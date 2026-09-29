@@ -20,6 +20,7 @@
   --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
   --han:'Ma Shan Zheng','KaiTi','STKaiti',serif;
 }
+[hidden]{display:none!important}
 html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:var(--body)}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
 .ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-inline:16px;text-align:center;z-index:5}
@@ -94,8 +95,8 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 const $ = s => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d');
 const isTouch = matchMedia('(pointer: coarse)').matches;
-const DPR = Math.min(devicePixelRatio || 1, 2);
-const RES = 2;                        // part pre-render resolution
+const DPR = Math.min(devicePixelRatio || 1, isTouch ? 1.5 : 2);
+const RES = isTouch ? 1.25 : 2;                        // part pre-render resolution
 const VIEW_H = 430, GROUND = 352, WORLD_W = 3200;
 const INK = '#1d1915';
 
@@ -171,6 +172,7 @@ function part(b, draw) {
   draw(api);
   mottle(cg, W, H, .55); mottle(kg, W, H, .2);
   const og = out.getContext('2d'); og.drawImage(col, 0, 0); og.drawImage(key, 0, 0);
+  col.width = col.height = key.width = key.height = 0;
   return { c: out, x0, y0, w: x1 - x0, h: y1 - y0 };
 }
 function mottle(g, W, H, a) {
@@ -205,6 +207,7 @@ function makePaper() {
   const m = mk(f, H), mg = m.getContext('2d'); mg.drawImage(s, 0, 0, f, H, 0, 0, f, H);
   mg.globalCompositeOperation = 'destination-in'; const g2 = mg.createLinearGradient(0, 0, f, 0); g2.addColorStop(0, 'rgba(0,0,0,0)'); g2.addColorStop(1, 'rgba(0,0,0,1)'); mg.fillStyle = g2; mg.fillRect(0, 0, f, H);
   g.globalAlpha = 1; g.drawImage(m, W - f, 0);
+  s.width = s.height = m.width = m.height = 0;
   return c;
 }
 
@@ -739,7 +742,8 @@ let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now;
-  update(dt); render();
+  try { update(dt); render(); }
+  catch (err) { if (!frame.failed) { frame.failed = true; const el = $('#err'); el.hidden = false; el.textContent = 'Lỗi khi vẽ màn chơi: ' + err.message; } }
 }
 requestAnimationFrame(t => { last = t; frame(t); });
 })();
