@@ -23,7 +23,7 @@
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:var(--body);transition:background-color .6s}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
-.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-inline:16px;text-align:center;z-index:5;overflow-y:auto}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:14px;padding:16px;box-sizing:border-box;text-align:center;z-index:5;overflow-y:auto}
 .sheet{background:rgba(242,236,222,.94);border:3px solid var(--ink);outline:1px solid var(--ink);outline-offset:4px;padding:24px 28px 22px;max-width:min(560px,92vw);box-shadow:6px 6px 0 rgba(29,25,21,.25);box-sizing:border-box}
 .sheet.wide{max-width:min(860px,94vw);width:100%}
 .sheet h1,.sheet h2{font-family:var(--display);font-weight:900;margin:0;letter-spacing:.02em;line-height:1.05;text-wrap:balance}
@@ -59,16 +59,23 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #lvCard.on{opacity:1}
 #lvCard .han{font-family:var(--han);font-size:clamp(48px,9vw,86px);line-height:1;color:var(--ink)}
 #lvCard b{display:inline-block;margin-top:8px;font-family:var(--display);font-weight:900;font-size:clamp(20px,3.4vw,30px);background:var(--diep);border:2px solid var(--ink);padding:4px 14px}
-#abil{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;z-index:4}
+#abil{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:96vw;z-index:4}
+#abil button.pl i{display:inline-block;width:12px;height:12px;border:1.5px solid var(--ink);border-radius:50%}
+#abil button#bRed i{background:#a3332a}#abil button#bGreen i{background:#2f6a4c}#abil button#bYellow i{background:#f2c640}
+#abil button.pl.on{outline:3px solid var(--ink);outline-offset:1px}
+#holdTag{background:var(--paper-hi)}
 #abil button{font-family:var(--display);font-weight:700;font-size:16px;color:var(--ink);background:rgba(242,236,222,.92);border:2px solid var(--ink);padding:8px 14px;cursor:pointer;box-shadow:3px 3px 0 rgba(29,25,21,.35);display:flex;align-items:center;gap:8px;touch-action:manipulation}
 #abil button .k{font-family:var(--body);font-size:11px;font-weight:600;border:1.5px solid var(--ink);padding:0 5px;background:var(--diep)}
 #abil button.on{background:var(--son);color:var(--diep)}
 #abil button#bOffer{background:var(--son);color:var(--diep)}
 #pad{position:fixed;left:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;z-index:4}
 #pad button{width:66px;height:66px;border-radius:50%;border:2px solid var(--ink);background:rgba(242,236,222,.85);font-size:24px;color:var(--ink);touch-action:none;box-shadow:3px 3px 0 rgba(29,25,21,.35)}
-body.touch #abil{left:auto;right:16px;transform:none;flex-direction:column;align-items:stretch}
+body.touch #abil{left:auto;right:12px;transform:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:none}
 body.touch #abil button .k{display:none}
+body.touch #abil button{padding:7px 8px;font-size:14px}
+body.touch #pad button{width:60px;height:60px}
 #err{position:fixed;inset:0;display:grid;place-items:center;padding-inline:16px;text-align:center;background:var(--diep);font-size:18px;z-index:9}
+@media (max-width:560px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{padding:10px 6px 8px}.card .ch{font-size:34px}.card b{font-size:17px}.sheet{padding:18px 16px 16px}.sheet.wide{padding:16px 12px}}
 @media (prefers-reduced-motion:reduce){#lvCard,#toast{transition:none}}
 </style>
 
@@ -76,7 +83,7 @@ body.touch #abil button .k{display:none}
 
 <div id="hud" hidden>
   <div class="tag" id="lvName" title="Về album tranh">Tranh 1 · Ngõ Tre</div>
-  <div class="right"><div id="watch" hidden></div><div class="tag" id="gift" hidden></div></div>
+  <div class="right"><div id="watch" hidden></div><div class="tag" id="holdTag" hidden>Đoàn đang đứng chờ · G để gọi</div><div class="tag" id="gift" hidden></div></div>
 </div>
 <div id="toast"><span id="toastTx"></span></div>
 <div id="lvCard"><div class="han" id="lvHan"></div><b id="lvTitle"></b></div>
@@ -85,6 +92,10 @@ body.touch #abil button .k{display:none}
   <button data-a="drum" id="bDrum"><span class="k">1</span>Trống</button>
   <button data-a="ken" id="bKen"><span class="k">2</span>Kèn</button>
   <button data-a="parasol" id="bPara"><span class="k">3</span>Lọng</button>
+  <button data-a="plate:red" id="bRed" class="pl"><span class="k">4</span><i></i>Đỏ</button>
+  <button data-a="plate:green" id="bGreen" class="pl"><span class="k">5</span><i></i>Xanh</button>
+  <button data-a="plate:yellow" id="bYellow" class="pl"><span class="k">6</span><i></i>Vàng</button>
+  <button data-a="hold" id="bHold"><span class="k">G</span>Giữ đoàn</button>
   <button data-a="offer" id="bOffer" hidden><span class="k">E</span>Dâng cá</button>
 </div>
 
@@ -92,7 +103,7 @@ body.touch #abil button .k{display:none}
   <div class="sheet">
     <div class="han">老鼠娶親</div>
     <h1>Đám Cưới Chuột</h1>
-    <p>Chú rể chuột dẫn đoàn rước dâu băng qua làng. Mỗi người trong đoàn có một tài: tiếng trống làm giật mình, tiếng kèn gọi muông thú, chiếc lọng che khỏi con mắt trên cao. Mỗi chặng đường là một bức tranh.</p>
+    <p>Chú rể chuột dẫn đoàn rước dâu băng qua làng. Mỗi người trong đoàn có một tài: tiếng trống làm giật mình, tiếng kèn gọi muông thú, chiếc lọng che khỏi con mắt trên cao. Sáu chặng đường là sáu bức tranh, càng đi càng lắm mưu mẹo: bản màu in cầu, bàn đạp mở cổng, đổi đồ ở chợ Tết.</p>
     <p class="how" id="howTx">← → đi · 1 Trống · 2 Kèn · 3 Lọng · E dâng lễ</p>
     <div class="row"><button class="btn" id="bStart">Mở album tranh</button></div>
   </div>
@@ -189,7 +200,7 @@ function tube(pts, w0, w1) {
 }
 
 /* ---------- woodblock part: colour plates (offset, mottled) + key block (ink) ---------- */
-function part(b, draw) {
+function part(b, draw, keepKey) {
   const [x0, y0, x1, y1] = b, W = Math.ceil((x1 - x0) * RES), H = Math.ceil((y1 - y0) * RES);
   const out = mk(W, H), col = mk(W, H), key = mk(W, H), cg = col.getContext('2d'), kg = key.getContext('2d');
   const T = (g, dx = 0, dy = 0) => g.setTransform(RES, 0, 0, RES, (-x0 + dx) * RES, (-y0 + dy) * RES);
@@ -209,8 +220,8 @@ function part(b, draw) {
   draw(api);
   mottle(cg, W, H, .55); mottle(kg, W, H, .2);
   const og = out.getContext('2d'); og.drawImage(col, 0, 0); og.drawImage(key, 0, 0);
-  col.width = col.height = key.width = key.height = 0;
-  return { c: out, x0, y0, w: x1 - x0, h: y1 - y0 };
+  col.width = col.height = 0; if (!keepKey) key.width = key.height = 0;
+  return { c: out, k: keepKey ? key : null, x0, y0, w: x1 - x0, h: y1 - y0 };
 }
 function mottle(g, W, H, a) {
   g.setTransform(1, 0, 0, 1, 0, 0);
@@ -631,6 +642,153 @@ function buildWorldParts() {
   return P;
 }
 
+/* ---------- art for the market, courtyard and wedding levels ---------- */
+function buildMoreParts() {
+  const M = {};
+  const pg = pts => { const p = new Path2D(); p.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) p.lineTo(pts[i][0], pts[i][1]); p.closePath(); return p; };
+  const hc = (x, y, r) => { const p = new Path2D(); p.arc(x, y, r, 0, Math.PI); p.closePath(); return p; };
+  const display = '"Playfair Display", serif';
+
+  M.stall = part([-146, -246, 146, 8], a => {
+    for (const x of [-116, 116]) a.fk('brown', rect(x - 6, -196, 12, 196), 2);
+    a.fk('brown', rect(-124, -72, 248, 72), 2.4);
+    a.fk('yellow', rect(-124, -78, 248, 12), 2);
+    for (let i = 0; i < 6; i++) a.key(lines([[-104 + i * 41.5, -64, -104 + i * 41.5, -6]]), 1.2);
+    [[-80, 'red'], [-40, 'green'], [0, 'yellow'], [40, 'white'], [80, 'red']].forEach(([x, c]) => a.fk(c, ell(x, -91, 17, 11), 1.6));
+    const top = u => -126 + 252 * u, bot = u => -142 + 284 * u;
+    for (let i = 0; i < 6; i++) {
+      const u0 = i / 6, u1 = (i + 1) / 6, c = i % 2 ? 'white' : 'red';
+      a.fk(c, pg([[top(u0), -240], [top(u1), -240], [bot(u1), -198], [bot(u0), -198]]), 1.6);
+      a.fk(c, hc((bot(u0) + bot(u1)) / 2, -198, (bot(u1) - bot(u0)) / 2), 1.6);
+    }
+    a.key(lines([[top(0), -240, top(1), -240]]), 2.6);
+  });
+  M.lanterns = part([-232, -62, 232, 72], a => {
+    a.key(smooth([[-226, -42], [-110, -8], [0, 0], [110, -8], [226, -42]], false), 2);
+    for (let i = 0; i < 5; i++) {
+      const u = (i + .5) / 5, x = -226 + 452 * u, y = -42 + 42 * Math.sin(u * Math.PI) - 2;
+      a.key(lines([[x, y, x, y + 8]]), 1.6);
+      a.fk('yellow', rect(x - 7, y + 8, 14, 5), 1.4);
+      a.fk('red', ell(x, y + 27, 15, 17), 2);
+      a.key(lines([[x - 7, y + 14, x - 8, y + 40], [x + 7, y + 14, x + 8, y + 40]]), 1);
+      a.fk('yellow', rect(x - 7, y + 42, 14, 4), 1.4);
+      a.key(lines([[x, y + 46, x, y + 56]]), 1.4);
+    }
+  });
+  /* lợn mẹ, facing left (after the print of Lợn Đàn) */
+  M.pig = part([-136, -140, 136, 8], a => {
+    for (const x of [-64, -34, 50, 80]) { a.fk('grey', tube([[x, -24], [x, -4]], 20, 18), 2); a.fk('dark', ell(x, -3, 11, 5), 1.4); }
+    const body = smooth([[-74, -18], [-98, -52], [-94, -96], [-50, -122], [20, -124], [92, -106], [114, -60], [98, -18], [40, -2], [-20, 0]]);
+    a.fk('grey', body, 2.8);
+    a.fk('yellow', circ(12, -66, 27), 2);
+    const sw = new Path2D(); sw.arc(12, -66, 27, -Math.PI / 2, Math.PI / 2); sw.arc(12, -66 + 13.5, 13.5, Math.PI / 2, -Math.PI / 2, true); sw.arc(12, -66 - 13.5, 13.5, Math.PI / 2, -Math.PI / 2); sw.closePath();
+    a.fill('red', sw); a.key(circ(12, -66, 27), 2);
+    const cr = new Path2D(); cr.arc(-42, -66, 22, 1.9, 5.2); cr.arc(-35, -66, 16, 5.0, 2.1, true); cr.closePath(); a.fk('yellow', cr, 1.6);
+    a.key(smooth([[-20, -118], [10, -108], [50, -118], [86, -104]], false), 1.6);
+    a.fk('grey', ell(-102, -60, 34, 30), 2.6);
+    a.fk('yellow', smooth([[-94, -88], [-80, -114], [-68, -88]]), 1.8);
+    a.fk('red', ell(-128, -50, 13, 12), 2); a.ink(circ(-132, -50, 2.2)); a.ink(circ(-124, -49, 2.2));
+    a.fk('white', ell(-104, -68, 8, 5.5), 1.6); a.ink(circ(-105, -68, 2.6));
+    a.key(smooth([[-124, -34], [-112, -28], [-98, -32]], false), 1.4);
+    a.key(smooth([[108, -72], [124, -82], [128, -66], [118, -62]], false), 2);
+  });
+  /* bà cóc bán hàng, with a nón lá */
+  M.toad = part([-62, -132, 62, 8], a => {
+    a.fk('green', ell(-26, -4, 20, 8), 1.8); a.fk('green', ell(26, -4, 20, 8), 1.8);
+    const b = smooth([[-42, -2], [-50, -32], [-38, -64], [0, -74], [38, -64], [50, -32], [42, -2]]);
+    a.fk('green', b, 2.6); a.fill('lilac', ell(0, -30, 27, 31));
+    a.key(lines([[-14, -46, -8, -44], [10, -38, 16, -40], [-12, -22, -6, -20], [8, -16, 14, -18]]), 1.2);
+    a.fk('green', circ(-22, -78, 16), 2.2); a.fk('green', circ(22, -78, 16), 2.2);
+    a.fk('yellow', circ(-22, -80, 11), 1.8); a.ink(ell(-22, -80, 2.4, 7));
+    a.fk('yellow', circ(22, -80, 11), 1.8); a.ink(ell(22, -80, 2.4, 7));
+    a.key(smooth([[-26, -60], [0, -52], [26, -60]], false), 2);
+    const hat = smooth([[-60, -92], [-40, -100], [0, -134], [40, -100], [60, -92], [0, -98]]);
+    a.fk('straw', hat, 2.6);
+    for (let i = 0; i < 6; i++) a.key(lines([[0, -132, -50 + i * 20, -94]]), 1.1);
+    a.key(smooth([[-50, -94], [0, -86], [50, -94]], false), 1.6);
+  });
+  /* chó canh, facing right */
+  M.dogBody = part([-64, -84, 66, 6], a => {
+    const b = smooth([[-46, -24], [-52, -50], [-34, -68], [16, -72], [46, -60], [52, -36], [30, -22], [-18, -20]]);
+    a.fk('yellow', b, 2.6);
+    a.fill('brown', ell(-18, -52, 15, 10, .2)); a.fill('brown', ell(28, -42, 11, 8, -.3));
+    a.fill('straw', smooth([[-40, -30], [-8, -24], [30, -26], [10, -38], [-30, -40]]));
+    a.key(smooth([[-30, -62], [-22, -54]], false), 1.2); a.key(smooth([[-4, -66], [4, -58]], false), 1.2);
+    a.key(b, 2.6);
+  });
+  M.dogLeg = part([-10, -6, 16, 50], a => { a.fk('yellow', tube([[0, 0], [1, 38]], 13, 10), 1.8); a.fk('dark', ell(6, 42, 11, 5), 1.6); });
+  M.dogHead = part([-34, -46, 56, 28], a => {
+    const h = smooth([[-20, -20], [-14, -38], [10, -40], [30, -26], [48, -16], [50, -4], [26, 4], [-8, 2]]);
+    a.fk('yellow', h, 2.4);
+    a.fk('brown', smooth([[-10, -36], [-32, -20], [-24, 0], [-4, -22]]), 2);
+    a.fk('white', circ(14, -20, 6.5), 1.6); a.ink(circ(15.5, -20, 3));
+    a.ink(ell(50, -12, 5, 4));
+    a.key(smooth([[46, -2], [34, 3], [26, 0]], false), 1.4);
+  });
+  M.dogTail = part([-6, -54, 36, 8], a => { a.fk('yellow', tube([[0, 0], [16, -20], [30, -44]], 10, 6), 1.8); });
+  M.excl = part([-14, -46, 14, 6], a => { a.text('!', 3, -20, 46, 'red', display, 'color', 900); a.text('!', 0, -22, 46, 'dark', display, 'ink', 900); });
+  /* bàn đạp và cổng then */
+  M.pad = part([-50, -16, 50, 8], a => {
+    a.fk('grey', pg([[-46, 2], [-40, -10], [40, -10], [46, 2]]), 2.4);
+    a.fk('red', ell(0, -9, 27, 4.6), 1.6); a.fk('yellow', ell(-8, -9, 10, 2.8), 1.2);
+    a.key(lines([[-40, -4, -46, 2], [40, -4, 46, 2]]), 1);
+  });
+  M.doorFrame = part([-90, -290, 90, 8], a => {
+    for (const x of [-66, 66]) a.fk('red', rect(x - 11, -228, 22, 228), 2.6);
+    a.fk('dark', rect(-82, -238, 164, 15), 2.2);
+    a.fk('green', smooth([[-90, -238], [-72, -250], [-44, -268], [0, -276], [44, -268], [72, -250], [90, -238], [0, -242]]), 2.6);
+    for (let i = 0; i < 7; i++) a.key(lines([[-54 + i * 18, -268 + Math.abs(i - 3) * 4, -56 + i * 18, -246]]), 1.2);
+    a.fk('yellow', circ(0, -280, 6), 1.5);
+  });
+  M.slat = part([-58, -232, 58, 8], a => {
+    for (let x = -46; x <= 46; x += 13) a.fk('green', tube([[x, 4], [x, -226]], 10, 9), 1.6);
+    for (const y of [-40, -120, -200]) a.fk('yellow', rect(-54, y - 6, 108, 12), 1.8);
+    for (let x = -46; x <= 46; x += 13) a.key(lines([[x - 4, -84, x + 4, -80]]), 1);
+  });
+  /* items */
+  M.gao = part([-24, -36, 24, 6], a => {
+    a.fk('white', smooth([[-18, 0], [-22, -18], [-14, -28], [14, -28], [22, -18], [18, 0]]), 2.2);
+    a.fill('lilac', ell(6, -12, 10, 12)); a.fk('red', rect(-12, -32, 24, 6), 1.6); a.key(lines([[-8, -8, 8, -8]]), 1.2);
+  });
+  M.ladong = part([-36, -14, 36, 14], a => {
+    a.fk('green', smooth([[-30, 0], [-12, -9], [22, -8], [32, 0], [22, 8], [-12, 8]]), 2); a.key(lines([[-28, 0, 30, 0]]), 1.2);
+    for (let i = 0; i < 4; i++) a.key(lines([[-14 + i * 12, 0, -8 + i * 12, -6], [-14 + i * 12, 0, -8 + i * 12, 6]]), 1);
+  });
+  M.banh = part([-24, -28, 24, 6], a => {
+    a.fk('green', pg([[-20, 0], [-20, -22], [20, -22], [20, 0]]), 2.4);
+    a.fk('red', rect(-3, -22, 6, 22), 1.4); a.fk('red', rect(-20, -14, 40, 6), 1.4);
+  });
+  M.seal = part([-20, -20, 20, 20], a => {
+    a.fk('red', pg([[-15, -15], [15, -15], [15, 4], [4, 15], [-15, 15]]), 2);
+    a.text('東', 0, 0, 22, 'paper');
+  });
+  const tag = (n, pl) => part([-18, -18, 18, 18], a => { a.fk(pl, circ(0, 0, 15), 2.2); a.text(n, 0, 1, 20, 'dark', display, 'ink', 900); });
+  M.tag = { red: tag('4', 'red'), green: tag('5', 'green'), yellow: tag('6', 'yellow') };
+  /* cầu in theo bản màu: keep the ink-only plate so it can be shown unprinted */
+  M.bridgeFor = (style, w) => part([-12, -50, w + 12, 44], a => {
+    if (style === 'red') {
+      for (const x of [0, w]) a.fk('brown', rect(x - 6, -44, 12, 54), 2);
+      a.fk('yellow', rect(-6, -44, w + 12, 7), 1.8);
+      a.fk('red', rect(-4, -4, w + 8, 16), 2.6);
+      for (let x = 14; x < w; x += 22) a.key(lines([[x, -4, x, 12]]), 1.3);
+      for (let x = w / 4; x < w - 4; x += w / 4) a.fk('brown', rect(x - 4, -36, 8, 38), 1.6);
+    } else if (style === 'green') {
+      const n = Math.ceil(w / 54);
+      for (let i = 0; i < n; i++) {
+        const x = 27 + i * ((w - 54) / Math.max(1, n - 1));
+        a.fk('green', smooth([[x - 30, 6], [x - 22, -4], [x + 22, -4], [x + 30, 6], [x + 20, 14], [x - 20, 14]]), 2.2);
+        a.key(lines([[x - 22, 5, x + 22, 5], [x, -3, x, 13]]), 1.2);
+        if (i % 2 === 1) { a.fk('red', ell(x, -9, 9, 5), 1.4); a.fk('yellow', circ(x, -10, 3), 1); }
+      }
+    } else {
+      for (let i = 0; i < 4; i++) a.fk('yellow', tube([[-4, -2 + i * 9], [w + 4, -2 + i * 9]], 11, 11), 1.8);
+      for (const x of [w * .25, w * .75]) a.fk('dark', rect(x - 4, -6, 8, 42), 1.6);
+      for (let i = 0; i < 4; i++) for (let x = 20; x < w - 10; x += 34) a.key(lines([[x, -6 + i * 9, x + 6, -1 + i * 9]]), 1);
+    }
+  }, true);
+  return M;
+}
+
 /* ---------- audio ---------- */
 const AU = (() => {
   let c = null, master, music, sfx, next = 0, step = 0, quiet = false, key = 0;
@@ -697,6 +855,14 @@ const AU = (() => {
     chirp: on(() => { const t = c.currentTime; for (let i = 0; i < 3; i++) sweep('sine', 3800, 5200, .08, 4500, .12, t + i * .1); }),
     thump: on(() => { const t = c.currentTime; drum(t, 1.4, sfx); }),
     pluck: on((m = 86) => { const t = c.currentTime, o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(m); env(o, t, .005, .25, .5).connect(sfx); o.start(t); o.stop(t + .52); }),
+    bark: on(() => { const t = c.currentTime; sweep('square', 420, 260, .12, 1400, .3, t); sweep('square', 380, 220, .14, 1400, .3, t + .2); }),
+    snore: on(() => sweep('sawtooth', 90, 70, .9, 300, .14)),
+    creak: on(() => { const t = c.currentTime; sweep('sawtooth', 180, 90, .7, 700, .2, t); const n = noise(.6), f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 400; n.connect(f); env(f, t, .05, .15, .6).connect(sfx); n.start(t); n.stop(t + .6); }),
+    click: on(() => { const t = c.currentTime; drum(t, .5, sfx); sweep('triangle', 900, 600, .08, 1200, .15, t); }),
+    swoosh: on(() => { const t = c.currentTime, n = noise(.5), f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = .8; f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(3200, t + .4); n.connect(f); env(f, t, .05, .3, .5).connect(sfx); n.start(t); n.stop(t + .5); }),
+    ribbit: on(() => { const t = c.currentTime; sweep('sawtooth', 140, 90, .16, 500, .3, t); sweep('sawtooth', 150, 95, .16, 500, .3, t + .22); }),
+    oink: on(() => { const t = c.currentTime; sweep('sawtooth', 260, 150, .35, 800, .3, t); sweep('sawtooth', 230, 140, .3, 800, .25, t + .4); }),
+    stamp: on(() => { drum(c.currentTime, 1.6, sfx); }),
     tension: on(() => { const t = c.currentTime, o = c.createOscillator(); o.frequency.value = mtof(38); const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.12, t + .3); g.gain.linearRampToValueAtTime(0, t + 2.2); o.connect(g); g.connect(sfx); o.start(t); o.stop(t + 2.3); }),
   };
 })();
@@ -704,7 +870,7 @@ const AU = (() => {
 /* ---------- build art ---------- */
 try {
   await Promise.race([
-    Promise.all([document.fonts.load('60px "Ma Shan Zheng"', '鼠娶親貓受禮東湖囍竹巷塘邊'), document.fonts.load('900 28px "Playfair Display"', 'Tùng!')]),
+    Promise.all([document.fonts.load('60px "Ma Shan Zheng"', '鼠娶親貓受禮東湖囍竹巷塘邊市集院亭迎親貓關'), document.fonts.load('900 28px "Playfair Display"', 'Tùng!')]),
     new Promise(r => setTimeout(r, 3000)),
   ]);
 } catch (e) {}
@@ -712,6 +878,7 @@ buildItems();
 const PROPS = buildProps();
 const CAT = buildCat();
 const WP = buildWorldParts();
+const MP = buildMoreParts();
 const MICE = {
   groom: buildMouse({ robe: 'green', trim: 'red', head: 'dark', hat: 'dark', dots: true }),
   a: buildMouse({ robe: 'red', trim: 'green', head: 'brown' }),
@@ -723,21 +890,53 @@ const PAPERS = {
   yellow: { base: '#e1b23a', hi: '#f0cb63', lo: '#c8981f', s1: '#b98a1e', s2: '#f5d57a', fib: '#a97a17', css: '#e2b43c', spark: '#fff6d8' },
   pink: { base: '#e2a597', hi: '#f2c6bc', lo: '#c98575', s1: '#b57266', s2: '#f8d9d1', fib: '#a2665b', css: '#e2a597', spark: '#fff3ef' },
   blue: { base: '#a7c0c1', hi: '#c8dbda', lo: '#86a3a4', s1: '#7a9798', s2: '#e1ecea', fib: '#6c8889', css: '#a7c0c1', spark: '#ffffff' },
+  white: { base: '#ebe3cd', hi: '#faf6ea', lo: '#d6cbb0', s1: '#c3b596', s2: '#fdfbf3', fib: '#b3a37f', css: '#ebe3cd', spark: '#ffffff' },
+  sage: { base: '#b4c19a', hi: '#cdd8b3', lo: '#94a27b', s1: '#859371', s2: '#e3ecd0', fib: '#7a8867', css: '#b4c19a', spark: '#fbfff0' },
+  lilac: { base: '#b8a5c8', hi: '#d2c3df', lo: '#9985ab', s1: '#8a779d', s2: '#e8def1', fib: '#7b698e', css: '#b8a5c8', spark: '#ffffff' },
 };
-const paperCache = {};
-const getPaper = k => paperCache[k] || (paperCache[k] = makePaper(PAPERS[k]));
+let paperKey = null, paperImg = null;
+const getPaper = k => { if (k !== paperKey) { if (paperImg) paperImg.width = paperImg.height = 0; paperImg = makePaper(PAPERS[k]); paperKey = k; } return paperImg; };
+
+/* ---------- items ---------- */
+const ITEMS = {
+  fish: { name: 'cá', part: ITEM.fish, s: .9, cy: 0 },
+  cau: { name: 'trầu cau', part: WP.basket, s: .8, cy: -6 },
+  gao: { name: 'gạo nếp', part: MP.gao, s: .8, cy: -15 },
+  ladong: { name: 'lá dong', part: MP.ladong, s: 1, cy: 0 },
+  banh: { name: 'bánh chưng', part: MP.banh, s: 1, cy: -11 },
+};
+const PLN = { red: 'Đỏ', green: 'Xanh', yellow: 'Vàng' }, PKEY = { red: '4', green: '5', yellow: '6' };
+const PCOL = { red: '#a3332a', green: '#2f6a4c', yellow: '#f2c640' };
+const PBTN = { red: '#bRed', green: '#bGreen', yellow: '#bYellow' };
 
 /* ---------- game state ---------- */
-const S = { lv: 0, mode: 'title', t: 0, pose: 0, poseT: 0, parasol: false, drumT: 0, kenT: 0, caught: 0, catcher: null, cp: 0, gift: null, ents: [], gaps: [], tufts: [], fx: [], wallT: 0, lastHint: -99, endT: 0, told: {} };
+const S = { lv: 0, mode: 'title', t: 0, pose: 0, poseT: 0, parasol: false, drumT: 0, kenT: 0, caught: 0, catcher: null, cp: 0, inv: [], hold: false, plate: null, pads: {}, catches: 0, gotSecret: false, ents: [], gaps: [], tufts: [], fx: [], wallT: 0, lastHint: -99, endT: 0, told: {}, reset: false };
 const groom = { x: 160, vx: 0, face: 1, ph: 0, moving: false };
 const followers = [
   { m: MICE.a, item: 'parasol', gap: 100 }, { m: MICE.b, item: 'drum', gap: 196 },
   { m: MICE.c, item: 'ken', gap: 290 }, { m: MICE.d, item: 'gift', gap: 384 },
 ];
 let L = null, PAPER = null, camX = 0;
-let SAVE = { done: [false, false, false] };
-try { const s = JSON.parse(localStorage.getItem('dcc.v1') || 'null'); if (s && Array.isArray(s.done)) SAVE = s; } catch (e) {}
-const persist = () => { try { localStorage.setItem('dcc.v1', JSON.stringify(SAVE)); } catch (e) {} };
+const members = () => [groom, ...followers];
+const has = i => S.inv.includes(i);
+const hasAll = list => list.every(has);
+function takeItems(list) { for (const i of list) { const k = S.inv.indexOf(i); if (k >= 0) S.inv.splice(k, 1); } }
+function drawItem(g, i, x, y, s = 1, rot = 0) { const it = ITEMS[i]; dp(g, it.part, x, y - it.cy * it.s * s, rot, it.s * s, it.s * s); }
+function drawBubble(g, x, y, items) {
+  const w = items.length * 40 + 18, h = 48;
+  g.save(); g.translate(x, y);
+  g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 2.4; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(-w / 2 + 8, -h); g.lineTo(w / 2 - 8, -h); g.quadraticCurveTo(w / 2, -h, w / 2, -h + 8); g.lineTo(w / 2, -8); g.quadraticCurveTo(w / 2, 0, w / 2 - 8, 0);
+  g.lineTo(8, 0); g.lineTo(0, 12); g.lineTo(-8, 0); g.lineTo(-w / 2 + 8, 0); g.quadraticCurveTo(-w / 2, 0, -w / 2, -8); g.lineTo(-w / 2, -h + 8); g.quadraticCurveTo(-w / 2, -h, -w / 2 + 8, -h);
+  g.closePath(); g.fill(); g.stroke();
+  items.forEach((it, k) => drawItem(g, it, -w / 2 + 29 + k * 40, -h / 2, .8));
+  g.restore();
+}
+function sparkle(g, x, y, s, a) {
+  g.save(); g.globalAlpha = a; g.translate(x, y); g.rotate(S.t * .6); g.fillStyle = INK; g.beginPath();
+  for (let i = 0; i < 8; i++) { const r = i % 2 ? s * .26 : s, an = i * Math.PI / 4; g.lineTo(Math.cos(an) * r, Math.sin(an) * r); }
+  g.closePath(); g.fill(); g.restore();
+}
 
 /* ---------- entities ---------- */
 function decor(p, x, y, s = 1, f = 1, layer = 'bg') { return { layer, draw(g) { dp(g, p, x, y, 0, s * f, s); } }; }
@@ -750,21 +949,47 @@ function tickWatcher(e, dt) {
   else if (e.st === 'warn') { e.st = 'watch'; e.t = 1.8 + R() * 1.2; AU.tension(); }
   else { e.st = 'sleep'; e.t = 2.2 + R() * 2.2; }
 }
-function fishPickup(x) {
+function pickup(x, item, msg, art) {
   return {
     layer: 'mid', taken: false,
-    update() { if (!this.taken && groom.x > x - 20) { this.taken = true; S.gift = 'fish'; AU.pluck(); toast('Nhặt được con cá: lễ vật cho mèo.'); } },
-    draw(g) { if (this.taken) return; dp(g, PROPS.leaf, x, GROUND - 4); dp(g, ITEM.fish, x, GROUND - 14 + Math.sin(S.pose * 3) * 1.5, 0, .9, .9); },
+    update() { if (!this.taken && Math.abs(groom.x - x) < 26) { this.taken = true; S.inv.push(item); AU.pluck(); toast(msg); } },
+    draw(g) {
+      if (this.taken) return;
+      if (art) art(g); else { dp(g, PROPS.leaf, x, GROUND - 4); dp(g, ITEM.fish, x, GROUND - 14 + Math.sin(S.pose * 3) * 1.5, 0, .9, .9); }
+    },
   };
 }
-/* Màn 1: mèo ngồi canh cuối đường (the original demo) */
+function secretSpot(x, ab, note) {
+  const fx = x + 60;
+  const trig = function () { if (this.st !== 'hidden') return false; this.st = 'fall'; this.t = 0; toast(note, 3.6); return true; };
+  const e = {
+    layer: 'top', st: SAVE.secret[S.lv] ? 'taken' : 'hidden', t: 0, ax: x, range: 280,
+    update(dt) {
+      this.t += dt;
+      if (this.st === 'fall' && this.t > .7) { this.st = 'ground'; AU.thump(); }
+      if (this.st === 'ground' && Math.abs(groom.x - fx) < 30) { this.st = 'taken'; SAVE.secret[S.lv] = true; S.gotSecret = true; persist(); AU.pluck(88); setTimeout(() => AU.pluck(93), 120); toast('Nhặt được một mảnh triện Đông Hồ!', 3.4); }
+    },
+    draw(g) {
+      if (this.st === 'hidden') sparkle(g, x, GROUND - 190, 9, .35 + .35 * Math.sin(S.t * 2.4));
+      else if (this.st === 'fall' || this.st === 'ground') {
+        const k = this.st === 'fall' ? Math.min(1, this.t / .7) : 1, y = GROUND - 190 + (GROUND - 22 - (GROUND - 190)) * k * k;
+        dp(g, MP.seal, x + 60 * k, y, k * 5, 1, 1);
+        if (this.st === 'ground') sparkle(g, fx, GROUND - 54, 8, .5 + .5 * Math.sin(S.t * 5));
+      }
+    },
+  };
+  if (ab === 'drum') e.onDrum = trig; else e.onKen = trig;
+  return e;
+}
+/* Màn 1: mèo ngồi canh cuối đường (the original demo, unchanged) */
 function groundCat(cx, from) {
   const wallX = cx - 190;
   return {
     layer: 'mid', watcher: true, mode: 'ground', kind: 'cat', x: cx, z0: from, z1: wallX - 90, st: 'sleep', t: 3, fed: false,
+    get spent() { return this.fed; },
     wall() { return this.fed ? null : wallX; },
-    hint() { return S.gift === 'fish' ? 'Mèo chắn đường, đòi lễ vật. Dâng cá đi!' : 'Mèo chắn đường. Không có lễ thì đừng hòng qua!'; },
-    offer: { need: 'fish', label: 'Dâng cá', near: () => groom.x > wallX - 90, missing: 'Mèo chắn đường. Không có lễ thì đừng hòng qua!' },
+    hint() { return has('fish') ? 'Mèo chắn đường, đòi lễ vật. Dâng cá đi!' : 'Mèo chắn đường. Không có lễ thì đừng hòng qua!'; },
+    offer: { wants: ['fish'], label: 'Dâng cá', near: () => groom.x > wallX - 90, missing: 'Mèo chắn đường. Không có lễ thì đừng hòng qua!' },
     give() { this.fed = true; this.st = 'fed'; AU.pluck(81); setTimeout(() => AU.pluck(86), 140); toast('Mèo nhận lễ, cho đoàn rước đi qua.', 3); },
     catchMsg: () => 'Mèo vồ! Đoàn rước phải lùi về chỗ nấp trước.',
     update(dt) {
@@ -839,10 +1064,9 @@ function pomeloDitch(treeX, g0, g1) {
       let fx = treeX + 70, fy = GROUND - 150, rot = 0;
       if (this.st === 'fall') {
         const t = this.t;
-        if (t < .5) fy = GROUND - 150 + 150 * (t / .5) * (t / .5) - 40 * 0;
+        if (t < .5) fy = GROUND - 190 + 150 * (t / .5) * (t / .5);
         else if (t < 1.3) { const k = (t - .5) / .8; fx = treeX + 70 + (mid - treeX - 70) * k; fy = GROUND - 40 - Math.abs(Math.sin(k * Math.PI * 2)) * 24 * (1 - k); rot = k * 6; }
         else { const k = Math.min(1, (t - 1.3) / .2); fx = mid; fy = GROUND - 40 + 70 * k; rot = 6; }
-        if (t < .5) fy -= 40;
       }
       if (this.st === 'filled') { fx = mid; fy = GROUND + 30; rot = 6; }
       dp(g, WP.fruit, fx, fy, rot, 3.1, 3.1);
@@ -854,7 +1078,6 @@ function basketTree(treeX) {
   const hx = treeX + 160, ropeTop = GROUND - 222;
   return {
     layer: 'bg', st: 'hang', t: 0, ax: hx, range: 420,
-    hint: null,
     onKen() { if (this.st !== 'hang') return false; this.st = 'bird'; this.t = 0; return true; },
     update(dt) {
       this.t += dt;
@@ -862,14 +1085,12 @@ function basketTree(treeX) {
       if (this.st === 'bird' && this.t > 1.2 && !this.chirped) { this.chirped = true; AU.chirp(); }
       if (this.st === 'bird' && this.t > 2.1) { this.st = 'fall'; this.t = 0; toast('Chim sẻ mổ đứt dây, giỏ trầu rơi xuống!'); }
       if (this.st === 'fall' && this.t > .45) { this.st = 'ground'; AU.thump(); }
-      if (this.st === 'ground' && groom.x > hx - 30) { this.st = 'taken'; S.gift = 'cau'; AU.pluck(); toast('Nhặt được giỏ trầu cau.'); }
+      if (this.st === 'ground' && groom.x > hx - 30) { this.st = 'taken'; S.inv.push('cau'); AU.pluck(); toast('Nhặt được giỏ trầu cau.'); }
     },
     draw(g) {
       dp(g, WP.bigTree, treeX, GROUND + 4);
       let by = GROUND - 150;
-      if (this.st === 'hang' || this.st === 'bird') {
-        g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(hx, ropeTop); g.lineTo(hx + Math.sin(S.pose * 1.5) * 2, by - 4); g.stroke();
-      }
+      if (this.st === 'hang' || this.st === 'bird') { g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(hx, ropeTop); g.lineTo(hx + Math.sin(S.pose * 1.5) * 2, by - 4); g.stroke(); }
       if (this.st === 'fall') by = GROUND - 150 + 134 * (this.t / .45) * (this.t / .45);
       if (this.st === 'ground') by = GROUND - 16;
       if (this.st !== 'taken') dp(g, WP.basket, hx + (this.st === 'hang' || this.st === 'bird' ? Math.sin(S.pose * 1.5) * 2 : 0), by + 16);
@@ -889,7 +1110,7 @@ function pond(g0, g1) {
     wall() { return this.st !== 'bridge' ? g0 - 10 : null; },
     hint: () => 'Ao rộng quá, chuột không biết bơi. Nghe nói đàn vịt nhà bên mê tiếng kèn…',
     onKen() { if (this.st !== 'empty') return false; this.st = 'coming'; this.t = 0; AU.quack(); toast('Đàn vịt nghe kèn kéo tới, xếp hàng thành cầu!'); return true; },
-    onDrum() { if (this.st === 'empty') { toast('Tùng tùng… mặt ao gợn sóng, chẳng con gì tới.'); } return false; },
+    onDrum() { if (this.st === 'empty') toast('Tùng tùng… mặt ao gợn sóng, chẳng con gì tới.'); return false; },
     update(dt) { this.t += dt; if (this.st === 'coming') { let done = true; for (const d of ducks) { d.x += Math.max(-160 * dt, d.tx - d.x); if (d.x > d.tx + .5) done = false; } if (done) { this.st = 'bridge'; AU.quack(); } } },
     draw(g) { dp(g, water, g0, GROUND); },
     drawMid(g) { if (this.st === 'empty') return; for (const d of ducks) dp(g, WP.duck, d.x, GROUND + 38 + Math.sin(S.t * 2 + d.ph) * 2); },
@@ -936,12 +1157,141 @@ function buffalo(x) {
 function gate(x, need) {
   return {
     layer: 'bg', gateX: x, opened: !need,
+    get spent() { return this.opened; },
     wall() { return this.opened ? null : x - 120; },
-    hint: () => need ? (S.gift === 'cau' ? 'Nhà gái đứng chờ ở cổng. Dâng trầu cau đi!' : 'Nhà gái đòi lễ trầu cau mới cho rước dâu. Quay lại lấy giỏ trầu trên cây đa.') : null,
-    offer: need ? { need, label: 'Dâng trầu cau', near: () => groom.x > x - 220, missing: 'Nhà gái đòi lễ trầu cau mới cho rước dâu.' } : null,
+    hint: () => need ? (has(need) ? 'Nhà gái đứng chờ ở cổng. Dâng trầu cau đi!' : 'Nhà gái đòi lễ trầu cau mới cho rước dâu. Quay lại lấy giỏ trầu trên cây đa.') : null,
+    offer: need ? { wants: [need], label: 'Dâng trầu cau', near: () => groom.x > x - 220, missing: 'Nhà gái đòi lễ trầu cau mới cho rước dâu.' } : null,
     give() { this.opened = true; AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Nhà gái nhận trầu cau, mở cổng đón chú rể!', 3); },
     draw(g) { dp(g, PROPS.gate, x, GROUND + 4); },
   };
+}
+/* Màn 4+: bản màu, bàn đạp, cổng then, bà cóc, lợn mẹ, chó canh */
+function plateBridge(g0, g1, plate, note) {
+  const img = MP.bridgeFor(plate, g1 - g0), mid = (g0 + g1) / 2;
+  return {
+    layer: 'bg', plate, gap: [g0, g1], pv: 0, ax: mid,
+    wall() { return S.plate === plate ? null : g0 - 10; },
+    occupied() { return members().some(m => m.x > g0 - 16 && m.x < g1 + 16); },
+    hint: () => note || `${plate === 'green' ? 'Ao' : 'Suối'} rộng quá, chuột không bơi được. Chỗ này có nét khắc cây cầu chưa in màu ${PLN[plate].toLowerCase()}: bấm phím ${PKEY[plate]} để in bản ${PLN[plate].toLowerCase()}.`,
+    update(dt) { this.pv += ((S.plate === plate ? 1 : 0) - this.pv) * Math.min(1, dt * 6); },
+    draw(g) {
+      g.globalAlpha = .34 * (1 - this.pv); dp(g, img, g0, GROUND); g.globalAlpha = 1;
+      if (img.k) { g.globalAlpha = .55 * (1 - this.pv); g.drawImage(img.k, img.x0 + g0, img.y0 + GROUND, img.w, img.h); g.globalAlpha = 1; }
+      if (this.pv > .02) { g.globalAlpha = this.pv; dp(g, img, g0, GROUND); g.globalAlpha = 1; }
+      if (this.pv < .6) { g.globalAlpha = (1 - this.pv / .6); dp(g, MP.tag[plate], mid, GROUND - 74 + Math.sin(S.t * 3) * 3); g.globalAlpha = 1; }
+    },
+  };
+}
+function pad(x, id) {
+  return { layer: 'bg', padX: x, id, pressed: false, ax: x, draw(g) { dp(g, MP.pad, x, GROUND + 4 + (this.pressed ? 4 : 0)); } };
+}
+function door(x, ids) {
+  return {
+    layer: 'bg', doorX: x, ids, open: 0, tgt: false, told: false, ax: x,
+    wall() { return this.tgt ? null : x; },
+    hint: () => 'Cổng then đóng chặt. Cổng chỉ mở khi có ai đứng trên bàn đạp.',
+    update(dt) {
+      const t = ids.some(i => S.pads[i]);
+      if (t !== this.tgt) { this.tgt = t; t ? AU.creak() : AU.click(); }
+      this.open += ((t ? 1 : 0) - this.open) * Math.min(1, dt * 5);
+      if (!this.told && !t && groom.x > x - 460) { this.told = true; toast('Cổng then chỉ mở khi có ai đứng trên bàn đạp. Để một người ở lại giữ bàn đạp: bấm G để đoàn đứng chờ.', 5.5); }
+    },
+    draw(g) { dp(g, MP.doorFrame, x, GROUND + 4); },
+    drawFg(g) { g.save(); g.beginPath(); g.rect(x - 80, GROUND - 222, 160, 232); g.clip(); dp(g, MP.slat, x, GROUND + 4 - this.open * 224); g.restore(); },
+  };
+}
+function vendor(x, cfg) {
+  return {
+    layer: 'mid', spent: false, ax: x, told: false, bounce: 0, bubbleT: 0,
+    offer: { always: true, label: cfg.label, wants: cfg.wants, missing: cfg.missing, near: () => Math.abs(groom.x - x) < 190 },
+    update(dt) {
+      this.bounce = Math.max(0, this.bounce - dt);
+      if (!this.told && Math.abs(groom.x - x) < 340) { this.told = true; toast(cfg.tell, 4.6); AU.ribbit(); }
+    },
+    give() { this.spent = true; this.bounce = .7; if (cfg.gives) S.inv.push(cfg.gives); AU.ribbit(); AU.pluck(84); toast(cfg.ok, 3.6); },
+    draw(g) {
+      const b = this.bounce > 0 ? Math.abs(Math.sin(this.bounce * 14)) * 8 : Math.sin(S.pose * 2 + x) * 1.2;
+      dp(g, MP.toad, x - 24, GROUND - 68 - b, 0, .8, .8);
+      dp(g, MP.stall, x, GROUND + 4);
+      if (!this.spent && Math.abs(groom.x - x) < 520) drawBubble(g, x, GROUND - 262, cfg.wants);
+    },
+  };
+}
+function pigGuard(x) {
+  const e = {
+    layer: 'mid', spent: false, t: 0, told: false, ax: x,
+    wall() { return this.spent ? null : x - 170; },
+    hint: () => 'Lợn mẹ nằm chắn đường, không chịu nhúc nhích. Chắc nó đòi món gì đó…',
+    offer: { always: true, label: 'Cho lợn ăn', wants: ['banh'], missing: 'Lợn mẹ ngoảnh mặt đi, chỉ chịu bánh chưng thôi.', near: () => !e.spent && groom.x > x - 340 },
+    give() { this.spent = true; this.t = 0; AU.oink(); toast('Lợn mẹ ăn bánh chưng, ủn ỉn nhường đường!', 3.4); },
+    update(dt) {
+      this.t += dt;
+      if (!this.told && groom.x > x - 560) { this.told = true; toast('Lợn mẹ nằm chắn ngang đường, bụng réo ùng ục. Nó đòi bánh chưng.', 4.4); AU.oink(); }
+    },
+    draw(g) {
+      const px = this.spent ? x + Math.min(1, this.t / 2.6) * 270 : x, bob = Math.sin(S.pose * 2) * 1.2;
+      dp(g, MP.pig, px, GROUND + 4 + bob, 0, this.spent ? -1.25 : 1.25, 1.25);
+      if (!this.spent && groom.x > x - 600) drawBubble(g, x - 70, GROUND - 204, ['banh']);
+    },
+  };
+  return e;
+}
+function dog(x0, x1, o = {}) {
+  const spd = o.speed || 85, sight = o.sight || 270;
+  const e = {
+    layer: 'top', watcher: true, kind: 'dog', mode: 'dog', z0: x0 - 300, z1: x1 + 300, sound: 'bark',
+    x: x0, dir: 1, st: 'patrol', pause: 0, lureX: 0, lureT: 0, alert: 0, sleepT: 0, moving: false, range: 1050,
+    get ax() { return this.x; },
+    hud() {
+      if (this.st === 'sleep') return { text: 'Chó đang ngủ (kèn ru)', cls: 'warn' };
+      if (this.st === 'lure') return { text: 'Chó chạy đi xem trống', cls: 'warn' };
+      if (this.alert > 0) return { text: 'CHÓ THẤY RỒI! nấp mau!', cls: 'on' };
+      return { text: 'Chó canh đang đi tuần', cls: '' };
+    },
+    catchMsg: () => 'Chó thấy đoàn rước, sủa ầm lên! Nấp sau chum, rơm, hoặc ru nó ngủ bằng kèn.',
+    onKen() { if (this.st === 'sleep') return false; this.st = 'sleep'; this.sleepT = 7.5; this.alert = 0; AU.snore(); toast('Tiếng kèn ru chó ngủ khì khì. Nhanh chân lên!', 2.8); return true; },
+    onDrum(origin) { this.st = 'lure'; this.lureX = origin; this.lureT = 5; this.alert = 0; AU.bark(); toast('Tiếng trống làm chó chạy tới xem!', 2.8); return true; },
+    update(dt) {
+      if (S.caught) return;
+      if (this.st === 'sleep') { this.sleepT -= dt; this.moving = false; if (this.sleepT <= 0) { this.st = 'patrol'; AU.bark(); } return; }
+      let move = 0;
+      if (this.st === 'lure') {
+        const d = this.lureX - this.x;
+        if (Math.abs(d) > 50) { this.dir = d > 0 ? 1 : -1; move = this.dir * 200; }
+        this.lureT -= dt; if (this.lureT <= 0) this.st = 'patrol';
+      } else if (this.pause > 0) this.pause -= dt;
+      else {
+        if (this.x >= x1 && this.dir > 0) { this.dir = -1; this.pause = 1.1; }
+        else if (this.x <= x0 && this.dir < 0) { this.dir = 1; this.pause = 1.1; }
+        else move = this.dir * spd;
+      }
+      this.x += move * dt; this.moving = Math.abs(move) > 1;
+      const dx = groom.x - this.x, seen = dx * this.dir > 0 && Math.abs(dx) < sight && !inCover(groom.x);
+      if (seen) { this.alert += dt * (Math.abs(dx) < 150 ? 3.5 : 1); if (this.alert > .45) { this.alert = 0; caught(this); } } else this.alert = Math.max(0, this.alert - dt * 1.5);
+    },
+    draw(g) {
+      const sl = this.st === 'sleep';
+      let x = this.x;
+      if (S.catcher === this) { const p = S.caught, k = Math.min(1, p / .45), back = p > .45 ? Math.max(0, 1 - (p - .45) / .6) : 1; x += (this.from0 - this.x) * .85 * Math.sin(k * Math.PI / 2) * back; }
+      g.save(); g.translate(x, GROUND + 4); g.scale(this.dir, 1);
+      const w = this.moving ? Math.sin(S.pose * 14) : 0, bob = sl ? 0 : this.moving ? -Math.abs(Math.sin(S.pose * 14)) * 2 : 0;
+      if (sl) {
+        dp(g, MP.dogBody, 0, 8, 0, 1, .82);
+        dp(g, MP.dogHead, 38, -18, .55);
+        dp(g, MP.dogTail, -50, -18, .5);
+      } else {
+        dp(g, MP.dogTail, -50, -42 + bob, Math.sin(S.pose * 8) * .3 - (this.alert > 0 ? .3 : 0));
+        dp(g, MP.dogLeg, -28, -44 + bob, w * .6); dp(g, MP.dogLeg, 36, -44 + bob, -w * .6);
+        dp(g, MP.dogBody, 0, bob);
+        dp(g, MP.dogLeg, -18, -44 + bob, -w * .6); dp(g, MP.dogLeg, 46, -44 + bob, w * .6);
+        dp(g, MP.dogHead, 44, -50 + bob, this.alert > 0 ? -.25 : Math.sin(S.pose * 3) * .05);
+      }
+      g.restore();
+      if (sl) for (let i = 0; i < 3; i++) { const k = (S.pose * .5 + i / 3) % 1; g.globalAlpha = Math.sin(k * Math.PI); dp(g, PROPS.zz, x - 10 + this.dir * 20 - k * 20 + i * 4, GROUND - 60 - k * 50, 0, .7 + k * .5, .7 + k * .5); g.globalAlpha = 1; }
+      if (this.alert > 0 || S.catcher === this) dp(g, MP.excl, x + this.dir * 40, GROUND - 100 + Math.sin(S.t * 30) * 2);
+    },
+  };
+  return e;
 }
 
 /* ---------- levels ---------- */
@@ -953,7 +1303,7 @@ const LEVELS = [
     build: () => [
       decor(PROPS.bamboo, 430, GROUND + 4), decor(PROPS.bamboo, 1330, GROUND + 4, .9, -1), decor(PROPS.bamboo, 2680, GROUND + 4, 1.05),
       decor(PROPS.txt1, 70, 150, .75), decor(PROPS.txt2, 2110, 120, .8),
-      fishPickup(700), groundCat(2360, 860),
+      pickup(700, 'fish', 'Nhặt được con cá: lễ vật cho mèo.'), groundCat(2360, 860),
       cover(1120, 'hay', 70), cover(1520, 'chum', 40), cover(1860, 'chum', 40), gate(3000),
     ],
   },
@@ -963,6 +1313,7 @@ const LEVELS = [
     endTitle: 'Qua Ngõ Tre', endText: 'Gà trống, mèo trên mái, rãnh sâu đều đã qua. Ra khỏi ngõ là tới bờ ao.',
     build: () => [
       decor(WP.hanFor('竹巷'), 70, 120, .7), decor(PROPS.bamboo, 360, GROUND + 4, .95), decor(WP.fence, 700, GROUND + 4),
+      secretSpot(360, 'drum', 'Tùng! Từ bụi tre rơi xuống một mảnh triện đỏ!'),
       rooster(640, 700), roofCat(980, 1540), decor(PROPS.bamboo, 1680, GROUND + 4, 1, -1),
       pomeloDitch(1880, 2010, 2110), decor(PROPS.bamboo, 2380, GROUND + 4, .9), gate(2640),
     ],
@@ -970,14 +1321,67 @@ const LEVELS = [
   {
     han: '塘邊', name: 'Bờ Ao', paper: 'blue', width: 2950, key: -3, abil: ['drum', 'ken', 'parasol'], cps: [160, 700, 1260, 1960],
     intro: 'Chú Kèn vào việc (phím 2): tiếng kèn gọi chim muông tới giúp.',
-    endTitle: 'Tới nhà gái', endText: 'Nhà gái nhận trầu cau, mở cổng. Đám cưới chuột thành rồi, cả làng cùng vui!',
+    endTitle: 'Tới nhà gái', endText: 'Nhà gái nhận trầu cau, mở cổng. Nhưng đường tới sân đình còn xa, còn cả chợ Tết đang họp.',
     build: () => [
       decor(WP.hanFor('塘邊'), 70, 120, .7), basketTree(400),
       pond(840, 1200), hawk(1360, 1900), decor(PROPS.bamboo, 1990, GROUND + 4, .9, -1),
+      secretSpot(1700, 'ken', 'Tò te… từ đám lau rơi xuống một mảnh triện đỏ!'),
       buffalo(2300), gate(2820, 'cau'),
     ],
   },
+  {
+    han: '市集', name: 'Chợ Tết', paper: 'white', width: 4100, key: -2, abil: ['drum', 'ken', 'parasol', 'plates', 'hold'], cps: [160, 1500, 2650, 3050],
+    intro: 'Bản màu (phím 4, 5, 6): mỗi lần chỉ in được một bản, cầu chỉ hiện khi bản của nó đang in. Bấm G để đoàn đứng chờ khi chú rể đi một mình.',
+    endTitle: 'Qua Chợ Tết', endText: 'Lợn mẹ no bụng, chợ Tết mở lối. Đoàn rước dâu tới sân đình.',
+    build: () => [
+      decor(MP.lanterns, 400, GROUND - 262), decor(MP.lanterns, 1250, GROUND - 262), decor(MP.lanterns, 2250, GROUND - 262), decor(MP.lanterns, 3300, GROUND - 262),
+      decor(MP.stall, 640, GROUND + 4, .9), decor(PROPS.bamboo, 250, GROUND + 4, .8), decor(PROPS.bamboo, 3700, GROUND + 4, 1),
+      pickup(440, 'gao', 'Nhặt được bao gạo nếp.', g => dp(g, MP.gao, 440, GROUND + 2 + Math.sin(S.pose * 3) * 1.5)),
+      plateBridge(770, 990, 'red'),
+      vendor(1400, { label: 'Đổi với bà cóc', wants: ['gao', 'ladong'], gives: 'banh', tell: 'Bà Cóc bán bánh chưng: "Muốn có bánh phải mang đủ gạo nếp và lá dong."', missing: 'Bà Cóc lắc đầu: cần đủ gạo nếp và lá dong mới gói được bánh.', ok: 'Bà Cóc gói xong chiếc bánh chưng vuông vức, xanh mướt.' }),
+      plateBridge(1820, 2060, 'green'),
+      hawk(2140, 2860),
+      pickup(2540, 'ladong', 'Nhặt được bó lá dong.', g => dp(g, MP.ladong, 2540, GROUND - 6 + Math.sin(S.pose * 3) * 1.5, .1, 1.3, 1.3)),
+      secretSpot(2340, 'ken', 'Tò te… từ gánh hàng rơi ra một mảnh triện đỏ!'),
+      pigGuard(3330), gate(4000),
+    ],
+  },
+  {
+    han: '院亭', name: 'Sân Đình', paper: 'sage', width: 4300, key: 0, abil: ['drum', 'ken', 'parasol', 'hold'], cps: [160, 1700, 2950, 3900],
+    intro: 'Chó canh sân đình: kèn (phím 2) ru chó ngủ, trống (phím 1) dụ chó chạy tới. Cổng then mở nhờ bàn đạp: để một người ở lại giữ bàn đạp.',
+    endTitle: 'Qua Sân Đình', endText: 'Hai con chó canh đã bị qua mặt, cổng then đã mở. Cổng làng nhà gái ngay phía trước.',
+    build: () => [
+      decor(MP.lanterns, 500, GROUND - 262), decor(MP.lanterns, 2000, GROUND - 262), decor(MP.lanterns, 3200, GROUND - 262),
+      decor(PROPS.bamboo, 300, GROUND + 4, .9), decor(PROPS.bamboo, 1700, GROUND + 4, .85, -1), decor(PROPS.bamboo, 4000, GROUND + 4, .95),
+      secretSpot(560, 'drum', 'Tùng! Trên mái đình rơi xuống một mảnh triện đỏ!'),
+      dog(900, 1520), cover(1060, 'chum', 40), cover(1340, 'hay', 70),
+      pad(1800, 'a'), door(2400, ['a', 'b']), pad(2800, 'b'),
+      dog(3040, 3700), cover(3200, 'chum', 40), cover(3420, 'hay', 70), cover(3620, 'chum', 40),
+      gate(4200),
+    ],
+  },
+  {
+    han: '迎親', name: 'Rước Dâu', paper: 'lilac', width: 5500, key: -1, abil: ['drum', 'ken', 'parasol', 'plates', 'hold'], cps: [160, 1320, 2320, 2820, 3950, 4250],
+    intro: 'Màn cuối, gộp mọi tài nghệ: bản màu, bàn đạp, giữ đoàn, trống, kèn, lọng. Cổng nhà gái có mèo lớn canh, cần lễ cá.',
+    endTitle: 'Đón dâu về', endText: 'Cả đoàn rước qua đủ sáu chặng tranh. Đám cưới chuột thành rồi, cả làng cùng vui!',
+    build: () => [
+      decor(MP.lanterns, 450, GROUND - 262), decor(MP.lanterns, 1350, GROUND - 262), decor(MP.lanterns, 2500, GROUND - 262), decor(MP.lanterns, 4100, GROUND - 262),
+      decor(PROPS.bamboo, 300, GROUND + 4, .85), decor(PROPS.bamboo, 5150, GROUND + 4, 1, -1),
+      plateBridge(720, 920, 'red'), secretSpot(1150, 'drum', 'Tùng! Trên bụi tre giữa bãi rơi xuống một mảnh triện đỏ!'), decor(PROPS.bamboo, 1180, GROUND + 4, .8),
+      plateBridge(1520, 1720, 'green'),
+      hawk(1800, 2700),
+      pickup(2300, 'fish', 'Nhặt được con cá: lễ vật cho mèo lớn giữ cổng.'),
+      pad(2700, 'a'), plateBridge(3000, 3200, 'yellow', 'Vực rộng, chỉ có bè tre in bản vàng (phím 6) mới qua được. Cổng then bên kia mở nhờ bàn đạp: để một người ở lại giữ (phím G) rồi mới qua.'),
+      door(3500, ['a', 'b']), pad(3850, 'b'),
+      groundCat(4900, 4150), cover(4300, 'chum', 40), cover(4470, 'hay', 70),
+      gate(5350),
+    ],
+  },
 ];
+let SAVE = { done: [], secret: [], gold: [] };
+try { const s = JSON.parse(localStorage.getItem('dcc.v1') || 'null'); if (s && Array.isArray(s.done)) SAVE = Object.assign(SAVE, s); } catch (e) {}
+for (const k of ['done', 'secret', 'gold']) { if (!Array.isArray(SAVE[k])) SAVE[k] = []; while (SAVE[k].length < LEVELS.length) SAVE[k].push(false); }
+function persist() { try { localStorage.setItem('dcc.v1', JSON.stringify(SAVE)); } catch (e) {} }
 
 function loadLevel(i) {
   S.lv = i; L = LEVELS[i]; PAPER = getPaper(L.paper);
@@ -986,12 +1390,15 @@ function loadLevel(i) {
   S.tufts = [];
   const tr = mulberry(100 + i);
   for (let x = 40; x < L.width; x += 70 + tr() * 100) if (!S.gaps.some(([a, b]) => x > a - 30 && x < b + 30)) S.tufts.push({ x, k: (tr() * 3) | 0, s: .7 + tr() * .45, front: tr() < .45 });
-  S.gift = null; S.parasol = false; S.caught = 0; S.catcher = null; S.fx = []; S.told = {}; S.cp = L.cps[0]; S.lastHint = -99; S.wallT = 0;
+  S.inv = []; S.parasol = false; S.hold = false; S.plate = null; S.pads = {}; S.caught = 0; S.catcher = null; S.fx = []; S.told = {}; S.cp = L.cps[0];
+  S.lastHint = -99; S.wallT = 0; S.catches = 0; S.gotSecret = false; S.reset = false;
   placeParty(S.cp);
   camX = 0; AU.setKey(L.key);
   $('#lvName').textContent = `Tranh ${i + 1} · ${L.name}`;
   $('#bDrum').hidden = !L.abil.includes('drum'); $('#bKen').hidden = !L.abil.includes('ken'); $('#bPara').hidden = !L.abil.includes('parasol');
-  updateHud();
+  const pl = L.abil.includes('plates'); for (const c in PBTN) $(PBTN[c]).hidden = !pl;
+  $('#bHold').hidden = !L.abil.includes('hold');
+  hudKey = ''; updateHud();
 }
 function placeParty(x) {
   groom.x = x; groom.vx = 0; groom.face = 1;
@@ -1006,19 +1413,25 @@ const WATCH_TX = {
   roof: { sleep: 'Mèo trên mái đang ngủ', warn: 'Mèo trên mái sắp mở mắt!', watch: 'MÈO NHÌN XUỐNG · che lọng!' },
   hawk: { sleep: 'Diều hâu lượn xa', warn: 'Diều hâu kêu!', watch: 'DIỀU HÂU SÀ XUỐNG · che lọng!' },
 };
+function stdHud(w) { const st = S.catcher === w ? 'watch' : w.fed ? 'fed' : w.st; return { text: (WATCH_TX[w.kind] || {})[st] || '', cls: st === 'watch' || st === 'block' ? 'on' : st === 'warn' ? 'warn' : '' }; }
+function activeWatcher() {
+  let best = null, bd = 1e9;
+  for (const e of S.ents) if (e.watcher && groom.x > e.z0 - 320 && groom.x < e.z1 + 160) { const d = Math.abs(groom.x - (e.x ?? 0)); if (d < bd) { bd = d; best = e; } }
+  return best;
+}
+function currentOffer() { return S.ents.find(e => e.offer && !e.spent && e.offer.near()); }
 let hudKey = '';
-function currentOffer() { return S.ents.find(e => e.offer && !e.fed && !e.opened && e.offer.near()); }
 function updateHud() {
-  const w = S.ents.find(e => e.watcher && groom.x > e.z0 - 320 && groom.x < e.z1 + 160);
-  const st = w ? (S.catcher === w ? 'watch' : w.fed ? 'fed' : w.st) : '';
-  const off = currentOffer();
-  const key = [w && w.kind, st, S.gift, S.parasol, off && S.gift === off.offer.need].join('|');
+  const w = activeWatcher(), h = w ? (w.hud ? w.hud() : stdHud(w)) : null, off = currentOffer();
+  const showOff = off && (off.offer.always || hasAll(off.offer.wants));
+  const key = [h && h.text, h && h.cls, S.inv.join(), S.parasol, S.hold, S.plate, showOff && off.offer.label].join('|');
   if (key === hudKey) return; hudKey = key;
-  const el = $('#watch');
-  el.hidden = !w; if (w) { el.textContent = WATCH_TX[w.kind][st] || ''; el.className = st === 'watch' || st === 'block' ? 'on' : st === 'warn' ? 'warn' : ''; }
-  const gift = $('#gift'); gift.hidden = !S.gift; gift.textContent = S.gift === 'fish' ? 'Lễ vật: 1 con cá' : S.gift === 'cau' ? 'Lễ vật: giỏ trầu cau' : '';
-  $('#bPara').classList.toggle('on', S.parasol);
-  const b = $('#bOffer'); b.hidden = !(off && S.gift === off.offer.need); if (off) b.lastChild.textContent = off.offer.label;
+  const el = $('#watch'); el.hidden = !h; if (h) { el.textContent = h.text; el.className = h.cls || ''; }
+  const gift = $('#gift'); gift.hidden = !S.inv.length; gift.textContent = 'Mang theo: ' + S.inv.map(i => ITEMS[i].name).join(', ');
+  $('#holdTag').hidden = !S.hold;
+  $('#bPara').classList.toggle('on', S.parasol); $('#bHold').classList.toggle('on', S.hold);
+  for (const c in PBTN) $(PBTN[c]).classList.toggle('on', S.plate === c);
+  const b = $('#bOffer'); b.hidden = !showOff; if (showOff) b.lastChild.textContent = off.offer.label;
 }
 function showCard() {
   $('#lvHan').textContent = L.han; $('#lvTitle').textContent = `Tranh ${S.lv + 1} · ${L.name}`;
@@ -1030,7 +1443,8 @@ function buildAlbum() {
     const open = i === 0 || SAVE.done[i - 1];
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.disabled = !open;
-    b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">${lv.han}</div><b>${lv.name}</b><span class="st${SAVE.done[i] ? ' done' : ''}">${SAVE.done[i] ? 'Đã đóng triện' : open ? 'Chơi' : 'Chưa mở'}</span>`;
+    const marks = (SAVE.gold[i] ? ' ★' : '') + (SAVE.secret[i] && i > 0 ? ' ✦' : '');
+    b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">${lv.han}</div><b>${lv.name}</b><span class="st${SAVE.done[i] ? ' done' : ''}">${SAVE.done[i] ? 'Đã đóng triện' + marks : open ? 'Chơi' : 'Chưa mở'}</span>`;
     b.addEventListener('click', () => { if (open) { loadLevel(i); startPlay(); } });
     box.appendChild(b);
   });
@@ -1045,17 +1459,18 @@ function showAlbum() {
 function startPlay() {
   AU.init(); AU.setQuiet(false);
   $('#album').hidden = true; $('#end').hidden = true; $('#title').hidden = true;
-  S.mode = 'play'; $('#hud').hidden = false; $('#abil').hidden = !L.abil.length && !currentOffer(); $('#pad').hidden = !isTouch;
-  hudKey = ''; updateHud(); cv.focus(); showCard();
-  setTimeout(() => { if (S.mode === 'play') toast(L.intro, 4.5); }, 1500);
+  S.mode = 'play'; $('#hud').hidden = false; $('#pad').hidden = !isTouch;
+  hudKey = ''; updateHud(); $('#abil').hidden = !L.abil.length && $('#bOffer').hidden; cv.focus(); showCard();
+  setTimeout(() => { if (S.mode === 'play') toast(L.intro, 5.5); }, 1500);
 }
 function finishLevel() {
-  S.mode = 'end'; S.endT = 0; AU.thump(); AU.setQuiet(true);
-  SAVE.done[S.lv] = true; persist();
+  S.mode = 'end'; S.endT = 0; AU.stamp(); AU.setQuiet(true);
+  SAVE.done[S.lv] = true; if (S.catches === 0) SAVE.gold[S.lv] = true; persist();
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   $('#endHan').textContent = L.han; $('#endTitle').textContent = L.endTitle; $('#endText').textContent = L.endText;
-  const last = S.lv === LEVELS.length - 1;
-  $('#endNote').textContent = last ? `Đã đóng triện đủ ${LEVELS.length}/${LEVELS.length} tranh. Các chặng mới sẽ còn thêm.` : `Tranh ${S.lv + 1}/${LEVELS.length} đã vào album.`;
+  const last = S.lv === LEVELS.length - 1, n = SAVE.done.filter(Boolean).length;
+  const stats = `Bị bắt ${S.catches} lần${S.catches === 0 ? ' · Triện vàng ★' : ''}${S.lv > 0 ? (SAVE.secret[S.lv] ? ' · Có mảnh triện ✦' : ' · Chưa tìm ra mảnh triện ẩn') : ''}`;
+  $('#endNote').textContent = `${last ? `Đã đóng triện ${n}/${LEVELS.length} tranh. ` : `Tranh ${S.lv + 1}/${LEVELS.length} đã vào album. `}${stats}`;
   $('#bNext').hidden = last;
 }
 $('#bStart').addEventListener('click', () => { AU.init(); showAlbum(); });
@@ -1063,33 +1478,51 @@ $('#bNext').addEventListener('click', () => { loadLevel(S.lv + 1); startPlay(); 
 $('#bAlbum').addEventListener('click', showAlbum);
 $('#bRetry').addEventListener('click', () => { loadLevel(S.lv); startPlay(); });
 $('#lvName').addEventListener('click', showAlbum);
-$('#howTx').textContent = isTouch ? 'Giữ ◀ ▶ để đi · bấm Trống, Kèn, Lọng ở bên phải' : '← → đi · 1 Trống · 2 Kèn · 3 Lọng · E dâng lễ';
+$('#howTx').textContent = isTouch ? 'Giữ ◀ ▶ để đi · bấm nút bên phải để dùng trống, kèn, lọng, bản màu, giữ đoàn' : '← → đi · 1 Trống · 2 Kèn · 3 Lọng · 4 5 6 bản màu · G giữ đoàn · E trao đổi';
 
 /* ---------- abilities ---------- */
+function toggleHold() {
+  if (!L.abil.includes('hold')) return;
+  S.hold = !S.hold; AU.click();
+  if (S.hold) toast('Đoàn đứng chờ tại chỗ. Bấm G lần nữa để gọi đoàn theo.', 3.2);
+  else toast('Đoàn lại theo chú rể.', 2);
+  updateHud();
+}
+function setPlate(p) {
+  if (!L.abil.includes('plates')) return;
+  const busy = S.plate && S.ents.find(e => e.plate === S.plate && e.occupied && e.occupied());
+  if (busy && p !== S.plate) { toast('Còn người đứng trên cầu, chưa rút bản màu được!', 2.6); AU.pluck(60); return; }
+  if (busy && p === S.plate) { toast('Còn người đứng trên cầu, chưa rút bản màu được!', 2.6); AU.pluck(60); return; }
+  S.plate = S.plate === p ? null : p; AU.swoosh(); S.fx.push({ kind: 'wash', pl: p, t: 0 });
+  if (S.plate && !S.told.plate) { S.told.plate = true; toast(`Ván khắc bản ${PLN[p].toLowerCase()} đang in. Mỗi lần chỉ in được một bản màu.`, 3.4); }
+  updateHud();
+}
 function useAbility(k) {
   if (S.mode !== 'play' || S.caught) return;
   if (k === 'offer') return tryOffer();
+  if (k === 'hold') return toggleHold();
+  if (k.startsWith('plate:')) return setPlate(k.slice(6));
   if (!L.abil.includes(k)) return;
   if (k === 'parasol') {
     S.parasol = !S.parasol; AU.pluck(S.parasol ? 79 : 74);
     if (S.parasol && !S.told.para) { S.told.para = true; toast('Cả đoàn chụm lại dưới lọng, đi chậm hơn nhưng con mắt trên cao không thấy.', 3.5); }
     updateHud(); return;
   }
-  const f = followers[k === 'drum' ? 1 : 2];
+  const f = followers[k === 'drum' ? 1 : 2], origin = f.x;
   let any = false;
   if (k === 'drum') { S.drumT = .8; AU.drumHit(); S.fx.push({ kind: 'tung', x: f.x + 20, y: GROUND - 150, t: 0 }); }
   else { S.kenT = 1.4; AU.kenCall(); for (let i = 0; i < 6; i++) S.fx.push({ kind: 'note', x: f.x + 50, y: GROUND - 100, t: -i * .18, vx: 40 + R() * 40, vy: -50 - R() * 30 }); }
   for (const e of S.ents) {
     const h = k === 'drum' ? e.onDrum : e.onKen;
-    if (h && Math.abs((e.ax ?? e.x ?? 0) - groom.x) < (e.range || 380)) any = h.call(e) || any;
+    if (h && Math.abs((e.ax ?? e.x ?? 0) - origin) < (e.range || 380)) any = h.call(e, origin) || any;
   }
   if (!any && !S.told['none' + k]) { S.told['none' + k] = true; toast(k === 'drum' ? 'Tùng tùng! Quanh đây chẳng có gì giật mình.' : 'Tò te… quanh đây chẳng con gì nghe kèn.', 2.4); }
 }
 function tryOffer() {
   const e = currentOffer();
   if (!e) return;
-  if (S.gift !== e.offer.need) { toast(e.offer.missing); return; }
-  S.gift = null; e.give(); updateHud();
+  if (!hasAll(e.offer.wants)) { toast(e.offer.missing); return; }
+  takeItems(e.offer.wants); e.give(); updateHud();
 }
 
 /* ---------- input ---------- */
@@ -1103,6 +1536,10 @@ addEventListener('keydown', e => {
   if (e.code === 'Digit1' || e.code === 'Numpad1') useAbility('drum');
   if (e.code === 'Digit2' || e.code === 'Numpad2') useAbility('ken');
   if (e.code === 'Digit3' || e.code === 'Numpad3' || e.code === 'KeyQ') useAbility('parasol');
+  if (e.code === 'Digit4' || e.code === 'Numpad4') useAbility('plate:red');
+  if (e.code === 'Digit5' || e.code === 'Numpad5') useAbility('plate:green');
+  if (e.code === 'Digit6' || e.code === 'Numpad6') useAbility('plate:yellow');
+  if (e.code === 'KeyG') useAbility('hold');
   if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') useAbility('offer');
 });
 addEventListener('keyup', e => keys.delete(e.code));
@@ -1117,8 +1554,9 @@ document.querySelectorAll('#abil button').forEach(b => b.addEventListener('click
 
 /* ---------- update ---------- */
 function caught(w) {
-  S.caught = .001; S.catcher = w; w.from0 = groom.x;
-  AU.meow(); AU.thump(); toast(w.catchMsg(), 3);
+  S.caught = .001; S.catcher = w; w.from0 = groom.x; S.catches++;
+  if (w.sound === 'bark') AU.bark(); else AU.meow();
+  AU.thump(); toast(w.catchMsg(), 3);
 }
 function safeFrom(w, x) { return w.mode === 'above' ? S.parasol : S.ents.some(e => e.cover && x > e.cover[0] && x < e.cover[1]); }
 function update(dt) {
@@ -1130,6 +1568,15 @@ function update(dt) {
   S.fx = S.fx.filter(f => f.t < 1.4);
   if (S.mode === 'play') {
     const frozen = S.caught > 0;
+    S.pads = {};
+    for (const e of S.ents) if (e.padX !== undefined) {
+      const p = members().some(m => Math.abs(m.x - e.padX) < 36);
+      if (p !== e.pressed) { e.pressed = p; AU.click(); }
+      if (p) S.pads[e.id] = true;
+    }
+    for (const e of S.ents) e.update && e.update(dt);
+    const walls = [];
+    for (const e of S.ents) { const w = e.wall && e.wall(); if (w != null) walls.push([w, e]); }
     let dir = 0;
     if (!frozen) {
       if (keys.has('ArrowLeft') || keys.has('KeyA') || touchDir.L) dir -= 1;
@@ -1138,34 +1585,37 @@ function update(dt) {
     const speed = S.parasol ? 80 : 150;
     groom.vx += (dir * speed - groom.vx) * Math.min(1, dt * 12);
     let nx = groom.x + groom.vx * dt, blockedBy = null;
-    for (const e of S.ents) { const w = e.wall && e.wall(); if (w != null && groom.x <= w + .5 && nx > w) { nx = w; blockedBy = e; } }
+    for (const [w, e] of walls) if (groom.x <= w + .5 && nx > w) { nx = w; blockedBy = e; }
     groom.x = Math.max(60, Math.min(L.width - 60, nx));
     groom.moving = Math.abs(groom.vx) > 8;
     if (groom.moving) { groom.ph += dt * (S.parasol ? 6 : 9); groom.face = groom.vx < 0 ? -1 : 1; }
     if (blockedBy && dir > 0) {
       S.wallT += dt;
-      if (S.wallT > .6 && S.t - S.lastHint > 6) { const h = blockedBy.hint && blockedBy.hint(); if (h) { S.lastHint = S.t; toast(h, 3.4); } }
+      if (S.wallT > .6 && S.t - S.lastHint > 6) { const h = blockedBy.hint && blockedBy.hint(); if (h) { S.lastHint = S.t; toast(h, 3.6); } }
     } else S.wallT = 0;
     for (const c of L.cps) if (groom.x > c + 30 && c > S.cp) S.cp = c;
-    for (const e of S.ents) e.update && e.update(dt);
-    // watchers
+    // watchers (cats, hawk): caught if the groom moves in plain sight
     if (!frozen) for (const w of S.ents) {
-      if (!w.watcher || w.st !== 'watch') continue;
+      if (!w.watcher || w.mode === 'dog' || w.st !== 'watch') continue;
       if (groom.x < w.z0 || groom.x > w.z1) continue;
       if (groom.moving && !safeFrom(w, groom.x)) { caught(w); break; }
     }
     if (S.caught) {
       S.caught += dt;
-      if (S.caught > .45 && !S.reset) { S.reset = true; placeParty(S.cp); S.parasol = false; }
-      if (S.caught > 1.1) { const w = S.catcher; S.caught = 0; S.catcher = null; S.reset = false; if (w) { w.st = 'sleep'; w.t = 2.8; } }
+      if (S.caught > .45 && !S.reset) { S.reset = true; placeParty(S.cp); S.parasol = false; S.hold = false; }
+      if (S.caught > 1.1) { const w = S.catcher; S.caught = 0; S.catcher = null; S.reset = false; if (w && w.st !== undefined && w.mode !== 'dog') { w.st = 'sleep'; w.t = 2.8; } if (w && w.mode === 'dog') w.alert = 0; }
     }
     const watching = S.ents.filter(w => w.watcher && w.st === 'watch' && !w.fed);
     const gapK = S.parasol ? .42 : 1;
     followers.forEach(f => {
       const d = groom.x - f.gap * gapK - f.x;
       const exposed = watching.some(w => f.x > w.z0 && f.x < w.z1 && !safeFrom(w, f.x));
-      const v = !frozen && (!exposed || Math.abs(d) < 4) ? Math.max(-190, Math.min(190, d * 4)) : 0;
-      f.x += v * dt; f.moving = Math.abs(v) > 10; if (f.moving) { f.ph += dt * 9; f.face = v < 0 ? -1 : 1; }
+      const v = !frozen && !S.hold && (!exposed || Math.abs(d) < 4) ? Math.max(-190, Math.min(190, d * 4)) : 0;
+      let fx = f.x + v * dt;
+      for (const [w] of walls) if (f.x <= w + .5 && fx > w) fx = w;
+      f.moving = Math.abs(fx - f.x) > 10 * dt;
+      if (f.moving) { f.ph += dt * 9; f.face = fx < f.x ? -1 : 1; }
+      f.x = fx;
     });
     AU.setQuiet(watching.some(w => groom.x > w.z0 - 100 && groom.x < w.z1) || S.caught > 0);
     const g = S.ents.find(e => e.gateX);
@@ -1216,8 +1666,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   if (item === 'parasol' && !bigPara) dp(g, ITEM.parasol, hx, hyy + 26, Math.sin(S.pose * 1.5 + seed) * .05);
   if (item === 'ken') dp(g, ITEM.ken, hx - 4, hyy, -.25 - (S.kenT > 0 ? Math.sin(S.t * 10) * .05 : 0));
   if (item === 'drum') dp(g, ITEM.stick, hx - 2, hyy, .5 + armN);
-  if (item === 'gift' && S.gift === 'fish') dp(g, ITEM.fish, hx + 4, hyy + 12, 1.3);
-  if (item === 'gift' && S.gift === 'cau') dp(g, WP.basket, hx + 6, hyy + 16, .1, .8, .8);
+  if (item === 'gift' && S.inv.length) { const it = S.inv[S.inv.length - 1]; drawItem(g, it, hx + 5, hyy + 14, it === 'fish' ? 1.1 : .9, it === 'fish' ? 1.3 : .1); }
   dp(g, M.arm, ax, ay, armN);
   g.restore();
 }
@@ -1257,30 +1706,30 @@ function render() {
   for (const t of S.tufts) if (!t.front) dp(ctx, PROPS.tufts[t.k], t.x, GROUND - 6, 0, t.s * .8, t.s * .8);
   for (const e of S.ents) if (e.drawMid) e.drawMid(ctx);
   layer('mid');
-  // procession
   if (S.parasol) { const f = followers[0]; dp(ctx, ITEM.parasol, f.x + 14 * f.face, GROUND + 18, Math.sin(S.pose * 1.5) * .02, 2.2, 2.2); }
   for (let i = followers.length - 1; i >= 0; i--) { const f = followers[i]; drawMouse(ctx, f.m, f.x, f.face, f.ph, f.moving, f.item, i * 1.7 + 1); }
   drawMouse(ctx, MICE.groom, groom.x, groom.face, groom.ph, groom.moving, null, 0);
-  // ground with gaps for ponds and ditches
   ctx.save(); ctx.beginPath();
   let gx = -40; for (const [a, b] of [...S.gaps].sort((p, q) => p[0] - q[0])) { ctx.rect(gx, GROUND - 30, a - gx, 90); gx = b; }
   ctx.rect(gx, GROUND - 30, L.width + 40 - gx, 90); ctx.clip();
   for (let x = Math.floor((camX - 40) / 580) * 580 - 20; x < camX + vw + 20; x += 580) dp(ctx, PROPS.ground, x, GROUND + 6);
   ctx.restore();
   layer('fg');
+  for (const e of S.ents) if (e.drawFg) e.drawFg(ctx);
   for (const t of S.tufts) if (t.front) dp(ctx, PROPS.tufts[t.k], t.x, GROUND + 14, 0, t.s, t.s);
   layer('top');
   for (const f of S.fx) {
-    if (f.t < 0) continue;
+    if (f.t < 0 || f.kind === 'wash') continue;
     if (f.kind === 'tung') { ctx.globalAlpha = Math.max(0, 1 - f.t / 1.2); dp(ctx, WP.tung, f.x, f.y - f.t * 30, -.08, 1 + f.t * .3, 1 + f.t * .3); }
     else { ctx.globalAlpha = Math.max(0, 1 - f.t / 1.3); dp(ctx, WP.note, f.x + f.vx * f.t, f.y + f.vy * f.t + Math.sin(f.t * 8) * 6, Math.sin(f.t * 5) * .3); }
     ctx.globalAlpha = 1;
   }
-  // print frame + seal
   ctx.setTransform(Sc, 0, 0, Sc, 0, 0);
+  for (const f of S.fx) if (f.kind === 'wash') { ctx.globalAlpha = Math.max(0, .2 * (1 - f.t / .7)); ctx.fillStyle = PCOL[f.pl]; ctx.fillRect(0, 0, vw, viewH); ctx.globalAlpha = 1; }
   const m = 10;
   ctx.strokeStyle = INK; ctx.lineWidth = 3.2; ctx.strokeRect(m, m, vw - m * 2, viewH - m * 2);
   ctx.lineWidth = 1.2; ctx.strokeRect(m + 6, m + 6, vw - m * 2 - 12, viewH - m * 2 - 12);
+  if (S.plate) { ctx.fillStyle = PCOL[S.plate]; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m + 26, m + 26 + 34, 10, 0, 6.283); ctx.fill(); ctx.stroke(); }
   if (S.mode === 'end') { const k = Math.min(1, S.endT / .35), sc = 1.8 - .8 * k; ctx.globalAlpha = k; dp(ctx, PROPS.seal, vw - 70, viewH - 76, -.06, sc, sc); ctx.globalAlpha = 1; }
 }
 
