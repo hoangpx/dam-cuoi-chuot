@@ -118,8 +118,8 @@ body.c2.touch #toast{bottom:calc(215px + env(safe-area-inset-bottom,0px))}
   <div class="sheet">
     <div class="han">老鼠娶親</div>
     <h1>Đám Cưới Chuột</h1>
-    <p>Chú rể chuột dẫn đoàn rước dâu băng qua làng. Mỗi người trong đoàn có một tài: tiếng trống làm giật mình, tiếng kèn gọi muông thú, chiếc lọng che khỏi con mắt trên cao. Mỗi chương là một lối chơi khác: chương I rước dâu với trống, kèn, lọng và bản màu, chương II đẩy chữ khắc gỗ để đổi luật chơi.</p>
-    <p class="how" id="howTx">← → đi · 1 Trống · 2 Kèn · 3 Lọng · E dâng lễ</p>
+    <p>Chú rể chuột dẫn đoàn rước dâu băng qua làng. Không có lời chỉ dẫn: hãy nhìn tranh, chạm vào mọi thứ, kéo đồ vật tới đúng chỗ mà tự tìm đường. Mỗi chương là một lối chơi khác: chương I rước dâu qua làng, chương II đẩy chữ khắc gỗ để đổi luật chơi.</p>
+    <p class="how" id="howTx">← → để đi · bấm chuột để chạm, giữ chuột để kéo</p>
     <div class="row"><button class="btn" id="bStart">Chọn chương</button></div>
   </div>
 </div>
@@ -1836,7 +1836,7 @@ $('#bNext').addEventListener('click', () => { if (S.chapter === 2) startC2(C2.i 
 $('#bAlbum').addEventListener('click', () => showAlbum(S.chapter));
 $('#bRetry').addEventListener('click', () => { if (S.chapter === 2) { $('#end').hidden = true; c2Load(); cv.focus(); } else { loadLevel(S.lv); startPlay(); } });
 $('#lvName').addEventListener('click', () => showAlbum(1));
-$('#howTx').textContent = isTouch ? 'Giữ ◀ ▶ để đi · bấm nút bên phải để dùng trống, kèn, lọng, bản màu, giữ đoàn' : '← → đi · 1 Trống · 2 Kèn · 3 Lọng · 4 5 6 bản màu · G giữ đoàn · E trao đổi';
+$('#howTx').textContent = isTouch ? 'Giữ ◀ ▶ để đi · chạm vào tranh, giữ ngón tay để kéo' : '← → để đi · bấm chuột để chạm, giữ chuột để kéo';
 
 /* ---------- abilities ---------- */
 const PARA_TIME = 3, PARA_CD = 1.2;
@@ -1915,14 +1915,10 @@ addEventListener('keydown', e => {
   keys.add(e.code);
   if (['ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
-  if (e.code === 'Digit1' || e.code === 'Numpad1') useAbility('drum');
-  if (e.code === 'Digit2' || e.code === 'Numpad2') useAbility('ken');
-  if (e.code === 'Digit3' || e.code === 'Numpad3' || e.code === 'KeyQ') useAbility('parasol');
   if (e.code === 'Digit4' || e.code === 'Numpad4') useAbility('plate:red');
   if (e.code === 'Digit5' || e.code === 'Numpad5') useAbility('plate:green');
   if (e.code === 'Digit6' || e.code === 'Numpad6') useAbility('plate:yellow');
   if (e.code === 'KeyG') useAbility('hold');
-  if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') useAbility('offer');
 });
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('blur', () => { keys.clear(); touchDir.L = touchDir.R = false; });
