@@ -2,7 +2,8 @@
      registerChapter({
        id, card: { num, han, name, desc, bg }, progress() → text on its card,
        modes: [...S.mode values it owns while playing],   cover: true for the one drawn behind menus,
-       boot(), album() → fill #cards and the album titles, hide() → tear down its own HUD,
+       boot(), playFirst() → where a brand-new player starts (cover chapter only), hasProgress() → any saved progress,
+       album() → fill #cards and the album titles, hide() → tear down its own HUD,
        update(dt), render(), key(e), pointer: { down(e), move(e), up(e) },
        next(), retry()  → end-screen buttons,
      })

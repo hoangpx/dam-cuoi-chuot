@@ -43,6 +43,12 @@ every gift rides in the groom's hand (`leadItem()`, dragged from `handPos()`). `
 ## Design rules from the owner
 
 - No hint text; players discover by tapping and dragging. Controls: walk (← → / ◀ ▶) and tap/drag only.
+- A brand-new player (no saved progress in any chapter: each chapter's `hasProgress()`) skips the menus and starts
+  chương I tranh 1 (`playFirst()`); returning players get the title → chapter picker. The party never starts
+  left of x 340 so all four mice are on screen.
+- Controls how-to (js/ch1/howto.js): corner panel with ← → keys and a woodblock computer-mouse critter (finger on touch,
+  and the ◀ ▶ pad pulses). Shows only what the player has not done yet (walked 160 px / a tap that hit something),
+  remembers it in localStorage 'dcc.how', and reappears after 10 s idle or 2.5 s pushing against a wall.
 - Each chapter: its own gameplay and its own song, same art style. Don't rework finished chapters unasked.
 - Check every puzzle on a phone-sized view too. Portrait screens show at least 640 world px with the groom 360 px
   from the left edge so the whole party fits (375×812: x ≈ groom−360 … groom+280); desktop 1100×640 shows
@@ -59,6 +65,8 @@ every gift rides in the groom's hand (`leadItem()`, dragged from `handPos()`). `
 - Look at real screenshots (desktop and mobile), not just numbers.
 
 ## Publishing
+
+- Bump `VERSION` in the loader (index.html) on every deploy so browsers do not mix cached old JS with a new page.
 
 - GitHub: push only when the owner asks.
 - The claude.ai artifact copy must not include the GoatCounter `<script>` in `<head>` (its CSP blocks it).
