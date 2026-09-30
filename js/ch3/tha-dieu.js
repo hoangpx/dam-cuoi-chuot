@@ -1,7 +1,9 @@
 /* Chương III · tranh 4 · Thả Diều.
    The herd boy sits on his buffalo and throws his kite up; the camera follows the kite as it climbs, so boy and buffalo
    sink out of the bottom of the picture and only the kite and the bamboo are left. The kite climbs by itself; the player
-   only steers it left and right (← → / ◀ ▶, the buttons at both sides) through the gaps between the bamboo branches.
+   only steers it left and right through the gaps between the bamboo branches: hold a finger (or the mouse button) on the
+   screen and slide it sideways, and the kite goes where the finger goes; on computers ← → and the ◀ ▶ buttons work too.
+   Every so often a gust sweeps across and the kite shoots up faster for a moment.
    Now and then a crow flaps across. Touching a branch or a crow brings the kite down (a fail); clearing the tops of the
    bamboo wins. The record is the fastest climb.
    World coordinates are screen-like (y down); the camera keeps the kite a little below the middle of the screen. */
@@ -116,7 +118,7 @@ function tdCourse() {
 }
 function tdStart() {
   tdLayout();
-  Object.assign(TD, { t: 0, phase: 'intro', phaseT: 0, camY: 0, crows: [], crowT: 4, why: '', walked: false });
+  Object.assign(TD, { t: 0, phase: 'intro', phaseT: 0, camY: 0, crows: [], crowT: 4, why: '', walked: false, hold: null, gust: 0, gustT: 5, streaks: [] });
   TD.rows = tdCourse();
   const r = mulberry(21); TD.clouds = [];
   for (let y = TD.ground - 900; y > TD.top - 900; y -= 260 + r() * 200) TD.clouds.push({ x: r() * TD.W, y, s: .7 + r() * .6, v: (r() - .5) * 14 });
@@ -140,11 +142,19 @@ function tdUpdate(dt) {
     k.x = TD.l0[0] + (W / 2 - TD.l0[0]) * ee; k.y = TD.l0[1] - 420 * ee; k.rot = Math.sin(TD.t * 5) * .15 * (1 - e);
     if (e >= 1) { TD.phase = 'fly'; TD.phaseT = 0; }
   } else if (TD.phase === 'fly') {
-    const dir = ctDir(); if (dir) TD.walked = true;
+    const dir = ctDir(); if (dir || TD.hold !== null) TD.walked = true;
     const p = Math.max(0, Math.min(1, (TD.ground - TD_ROWS0 - k.y) / (TD_HEIGHT - TD_ROWS0)));
-    k.climb = Math.min(92 + p * 40, k.climb + dt * 120);
+    // gusts: every few seconds the wind picks up for a moment and the kite shoots up
+    if ((TD.gustT -= dt) <= 0) { TD.gustT = 4.5 + R() * 4 - p * 1.5; TD.gust = 1.7; AU.swoosh(); for (let i = 0; i < 7; i++) TD.streaks.push({ x: -60 - R() * 200, y: TD.camY + R() * H, t: 0, len: 60 + R() * 80 }); }
+    TD.gust = Math.max(0, TD.gust - dt);
+    const boost = TD.gust > 0 ? 1 + .9 * Math.sin(Math.min(1, TD.gust / 1.7) * Math.PI) : 1;
+    k.climb = Math.min((130 + p * 60) * boost, k.climb + dt * 160);
     k.y -= k.climb * dt;
-    k.vx += dir * 1150 * dt; k.vx *= Math.max(0, 1 - dt * (dir ? 2.2 : 4.5)); k.vx = Math.max(-280, Math.min(280, k.vx));
+    if (TD.hold !== null) {                                          // follow the finger across
+      const want = Math.max(-360, Math.min(360, (TD.hold - k.x) * 7));
+      k.vx += (want - k.vx) * Math.min(1, dt * 9);
+    } else { k.vx += dir * 1300 * dt; k.vx *= Math.max(0, 1 - dt * (dir ? 2.2 : 4.5)); }
+    k.vx = Math.max(-360, Math.min(360, k.vx));
     k.x += (k.vx + Math.sin(TD.t * .7) * 18) * dt;
     if (k.x < 56) { k.x = 56; k.vx = Math.max(0, k.vx); } if (k.x > W - 56) { k.x = W - 56; k.vx = Math.min(0, k.vx); }
     k.rot = k.vx / 280 * .35 + Math.sin(TD.t * 2.3) * .05;
@@ -169,6 +179,8 @@ function tdUpdate(dt) {
     k.y -= 40 * dt * Math.max(0, 1 - TD.phaseT); k.rot = Math.sin(TD.t * 1.6) * .1; k.x += (W / 2 - k.x) * Math.min(1, dt * 1.2);
     if (TD.phaseT > 1.4 && TD.onWin) { const cb = TD.onWin; TD.onWin = null; cb(); }
   }
+  for (const s of TD.streaks) { s.t += dt; s.x += 700 * dt; }
+  TD.streaks = TD.streaks.filter(s => s.x < W + 200);
   for (const c of TD.crows) { c.x += c.v * dt; c.ph += dt * 9; }
   TD.crows = TD.crows.filter(c => c.x > -80 && c.x < W + 80);
   // each ribbon follows its wing tip like a chain, fluttering
@@ -216,6 +228,8 @@ function tdRender(g) {
     const L = Math.abs(r.tip - (r.from < 0 ? 30 : W - 30));
     dp(g, tdBranch(L), r.from < 0 ? 30 : W - 30, r.y, 0, r.from < 0 ? 1 : -1, 1);
   }
+  g.strokeStyle = 'rgba(242,236,222,.85)'; g.lineWidth = 3; g.lineCap = 'round';
+  for (const s of TD.streaks) { g.beginPath(); g.moveTo(s.x, s.y); g.quadraticCurveTo(s.x + s.len / 2, s.y - 8, s.x + s.len, s.y); g.stroke(); }
   for (const c of TD.crows) dp(g, A.crow[Math.sin(c.ph) > 0 ? 0 : 1], c.x, c.y, 0, c.v > 0 ? 1 : -1, 1);
   // the two ribbons (ink, tapering), then the kite
   TD.tails.forEach((tl, j) => {
@@ -254,19 +268,30 @@ function tdPrint(g, W, H, k) {
   g.restore();
 }
 
+function tdOverlay(g, W, H) {
+  if (TD.phase !== 'fly' || TD.walked) return;
+  const A = howtoArt(), t = TD.t, Z = Math.min(1.35, Math.max(1.1, W / 420)), sx = Math.sin(t * 3) * 40;
+  g.save(); g.setTransform(DPR * Z, 0, 0, DPR * Z, (W / 2) * DPR, (H - 90 * Z) * DPR);
+  g.strokeStyle = INK; g.fillStyle = INK; g.lineWidth = 2.4;
+  for (const d of [-1, 1]) { g.beginPath(); g.moveTo(d * 52, -26); g.lineTo(d * 66, -26); g.stroke(); g.beginPath(); g.moveTo(d * 72, -26); g.lineTo(d * 64, -32); g.lineTo(d * 64, -20); g.closePath(); g.fill(); }
+  if (isTouch) dp(g, A.finger, sx, -27, -.1, .62, .62); else dp(g, A.mouse, sx, -9, 0, .72, .72), dp(g, A.click, sx, -9, 0, .72, .72);
+  g.restore();
+}
+
 C3GAMES[3] = {
   han: '放鳶', name: 'Thả Diều', paper: 'blue',
   short: portrait => portrait ? 460 : 620,
   song: 5,
-  // the ◀ ▶ buttons once the kite is up, one at each side; they pulse until the player first steers
-  padOn: () => TD.phase === 'fly', padPulse: () => !TD.walked,
+  // steering: slide a held finger / mouse; on computers also ← → and the ◀ ▶ buttons at both sides
+  padOn: () => TD.phase === 'fly' && !isTouch, padPulse: () => !TD.walked,   // computers only; phones steer by sliding
+  overlay: tdOverlay,
   isWon: () => TD.phase === 'done',
   praise: () => 'Diều bay cao quá!',
   failText: () => TD.why === 'qua' ? 'Ôi! Diều đâm phải con quạ rồi!' : 'Ôi! Diều vướng cành tre rồi!',
   start: tdStart, update: tdUpdate, render: tdRender,
   print: 'img/ch3/tha-dieu.jpg',                   // the real print; if the file is missing the shell falls back to tdPrint
   printRender: tdPrint,
-  down() { return false; }, move() {}, up() {},
+  down(x) { TD.hold = x; return true; }, move(x) { if (TD.hold !== null) TD.hold = x; }, up() { TD.hold = null; },
   resize(W, H) { const sx = W / TD.W; TD.W = W; TD.H = H; if (!TD.kite) return; const g0 = TD.ground; tdLayout(); const dy = TD.ground - g0;
     TD.kite.x *= sx; TD.kite.y += dy; TD.camY += dy; for (const r of TD.rows) { r.y += dy; r.tip *= sx; } for (const c of TD.clouds) c.y += dy; TD.crows = []; TD.tails.forEach(tl => tl.forEach(p => { p[0] *= sx; p[1] += dy; })); },
   onWin(f) { TD.onWin = f; }, onFail(f) { TD.onFail = f; },

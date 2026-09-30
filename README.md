@@ -21,7 +21,7 @@ Game giải đố phong cách tranh dân gian Đông Hồ, vẽ hoàn toàn bằ
   - Tranh 1 · Đàn Gà Mẹ Con: gà mẹ gọi con về tổ, kéo 10 gà con về tổ trước khi trời tối.
   - Tranh 2 · Hứng Dừa: trong 3 phút, chạm quả dừa chín đúng lúc cô gái đi tới bên dưới để cô hứng bằng vạt áo; cần ít nhất 3 quả để qua, số quả hứng được là kỷ lục.
   - Tranh 3 · Chăn Trâu: ném thừng trúng cổ con trâu đang chạy, rồi đi vòng quanh cho đúng hướng đầu trâu để vòng tròn khép lại; lệch hướng thì vòng nở ra, nở hết thì trâu xổng. Kỷ lục là thời gian thuần trâu nhanh nhất.
-  - Tranh 4 · Thả Diều: cậu bé trên lưng trâu ném diều lên; dùng ← → lái diều né cành tre và quạ, bay vượt ngọn tre là thắng. Kỷ lục là thời gian nhanh nhất.
+  - Tranh 4 · Thả Diều: cậu bé trên lưng trâu ném diều lên; giữ ngón tay rồi di sang hai bên để lái diều (máy tính: chuột, ← → hoặc nút ◀ ▶) né cành tre và quạ, có cơn gió to đẩy diều vọt lên, bay vượt ngọn tre là thắng. Kỷ lục là thời gian nhanh nhất.
 
 Điều khiển: ← → hoặc A D để đi, chạm hoặc bấm chuột vào đồ vật trong tranh. Trên điện thoại dùng nút trên màn hình.
 
