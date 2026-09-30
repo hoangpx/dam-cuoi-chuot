@@ -80,7 +80,7 @@ function tdText() {
   TD_TEXT = { ready: false, c: null };
   const img = new Image();
   img.onload = () => {
-    const W0 = img.naturalWidth, H0 = img.naturalHeight, sx = W0 * .19, sy = H0 * .135, sw = W0 * .175, sh = H0 * .205;   // measured on the 455×640 print
+    const W0 = img.naturalWidth, H0 = img.naturalHeight, sx = W0 * .17, sy = H0 * .16, sw = W0 * .2, sh = H0 * .2;   // measured on the 648×926 print
     const c = document.createElement('canvas'); c.width = Math.round(sw); c.height = Math.round(sh);
     const x = c.getContext('2d'); x.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
     const d = x.getImageData(0, 0, c.width, c.height), p = d.data;

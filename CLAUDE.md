@@ -75,7 +75,7 @@ then the camera follows the kite up (world y down, TD.camY) so the herd sinks of
 from a side, or both sides with a gap, narrowing higher up) and past crows; a branch (body or a wing tip) or a crow →
 the kite falls → game.onFail → the shell's fail screen. Clearing TD.top (bamboo height TD_HEIGHT) wins; record = time.
 The kite is the print's arched wing kite with a ribbon from each tip. Song SONGS[5] (inst 'sao' bamboo flute + drone =
-the hum of the kite flute). Reward img/ch3/tha-dieu.jpg (the owner's print; falls back to tdPrint if the file is missing),
+the hum of the kite flute). Reward img/ch3/tha-dieu.jpg (the owner's print, yellow mat cropped off; falls back to tdPrint if the file is missing),
 whose Nôm inscription (top left, cut at run time) sits in the open sky beside the red sun above the bamboo.
 Chương III games may set `handCursor` (Đàn Gà Mẹ Con does): on computers the pointer is a big woodblock hand (c3DrawHand),
 a fist while dragging. Chase: the buffalo wanders/dashes/
