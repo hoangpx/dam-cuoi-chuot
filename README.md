@@ -17,6 +17,8 @@ Game giải đố phong cách tranh dân gian Đông Hồ, vẽ hoàn toàn bằ
   - Tranh 3 · Bờ Ao: chọn đúng con chim, xếp đàn vịt thành cầu, gõ trống đúng nhịp đánh thức trâu, mang trầu cau tới cổng nhà gái.
   - Tranh 4–6 đang khắc ván.
 - **Chương II · Chữ Là Luật** (8 tranh Nhập môn + 6 tranh Cao thủ): chữ khắc gỗ là luật chơi (kiểu Baba Is You). Đẩy chữ để ghép, phá hay đổi luật (CHUỘT LÀ ĐI, TƯỜNG LÀ CHẶN, MÈO LÀ CÁ, LỬA LÀ CỔNG…). Có hoàn tác (Z), chơi lại (R), vuốt hoặc nút mũi tên trên điện thoại. Mọi màn đều đã được máy giải tự động kiểm chứng.
+- **Chương III · Nhanh Tay Nhanh Mắt** (mở sẵn): trò nhanh tay nhanh mắt cho các bạn nhỏ, chơi xong được tặng tranh Đông Hồ.
+  - Tranh 1 · Đàn Gà Mẹ Con: gà mẹ gọi con về tổ, kéo 10 gà con về tổ trước khi trời tối.
 
 Điều khiển: ← → hoặc A D để đi, chạm hoặc bấm chuột vào đồ vật trong tranh. Trên điện thoại dùng nút trên màn hình.
 
@@ -29,6 +31,7 @@ Không cần build, GitHub Pages chạy thẳng các file.
 - `js/art/`: thư viện hình vẽ dùng chung (chuột, mèo, đồ vật, cảnh làng).
 - `js/ch1/`: Chương I, mỗi tranh một file (`tranh1-ai-meo.js`, `tranh2-ngo-tre.js`, `tranh3-bo-ao.js`…).
 - `js/ch2/`: Chương II (bản đồ, luật chữ, hình, game).
+- `js/ch3/`: Chương III, mỗi trò chơi một file (`ga-me-con.js`…).
 - `css/`: `base.css` dùng chung, `ch1.css`, `ch2.css` cho từng chương.
 - `tools/regress/`: bộ kiểm tra tự động, chạy lại mọi tranh và so từng khung hình.
 

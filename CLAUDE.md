@@ -14,6 +14,8 @@ js/core/              boot (canvas, constants, resize, toast), woodblock (part()
 js/art/               shared parts: mice, cat, props, world, market; build.js renders them once
 js/ch1/               Chương I · Đám Cưới Chuột: state, entities (shared blocks), tranhN-*.js, game.js (engine)
 js/ch2/               Chương II · Chữ Là Luật: levels (maps), engine (pure rules), art, game
+js/ch3/               Chương III · Nhanh Tay Nhanh Mắt (kids' quick games, open from the start): state (C3GAMES, saves),
+                      art (hen, chicks, nest, mound), one file per game (ga-me-con.js), game.js (shell, reward print)
 tools/regress/        deterministic regression run (see below)
 v1/                   frozen old single-file version (5-mouse party), kept at /v1/ — do not edit
 v2/                   redirect to the root (v2 was promoted to the main version)
@@ -39,6 +41,16 @@ Chương I tranh: each `tranhN-*.js` holds that tranh's entities and sets `LEVEL
 objects with optional `layer`, `update`, `draw/drawMid/drawFg/drawHud`, `wall()`, `onClick`, `grab/drop`,
 `onDrum/onKen`, `offer`, `watcher`. The party is the groom + 3 followers (lọng, trống, kèn, ~330 px);
 every gift rides in the groom's hand (`leadItem()`, dragged from `handPos()`). `C1_READY` (game.js) = how many tranh are open; later ones open after 5 taps.
+
+## Chương III games
+
+Each game fills `C3GAMES[i]` (contract in js/ch3/state.js) and works in logical units (short side 540, 460 on
+portrait phones). Winning shows a photo of the real print (`print`, e.g. img/ch3/dan-ga-me-con.jpg; the drawn `printRender` is only a
+fallback), a clock times each game (`SAVE3.best[i]`, shown on the reward and the album card), and marks
+`SAVE3.done[i]`. Tranh 1 · Đàn Gà Mẹ Con: 10 chicks, alone in the nest they stay 4.5 s (drop zone is wider than the nest, g3DropIn); drag the hen in first and she
+sits 10 s (they stay while she sits; a small red disc above her head unwinds backwards); all ten home → win. Tapping the nest shows the hint slip "HÃY GIÚP GÀ MẸ ĐƯA CÁC CON VỀ TỔ"; the praise
+says "Bạn thật thông minh!" when the hen was sitting at the win, else "Tuyệt vời! Bạn có một đôi tay siêu nhanh!". Art follows the reference print: red/green/yellow plates
+on white paper, hen tail printed separately so its key lines stay behind the body (`c3Hen`).
 
 ## Design rules from the owner
 

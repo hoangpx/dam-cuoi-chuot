@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/ch1.css">
 <link rel="stylesheet" href="css/ch2.css">
+<link rel="stylesheet" href="css/ch3.css">
 
 <canvas id="cv" tabindex="0" aria-label="Màn chơi Đám Cưới Chuột"></canvas>
 
@@ -92,9 +93,9 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-09-30c';
-const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是';
-const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷ';
+const VERSION = '2026-09-30h';
+const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞';
+const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚ';
 const GAME_FILES = [
   'js/core/boot.js',
   'js/core/woodblock.js',
@@ -118,6 +119,10 @@ const GAME_FILES = [
   'js/ch2/engine.js',
   'js/ch2/art.js',
   'js/ch2/game.js',
+  'js/ch3/state.js',
+  'js/ch3/art.js',
+  'js/ch3/ga-me-con.js',
+  'js/ch3/game.js',
   'js/core/hub.js',
   'js/core/main.js',
 ];

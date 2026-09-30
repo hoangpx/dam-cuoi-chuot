@@ -1,0 +1,10 @@
+/* Chương III · Nhanh Tay Nhanh Mắt: name tag and the buttons under the reward print. */
+#c3hud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;z-index:4;pointer-events:none}
+#c3hud .tag{pointer-events:auto;cursor:pointer;font-family:var(--display);font-weight:900;font-size:14px;color:var(--ink)}
+#c3end{position:fixed;left:0;right:0;bottom:calc(22px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:12px;flex-wrap:wrap;padding-inline:16px;z-index:5}
+#c3Time{font-family:var(--display);font-weight:900;font-size:16px;min-width:3.2em;text-align:center}
+#c3end{flex-direction:column;align-items:center}
+#c3end .row{margin-top:8px}
+#c3Stat{margin:0;font-family:var(--display);font-weight:900;font-size:15px}
+#c3Praise{margin:0 0 8px;font-family:var(--display);font-weight:900;font-size:clamp(18px,4.6vw,26px);color:var(--diep);background:var(--son);border:2px solid var(--ink);padding:6px 16px;text-align:center;box-shadow:3px 3px 0 rgba(29,25,21,.35)}
+#c3Praise:empty{display:none}
