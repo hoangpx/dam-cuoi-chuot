@@ -9,6 +9,10 @@ const AU = (() => {
       drum: [1, 0, 0, 0, .7, 0, .4, 0, .7, 0, 0, 0, .7, 0, .4, 0], perc: s => s === 8 ? 'cym' : null, vol: .14, oct: 0 },
     { bpm: 86, mel: [69, null, null, 72, 74, null, 72, null, 69, null, 67, null, 69, null, null, null, 76, null, 74, 72, 74, null, null, 76, 79, null, 76, 74, 72, null, 69, null],
       drum: [.9, 0, 0, .35, 0, 0, .55, 0, 0, 0, .35, 0, .6, 0, 0, 0], perc: s => (s % 4 === 2 ? 'mo' : s === 11 ? 'mo2' : null), vol: .12, oct: -12 },
+    // Chương III: bài hát do chủ dự án tự sáng tác (2/4, 16 ô nhịp): Fa Fa Đô Đô Rê Rê Đô · ×2 · Đô Đô Rê Mi Fa – Fa – · ×2
+    // one step = a quaver; hold 4 lets the minims ring for a whole bar; an octave up so it sounds bright for children
+    { bpm: 108, hold: 4, mel: [65,null,65,null,60,null,60,null,62,null,62,null,60,null,null,null,65,null,65,null,60,null,60,null,62,null,62,null,60,null,null,null,60,null,60,null,62,null,64,null,65,null,null,null,65,null,null,null,60,null,60,null,62,null,64,null,65,null,null,null,65,null,null,null],
+      drum: [.8, 0, 0, 0, .4, 0, 0, 0, .6, 0, 0, 0, .4, 0, 0, 0], perc: s => (s % 4 === 2 ? 'mo2' : null), vol: .12, oct: 12 },
   ];
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;
@@ -59,7 +63,7 @@ const AU = (() => {
           const s = step % 16, MEL = so.mel;
           if (so.drum[s] && !muteDr) drum(next, so.drum[s]);
           const p = so.perc(s); if (p === 'cym') cymbal(next); else if (p === 'mo') mo(next, false); else if (p === 'mo2') mo(next, true);
-          const m = MEL[step % 32]; if (m) { let d = 1; while (!MEL[(step + d) % 32] && d < 3) d++; ken(next, m + key + so.oct, sp * d * .95, music, so.vol); }
+          const ML = MEL.length, m = MEL[step % ML]; if (m) { let d = 1; const H = so.hold || 3; while (!MEL[(step + d) % ML] && d < H) d++; ken(next, m + key + so.oct, sp * d * .95, music, so.vol); }
         }
         next += sp; step++;
       }
@@ -94,6 +98,8 @@ const AU = (() => {
     oink: on(() => { const t = c.currentTime; sweep('sawtooth', 260, 150, .35, 800, .3, t); sweep('sawtooth', 230, 140, .3, 800, .25, t + .4); }),
     tap: on(() => sweep('triangle', 700, 520, .05, 900, .08)),
     stamp: on(() => { drum(c.currentTime, 1.6, sfx); }),
+    cluck: on(() => { const t = c.currentTime; for (let i = 0; i < 3; i++) sweep('sawtooth', 520, 380, .09, 1100, .24, t + i * .13); sweep('sawtooth', 640, 430, .28, 1200, .26, t + .42); }),
+    cheep: on(() => { const t = c.currentTime + Math.random() * .05; sweep('sine', 2500, 3500, .07, 3200, .1, t); sweep('sine', 2700, 3700, .06, 3400, .08, t + .1); }),
     tension: on(() => { const t = c.currentTime, o = c.createOscillator(); o.frequency.value = mtof(38); const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.12, t + .3); g.gain.linearRampToValueAtTime(0, t + 2.2); o.connect(g); g.connect(sfx); o.start(t); o.stop(t + 2.3); }),
   };
 })();
