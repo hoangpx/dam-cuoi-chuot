@@ -15,7 +15,7 @@ js/art/               shared parts: mice, cat, props, world, market; build.js re
 js/ch1/               Chương I · Đám Cưới Chuột: state, entities (shared blocks), tranhN-*.js, game.js (engine)
 js/ch2/               Chương II · Chữ Là Luật: levels (maps), engine (pure rules), art, game
 js/ch3/               Chương III · Nhanh Tay Nhanh Mắt (kids' quick games, open from the start): state (C3GAMES, saves),
-                      art (hen, chicks, nest, mound), one file per game (ga-me-con.js), game.js (shell, reward print)
+                      art (hen, chicks, nest, mound), one file per game (ga-me-con.js, hung-dua.js), game.js (shell, reward print)
 tools/regress/        deterministic regression run (see below)
 v1/                   frozen old single-file version (5-mouse party), kept at /v1/ — do not edit
 v2/                   redirect to the root (v2 was promoted to the main version)
@@ -51,6 +51,14 @@ fallback), a clock times each game (`SAVE3.best[i]`, shown on the reward and the
 sits 10 s (they stay while she sits; a small red disc above her head unwinds backwards); all ten home → win. Tapping the nest shows the hint slip "HÃY GIÚP GÀ MẸ ĐƯA CÁC CON VỀ TỔ"; the praise
 says "Bạn thật thông minh!" when the hen was sitting at the win, else "Tuyệt vời! Bạn có một đôi tay siêu nhanh!". Art follows the reference print: red/green/yellow plates
 on white paper, hen tail printed separately so its key lines stay behind the body (`c3Hen`).
+
+Tranh 2 · Hứng Dừa (hung-dua.js, own art inside): the player does not move the catcher — tap a ripe (brown) coconut and
+the boy twists it off; the girl strolls/turns/pauses on her own, so the skill is timing. Only a nut landing in the
+mouth of her lifted skirt counts (±22·HD_GIRL); catching a green one, or a nut hitting one of the two children running
+about under the palm, costs a coconut (hdLose, red "−1");
+wind (fronds, drifting leaves) pushes falling nuts; the whole palm leans and sways about its foot (hdSway, about -4..8°),
+so nuts move and a nut picked mid-swing flies off with the palm's momentum; taps are tested in the palm frame (hdWorld). Ten caught → img/ch3/hung-dua.png. Laid out portrait-first; on wide screens it asks the shell for a taller logical
+view (`short: p => p ? 460 : 860`) so the palm is as tall as on a phone and centred.
 
 ## Design rules from the owner
 

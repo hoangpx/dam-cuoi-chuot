@@ -8,7 +8,8 @@ const C3 = { i: 0, game: null, view: 'play', printT: 0, W: 0, H: 0, time: 0, sho
   document.body.append(hud, end);
 }
 // logical units: the short side is 540 (460 on portrait phones, so chicks are big enough for small fingers)
-function c3Size() { const W = cv.width / DPR, H = cv.height / DPR, u = Math.min(W, H) / (H > W ? 460 : 540); return { W, H, u }; }
+// a game may ask for a different short side (e.g. Hứng Dừa zooms out on wide screens so the palm stands tall)
+function c3Size() { const W = cv.width / DPR, H = cv.height / DPR, p = H > W, g = C3.game, short = g && g.short ? g.short(p) : (p ? 460 : 540); return { W, H, u: Math.min(W, H) / short }; }
 function c3Hide() { $('#c3hud').hidden = true; $('#c3end').hidden = true; }
 function startC3(i) {
   AU.init(); AU.setSong(2); AU.setQuiet(false); hideChapterHuds();
