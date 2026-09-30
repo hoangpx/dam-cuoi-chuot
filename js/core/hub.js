@@ -37,7 +37,7 @@ $('#bRetry').addEventListener('click', () => chapterById(S.chapter).retry());
 $('#howTx').textContent = isTouch ? 'Giữ ◀ ▶ để đi · chạm vào tranh, giữ ngón tay để kéo' : '← → để đi · bấm chuột để chạm, giữ chuột để kéo';
 
 /* ---------- input routing ---------- */
-for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => AU.init(), true);
+for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => AU.init(), true);   // any of these may unlock audio (iOS wants touchend)
 addEventListener('keydown', e => {
   if (S.mode === 'title' && (e.code === 'Enter' || e.code === 'Space')) { e.preventDefault(); AU.init(); showChapters(); return; }
   const c = activeChapter(); if (c.key) c.key(e);

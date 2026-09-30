@@ -7,7 +7,31 @@ for (const k of ['done', 'best']) { if (!Array.isArray(SAVE2[k])) SAVE2[k] = [];
 const persist2 = () => { try { localStorage.setItem('dcc.c2', JSON.stringify(SAVE2)); } catch (e) {} };
 const c2Sig = r => r.a + ':' + (r.prop || r.to) + ':' + r.cells.map(o => o.id).join(',');
 const c2Clone = objs => objs.map(o => ({ ...o }));
-function c2Hide() { document.body.classList.remove('c2'); $('#c2hud').hidden = true; $('#c2rules').hidden = true; $('#c2pad').hidden = true; }
+/* ---------- the rules sheet: how the game works, and on the first maps (C2_TIPS) the map's own hint ---------- */
+const C2_TIPS = 3;
+{
+  const el = document.createElement('div'); el.id = 'c2help'; el.hidden = true;
+  const w = t => `<b class="w">${t}</b>`;
+  el.innerHTML = `<div class="card2"><div id="c2law"><h3>Luật chơi</h3><ul>
+    <li>Chữ là luật: xếp ${w('VẬT')} ${w('LÀ')} ${w('TÍNH CHẤT')} thành một hàng ngang (trái sang phải) hoặc hàng dọc (trên xuống dưới) thì câu đó thành luật. Tách một chữ ra là luật mất.</li>
+    <li>${w('ĐI')} vật bạn điều khiển · ${w('THẮNG')} chạm vào là qua tranh · ${w('CHẶN')} không đi qua được · ${w('ĐẨY')} đẩy được · ${w('NÓNG')} chạm vào là cháy · ${w('CHÌM')} vật nào rơi vào thì cả hai cùng mất.</li>
+    <li>${w('VẬT')} ${w('LÀ')} ${w('VẬT')}, ví dụ ${w('MÈO')} ${w('LÀ')} ${w('CÁ')}: mọi con mèo hóa thành cá.</li>
+    <li>Đi vào chữ là đẩy chữ. Chữ có đinh ghim ở góc thì không đẩy được; chữ đã vào góc hay sát mép thì không kéo ra được nữa.</li>
+    <li id="c2ctl"></li></ul></div>
+    <div id="c2tip"><h3>Gợi ý</h3><p></p></div>
+    <button class="btn" id="c2Go">Chơi</button></div>`;
+  document.body.appendChild(el);
+  $('#c2ctl').textContent = isTouch ? 'Vuốt trên tranh hoặc bấm các nút mũi tên để đi · ↶ hoàn tác · ⟲ chơi lại.' : '← ↑ → ↓ để đi · Z hoàn tác · R chơi lại.';
+  el.addEventListener('click', e => { if (e.target === el || e.target.id === 'c2Go') c2HelpClose(); });
+}
+// which: 'law' (how the game works) or 'tip' (this map's hint, first C2_TIPS maps only)
+function c2HelpOpen(which) {
+  $('#c2law').hidden = which !== 'law'; $('#c2tip').hidden = which !== 'tip';
+  if (which === 'tip') $('#c2tip p').textContent = C2.def.hint || '';
+  $('#c2help').hidden = false; C2.help = which;
+}
+function c2HelpClose() { $('#c2help').hidden = true; cv.focus(); }
+function c2Hide() { document.body.classList.remove('c2'); $('#c2hud').hidden = true; $('#c2rules').hidden = true; $('#c2pad').hidden = true; $('#c2help').hidden = true; }
 function c2Load() {
   C2.st = c2Parse(C2.def); c2Settle(C2.st);
   C2.hist = []; C2.moves = 0; C2.over = false; C2.deadToast = false;
@@ -26,6 +50,7 @@ function startC2(i) {
   $('#lvHan').textContent = C2.def.han; $('#lvTitle').textContent = `Tranh ${i + 1} · ${C2.def.name}`;
   const c = $('#lvCard'); c.classList.add('on'); setTimeout(() => c.classList.remove('on'), 2200);
   C2.hinted = false;
+  $('#c2help').hidden = true; $('#c2Tip').hidden = !(i < C2_TIPS && C2.def.hint);   // only opens when asked; hints on the first maps only
 }
 function c2ShowRules() {
   const seen = new Set(), chips = [];
@@ -33,6 +58,7 @@ function c2ShowRules() {
   $('#c2rules').innerHTML = chips.length ? chips.map(t => `<span class="rule">${t}</span>`).join('') : '<span class="rule">Chưa có luật nào</span>';
 }
 function c2Move(dx, dy) {
+  if (!$('#c2help').hidden) { c2HelpClose(); return; }
   if (S.mode !== 'c2play' || C2.over) return;
   const st = C2.st, snap = c2Clone(st.objs), old = new Set(st.rules.map(c2Sig));
   for (const o of st.objs) if (o.t === 'thing' && dx && c2Has(st, o.k, 'you')) o.face = dx;
@@ -89,6 +115,7 @@ function c2Key(e) {
 }
 $('#c2Undo').addEventListener('click', () => { c2Undo(); cv.focus(); });
 $('#c2Reset').addEventListener('click', () => { c2Reset(); cv.focus(); });
+for (const [id, which] of [['#c2Help', 'law'], ['#c2Tip', 'tip']]) $(id).addEventListener('click', () => { if ($('#c2help').hidden || C2.help !== which) c2HelpOpen(which); else c2HelpClose(); });
 function c2Hint() { if (S.mode !== 'c2play') return; C2.hinted = true; toast(C2.def.hint, 10); }
 
 $('#c2Name').addEventListener('click', () => showAlbum(2));

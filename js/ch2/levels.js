@@ -13,7 +13,7 @@ const C2PROP = { 1: 'you', 2: 'push', 3: 'stop', 4: 'sink', 5: 'hot', 6: 'win' }
 const C2LEVELS = [
   {
     han: '尋門', name: 'Tìm cổng', paper: 'yellow', key: 0,
-    hint: "Chữ là luật. CHUỘT LÀ ĐI nên chuột đi được, nhưng cổng chưa phải đích vì CỔNG, LÀ, THẮNG còn nằm rải rác. Đẩy chúng thành một hàng ngang hoặc dọc. Chữ đã vào góc hay sát mép thì không kéo ra được.",
+    hint: "CHUỘT LÀ ĐI nên chuột đi được, nhưng cổng chưa phải đích vì ba chữ CỔNG, LÀ, THẮNG còn nằm rải rác. Đẩy chúng thành một hàng để ghép CỔNG LÀ THẮNG, rồi đưa chuột tới cổng.",
     map: ["..........",".W=3ww..w.",".w..w..w..","..wM=1.w..",".w..w...w.",".m.wG.6=g.",".........."],
     fixed: [],
   },

@@ -13,6 +13,12 @@ const AU = (() => {
     // one step = a quaver; hold 4 lets the minims ring for a whole bar; an octave up so it sounds bright for children
     { bpm: 108, hold: 4, mel: [65,null,65,null,60,null,60,null,62,null,62,null,60,null,null,null,65,null,65,null,60,null,60,null,62,null,62,null,60,null,null,null,60,null,60,null,62,null,64,null,65,null,null,null,65,null,null,null,60,null,60,null,62,null,64,null,65,null,null,null,65,null,null,null],
       drum: [.8, 0, 0, 0, .4, 0, 0, 0, .6, 0, 0, 0, .4, 0, 0, 0], perc: s => (s % 4 === 2 ? 'mo2' : null), vol: .12, oct: 12 },
+    // Hứng Dừa (chương III tranh 2): a skipping tune in the five-note scale, kèn over a bouncy drum and woodblock
+    { bpm: 118, hold: 4, mel: [67,null,69,67,64,null,62,null,64,67,69,null,67,null,null,null,69,72,69,null,67,null,64,null,62,64,67,64,62,null,null,null,67,null,69,67,64,null,62,null,64,67,69,72,74,null,null,null,72,null,69,67,69,null,67,null,64,62,64,67,60,null,null,null],
+      drum: [.8, 0, .25, 0, .55, 0, .25, .2, .7, 0, .25, 0, .55, .2, .3, 0], perc: s => (s % 2 === 1 ? (s % 4 === 3 ? 'mo2' : 'mo') : null), vol: .12, oct: 12 },
+    // Chăn Trâu (chương III tranh 3): tense and driving, a minor five-note run hammered over a pounding drum
+    { bpm: 150, hold: 2, mel: [69,69,null,72,69,null,67,null,69,69,null,72,74,null,72,null,69,69,null,72,69,null,67,64,62,null,64,null,67,null,null,null,76,null,74,72,74,null,72,69,72,null,69,67,69,null,null,null,76,76,74,76,79,null,76,74,72,69,72,74,76,null,null,null],
+      drum: [1, 0, .5, 0, .8, .35, .5, 0, 1, 0, .5, .35, .8, .35, .6, .45], perc: s => (s % 2 === 1 ? 'mo' : s === 12 ? 'cym' : null), vol: .12, oct: 0 },
   ];
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;

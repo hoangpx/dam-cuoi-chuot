@@ -12,3 +12,13 @@ body.touch #c2rules{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 body.c2 #toast{top:auto;bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 body.c2.touch #toast{bottom:calc(215px + env(safe-area-inset-bottom,0px))}
 #c2pad [data-d=up]{grid-column:2;grid-row:1}#c2pad [data-d=left]{grid-column:1;grid-row:2}#c2pad [data-d=down]{grid-column:2;grid-row:2}#c2pad [data-d=right]{grid-column:3;grid-row:2}
+#c2help{position:fixed;inset:0;z-index:6;display:flex;align-items:safe center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35);overflow-y:auto}
+#c2help .card2{max-width:460px;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:14px 18px 16px;text-align:left}
+#c2help h3{margin:0 0 6px;font-family:var(--display);font-weight:900;font-size:20px;text-align:center}
+#c2help ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;font-size:15px;line-height:1.45}
+#c2help .w{display:inline-block;border:1.5px solid var(--ink);padding:0 5px;font-family:var(--display);font-weight:900;font-size:13px;line-height:1.5;background:#f2ecde}
+#c2tip{margin-top:12px;border-top:2px dashed var(--ink);padding-top:8px}
+#c2tip p{margin:0;font-size:15px;line-height:1.45}
+#c2help .btn{display:block;margin:14px auto 0}
+#c2law[hidden]+#c2tip{margin-top:0;border-top:0;padding-top:0}
+@media (max-width:480px){#c2hud .tools{gap:5px;flex-wrap:nowrap}#c2hud .tools .tag{font-size:12.5px;padding:5px 7px;white-space:nowrap}}
