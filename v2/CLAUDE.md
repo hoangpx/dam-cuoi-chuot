@@ -41,15 +41,17 @@ objects with optional `layer`, `update`, `draw/drawMid/drawFg/drawHud`, `wall()`
 
 - No hint text; players discover by tapping and dragging. Controls: walk (← → / ◀ ▶) and tap/drag only.
 - Each chapter: its own gameplay and its own song, same art style. Don't rework finished chapters unasked.
-- Check every puzzle on a phone-sized view too (375×812 shows only ~560 world px around the groom; desktop
-  1100×640 shows ~350 px above GROUND) — keep puzzle pieces inside both.
+- Check every puzzle on a phone-sized view too. Portrait screens show at least 760 world px with the groom 440 px
+  from the left edge so the whole party fits (375×812: x ≈ groom−440 … groom+320); desktop 1100×640 shows
+  groom−310 … groom+430 and ~350 px above GROUND. Keep puzzle pieces inside both.
 
 ## Verifying changes
 
 - `node tools/regress/make-test-page.js`, serve the folder, open `/_test.html`, run `await __regress()`.
   It clears saves, seeds `Math.random`, freezes rAF, walks every tranh of chương I and solves all 14 chương II
-  maps (`ch2-solutions.json`), returning frame hashes. For refactors the result must equal `snapshot.json`;
-  for intended changes, re-save the snapshot.
+  maps (`ch2-solutions.json`), returning frame hashes. Hashes depend on the browser and font files, so compare
+  against a run of the previous commit made in the same browser session (git stash → run → stash pop → run);
+  `snapshot.json` is only an example of the output.
 - Chương II maps: verify solvability by replaying solutions through `c2Parse/c2Settle/c2Step`.
 - Look at real screenshots (desktop and mobile), not just numbers.
 

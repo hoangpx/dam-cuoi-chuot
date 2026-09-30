@@ -279,7 +279,8 @@ function update(dt) {
     for (const e of S.ents) if (e.kind === 'hawk') e.update(dt);
   }
   const viewW = cv.width / DPR / scale;
-  const want = Math.max(0, Math.min(L.width - viewW, groom.x - viewW * .42));
+  const lead = innerWidth < innerHeight ? Math.min(440, viewW * .62) : viewW * .42;   // portrait: keep the last mouse on screen
+  const want = Math.max(0, Math.min(L.width - viewW, groom.x - lead));
   if (Number.isFinite(want)) camX += (want - camX) * Math.min(1, dt * 4);
   if (!Number.isFinite(camX)) camX = 0;
 }
