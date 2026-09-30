@@ -14,8 +14,8 @@ let scale = 1, viewH = VIEW_H, offY = 0;
 function resize() {
   const w = innerWidth, h = innerHeight;
   cv.width = Math.max(1, Math.round(w * DPR)); cv.height = Math.max(1, Math.round(h * DPR));
-  // portrait phones: show at least 760 world px across so the whole wedding party (~430 px) fits with room ahead
-  scale = Math.max(.05, Math.min(h / VIEW_H, w / (w < h ? 760 : 560)));
+  // portrait phones: show at least 760 world px across so the whole wedding party (~330 px) fits with room ahead
+  scale = Math.max(.05, Math.min(h / VIEW_H, w / (w < h ? 640 : 560)));
   viewH = h / scale; offY = (viewH - VIEW_H) / 2;
 }
 addEventListener('resize', resize); resize();

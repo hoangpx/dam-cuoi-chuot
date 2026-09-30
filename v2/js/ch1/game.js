@@ -143,10 +143,9 @@ function useAbility(k) {
     if (h && Math.abs((e.ax ?? e.x ?? 0) - origin) < (e.range || 380)) h.call(e, origin);
   }
 }
-const LEAD_ITEMS = ['cau', 'fish'];
-const bearerItem = () => { for (let i = S.inv.length - 1; i >= 0; i--) if (!LEAD_ITEMS.includes(S.inv[i])) return S.inv[i]; return null; };
-const leadItem = () => { for (let i = S.inv.length - 1; i >= 0; i--) if (LEAD_ITEMS.includes(S.inv[i])) return S.inv[i]; return null; };
-function handPos(f = followers[3]) { return [f.x + 16 * f.face, GROUND - 50]; }
+// every gift rides in the groom's hand; the newest one is on top and is the one you drag
+const leadItem = () => S.inv.length ? S.inv[S.inv.length - 1] : null;
+function handPos(f = groom) { return [f.x + 16 * f.face, GROUND - 50]; }
 function dropOn(wx, wy, item) {
   for (const e of S.ents) {
     if (!e.offer || e.spent || e.opened || e.fed) continue;
@@ -279,7 +278,7 @@ function update(dt) {
     for (const e of S.ents) if (e.kind === 'hawk') e.update(dt);
   }
   const viewW = cv.width / DPR / scale;
-  const lead = innerWidth < innerHeight ? Math.min(440, viewW * .62) : viewW * .42;   // portrait: keep the last mouse on screen
+  const lead = innerWidth < innerHeight ? Math.min(360, viewW * .62) : viewW * .42;   // portrait: keep the last mouse on screen
   const want = Math.max(0, Math.min(L.width - viewW, groom.x - lead));
   if (Number.isFinite(want)) camX += (want - camX) * Math.min(1, dt * 4);
   if (!Number.isFinite(camX)) camX = 0;
@@ -298,7 +297,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   if (item === 'parasol') armN = bigPara ? -2.2 : -1.35 + Math.sin(S.pose * 2 + seed) * .04;
   if (item === 'ken') armN = -1.05;
   if (item === 'drum') armN = S.drumT > 0 ? -.4 - Math.abs(Math.sin(S.t * 22)) * .9 : S.manualDrum || S.eyeWatch ? -.4 : -.4 + Math.abs(Math.sin(S.pose * 7)) * -.6;
-  if (item === 'gift' || item === 'lead') armN = -.25;
+  if (item === 'lead') armN = -.25;
   dp(g, M.arm, 2, hy - 50, -sw * .4);
   dp(g, M.body, 0, hy, .04);
   if (item === 'drum') dp(g, ITEM.drum, 26, hy - 18);
@@ -308,7 +307,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   if (item === 'parasol' && !bigPara) dp(g, ITEM.parasol, hx, hyy + 26, Math.sin(S.pose * 1.5 + seed) * .05);
   if (item === 'ken') dp(g, ITEM.ken, hx - 4, hyy, -.25 - (S.kenT > 0 ? Math.sin(S.t * 10) * .05 : 0));
   if (item === 'drum') dp(g, ITEM.stick, hx - 2, hyy, .5 + armN);
-  const carry = item === 'gift' ? bearerItem() : item === 'lead' ? leadItem() : null;
+  const carry = item === 'lead' ? leadItem() : null;
   if (carry && !(S.drag && S.drag.item === carry)) { const it = carry, w = it === 'fish';
     drawItem(g, it, hx + 5, hyy + 14 - (w ? Math.abs(Math.sin(S.t * 9)) * 9 : 0), w ? 1.1 : .9, w ? 1.3 + Math.sin(S.t * 17) * .5 : .1); }
   dp(g, M.arm, ax, ay, armN);
@@ -419,7 +418,7 @@ function ch1PointerDown(e) {
   if (S.mode !== 'play' || S.caught) return;
   const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / scale + camX, wy = (e.clientY - r.top) / scale - offY;
   for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return; } }
-  for (const [who, it] of [[groom, leadItem()], [followers[3], bearerItem()]]) { if (!it) continue; const [hx, hy] = handPos(who); if (Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return; } }
+  { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return; } }
   for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return;
   { const f = followers[0]; if (L.abil.includes('parasol') && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return; } }
   for (const [i, k] of [[1, 'drum'], [2, 'ken']]) { const f = followers[i]; if (L.abil.includes(k) && Math.abs(wx - f.x) < 40 && wy > GROUND - 150 && wy < GROUND + 8) { useAbility(k); return; } }

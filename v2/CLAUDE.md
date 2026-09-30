@@ -35,14 +35,15 @@ drawn in a fallback font the first time a part is printed).
 
 Chương I tranh: each `tranhN-*.js` holds that tranh's entities and sets `LEVELS[N-1] = {...}`; entities are plain
 objects with optional `layer`, `update`, `draw/drawMid/drawFg/drawHud`, `wall()`, `onClick`, `grab/drop`,
-`onDrum/onKen`, `offer`, `watcher`. `C1_READY` (game.js) = how many tranh are open; later ones open after 5 taps.
+`onDrum/onKen`, `offer`, `watcher`. The party is the groom + 3 followers (lọng, trống, kèn, ~330 px);
+every gift rides in the groom's hand (`leadItem()`, dragged from `handPos()`). `C1_READY` (game.js) = how many tranh are open; later ones open after 5 taps.
 
 ## Design rules from the owner
 
 - No hint text; players discover by tapping and dragging. Controls: walk (← → / ◀ ▶) and tap/drag only.
 - Each chapter: its own gameplay and its own song, same art style. Don't rework finished chapters unasked.
-- Check every puzzle on a phone-sized view too. Portrait screens show at least 760 world px with the groom 440 px
-  from the left edge so the whole party fits (375×812: x ≈ groom−440 … groom+320); desktop 1100×640 shows
+- Check every puzzle on a phone-sized view too. Portrait screens show at least 640 world px with the groom 360 px
+  from the left edge so the whole party fits (375×812: x ≈ groom−360 … groom+280); desktop 1100×640 shows
   groom−310 … groom+430 and ~350 px above GROUND. Keep puzzle pieces inside both.
 
 ## Verifying changes

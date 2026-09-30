@@ -18,7 +18,7 @@ Object.assign(S, { parasol: false, drumT: 0, kenT: 0, caught: 0, catcher: null, 
 const groom = { x: 160, vx: 0, face: 1, ph: 0, moving: false };
 const followers = [
   { m: MICE.a, item: 'parasol', gap: 100 }, { m: MICE.b, item: 'drum', gap: 196 },
-  { m: MICE.c, item: 'ken', gap: 290 }, { m: MICE.d, item: 'gift', gap: 384 },
+  { m: MICE.c, item: 'ken', gap: 290 },
 ];
 let L = null, PAPER = null, camX = 0;
 const members = () => [groom, ...followers];
