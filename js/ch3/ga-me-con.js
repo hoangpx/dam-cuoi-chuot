@@ -94,7 +94,7 @@ function g3Down(x, y) {
   for (const c of G3.chicks) { if (c.st === 'hop') continue; const d = Math.hypot(x - c.x, y - (c.y - 32)); if (d < bd) { bd = d; best = c; } }
   if (best) { G3.drag = { who: best, dx: best.x - x, dy: best.y - y }; if (best.st === 'nest') best.slot = -1; best.st = 'drag'; AU.cheep(); return true; }
   const h = G3.hen;
-  if (h.st !== 'leave' && Math.abs(x - h.x) < 140 && y > h.y - 270 && y < h.y + 10) { G3.drag = { who: h, dx: h.x - x, dy: h.y - y, hen: true }; h.st = 'drag'; AU.cluck(); return true; }
+  if (h.st !== 'leave' && h.st !== 'in' && Math.abs(x - h.x) < 140 && y > h.y - 270 && y < h.y + 10) { G3.drag = { who: h, dx: h.x - x, dy: h.y - y, hen: true }; h.st = 'drag'; AU.cluck(); return true; }
   if (g3InNest(x, y + 10)) { G3.helpT = 3; AU.pluck(72); }            // "Hãy giúp gà mẹ đưa các con về tổ"
   return false;
 }
@@ -202,6 +202,7 @@ C3GAMES[0] = {
   isWon: () => G3.won,
   praise: () => G3.smart ? 'Bạn thật thông minh!' : 'Tuyệt vời! Bạn có một đôi tay siêu nhanh!',
   start: g3Start, update: g3Update, render: g3Render, printRender: g3RenderPrint,
+  handCursor: true,                                // on computers the pointer is a big hand
   down: g3Down, move: g3Move, up: g3Up,
   resize(W, H) { const oldW = G3.W, oldH = G3.H; G3.W = W; G3.H = H; if (!G3.hen) return; const sx = W / oldW, sy = H / oldH; g3Layout(); for (const o of [G3.hen, ...G3.chicks]) { o.x *= sx; o.y *= sy; o.tx *= sx; o.ty *= sy; } },
   onWin(f) { G3.onWin = f; },

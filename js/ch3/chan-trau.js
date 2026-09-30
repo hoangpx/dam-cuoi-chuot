@@ -107,7 +107,7 @@ function ctLayout() {
 }
 function ctStart() {
   ctLayout();
-  Object.assign(CT, { t: 0, phase: 'chase', r: 0, throws: 0, breaks: 0, phaseT: 0, lasso: null, puffs: [], won: false });
+  Object.assign(CT, { t: 0, phase: 'chase', r: 0, throws: 0, breaks: 0, phaseT: 0, lasso: null, puffs: [], won: false, idle: 0, howK: 0, walked: false });
   CT.B = { x: CT.W * .62, y: (CT.top + CT.front) / 2 - 20, th: Math.PI * .9, thTo: Math.PI * .9, sp: 110, turnT: 1.5, ph: 0, stamp: 0, nod: 0, mooT: 3 };
   CT.boy = { x: CT.W * .3, y: CT.front, face: 1, ph: 0, moving: false, phi: Math.PI / 2 };
 }
@@ -117,6 +117,11 @@ function ctUpdate(dt) {
   CT.t += dt; CT.phaseT += dt;
   const B = CT.B, boy = CT.boy, dir = ctDir();
   for (const p of CT.puffs) p.t += dt; CT.puffs = CT.puffs.filter(p => p.t < .6);
+  // the how-to: the tap critter while roping, until the first throw (and again after standing idle a while)
+  if (CT.phase === 'chase' && !CT.lasso) CT.idle += dt;
+  const how = CT.phase === 'chase' && (CT.throws === 0 || CT.idle > 6);
+  CT.howK += ((how ? 1 : 0) - CT.howK) * Math.min(1, dt * (how ? 3 : 5));
+  if (CT.phase === 'tame' && dir) CT.walked = true;
   if (CT.phase === 'chase') {
     // the boy walks along the near edge (after a break he first walks back to it)
     boy.y += (CT.front - boy.y) * Math.min(1, dt * 5);
@@ -163,6 +168,9 @@ function ctUpdate(dt) {
     B.th += Math.max(-wb * dt, Math.min(wb * dt, d)); if (Math.abs(d) > .02) B.ph += dt * 6;
     B.nod = B.stamp > 0 ? Math.sin(B.stamp * 30) * .1 : Math.sin(CT.t * 2) * .03;
     CT.aligned = Math.abs(ctWrap(boy.phi - B.th)) < CT_ALIGN;
+    const bk = ctBuck(B), up = bk && Math.abs(bk.k) > .5;
+    if (CT.bucking && !up) { const s2 = ctSc(B.y), f2 = .45 + .55 * Math.abs(Math.cos(B.th)); CT.puffs.push({ x: B.x + (CT.lastRear ? 40 : -44) * Math.sign(Math.cos(B.th) || 1) * f2 * s2, y: B.y, t: 0 }); if (CT.lastRear) AU.thump(); }
+    CT.bucking = up; if (bk) CT.lastRear = bk.rear;
     CT.r += (CT.aligned ? -CT_IN : CT_OUT) * dt;
     const [px, py] = ctRing(boy.phi, CT.r); boy.x = px; boy.y = py; boy.face = px < B.x ? 1 : -1;
     if (CT.r <= CT.rMin) {                                     // tamed
@@ -183,7 +191,7 @@ function ctUpdate(dt) {
 }
 function ctCatch() {
   const B = CT.B, boy = CT.boy;
-  CT.lasso = null; CT.phase = 'tug'; CT.phaseT = 0; AU.moo(); AU.drumOne();
+  CT.lasso = null; CT.phase = 'tug'; CT.phaseT = 0; CT.walked = false; AU.moo(); AU.drumOne();
   boy.phi = Math.atan2((boy.y - CT.C.y) / CT_K, boy.x - CT.C.x);   // he comes to the ring on his own side
   CT.r = CT.rMax * .78;
   CT.tug = { bx: B.x, by: B.y, x: boy.x, y: boy.y, th: B.th, th2: boy.phi + Math.PI * .6 };   // it ends up looking off to one side
@@ -193,12 +201,28 @@ function ctCatch() {
 function ctDown(x, y) {
   if (CT.phase !== 'chase' || CT.lasso || CT.won) return false;
   const [hx, hy] = ctHand(), d = Math.hypot(x - hx, y - hy);
-  CT.lasso = { x0: hx, y0: hy, x1: x, y1: y, t: 0, T: .7 + d / 1100, st: 'fly' }; CT.throws++;
+  CT.lasso = { x0: hx, y0: hy, x1: x, y1: y, t: 0, T: .7 + d / 1100, st: 'fly' }; CT.throws++; CT.idle = 0;
   CT.boy.face = x >= CT.boy.x ? 1 : -1; AU.swoosh();
   return true;
 }
 
 /* ---------- drawing ---------- */
+// the bucking while roped: k > 0 rears (front up, pivoting on the hind feet), k < 0 kicks (hind up, on the front feet);
+// wilder as the ring closes. Returns null when it is not bucking.
+function ctBuck(B) {
+  if (CT.phase !== 'tame' && CT.phase !== 'tug') return null;
+  const sc = ctSc(B.y), c = Math.cos(B.th), side = c >= 0 ? 1 : -1, f = .45 + .55 * Math.abs(c);
+  const prog = CT.phase === 'tame' ? Math.max(0, 1 - (CT.r - CT.rMin) / (CT.rMax - CT.rMin)) : 0;
+  const k = Math.sin(CT.t * (6.5 + prog * 2.5)), amp = .75 + prog * .5, rear = k > 0;
+  return { k, rear, amp, px: B.x + (rear ? -44 : 40) * side * f * sc, py: B.y,
+    rot: -k * .4 * amp * side * Math.max(.25, Math.abs(c)), lift: Math.abs(k) * 16 * sc * amp };
+}
+// a point on the buffalo, moved the way the bucking moves the body
+function ctBuckPt(B, [x, y]) {
+  const b = ctBuck(B); if (!b) return [x, y];
+  const cs = Math.cos(b.rot), sn = Math.sin(b.rot), dx = x - b.px, dy = y - b.py;
+  return [b.px + dx * cs - dy * sn, b.py + dx * sn + dy * cs - b.lift];
+}
 function ctBuffalo(g, B) {
   const A = ctArt(), sc = ctSc(B.y), c = Math.cos(B.th), s = Math.sin(B.th), side = c >= 0 ? 1 : -1, f = .45 + .55 * Math.abs(c);
   const x = B.x, y = B.y, sx = side * f * sc, frontal = Math.abs(c) <= .42;
@@ -208,19 +232,28 @@ function ctBuffalo(g, B) {
     if (!frontal) dp(g, A.headSide, hx, hy, B.nod * side, side * sc, sc);
     else dp(g, s > 0 ? A.headFront : A.headBack, hx, hy, B.nod * .5, sc, sc);
   };
-  const tail = () => dp(g, A.tail, x - c * 70 * sc, y - 86 * sc, Math.sin(CT.t * 3) * .25 * side, sc, sc);
+  const tail = () => dp(g, A.tail, x - c * 70 * sc, y - 86 * sc, Math.sin(CT.t * 3) * .25 * side + (bk ? -bk.k * .6 * side : 0), sc, sc);
+  const bk = ctBuck(B);
+  g.save();
+  if (bk) { g.translate(0, -bk.lift); g.translate(bk.px, bk.py); g.rotate(bk.rot); g.translate(-bk.px, -bk.py); }
   if (frontal && s < 0) head();                        // walking away: the head is behind the body
   if (!(frontal && s < 0)) tail();
   const gait = CT.phase === 'chase' || CT.phase === 'tug' ? 1 : .35;
   [-50, 48, -34, 32].forEach((lx, i) => {             // far legs first, then near ones
     const px = x + lx * sx, sw = Math.sin(B.ph + (i % 2 ? Math.PI : 0) + (i > 1 ? 1.2 : 0)) * 9 * gait * sc * side;
-    g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = 13 * sc; g.beginPath(); g.moveTo(px, y - 44 * sc); g.lineTo(px + sw, y - 2); g.stroke();
+    let fx = px + sw, fy = y - 2;
+    if (bk && (lx > 0) === bk.rear) {                // the lifted pair: forelegs tucked up when rearing, hind legs kicked out back
+      const e = Math.abs(bk.k);
+      if (lx > 0) { fx = px + side * f * 18 * sc * e; fy = y - 2 - 28 * sc * e; } else { fx = px - side * f * 34 * sc * e; fy = y - 2 - 20 * sc * e; }
+    }
+    g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = 13 * sc; g.beginPath(); g.moveTo(px, y - 44 * sc); g.lineTo(fx, fy); g.stroke();
     g.strokeStyle = i < 2 ? '#7a2a22' : '#a3332a'; g.lineWidth = 8.5 * sc; g.stroke();
-    g.fillStyle = INK; g.beginPath(); g.ellipse(px + sw, y - 2, 6.5 * sc, 4 * sc, 0, 0, 6.283); g.fill();
+    g.fillStyle = INK; g.beginPath(); g.ellipse(fx, fy, 6.5 * sc, 4 * sc, 0, 0, 6.283); g.fill();
   });
   dp(g, A.body, x, y, 0, sx, sc);
   if (frontal && s < 0) tail();
   if (!(frontal && s < 0)) head();
+  g.restore();
 }
 function ctBoy(g, target) {
   const A = ctArt(), b = CT.boy, sc = ctSc(CT.phase === 'done' ? CT.B.y : b.y), sitting = CT.phase === 'done' && CT.phaseT > .6;
@@ -267,7 +300,7 @@ function ctRender(g) {
   }
   for (const p of CT.puffs) { const k = p.t / .6; g.globalAlpha = .5 * (1 - k); g.fillStyle = '#c3b596'; for (let j = -1; j <= 1; j++) { g.beginPath(); g.arc(p.x + j * 16 * (1 + k), p.y - 6 - k * 14, 8 + k * 10, 0, 6.283); g.fill(); } g.globalAlpha = 1; }
   // depth order: whoever is further up the field is drawn first
-  const roped = CT.phase === 'tug' || CT.phase === 'tame', neck = ctNeck(B), L = CT.lasso;
+  const roped = CT.phase === 'tug' || CT.phase === 'tame', neck = ctBuckPt(B, ctNeck(B)), L = CT.lasso;
   let lp = null;
   if (L) {
     if (L.st === 'fly') {                                           // up high, then down on to the spot (its shadow marks where)
@@ -285,11 +318,30 @@ function ctRender(g) {
   if (roped) ctLoop(g, neck[0], neck[1] + 4, .8, 0);                // the loop round its neck
 }
 
+function ctOverlay(g, W, H) {
+  if (CT.howK < .02) return;
+  const A = howtoArt(), t = CT.t, k = CT.howK, Z = Math.min(1.35, Math.max(1.1, W / 420));
+  g.save(); g.setTransform(DPR * Z, 0, 0, DPR * Z, (34 + 35 * Z) * DPR, (H - 34 - 35 * Z + (1 - k) * 18) * DPR); g.globalAlpha = k;
+  const ph = (t % 1.2) / 1.2, tap = ph < .18;                          // a click every 1.2 s
+  if (isTouch) {
+    const lift = tap ? 0 : Math.sin(ph * Math.PI) * 6;
+    if (tap) { g.strokeStyle = INK; g.lineWidth = 1.6; for (const r of [9, 15]) { g.globalAlpha = k * (1 - ph / .18); g.beginPath(); g.arc(-3, -30, r, 0, 6.283); g.stroke(); } g.globalAlpha = k; }
+    dp(g, A.finger, 0, -27 - lift, -.15, .62, .62);
+  } else {
+    const bob = tap ? 1.5 : Math.sin(t * 3) * 1.2;
+    dp(g, A.mouse, 0, -9 + bob, Math.sin(t * 2) * .05, .72, .72);
+    if (tap) dp(g, A.click, 0, -9 + bob, Math.sin(t * 2) * .05, .72, .72);
+  }
+  g.restore();
+}
+
 C3GAMES[2] = {
   han: '牧牛', name: 'Chăn Trâu', paper: 'white',
   short: portrait => portrait ? 460 : 600,
   print: 'img/ch3/chan-trau.png',                  // the reward: the real Đông Hồ print
-  pad: true,                                       // walks with ← → / ◀ ▶
+  // the ◀ ▶ buttons only once it is roped, one at each side; they pulse until the boy first walks the ring
+  padOn: () => CT.phase === 'tug' || CT.phase === 'tame', padPulse: () => !CT.walked,
+  overlay: ctOverlay,
   song: 4,
   isWon: () => CT.won,
   praise: () => CT.breaks === 0 && CT.throws === 1 ? 'Tài quá! Ném một lần là trúng!' : 'Giỏi lắm! Trâu đã ngoan rồi!',

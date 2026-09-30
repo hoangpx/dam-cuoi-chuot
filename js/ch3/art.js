@@ -65,7 +65,7 @@ function c3Art() {
   const HEAD = [118, -286];
   // ---------- chicks (face right, feet at y 0; legs are drawn live so they can run) ----------
   const KINDS = [['red', 'green'], ['green', 'red'], ['yellow', 'red'], ['red', 'yellow'], ['green', 'yellow']];
-  const chick = ([body, wing]) => part([-44, -74, 46, 4], a => {
+  const chick = ([body, wing]) => part([-62, -74, 46, 4], a => {
     for (const [ang, len] of [[2.7, 30], [2.95, 34]]) a.fk(wing, leaf(-22, -30, ang, len, 7), 1.4);
     a.fk(body, smooth([[-28, -26], [-12, -46], [12, -46], [26, -32], [22, -12], [2, -6], [-20, -12]]), 2.2);
     a.fk(wing, smooth([[-20, -34], [4, -40], [12, -26], [-2, -16], [-22, -20]]), 1.8);

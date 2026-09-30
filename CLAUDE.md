@@ -15,7 +15,7 @@ js/art/               shared parts: mice, cat, props, world, market; build.js re
 js/ch1/               Chương I · Đám Cưới Chuột: state, entities (shared blocks), tranhN-*.js, game.js (engine)
 js/ch2/               Chương II · Chữ Là Luật: levels (maps), engine (pure rules), art, game
 js/ch3/               Chương III · Nhanh Tay Nhanh Mắt (kids' quick games, open from the start): state (C3GAMES, saves),
-                      art (hen, chicks, nest, mound), one file per game (ga-me-con.js, hung-dua.js, chan-trau.js), game.js (shell, reward print)
+                      art (hen, chicks, nest, mound), one file per game (ga-me-con.js, hung-dua.js, chan-trau.js, tha-dieu.js), game.js (shell, reward print)
 tools/regress/        deterministic regression run (see below)
 v1/                   frozen old single-file version (5-mouse party), kept at /v1/ — do not edit
 v2/                   redirect to the root (v2 was promoted to the main version)
@@ -64,15 +64,28 @@ by the owner) is printed ink-only into the empty sky beside the palm (hdText str
 round's red countdown disc is drawn in the scene on the other side of the palm, level with the inscription (`ownClock: true`
 hides the shell's corner #c3Time); the coconut count sits under the green ground strip.
 
-Tranh 3 · Chăn Trâu (chan-trau.js, own art inside): the only chương III game that walks — `pad: true` shows the ◀ ▶
-buttons on touch and c3Key feeds ← → into chương I's `keys`/`touchDir` (read by ctDir). Chase: the buffalo wanders/dashes/
+Tranh 3 · Chăn Trâu (chan-trau.js, own art inside): the only chương III game that walks — c3Key feeds ← → into chương I's
+`keys`/`touchDir` (read by ctDir). How-to as in chương I: while roping, the clicking-mouse / tapping-finger critter
+(ch1 `howtoArt`, drawn by game.overlay) bottom-left until the first throw or after 6 s idle; once roped, `padOn` shows the
+◀ ▶ buttons on every screen, split to both sides (#pad.split), pulsing until the boy first walks.
+
+Tranh 4 · Thả Diều (tha-dieu.js): intro (boy on the buffalo — tranh 3's art via tdHerd — holds the kite up, throws it),
+then the camera follows the kite up (world y down, TD.camY) so the herd sinks off the bottom. The kite climbs by itself;
+← → / ◀ ▶ (padOn while flying, split) steer it with inertia through rows of bamboo branches (tdCourse: one long branch
+from a side, or both sides with a gap, narrowing higher up) and past crows; a branch (body or a wing tip) or a crow →
+the kite falls → game.onFail → the shell's fail screen. Clearing TD.top (bamboo height TD_HEIGHT) wins; record = time.
+The kite is the print's arched wing kite with a ribbon from each tip. Song SONGS[5] (inst 'sao' bamboo flute + drone =
+the hum of the kite flute). Reward img/ch3/tha-dieu.jpg (the owner's print; falls back to tdPrint if the file is missing),
+whose Nôm inscription (top left, cut at run time) sits in the open sky beside the red sun above the bamboo.
+Chương III games may set `handCursor` (Đàn Gà Mẹ Con does): on computers the pointer is a big woodblock hand (c3DrawHand),
+a fist while dragging. Chase: the buffalo wanders/dashes/
 shies from the boy; a tap lobs the lasso high onto that point (flight .7 s + d/1100, a shadow marks the spot), holding only if it
 lands within ~44·scale of the neck (32 of the head) — so it has to be thrown ahead of the running buffalo. The print's inscription is cut
 from img/ch3/chan-trau.png at run time (ctText, ink-only) into the sky top right. Roped: it is dragged to CT.C and turns its head (stamps, then swings; faster as the ring closes);
 the boy walks the ring (→ = anticlockwise, i.e. right along the near side); within CT_ALIGN of the head direction the ring
 draws in (CT_IN/s), else it opens (CT_OUT/s); the ring is red with a green arc of ±CT_ALIGN at the head direction that follows it round; rMin → tamed (boy hops on, flute, win after 1.4 s); rMax (dashed
 ring) → breaks loose, back to chasing. Ground is a front-seen plane squashed by CT_K; the buffalo fakes turning by
-foreshortening the body and swapping side/front/back heads. Record = fastest time; SONGS[4] (tense, 150 bpm).
+foreshortening the body and swapping side/front/back heads. Roped, it bucks like a rodeo bull (ctBuck: rears on the hind feet / kicks the hind legs out, wilder as the ring closes; ctBuckPt moves the rope end with it). Record = fastest time; SONGS[4] (tense, 150 bpm).
 
 ## Design rules from the owner
 

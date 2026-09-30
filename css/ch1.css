@@ -24,3 +24,5 @@ body.touch #pad button{width:60px;height:60px}
 #pad.pulse button:nth-child(2){animation-delay:.55s}
 @keyframes padPulse{0%,100%{transform:scale(1);background:rgba(242,236,222,.85)}50%{transform:scale(1.1);background:var(--paper-hi)}}
 @media (prefers-reduced-motion:reduce){#pad.pulse button{animation:none;outline:3px solid var(--son)}}
+#pad.split{left:16px;right:16px;justify-content:space-between;pointer-events:none}
+#pad.split button{pointer-events:auto}
