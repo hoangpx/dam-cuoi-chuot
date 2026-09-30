@@ -172,6 +172,7 @@ registerChapter({
   id: 2, modes: ['c2play'],
   card: { num: 'Chương II', han: '字即法', name: 'Chữ Là Luật', desc: 'Chữ khắc gỗ chính là luật chơi. Đẩy chữ để ghép, phá hay đổi luật rồi đưa chuột tới cổng. Có phần Nhập môn và phần Cao thủ.', bg: PAPERS.white.css },
   progress: () => `${SAVE2.done.filter(Boolean).length}/${C2LEVELS.length} tranh`,
+  hasProgress: () => SAVE2.done.some(Boolean),
   album() { buildAlbum2(); $('#albumTitle').textContent = 'Chương II · Chữ Là Luật'; $('#albumDesc').textContent = 'Chữ khắc gỗ là luật chơi. Đẩy chữ để ghép, phá hay đổi luật, rồi đưa chuột tới cổng. Qua tranh này mới mở tranh sau.'; },
   hide: c2Hide,
   update: updateC2, render: renderC2, key: c2Key,

@@ -22,6 +22,7 @@ function loadLevel(i) {
   hudKey = ''; updateHud();
 }
 function placeParty(x) {
+  x = Math.max(x, 340);                      // the whole party (~330 px) stands inside the tranh
   groom.x = x; groom.vx = 0; groom.face = 1;
   followers.forEach(f => { f.x = x - f.gap; f.face = 1; f.ph = R() * 6; f.moving = false; });
 }
@@ -170,6 +171,7 @@ function tryOffer() {
 const keys = new Set(), touchDir = { L: false, R: false };
 function ch1Key(e) {
   if (S.mode !== 'play') return;
+  howtoInput();
   keys.add(e.code);
   if (['ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
@@ -198,6 +200,7 @@ function caught(w) {
 function safeFrom(w, x) { return w.mode === 'above' ? S.parasol : S.ents.some(e => e.cover && x > e.cover[0] && x < e.cover[1]); }
 function update(dt) {
   S.drumT = Math.max(0, S.drumT - dt); S.kenT = Math.max(0, S.kenT - dt);
+  howtoUpdate(dt);
   {
     const w = S.mode === 'play' ? activeWatcher() : null, eyed = w && w.kind !== 'dog' && !w.fed;
     const st = eyed ? (S.catcher === w ? 'watch' : w.st) : 'sleep';
@@ -410,18 +413,24 @@ function render() {
   ctx.lineWidth = 1.2; ctx.strokeRect(m + 6, m + 6, vw - m * 2 - 12, viewH - m * 2 - 12);
   if (S.plate) { ctx.fillStyle = PCOL[S.plate]; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m + 26, m + 26 + 34, 10, 0, 6.283); ctx.fill(); ctx.stroke(); }
   if (S.mode === 'end') { const k = Math.min(1, S.endT / .35), sc = 1.8 - .8 * k; ctx.globalAlpha = k; dp(ctx, PROPS.seal, vw - 70, viewH - 76, -.06, sc, sc); ctx.globalAlpha = 1; }
+  howtoDraw();
 }
 
 
 /* ---------- pointer: tap things, drag carried items and loose pieces ---------- */
 function ch1PointerDown(e) {
   if (S.mode !== 'play' || S.caught) return;
+  howtoInput();
+  if (ch1PointerHit(e)) howtoTapped();
+}
+function ch1PointerHit(e) {
   const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / scale + camX, wy = (e.clientY - r.top) / scale - offY;
-  for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return; } }
-  { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return; } }
-  for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return;
-  { const f = followers[0]; if (L.abil.includes('parasol') && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return; } }
-  for (const [i, k] of [[1, 'drum'], [2, 'ken']]) { const f = followers[i]; if (L.abil.includes(k) && Math.abs(wx - f.x) < 40 && wy > GROUND - 150 && wy < GROUND + 8) { useAbility(k); return; } }
+  for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return true; } }
+  { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return true; } }
+  for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;
+  { const f = followers[0]; if (L.abil.includes('parasol') && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return true; } }
+  for (const [i, k] of [[1, 'drum'], [2, 'ken']]) { const f = followers[i]; if (L.abil.includes(k) && Math.abs(wx - f.x) < 40 && wy > GROUND - 150 && wy < GROUND + 8) { useAbility(k); return true; } }
+  return false;
 }
 function ch1PointerMove(e) {
   if (!S.drag) return;
@@ -436,7 +445,9 @@ registerChapter({
   id: 1, cover: true, modes: ['play', 'end'],
   card: { num: 'Chương I', han: '老鼠娶親', name: 'Đám Cưới Chuột', desc: 'Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu. Các bức sau đang khắc ván.', bg: PAPERS.yellow.css },
   progress: () => `${SAVE.done.slice(0, C1_READY).filter(Boolean).length}/${C1_READY} tranh`,
+  hasProgress: () => SAVE.done.some(Boolean) || SAVE.secret.some(Boolean),
   boot() { loadLevel(0); },
+  playFirst() { loadLevel(0); startPlay(); },
   album() { buildAlbum(); $('#albumTitle').textContent = 'Chương I · Đám Cưới Chuột'; $('#albumDesc').textContent = 'Mỗi bức là một chặng rước dâu. Qua chặng này mới mở được chặng sau.'; },
   update, render, key: ch1Key,
   pointer: { down: ch1PointerDown, move: ch1PointerMove, up: ch1PointerUp },

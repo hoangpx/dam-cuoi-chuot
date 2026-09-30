@@ -10,6 +10,8 @@ function tick(dt) {
 }
 function draw() { activeChapter().render(); }
 coverChapter().boot();
+// a brand-new player skips the menus and starts playing; anyone with saved progress gets the title and chapter picker
+if (!CHAPTERS.some(c => c.hasProgress && c.hasProgress())) coverChapter().playFirst();
 let last = performance.now();
 function step(dt) { tick(dt); draw(); }
 function frame(now) {
