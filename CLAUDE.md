@@ -15,6 +15,8 @@ js/art/               shared parts: mice, cat, props, world, market; build.js re
 js/ch1/               Chương I · Đám Cưới Chuột: state, entities (shared blocks), tranhN-*.js, game.js (engine)
 js/ch2/               Chương II · Chữ Là Luật: levels (maps), engine (pure rules), art, game
 tools/regress/        deterministic regression run (see below)
+v1/                   frozen old single-file version (5-mouse party), kept at /v1/ — do not edit
+v2/                   redirect to the root (v2 was promoted to the main version)
 ```
 
 All files are classic scripts sharing one global scope, so load order in `GAME_FILES` matters: a file may only use
