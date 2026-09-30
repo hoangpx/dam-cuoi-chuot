@@ -73,7 +73,8 @@ Tranh 4 · Thả Diều (tha-dieu.js): intro (boy on the buffalo — tranh 3's a
 then the camera follows the kite up (world y down, TD.camY) so the herd sinks off the bottom. The kite climbs by itself;
 hold a finger / the mouse and slide sideways (TD.hold: the kite chases the finger's x); on computers also
 ← → / ◀ ▶ (padOn while flying on computers only, split) steer it through rows of bamboo branches (tdCourse: one long branch
-from a side, or both sides with a gap, narrowing higher up) and past crows; a branch (body or a wing tip) or a crow →
+from a side, or both sides with a gap, narrowing higher up) and past crows. Holding on (finger/mouse/key) climbs fast, letting go brakes to ~45%.
+A crow only sends the kite reeling (TD.wobble, knocked aside, slow to answer); a branch (body or a wing tip) →
 the kite falls → game.onFail → the shell's fail screen. Clearing TD.top (bamboo height TD_HEIGHT) wins; record = time. Gusts every few s (TD.gust) boost the climb and show as
 wind lines. tdOverlay shows a finger (mouse) sliding between two arrows until the player first steers.
 The kite is the print's arched wing kite with a ribbon from each tip. Song SONGS[5] (inst 'sao' bamboo flute + drone =

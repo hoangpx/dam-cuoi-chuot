@@ -4,11 +4,11 @@
    only steers it left and right through the gaps between the bamboo branches: hold a finger (or the mouse button) on the
    screen and slide it sideways, and the kite goes where the finger goes; on computers ← → and the ◀ ▶ buttons work too.
    Every so often a gust sweeps across and the kite shoots up faster for a moment.
-   Now and then a crow flaps across. Touching a branch or a crow brings the kite down (a fail); clearing the tops of the
-   bamboo wins. The record is the fastest climb.
+   Holding on flies fast; letting go brakes the kite to a slow climb. Now and then a crow flaps across: hitting it sends
+   the kite reeling for a moment. Touching a branch brings the kite down (a fail); clearing the tops of the bamboo wins. The record is the fastest climb.
    World coordinates are screen-like (y down); the camera keeps the kite a little below the middle of the screen. */
 const TD = { W: 460, H: 995, t: 0, phase: 'intro', phaseT: 0, camY: 0, onWin: null, onFail: null };
-const TD_ROWS0 = 1050, TD_HEIGHT = 3100, TD_KR = 19;             // first branches above the ground, bamboo height, kite radius
+const TD_ROWS0 = 1050, TD_HEIGHT = 4600, TD_KR = 19;             // first branches above the ground, bamboo height, kite radius
 
 /* ---------- art ---------- */
 let TDART = null;
@@ -112,13 +112,13 @@ function tdCourse() {
       const reach = W * (.4 + p * .1 + R() * .06);
       rows.push({ y, from: side, tip: side < 0 ? reach : W - reach });
     }
-    y -= 215 - p * 70 + R() * 40;
+    y -= 235 - p * 65 + R() * 40;
   }
   return rows;
 }
 function tdStart() {
   tdLayout();
-  Object.assign(TD, { t: 0, phase: 'intro', phaseT: 0, camY: 0, crows: [], crowT: 4, why: '', walked: false, hold: null, gust: 0, gustT: 5, streaks: [] });
+  Object.assign(TD, { t: 0, phase: 'intro', phaseT: 0, camY: 0, crows: [], crowT: 4, why: '', walked: false, hold: null, gust: 0, gustT: 5, streaks: [], wobble: 0 });
   TD.rows = tdCourse();
   const r = mulberry(21); TD.clouds = [];
   for (let y = TD.ground - 900; y > TD.top - 900; y -= 260 + r() * 200) TD.clouds.push({ x: r() * TD.W, y, s: .7 + r() * .6, v: (r() - .5) * 14 });
@@ -148,16 +148,19 @@ function tdUpdate(dt) {
     if ((TD.gustT -= dt) <= 0) { TD.gustT = 4.5 + R() * 4 - p * 1.5; TD.gust = 1.7; AU.swoosh(); for (let i = 0; i < 7; i++) TD.streaks.push({ x: -60 - R() * 200, y: TD.camY + R() * H, t: 0, len: 60 + R() * 80 }); }
     TD.gust = Math.max(0, TD.gust - dt);
     const boost = TD.gust > 0 ? 1 + .9 * Math.sin(Math.min(1, TD.gust / 1.7) * Math.PI) : 1;
-    k.climb = Math.min((130 + p * 60) * boost, k.climb + dt * 160);
+    // holding on (finger, mouse, or a key / button) flies fast; letting go brakes it to a slow climb
+    const held = TD.hold !== null || dir !== 0, want = (130 + p * 60) * boost * (held ? 1.05 : .45);
+    k.climb += (want - k.climb) * Math.min(1, dt * (held ? 2.5 : 3.5));
     k.y -= k.climb * dt;
     if (TD.hold !== null) {                                          // follow the finger across
       const want = Math.max(-360, Math.min(360, (TD.hold - k.x) * 7));
-      k.vx += (want - k.vx) * Math.min(1, dt * 9);
+      k.vx += (want - k.vx) * Math.min(1, dt * (TD.wobble > 0 ? 2 : 9));   // a knocked kite answers slowly
     } else { k.vx += dir * 1300 * dt; k.vx *= Math.max(0, 1 - dt * (dir ? 2.2 : 4.5)); }
     k.vx = Math.max(-360, Math.min(360, k.vx));
     k.x += (k.vx + Math.sin(TD.t * .7) * 18) * dt;
     if (k.x < 56) { k.x = 56; k.vx = Math.max(0, k.vx); } if (k.x > W - 56) { k.x = W - 56; k.vx = Math.min(0, k.vx); }
-    k.rot = k.vx / 280 * .35 + Math.sin(TD.t * 2.3) * .05;
+    TD.wobble = Math.max(0, TD.wobble - dt);
+    k.rot = k.vx / 280 * .35 + Math.sin(TD.t * 2.3) * .05 + (TD.wobble > 0 ? Math.sin(TD.t * 17) * .6 * TD.wobble / 1.3 : 0);
     // crows flap across a little above the kite, from either side
     if ((TD.crowT -= dt) <= 0 && k.y > TD.top + 200) {
       TD.crowT = 3.2 + R() * 2.8 - p * 1.2; const from = R() < .5 ? -1 : 1;
@@ -170,7 +173,10 @@ function tdUpdate(dt) {
       const x0 = r.from < 0 ? 30 : W - 30, y0 = r.y, x1 = r.tip, y1 = r.y - 18;
       if (tdSegDist(k.x, k.y, x0, y0, x1, y1) < TD_KR + 8 || [-1, 1].some(sd => { const [tx, ty] = tdTip(sd); return tdSegDist(tx, ty, x0, y0, x1, y1) < 7; })) { tdCrash('tre'); break; }   // body or a wing tip
     }
-    for (const c of TD.crows) if (Math.hypot(c.x - k.x, (c.y - k.y) * 1.2) < TD_KR + 20) { tdCrash('qua'); break; }
+    // a crow does not bring it down: the kite reels, knocked aside, and the crow flaps off the other way
+    for (const c of TD.crows) if (!c.hit && Math.hypot(c.x - k.x, (c.y - k.y) * 1.2) < TD_KR + 20) {
+      c.hit = true; c.v = -c.v * 1.3; TD.wobble = 1.3; k.vx = (k.x < c.x ? -1 : 1) * 320; k.climb *= .6; AU.caw(); AU.thump();
+    }
     if (TD.phase === 'fly' && k.y < TD.top - 140) { TD.phase = 'done'; TD.phaseT = 0; [79, 83, 86, 91].forEach((m, i) => setTimeout(() => AU.pluck(m), i * 170)); }
   } else if (TD.phase === 'fall') {                                      // tumbles down, string slack
     k.vy += 700 * dt; k.y += k.vy * dt; k.x += k.vx * dt; k.rot += dt * 7;
