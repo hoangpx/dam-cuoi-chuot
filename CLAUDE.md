@@ -7,7 +7,7 @@ GitHub Pages (https://hoangpx.github.io/dam-cuoi-chuot/).
 ## Layout
 
 ```
-index.html            page shell, all overlay DOM, and the loader (GAME_FILES are preloaded in parallel at once, then run in order after the fonts; #loading sheet with a progress bar until then)
+index.html            page shell (with the home-screen icon links: img/icon-180/192/512.png + manifest.webmanifest), all overlay DOM, and the loader (GAME_FILES are preloaded in parallel at once, then run in order after the fonts; #loading sheet with a progress bar until then)
 css/base.css          shared UI (sheets, cards, toast, level card)      css/chN.css  one chapter's HUD
 js/core/              boot (canvas, constants, resize, toast), woodblock (part()/dp()/paper), audio (SONGS),
                       state (S: app-wide), chapters (registry), hub (menus + input routing), main (loop)
@@ -71,9 +71,11 @@ Tranh 3 · Chăn Trâu (chan-trau.js, own art inside): the only chương III gam
 
 Tranh 4 · Thả Diều (tha-dieu.js): intro (boy on the buffalo — tranh 3's art via tdHerd — holds the kite up, throws it),
 then the camera follows the kite up (world y down, TD.camY) so the herd sinks off the bottom. The kite climbs by itself;
-← → / ◀ ▶ (padOn while flying, split) steer it with inertia through rows of bamboo branches (tdCourse: one long branch
+hold a finger / the mouse and slide sideways (TD.hold: the kite chases the finger's x); on computers also
+← → / ◀ ▶ (padOn while flying on computers only, split) steer it through rows of bamboo branches (tdCourse: one long branch
 from a side, or both sides with a gap, narrowing higher up) and past crows; a branch (body or a wing tip) or a crow →
-the kite falls → game.onFail → the shell's fail screen. Clearing TD.top (bamboo height TD_HEIGHT) wins; record = time.
+the kite falls → game.onFail → the shell's fail screen. Clearing TD.top (bamboo height TD_HEIGHT) wins; record = time. Gusts every few s (TD.gust) boost the climb and show as
+wind lines. tdOverlay shows a finger (mouse) sliding between two arrows until the player first steers.
 The kite is the print's arched wing kite with a ribbon from each tip. Song SONGS[5] (inst 'sao' bamboo flute + drone =
 the hum of the kite flute). Reward img/ch3/tha-dieu.jpg (the owner's print, yellow mat cropped off; falls back to tdPrint if the file is missing),
 whose Nôm inscription (top left, cut at run time) sits in the open sky beside the red sun above the bamboo.
