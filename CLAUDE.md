@@ -46,7 +46,7 @@ every gift rides in the groom's hand (`leadItem()`, dragged from `handPos()`). `
 - A brand-new player (no saved progress in any chapter: each chapter's `hasProgress()`) skips the menus and starts
   chương I tranh 1 (`playFirst()`); returning players get the title → chapter picker. The party never starts
   left of x 340 so all four mice are on screen.
-- Controls how-to (js/ch1/howto.js): corner panel with ← → keys and a woodblock computer-mouse critter (finger on touch,
+- Controls how-to (js/ch1/howto.js): corner ← → keys and a woodblock computer-mouse critter, no panel and no text (finger on touch,
   and the ◀ ▶ pad pulses). Shows only what the player has not done yet (walked 160 px / a tap that hit something),
   remembers it in localStorage 'dcc.how', and reappears after 10 s idle or 2.5 s pushing against a wall.
 - Each chapter: its own gameplay and its own song, same art style. Don't rework finished chapters unasked.
