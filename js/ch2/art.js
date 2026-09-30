@@ -63,8 +63,9 @@ function buildC2Parts() {
     a.fk(kind === 'noun' ? 'white' : kind === 'is' ? 'yellow' : 'green', rect(-36, -36, 72, 72), 2.8);
     if (kind === 'noun') a.fill('red', rect(-36, -36, 72, 9)); else if (kind === 'prop') a.fill('white', rect(-36, -36, 72, 9));
     a.key(rect(-31, -31, 62, 62), 1.2);
-    a.text(han, 0, -4, 42, 'dark', undefined, 'ink');
-    a.text(vi, 0, 26, vi.length > 4 ? 13 : 16, 'dark', display, 'ink', 900);
+    const n = [...vi].length, size = n <= 2 ? 28 : n === 3 ? 23 : n === 4 ? 20 : 16.5;
+    a.text(vi, 0, -4, size, 'dark', display, 'ink', 900);
+    a.text(han, 0, 22, 17, 'dark', undefined, 'ink');
     if (fixed) for (const [x, y] of [[-29, -29], [29, -29], [-29, 29], [29, 29]]) a.ink(circ(x, y, 3.2));
   });
   for (const k in C2K) { T.tiles['n:' + k] = tile(C2K[k].han, C2K[k].vi, 'noun', false); T.tiles['n:' + k + ':f'] = tile(C2K[k].han, C2K[k].vi, 'noun', true); }
