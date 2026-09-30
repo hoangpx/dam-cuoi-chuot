@@ -1,0 +1,22 @@
+/* Chương I · Đám Cưới Chuột: HUD tags, ability bar (tranh 4–6), walk pad. */
+#hud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;z-index:4;pointer-events:none}
+#hud .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#lvName{font-family:var(--display);font-weight:900;font-size:15px;pointer-events:auto;cursor:pointer}
+#watch{font-family:var(--display);font-weight:900;font-size:16px;padding:5px 12px;border:2px solid var(--ink);background:var(--diep)}
+#watch.warn{background:var(--paper-hi)}
+#watch.on{background:var(--son);color:var(--diep)}
+#abil{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:96vw;z-index:4}
+#abil button.pl i{display:inline-block;width:12px;height:12px;border:1.5px solid var(--ink);border-radius:50%}
+#abil button#bRed i{background:#a3332a}#abil button#bGreen i{background:#2f6a4c}#abil button#bYellow i{background:#f2c640}
+#abil button.pl.on{outline:3px solid var(--ink);outline-offset:1px}
+#holdTag{background:var(--paper-hi)}
+#abil button{font-family:var(--display);font-weight:700;font-size:16px;color:var(--ink);background:rgba(242,236,222,.92);border:2px solid var(--ink);padding:8px 14px;cursor:pointer;box-shadow:3px 3px 0 rgba(29,25,21,.35);display:flex;align-items:center;gap:8px;touch-action:manipulation}
+#abil button .k{font-family:var(--body);font-size:11px;font-weight:600;border:1.5px solid var(--ink);padding:0 5px;background:var(--diep)}
+#abil button.on{background:var(--son);color:var(--diep)}
+#abil button#bOffer{background:var(--son);color:var(--diep)}
+#pad{position:fixed;left:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;z-index:4}
+#pad button{width:66px;height:66px;border-radius:50%;border:2px solid var(--ink);background:rgba(242,236,222,.85);font-size:24px;color:var(--ink);touch-action:none;box-shadow:3px 3px 0 rgba(29,25,21,.35)}
+body.touch #abil{left:auto;right:12px;transform:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:none}
+body.touch #abil button .k{display:none}
+body.touch #abil button{padding:7px 8px;font-size:14px}
+body.touch #pad button{width:60px;height:60px}

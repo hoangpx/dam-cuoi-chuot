@@ -1,0 +1,24 @@
+/* Canvas, device constants and the view scale shared by every chapter.
+   All game files are plain scripts that share one global scope; index.html loads them in order. */
+const $ = s => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const isTouch = matchMedia('(pointer: coarse)').matches;
+if (isTouch) document.body.classList.add('touch');
+const DPR = Math.min(devicePixelRatio || 1, isTouch ? 1.5 : 2);
+const RES = isTouch ? 1.25 : 2;                        // part pre-render resolution
+const VIEW_H = 430, GROUND = 352;
+const INK = '#1d1915';
+
+
+let scale = 1, viewH = VIEW_H, offY = 0;
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  cv.width = Math.max(1, Math.round(w * DPR)); cv.height = Math.max(1, Math.round(h * DPR));
+  scale = Math.max(.05, Math.min(h / VIEW_H, w / 560));
+  viewH = h / scale; offY = (viewH - VIEW_H) / 2;
+}
+addEventListener('resize', resize); resize();
+
+let toastTimer;
+function toast(s, d = 2.8) { $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
+function capturePointer(e, el = cv) { try { el.setPointerCapture(e.pointerId); } catch (err) {} }
