@@ -32,7 +32,7 @@
   <button data-a="offer" id="bOffer" hidden><span class="k">E</span>Dâng cá</button>
 </div>
 
-<div id="title" class="ov">
+<div id="title" class="ov" hidden><!-- no longer shown: new players go straight into chương I, returning ones to the chapter picker -->
   <div class="sheet">
     <div class="han">老鼠娶親</div>
     <h1>Đám Cưới Chuột</h1>
@@ -44,7 +44,8 @@
 
 <div id="chapters" class="ov" hidden>
   <div class="sheet wide">
-    <h2>Chọn chương</h2>
+    <h2>Đám Cưới Chuột</h2>
+    <div class="han">老鼠娶親</div>
     <p>Mỗi chương là một lối chơi khác, cùng chung phong cách tranh khắc gỗ Đông Hồ.</p>
     <div class="grid" id="chapCards"></div>
   </div>
@@ -64,6 +65,8 @@
   <div class="tools">
     <button class="tag" id="c2Undo">↶ Hoàn tác<span class="kk">Z</span></button>
     <button class="tag" id="c2Reset">⟲ Chơi lại<span class="kk">R</span></button>
+    <button class="tag" id="c2Help">Luật chơi</button>
+    <button class="tag" id="c2Tip">Gợi ý</button>
   </div>
 </div>
 <div id="c2rules" hidden></div>
@@ -84,17 +87,36 @@
 </div>
 
 <div id="err" hidden></div>
+<!-- shown from the first paint (plain HTML + inline CSS, no fonts or scripts needed) until the loader has run every file -->
+<div id="loading"><div class="lc">
+  <div class="seal">囍</div>
+  <b>Đám Cưới Chuột</b>
+  <div class="bar"><i id="loadBar"></i></div>
+  <span>Đang khắc ván…</span>
+</div></div>
+<style>
+#loading{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:#e2b43c;transition:opacity .35s}
+#loading.done{opacity:0;pointer-events:none}
+#loading .lc{display:flex;flex-direction:column;align-items:center;gap:12px;color:#1d1915;font-family:'Playfair Display','Times New Roman',serif}
+#loading .seal{width:64px;height:64px;display:grid;place-items:center;background:#a3332a;color:#f2ecde;border:3px solid #1d1915;font-size:38px;line-height:1;box-shadow:3px 3px 0 rgba(29,25,21,.35);animation:sealBob 1.2s ease-in-out infinite}
+#loading b{font-size:30px;font-weight:900}
+#loading .bar{width:min(240px,64vw);height:12px;border:2px solid #1d1915;background:#f2ecde}
+#loading .bar i{display:block;height:100%;width:4%;background:#a3332a;transition:width .2s}
+#loading span{font-size:15px;font-style:italic}
+@keyframes sealBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+@media (prefers-reduced-motion:reduce){#loading .seal{animation:none}}
+</style>
 
 <script>
-window.addEventListener('unhandledrejection', e => { const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; el.textContent = 'Không khởi động được trò chơi: ' + (e.reason && e.reason.message || 'lỗi không rõ'); } });
-window.addEventListener('error', e => { const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; el.textContent = 'Không khởi động được trò chơi: ' + (e.message || 'lỗi không rõ'); } });
+window.addEventListener('unhandledrejection', e => { const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; const ld = document.getElementById('loading'); if (ld) ld.remove(); el.textContent = 'Không khởi động được trò chơi: ' + (e.reason && e.reason.message || 'lỗi không rõ'); } });
+window.addEventListener('error', e => { const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; const ld = document.getElementById('loading'); if (ld) ld.remove(); el.textContent = 'Không khởi động được trò chơi: ' + (e.message || 'lỗi không rõ'); } });
 </script>
 <script>
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-09-30m';
-const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰';
+const VERSION = '2026-09-30x';
+const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚ';
 const GAME_FILES = [
   'js/core/boot.js',
@@ -123,10 +145,14 @@ const GAME_FILES = [
   'js/ch3/art.js',
   'js/ch3/ga-me-con.js',
   'js/ch3/hung-dua.js',
+  'js/ch3/chan-trau.js',
   'js/ch3/game.js',
   'js/core/hub.js',
   'js/core/main.js',
 ];
+// every file starts downloading now, alongside the fonts (one after another cost a network round trip each)
+for (const f of GAME_FILES) { const l = document.createElement('link'); l.rel = 'preload'; l.as = 'script'; l.href = f + '?v=' + VERSION; document.head.appendChild(l); }
+const loadBar = k => { const b = document.getElementById('loadBar'); if (b) b.style.width = Math.round(4 + k * 96) + '%'; };
 (async () => {
   try {
     await Promise.race([
@@ -134,11 +160,16 @@ const GAME_FILES = [
       new Promise(r => setTimeout(r, 3000)),
     ]);
   } catch (e) {}
-  for (const f of GAME_FILES) await new Promise((ok, bad) => {
-    const s = document.createElement('script'); s.src = f + '?v=' + VERSION; s.async = false;
-    s.onload = ok; s.onerror = () => bad(new Error('không tải được ' + f));
-    document.body.appendChild(s);
+  loadBar(.2);
+  await new Promise((ok, bad) => {                // async = false: they still run in list order
+    let left = GAME_FILES.length;
+    for (const f of GAME_FILES) {
+      const s = document.createElement('script'); s.src = f + '?v=' + VERSION; s.async = false;
+      s.onload = () => { left--; loadBar(.2 + .8 * (1 - left / GAME_FILES.length)); if (left === 0) ok(); }; s.onerror = () => bad(new Error('không tải được ' + f));
+      document.body.appendChild(s);
+    }
   });
+  const ld = document.getElementById('loading'); ld.classList.add('done'); setTimeout(() => ld.remove(), 400);
   if (window.__onGameReady) window.__onGameReady();
 })();
 </script>

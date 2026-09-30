@@ -10,8 +10,10 @@ function tick(dt) {
 }
 function draw() { activeChapter().render(); }
 coverChapter().boot();
-// a brand-new player skips the menus and starts playing; anyone with saved progress gets the title and chapter picker
-if (!CHAPTERS.some(c => c.hasProgress && c.hasProgress())) coverChapter().playFirst();
+// start the audio device now, silent until the first tap resumes it: opening it on that tap froze the page for a second
+AU.init();
+// a brand-new player skips the menus and starts playing; anyone with saved progress goes straight to the chapter picker
+if (!CHAPTERS.some(c => c.hasProgress && c.hasProgress())) coverChapter().playFirst(); else showChapters();
 let last = performance.now();
 function step(dt) { tick(dt); draw(); }
 function frame(now) {

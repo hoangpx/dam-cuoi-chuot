@@ -8,3 +8,4 @@
 #c3Stat{margin:0;font-family:var(--display);font-weight:900;font-size:15px}
 #c3Praise{margin:0 0 8px;font-family:var(--display);font-weight:900;font-size:clamp(18px,4.6vw,26px);color:var(--diep);background:var(--son);border:2px solid var(--ink);padding:6px 16px;text-align:center;box-shadow:3px 3px 0 rgba(29,25,21,.35)}
 #c3Praise:empty{display:none}
+#c3Time.hurry{background:var(--son);color:var(--diep)}

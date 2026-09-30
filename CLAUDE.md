@@ -7,7 +7,7 @@ GitHub Pages (https://hoangpx.github.io/dam-cuoi-chuot/).
 ## Layout
 
 ```
-index.html            page shell, all overlay DOM, and the loader (fonts first, then GAME_FILES in order)
+index.html            page shell, all overlay DOM, and the loader (GAME_FILES are preloaded in parallel at once, then run in order after the fonts; #loading sheet with a progress bar until then)
 css/base.css          shared UI (sheets, cards, toast, level card)      css/chN.css  one chapter's HUD
 js/core/              boot (canvas, constants, resize, toast), woodblock (part()/dp()/paper), audio (SONGS),
                       state (S: app-wide), chapters (registry), hub (menus + input routing), main (loop)
@@ -15,7 +15,7 @@ js/art/               shared parts: mice, cat, props, world, market; build.js re
 js/ch1/               Chương I · Đám Cưới Chuột: state, entities (shared blocks), tranhN-*.js, game.js (engine)
 js/ch2/               Chương II · Chữ Là Luật: levels (maps), engine (pure rules), art, game
 js/ch3/               Chương III · Nhanh Tay Nhanh Mắt (kids' quick games, open from the start): state (C3GAMES, saves),
-                      art (hen, chicks, nest, mound), one file per game (ga-me-con.js, hung-dua.js), game.js (shell, reward print)
+                      art (hen, chicks, nest, mound), one file per game (ga-me-con.js, hung-dua.js, chan-trau.js), game.js (shell, reward print)
 tools/regress/        deterministic regression run (see below)
 v1/                   frozen old single-file version (5-mouse party), kept at /v1/ — do not edit
 v2/                   redirect to the root (v2 was promoted to the main version)
@@ -55,18 +55,34 @@ on white paper, hen tail printed separately so its key lines stay behind the bod
 Tranh 2 · Hứng Dừa (hung-dua.js, own art inside): the player does not move the catcher — tap a ripe (brown) coconut and
 the boy twists it off; the girl strolls/turns/pauses on her own, so the skill is timing. Only a nut landing in the
 mouth of her lifted skirt counts (±22·HD_GIRL); catching a green one, or a nut hitting one of the two children running
-about under the palm, costs a coconut (hdLose, red "−1");
+about under the palm, costs a coconut (hdLose, red "−1"); a round is 3 minutes (timeLimit 180, countdown clock) — at the whistle ≥ 3 is a pass
+(penalties can drop you under), the count is the record (SAVE3.most), else a fail screen; its own song (SONGS[3]);
 wind (fronds, drifting leaves) pushes falling nuts; the whole palm leans and sways about its foot (hdSway, about -4..8°),
 so nuts move and a nut picked mid-swing flies off with the palm's momentum; taps are tested in the palm frame (hdWorld). Ten caught → img/ch3/hung-dua.png. Laid out portrait-first; on wide screens it asks the shell for a taller logical
-view (`short: p => p ? 460 : 860`) so the palm is as tall as on a phone and centred.
+view (`short: p => p ? 460 : 860`) so the palm is as tall as on a phone and centred. The Nôm inscription from the print (img/ch3/hung-dua-chu.png, cropped
+by the owner) is printed ink-only into the empty sky beside the palm (hdText strips the paper and crop-edge strays). The
+round's red countdown disc is drawn in the scene on the other side of the palm, level with the inscription (`ownClock: true`
+hides the shell's corner #c3Time); the coconut count sits under the green ground strip.
+
+Tranh 3 · Chăn Trâu (chan-trau.js, own art inside): the only chương III game that walks — `pad: true` shows the ◀ ▶
+buttons on touch and c3Key feeds ← → into chương I's `keys`/`touchDir` (read by ctDir). Chase: the buffalo wanders/dashes/
+shies from the boy; a tap lobs the lasso high onto that point (flight .7 s + d/1100, a shadow marks the spot), holding only if it
+lands within ~44·scale of the neck (32 of the head) — so it has to be thrown ahead of the running buffalo. The print's inscription is cut
+from img/ch3/chan-trau.png at run time (ctText, ink-only) into the sky top right. Roped: it is dragged to CT.C and turns its head (stamps, then swings; faster as the ring closes);
+the boy walks the ring (→ = anticlockwise, i.e. right along the near side); within CT_ALIGN of the head direction the ring
+draws in (CT_IN/s), else it opens (CT_OUT/s); the ring is red with a green arc of ±CT_ALIGN at the head direction that follows it round; rMin → tamed (boy hops on, flute, win after 1.4 s); rMax (dashed
+ring) → breaks loose, back to chasing. Ground is a front-seen plane squashed by CT_K; the buffalo fakes turning by
+foreshortening the body and swapping side/front/back heads. Record = fastest time; SONGS[4] (tense, 150 bpm).
 
 ## Design rules from the owner
 
 - Vietnamese first and large, Hán characters under it and small (cards, sheets, level card, chương II word tiles);
   keep Hán to a minimum.
-- No hint text; players discover by tapping and dragging. Controls: walk (← → / ◀ ▶) and tap/drag only.
+- No hint text; players discover by tapping and dragging. Exception the owner asked for: chương II has two HUD buttons,
+  "Luật chơi" (how the game works) and "Gợi ý" (the map's hint, only on the first C2_TIPS = 3 maps), each opening #c2help
+  only when tapped; a move closes it. Controls: walk (← → / ◀ ▶) and tap/drag only.
 - A brand-new player (no saved progress in any chapter: each chapter's `hasProgress()`) skips the menus and starts
-  chương I tranh 1 (`playFirst()`); returning players get the title → chapter picker. The party never starts
+  chương I tranh 1 (`playFirst()`); returning players go straight to the chapter picker (the old #title sheet is never shown). AU.init() runs at boot so the audio device opens silently before the first tap (opening it on the tap froze the page ~1 s). The party never starts
   left of x 340 so all four mice are on screen.
 - Controls how-to (js/ch1/howto.js): corner ← → keys and a woodblock computer-mouse critter, no panel and no text (finger on touch,
   and the ◀ ▶ pad pulses). Shows only what the player has not done yet (walked 160 px / a tap that hit something),

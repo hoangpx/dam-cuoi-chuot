@@ -3,12 +3,14 @@
    The player does not move the catcher: tap a RIPE (brown) coconut and the boy twists it off, so the trick is to pick
    the moment she is about to pass underneath. Only a coconut that drops right into the lifted front of her skirt counts.
    Green coconuts come off too, but catching one costs a coconut; so does dropping one on the head of either of the
-   two children running about under the palm. The wind (shown by the swaying fronds
+   two children running about under the palm.
+   A round lasts 3 minutes: keep catching until the time is up; at the whistle 3 or more coconuts is a pass (penalties
+   can take you back under 3), and the number caught is the record. The wind (shown by the swaying fronds
    and drifting leaves) pushes falling coconuts sideways. The whole palm leans and sways about its foot, so the coconuts
    are always moving and one picked mid-swing flies off with the palm's momentum. Ten caught → the "Hứng dừa" print.
    Laid out for a portrait phone first; on wide screens the girl's walk is kept under the crown. */
 const HD = { W: 460, H: 995, t: 0, ang: 0, angV: 0, caught: 0, missed: 0, won: false, slots: [], falling: [], leaves: [], wind: 0, windTo: 0, windT: 0, onWin: null };
-const HD_GOAL = 10, HD_G = 900, HD_GIRL = 1.2;             // the girl is drawn a little larger so she reads well on a phone
+const HD_TIME = 180, HD_PASS = 3, HD_G = 900, HD_GIRL = 1.2;             // the girl is drawn a little larger so she reads well on a phone
 
 /* ---------- art ---------- */
 let HDART = null;
@@ -82,6 +84,45 @@ function hdArt() {
   return HDART;
 }
 const hdTrunk = len => { const A = hdArt(), k = Math.round(len / 20) * 20; return A.trunkCache[k] || (A.trunkCache[k] = A.trunk(k)); };
+
+// the Nôm inscription from the real print (img/ch3/hung-dua-chu.png): only its ink is kept, so it prints onto our paper
+let HD_TEXT = null;
+function hdText() {
+  if (HD_TEXT) return HD_TEXT.ready ? HD_TEXT.c : null;
+  HD_TEXT = { ready: false, c: null };
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+    const W0 = c.width, H0 = c.height;
+    for (let i = 0; i < p.length; i += 4) {
+      const px = (i / 4) % W0, py = Math.floor(i / 4 / W0), stray = px < W0 * .09 || px > W0 * .97 || py < H0 * .035 || (py > H0 * .89 && px < W0 * .55);   // bits of frond and a flower caught at the crop edges
+      const lum = .3 * p[i] + .59 * p[i + 1] + .11 * p[i + 2]; p[i + 3] = stray ? 0 : Math.max(0, Math.min(1, (165 - lum) / 85)) * p[i + 3]; p[i] = 29; p[i + 1] = 25; p[i + 2] = 21; }
+    x.putImageData(d, 0, 0); HD_TEXT.c = c; HD_TEXT.ready = true;
+  };
+  img.src = 'img/ch3/hung-dua-chu.png';
+  return null;
+}
+
+// where the inscription sits (right of the palm) and, mirrored across the trunk, the clock
+function hdTextBox() {
+  const p = HD.H > HD.W, h = HD.H * (p ? .3 : .34), w = h * 131 / 331;
+  return { x: p ? HD.W - w - 28 : HD.W * .74, y: p ? HD.H * .38 : HD.H * .2, w, h };
+}
+// the round's time as a red woodblock disc that unwinds backwards, with the seconds left in the middle
+function hdDrawClock(g, box) {
+  const left = Math.max(0, HD_TIME - (typeof C3 !== 'undefined' ? C3.time : 0)), k = left / HD_TIME, sec = Math.ceil(left);
+  const p = HD.H > HD.W, cx = p ? 64 : Math.max(90, 2 * HD.base.x - (box.x + box.w / 2)), cy = box.y + box.h / 2, r = p ? 46 : 58;
+  const hurry = sec <= 10 && left > 0, pulse = hurry ? 1 + Math.max(0, Math.sin(HD.t * 10)) * .08 : 1;
+  g.save(); g.translate(cx, cy); g.scale(pulse, pulse);
+  g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, r, 0, 6.283); g.fill(); g.stroke();
+  g.fillStyle = '#a3332a'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r - 7, -Math.PI / 2, -Math.PI / 2 - k * 6.283, true); g.closePath(); g.fill();
+  g.fillStyle = '#f2ecde'; g.beginPath(); g.arc(0, 0, r - 19, 0, 6.283); g.fill(); g.lineWidth = 1.4; g.stroke();
+  g.font = `900 ${p ? 22 : 26}px "Playfair Display", serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#a3332a';
+  g.fillText(c3Clock(sec), 0, 1);
+  g.restore();
+}
 
 /* ---------- layout ---------- */
 function hdLayout() {
@@ -160,7 +201,7 @@ function hdUpdate(dt) {
         if (f.green) { hdLose(ax, HD.apronY - 30); AU.snort(); }                  // a green one: that costs a coconut
         else {
           HD.caught++; g.load = Math.min(3, HD.caught); AU.pluck(78 + HD.caught); AU.drumOne();
-          if (HD.caught >= HD_GOAL) { HD.won = true; HD.smart = HD.missed === 0 && HD.lost === 0; if (HD.onWin) { const cb = HD.onWin; HD.onWin = null; cb(); } }
+
         }
       } else if (!HD.won && !f.bounced && y0 < headY && f.y >= headY && HD.kids.some(k => Math.abs(f.x - k.x) < 24 && (f.kid = k))) {
         const k = f.kid; k.dizzy = 1.4; f.bounced = true; f.vy = -260; f.vx = (f.x < k.x ? -1 : 1) * 140; hdLose(k.x, headY - 40); AU.thump(); AU.snort();
@@ -193,6 +234,10 @@ function hdDown(x, y) {
 function hdRender(g) {
   const A = hdArt(), W = HD.W, H = HD.H, girl = HD.girl, t = HD.t;
   dp(g, c3Mound(W * .96), W / 2, HD.ground + 26);
+  // the inscription in the empty sky to the right of the palm, as on the print
+  const tx = hdText();
+  const box = hdTextBox(); if (tx) g.drawImage(tx, box.x, box.y, box.w, box.h);
+  hdDrawClock(g, box);
   for (const l of HD.leaves) dp(g, A.leafBit, l.x, l.y, Math.sin(l.t * 4 + l.ph) * .6 + HD.wind * .5);
   // the palm leans and sways about its foot; everything on it moves with it
   g.save(); g.translate(HD.base.x, HD.base.y); g.rotate(HD.ang); g.translate(-HD.base.x, -HD.base.y);
@@ -234,16 +279,24 @@ function hdRender(g) {
   for (let i = 0; i < girl.load; i++) dp(g, A.ripe, 30 + i * 6, -70 - i * 4, 0, .45, .45);   // a few coconuts show in the sling
   g.restore();
   for (const e of HD.fx) { const k = e.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 40px "Playfair Display", serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = '#a3332a'; g.strokeText('−1', e.x, e.y - k * 50); g.fillText('−1', e.x, e.y - k * 50); g.restore(); }
-  // ten coconuts along the top: filled as they are caught
-  for (let i = 0; i < HD_GOAL; i++) { g.save(); g.globalAlpha = i < HD.caught ? 1 : .22; const gap = W < 520 ? 40 : 44; g.translate(W / 2 - 4.5 * gap + i * gap, (H > W ? 118 : 64) + (i < HD.caught ? Math.sin(t * 4 + i) * 1.5 : 0)); g.scale(.72, .72); dp(g, A.ripe, 0, 0); g.restore(); }
+  // under the green ground strip: the three needed to pass, then how many have been caught
+  const ty = Math.min(H - 44, HD.ground + (H > W ? 86 : 78)), gap = 44, tx0 = W / 2 - gap * 1.6;
+  g.save(); g.globalAlpha = .88; g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(tx0 - 30, ty - 30, gap * HD_PASS + 110, 56, 14); g.fill(); g.globalAlpha = 1; g.stroke(); g.restore();   // a paper strip so the count reads over the fronds
+  for (let i = 0; i < HD_PASS; i++) { const on = i < HD.caught; g.save(); g.globalAlpha = on ? 1 : .22; g.translate(tx0 + i * gap, ty + (on ? Math.sin(t * 4 + i) * 1.5 : 0)); g.scale(.72, .72); dp(g, A.ripe, 0, 0); g.restore(); }
+  g.save(); g.font = '900 34px "Playfair Display", serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = HD.caught >= HD_PASS ? '#2f6a4c' : INK;
+  const label = '× ' + HD.caught; g.strokeText(label, tx0 + HD_PASS * gap - 8, ty - 4); g.fillText(label, tx0 + HD_PASS * gap - 8, ty - 4); g.restore();
 }
 
 C3GAMES[1] = {
   han: '承椰', name: 'Hứng Dừa', paper: 'white',
   short: portrait => portrait ? 460 : 860,         // wide screens: zoom out so the palm is as tall as on a phone
   print: 'img/ch3/hung-dua.png',                 // the reward: the real Đông Hồ print
-  isWon: () => HD.won,
-  praise: () => HD.smart ? 'Mắt tinh quá! Không sai quả nào!' : 'Giỏi lắm! Hứng đủ 10 quả dừa!',
+  isWon: () => false,                            // the round only ends when the time is up
+  timeLimit: HD_TIME, scoring: 'count', song: 3, ownClock: true,
+  score: () => HD.caught,
+  passed: () => HD.caught >= HD_PASS,
+  praise: () => HD.lost === 0 && HD.missed === 0 ? 'Mắt tinh quá! Không sai quả nào!' : 'Giỏi lắm! Bạn đã qua!',
+  failText: () => 'Hết giờ! Cần hứng ít nhất ' + HD_PASS + ' quả dừa.',
   start: hdStart, update: hdUpdate, render: hdRender,
   printRender(g, W, H) { g.fillStyle = '#f2ecde'; g.fillRect(W / 2 - 140, H / 2 - 180, 280, 360); },
   down: hdDown, move() {}, up() {},
