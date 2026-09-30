@@ -19,6 +19,7 @@ Game giải đố phong cách tranh dân gian Đông Hồ, vẽ hoàn toàn bằ
 - **Chương II · Chữ Là Luật** (8 tranh Nhập môn + 6 tranh Cao thủ): chữ khắc gỗ là luật chơi (kiểu Baba Is You). Đẩy chữ để ghép, phá hay đổi luật (CHUỘT LÀ ĐI, TƯỜNG LÀ CHẶN, MÈO LÀ CÁ, LỬA LÀ CỔNG…). Có hoàn tác (Z), chơi lại (R), vuốt hoặc nút mũi tên trên điện thoại. Mọi màn đều đã được máy giải tự động kiểm chứng.
 - **Chương III · Nhanh Tay Nhanh Mắt** (mở sẵn): trò nhanh tay nhanh mắt cho các bạn nhỏ, chơi xong được tặng tranh Đông Hồ.
   - Tranh 1 · Đàn Gà Mẹ Con: gà mẹ gọi con về tổ, kéo 10 gà con về tổ trước khi trời tối.
+  - Tranh 2 · Hứng Dừa: chạm quả dừa chín đúng lúc cô gái đi tới bên dưới để cậu bé thả xuống cho cô hứng.
 
 Điều khiển: ← → hoặc A D để đi, chạm hoặc bấm chuột vào đồ vật trong tranh. Trên điện thoại dùng nút trên màn hình.
 
