@@ -51,3 +51,19 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 .card .cd{font-size:12px;line-height:1.4;margin:8px 0 0;font-weight:400}
 @media (max-width:560px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{padding:10px 6px 8px}.card .ch{font-size:34px}.card b{font-size:17px}.sheet{padding:18px 16px 16px}.sheet.wide{padding:16px 12px}}
 @media (prefers-reduced-motion:reduce){#lvCard,#toast{transition:none}}
+
+/* Vietnamese first and large, Hán characters under it and small (owner's rule) */
+.sheet{display:flex;flex-direction:column;align-items:center}
+.sheet > *{order:3}
+.sheet > h1,.sheet > h2{order:1}
+.sheet > .han{order:2;font-size:18px;margin:6px 0 0;letter-spacing:.15em}
+.sheet > .grid,.sheet > .row{align-self:stretch}
+.card{display:flex;flex-direction:column;align-items:center}
+.card .num{order:1}
+.card b{order:2;margin-top:6px}
+.card .ch{order:3;font-size:18px;line-height:1.2;margin:4px 0 0;opacity:.8}
+.card .cd{order:4}
+.card .st{order:5}
+#lvCard{display:flex;flex-direction:column;align-items:center}
+#lvCard b{order:1;margin-top:0;font-size:clamp(24px,4.6vw,38px)}
+#lvCard .han{order:2;font-size:clamp(18px,3.2vw,28px);margin-top:8px}

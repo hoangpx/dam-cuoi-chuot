@@ -62,6 +62,8 @@ view (`short: p => p ? 460 : 860`) so the palm is as tall as on a phone and cent
 
 ## Design rules from the owner
 
+- Vietnamese first and large, Hán characters under it and small (cards, sheets, level card, chương II word tiles);
+  keep Hán to a minimum.
 - No hint text; players discover by tapping and dragging. Controls: walk (← → / ◀ ▶) and tap/drag only.
 - A brand-new player (no saved progress in any chapter: each chapter's `hasProgress()`) skips the menus and starts
   chương I tranh 1 (`playFirst()`); returning players get the title → chapter picker. The party never starts
