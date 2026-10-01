@@ -19,9 +19,9 @@ Game giải đố phong cách tranh dân gian Đông Hồ, vẽ hoàn toàn bằ
 - **Chương II · Chữ Là Luật** (8 tranh Nhập môn + 6 tranh Cao thủ): chữ khắc gỗ là luật chơi (kiểu Baba Is You). Đẩy chữ để ghép, phá hay đổi luật (CHUỘT LÀ ĐI, TƯỜNG LÀ CHẶN, MÈO LÀ CÁ, LỬA LÀ CỔNG…). Có hoàn tác (Z), chơi lại (R), vuốt hoặc nút mũi tên trên điện thoại. Mọi màn đều đã được máy giải tự động kiểm chứng.
 - **Chương III · Nhanh Tay Nhanh Mắt** (mở sẵn): trò nhanh tay nhanh mắt cho các bạn nhỏ, chơi xong được tặng tranh Đông Hồ.
   - Tranh 1 · Đàn Gà Mẹ Con: gà mẹ gọi con về tổ, kéo 10 gà con về tổ trước khi trời tối.
-  - Tranh 2 · Hứng Dừa: trong 3 phút, chạm quả dừa chín đúng lúc cô gái đi tới bên dưới để cô hứng bằng vạt áo; cần ít nhất 3 quả để qua, số quả hứng được là kỷ lục.
+  - Tranh 2 · Hứng Dừa: chạm quả dừa chín đúng lúc cô gái đi tới bên dưới để cô hứng bằng vạt áo; hứng đủ 3 quả là thắng, kỷ lục là thời gian nhanh nhất.
   - Tranh 3 · Chăn Trâu: ném thừng trúng cổ con trâu đang chạy, rồi đi vòng quanh cho đúng hướng đầu trâu để vòng tròn khép lại; lệch hướng thì vòng nở ra, nở hết thì trâu xổng. Kỷ lục là thời gian thuần trâu nhanh nhất.
-  - Tranh 4 · Thả Diều: cậu bé trên lưng trâu ném diều lên; giữ ngón tay rồi di sang hai bên để lái diều (máy tính: chuột, ← → hoặc nút ◀ ▶) né cành tre và quạ, có cơn gió to đẩy diều vọt lên, bay vượt ngọn tre là thắng. Kỷ lục là thời gian nhanh nhất.
+  - Tranh 4 · Thả Diều: cậu bé trên lưng trâu ném diều lên; giữ ngón tay rồi di sang hai bên để lái diều (máy tính: giữ chuột rồi kéo) né cành tre và quạ, có cơn gió to đẩy diều vọt lên, bay vượt ngọn tre là thắng. Kỷ lục là thời gian nhanh nhất.
 
 Điều khiển: ← → hoặc A D để đi, chạm hoặc bấm chuột vào đồ vật trong tranh. Trên điện thoại dùng nút trên màn hình.
 

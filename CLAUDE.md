@@ -55,13 +55,13 @@ on white paper, hen tail printed separately so its key lines stay behind the bod
 Tranh 2 · Hứng Dừa (hung-dua.js, own art inside): the player does not move the catcher — tap a ripe (brown) coconut and
 the boy twists it off; the girl strolls/turns/pauses on her own, so the skill is timing. Only a nut landing in the
 mouth of her lifted skirt counts (±22·HD_GIRL); catching a green one, or a nut hitting one of the two children running
-about under the palm, costs a coconut (hdLose, red "−1"); a round is 3 minutes (timeLimit 180, countdown clock) — at the whistle ≥ 3 is a pass
-(penalties can drop you under), the count is the record (SAVE3.most), else a fail screen; its own song (SONGS[3]);
+about under the palm, costs a coconut (hdLose, red "−1"); three in the skirt wins at once (penalties can take you back down first); record = fastest time (SAVE3.best);
+its own song (SONGS[3]);
 wind (fronds, drifting leaves) pushes falling nuts; the whole palm leans and sways about its foot (hdSway, about -4..8°),
-so nuts move and a nut picked mid-swing flies off with the palm's momentum; taps are tested in the palm frame (hdWorld). Ten caught → img/ch3/hung-dua.png. Laid out portrait-first; on wide screens it asks the shell for a taller logical
+so nuts move and a nut picked mid-swing flies off with the palm's momentum; taps are tested in the palm frame (hdWorld). Three caught → img/ch3/hung-dua.png. Laid out portrait-first; on wide screens it asks the shell for a taller logical
 view (`short: p => p ? 460 : 860`) so the palm is as tall as on a phone and centred. The Nôm inscription from the print (img/ch3/hung-dua-chu.png, cropped
 by the owner) is printed ink-only into the empty sky beside the palm (hdText strips the paper and crop-edge strays). The
-round's red countdown disc is drawn in the scene on the other side of the palm, level with the inscription (`ownClock: true`
+elapsed-time red disc (its ring goes round once a minute) is drawn in the scene on the other side of the palm, level with the inscription (`ownClock: true`
 hides the shell's corner #c3Time); the coconut count sits under the green ground strip.
 
 Tranh 3 · Chăn Trâu (chan-trau.js, own art inside): the only chương III game that walks — c3Key feeds ← → into chương I's
@@ -71,8 +71,8 @@ Tranh 3 · Chăn Trâu (chan-trau.js, own art inside): the only chương III gam
 
 Tranh 4 · Thả Diều (tha-dieu.js): intro (boy on the buffalo — tranh 3's art via tdHerd — holds the kite up, throws it),
 then the camera follows the kite up (world y down, TD.camY) so the herd sinks off the bottom. The kite climbs by itself;
-hold a finger / the mouse and slide sideways (TD.hold: the kite chases the finger's x); on computers also
-← → / ◀ ▶ (padOn while flying on computers only, split) steer it through rows of bamboo branches (tdCourse: one long branch
+hold a finger / the mouse and slide sideways (TD.hold: the kite chases the finger's x) — the only control
+(no keys, no ◀ ▶ buttons, owner's choice) steers it through rows of bamboo branches (tdCourse: one long branch
 from a side, or both sides with a gap, narrowing higher up) and past crows. Holding on (finger/mouse/key) speeds up the longer it is held (TD.holdT → ×TD_TUNE.hold over TD_TUNE.ramp s), letting go brakes
 to ~45%; gusts boost it up to ×2.1; 30 s to the top (TD_TIME; game.clockDown shows a countdown) or the kite falls;
 TD_TUNE was set from bot runs (always holding ~2/10 wins, braking well ~5/10); crows come as a flock (one every 1–2 s, sometimes 2–3 at once).

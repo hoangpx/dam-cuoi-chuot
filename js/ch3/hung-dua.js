@@ -4,13 +4,12 @@
    the moment she is about to pass underneath. Only a coconut that drops right into the lifted front of her skirt counts.
    Green coconuts come off too, but catching one costs a coconut; so does dropping one on the head of either of the
    two children running about under the palm.
-   A round lasts 3 minutes: keep catching until the time is up; at the whistle 3 or more coconuts is a pass (penalties
-   can take you back under 3), and the number caught is the record. The wind (shown by the swaying fronds
+   Three in the skirt wins straight away (penalties take you back down on the way); the record is the fastest time. The wind (shown by the swaying fronds
    and drifting leaves) pushes falling coconuts sideways. The whole palm leans and sways about its foot, so the coconuts
-   are always moving and one picked mid-swing flies off with the palm's momentum. Ten caught → the "Hứng dừa" print.
+   are always moving and one picked mid-swing flies off with the palm's momentum. Three caught → the "Hứng dừa" print.
    Laid out for a portrait phone first; on wide screens the girl's walk is kept under the crown. */
 const HD = { W: 460, H: 995, t: 0, ang: 0, angV: 0, caught: 0, missed: 0, won: false, slots: [], falling: [], leaves: [], wind: 0, windTo: 0, windT: 0, onWin: null };
-const HD_TIME = 180, HD_PASS = 3, HD_G = 900, HD_GIRL = 1.2;             // the girl is drawn a little larger so she reads well on a phone
+const HD_PASS = 3, HD_G = 900, HD_GIRL = 1.2;             // the girl is drawn a little larger so she reads well on a phone
 
 /* ---------- art ---------- */
 let HDART = null;
@@ -110,14 +109,13 @@ function hdTextBox() {
   const p = HD.H > HD.W, h = HD.H * (p ? .3 : .34), w = h * 131 / 331;
   return { x: p ? HD.W - w - 28 : HD.W * .74, y: p ? HD.H * .38 : HD.H * .2, w, h };
 }
-// the round's time as a red woodblock disc that unwinds backwards, with the seconds left in the middle
+// the time so far as a red woodblock disc, its red ring going round once a minute like a clock hand
 function hdDrawClock(g, box) {
-  const left = Math.max(0, HD_TIME - (typeof C3 !== 'undefined' ? C3.time : 0)), k = left / HD_TIME, sec = Math.ceil(left);
+  const el = typeof C3 !== 'undefined' ? C3.time : 0, k = (el % 60) / 60, sec = Math.floor(el);
   const p = HD.H > HD.W, cx = p ? 64 : Math.max(90, 2 * HD.base.x - (box.x + box.w / 2)), cy = box.y + box.h / 2, r = p ? 46 : 58;
-  const hurry = sec <= 10 && left > 0, pulse = hurry ? 1 + Math.max(0, Math.sin(HD.t * 10)) * .08 : 1;
-  g.save(); g.translate(cx, cy); g.scale(pulse, pulse);
+  g.save(); g.translate(cx, cy);
   g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, r, 0, 6.283); g.fill(); g.stroke();
-  g.fillStyle = '#a3332a'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r - 7, -Math.PI / 2, -Math.PI / 2 - k * 6.283, true); g.closePath(); g.fill();
+  g.fillStyle = '#a3332a'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r - 7, -Math.PI / 2, -Math.PI / 2 + k * 6.283); g.closePath(); g.fill();
   g.fillStyle = '#f2ecde'; g.beginPath(); g.arc(0, 0, r - 19, 0, 6.283); g.fill(); g.lineWidth = 1.4; g.stroke();
   g.font = `900 ${p ? 22 : 26}px "Playfair Display", serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#a3332a';
   g.fillText(c3Clock(sec), 0, 1);
@@ -201,6 +199,7 @@ function hdUpdate(dt) {
         if (f.green) { hdLose(ax, HD.apronY - 30); AU.snort(); }                  // a green one: that costs a coconut
         else {
           HD.caught++; g.load = Math.min(3, HD.caught); AU.pluck(78 + HD.caught); AU.drumOne();
+          if (HD.caught >= HD_PASS && !HD.won) { HD.won = true; if (HD.onWin) { const cb = HD.onWin; HD.onWin = null; cb(); } }   // three: done
 
         }
       } else if (!HD.won && !f.bounced && y0 < headY && f.y >= headY && HD.kids.some(k => Math.abs(f.x - k.x) < 24 && (f.kid = k))) {
@@ -291,12 +290,9 @@ C3GAMES[1] = {
   han: '承椰', name: 'Hứng Dừa', paper: 'white',
   short: portrait => portrait ? 460 : 860,         // wide screens: zoom out so the palm is as tall as on a phone
   print: 'img/ch3/hung-dua.png',                 // the reward: the real Đông Hồ print
-  isWon: () => false,                            // the round only ends when the time is up
-  timeLimit: HD_TIME, scoring: 'count', song: 3, ownClock: true,
-  score: () => HD.caught,
-  passed: () => HD.caught >= HD_PASS,
-  praise: () => HD.lost === 0 && HD.missed === 0 ? 'Mắt tinh quá! Không sai quả nào!' : 'Giỏi lắm! Bạn đã qua!',
-  failText: () => 'Hết giờ! Cần hứng ít nhất ' + HD_PASS + ' quả dừa.',
+  isWon: () => HD.won,                           // three caught; the record is the fastest time
+  song: 3, ownClock: true,
+  praise: () => HD.lost === 0 && HD.missed === 0 ? 'Mắt tinh quá! Không sai quả nào!' : 'Giỏi lắm! Đủ 3 quả rồi!',
   start: hdStart, update: hdUpdate, render: hdRender,
   printRender(g, W, H) { g.fillStyle = '#f2ecde'; g.fillRect(W / 2 - 140, H / 2 - 180, 280, 360); },
   down: hdDown, move() {}, up() {},
