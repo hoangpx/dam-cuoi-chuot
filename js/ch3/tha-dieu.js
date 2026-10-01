@@ -8,7 +8,9 @@
    the kite reeling for a moment. Touching a branch brings the kite down (a fail), and so does running out of time (TD_TIME, 30 s on a countdown clock);
    clearing the tops of the bamboo wins. The record is the fastest climb.
    World coordinates are screen-like (y down); the camera keeps the kite a little below the middle of the screen. */
-const TD = { W: 460, H: 995, t: 0, phase: 'intro', phaseT: 0, camY: 0, onWin: null, onFail: null };
+// TD.W is the width of the course (a phone's width at most); on a wide screen it sits in the middle, TD.X0 in, with
+// bamboo groves either side, so the course looks and plays the same as on a phone
+const TD = { W: 460, H: 995, X0: 0, full: 460, t: 0, phase: 'intro', phaseT: 0, camY: 0, onWin: null, onFail: null };
 const TD_ROWS0 = 1050, TD_KR = 19, TD_TIME = 30;                // first branches above the ground, kite radius, seconds to clear the top
 // tuning (from bot runs: always holding wins ~2/10, braking well ~5/10): hold = speed-up after holding for ramp seconds,
 // spacing = rows apart at the bottom, gap = width of a two-sided gap at the bottom, height = of the bamboo
@@ -155,6 +157,7 @@ function tdUpdate(dt) {
     // holding on (finger, mouse, or a key / button) flies fast; letting go brakes it to a slow climb
     // holding on speeds the kite up bit by bit (the longer, the faster); letting go brakes it to a slow climb
     const held = TD.hold !== null;
+    TD.slowT = held ? 0 : (TD.slowT || 0) + dt;                       // letting go a while: show how to speed up again
     TD.holdT = held ? Math.min(TD_TUNE.ramp, TD.holdT + dt) : Math.max(0, TD.holdT - dt * 4);
     const want = (120 + p * 50) * boost * (held ? 1 + (TD_TUNE.hold - 1) * TD.holdT / TD_TUNE.ramp : .45);
     k.climb += (want - k.climb) * Math.min(1, dt * (held ? 3 : 3.5));
@@ -218,15 +221,27 @@ function tdCrash(why) { TD.phase = 'fall'; TD.phaseT = 0; TD.why = why; TD.kite.
 /* ---------- drawing ---------- */
 function tdRender(g) {
   const A = tdArt(), W = TD.W, H = TD.H, k = TD.kite, t = TD.t;
-  g.save(); g.translate(0, -TD.camY);
+  g.save(); g.translate(TD.X0, -TD.camY);
   const vy0 = TD.camY - 60, vy1 = TD.camY + H + 60;                    // the visible band of the world
+  // wide screens: thick bamboo either side of the course, just scenery
+  if (TD.X0 > 0) {
+    const gy0 = Math.max(vy0, TD.top - 30), gy1 = Math.min(vy1, TD.ground - 40), rr = mulberry(77);
+    for (const [a, b] of [[-TD.X0, -4], [W + 4, W + TD.X0]]) for (let x = a + 14; x < b - 6; x += 30 + rr() * 16) {
+      const top = TD.top - 30 + rr() * 160, y0 = Math.max(gy0, top); if (y0 >= gy1) continue;
+      g.globalAlpha = .45 + rr() * .25; g.fillStyle = rr() < .5 ? '#3f7a58' : '#2f6a4c'; g.strokeStyle = INK; g.lineWidth = 2;
+      g.fillRect(x - 7, y0, 14, gy1 - y0); g.strokeRect(x - 7, y0, 14, gy1 - y0);
+      g.beginPath(); for (let ny = Math.ceil((y0 - top) / 70) * 70 + top; ny < gy1; ny += 70) { g.moveTo(x - 8, ny); g.quadraticCurveTo(x, ny + 3, x + 8, ny); } g.stroke();
+      if (top > vy0 - 80 && top < vy1) dp(g, tdArt().crown, x, top, 0, x < 0 ? -1 : 1, .8);
+      g.globalAlpha = 1;
+    }
+  }
   // a red sun waiting above the bamboo, and clouds on the way
   const sy = TD.top - 520; if (sy > vy0 - 80) { g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(W * .7, sy, 56, 0, 6.283); g.fill(); g.stroke(); }
   const tx = tdText(); if (tx && sy > vy0 - 300) { const h = 190, w = h * tx.width / tx.height; g.drawImage(tx, W * .2 - w / 2, sy - 90, w, h); }
   for (const c of TD.clouds) if (c.y > vy0 - 40 && c.y < vy1 + 40) dp(g, A.cloud, c.x - 70, c.y, 0, c.s, c.s);
   // ground, and the boy on his buffalo holding the string
   if (TD.ground - 200 < vy1) {
-    dp(g, c3Mound(W * .96), W / 2, TD.ground + 26);
+    dp(g, c3Mound(TD.full * .96), W / 2, TD.ground + 26);
     const hand = tdHerd(g, TD.herd.x, TD.herd.y, TD.herd.s, TD.phase === 'intro', t);
     if (TD.phase !== 'intro') tdString(g, hand[0], hand[1]);
   } else if (TD.phase !== 'intro') tdString(g, k.x - 60, vy1 + 40);
@@ -285,8 +300,20 @@ function tdPrint(g, W, H, k) {
 }
 
 function tdOverlay(g, W, H) {
+  const A = howtoArt(), t = TD.t, Z = Math.min(1.35, Math.max(1.1, W / 420));
+  // flying slowly (not held for a while): a finger / the mouse pressed and held, arrows running up above it
+  TD.holdK = (TD.holdK || 0) + ((TD.phase === 'fly' && TD.walked && TD.slowT > 2.5 ? 1 : 0) - (TD.holdK || 0)) * .12;
+  if (TD.holdK > .02) {
+    g.save(); g.setTransform(DPR * Z, 0, 0, DPR * Z, (W / 2) * DPR, (H - 90 * Z) * DPR); g.globalAlpha = TD.holdK;
+    g.strokeStyle = INK; g.lineWidth = 3; g.lineCap = g.lineJoin = 'round';
+    for (let i = 0; i < 3; i++) { const k = (t * 1.6 + i / 3) % 1, y = -62 - k * 40; g.globalAlpha = TD.holdK * Math.sin(k * Math.PI); g.beginPath(); g.moveTo(-12, y + 8); g.lineTo(0, y - 4); g.lineTo(12, y + 8); g.stroke(); }
+    g.globalAlpha = TD.holdK; const press = 1 + Math.sin(t * 6) * .04;
+    if (isTouch) { g.strokeStyle = INK; g.lineWidth = 1.6; for (const rr of [9, 15]) { g.beginPath(); g.arc(-3, -30, rr * press, 0, 6.283); g.stroke(); } dp(g, A.finger, 0, -27, -.1, .62, .62); }
+    else { dp(g, A.mouse, 0, -9, 0, .72 * press, .72 * press); dp(g, A.click, 0, -9, 0, .72 * press, .72 * press); }
+    g.restore();
+  }
   if (TD.phase !== 'fly' || TD.walked) return;
-  const A = howtoArt(), t = TD.t, Z = Math.min(1.35, Math.max(1.1, W / 420)), sx = Math.sin(t * 3) * 40;
+  const sx = Math.sin(t * 3) * 40;
   g.save(); g.setTransform(DPR * Z, 0, 0, DPR * Z, (W / 2) * DPR, (H - 90 * Z) * DPR);
   g.strokeStyle = INK; g.fillStyle = INK; g.lineWidth = 2.4;
   for (const d of [-1, 1]) { g.beginPath(); g.moveTo(d * 52, -26); g.lineTo(d * 66, -26); g.stroke(); g.beginPath(); g.moveTo(d * 72, -26); g.lineTo(d * 64, -32); g.lineTo(d * 64, -20); g.closePath(); g.fill(); }
@@ -296,7 +323,7 @@ function tdOverlay(g, W, H) {
 
 C3GAMES[3] = {
   han: '放鳶', name: 'Thả Diều', paper: 'blue',
-  short: portrait => portrait ? 460 : 620,
+  short: portrait => portrait ? 460 : 940,          // wide screens: as tall a view as a phone's, so branches show as early
   song: 5,
   // steering: only by sliding a held finger (or the mouse with its button down)
   overlay: tdOverlay,
@@ -307,8 +334,8 @@ C3GAMES[3] = {
   start: tdStart, update: tdUpdate, render: tdRender,
   print: 'img/ch3/tha-dieu.jpg',                   // the real print; if the file is missing the shell falls back to tdPrint
   printRender: tdPrint,
-  down(x) { TD.hold = x; return true; }, move(x) { if (TD.hold !== null) TD.hold = x; }, up() { TD.hold = null; },
-  resize(W, H) { const sx = W / TD.W; TD.W = W; TD.H = H; if (!TD.kite) return; const g0 = TD.ground; tdLayout(); const dy = TD.ground - g0;
+  down(x) { TD.hold = x - TD.X0; return true; }, move(x) { if (TD.hold !== null) TD.hold = x - TD.X0; }, up() { TD.hold = null; },
+  resize(W, H) { TD.full = W; TD.X0 = Math.max(0, (W - 500) / 2); W = Math.min(W, 500); const sx = W / TD.W; TD.W = W; TD.H = H; if (!TD.kite) return; const g0 = TD.ground; tdLayout(); const dy = TD.ground - g0;
     TD.kite.x *= sx; TD.kite.y += dy; TD.camY += dy; for (const r of TD.rows) { r.y += dy; r.tip *= sx; } for (const c of TD.clouds) c.y += dy; TD.crows = []; TD.tails.forEach(tl => tl.forEach(p => { p[0] *= sx; p[1] += dy; })); },
   onWin(f) { TD.onWin = f; }, onFail(f) { TD.onFail = f; },
 };

@@ -16,6 +16,8 @@ js/ch1/               Chương I · Đám Cưới Chuột: state, entities (shar
 js/ch2/               Chương II · Chữ Là Luật: levels (maps), engine (pure rules), art, game
 js/ch3/               Chương III · Nhanh Tay Nhanh Mắt (kids' quick games, open from the start): state (C3GAMES, saves),
                       art (hen, chicks, nest, mound), one file per game (ga-me-con.js, hung-dua.js, chan-trau.js, tha-dieu.js), game.js (shell, reward print)
+js/ch4/               Chương IV · Vợ Chồng Khởi Nghiệp (village-market trading game, step 1): art.js (stalls, rigs,
+                      measured speech bubbles), folk.js (names, chat scripts, calls, buy/sell lines), cho.js (the game)
 tools/regress/        deterministic regression run (see below)
 v1/                   frozen old single-file version (5-mouse party), kept at /v1/ — do not edit
 v2/                   redirect to the root (v2 was promoted to the main version)
@@ -78,8 +80,10 @@ to ~45%; gusts boost it up to ×2.1; 30 s to the top (TD_TIME; game.clockDown sh
 TD_TUNE was set from bot runs (always holding ~2/10 wins, braking well ~5/10); crows come as a flock (one every 1–2 s, sometimes 2–3 at once).
 A crow only sends the kite reeling (TD.wobble, knocked aside, slow to answer); a branch (body or a wing tip) →
 the kite falls → game.onFail → the shell's fail screen. Clearing TD.top (bamboo height TD_HEIGHT) wins; record = time. Gusts every few s (TD.gust) boost the climb and show as
-wind lines. tdOverlay shows a finger (mouse) sliding between two arrows until the player first steers.
-The kite is the print's arched wing kite with a ribbon from each tip. Song SONGS[5] (inst 'sao' bamboo flute + drone =
+wind lines. tdOverlay shows a finger (mouse) sliding between two arrows until the player first steers, and later, after 2.5 s without
+holding (TD.slowT), a finger (mouse) pressed and held with arrows running up: hold to fly faster.
+Wide screens play the same course as a phone: TD.W is capped at 500 and centred (TD.X0), bamboo groves fill the sides
+(scenery only), and the logical short side is 940 so branches show as early as on a phone. The kite is the print's arched wing kite with a ribbon from each tip. Song SONGS[5] (inst 'sao' bamboo flute + drone =
 the hum of the kite flute). Reward img/ch3/tha-dieu.jpg (the owner's print, yellow mat cropped off; falls back to tdPrint if the file is missing),
 whose Nôm inscription (top left, cut at run time) sits in the open sky beside the red sun above the bamboo.
 Chương III games may set `handCursor` (Đàn Gà Mẹ Con does): on computers the pointer is a big woodblock hand (c3DrawHand),
@@ -91,6 +95,30 @@ the boy walks the ring (→ = anticlockwise, i.e. right along the near side); wi
 draws in (CT_IN/s), else it opens (CT_OUT/s); the ring is red with a green arc of ±CT_ALIGN at the head direction that follows it round; rMin → tamed (boy hops on, flute, win after 1.4 s); rMax (dashed
 ring) → breaks loose, back to chasing. Ground is a front-seen plane squashed by CT_K; the buffalo fakes turning by
 foreshortening the body and swapping side/front/back heads. Roped, it bucks like a rodeo bull (ctBuck: rears on the hind feet / kicks the hind legs out, wilder as the ring closes; ctBuckPt moves the rope end with it). Record = fastest time; SONGS[4] (tense, 150 bpm).
+
+Chương IV · Vợ Chồng Khởi Nghiệp (js/ch4/cho.js, css/ch4.css, SAVE4 in localStorage `dcc.c4`) — HELD BACK by the owner:
+`locked()` (C4_LOCAL) keeps its card greyed "Sắp mở" everywhere but localhost (GitHub Pages and the artifact too). There is no
+"Sắp có" next-chapter card any more (the owner dropped it). a trading game modelled on the
+mechanics (not the content) of a street-vending sim, set in an old mouse village. First visit (SAVE4.intro false): the
+newly-wed couple talk it over at home (C4_TALK, c4Slip slips with the dots towards the speaker, tap/Space to go on) — he
+wants to steal food, she refuses (danger, their future children), "phi thương bất phú", so: a betel stall. The husband
+(MICE.groom) is the porter carrying the goods up from the boat; the wife (MICE.b) sells. The lane is seen a little from above: depth z (0 far edge by the houses … 1 near edge), c4Y(z)/c4S(z) give screen y and
+size, everything is drawn far-to-near. Folk: mice of 14 sorts (C4_MOUSE_SORTS: colours, conical hats, old ones stooping with a stick, children small and quick,
+who do not buy), ducks, cocks (body + rHead), dogs, toads (c4Critter; the pig was dropped — it read as an ugly buffalo),
+each named (C4_NAMES by kind / old / child); sways run on a per-walker seed, never on x (that jittered). No river: the
+husband waits behind the stall (c4HusbX), walks off out of sight for the goods and comes back carrying them. Folk walk at random depths; two who meet may stop and play a chat script from folk.js ({A}/{B} the two, {X} someone
+else present — gossip, greetings, back-biting, some about the betel couple); neighbours (C4_VENDORS) call their wares; buyers
+say what they want and the wife answers; the husband announces deliveries. Speech bubbles (c4Bubble, 13 px on the market) are measured
+in the real font (iPhone fonts run wider), have no inner frame and stay right over the speaker; one that would cover a
+more important bubble (couple, chats, buyers first) waits instead of moving. Step 1 = one stall: the seller sells by
+herself — villagers walk the lane (C4_BUSY per double-hour × C4_LV.flow), some queue (patience bar), she serves one at a time
+(C4_LV.serve), each pays C4_PRICE a quid; when stock ≤ 30% the husband fetches more (credit up to C4_DEBT, auto-repaid from cash). A day is giờ Mão–Dậu (C4_MPS game min/s, ~3.5 min) then a tally
+sheet (#c4day). Tap the stall → #c4up: gánh → sạp lều → gian mái ngói (6 s of scaffolding). Drag sideways to look along the
+lane. Money in đồng shown as quan + đồng (600 đồng a quan). Own view c4View() (closer on phones: ~430 units across, lane a
+little below the middle, sun + a faded far row of the village above, earth below). Mice drawn with c4Mouse (chương I parts).
+Straight-edged art uses c4Poly/c4Rect (smooth() rounds every corner). Song SONGS[6]. Next steps (planned with the owner):
+more stalls and dishes made step by step, helpers, weather; acquaintances + resident book + the cat demanding tribute;
+village events, market dues, the teacher, take-overs, ending in the mouse wedding.
 
 ## Design rules from the owner
 

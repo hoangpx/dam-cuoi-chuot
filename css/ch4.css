@@ -1,0 +1,24 @@
+/* Chương IV · Chợ Làng Chuột: top bar (money, day and hour, stock), end-of-day tally, upgrade sheet */
+#c4hud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;z-index:4;pointer-events:none}
+#c4hud .tag{font-family:var(--display);font-weight:900;font-size:14px;color:var(--ink);white-space:nowrap}
+#c4hud button.tag{pointer-events:auto;cursor:pointer}
+#c4hud .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#c4hud .mid{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px))}
+#c4hud .debt{background:var(--son);color:var(--diep)}
+#c4Money{font-size:16px}
+body.touch #c4hud .mid{position:static;transform:none}
+@media (max-width:520px){#c4hud{flex-wrap:wrap}#c4hud .mid{position:static;transform:none;order:3;width:100%;display:flex;justify-content:center}}
+#c4day,#c4up{position:fixed;inset:0;z-index:6;display:flex;align-items:safe center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35)}
+#c4day .card4,#c4up .card4{max-width:420px;width:100%;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:16px 18px;text-align:center;font-family:var(--body)}
+.card4 h3{margin:0 0 10px;font-family:var(--display);font-weight:900;font-size:22px}
+.card4 .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.card4 .nums div{border:2px solid var(--ink);padding:8px 4px;background:#f6f0e2;display:flex;flex-direction:column;gap:2px}
+.card4 .nums b{font-family:var(--display);font-weight:900;font-size:16px}
+.card4 .nums span{font-size:12px;opacity:.8}
+.card4 .nums .gain{background:#e3ecd0}
+.card4 p{margin:6px 0;font-size:15px;line-height:1.45}
+.card4 .nx{font-size:16px}
+.card4 .now{opacity:.75}
+.card4 .row{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.card4 .btn[disabled]{opacity:.45;cursor:not-allowed}
+#c4day .btn{margin-top:10px}

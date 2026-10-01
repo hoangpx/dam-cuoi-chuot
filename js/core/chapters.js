@@ -5,7 +5,7 @@
        boot(), playFirst() → where a brand-new player starts (cover chapter only), hasProgress() → any saved progress,
        album() → fill #cards and the album titles, hide() → tear down its own HUD,
        update(dt), render(), key(e), pointer: { down(e), move(e), up(e) },
-       next(), retry()  → end-screen buttons,
+       next(), retry()  → end-screen buttons, locked() → true to show its card greyed and closed (optional),
      })
    Menus, the loop and input only ever talk to chapters through this object. */
 

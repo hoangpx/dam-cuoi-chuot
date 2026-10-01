@@ -22,6 +22,7 @@ Game giải đố phong cách tranh dân gian Đông Hồ, vẽ hoàn toàn bằ
   - Tranh 2 · Hứng Dừa: chạm quả dừa chín đúng lúc cô gái đi tới bên dưới để cô hứng bằng vạt áo; hứng đủ 3 quả là thắng, kỷ lục là thời gian nhanh nhất.
   - Tranh 3 · Chăn Trâu: ném thừng trúng cổ con trâu đang chạy, rồi đi vòng quanh cho đúng hướng đầu trâu để vòng tròn khép lại; lệch hướng thì vòng nở ra, nở hết thì trâu xổng. Kỷ lục là thời gian thuần trâu nhanh nhất.
   - Tranh 4 · Thả Diều: cậu bé trên lưng trâu ném diều lên; giữ ngón tay rồi di sang hai bên để lái diều (máy tính: giữ chuột rồi kéo) né cành tre và quạ, có cơn gió to đẩy diều vọt lên, bay vượt ngọn tre là thắng. Kỷ lục là thời gian nhanh nhất.
+- Chương IV · Vợ Chồng Khởi Nghiệp (đang làm, chỉ mở khi chạy trên máy, trên web hiện "Sắp mở"; bước 1): vợ chồng chuột mới cưới bàn nhau làm ăn (chồng muốn đi ăn trộm, vợ can: phi thương bất phú), rồi mở gánh trầu cau ở cổng chợ; chợ nhìn hơi chếch từ trên, đông chuột, vịt, gà, chó, lợn, cóc đi lại, gặp nhau thì chào hỏi, buôn chuyện; gánh tự bán cho dân làng, lái buôn chở đò tới giao hàng, ngày chợ theo canh giờ có bảng tổng kết; chạm vào gánh để nâng lên sạp lều, gian mái ngói. Vuốt ngang để xem dọc đường làng.
 
 Điều khiển: ← → hoặc A D để đi, chạm hoặc bấm chuột vào đồ vật trong tranh. Trên điện thoại dùng nút trên màn hình.
 
@@ -35,6 +36,7 @@ Không cần build, GitHub Pages chạy thẳng các file.
 - `js/ch1/`: Chương I, mỗi tranh một file (`tranh1-ai-meo.js`, `tranh2-ngo-tre.js`, `tranh3-bo-ao.js`…).
 - `js/ch2/`: Chương II (bản đồ, luật chữ, hình, game).
 - `js/ch3/`: Chương III, mỗi trò chơi một file (`ga-me-con.js`…).
+- `js/ch4/`: Chương IV, trò buôn bán ở chợ làng: hình vẽ (`art.js`), dân làng và lời thoại (`folk.js`), trò chơi (`cho.js`).
 - `css/`: `base.css` dùng chung, `ch1.css`, `ch2.css` cho từng chương.
 - `tools/regress/`: bộ kiểm tra tự động, chạy lại mọi tranh và so từng khung hình.
 
