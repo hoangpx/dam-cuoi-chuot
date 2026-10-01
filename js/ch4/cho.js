@@ -151,7 +151,7 @@ function c4Hide() { $('#c4hud').hidden = true; c4Sheets(null); document.body.cla
 function c4Sheets(id) { for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; }
 const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text, t: 0, life }; };
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
-const c4Flow = () => ({ dep: 1, gat: .85, mua: .55, ret: .8 }[c4Wx()]) * (SAVE4.plan.hoi ? 1.8 : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1);
+const c4Flow = () => ({ dep: 1, gat: .85, mua: .55, ret: .8 }[c4Wx()]) * (SAVE4.plan.hoi ? 1.8 : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0));
 // how much a passer-by wants a ware now
 function c4Want(g) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
@@ -493,7 +493,7 @@ function updateC4(dt) {
     if (sv) {
       sv.t += dt;
       if (sv.t >= (g === 'trau' ? c4Lv().serve : C4_GOODS[g].serve) + .6) {
-        const w = sv.who, n = Math.min(w.n, c4Stock(g)), pay = c4Pay(w, n * c4Price(g));
+        const w = sv.who, n = Math.min(w.n, c4Stock(g)), pay = c4Pay(w, n * c4Price(g)); SAVE4.sold = (SAVE4.sold || 0) + n;
         c4SetStock(g, c4Stock(g) - n); SAVE4.money += pay; C4.today.sold += n; C4.today.take += pay; C4.today.cogs += n * c4Unit(g); C4.today.served++;
         C4.fx.push({ x: C4_GOODS[g].x + 40, y: c4Y(C4_STALL_Z) - 210, t: 0, s: '+' + pay }); AU.pluck(84 + (pay % 5));
         if (w.kind === 'mouse' && g === 'trau') w.carry = MP.ladong;
@@ -571,6 +571,7 @@ function c4EndDay() {
   const gossip = SAVE4.day >= C4_BOOK_DAY ? c4Gossip() : 0;
   const gain = d.take - d.cogs - d.wiltLoss - d.spent - d.wages + d.got;
   if (gain > SAVE4.best) SAVE4.best = gain;
+  c4StoryCheck(); c4AchCheck();
   if (SAVE4.favor > 0) SAVE4.favor--;
   if (SAVE4.rival > 0) SAVE4.rival--; if (SAVE4.cheap > 0) SAVE4.cheap--;
   SAVE4.phuc = 0;

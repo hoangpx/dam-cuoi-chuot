@@ -76,6 +76,22 @@ body.touch #c4hud .mid{position:static;transform:none}
 .card4 svg.web text{font-family:var(--body);font-size:11px;fill:var(--ink)}
 .card4 svg.web text.q{font-size:9px;opacity:.7}
 .card4 svg.web .nd{cursor:pointer}
+.card4 .story{border:2px solid rgba(29,25,21,.25);border-left:6px solid;padding:6px 8px;margin:8px 0;background:#fbf7ee}
+.card4 .story h5{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:6px}
+.card4 .story .no{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;flex:none}
+.card4 .story .dots{margin-left:auto;display:flex;gap:3px}
+.card4 .story .dots i{width:9px;height:9px;border-radius:50%;border:1.5px solid #c98a1c}
+.card4 .story .dots i.on{background:#c98a1c}
+.card4 .story p{font-size:14px;margin:3px 0}
+.card4 .story p.unk{opacity:.5}
+.card4 .ach{margin:8px 0}
+.card4 .ach h5{margin:0 0 4px;font-size:15px;display:inline-block;background:#8a5a2a;color:var(--diep);padding:2px 12px}
+.card4 .ach .a{display:grid;grid-template-columns:18px 1fr;column-gap:8px;align-items:center;padding:3px 0;opacity:.5}
+.card4 .ach .a.on{opacity:1}
+.card4 .ach .a i{grid-row:span 2;width:14px;height:14px;border-radius:50%;border:2px solid #8a5a2a}
+.card4 .ach .a.on i{background:#8a5a2a}
+.card4 .ach .a b{font-size:14px}
+.card4 .ach .a span{font-size:12px}
 .card4 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin:6px 0}
 .card4 .legend i{display:inline-block;width:14px;height:4px;margin-right:4px;vertical-align:middle}
 #c4noteB p{margin:4px 0}
@@ -83,3 +99,4 @@ body.touch #c4hud .mid{position:static;transform:none}
 #c4Note.new{background:var(--son);color:var(--diep)}
 /* chương IV: notices (toast) at the bottom of the screen, where nothing covers them */
 body.c4 #toast{top:auto;bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.card4 .fk.unk2{cursor:default;opacity:.65}
