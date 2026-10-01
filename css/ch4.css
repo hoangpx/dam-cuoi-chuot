@@ -29,6 +29,12 @@ body.touch #c4hud .mid{position:static;transform:none}
 .card4 .ware h5{margin:0 0 4px;font-size:15px}
 .card4 .ware .step{margin:2px 0}
 .card4 .ware .cost{margin:2px 0 4px;font-size:13px}
+.card4 .money{border:2px solid var(--ink);background:#f6f0e2;padding:6px 8px;margin:8px 0;text-align:left}
+.card4 .money h4{margin:0 0 4px}
+.card4 .loan{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;margin:4px 0}
+.card4 .loan .btn{padding:4px 12px;font-size:14px}
+.card4 .borrow{gap:6px;margin-top:6px}
+.card4 .borrow .btn{font-size:14px;padding:7px 8px}
 .card4 .tot{margin:10px 0 8px;font-size:15px}
 .card4 .go{width:100%}
 .card4 .back{background:#e3ecd0;border:2px solid var(--ink);padding:6px 8px}
