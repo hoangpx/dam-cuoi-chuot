@@ -2,7 +2,7 @@
    The herd boy sits on his buffalo and throws his kite up; the camera follows the kite as it climbs, so boy and buffalo
    sink out of the bottom of the picture and only the kite and the bamboo are left. The kite climbs by itself; the player
    only steers it left and right through the gaps between the bamboo branches: hold a finger (or the mouse button) on the
-   screen and slide it sideways, and the kite goes where the finger goes; on computers ← → and the ◀ ▶ buttons work too.
+   screen and slide it sideways, and the kite goes where the finger goes (on computers: the mouse, button held).
    Every so often a gust sweeps across and the kite shoots up faster for a moment.
    Holding on speeds the kite up more and more (the longer the hold, the faster); letting go brakes the kite to a slow climb. Now and then a crow flaps across: hitting it sends
    the kite reeling for a moment. Touching a branch brings the kite down (a fail), and so does running out of time (TD_TIME, 30 s on a countdown clock);
@@ -146,7 +146,7 @@ function tdUpdate(dt) {
     k.x = TD.l0[0] + (W / 2 - TD.l0[0]) * ee; k.y = TD.l0[1] - 420 * ee; k.rot = Math.sin(TD.t * 5) * .15 * (1 - e);
     if (e >= 1) { TD.phase = 'fly'; TD.phaseT = 0; }
   } else if (TD.phase === 'fly') {
-    const dir = ctDir(); if (dir || TD.hold !== null) TD.walked = true;
+    if (TD.hold !== null) TD.walked = true;
     const p = Math.max(0, Math.min(1, (TD.ground - TD_ROWS0 - k.y) / (TD_TUNE.height - TD_ROWS0)));
     // gusts: every few seconds the wind picks up for a moment and the kite shoots up
     if ((TD.gustT -= dt) <= 0) { TD.gustT = 4.5 + R() * 4 - p * 1.5; TD.gust = 1.7; AU.swoosh(); for (let i = 0; i < 7; i++) TD.streaks.push({ x: -60 - R() * 200, y: TD.camY + R() * H, t: 0, len: 60 + R() * 80 }); }
@@ -154,7 +154,7 @@ function tdUpdate(dt) {
     const boost = TD.gust > 0 ? 1 + 1.1 * Math.sin(Math.min(1, TD.gust / 1.7) * Math.PI) : 1;
     // holding on (finger, mouse, or a key / button) flies fast; letting go brakes it to a slow climb
     // holding on speeds the kite up bit by bit (the longer, the faster); letting go brakes it to a slow climb
-    const held = TD.hold !== null || dir !== 0;
+    const held = TD.hold !== null;
     TD.holdT = held ? Math.min(TD_TUNE.ramp, TD.holdT + dt) : Math.max(0, TD.holdT - dt * 4);
     const want = (120 + p * 50) * boost * (held ? 1 + (TD_TUNE.hold - 1) * TD.holdT / TD_TUNE.ramp : .45);
     k.climb += (want - k.climb) * Math.min(1, dt * (held ? 3 : 3.5));
@@ -162,7 +162,7 @@ function tdUpdate(dt) {
     if (TD.hold !== null) {                                          // follow the finger across
       const want = Math.max(-520, Math.min(520, (TD.hold - k.x) * 9));
       k.vx += (want - k.vx) * Math.min(1, dt * (TD.wobble > 0 ? 4 : 9));   // a knocked kite answers slowly
-    } else { k.vx += dir * 1300 * dt; k.vx *= Math.max(0, 1 - dt * (dir ? 2.2 : 4.5)); }
+    } else k.vx *= Math.max(0, 1 - dt * 4.5);
     k.vx = Math.max(-520, Math.min(520, k.vx));
     k.x += (k.vx + Math.sin(TD.t * .7) * 18) * dt;
     if (k.x < 56) { k.x = 56; k.vx = Math.max(0, k.vx); } if (k.x > W - 56) { k.x = W - 56; k.vx = Math.min(0, k.vx); }
@@ -298,8 +298,7 @@ C3GAMES[3] = {
   han: '放鳶', name: 'Thả Diều', paper: 'blue',
   short: portrait => portrait ? 460 : 620,
   song: 5,
-  // steering: slide a held finger / mouse; on computers also ← → and the ◀ ▶ buttons at both sides
-  padOn: () => TD.phase === 'fly' && !isTouch, padPulse: () => !TD.walked,   // computers only; phones steer by sliding
+  // steering: only by sliding a held finger (or the mouse with its button down)
   overlay: tdOverlay,
   isWon: () => TD.phase === 'done',
   praise: () => 'Diều bay cao quá!',
