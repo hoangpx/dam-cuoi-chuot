@@ -2,7 +2,7 @@
    Chats are little scripts of [speaker 0|1, line]; {A} and {B} are the two talking, {X} is somebody else at the market.
    Kept here so the lines can grow without touching the game. */
 const C4_NAMES = {
-  mouse: ['bà Ba', 'cô Tư', 'chú Năm', 'anh Cả', 'chị Hai', 'bác Sáu', 'ông Lý', 'cô Út', 'bà Cả Mõ', 'chú Tám', 'cô Gái Đầu'],
+  mouse: ['bà Ba', 'cô Tư', 'chú Năm', 'anh Cả', 'chị Hai', 'bác Sáu', 'cụ Lý', 'cô Út', 'bà Cả Mõ', 'chú Tám', 'cô Gái Đầu'],
   old: ['cụ Đồ', 'cụ Bảy', 'bà cụ Tư', 'cụ Lang'], child: ['thằng Tí', 'cái Hến', 'thằng Cu', 'cái Bống', 'thằng Bờm'],
   duck: ['bác Vịt Bầu', 'cô Vịt Cỏ'], rooster: ['ông Gà Trống', 'anh Gà Chọi'], dog: ['chú Mực', 'con Vện'], toad: ['cụ Cóc', 'chú Ếch'],
 };
@@ -78,15 +78,15 @@ const C4_NEWS = {
         [[0, 'Kiến tha trứng lên cao kìa.'], [1, 'Thế là mai mưa rồi, chợ vắng hoe.']]],
   meo:  [[[0, 'Suỵt… nghe đâu mai mèo lại về chợ.'], [1, 'Chết! Thế thì phải sắm lễ sẵn.'], [0, 'Không có lễ là nó phá cả gánh.']],
         [[0, 'Đêm qua thấy bóng mèo ở đầu làng.'], [1, 'Mai nó ra chợ cho xem, cẩn thận đấy.']]],
-  thue: [[[0, 'Mai ông Lý đi thu tiền chợ đấy.'], [1, 'Lại thu! Phải để dành ít tiền.']],
-        [[0, 'Ông Lý dặn mai ai cũng phải nộp tiền chợ.'], [1, 'Ai biếu thêm thì ông ấy cho chỗ đẹp.']]],
+  thue: [[[0, 'Mai cụ Lý đi thu tiền chợ đấy.'], [1, 'Lại thu! Phải để dành ít tiền.']],
+        [[0, 'Cụ Lý dặn mai ai cũng phải nộp tiền chợ.'], [1, 'Ai biếu thêm thì ông ấy cho chỗ đẹp.']]],
   cuoi: [[[0, 'Nhà {X} mai cưới con, cần nhiều trầu lắm.'], [1, 'Thế cô bán trầu cổng chợ lại đắt hàng!']],
         [[0, 'Mai có đám hỏi, phải mấy chục miếng trầu.'], [1, 'Nhà gái chắc đặt trầu cánh phượng.']]],
 };
 // what the wife writes in her notebook when she overhears it
 const C4_NOTE = {
   hoi: 'Nghe nói mai làng mở hội, chợ sẽ đông.', mua: 'Nghe nói mai trời mưa to, chợ vắng.', meo: 'Nghe đồn mai mèo về chợ đòi lễ.',
-  thue: 'Mai ông Lý đi thu tiền chợ.', cuoi: 'Mai có nhà cưới con, cần nhiều trầu.',
+  thue: 'Mai cụ Lý đi thu tiền chợ.', cuoi: 'Mai có nhà cưới con, cần nhiều trầu.',
 };
 
 /* ---------- more chats: proverbs, village life, a little teasing ---------- */
@@ -116,7 +116,7 @@ C4_CHATS.push(
   [[0, 'Con gái nhà {X} sắp đi lấy chồng.'], [1, 'Lấy ai thế?'], [0, 'Anh thợ mộc làng bên.'], [1, 'Khéo tay thế thì sướng rồi!']],
   [[0, 'Này, mai đi lễ đình không?'], [1, 'Đi chứ, cầu cho buôn may bán đắt.']],
   [[0, 'Nhà {X} cãi nhau vì con gà sang vườn.'], [1, 'Chuyện bé xé ra to!']],
-  [[0, 'Ông Lý dạo này hay đi tuần đêm.'], [1, 'Chắc sợ mèo về bắt trộm gà.']],
+  [[0, 'Cụ Lý dạo này hay đi tuần đêm.'], [1, 'Chắc sợ mèo về bắt trộm gà.']],
   [[0, 'Thằng Bờm lại đổi quạt mo lấy xôi.'], [1, 'Khôn thế mà người ta bảo nó dại!']],
   [[0, 'Trông kìa, con Vện lại đuổi gà.'], [1, 'Chó cậy gần nhà, gà cậy gần chuồng.']],
   [[0, 'Chợ quê vui nhỉ {B}.'], [1, 'Vui chứ, có nhiều chuyện để nghe!']],
