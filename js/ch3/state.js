@@ -1,6 +1,6 @@
 /* Chương III · Nhanh Tay Nhanh Mắt 眼疾手快 — quick-hands, quick-eyes games for children, one Đông Hồ print each.
    Each game file (ga-me-con.js, …) fills C3GAMES[i] with:
-     { han, name, paper, short(portrait) (optional logical short side), timeLimit + scoring:'count' + score() + passed() + failText() (optional timed round), onFail(callback) (optional: the game can lose by itself), handCursor (a big hand pointer on computers), ownClock, pad (◀ ▶ on phones all game) or padOn() + padPulse() (◀ ▶ at both sides only while padOn), overlay(ctx, W, H) (screen px), song, print (image of the real print), isWon(), start(), update(dt), render(ctx, u), printRender(ctx, W, H, t) (drawn fallback),
+     { han, name, paper, short(portrait) (optional logical short side), timeLimit + scoring:'count' + score() + passed() + failText() (optional timed round), onFail(callback) (optional: the game can lose by itself), handCursor (a big hand pointer on computers), clockDown (show a countdown; the game ends the round itself), ownClock, pad (◀ ▶ on phones all game) or padOn() + padPulse() (◀ ▶ at both sides only while padOn), overlay(ctx, W, H) (screen px), song, print (image of the real print), isWon(), start(), update(dt), render(ctx, u), printRender(ctx, W, H, t) (drawn fallback),
        down(x, y), move(x, y), up(), resize(W, H), onWin(callback) }
    Games work in logical units: the short side of the screen is 540 units (460 on portrait phones). */
 const C3GAMES = [];

@@ -4,11 +4,15 @@
    only steers it left and right through the gaps between the bamboo branches: hold a finger (or the mouse button) on the
    screen and slide it sideways, and the kite goes where the finger goes; on computers ← → and the ◀ ▶ buttons work too.
    Every so often a gust sweeps across and the kite shoots up faster for a moment.
-   Holding on flies fast; letting go brakes the kite to a slow climb. Now and then a crow flaps across: hitting it sends
-   the kite reeling for a moment. Touching a branch brings the kite down (a fail); clearing the tops of the bamboo wins. The record is the fastest climb.
+   Holding on speeds the kite up more and more (the longer the hold, the faster); letting go brakes the kite to a slow climb. Now and then a crow flaps across: hitting it sends
+   the kite reeling for a moment. Touching a branch brings the kite down (a fail), and so does running out of time (TD_TIME, 30 s on a countdown clock);
+   clearing the tops of the bamboo wins. The record is the fastest climb.
    World coordinates are screen-like (y down); the camera keeps the kite a little below the middle of the screen. */
 const TD = { W: 460, H: 995, t: 0, phase: 'intro', phaseT: 0, camY: 0, onWin: null, onFail: null };
-const TD_ROWS0 = 1050, TD_HEIGHT = 4600, TD_KR = 19;             // first branches above the ground, bamboo height, kite radius
+const TD_ROWS0 = 1050, TD_KR = 19, TD_TIME = 30;                // first branches above the ground, kite radius, seconds to clear the top
+// tuning (from bot runs: always holding wins ~2/10, braking well ~5/10): hold = speed-up after holding for ramp seconds,
+// spacing = rows apart at the bottom, gap = width of a two-sided gap at the bottom, height = of the bamboo
+const TD_TUNE = { hold: 2.6, ramp: 3, spacing: 310, height: 7200, gap: 280 };
 
 /* ---------- art ---------- */
 let TDART = null;
@@ -95,7 +99,7 @@ function tdText() {
 
 /* ---------- layout and course ---------- */
 function tdLayout() {
-  TD.ground = TD.H * .86; TD.top = TD.ground - TD_HEIGHT;
+  TD.ground = TD.H * .86; TD.top = TD.ground - TD_TUNE.height;
   TD.herd = { x: TD.W * .38, y: TD.ground, s: 1.05 };
   TD.culms = [16, 46, TD.W - 46, TD.W - 16];
 }
@@ -103,22 +107,22 @@ function tdLayout() {
 function tdCourse() {
   const rows = [], W = TD.W; let y = TD.ground - TD_ROWS0, side = R() < .5 ? -1 : 1;
   while (y > TD.top + 120) {
-    const p = (TD.ground - TD_ROWS0 - y) / (TD_HEIGHT - TD_ROWS0);
+    const p = (TD.ground - TD_ROWS0 - y) / (TD_TUNE.height - TD_ROWS0);
     if (R() < .35 + p * .3) {                                          // branches from both sides with a gap between
-      const gw = 235 - p * 50, gc = 60 + gw / 2 + R() * (W - 120 - gw);
+      const gw = TD_TUNE.gap - p * 50, gc = 60 + gw / 2 + R() * (W - 120 - gw);
       rows.push({ y, from: -1, tip: gc - gw / 2 }, { y: y - 6, from: 1, tip: gc + gw / 2 });
     } else {                                                          // one long branch, alternating sides more often than not
       if (R() < .75) side = -side;
       const reach = W * (.4 + p * .1 + R() * .06);
       rows.push({ y, from: side, tip: side < 0 ? reach : W - reach });
     }
-    y -= 235 - p * 65 + R() * 40;
+    y -= TD_TUNE.spacing - p * 70 + R() * 45;
   }
   return rows;
 }
 function tdStart() {
   tdLayout();
-  Object.assign(TD, { t: 0, phase: 'intro', phaseT: 0, camY: 0, crows: [], crowT: 4, why: '', walked: false, hold: null, gust: 0, gustT: 5, streaks: [], wobble: 0 });
+  Object.assign(TD, { t: 0, phase: 'intro', phaseT: 0, camY: 0, crows: [], crowT: 4, why: '', walked: false, hold: null, gust: 0, gustT: 5, streaks: [], wobble: 0, holdT: 0 });
   TD.rows = tdCourse();
   const r = mulberry(21); TD.clouds = [];
   for (let y = TD.ground - 900; y > TD.top - 900; y -= 260 + r() * 200) TD.clouds.push({ x: r() * TD.W, y, s: .7 + r() * .6, v: (r() - .5) * 14 });
@@ -143,29 +147,34 @@ function tdUpdate(dt) {
     if (e >= 1) { TD.phase = 'fly'; TD.phaseT = 0; }
   } else if (TD.phase === 'fly') {
     const dir = ctDir(); if (dir || TD.hold !== null) TD.walked = true;
-    const p = Math.max(0, Math.min(1, (TD.ground - TD_ROWS0 - k.y) / (TD_HEIGHT - TD_ROWS0)));
+    const p = Math.max(0, Math.min(1, (TD.ground - TD_ROWS0 - k.y) / (TD_TUNE.height - TD_ROWS0)));
     // gusts: every few seconds the wind picks up for a moment and the kite shoots up
     if ((TD.gustT -= dt) <= 0) { TD.gustT = 4.5 + R() * 4 - p * 1.5; TD.gust = 1.7; AU.swoosh(); for (let i = 0; i < 7; i++) TD.streaks.push({ x: -60 - R() * 200, y: TD.camY + R() * H, t: 0, len: 60 + R() * 80 }); }
     TD.gust = Math.max(0, TD.gust - dt);
-    const boost = TD.gust > 0 ? 1 + .9 * Math.sin(Math.min(1, TD.gust / 1.7) * Math.PI) : 1;
+    const boost = TD.gust > 0 ? 1 + 1.1 * Math.sin(Math.min(1, TD.gust / 1.7) * Math.PI) : 1;
     // holding on (finger, mouse, or a key / button) flies fast; letting go brakes it to a slow climb
-    const held = TD.hold !== null || dir !== 0, want = (130 + p * 60) * boost * (held ? 1.05 : .45);
-    k.climb += (want - k.climb) * Math.min(1, dt * (held ? 2.5 : 3.5));
+    // holding on speeds the kite up bit by bit (the longer, the faster); letting go brakes it to a slow climb
+    const held = TD.hold !== null || dir !== 0;
+    TD.holdT = held ? Math.min(TD_TUNE.ramp, TD.holdT + dt) : Math.max(0, TD.holdT - dt * 4);
+    const want = (120 + p * 50) * boost * (held ? 1 + (TD_TUNE.hold - 1) * TD.holdT / TD_TUNE.ramp : .45);
+    k.climb += (want - k.climb) * Math.min(1, dt * (held ? 3 : 3.5));
     k.y -= k.climb * dt;
     if (TD.hold !== null) {                                          // follow the finger across
-      const want = Math.max(-360, Math.min(360, (TD.hold - k.x) * 7));
-      k.vx += (want - k.vx) * Math.min(1, dt * (TD.wobble > 0 ? 2 : 9));   // a knocked kite answers slowly
+      const want = Math.max(-520, Math.min(520, (TD.hold - k.x) * 9));
+      k.vx += (want - k.vx) * Math.min(1, dt * (TD.wobble > 0 ? 4 : 9));   // a knocked kite answers slowly
     } else { k.vx += dir * 1300 * dt; k.vx *= Math.max(0, 1 - dt * (dir ? 2.2 : 4.5)); }
-    k.vx = Math.max(-360, Math.min(360, k.vx));
+    k.vx = Math.max(-520, Math.min(520, k.vx));
     k.x += (k.vx + Math.sin(TD.t * .7) * 18) * dt;
     if (k.x < 56) { k.x = 56; k.vx = Math.max(0, k.vx); } if (k.x > W - 56) { k.x = W - 56; k.vx = Math.min(0, k.vx); }
     TD.wobble = Math.max(0, TD.wobble - dt);
-    k.rot = k.vx / 280 * .35 + Math.sin(TD.t * 2.3) * .05 + (TD.wobble > 0 ? Math.sin(TD.t * 17) * .6 * TD.wobble / 1.3 : 0);
+    k.rot = k.vx / 280 * .35 + Math.sin(TD.t * 2.3) * .05 + (TD.wobble > 0 ? Math.sin(TD.t * 17) * .6 * TD.wobble / .9 : 0);
     // crows flap across a little above the kite, from either side
+    // a flock: one every second or two, sometimes two or three together at different heights
     if ((TD.crowT -= dt) <= 0 && k.y > TD.top + 200) {
-      TD.crowT = 3.2 + R() * 2.8 - p * 1.2; const from = R() < .5 ? -1 : 1;
-      TD.crows.push({ x: from < 0 ? -40 : W + 40, y: k.y - 220 - R() * 200, v: -from * (120 + R() * 70 + p * 40), ph: R() * 6 });
-      AU.caw();
+      TD.crowT = 1.1 + R() * 1.1 - p * .4;
+      const n = R() < .35 ? (R() < .4 ? 3 : 2) : 1;
+      for (let i = 0; i < n; i++) { const from = R() < .5 ? -1 : 1; TD.crows.push({ x: from < 0 ? -40 - i * 50 : W + 40 + i * 50, y: k.y - 200 - R() * 320, v: -from * (130 + R() * 90 + p * 50), ph: R() * 6 }); }
+      if (R() < .6) AU.caw();
     }
     // a branch (stalk or its leaves) or a crow brings the kite down
     for (const r of TD.rows) {
@@ -175,8 +184,9 @@ function tdUpdate(dt) {
     }
     // a crow does not bring it down: the kite reels, knocked aside, and the crow flaps off the other way
     for (const c of TD.crows) if (!c.hit && Math.hypot(c.x - k.x, (c.y - k.y) * 1.2) < TD_KR + 20) {
-      c.hit = true; c.v = -c.v * 1.3; TD.wobble = 1.3; k.vx = (k.x < c.x ? -1 : 1) * 320; k.climb *= .6; AU.caw(); AU.thump();
+      c.hit = true; c.v = -c.v * 1.3; TD.wobble = .9; k.vx = (k.x < c.x ? -1 : 1) * 320; k.climb *= .6; AU.caw(); AU.thump();
     }
+    if (TD.phase === 'fly' && typeof C3 !== 'undefined' && C3.time >= TD_TIME) tdCrash('gio');   // out of time: the wind drops and down it comes
     if (TD.phase === 'fly' && k.y < TD.top - 140) { TD.phase = 'done'; TD.phaseT = 0; [79, 83, 86, 91].forEach((m, i) => setTimeout(() => AU.pluck(m), i * 170)); }
   } else if (TD.phase === 'fall') {                                      // tumbles down, string slack
     k.vy += 700 * dt; k.y += k.vy * dt; k.x += k.vx * dt; k.rot += dt * 7;
@@ -293,7 +303,8 @@ C3GAMES[3] = {
   overlay: tdOverlay,
   isWon: () => TD.phase === 'done',
   praise: () => 'Diều bay cao quá!',
-  failText: () => TD.why === 'qua' ? 'Ôi! Diều đâm phải con quạ rồi!' : 'Ôi! Diều vướng cành tre rồi!',
+  failText: () => TD.why === 'gio' ? 'Hết giờ! Diều rơi mất rồi.' : 'Ôi! Diều vướng cành tre rồi!',
+  clockDown: TD_TIME,                              // the clock counts down the 30 s; the record is still the time taken
   start: tdStart, update: tdUpdate, render: tdRender,
   print: 'img/ch3/tha-dieu.jpg',                   // the real print; if the file is missing the shell falls back to tdPrint
   printRender: tdPrint,

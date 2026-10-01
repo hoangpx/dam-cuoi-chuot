@@ -23,7 +23,7 @@ function startC3(i) {
   $('#pad').hidden = !(C3.game.pad && isTouch);                            // games that walk get the ◀ ▶ buttons on phones
   const z = c3Size(); C3.W = z.W; C3.H = z.H; C3.game.resize(z.W / z.u, z.H / z.u);
   C3.game.start(); C3.game.onWin(c3Win); if (C3.game.onFail) C3.game.onFail(c3Fail);   // e.g. the kite crashing
-  C3.time = 0; C3.shown = -1; $('#c3Time').textContent = c3Clock(C3.game.timeLimit || 0); $('#c3Time').classList.remove('hurry');
+  C3.time = 0; C3.shown = -1; $('#c3Time').textContent = c3Clock(C3.game.timeLimit || C3.game.clockDown || 0); $('#c3Time').classList.remove('hurry');
   if (!C3.game.print) C3.img = null;                                        // no print yet: the game draws its own (printRender)
   else if (!C3.img || C3.img.dataset.src !== C3.game.print) { C3.img = new Image(); C3.img.dataset.src = C3.game.print; C3.img.src = C3.game.print; }
   $('#lvHan').textContent = C3.game.han; $('#lvTitle').textContent = `Tranh ${i + 1} · ${C3.game.name}`;
@@ -67,8 +67,9 @@ function updateC3(dt) {
   }
   const L = C3.game.timeLimit;
   if (L && C3.view === 'play' && C3.time >= L) { C3.time = L; if (C3.game.passed()) c3Win(); else c3Fail(); }
-  const sec = L ? Math.ceil(L - C3.time) : Math.floor(C3.time);        // timed rounds count down
-  if (sec !== C3.shown) { C3.shown = sec; $('#c3Time').textContent = c3Clock(sec); $('#c3Time').classList.toggle('hurry', !!L && sec <= 10); if (L && sec <= 5 && sec > 0) AU.pluck(60 + sec); }
+  const D = L || C3.game.clockDown;                                    // clockDown: count down for show, the game ends it itself
+  const sec = D ? Math.max(0, Math.ceil(D - C3.time)) : Math.floor(C3.time);   // timed rounds count down
+  if (sec !== C3.shown) { C3.shown = sec; $('#c3Time').textContent = c3Clock(sec); $('#c3Time').classList.toggle('hurry', !!D && sec <= 10); if (D && sec <= 5 && sec > 0 && C3.view === 'play') AU.pluck(60 + sec); }
 }
 function renderC3() {
   const z = c3Size(), pal = PAPERS[C3.game.paper], LW = z.W / z.u, LH = z.H / z.u;
