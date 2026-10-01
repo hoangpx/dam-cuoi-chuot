@@ -43,6 +43,41 @@ body.touch #c4hud .mid{position:static;transform:none}
 .card4 .bad{color:var(--son);font-weight:600}
 .card4 .nums .loss{background:#f2d6cf}
 #c4noteB{text-align:left}
+.c4tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:6px}
+.c4tabs button{font-family:var(--display);font-weight:900;font-size:14px;padding:5px 8px;border:2px solid var(--ink);background:#f6f0e2;color:var(--ink);cursor:pointer}
+.c4tabs button.on{background:var(--son);color:var(--diep)}
+#c4noteB .cnt{text-align:center;font-size:13px;opacity:.75;margin:0 0 6px}
+.card4 .folk{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.card4 .fk{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:2px solid rgba(29,25,21,.35);background:#f6f0e2;font-family:var(--body);color:var(--ink);cursor:pointer;min-width:0}
+.card4 .fk img{width:52px;height:52px}
+.card4 .fk b{font-size:13px;line-height:1.2;text-align:center}
+.card4 .fk span{font-size:11px;opacity:.75}
+.card4 .fk .bar{width:80%}
+.card4 .bar{display:inline-block;width:110px;height:7px;border:1.5px solid var(--ink);background:#fff;vertical-align:middle}
+.card4 .bar i{display:block;height:100%}
+.card4 .house{border-top:1.5px dashed rgba(29,25,21,.3);padding:6px 0}
+.card4 .house h5{margin:0 0 6px;font-size:14px}
+.card4 .house h5 span{font-weight:400;opacity:.7}
+.card4 .mem{display:flex;flex-wrap:wrap;gap:6px}
+.card4 .fk.sm{width:76px}
+.card4 .fk.sm img{width:40px;height:40px}
+.card4 .fk.unk{cursor:default;opacity:.6}
+.card4 .fk.unk i{width:40px;height:40px;border-radius:50%;background:#d9cdb2;display:grid;place-items:center;font-style:normal;font-weight:900}
+.card4 .who{display:flex;gap:10px;align-items:center}
+.card4 .who img{width:80px;height:80px}
+.card4 .who h4{margin:0}
+.card4 .who p{margin:2px 0;font-size:14px}
+.card4 .ties{list-style:none;padding:0;margin:6px 0;font-size:14px}
+.card4 .ties li{margin:3px 0}
+.card4 .ties li>i{display:inline-block;width:14px;height:4px;margin-right:6px;vertical-align:middle}
+.card4 .ties .unk{opacity:.6}
+.card4 .bk{margin-bottom:8px}
+.card4 svg.web{width:100%;height:auto;background:#fbf7ee;border:2px solid rgba(29,25,21,.25)}
+.card4 svg.web text{font-family:var(--body);font-size:11px;fill:var(--ink)}
+.card4 svg.web text.q{font-size:9px;opacity:.7}
+.card4 svg.web .nd{cursor:pointer}
+.card4 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin:6px 0}
+.card4 .legend i{display:inline-block;width:14px;height:4px;margin-right:4px;vertical-align:middle}
 #c4noteB p{margin:4px 0}
 #c4Note{pointer-events:auto;cursor:pointer}
 #c4Note.new{background:var(--son);color:var(--diep)}
