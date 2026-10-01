@@ -182,26 +182,28 @@ function c4Want(g) {
   const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .6 : 1) : .28 * (G.hours[h] || 0);
   return base * (G.wx[c4Wx()] || 1);
 }
-function c4Spawn(atX) {
-  // a resident of the village (dan.js), or now and then a child (nameless, never buys)
-  const kid = R() < .13, P = kid ? null : c4PickResident(); if (!kid && !P) return;
+function c4Spawn(atX, guest = null) {
+  // a resident of the village (dan.js), or now and then a child (nameless, never buys); or an invited guest
+  const kid = !guest && R() < .13, P = guest ? guest.p : kid ? null : c4PickResident(); if (!kid && !P) return;
   const kind = kid ? 'mouse' : P.kind, sort = kid ? 11 + ((R() * 3) | 0) : P.sort, role = kid ? 'child' : P.role;
   const fromRight = atX === undefined ? R() < .6 : R() < .5;
   let x = atX !== undefined ? atX : fromRight ? C4.camX + c4View().vw + 120 + R() * 200 : C4_GATE - 40;
   const sp = { mouse: role === 'old' ? 34 + R() * 10 : role === 'child' ? 80 + R() * 30 : 55 + R() * 40, duck: 40, rooster: 65, dog: 105, toad: 50 }[kind];
   // what (if anything) they come to buy
   let shop = null;
-  if (!(kind === 'mouse' && role === 'child') && C4.phase === 'open') {
+  if (guest) shop = guest.shop;
+  else if (!(kind === 'mouse' && role === 'child') && C4.phase === 'open') {
     const wants = c4Owned().map(g => [g, c4Want(g) * .56]), sum = wants.reduce((a, [, w]) => a + w, 0);
     if (R() < Math.min(.9, sum * c4Keen(P))) { let k = R() * sum; for (const [g, w] of wants) { if ((k -= w) <= 0) { shop = g; break; } } }
   }
   // what they bring: a buffalo to lead (then they are only passing, on the way to the fields), an umbrella in the rain, too much wine
-  const look = kid ? {} : P.look || {}, buf = look.tool === 'buf' && R() < .7 && C4.walkers.filter(q => q.buf).length < 2, drunk = !!look.drinker && C4.mins > 11 * 60 && R() < .3;
-  const smokeX = look.tool === 'dieu' ? C4.camX + c4View().vw * (.15 + R() * .7) : undefined;
+  const look = kid ? {} : P.look || {}, buf = !guest && look.tool === 'buf' && R() < .7 && C4.walkers.filter(q => q.buf).length < 2, drunk = !guest && !!look.drinker && C4.mins > 11 * 60 && R() < .3;
+  if (guest) x = C4_GOODS[shop].x + c4QX(shop) + (fromRight ? 1 : -1) * (c4View().vw * .6 + 40);   // off screen, heading for their stall
+  const smokeX = !guest && look.tool === 'dieu' ? C4.camX + c4View().vw * (.15 + R() * .7) : undefined;
   if (buf || smokeX !== undefined) shop = null;
   if (shop && fromRight && atX === undefined) x = Math.max(x, C4_GOODS[shop].x + 260);         // buyers come from a side that takes them past their stall
-  C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, smokeX, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, sp: buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
-    buy: !!shop, shop, st: 'walk', n: 1 + ((R() * 3) | 0), carry: null, cd: 3 + R() * 6, say: null });
+  C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, smokeX, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, guest: !!guest, sp: guest ? 120 : buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
+    buy: !!shop, shop, st: 'walk', n: guest ? 3 + ((R() * 4) | 0) : 1 + ((R() * 3) | 0), carry: null, cd: 3 + R() * 6, say: null });
   if (kind === 'mouse' && role === 'child' && atX === undefined && R() < .5) {             // a gang of children chasing each other
     const lead = C4.walkers[C4.walkers.length - 1]; lead.sp = 150; lead.cd = 99;
     for (let i = 1; i <= 1 + ((R() * 2) | 0); i++) { const s2 = 11 + ((R() * 3) | 0); C4.walkers.push({ ...lead, pid: undefined, sort: s2, M: c4MouseRig(s2), seed: R() * 6, name: c4Pick(C4_NAMES.child), x: lead.x - lead.face * 60 * i, z: Math.min(.98, lead.z + (R() - .5) * .2), ph: R() * 6, say: null }); }
@@ -297,10 +299,12 @@ function c4AmTotal(orders) {
   const go = $('#c4amO .go'); if (go) go.disabled = SAVE4.debt + Math.max(0, sum - SAVE4.money) > C4_DEBT;
 }
 // a stepper for one ware: how many, what it costs
-function c4Stepper(box, g, on) {
-  const G = C4_GOODS[g], max = c4Cap(g) - c4Stock(g), step = max > 40 ? 10 : 5; let q = 0;
+// goods fetched during the day cost more than the morning's (the trader's best is gone, the husband walks twice)
+const c4CostMid = g => c4Cost(g) + (g === 'trau' ? 1 : Math.max(1, Math.round(c4Cost(g) * .5)));
+function c4Stepper(box, g, on, mid = false) {
+  const G = C4_GOODS[g], max = c4Cap(g) - c4Stock(g), step = max > 40 ? 10 : 5, cost = mid ? c4CostMid(g) : c4Cost(g); let q = 0;
   box.innerHTML = `<div class="step"><button class="btn alt" data-d="-${step}">−${step}</button><b class="q"></b><button class="btn alt" data-d="${step}">+${step}</button></div><p class="cost"></p>`;
-  const show = () => { q = Math.max(0, Math.min(q, max)); box.querySelector('.q').textContent = `${q} ${G.unit}`; box.querySelector('.cost').textContent = `${c4Cost(g)} đồng/${G.unit} · bán ${c4Price(g)} đồng`; on(q); };
+  const show = () => { q = Math.max(0, Math.min(q, max)); box.querySelector('.q').textContent = `${q} ${G.unit}`; box.querySelector('.cost').textContent = `${cost} đồng/${G.unit}${mid ? ` (sáng sớm ${c4Cost(g)})` : ''} · bán ${c4Price(g)} đồng`; on(q); };
   box.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { q += +b.dataset.d; AU.tap(); show(); }));
   show();
 }
@@ -536,18 +540,22 @@ function updateC4(dt) {
       }
       if (w.drunk) w.z = Math.max(.38, Math.min(.98, w.z + Math.sin(C4.t * 1.7 + w.seed) * dt * .12));   // zigzagging across the lane
       const g = w.shop, qx = g && C4_GOODS[g].x + c4QX(g);
-      if (g && c4Open(g) && !(g === 'trau' && C4.cat && C4.cat.st === 'sit') && !(C4.shut > 0) && C4.phase === 'open' && Math.abs(w.x - qx) < 140 && C4.Q[g].length < 4) { w.st = 'queue'; w.wait = 0; C4.Q[g].push(w); }
+      if (g && c4Open(g) && !(g === 'trau' && C4.cat && C4.cat.st === 'sit') && !(C4.shut > 0) && C4.phase === 'open' && Math.abs(w.x - qx) < 140 && C4.Q[g].length < (w.guest ? 9 : 4)) { w.st = 'queue'; w.wait = 0; C4.Q[g].push(w); }
       else if (R() < dt * (w.drunk ? .05 : .006) && !w.say) c4Say(w, c4Pick(w.drunk ? C4_DRUNK : C4_ALONE));
     } else if (w.st === 'queue') {
       const g = w.shop, q = C4.Q[g], i = q.indexOf(w), tx = C4_GOODS[g].x + c4QX(g) + i * 62, dx = tx - w.x, dz = C4_Q_Z - w.z, d = Math.hypot(dx, dz * 300);
       w.moving = d > 3;
       if (w.moving) { const k = Math.min(1, 90 * dt / d); w.x += dx * k; w.z += dz * k; w.ph += dt * 9; w.face = dx < -1 ? -1 : dx > 1 ? 1 : -1; } else w.face = -1;
       w.wait += dt;
-      if ((w.wait > c4Lv().wait + i * 2 || (g === 'trau' && C4.cat && C4.cat.st === 'sit') || !c4Open(g)) && C4.SV[g]?.who !== w) { c4Say(w, c4Stock(g) ? c4Pick(C4_GIVEUP) : 'Hết hàng rồi à? Tiếc quá!'); c4Snubbed(w, !c4Stock(g)); c4Leave(w, false); C4.today.lost++; }
+      if ((w.wait > (c4Lv().wait + i * 2) * (w.guest ? 4 : 1) || (g === 'trau' && C4.cat && C4.cat.st === 'sit') || !c4Open(g)) && C4.SV[g]?.who !== w) { c4Say(w, c4Stock(g) ? c4Pick(C4_GIVEUP) : 'Hết hàng rồi à? Tiếc quá!'); if (!w.guest) c4Snubbed(w, !c4Stock(g)); c4Leave(w, false); C4.today.lost++; }
     } else if (w.st === 'chat') {
       const c = w.chat; if (c.a === w) c4ChatStep(c, dt);
     } else if (w.st === 'leave') { w.x += w.face * w.sp * dt; w.ph += dt * w.sp / 9; }
     else if (w.st === 'sit' && (w.sitT -= dt) <= 0) w.st = 'walk';
+  }
+  if (C4.guestQ && C4.guestQ.length) {
+    C4.guestT += dt;
+    while (C4.guestQ.length && C4.guestQ[0].at <= C4.guestT) { const { p } = C4.guestQ.shift(), gs = C4.guestGoods(); if (gs.length) c4Spawn(undefined, { p, shop: gs[(R() * Math.min(2, gs.length)) | 0] }); }
   }
   if ((C4.chatT -= dt) <= 0) {
     C4.chatT = .35;
@@ -629,6 +637,7 @@ function c4EndDay() {
   C4.phase = 'night';
   for (const w of C4.walkers) if (w.st !== 'leave') { w.st = 'leave'; w.face = w.x < C4_STALL ? -1 : 1; w.chat = null; w.talk = false; }
   for (const g of Object.keys(C4.Q)) { C4.Q[g] = []; C4.SV[g] = null; }
+  C4.guestQ = [];
   C4.cat = null; C4.shut = 0; C4.parade = null; C4.fire = 0;
   if (C4.kid) { SAVE4.money += 10; C4.kid = null; }
   const d = C4.today, lines = [];
@@ -675,7 +684,34 @@ function c4NewDay() {
   for (let i = 0; i < 6; i++) c4Spawn(C4.camX - 200 + R() * (c4View().vw + 400));
   c4Hud(); c4Morning();
 }
+// near closing with much left over that will not keep: invite people you know to come and take it, half price or free
+const c4Leftover = () => c4Owned().filter(g => C4_GOODS[g].keep !== 'ever').reduce((a, g) => a + c4Stock(g), 0);
+const c4CanInvite = () => C4.phase === 'open' && SAVE4.day >= C4_BOOK_DAY && C4.mins >= 15 * 60 && c4Leftover() >= 5 && c4Guests().length > 0;
+function c4Guests() {
+  const here = new Set(C4.walkers.map(w => w.pid));
+  return c4People().list.filter(p => c4Known(p.id) && !here.has(p.id) && SAVE4.folk[p.id].called !== SAVE4.day);
+}
+function c4OpenInvite() {
+  const left = c4Owned().filter(g => C4_GOODS[g].keep !== 'ever' && c4Stock(g) > 0).map(g => `${c4Stock(g)} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ');
+  const n = c4Guests().length;
+  $('#c4evT').textContent = 'Hàng còn nhiều';
+  $('#c4evB').textContent = `Sắp tan chợ mà còn ${left}. Để đến tối là hỏng. Mời khách quen ghé lấy, vừa đỡ phí, vừa được lòng người ta.`;
+  const box = $('#c4evO'); box.innerHTML = '';
+  for (const [k, deal, label] of [[3, 'half', 'Mời 3 người · bán nửa giá'], [6, 'half', 'Mời 6 người · bán nửa giá'], [3, 'free', 'Mời 3 người · biếu không'], [6, 'free', 'Mời 6 người · biếu không'], [0, null, 'Thôi']]) {
+    const b = document.createElement('button'); b.className = k ? 'btn' : 'btn alt'; b.textContent = label; b.disabled = k > 0 && n === 0;
+    b.addEventListener('click', () => { c4Sheets(null); if (k) c4Invite(c4Guests().sort((a, b) => c4Like(a.id) - c4Like(b.id) + (R() - .5) * 40).slice(0, Math.min(k, n)), deal); });
+    box.appendChild(b);
+  }
+  c4Sheets('c4ev');
+}
+function c4Invite(ps, deal) {
+  const goods = () => c4Owned().filter(g => C4_GOODS[g].keep !== 'ever' && c4Stock(g) > 0).sort((a, b) => c4Stock(b) - c4Stock(a));
+  ps.forEach((p, i) => { const f = c4F(p.id); f.deal = deal; f.called = SAVE4.day; (C4.guestQ = C4.guestQ || []).push({ p, at: i * .7 }); });
+  C4.guestGoods = goods; C4.guestT = 0; AU.pluck(88);
+  toast(`Chồng chạy đi mời ${ps.map(p => p.name).join(', ')}. Ai cũng bảo: "Ra ngay!"`, 3.6);
+}
 function c4Hud() {
+  $('#c4Invite').hidden = !c4CanInvite();
   $('#c4Money').textContent = c4Money(SAVE4.money) + (SAVE4.goal ? '' : ' / ' + c4Money(C4_GOAL));
   $('#c4Time').textContent = `Ngày ${SAVE4.day} · giờ ${c4Hour(C4.mins)} · ${c4Clock(C4.mins)}${{ mua: ' · mưa', ret: ' · rét', gat: ' · nắng gắt', dep: '' }[c4Wx()]}`;
   $('#c4Stock').textContent = c4Owned().map(g => `${C4_GOODS[g].name.split(' ')[0]} ${c4Stock(g)}`).join(' · ');
@@ -707,8 +743,8 @@ function c4OpenUp(g = 'trau') {
   else if (C4.phase !== 'open') box.innerHTML = '';
   else {
     box.innerHTML = `<h4>Nhập thêm ${G.name.toLowerCase()}</h4><div class="ord"></div><button class="btn get">Sai chồng đi lấy</button>`;
-    let q = 0; c4Stepper(box.querySelector('.ord'), g, v => { q = v; });
-    box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } Object.assign(P, { st: 'out', good: g, qty: q, cost: c4Cost(g) }); c4Sheets(null); toast('Chồng đi lấy hàng ở bến.'); });
+    let q = 0; c4Stepper(box.querySelector('.ord'), g, v => { q = v; }, true);
+    box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g) }); c4Sheets(null); toast('Chồng đi lấy hàng ở bến.'); });
   }
   if (g === 'trau') {
     const nx = C4_LV[SAVE4.lv + 1];
@@ -933,7 +969,7 @@ function c4Key(e) {
 /* ---------- HUD, sheets, registration ---------- */
 {
   const hud = document.createElement('div'); hud.id = 'c4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div><button class="tag" id="c4Note">Sổ tay</button></div>';
+  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div><button class="tag" id="c4Note">Sổ tay</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div>'),
@@ -942,10 +978,11 @@ function c4Key(e) {
     sheet('c4note', '<h3>Sổ tay</h3><div id="c4noteB"></div><div class="row"><button class="btn alt" id="c4noteX">Đóng</button></div>'),
     sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button>'));
   $('#c4Name').addEventListener('click', () => showChapters());
-  $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); c4OpenNotes(); } });
+  $('#c4Invite').addEventListener('click', () => { if (c4CanInvite()) { AU.tap(); C4_PICK = { deal: 'half', sel: new Set() }; C4_WHO = null; c4OpenNotes('quen'); } });
+  $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
   $('#c4dayGo').addEventListener('click', () => { c4Sheets(null); if (!SAVE4.goal && c4Net() >= C4_GOAL) c4GoalReached(); else c4NewDay(); });
   $('#c4upX').addEventListener('click', () => c4Sheets(null));
-  $('#c4noteX').addEventListener('click', () => { C4_WHO = null; c4Sheets(null); });
+  $('#c4noteX').addEventListener('click', () => { C4_WHO = null; C4_PICK = null; c4Sheets(null); });
   for (const id of ['c4up', 'c4note']) $('#' + id).addEventListener('click', e => { if (e.target.id === id) c4Sheets(null); });
 }
 registerChapter({
