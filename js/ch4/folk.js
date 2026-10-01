@@ -7,7 +7,7 @@ const C4_NAMES = {
   duck: ['bác Vịt Bầu', 'cô Vịt Cỏ'], rooster: ['ông Gà Trống', 'anh Gà Chọi'], dog: ['chú Mực', 'con Vện'], toad: ['cụ Cóc', 'chú Ếch'],
 };
 // how often each kind turns up at the market
-const C4_KINDS = [['mouse', .64], ['duck', .1], ['rooster', .08], ['dog', .09], ['toad', .09]];
+const C4_KINDS = [['mouse', .64], ['duck', .1], ['rooster', .08], ['dog', .09]];
 // the neighbours who keep a stall along the lane; they call out their wares now and then
 const C4_VENDORS = [
   { x: 1180, name: 'bà hàng cá', M: 'c', ware: 'hangCa', calls: ['Cá rô đồng đây! Cá tươi đây!', 'Cá chép béo lắm, mua đi cô bác ơi!', 'Tươi rói, vừa kéo lưới sáng nay!'] },
@@ -65,6 +65,8 @@ const C4_WANT = {
   bun: ['Bát bún riêu, nhiều riêu nhé!', '{n} bát bún, thêm mắm tôm!', 'Đói quá, bát bún nào!', 'Bún riêu cua đồng phải không?'],
 };
 const C4_THANKS = ['Có ngay ạ!', 'Của bác đây ạ!', 'Cảm ơn, lần sau lại ghé!', 'Nóng hổi đây ạ!', 'Vâng, có ngay!'];
+// what someone who has had too much rice wine mumbles on the way home
+const C4_DRUNK = ['Hức! Rượu làng mình… ngon nhất!', 'Ai bảo… tôi say? Hức!', 'Nhà… nhà tôi đâu nhỉ?', 'Một chén nữa thôi… hức!', 'Trăng hôm nay… sao có hai cái?', 'Ta là… ta là chúa chợ! Hức!'];
 const C4_GIVEUP = ['Lâu quá, thôi đi chỗ khác!', 'Đông quá, mai mua vậy.', 'Chờ mỏi cả chân!'];
 const C4_HUSBAND = ['Hàng về rồi đây mình ơi!', 'Trầu tươi vừa lên đò!', 'Thúng này nặng ghê!'];
 const C4_WIFE_GOT = ['Anh để đấy em xếp!', 'Anh vất vả quá!', 'Vừa kịp, sắp hết rồi!'];

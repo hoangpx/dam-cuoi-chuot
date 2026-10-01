@@ -106,3 +106,5 @@ body.touch #c4hud .mid{position:static;transform:none}
 /* chương IV: notices (toast) at the bottom of the screen, where nothing covers them */
 body.c4 #toast{top:auto;bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .card4 .fk.unk2{cursor:default;opacity:.65}
+.card4 .loan .pays{display:flex;gap:6px}
+.card4 .loan .btn{white-space:nowrap}
