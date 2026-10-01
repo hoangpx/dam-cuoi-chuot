@@ -57,7 +57,72 @@ const C4_ALONE = ['Ơ, quên mua muối rồi!', 'Chợ hôm nay đông quá!', 
 // buying betel
 const C4_BUY = ['Cho {n} miếng trầu nhé cô!', 'Trầu hôm nay có tươi không cô?', 'Lấy cho tôi {n} miếng, têm cánh phượng nhé!', 'Bà nhà tôi dặn mua {n} miếng trầu.', 'Cô ơi, {n} miếng trầu!', 'Có cau non không cô?'];
 const C4_SELL = ['Có ngay ạ!', 'Trầu mới hái sáng nay đấy ạ!', 'Cảm ơn, lần sau lại ghé nhé!', 'Vâng, em têm cẩn thận đây!', 'Cau non, trầu tươi đây ạ!', 'Ăn trầu cho đỏ môi nhé!'];
+// buyers at the other stalls ({n} how many), and the helpers serving them
+const C4_WANT = {
+  che: ['Cho bát chè nóng nào!', 'Chè xanh đặc vào nhé!', '{n} bát chè cho cả nhà!', 'Rét quá, bát chè cho ấm bụng!'],
+  xoi: ['Gói cho {n} gói xôi!', 'Xôi gấc còn không?', 'Xôi đỗ một gói mang đi!', 'Cho cháu gói xôi ăn sáng.'],
+  xen: ['Có kim chỉ không?', 'Bán cho cái lược bí!', 'Lấy {n} cuộn chỉ đỏ.', 'Gương này bao nhiêu?'],
+  bun: ['Bát bún riêu, nhiều riêu nhé!', '{n} bát bún, thêm mắm tôm!', 'Đói quá, bát bún nào!', 'Bún riêu cua đồng phải không?'],
+};
+const C4_THANKS = ['Có ngay ạ!', 'Của bác đây ạ!', 'Cảm ơn, lần sau lại ghé!', 'Nóng hổi đây ạ!', 'Vâng, có ngay!'];
 const C4_GIVEUP = ['Lâu quá, thôi đi chỗ khác!', 'Đông quá, mai mua vậy.', 'Chờ mỏi cả chân!'];
 const C4_HUSBAND = ['Hàng về rồi đây mình ơi!', 'Trầu tươi vừa lên đò!', 'Thúng này nặng ghê!'];
 const C4_WIFE_GOT = ['Anh để đấy em xếp!', 'Anh vất vả quá!', 'Vừa kịp, sắp hết rồi!'];
 const c4Pick = arr => arr[(R() * arr.length) | 0];
+
+/* ---------- news for tomorrow (whispered; the player taps to overhear them, they go into the notebook) ---------- */
+const C4_NEWS = {
+  hoi: [[[0, 'Này, nghe nói mai làng mở hội đấy!'], [1, 'Thật à? Thế thì chợ đông lắm đây.'], [0, 'Đông lắm, người làng bên cũng sang.']],
+        [[0, 'Mai có rước kiệu đình, biết chưa?'], [1, 'Biết rồi, cả làng đi xem, chợ chen không lọt!']]],
+  mua:  [[[0, 'Cụ Đồ xem trời, bảo mai mưa to.'], [1, 'Mưa thì ai đi chợ, ở nhà cả thôi.']],
+        [[0, 'Kiến tha trứng lên cao kìa.'], [1, 'Thế là mai mưa rồi, chợ vắng hoe.']]],
+  meo:  [[[0, 'Suỵt… nghe đâu mai mèo lại về chợ.'], [1, 'Chết! Thế thì phải sắm lễ sẵn.'], [0, 'Không có lễ là nó phá cả gánh.']],
+        [[0, 'Đêm qua thấy bóng mèo ở đầu làng.'], [1, 'Mai nó ra chợ cho xem, cẩn thận đấy.']]],
+  thue: [[[0, 'Mai ông Lý đi thu tiền chợ đấy.'], [1, 'Lại thu! Phải để dành ít tiền.']],
+        [[0, 'Ông Lý dặn mai ai cũng phải nộp tiền chợ.'], [1, 'Ai biếu thêm thì ông ấy cho chỗ đẹp.']]],
+  cuoi: [[[0, 'Nhà {X} mai cưới con, cần nhiều trầu lắm.'], [1, 'Thế cô bán trầu cổng chợ lại đắt hàng!']],
+        [[0, 'Mai có đám hỏi, phải mấy chục miếng trầu.'], [1, 'Nhà gái chắc đặt trầu cánh phượng.']]],
+};
+// what the wife writes in her notebook when she overhears it
+const C4_NOTE = {
+  hoi: 'Nghe nói mai làng mở hội, chợ sẽ đông.', mua: 'Nghe nói mai trời mưa to, chợ vắng.', meo: 'Nghe đồn mai mèo về chợ đòi lễ.',
+  thue: 'Mai ông Lý đi thu tiền chợ.', cuoi: 'Mai có nhà cưới con, cần nhiều trầu.',
+};
+
+/* ---------- more chats: proverbs, village life, a little teasing ---------- */
+C4_CHATS.push(
+  [[0, 'Dạo này nhà {B} làm ăn khấm khá nhỉ?'], [1, 'Có công mài sắt có ngày nên kim mà!']],
+  [[0, 'Nhà {X} lại sang ăn chực nhà tôi.'], [1, 'Bán anh em xa, mua láng giềng gần, thôi chịu khó!']],
+  [[0, 'Thằng út nhà tôi chui vào chum gạo ngủ quên.'], [1, 'Đúng là chuột sa chĩnh gạo!'], [0, 'Sướng nhất nó rồi!']],
+  [[0, '{X} khoe con mình học giỏi nhất làng.'], [1, 'Mèo khen mèo dài đuôi ấy mà.']],
+  [[0, 'Nhà {X} tham bán đắt, giờ ế cả gánh.'], [1, 'Tham thì thâm, các cụ dạy cấm sai.']],
+  [[0, 'Vợ chồng {X} nghèo mà thương nhau lắm.'], [1, 'Thương nhau củ ấu cũng tròn mà.']],
+  [[0, 'Hôm qua giỗ cụ nhà {X}, đông vui lắm.'], [1, 'Có bánh chưng không?'], [0, 'Có, cả xôi gấc đỏ au!']],
+  [[0, 'Mùa này cấy lúa có kịp không {B}?'], [1, 'Kịp, chỉ lo hạn thôi.'], [0, 'Trời thương thì mưa thuận gió hoà.']],
+  [[0, 'Nghe tiếng sáo diều đầu làng chưa?'], [1, 'Nghe rồi, trẻ con thả diều cả chiều.']],
+  [[0, 'Này, nồi cám nhà tôi lại bị đổ!'], [1, 'Chắc lại con Vện chứ ai.']],
+  [[0, 'Cụ {X} năm nay bao nhiêu tuổi rồi?'], [1, 'Bảy mươi, mà vẫn đi chợ phăm phăm.'], [0, 'Sống lâu lên lão làng!']],
+  [[0, 'Trời nóng quá, mua bát chè đỗ đen không?'], [1, 'Thôi, để dành tiền mua muối.']],
+  [[0, 'Chồng tôi hứa sắm cho cái nón quai thao.'], [1, 'Hứa từ Tết năm ngoái rồi còn gì!']],
+  [[0, '{B} đi chợ một mình à?'], [1, 'Ừ, ông nhà tôi ở nhà trông trẻ.'], [0, 'Thế thì giỏi quá!']],
+  [[0, 'Ối, ai dẫm vào chân tôi thế?'], [1, 'Xin lỗi, chợ đông quá!']],
+  [[0, 'Đồng tiền đi liền khúc ruột, mua gì cũng phải tính.'], [1, 'Phải, buôn có bạn, bán có phường.']],
+  [[0, 'Nhà {X} mới đẻ thằng cu, kháu lắm.'], [1, 'Thế à! Phải sang mừng mới được.']],
+  [[0, 'Sáng nay gà nhà tôi đẻ trứng hai lòng đỏ!'], [1, 'Điềm lành đấy, sắp có lộc.']],
+  [[0, 'Này, đừng có nói to, {X} đứng ngay đấy!'], [1, 'Ơ chết, thế mà tôi không thấy.']],
+  [[0, 'Ăn trầu không {B}?'], [1, 'Có, miếng trầu là đầu câu chuyện mà.'], [0, 'Trầu cô ở cổng chợ đấy, ngon lắm.']],
+  [[0, 'Năm nay hội làng có thi nấu cơm không?'], [1, 'Có, cả thi bắt vịt nữa.'], [0, 'Thôi tôi chỉ đi xem thôi.']],
+  [[0, 'Sao dạo này ít thấy {X} ra chợ?'], [1, 'Nghe nói ốm, phải uống thuốc nam.']],
+  [[0, 'Con gái nhà {X} sắp đi lấy chồng.'], [1, 'Lấy ai thế?'], [0, 'Anh thợ mộc làng bên.'], [1, 'Khéo tay thế thì sướng rồi!']],
+  [[0, 'Này, mai đi lễ đình không?'], [1, 'Đi chứ, cầu cho buôn may bán đắt.']],
+  [[0, 'Nhà {X} cãi nhau vì con gà sang vườn.'], [1, 'Chuyện bé xé ra to!']],
+  [[0, 'Ông Lý dạo này hay đi tuần đêm.'], [1, 'Chắc sợ mèo về bắt trộm gà.']],
+  [[0, 'Thằng Bờm lại đổi quạt mo lấy xôi.'], [1, 'Khôn thế mà người ta bảo nó dại!']],
+  [[0, 'Trông kìa, con Vện lại đuổi gà.'], [1, 'Chó cậy gần nhà, gà cậy gần chuồng.']],
+  [[0, 'Chợ quê vui nhỉ {B}.'], [1, 'Vui chứ, có nhiều chuyện để nghe!']],
+  [[0, 'Bánh đa chị ấy nướng thơm cả chợ.'], [1, 'Ừ, chiều về mua một chiếc cho bọn trẻ.']],
+);
+C4_ALONE.push('Chết, quên cái nón ở nhà!', 'Phải mua ít vôi về têm trầu.', 'Mua thêm bó rau muống đã.', 'Ơ, con Vện chạy đâu rồi?', 'Ối, nắng to quá!', 'Hôm nay giá cá rẻ thật.');
+// more customer lines
+C4_BUY.push('Têm cho tôi {n} miếng thật cay nhé!', 'Nhà có khách, lấy {n} miếng cô ơi.', 'Trầu này tươi quá, lấy {n} miếng!');
+C4_SELL.push('Trầu cánh phượng đây ạ!', 'Mời bác ăn thử miếng cau non!', 'Ăn trầu là nhớ đến em nhé!');

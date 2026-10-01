@@ -6,6 +6,8 @@
        album() → fill #cards and the album titles, hide() → tear down its own HUD,
        update(dt), render(), key(e), pointer: { down(e), move(e), up(e) },
        next(), retry()  → end-screen buttons, locked() → true to show its card greyed and closed (optional),
+       direct() → start it straight from its chapter card, no album (optional),
+       hidden() → true to leave its card out of the picker (optional), lockText → the greyed card's note (default "Sắp mở"),
      })
    Menus, the loop and input only ever talk to chapters through this object. */
 
