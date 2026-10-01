@@ -218,7 +218,6 @@ function c4Deco(g, w, k, moving = false) {
   } else if (t === 'dieu') {}
   else if (t === 'thung' && !w.drunk) c4Basket(g, 20, -58, 24, 13);
   else if (t === 'cay' || t === 'cuoc') c4Stroke(g, t === 'cay' ? 7 : 5, '#8a5a2a', [[46, -136], [30, -128]]);   // the handle's end in front of the hand
-  else if (t === 'ganh') c4Stroke(g, 5, '#8a5a2a', [[10, -125], [30, -125]]);
   if (w.umb && (rain || t === 'o')) {                                       // an umbrella (paper, oiled)
     c4Stroke(g, 3, '#7a4a22', [[44, -96], [40, -214]]);
     g.fillStyle = L.umbCol || '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2.4;

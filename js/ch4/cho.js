@@ -352,13 +352,14 @@ function c4Event(kind) {
       ['Nhận', () => { C4.wed = { n, who }; toast(`Nhớ để dành đủ trầu đến ${c4Span('Thân')}!`, 3.4); }],
       ['Không nhận', () => {}]] });
   } else if (kind === 'boi') {
-    Object.assign(E, { title: 'Thầy bói', text: 'Ông thầy bói chống gậy ghé gánh: "Gieo một quẻ, biết ngày mai lành dữ, chỉ năm đồng!"', opts: [
+    Object.assign(E, { title: 'Thầy bói', text: 'Ông thầy bói chống gậy ghé gánh: "Gieo một quẻ, biết ngày mai lành dữ, chỉ năm đồng! Bói vui thì một đồng thôi!"', opts: [
       ['Xem quẻ · 5 đồng', () => { sp(5); const n = SAVE4.next, got = Object.keys(C4_NOTE).filter(k => k === 'mua' ? n.wx === 'mua' : n[k]);
         if (n.wx === 'ret') SAVE4.notes.push({ day: SAVE4.day + 1, kind: 'ret', text: 'Thầy bói phán: mai trời rét căm căm.' });
         if (n.wx === 'gat') SAVE4.notes.push({ day: SAVE4.day + 1, kind: 'gat', text: 'Thầy bói phán: mai nắng gắt như đổ lửa.' });
         for (const k of got) if (!SAVE4.notes.some(x => x.day === SAVE4.day + 1 && x.kind === k)) SAVE4.notes.push({ day: SAVE4.day + 1, kind: k, text: 'Thầy bói phán: ' + C4_NOTE[k].replace('Nghe nói ', '').replace('Nghe đồn ', '') });
         if (!got.length && n.wx === 'dep') SAVE4.notes.push({ day: SAVE4.day + 1, kind: 'yen', text: 'Thầy bói phán: mai trời đẹp, bình yên vô sự.' });
-        C4.noteNew = true; toast('Thầy bói lẩm nhẩm bấm đốt tay… Đã ghi lời phán vào sổ tay.', 3.4); }, SAVE4.money >= 5],
+        C4.noteNew = true; toast(`Thầy bói bấm đốt tay: "${c4Pick(C4_BOI)}" (đã ghi lời phán ngày mai vào sổ tay)`, 5); }, SAVE4.money >= 5],
+      ['Bói vui · 1 đồng', () => { sp(1); toast(`Thầy bói phán: "${c4Pick(C4_BOI)}"`, 4.6); }, SAVE4.money >= 1],
       ['Không tin bói', () => toast('Thầy bói lắc đầu: "Có kiêng có lành đấy!"', 2.6)]] });
   } else if (kind === 'trom') {
     const n = Math.min(SAVE4.stock, 4 + ((R() * 5) | 0)); if (n < 2) return;
