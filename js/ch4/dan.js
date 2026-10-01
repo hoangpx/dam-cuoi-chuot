@@ -66,10 +66,10 @@ function c4People() {
     const head = list[h.members[0]]; h.name = `nhà ${head.name}`;
   }
   // the animals' households
-  for (const [kind, names] of [['duck', ['bác Vịt Bầu', 'cô Vịt Cỏ']], ['rooster', ['ông Gà Trống', 'bà Gà Mái']], ['dog', ['chú Mực', 'thím Vện']], ['toad', ['cụ Cóc', 'chú Ếch']]]) {
+  for (const [kind, names] of [['duck', ['bác Vịt Bầu', 'cô Vịt Cỏ']], ['rooster', ['ông Gà Trống', 'bà Gà Mái']], ['dog', ['chú Mực', 'thím Vện']]]) {
     const h = { id: houses.length, xom: pick(C4_XOM), members: [] }; houses.push(h);
     const ps = names.map((name, i) => { const p = { id: list.length, name, g: i ? 'f' : 'm', role: 'adult', kind, sort: 0, trait: trait(), job: C4_JOBS[kind][0], house: h.id, as: i ? 'vợ' : 'chủ nhà', links: [] }; list.push(p); h.members.push(p.id); return p; });
-    if (kind === 'toad') ps[1].as = 'cháu', tie(ps[0], ps[1], 'ong'); else tie(ps[0], ps[1], 'vc');
+    tie(ps[0], ps[1], 'vc');
     h.name = `nhà ${ps[0].name}`;
   }
   // ties across houses: some folk know half the village, some hardly anyone
@@ -81,6 +81,21 @@ function c4People() {
       const rel = hp.xom === hq.xom && rnd() < .6 ? 'xom' : p.g === 'm' && q.g === 'm' && p.kind === 'mouse' && q.kind === 'mouse' && rnd() < .4 ? 'nhau' : p.g === 'f' && q.g === 'f' && rnd() < .3 ? 'ketnghia' : rnd() < .1 ? 'ghet' : 'ban';
       tie(p, q, rel);
     }
+  }
+  // how each one looks and what they carry to market (art.js c4Deco), from their trade, age and sex
+  for (const p of list) {
+    if (p.kind !== 'mouse') { p.look = {}; continue; }
+    const non = C4_MOUSE_SORTS[p.sort].non, L = p.look = {};
+    if (p.g === 'f') { L.skirt = pick(C4_SKIRTS); if (!non && rnd() < .3) L.hat = 'quai'; }
+    const farm = ['thợ cấy', 'chăn trâu', 'xay lúa'].includes(p.job);
+    L.tool = p.job === 'chăn trâu' || (farm && rnd() < .5) ? 'buf'
+      : farm ? pick(['cay', 'cuoc'])
+      : p.role === 'old' && p.g === 'm' && rnd() < .6 ? 'dieu'
+      : ['đánh cá', 'bán chiếu', 'nặn nồi', 'đan rổ'].includes(p.job) ? pick(['ganh', 'thung'])
+      : rnd() < .55 ? pick(p.g === 'm' ? ['thung', 'o', 'cuoc', 'dieu', 'ganh', 'buf', 'buf', 'cay'] : ['thung', 'o', 'ganh', 'thung']) : null;
+    if (L.tool === 'dieu' && p.g === 'f') L.tool = 'thung';
+    L.umbCol = pick(['#a3332a', '#c98a1c', '#2f5f8f', '#2f6a4c']);
+    L.drinker = p.g === 'm' && ((p.links.some(l => l.rel === 'nhau') && rnd() < .45) || rnd() < .06);
   }
   for (let k = 0; k < 5; k++) { const a = list[houses[(rnd() * C4_HOUSES) | 0].members[0]], b = list[houses[(rnd() * C4_HOUSES) | 0].members[0]]; if (a.house !== b.house) tie(a, b, 'thong'); }
   return (C4P = { seed: SAVE4.seed, list, houses });
@@ -169,7 +184,7 @@ function c4Face(p) {
   g.save(); g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.clip();
   const w = { kind: p.kind, sort: p.sort, M: p.kind === 'mouse' ? c4MouseRig(p.sort) : null, seed: 0, ph: 0, st: 'idle', face: 1 }, t = C4.t; C4.t = 0;
   if (p.kind === 'mouse') c4Critter(g, w, 44, 150, 1.05);                  // head and shoulders
-  else { const s = { duck: 1.2, rooster: .55, dog: .62, toad: .7 }[p.kind]; c4Critter(g, w, 48, 82, s); }
+  else { const s = { duck: 1.2, rooster: .55, dog: .62 }[p.kind]; c4Critter(g, w, 48, 82, s); }
   C4.t = t; g.restore();
   g.strokeStyle = '#b39a6a'; g.lineWidth = 5; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.stroke();
   const url = c.toDataURL(); C4_FACE.set(key, url); return url;

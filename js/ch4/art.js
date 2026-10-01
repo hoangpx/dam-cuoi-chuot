@@ -145,16 +145,121 @@ function c4Non(g) {
   g.lineWidth = 1; g.beginPath(); g.moveTo(-18, -147); g.lineTo(30, -147); g.moveTo(-4, -156); g.lineTo(18, -156); g.stroke();
 }
 // the other folk at the market, from chương I's parts; face 1 = walking right. C4_TALL: how high their head is.
+/* ---------- what folk wear and carry (look: dan.js c4People; drawn over the mouse in its own frame, face right) ----------
+   skirt (váy đụp, a colour), hat 'quai' (nón quai thao), tool: cay (a plough on the shoulder), cuoc (a hoe), dieu (a
+   bamboo water pipe, smoking), thung (a basket on the hip), ganh (a shoulder pole with two baskets), o (an umbrella);
+   in the rain: an umbrella or a straw rain cape (áo tơi); drunk: red cheeks and a gourd of rice wine. */
+const C4_SKIRTS = ['#3a2a22', '#2a2320', '#2f3f6f', '#7a2a22', '#2f4f3c'];
+// the arm pose each thing needs (c4Mouse arm angle): the hand where the thing is held
+const C4_TOOL_ARM = { o: -1.2, dieu: -.6, thung: .2, ganh: -2.4, cay: -2, cuoc: -2, drunk: .3, buf: 1.2 };
+const c4Stroke = (g, w, col, pts) => { g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.strokeStyle = INK; g.lineWidth = w + 3; g.stroke(); g.strokeStyle = col; g.lineWidth = w; g.stroke(); };
+const c4Shape = (g, col, pts, lw = 2.2) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = col; g.fill(); g.strokeStyle = INK; g.lineWidth = lw; g.lineJoin = 'round'; g.stroke(); };
+function c4Basket(g, x, y, rx, ry) {
+  g.fillStyle = '#c9a45a'; g.strokeStyle = INK; g.lineWidth = 2.2;
+  g.beginPath(); g.moveTo(x - rx, y - ry * .3); g.quadraticCurveTo(x - rx, y + ry, x, y + ry); g.quadraticCurveTo(x + rx, y + ry, x + rx, y - ry * .3); g.closePath(); g.fill(); g.stroke();
+  g.lineWidth = 1.1; g.beginPath(); for (let i = -2; i <= 2; i++) { g.moveTo(x + i * rx * .35, y - ry * .2); g.lineTo(x + i * rx * .3, y + ry * .8); } g.stroke();
+  g.lineWidth = 2; g.beginPath(); g.ellipse(x, y - ry * .3, rx, ry * .35, 0, 0, 6.283); g.stroke();
+}
+// behind the mouse (drawn first): a plough or hoe handle passing behind the back, the pole of a gánh
+function c4DecoBack(g, w) {
+  const L = w.look || {}, t = L.tool;
+  if (t === 'cay') {                                                         // the plough: beam over the shoulder, the share and handle behind
+    c4Stroke(g, 7, '#8a5a2a', [[34, -128], [-10, -118], [-70, -70]]);
+    c4Shape(g, '#7a4a22', [[-70, -70], [-92, -40], [-78, -34], [-60, -62]]);
+    c4Shape(g, '#5a5a5a', [[-92, -40], [-104, -26], [-80, -30]], 1.8);
+    c4Stroke(g, 5, '#8a5a2a', [[-66, -66], [-84, -100]]);
+  } else if (t === 'cuoc') {
+    c4Stroke(g, 5, '#8a5a2a', [[34, -130], [-8, -120], [-56, -88]]);
+    c4Shape(g, '#5a5a5a', [[-56, -88], [-70, -66], [-58, -62], [-48, -84]], 1.8);
+  } else if (t === 'ganh') {
+    const sw = Math.sin(C4.t * 3 + w.seed) * 3;
+    g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath();
+    for (const bx of [-64, 64]) { g.moveTo(bx, -124); g.lineTo(bx - 14 + sw, -58); g.moveTo(bx, -124); g.lineTo(bx + 14 + sw, -58); }
+    g.stroke();
+    c4Basket(g, -64 + sw, -50, 22, 14); c4Basket(g, 64 + sw, -50, 22, 14);
+    c4Stroke(g, 5, '#8a5a2a', [[-76, -126], [76, -124]]);
+  }
+}
+// over the mouse: skirt, rain cape, hat, the things held in front
+function c4Deco(g, w, k) {
+  const L = w.look || {}, rain = typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story', t = L.tool;
+  if (L.skirt) {
+    c4Shape(g, L.skirt, [[-23, -60], [23, -60], [30, -8], [0, -4], [-30, -8]]);
+    g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1.2; g.beginPath(); for (const x of [-12, 0, 12]) { g.moveTo(x, -56); g.lineTo(x * 1.25, -8); } g.stroke();
+    c4Shape(g, '#a3332a', [[-24, -64], [24, -64], [24, -57], [-24, -57]], 1.6);   // the sash
+  }
+  if (rain && !w.umb) {                                                     // áo tơi: a straw cape over the shoulders
+    c4Shape(g, '#b08a48', [[-8, -120], [18, -118], [30, -66], [28, -34], [-32, -34], [-30, -70]]);
+    g.strokeStyle = INK; g.lineWidth = 1; g.beginPath();
+    for (let x = -28; x <= 26; x += 6) { g.moveTo(x * .6, -110); g.lineTo(x, -36); }
+    for (let x = -32; x <= 28; x += 5) { g.moveTo(x, -36); g.lineTo(x - 2, -28); }
+    g.stroke();
+  }
+  if (L.hat === 'quai' && !(rain && w.umb)) {                               // nón quai thao: a wide flat hat with tassels
+    g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-26, -140); g.lineTo(-30, -104); g.moveTo(40, -140); g.lineTo(44, -106); g.stroke();
+    g.fillStyle = '#e2b43c'; g.fillRect(-33, -106, 6, 8); g.fillRect(41, -108, 6, 8);
+    g.fillStyle = '#d9b46a'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.ellipse(8, -142, 48, 9, 0, 0, 6.283); g.fill(); g.stroke();
+    g.beginPath(); g.ellipse(8, -146, 20, 5, 0, 0, 6.283); g.stroke();
+  }
+  if (w.drunk) {                                                            // red cheeks, a gourd of rice wine
+    g.fillStyle = 'rgba(200,40,40,.55)'; g.beginPath(); g.arc(24, -98, 7, 0, 6.283); g.fill();
+    g.fillStyle = '#c98a1c'; g.strokeStyle = INK; g.lineWidth = 2;
+    g.beginPath(); g.arc(18, -44, 10, 0, 6.283); g.fill(); g.stroke(); g.beginPath(); g.arc(18, -60, 6.5, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = '#a3332a'; g.fillRect(15, -71, 6, 5);
+  }
+  if (t === 'dieu') {                                                       // điếu cày: a bamboo pipe held up to the mouth
+    c4Stroke(g, 8, '#c9a45a', [[38, -36], [50, -108]]);
+    g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(38, -60); g.lineTo(46, -61); g.moveTo(42, -84); g.lineTo(50, -85); g.stroke();
+    c4Stroke(g, 3, '#7a4a22', [[40, -54], [30, -62]]);
+    const k2 = (C4.t * .7 + w.seed) % 3;
+    if (k2 < 1.4) { g.fillStyle = `rgba(200,195,185,${.7 - k2 * .45})`; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(54 + i * 6 + k2 * 10, -116 - i * 9 - k2 * 22, 5 + i * 2 + k2 * 4, 0, 6.283); g.fill(); } }
+  } else if (t === 'thung' && !w.drunk) c4Basket(g, 20, -58, 24, 13);
+  else if (t === 'cay' || t === 'cuoc') c4Stroke(g, t === 'cay' ? 7 : 5, '#8a5a2a', [[46, -136], [30, -128]]);   // the handle's end in front of the hand
+  else if (t === 'ganh') c4Stroke(g, 5, '#8a5a2a', [[10, -125], [30, -125]]);
+  if (w.umb && (rain || t === 'o')) {                                       // an umbrella (paper, oiled)
+    c4Stroke(g, 3, '#7a4a22', [[44, -96], [40, -214]]);
+    g.fillStyle = L.umbCol || '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2.4;
+    g.beginPath(); g.moveTo(-14, -196); g.quadraticCurveTo(40, -262, 96, -196); g.quadraticCurveTo(68, -204, 41, -196); g.quadraticCurveTo(14, -204, -14, -196); g.closePath(); g.fill(); g.stroke();
+    g.lineWidth = 1.1; g.beginPath(); for (const x of [-14, 14, 41, 68, 96]) { g.moveTo(40, -226); g.lineTo(x, -197); } g.stroke();
+  }
+}
+// a buffalo (chương III's Chăn Trâu art), side on, led on a rope; feet on y = 0, face 1 = facing right
+function c4Buffalo(g, x, y, s, face, ph, moving) {
+  const A = ctArt(), sx = face * s, gait = moving ? 1 : 0;
+  g.fillStyle = 'rgba(29,25,21,.16)'; g.beginPath(); g.ellipse(x, y + 2, 86 * s, 12 * s, 0, 0, 6.283); g.fill();
+  dp(g, A.tail, x - face * 70 * s, y - 86 * s, Math.sin(C4.t * 3) * .25 * face, s, s);
+  [-50, 48, -34, 32].forEach((lx, i) => {
+    const px = x + lx * sx, sw = Math.sin(ph + (i % 2 ? Math.PI : 0) + (i > 1 ? 1.2 : 0)) * 9 * gait * s * face;
+    g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = 13 * s; g.beginPath(); g.moveTo(px, y - 44 * s); g.lineTo(px + sw, y - 2); g.stroke();
+    g.strokeStyle = i < 2 ? '#7a2a22' : '#a3332a'; g.lineWidth = 8.5 * s; g.stroke();
+    g.fillStyle = INK; g.beginPath(); g.ellipse(px + sw, y - 2, 6.5 * s, 4 * s, 0, 0, 6.283); g.fill();
+  });
+  dp(g, A.body, x, y, 0, sx, s);
+  const nod = moving ? Math.sin(ph * 2) * .06 : Math.sin(C4.t * 1.3) * .05;
+  dp(g, A.headSide, x + face * 66 * s, y - 58 * s, nod * face, sx, s);
+  return [x + face * (66 + 40) * s, y - (58 - 20) * s];                     // the muzzle, where the rope is tied
+}
+// the other folk at the market, from chương I's parts; face 1 = walking right. C4_TALL: how high their head is.
 const C4_TALL = { mouse: 168, duck: 58, rooster: 150, dog: 110, toad: 100 };
 function c4Critter(g, w, x, y, s) {
   const ph = w.ph, moving = w.st === 'walk' || w.st === 'leave' || (w.st === 'queue' && w.moving), f = w.face;
   if (w.kind === 'mouse') {
-    const sort = C4_MOUSE_SORTS[w.sort], k = s * .92 * (sort.role === 'child' ? .68 : 1), arm = w.carry ? .4 : (w.talk ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null);
+    const sort = C4_MOUSE_SORTS[w.sort], k = s * .92 * (sort.role === 'child' ? .68 : 1), L = w.look || {};
+    const busy = w.buf ? 'buf' : w.drunk ? 'drunk' : (L.tool && L.tool !== 'o') ? L.tool : w.umb && (L.tool === 'o' || (typeof c4Wx === 'function' && c4Wx() === 'mua')) ? 'o' : null;
+    const arm = busy && (busy !== 'thung' || !w.carry) ? C4_TOOL_ARM[busy] : w.carry ? .4 : (w.talk ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null);
+    let muzzle = null;
+    if (w.buf) muzzle = c4Buffalo(g, x - f * 205 * s, y, s * 1.3, f, ph, moving);   // the buffalo plods behind on its rope
     g.save(); g.translate(x, y); if (sort.role === 'old') g.rotate(f * .1);          // the old ones stoop a little
-    c4Mouse(g, w.M, 0, f, ph, moving, sort.role === 'old' && !w.talk ? -.15 : arm, w.carry, k, 0, w.seed);
+    if (w.drunk) g.rotate(Math.sin(C4.t * 2.2 + w.seed) * .13);                     // reeling
+    g.save(); g.scale(f * k, k); c4DecoBack(g, w); g.restore();
+    c4Mouse(g, w.M, 0, f, ph, moving, sort.role === 'old' && !w.talk && !busy ? -.15 : arm, w.carry, k, 0, w.seed);
+    g.save(); g.scale(f * k, k); c4Deco(g, w, k); g.restore();
     if (sort.role === 'old') { g.strokeStyle = INK; g.lineWidth = 6 * k; g.lineCap = 'round'; g.beginPath(); g.moveTo(f * 32 * k, -92 * k); g.lineTo(f * 44 * k, 0); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 3.4 * k; g.stroke(); }
-    if (sort.non) { g.scale(f * k, k); c4Non(g); }
-    g.restore(); return;
+    const wet = typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story';
+    if ((sort.non || (wet && !w.umb && L.hat !== 'quai')) && !(w.umb && (L.tool === 'o' || wet))) { g.scale(f * k, k); c4Non(g); }   // a conical hat; in the rain with the straw cape
+    g.restore();
+    if (muzzle) { const hx = x + f * -13 * k, hy = y - 71 * k; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(hx, hy); g.quadraticCurveTo((hx + muzzle[0]) / 2, Math.max(hy, muzzle[1]) + 22 * s, muzzle[0], muzzle[1]); g.stroke(); }
+    return;
   }
   const bob = moving ? -Math.abs(Math.sin(ph)) * 4 : (w.talk ? -Math.abs(Math.sin(C4.t * 8)) * 2 : 0);
   g.save(); g.translate(x, y); g.scale(s, s);
