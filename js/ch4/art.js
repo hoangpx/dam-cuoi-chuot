@@ -105,15 +105,16 @@ const c4StallArt = lv => { const A = c4Art(); return [A.ganh, A.sap, A.gian][lv]
 
 // a mouse: chương I's woodblock rig (legs, tail, arm, body, head), standing on y; the tail sways on the mouse's own
 // beat (seed), never on its position (that jittered as it walked)
+let C4_SIT = false;                                                        // c4Mouse draws the legs folded forward (sitting on a stool)
 function c4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y = GROUND, seed = 0) {
   const sw = moving ? Math.sin(ph) : 0, bob = moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0;
   g.save(); g.translate(x, y); g.scale(face * s, s);
   const hy = -45 + bob, armN = arm === null ? sw * .4 : arm;
   dp(g, M.tail, -18, hy + 2, Math.sin(C4.t * 2.4 + seed) * .12);
-  dp(g, M.leg, 6, hy, sw * .55);
+  dp(g, M.leg, 6, hy, C4_SIT ? -1.25 : sw * .55);
   dp(g, M.arm, 2, hy - 50, -sw * .4);
   dp(g, M.body, 0, hy, .04);
-  dp(g, M.leg, -2, hy, -sw * .55);
+  dp(g, M.leg, -2, hy, C4_SIT ? -1.1 : -sw * .55);
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04);
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (carry) dp(g, carry, hx + 4, hyy + (carry === WP.basket ? -16 : 6), 0, carry === WP.basket ? 1.1 : .9, carry === WP.basket ? 1.1 : .9);
@@ -151,7 +152,7 @@ function c4Non(g) {
    in the rain: an umbrella or a straw rain cape (áo tơi); drunk: red cheeks and a gourd of rice wine. */
 const C4_SKIRTS = ['#3a2a22', '#2a2320', '#2f3f6f', '#7a2a22', '#2f4f3c'];
 // the arm pose each thing needs (c4Mouse arm angle): the hand where the thing is held
-const C4_TOOL_ARM = { o: -1.2, dieu: -.6, thung: .2, ganh: -2.4, cay: -2, cuoc: -2, drunk: .3, buf: 1.2 };
+const C4_TOOL_ARM = { o: -1.2, dieu: -.6, thung: .2, ganh: -1.6, cay: -2, cuoc: -2, drunk: .3, buf: 1.2 };
 const c4Stroke = (g, w, col, pts) => { g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.strokeStyle = INK; g.lineWidth = w + 3; g.stroke(); g.strokeStyle = col; g.lineWidth = w; g.stroke(); };
 const c4Shape = (g, col, pts, lw = 2.2) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = col; g.fill(); g.strokeStyle = INK; g.lineWidth = lw; g.lineJoin = 'round'; g.stroke(); };
 function c4Basket(g, x, y, rx, ry) {
@@ -174,19 +175,20 @@ function c4DecoBack(g, w) {
   } else if (t === 'ganh') {
     const sw = Math.sin(C4.t * 3 + w.seed) * 3;
     g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath();
-    for (const bx of [-64, 64]) { g.moveTo(bx, -124); g.lineTo(bx - 14 + sw, -58); g.moveTo(bx, -124); g.lineTo(bx + 14 + sw, -58); }
+    for (const bx of [-66, 70]) { g.moveTo(bx, -104); g.lineTo(bx - 13 + sw, -46); g.moveTo(bx, -104); g.lineTo(bx + 13 + sw, -46); }
     g.stroke();
-    c4Basket(g, -64 + sw, -50, 22, 14); c4Basket(g, 64 + sw, -50, 22, 14);
-    c4Stroke(g, 5, '#8a5a2a', [[-76, -126], [76, -124]]);
+    c4Basket(g, -66 + sw, -38, 22, 13); c4Basket(g, 70 + sw, -38, 22, 13);
+    c4Stroke(g, 5, '#8a5a2a', [[-78, -105], [82, -103]]);
   }
 }
 // over the mouse: skirt, rain cape, hat, the things held in front
-function c4Deco(g, w, k) {
+function c4Deco(g, w, k, moving = false) {
   const L = w.look || {}, rain = typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story', t = L.tool;
   if (L.skirt) {
-    c4Shape(g, L.skirt, [[-23, -60], [23, -60], [30, -8], [0, -4], [-30, -8]]);
-    g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1.2; g.beginPath(); for (const x of [-12, 0, 12]) { g.moveTo(x, -56); g.lineTo(x * 1.25, -8); } g.stroke();
-    c4Shape(g, '#a3332a', [[-24, -64], [24, -64], [24, -57], [-24, -57]], 1.6);   // the sash
+    const b = moving ? -Math.abs(Math.sin(w.ph)) * 3.5 : 0, sw = moving ? Math.sin(w.ph) * 5 : 0;
+    c4Shape(g, L.skirt, [[-20, -50 + b], [20, -50 + b], [26 + sw, -12 + b], [0 + sw * .6, -9 + b], [-26 + sw, -12 + b]]);
+    g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1.2; g.beginPath(); for (const x of [-10, 0, 10]) { g.moveTo(x, -47 + b); g.lineTo(x * 1.25 + sw * .8, -12 + b); } g.stroke();
+    c4Shape(g, '#a3332a', [[-21, -53 + b], [21, -53 + b], [21, -48 + b], [-21, -48 + b]], 1.4);   // the sash
   }
   if (rain && !w.umb) {                                                     // áo tơi: a straw cape over the shoulders
     c4Shape(g, '#b08a48', [[-8, -120], [18, -118], [30, -66], [28, -34], [-32, -34], [-30, -70]]);
@@ -207,13 +209,14 @@ function c4Deco(g, w, k) {
     g.beginPath(); g.arc(18, -44, 10, 0, 6.283); g.fill(); g.stroke(); g.beginPath(); g.arc(18, -60, 6.5, 0, 6.283); g.fill(); g.stroke();
     g.fillStyle = '#a3332a'; g.fillRect(15, -71, 6, 5);
   }
-  if (t === 'dieu') {                                                       // điếu cày: a bamboo pipe held up to the mouth
-    c4Stroke(g, 8, '#c9a45a', [[38, -36], [50, -108]]);
+  if (t === 'dieu' && w.st === 'sit') {                                     // điếu cày: a bamboo pipe standing on the ground, up to the mouth
+    c4Stroke(g, 8, '#c9a45a', [[40, 0], [50, -104]]);
     g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(38, -60); g.lineTo(46, -61); g.moveTo(42, -84); g.lineTo(50, -85); g.stroke();
     c4Stroke(g, 3, '#7a4a22', [[40, -54], [30, -62]]);
     const k2 = (C4.t * .7 + w.seed) % 3;
     if (k2 < 1.4) { g.fillStyle = `rgba(200,195,185,${.7 - k2 * .45})`; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(54 + i * 6 + k2 * 10, -116 - i * 9 - k2 * 22, 5 + i * 2 + k2 * 4, 0, 6.283); g.fill(); } }
-  } else if (t === 'thung' && !w.drunk) c4Basket(g, 20, -58, 24, 13);
+  } else if (t === 'dieu') {}
+  else if (t === 'thung' && !w.drunk) c4Basket(g, 20, -58, 24, 13);
   else if (t === 'cay' || t === 'cuoc') c4Stroke(g, t === 'cay' ? 7 : 5, '#8a5a2a', [[46, -136], [30, -128]]);   // the handle's end in front of the hand
   else if (t === 'ganh') c4Stroke(g, 5, '#8a5a2a', [[10, -125], [30, -125]]);
   if (w.umb && (rain || t === 'o')) {                                       // an umbrella (paper, oiled)
@@ -245,16 +248,22 @@ function c4Critter(g, w, x, y, s) {
   const ph = w.ph, moving = w.st === 'walk' || w.st === 'leave' || (w.st === 'queue' && w.moving), f = w.face;
   if (w.kind === 'mouse') {
     const sort = C4_MOUSE_SORTS[w.sort], k = s * .92 * (sort.role === 'child' ? .68 : 1), L = w.look || {};
-    const busy = w.buf ? 'buf' : w.drunk ? 'drunk' : (L.tool && L.tool !== 'o') ? L.tool : w.umb && (L.tool === 'o' || (typeof c4Wx === 'function' && c4Wx() === 'mua')) ? 'o' : null;
+    const busy = w.buf ? 'buf' : w.drunk ? 'drunk' : L.tool === 'dieu' ? (w.st === 'sit' ? 'dieu' : null) : (L.tool && L.tool !== 'o') ? L.tool : w.umb && (L.tool === 'o' || (typeof c4Wx === 'function' && c4Wx() === 'mua')) ? 'o' : null;
     const arm = busy && (busy !== 'thung' || !w.carry) ? C4_TOOL_ARM[busy] : w.carry ? .4 : (w.talk ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null);
     let muzzle = null;
     if (w.buf) muzzle = c4Buffalo(g, x - f * 205 * s, y, s * 1.3, f, ph, moving);   // the buffalo plods behind on its rope
-    g.save(); g.translate(x, y); if (sort.role === 'old') g.rotate(f * .1);          // the old ones stoop a little
+    const sit = w.st === 'sit';
+    if (sit) {                                                               // a low stool by the roadside
+      g.save(); g.translate(x, y); g.scale(k, k);
+      c4Shape(g, '#8a5a2a', [[-26, -40], [26, -40], [26, -33], [-26, -33]], 2); c4Stroke(g, 4, '#7a4a22', [[-20, -33], [-23, 0]]); c4Stroke(g, 4, '#7a4a22', [[20, -33], [23, 0]]);
+      g.restore();
+    }
+    g.save(); g.translate(x, y); if (sort.role === 'old' && !sit) g.rotate(f * .1);   // the old ones stoop a little
     if (w.drunk) g.rotate(Math.sin(C4.t * 2.2 + w.seed) * .13);                     // reeling
     g.save(); g.scale(f * k, k); c4DecoBack(g, w); g.restore();
-    c4Mouse(g, w.M, 0, f, ph, moving, sort.role === 'old' && !w.talk && !busy ? -.15 : arm, w.carry, k, 0, w.seed);
-    g.save(); g.scale(f * k, k); c4Deco(g, w, k); g.restore();
-    if (sort.role === 'old') { g.strokeStyle = INK; g.lineWidth = 6 * k; g.lineCap = 'round'; g.beginPath(); g.moveTo(f * 32 * k, -92 * k); g.lineTo(f * 44 * k, 0); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 3.4 * k; g.stroke(); }
+    C4_SIT = sit; c4Mouse(g, w.M, 0, f, ph, moving, sort.role === 'old' && !w.talk && !busy ? -.15 : arm, w.carry, k, sit ? -8 * k : 0, w.seed); C4_SIT = false;
+    g.save(); g.scale(f * k, k); c4Deco(g, w, k, moving); g.restore();
+    if (sort.role === 'old' && !sit) { g.strokeStyle = INK; g.lineWidth = 6 * k; g.lineCap = 'round'; g.beginPath(); g.moveTo(f * 32 * k, -92 * k); g.lineTo(f * 44 * k, 0); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 3.4 * k; g.stroke(); }
     const wet = typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story';
     if ((sort.non || (wet && !w.umb && L.hat !== 'quai')) && !(w.umb && (L.tool === 'o' || wet))) { g.scale(f * k, k); c4Non(g); }   // a conical hat; in the rain with the straw cape
     g.restore();

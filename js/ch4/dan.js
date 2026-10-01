@@ -90,13 +90,15 @@ function c4People() {
     const farm = ['thợ cấy', 'chăn trâu', 'xay lúa'].includes(p.job);
     L.tool = p.job === 'chăn trâu' || (farm && rnd() < .5) ? 'buf'
       : farm ? pick(['cay', 'cuoc'])
-      : p.role === 'old' && p.g === 'm' && rnd() < .6 ? 'dieu'
+      : p.role === 'old' && p.g === 'm' && rnd() < .5 ? 'dieu'
       : ['đánh cá', 'bán chiếu', 'nặn nồi', 'đan rổ'].includes(p.job) ? pick(['ganh', 'thung'])
-      : rnd() < .55 ? pick(p.g === 'm' ? ['thung', 'o', 'cuoc', 'dieu', 'ganh', 'buf', 'buf', 'cay'] : ['thung', 'o', 'ganh', 'thung']) : null;
+      : rnd() < .55 ? pick(p.g === 'm' ? ['thung', 'o', 'cuoc', 'ganh', 'buf', 'cay'] : ['thung', 'o', 'ganh', 'thung']) : null;
     if (L.tool === 'dieu' && p.g === 'f') L.tool = 'thung';
     L.umbCol = pick(['#a3332a', '#c98a1c', '#2f5f8f', '#2f6a4c']);
     L.drinker = p.g === 'm' && ((p.links.some(l => l.rel === 'nhau') && rnd() < .45) || rnd() < .06);
   }
+  { let n = 0; for (const p of list) if (p.look && p.look.tool === 'dieu' && ++n > 2) p.look.tool = null;
+    if (!n) { const o = list.find(p => p.role === 'old' && p.g === 'm' && p.kind === 'mouse'); if (o) o.look.tool = 'dieu'; } }
   for (let k = 0; k < 5; k++) { const a = list[houses[(rnd() * C4_HOUSES) | 0].members[0]], b = list[houses[(rnd() * C4_HOUSES) | 0].members[0]]; if (a.house !== b.house) tie(a, b, 'thong'); }
   return (C4P = { seed: SAVE4.seed, list, houses });
 }

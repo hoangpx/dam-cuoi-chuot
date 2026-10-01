@@ -181,10 +181,11 @@ function c4Spawn(atX) {
     if (R() < Math.min(.9, sum * c4Keen(P))) { let k = R() * sum; for (const [g, w] of wants) { if ((k -= w) <= 0) { shop = g; break; } } }
   }
   // what they bring: a buffalo to lead (then they are only passing, on the way to the fields), an umbrella in the rain, too much wine
-  const look = kid ? {} : P.look || {}, buf = look.tool === 'buf' && R() < .7, drunk = !!look.drinker && C4.mins > 11 * 60 && R() < .3;
-  if (buf) shop = null;
+  const look = kid ? {} : P.look || {}, buf = look.tool === 'buf' && R() < .7 && C4.walkers.filter(q => q.buf).length < 2, drunk = !!look.drinker && C4.mins > 11 * 60 && R() < .3;
+  const smokeX = look.tool === 'dieu' ? C4.camX + c4View().vw * (.15 + R() * .7) : undefined;
+  if (buf || smokeX !== undefined) shop = null;
   if (shop && fromRight && atX === undefined) x = Math.max(x, C4_GOODS[shop].x + 260);         // buyers come from a side that takes them past their stall
-  C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, sp: buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
+  C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, smokeX, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, sp: buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
     buy: !!shop, shop, st: 'walk', n: 1 + ((R() * 3) | 0), carry: null, cd: 3 + R() * 6, say: null });
   if (kind === 'mouse' && role === 'child' && atX === undefined && R() < .5) {             // a gang of children chasing each other
     const lead = C4.walkers[C4.walkers.length - 1]; lead.sp = 150; lead.cd = 99;
@@ -515,6 +516,9 @@ function updateC4(dt) {
     w.cd -= dt;
     if (w.st === 'walk') {
       w.x += w.face * w.sp * dt; w.ph += dt * w.sp / 9;
+      if (w.smokeX !== undefined && !w.smoked && Math.abs(w.x - w.smokeX) < 8) {   // sit down on a stool for a smoke, then go on
+        w.st = 'sit'; w.smoked = true; w.sitT = 14 + R() * 10; if (R() < .6) c4Say(w, c4Pick(['Rít một hơi điếu cày… sướng!', 'Ngồi nghỉ chân tí đã.', 'Thuốc lào quê mình nặng ra phết!']));
+      }
       if (w.drunk) w.z = Math.max(.38, Math.min(.98, w.z + Math.sin(C4.t * 1.7 + w.seed) * dt * .12));   // zigzagging across the lane
       const g = w.shop, qx = g && C4_GOODS[g].x + c4QX(g);
       if (g && c4Open(g) && !(g === 'trau' && C4.cat && C4.cat.st === 'sit') && !(C4.shut > 0) && C4.phase === 'open' && Math.abs(w.x - qx) < 140 && C4.Q[g].length < 4) { w.st = 'queue'; w.wait = 0; C4.Q[g].push(w); }
@@ -528,6 +532,7 @@ function updateC4(dt) {
     } else if (w.st === 'chat') {
       const c = w.chat; if (c.a === w) c4ChatStep(c, dt);
     } else if (w.st === 'leave') { w.x += w.face * w.sp * dt; w.ph += dt * w.sp / 9; }
+    else if (w.st === 'sit' && (w.sitT -= dt) <= 0) w.st = 'walk';
   }
   if ((C4.chatT -= dt) <= 0) {
     C4.chatT = .35;
