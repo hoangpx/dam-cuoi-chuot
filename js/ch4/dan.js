@@ -194,6 +194,7 @@ function c4Face(p) {
 
 /* ---------- the book: rumours, the folk you know, the web of ties, households ---------- */
 let C4_TAB = 'tin', C4_WHO = null;
+let C4_PICK = null;                                                         // { deal, sel }: choosing whom to invite to take the leftovers
 function c4OpenNotes(tab) {
   C4.noteNew = false; c4Hud();
   if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY) C4_TAB = 'tin';
@@ -208,6 +209,14 @@ function c4OpenNotes(tab) {
       + (days.length ? days.map(d => `<h4>${d === SAVE4.day ? 'Hôm nay' : d === SAVE4.day + 1 ? 'Ngày mai' : 'Ngày ' + d}</h4>` + SAVE4.notes.filter(n => n.day === d).map(n => `<p>• ${n.text}</p>`).join('')).join('') : '<p>Chưa nghe được chuyện gì. Ai thì thầm thì lại gần nghe lỏm xem!</p>')
       + (open ? '' : `<p class="hint">Từ ngày ${C4_BOOK_DAY}, vợ ghi sổ những khách đã quen.</p>`);
   } else if (C4_TAB === 'quen' && C4_WHO !== null) h += c4WhoHtml(P.list[C4_WHO]);
+  else if (C4_TAB === 'quen' && C4_PICK) {
+    const free = new Set(c4Guests().map(p => p.id)), left = c4Owned().filter(g => C4_GOODS[g].keep !== 'ever' && c4Stock(g) > 0).map(g => `${c4Stock(g)} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ');
+    h += `<div class="pick"><p>Sắp tan chợ còn ${left || 'ít hàng'}. Chọn khách quen để mời ghé lấy:</p>
+      <div class="row"><button class="btn ${C4_PICK.deal === 'half' ? '' : 'alt'}" data-deal="half">Bán nửa giá</button><button class="btn ${C4_PICK.deal === 'free' ? '' : 'alt'}" data-deal="free">Biếu không</button></div></div>`;
+    h += `<div class="folk">${known.sort((a, b) => (free.has(b.id) - free.has(a.id)) || SAVE4.folk[b.id].a - SAVE4.folk[a.id].a).map(p => { const f = SAVE4.folk[p.id], ok = free.has(p.id), on = C4_PICK.sel.has(p.id);
+      return `<button class="fk ${on ? 'sel' : ''}" data-pick="${p.id}" ${ok ? '' : 'disabled'}><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>${ok ? (on ? '✓ mời' : 'ghé ' + f.v + ' lần') : f.called === SAVE4.day ? 'đã mời' : 'đang ở chợ'}</span></button>`; }).join('')}</div>`;
+    h += `<div class="row col"><button class="btn go" data-invite ${C4_PICK.sel.size ? '' : 'disabled'}>Mời ${C4_PICK.sel.size} người · ${C4_PICK.deal === 'free' ? 'biếu không' : 'bán nửa giá'}</button><button class="btn alt" data-pickx>Thôi</button></div>`;
+  }
   else if (C4_TAB === 'quen') {
     h += known.length ? `<div class="folk">${known.sort((a, b) => SAVE4.folk[b.id].a - SAVE4.folk[a.id].a).map(p => { const f = SAVE4.folk[p.id];
       return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}</div>`
@@ -223,7 +232,11 @@ function c4OpenNotes(tab) {
       || '<p>Chưa quen ai.</p>';
   }
   $('#c4noteB').innerHTML = h;
-  $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; c4OpenNotes(b.dataset.tab); }));
+  $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
+  $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
+  $('#c4noteB').querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_PICK.deal = b.dataset.deal; const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
+  { const b = $('#c4noteB [data-invite]'); if (b) b.addEventListener('click', () => { const P = c4People(), ps = [...C4_PICK.sel].map(id => P.list[id]), deal = C4_PICK.deal; C4_PICK = null; c4Sheets(null); c4Invite(ps, deal); }); }
+  { const b = $('#c4noteB [data-pickx]'); if (b) b.addEventListener('click', () => { C4_PICK = null; c4Sheets(null); }); }
   $('#c4noteB').querySelectorAll('[data-who]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = +b.dataset.who; c4OpenNotes('quen'); }));
   $('#c4noteB').querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => c4Act(C4_WHO, b.dataset.act)));
   const bk = $('#c4noteB .bk'); if (bk) bk.addEventListener('click', () => { AU.tap(); C4_WHO = null; c4OpenNotes('quen'); });

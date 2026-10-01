@@ -101,10 +101,17 @@ body.touch #c4hud .mid{position:static;transform:none}
 .card4 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin:6px 0}
 .card4 .legend i{display:inline-block;width:14px;height:4px;margin-right:4px;vertical-align:middle}
 #c4noteB p{margin:4px 0}
-#c4Note{pointer-events:auto;cursor:pointer}
+#c4Note,#c4Invite{pointer-events:auto;cursor:pointer}
+#c4Invite{background:#2f6a4c;color:var(--diep)}
 #c4Note.new{background:var(--son);color:var(--diep)}
 /* chương IV: notices (toast) at the bottom of the screen, where nothing covers them */
 body.c4 #toast{top:auto;bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.card4 .pick{border:2px solid #2f6a4c;background:#e3ecd0;padding:6px 8px;margin:6px 0}
+.card4 .pick p{margin:2px 0 6px;font-size:14px}
+.card4 .pick .row{margin-top:4px;flex-wrap:nowrap}
+.card4 .pick .btn{font-size:15px;padding:6px 12px}
+.card4 .fk.sel{border-color:#2f6a4c;background:#d6e6c4;box-shadow:inset 0 0 0 2px #2f6a4c}
+.card4 .fk[disabled]{opacity:.45;cursor:default}
 .card4 .fk.unk2{cursor:default;opacity:.65}
 .card4 .loan .pays{display:flex;gap:6px}
 .card4 .loan .btn{white-space:nowrap}
