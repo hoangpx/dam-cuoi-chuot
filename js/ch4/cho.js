@@ -100,24 +100,38 @@ const C4_TALK = [
   ['h', 'Mình để dành đủ hai quan rồi hẵng tính chuyện con cái nhé.'],
   ['h', 'Vậy sáng mai mình gánh ra cổng chợ!'],
 ];
-function c4StoryStart() {
-  Object.assign(C4, { phase: 'story', line: 0, lineT: 0, storyT: 0, fade: 0, walkers: [], fx: [], build: null, Q: {}, SV: {} });
+// the morning of day C4_BOOK_DAY: the couple talk over why nobody buys, and start the book of regulars
+const C4_TALK2 = [
+  ['w', 'Mình ơi, mấy hôm nay ế ẩm quá, chẳng mấy ai ghé mua.'],
+  ['h', 'Ừ, trầu thì héo, tiền thì hụt. Lỗ mất mấy hôm rồi.'],
+  ['w', 'Em để ý, người ta chỉ quen mua ở chỗ người quen.'],
+  ['h', 'Phải rồi, mình mới ra chợ, có ai biết mình là ai đâu.'],
+  ['w', 'Các cụ dạy: "Buôn có bạn, bán có phường". Mình phải chịu khó làm quen.'],
+  ['w', 'Khách ghé đến lần thứ hai là em hỏi han, nhớ mặt, nhớ tên, nhớ cả nhà người ta.'],
+  ['h', 'Mình quý khách thì khách quý mình. Thân rồi, người ta còn rủ họ hàng, bạn bè đến mua.'],
+  ['w', 'Nhưng hết hàng để khách về tay không là người ta giận lắm đấy.'],
+  ['h', 'Thế từ nay mình mở sổ, ghi hết khách quen vào!'],
+  ['w', 'Vâng! Hôm nay mình làm lại từ đầu, cố lên anh nhé!'],
+];
+function c4StoryStart(lines = C4_TALK, end = () => { SAVE4.intro = true; persist4(); c4MarketStart(); }) {
+  Object.assign(C4, { phase: 'story', talk: lines, talkEnd: end, tapped: false, line: 0, lineT: 0, storyT: 0, fade: 0, walkers: [], fx: [], build: null, Q: {}, SV: {} });
   C4.camX = -c4View().vw / 2;
   $('#c4hud').hidden = true;
 }
 function c4StoryNext() {
   if (C4.phase !== 'story' || C4.fade > 0) return;
   AU.tap();
-  if (C4.line < C4_TALK.length - 1) { C4.line++; C4.lineT = 0; C4.tapped = true; }
+  if (C4.line < C4.talk.length - 1) { C4.line++; C4.lineT = 0; C4.tapped = true; }
   else C4.fade = .001;
 }
 function c4StoryUpdate(dt) {
   C4.storyT += dt; C4.lineT += dt;
-  if (C4.fade > 0) { C4.fade += dt; if (C4.fade > 1.1) { SAVE4.intro = true; persist4(); c4MarketStart(); } }
+  if (C4.fade > 0) { C4.fade += dt; if (C4.fade > 1.1) C4.talkEnd(); }
 }
 function c4RenderStory(g, V) {
-  const cx = C4.camX, t = C4.storyT, [who, text] = C4_TALK[C4.line], gy = C4_Y0 + 120;
+  const cx = C4.camX, t = C4.storyT, [who, text] = C4.talk[C4.line], gy = C4_Y0 + 120;
   g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(cx + V.vw * .78, -V.oy + 110, 30, 0, 6.283); g.fill(); g.stroke();
+  c4Sky(g, V, cx, 'dep');
   g.fillStyle = 'rgba(91,47,31,.16)'; g.fillRect(cx - 20, gy, V.vw + 40, V.vh);
   dp(g, WP.house, 0, gy, 0, .8, .8);
   dp(g, PROPS.chum, 230, gy, 0, .6, .6);
@@ -140,6 +154,7 @@ function startC4() {
   c4Sheets(null);
   SAVE4.started = true; persist4();
   if (!SAVE4.intro) { c4StoryStart(); cv.focus(); return; }
+  if (c4Talk2Due()) { c4Talk2(); cv.focus(); return; }
   c4MarketStart();
 }
 function c4MarketStart() {
@@ -216,7 +231,6 @@ function c4Morning() {
   $('#c4amT').textContent = `Sáng ngày ${SAVE4.day}`;
   $('#c4amB').innerHTML = `<p class="wx">${C4_WX[p.wx]}${p.hoi ? ' <b>Làng mở hội, chợ đông!</b>' : ''}</p>`
     + (SAVE4.goal ? '' : `<p class="goal">Mục tiêu: để dành <b>${c4Money(C4_GOAL)}</b> · còn thiếu ${c4Money(Math.max(0, C4_GOAL - c4Net()))}</p>`)
-    + (SAVE4.day === C4_BOOK_DAY ? '<p class="back">Vợ bảo: "Từ hôm nay em ghi sổ khách quen. Khách quý thì phải giữ!"</p>' : '')
     + warn + '<div id="c4loan"></div>' + (back.length ? `<p class="back">${back.join(' ')}</p>` : '')
     + (p.thue ? `<p>Hôm nay cụ Lý đi thu tiền chợ (${dues} đồng).</p>` : SAVE4.next && SAVE4.next.thue ? `<p>Mai cụ Lý đi thu tiền chợ, nhớ để dành ${dues} đồng.</p>` : '')
     + (SAVE4.rival > 0 ? '<p class="bad">Gánh trầu đối diện vẫn bán rẻ, khách bị kéo sang bên ấy.</p>' : '')
@@ -651,8 +665,11 @@ function c4EndDay() {
   persist4(); c4LoanUI(true);
   setTimeout(() => { if (S.mode === 'c4play' && C4.phase === 'night') c4Sheets('c4day'); }, 900);
 }
+const c4Talk2Due = () => SAVE4.day === C4_BOOK_DAY && !SAVE4.talk2;
+function c4Talk2() { c4StoryStart(C4_TALK2, () => { SAVE4.talk2 = true; persist4(); c4MarketStart(); }); }
 function c4NewDay() {
   SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4();
+  if (c4Talk2Due()) { c4Sheets(null); c4Talk2(); return; }
   C4.mins = C4_OPEN; C4.phase = 'morning'; C4.said = {}; C4.expect = []; C4.today = { sold: 0, take: 0, cogs: 0, served: 0, lost: 0, wilt: 0, wiltLoss: 0, spent: 0, got: 0, wages: 0 }; C4.spawnT = .3; C4.wed = null; C4.parade = null; C4.cat = null;
   for (const g of C4_SHOPS) if (c4Own(g)) SAVE4.shops[g].sick = false;
   for (let i = 0; i < 6; i++) c4Spawn(C4.camX - 200 + R() * (c4View().vw + 400));
@@ -735,8 +752,9 @@ function renderC4() {
   const wx = c4Wx(), rain = wx === 'mua';
   const dayK = Math.max(0, Math.min(1, (C4.mins - C4_OPEN) / (C4_CLOSE - C4_OPEN)));
   g.save(); g.translate(cx * .85, 0);
-  g.fillStyle = rain || wx === 'ret' ? '#9d95b9' : wx === 'gat' ? '#c73a1e' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * 110, wx === 'gat' ? 40 : 32, 0, 6.283); g.fill(); g.stroke();
+  g.fillStyle = rain || wx === 'ret' ? '#9d95b9' : c4Sunset() > .3 ? '#d4471c' : wx === 'gat' ? '#c73a1e' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, C4_Y0 + oy - 170), wx === 'gat' ? 40 : 32, 0, 6.283); g.fill(); g.stroke();
   g.restore();
+  c4Sky(g, V, cx, wx);
   g.save(); g.translate(cx * .55, 0); g.globalAlpha = .5;
   for (const [x, k, sc] of [[-80, 'house', .45], [260, 'bamboo', .5], [520, 'house', .42], [880, 'tree', .45], [1180, 'house', .45], [1500, 'bamboo', .45], [1720, 'house', .42]])
     if (x + 150 > cx * .45 - 40 && x - 150 < cx * .45 + vw + 40) dp(g, k === 'house' ? WP.house : k === 'tree' ? WP.bigTree : PROPS.bamboo, x, C4_Y0 - 70, 0, sc, sc);
@@ -828,9 +846,49 @@ function renderC4() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (rain) { ctx.strokeStyle = 'rgba(47,95,143,.35)'; ctx.lineWidth = 1.5 * DPR; ctx.beginPath(); for (let i = 0, rr = mulberry(7 + ((C4.t * 12) | 0)); i < 70; i++) { const x = rr() * cv.width, y = rr() * cv.height; ctx.moveTo(x, y); ctx.lineTo(x - 6 * DPR, y + 16 * DPR); } ctx.stroke(); ctx.fillStyle = 'rgba(80,90,110,.12)'; ctx.fillRect(0, 0, cv.width, cv.height); }
   if (wx === 'ret') { ctx.fillStyle = 'rgba(120,140,170,.14)'; ctx.fillRect(0, 0, cv.width, cv.height); }
+  { const k = c4Sunset(); if (k > 0 && C4.phase !== 'story') { ctx.fillStyle = `rgba(232,110,36,${.2 * k})`; ctx.fillRect(0, 0, cv.width, cv.height); } }
   if (wx === 'gat') { ctx.fillStyle = 'rgba(255,170,60,.08)'; ctx.fillRect(0, 0, cv.width, cv.height); }
   if (C4.fire > 0) { ctx.fillStyle = `rgba(200,60,20,${.12 + Math.sin(C4.t * 8) * .04})`; ctx.fillRect(0, 0, cv.width, cv.height); }
   if (dusk > 0) { ctx.fillStyle = `rgba(40,30,60,${dusk})`; ctx.fillRect(0, 0, cv.width, cv.height); }
+}
+// sunset: from 15:00 the light warms to orange (0 … 1 at 18:30)
+const c4Sunset = () => Math.max(0, Math.min(1, (C4.mins - 15 * 60) / 210));
+function c4Sky(g, V, cx, wx) {
+  const skyH = C4_Y0 + V.oy, rain = wx === 'mua', sun = c4Sunset();
+  g.save(); g.translate(cx, -V.oy);                                        // screen space: (0,0) the top left corner
+  if (sun > 0) { const gr = g.createLinearGradient(0, 0, 0, skyH); gr.addColorStop(0, `rgba(228,96,34,${.42 * sun})`); gr.addColorStop(1, `rgba(240,150,60,${.12 * sun})`); g.fillStyle = gr; g.fillRect(-10, -10, V.vw + 20, skyH + 10); }
+  // clouds: puffs, long streaks, the curled clouds of the prints; they drift slowly, a little behind the camera
+  const n = rain ? 8 : wx === 'gat' ? 2 : 5, W = V.vw + 360;
+  for (let i = 0; i < n; i++) {
+    const r = mulberry(i * 31 + 5), base = r() * W, sp = 5 + r() * 9, type = i % 3, s = .7 + r() * .6;
+    const x = ((base + C4.t * sp - cx * .08) % W + W) % W - 180, y = 26 + r() * skyH * .45;
+    c4Cloud(g, x, y, s * (rain ? 1.3 : 1), type, rain ? '#cfc8cf' : sun > .3 ? '#f5d2a8' : '#f2ecde');
+  }
+  // birds: a flock now and then crosses the sky, wings beating
+  if (!rain) for (let k = 0; k < 2; k++) {
+    const per = 16 + k * 7, cyc = (C4.t + k * 9) / per, fr = cyc % 1, r = mulberry(Math.floor(cyc) * 17 + k * 3 + 1);
+    if (r() < .35) continue;
+    const dir = r() < .5 ? 1 : -1, y0 = 30 + r() * skyH * .4, cnt = 3 + ((r() * 4) | 0), x0 = dir > 0 ? -60 + fr * (V.vw + 160) : V.vw + 60 - fr * (V.vw + 160);
+    g.strokeStyle = INK; g.lineWidth = 2; g.lineCap = 'round';
+    for (let j = 0; j < cnt; j++) {
+      const bx = x0 - dir * (j % 2 ? 1 : .5) * 22 * Math.ceil(j / 2), by = y0 + Math.ceil(j / 2) * (j % 2 ? 9 : -9) + Math.sin(C4.t * 2 + j) * 3, fl = Math.sin(C4.t * 11 + j * 1.7) * 5, w = 9;
+      g.beginPath(); g.moveTo(bx - w, by - fl); g.quadraticCurveTo(bx - w * .4, by - 3 - fl * .3, bx, by); g.quadraticCurveTo(bx + w * .4, by - 3 - fl * .3, bx + w, by - fl); g.stroke();
+    }
+  }
+  g.restore();
+}
+function c4Cloud(g, x, y, s, type, col) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  const blobs = type === 1 ? [[-40, 4, 14], [-16, 0, 18], [12, 2, 16], [38, 5, 12], [0, 8, 14], [-26, 8, 12], [24, 8, 12]]
+    : [[-28, 6, 18], [0, -6, 24], [26, 4, 19], [-10, 10, 18], [14, 12, 16]];
+  g.lineWidth = 5; g.strokeStyle = INK;
+  for (const [bx, by, r] of blobs) { g.beginPath(); g.arc(bx, by, r, 0, 6.283); g.stroke(); }
+  g.fillStyle = col; for (const [bx, by, r] of blobs) { g.beginPath(); g.arc(bx, by, r, 0, 6.283); g.fill(); }
+  if (type === 2) {                                                        // the curl of a Đông Hồ cloud
+    g.strokeStyle = INK; g.lineWidth = 1.6;
+    for (const [bx, by] of [[-14, 4], [16, 6]]) { g.beginPath(); for (let a = 0; a < 9; a += .3) { const rr = 2 + a * 1.3, px = bx + Math.cos(a) * rr, py = by + Math.sin(a) * rr * .8; a ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke(); }
+  } else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-30, 14); g.quadraticCurveTo(0, 20, 30, 14); g.stroke(); }
+  g.restore();
 }
 function c4Ear(g, x, y, s, t) {
   g.save(); g.translate(x, y + Math.sin(t * 5) * 2); g.scale(s, s);
