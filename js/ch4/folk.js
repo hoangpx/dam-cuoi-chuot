@@ -15,6 +15,33 @@ const C4_VENDORS = [
   { x: 1930, name: 'chị bánh đa', M: 'a', ware: 'hangBanh', calls: ['Bánh đa nóng giòn đây!', 'Bánh đa vừng, bánh đa đỏ đây!', 'Ăn một chiếc là nhớ cả năm!'] },
 ];
 const C4_CHATS = [
+  // chuyện cười, châm biếm
+  [[0, 'Nghe nói cụ Lý mới xây cái cổng to lắm.'], [1, 'To bằng mấy năm tiền chợ của cả làng đấy!']],
+  [[0, 'Ông nhà {B} dạo này chăm thế, sáng nào cũng ra đồng.'], [1, 'Ra đồng ngủ cho mát, chứ cày được luống nào đâu!']],
+  [[0, 'Con mèo hôm qua lại về chợ.'], [1, 'Nó bảo nó ăn chay rồi.'], [0, 'Chay gì?'], [1, 'Chỉ ăn… cá chay thôi!']],
+  [[0, 'Mai tôi bắt đầu dậy sớm tập thể dục.'], [1, 'Câu ấy {A} nói từ Tết năm ngoái rồi.'], [0, 'Thì năm ngoái cũng là "mai" mà!']],
+  [[0, 'Nhà {X} mua cái nồi đồng mới, khoe cả xóm.'], [1, 'Khoe nồi chứ có khoe cơm đâu, nồi vẫn rỗng!']],
+  [[0, 'Sao dạo này {B} gầy thế?'], [1, 'Vợ bảo nhà phải tiết kiệm, tiết kiệm từ cái bụng tôi trước.']],
+  [[0, 'Thầy bói phán tôi sắp giàu to.'], [1, 'Thế đưa thầy mấy đồng?'], [0, 'Năm đồng.'], [1, 'Thế là thầy giàu trước rồi!']],
+  [[0, 'Đường làng đắp lại xong chưa?'], [1, 'Đắp ba lần, mưa xong lần nào cũng thành ruộng.'], [0, 'Đường đa năng, vừa đi vừa cấy!']],
+  [[0, 'Chồng tôi bảo tôi là nhất làng.'], [1, 'Nhất gì cơ?'], [0, 'Nhất… cằn nhằn.']],
+  [[0, 'Thằng cu nhà tôi học chữ giỏi lắm.'], [1, 'Biết mấy chữ rồi?'], [0, 'Chữ "ăn" với chữ "chơi"!']],
+  [[0, '{X} khoe nuôi được con gà to nhất làng.'], [1, 'To thật, nhưng là gà hàng xóm sang ăn thóc nhà nó.']],
+  [[0, 'Hôm qua tôi câu được con cá to bằng cái thuyền!'], [1, 'Thế cá đâu?'], [0, 'Nó… sổng mất rồi.']],
+  [[0, 'Sao {B} đi chợ mà không mua gì?'], [1, 'Đi xem giá thôi. Xem giá cũng đủ no.']],
+  [[0, 'Cụ Lý bảo năm nay thuế nhẹ hơn.'], [1, 'Nhẹ hơn năm sau thôi, chứ nặng hơn năm ngoái!']],
+  [[0, 'Biết sao chuột không ngủ ban ngày không?'], [1, 'Sao?'], [0, 'Vì còn bận ra chợ buôn chuyện như mình!']],
+  [[0, 'Nghe nói {X} sợ vợ lắm.'], [1, 'Ông ấy bảo không sợ, chỉ là kính nể.'], [0, 'Kính nể đến mức rửa bát cả nhà!']],
+  [[0, 'Làng sắp có hội thi nói phét đấy.'], [1, 'Giải nhất có gì?'], [0, 'Một con trâu… bằng lời!']],
+  [[0, 'Sao {B} đội nón trong nhà?'], [1, 'Mái dột, đội nón rẻ hơn lợp mái!']],
+  [[0, 'Lúa năm nay tốt quá nhỉ!'], [1, 'Tốt lắm, chỉ sợ chuột ăn hết…'], [0, 'Ơ… mình là chuột mà!']],
+  [[0, 'Con mèo bảo họ mèo họ chuột nên làm hoà.'], [1, 'Làm hoà kiểu gì?'], [0, 'Nó mời mình… vào bụng nó ăn cỗ!']],
+  [[0, '{B} ơi, cho tôi vay ít tiền, mai trả.'], [1, 'Mai là hôm nào?'], [0, 'Là… mai của ngày mai.']],
+  [[0, 'Đi ăn cưới nhà {X} về no chưa?'], [1, 'No mắt thôi, mâm cỗ bé bằng cái chén!']],
+  [[0, 'Sao ông {X} lúc nào cũng mặc áo mới thế?'], [1, 'Áo mới mặc ngoài, áo vá mặc trong. Sĩ diện mà!']],
+  [[0, 'Tôi mới nghĩ ra cách làm giàu.'], [1, 'Cách gì?'], [0, 'Tiêu ít đi.'], [1, 'Thế thì cả làng giàu từ lâu rồi!']],
+  [[0, 'Sao tuần đinh đi tuần mà ngủ gật thế?'], [1, 'Nó bảo ngủ để mơ thấy kẻ trộm cho nhanh.']],
+
   // chào hỏi
   [[0, 'Chào {B}, đi chợ sớm thế!'], [1, 'Chào {A}! Sớm mới có rau tươi chứ.']],
   [[0, '{B} ăn sáng chưa?'], [1, 'Rồi, bát cháo gạo mới thơm lắm!']],
@@ -53,7 +80,30 @@ const C4_CHATS = [
   [[0, 'Đừng mua cá nhà {X}, ươn đấy!'], [1, 'Thế à? May mà {A} bảo.']],
 ];
 // on their own, now and then
-const C4_ALONE = ['Ơ, quên mua muối rồi!', 'Chợ hôm nay đông quá!', 'Hôm nay phải mua được con gà.', 'Nắng quá, mua nhanh rồi về thôi.', 'Bánh đa thơm quá đi mất!', 'Không biết giá gạo hôm nay thế nào.'];
+// the fortune-teller's sayings: half oracle, half joke (all original)
+const C4_BOI = [
+  'Năm nay có lộc. Lộc gì thì… để lộc tự nói.',
+  'Mệnh cô hợp màu đỏ. Đỏ như… sổ nợ ấy.',
+  'Sắp có quý nhân phù trợ. Quý nhân là con mèo, nhớ dâng cá.',
+  'Đường tài lộc trong tay dài lắm! À không, vết nứt do têm trầu.',
+  'Cung phu thê viên mãn. Cung tiền nong thì… xin miễn bình luận.',
+  'Số cô phải lấy chồng họ Chuột. Ơ, lấy rồi à? Thế là quẻ linh!',
+  'Đầu năm ăn trầu, cuối năm ăn trầu tiếp. Ổn định là quý.',
+  'Đi đâu cũng gặp người quen. Vì làng có mỗi một con đường.',
+  'Có sao Thái Bạch chiếu mệnh. Đứng vào bóng râm là hết.',
+  'Nhà cô sắp có tin vui… hoặc tin buồn. Thầy nói trước, khỏi trách thầy.',
+  'Mai ra chợ bước chân phải trước. Chân phải mỏi thì đổi chân trái.',
+  'Cô có tướng vượng phu. Chồng cô vượng… mỗi cái bụng.',
+  'Sống thọ trăm tuổi, với điều kiện tránh xa nhà mèo.',
+  'Quẻ này dữ lắm! Dữ nhất là cái giá năm đồng của thầy.',
+  'Tình duyên như sợi chỉ hồng, ra hàng xén ba đồng một cuộn.',
+  'Tháng này kỵ nói dối. Trừ khi nói với cụ Lý lúc thu thuế.',
+  'Tài lộc đang trên đường đến. Đường làng lầy quá nên nó đi chậm.',
+  'Mệnh Thuỷ, gặp mưa là phát. Phát… cảm cúm.',
+  'Quẻ phán: ai chăm thì giàu. Thầy nói câu này cho cả làng rồi.',
+  'Sang năm buôn may bán đắt. Năm nay thì… thôi, sang năm.',
+];
+const C4_ALONE = ['Mới sáng đã tiêu hết tiền, giỏi thật!', 'Giá gì mà đắt như vàng ròng thế này!', 'Đi chợ mà quên… mang tiền!', 'Hôm nay quyết không mua gì… trừ cái này với cái kia.', 'Lại gặp ông thầy bói, tránh đường khác thôi!', 'Ơ, quên mua muối rồi!', 'Chợ hôm nay đông quá!', 'Hôm nay phải mua được con gà.', 'Nắng quá, mua nhanh rồi về thôi.', 'Bánh đa thơm quá đi mất!', 'Không biết giá gạo hôm nay thế nào.'];
 // buying betel
 const C4_BUY = ['Cho {n} miếng trầu nhé cô!', 'Trầu hôm nay có tươi không cô?', 'Lấy cho tôi {n} miếng, têm cánh phượng nhé!', 'Bà nhà tôi dặn mua {n} miếng trầu.', 'Cô ơi, {n} miếng trầu!', 'Có cau non không cô?'];
 const C4_SELL = ['Có ngay ạ!', 'Trầu mới hái sáng nay đấy ạ!', 'Cảm ơn, lần sau lại ghé nhé!', 'Vâng, em têm cẩn thận đây!', 'Cau non, trầu tươi đây ạ!', 'Ăn trầu cho đỏ môi nhé!'];
