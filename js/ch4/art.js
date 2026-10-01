@@ -64,7 +64,41 @@ function c4Art() {
     a.fk('straw', ell(0, -22, 80, 14), 2); a.fk('brown', c4Rect(-6, -14, 6, 0), 1.2);
     for (let i = 0; i < 5; i++) { a.fk('white', ell(-56 + i * 28, -36, 14, 6), 1.2); a.key(lines([[-66 + i * 28, -38, -46 + i * 28, -34]]), .8); }
   });
-  C4ART = { ganh, sap, gian, gate, scaffold, hangCa, hangVai, hangBanh };
+  // the couple's other stalls: green tea, sticky rice, haberdashery, crab noodle soup
+  const table = (a, w) => { a.fk('brown', c4Rect(-w, -62, w, -52), 1.6); for (const x of [-w + 10, w - 10]) a.fk('brown', c4Rect(x - 4, -54, x + 4, 0), 1.3); };
+  const bowl = (a, x, y, col = 'white') => { a.fk(col, smooth([[x - 12, y - 6], [x + 12, y - 6], [x + 8, y + 4], [x - 8, y + 4]]), 1.2); a.key(lines([[x - 9, y - 2, x + 9, y - 2]]), .8); };
+  const che = part([-110, -150, 110, 6], a => {                           // a big clay pot of green tea on a stove, bowls
+    table(a, 100);
+    a.fk('brown', ell(-40, -96, 34, 36), 2.2); a.fk('dark', ell(-40, -128, 18, 5), 1.4); a.fk('brown', smooth([[-8, -106], [12, -118], [16, -112], [-6, -98]]), 1.4);
+    a.fk('green', ell(-40, -132, 12, 4), 1); a.key(lines([[-62, -96, -18, -96]]), 1);
+    for (const x of [24, 52, 80]) { bowl(a, x, -70); a.fill('green', ell(x, -75, 9, 2.4)); }
+  });
+  const xoi = part([-110, -130, 110, 6], a => {                           // a basket of sticky rice under a banana leaf, packets
+    table(a, 100);
+    a.fk('straw', smooth([[-80, -64], [-10, -64], [-16, -108], [-74, -108]]), 2); a.key(lines([[-78, -86, -12, -86]]), 1);
+    a.fk('green', smooth([[-84, -106], [-46, -126], [-6, -106], [-46, -98]]), 1.6);
+    for (const x of [16, 46, 76]) { a.fk('green', smooth([[x - 12, -64], [x + 12, -64], [x + 10, -80], [x - 10, -80]]), 1.4); a.fk('yellow', ell(x, -80, 8, 3), 1); a.key(lines([[x, -64, x, -80]]), .8); }
+  });
+  const xen = part([-110, -130, 110, 6], a => {                           // needles and thread, combs, small boxes, a little mirror
+    table(a, 100);
+    const c = ['red', 'green', 'yellow', 'blue', 'red'];
+    for (let i = 0; i < 5; i++) { const x = -78 + i * 38; a.fk(c[i], c4Rect(x - 13, -86, x + 13, -64), 1.4); a.key(lines([[x - 13, -76, x + 13, -76]]), .8); }
+    a.fk('white', circ(-60, -104, 12), 1.4); a.fk('brown', c4Rect(-63, -92, -57, -86), 1);
+    for (let i = 0; i < 4; i++) a.fk(['red', 'yellow', 'green', 'blue'][i], circ(10 + i * 22, -96, 7), 1.2);
+  });
+  const bun = part([-120, -150, 120, 6], a => {                           // a pot of crab noodle soup on a stove, bowls, herbs
+    table(a, 110);
+    a.fk('dark', c4Rect(-90, -80, -20, -62), 1.6); a.fill('red', ell(-55, -80, 26, 5));
+    a.fk('dark', smooth([[-92, -82], [-18, -82], [-24, -128], [-86, -128]]), 2.2); a.fill('red', ell(-55, -128, 30, 6)); a.key(ell(-55, -128, 30, 6), 1.4);
+    for (const x of [6, 40, 74]) { bowl(a, x, -70); a.fill('red', ell(x, -75, 9, 2.4)); a.fill('green', circ(x + 3, -77, 2)); }
+    a.fk('green', smooth([[90, -64], [104, -64], [100, -88], [94, -88]]), 1.2);
+  });
+  const lot = part([-66, -120, 66, 6], a => {                             // an empty plot: a stake with a board
+    a.fk('brown', c4Rect(-5, -70, 5, 0), 1.4);
+    a.fk('white', c4Rect(-62, -116, 62, -70), 2);
+    for (const x of [-30, 30]) a.key(lines([[x - 8, 0, x + 8, -3]]), 1);
+  });
+  C4ART = { ganh, sap, gian, gate, scaffold, hangCa, hangVai, hangBanh, che, xoi, xen, bun, lot };
   return C4ART;
 }
 const c4StallArt = lv => { const A = c4Art(); return [A.ganh, A.sap, A.gian][lv]; };

@@ -8,12 +8,12 @@ function showChapters() {
   AU.setQuiet(true);
   const box = $('#chapCards'); box.textContent = '';
   // a chapter can be held back (locked()), e.g. still being made: shown greyed and closed
-  const cards = CHAPTERS.map(c => { const lk = !!(c.locked && c.locked()); return { ...c.card, ch: c.id, prog: lk ? 'Sắp mở' : c.progress(), locked: lk }; });
+  const cards = CHAPTERS.filter(c => !(c.hidden && c.hidden())).map(c => { const lk = !!(c.locked && c.locked()); return { ...c.card, ch: c.id, prog: lk ? (c.lockText || 'Sắp mở') : c.progress(), locked: lk }; });   // hidden(): not shown at all yet
   cards.forEach(c => {
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = c.bg; b.disabled = !!c.locked;
     b.innerHTML = `<div class="num">${c.num}</div><div class="ch">${c.han}</div><b>${c.name}</b><p class="cd">${c.desc}</p><span class="st">${c.prog}</span>`;
-    b.addEventListener('click', () => { if (!c.locked) showAlbum(c.ch); });
+    b.addEventListener('click', () => { if (c.locked) return; const ch = chapterById(c.ch); if (ch.direct) ch.direct(); else showAlbum(c.ch); });   // direct(): a chapter with no album starts straight away
     box.appendChild(b);
   });
   setTimeout(() => { const f = $('#chapCards .card:not([disabled])'); f && f.focus(); }, 30);

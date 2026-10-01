@@ -97,8 +97,9 @@ ring) → breaks loose, back to chasing. Ground is a front-seen plane squashed b
 foreshortening the body and swapping side/front/back heads. Roped, it bucks like a rodeo bull (ctBuck: rears on the hind feet / kicks the hind legs out, wilder as the ring closes; ctBuckPt moves the rope end with it). Record = fastest time; SONGS[4] (tense, 150 bpm).
 
 Chương IV · Vợ Chồng Khởi Nghiệp (js/ch4/cho.js, css/ch4.css, SAVE4 in localStorage `dcc.c4`) — HELD BACK by the owner:
-`locked()` (C4_LOCAL) keeps its card greyed "Sắp mở" everywhere but localhost (GitHub Pages and the artifact too). There is no
-"Sắp có" next-chapter card any more (the owner dropped it). a trading game modelled on the
+`locked()` (C4_LOCAL) keeps its card greyed "Sắp mở" on GitHub Pages only (open locally and in the private artifact). There is no
+"Sắp có" next-chapter card any more (the owner dropped it). No album either: `direct: startC4` — its chapter card opens the
+market straight away; the HUD name and Esc go back to the chapter picker (a fresh start is only by going bankrupt). a trading game modelled on the
 mechanics (not the content) of a street-vending sim, set in an old mouse village. First visit (SAVE4.intro false): the
 newly-wed couple talk it over at home (C4_TALK, c4Slip slips with the dots towards the speaker, tap/Space to go on) — he
 wants to steal food, she refuses (danger, their future children), "phi thương bất phú", so: a betel stall. The husband
@@ -110,13 +111,32 @@ husband waits behind the stall (c4HusbX), walks off out of sight for the goods a
 else present — gossip, greetings, back-biting, some about the betel couple); neighbours (C4_VENDORS) call their wares; buyers
 say what they want and the wife answers; the husband announces deliveries. Speech bubbles (c4Bubble, 13 px on the market) are measured
 in the real font (iPhone fonts run wider), have no inner frame and stay right over the speaker; one that would cover a
-more important bubble (couple, chats, buyers first) waits instead of moving. Step 1 = one stall: the seller sells by
+more important bubble (couple, chats, buyers first) waits instead of moving. The day loop (step 2): MORNING sheet (#c4am) shows the weather (SAVE4.plan.mua), a fair (plan.hoi), money lent / credit
+coming back (SAVE4.owed), last night's notebook entries, and the player buys betel with a stepper (c4OrderUI; credit up to
+C4_DEBT). Unsold betel WILTS at closing (stock → 0, a loss in the tally). More betel mid-day: tap the stall → #c4up, the
+husband walks off for it. Each day is rolled a day ahead (c4Roll → SAVE4.plan/next) so gossip can be about tomorrow: ~38%
+of chats are WHISPERS (C4_NEWS in folk.js) — bubble "…" + an ear; tapping the pair replays it audibly and on its end writes
+C4_NOTE into SAVE4.notes ("Sổ tay" button); ~72% of whispers are true. Events (c4PlanEvents → c4Event, a #c4ev sheet that
+pauses): the cat (feed 20 đ or it sits by the stall a double-hour, flow ×.2, then steals betel; drawn with ch1 drawCatAt),
+the headman's dues (pay / tip → SAVE4.favor flow ×1.15 for 2 days / ask to defer, maybe fined), a neighbour's loan, a
+regular's credit, a wedding order collected at giờ Thân (needs the stock). Besides the rolled ones, two everyday happenings a day from a pool (loan, credit, fortune-teller = pay to
+have tomorrow written into the notebook truthfully, thief + husband gives chase, savings club, cheap betel offer, tuần đinh
+clears the lane (C4.shut) or a tip, alms (SAVE4.phuc luck), cụ Đồ's scroll (SAVE4.cauDoi, red couplets on the stall, flow
+×1.06 for good), minding a neighbour's child (C4.kid)). The headman's dues come every C4_DUES_EVERY = 5 days, announced the
+morning before. The cat appears on the roof of the house behind the stall, leaps down (then the decision sheet), and leaves
+back over the roof. A wedding procession (C4.parade: drum, kèn, parasol, groom, bride from chương I) crosses the market on
+wedding days and sometimes otherwise; children sometimes come as a gang chasing each other. Chats/lines all original (the
+reference game's content is not copied — only its public guide was read for mechanics). Customer flow = c4Flow(). Ruin: owing the trader ≥ C4_BROKE (200 đ) on C4_BROKE_DAYS (3) mornings running →
+c4Bankrupt (red warnings count down on the morning sheet) → start over from day 1 (intro skipped). Times show the modern
+clock too: HUD "giờ Thìn · 7:40" (c4Clock), messages "giờ Thân (15–17 giờ)" (c4Span). Bubbles are fixed to
+the speaker's head (never clamped to the screen); once shown a bubble keeps its place.
+Step 1 = one stall: the seller sells by
 herself — villagers walk the lane (C4_BUSY per double-hour × C4_LV.flow), some queue (patience bar), she serves one at a time
 (C4_LV.serve), each pays C4_PRICE a quid; when stock ≤ 30% the husband fetches more (credit up to C4_DEBT, auto-repaid from cash). A day is giờ Mão–Dậu (C4_MPS game min/s, ~3.5 min) then a tally
 sheet (#c4day). Tap the stall → #c4up: gánh → sạp lều → gian mái ngói (6 s of scaffolding). Drag sideways to look along the
 lane. Money in đồng shown as quan + đồng (600 đồng a quan). Own view c4View() (closer on phones: ~430 units across, lane a
 little below the middle, sun + a faded far row of the village above, earth below). Mice drawn with c4Mouse (chương I parts).
-Straight-edged art uses c4Poly/c4Rect (smooth() rounds every corner). Song SONGS[6]. Next steps (planned with the owner):
+Straight-edged art uses c4Poly/c4Rect (smooth() rounds every corner). Song SONGS[6]. APPROACH A (multi-stall, owner's choice): C4_GOODS holds every ware (trau = the betel stall, plus che 990 / xoi 1370 / xen 1750 / bun 2130 on rentable plots: from day 2/4/6/8, rent 100/200/300/500, a hired helper paid C4_GOODS.wage each evening — two unpaid evenings and they quit; helpers are C4_HELPERS mouse sorts in SAVE4.shops[g] {own, stock, staff, sort, unpaid, sick}). Each ware has demand per double-hour (hours) and weather (wx), and how it keeps: day (wasted at closing), noon (xôi goes off at giờ Ngọ), ever (hàng xén). Weather c4Roll().wx: dep / gat (25% of betel wilts at noon) / mua / ret. A spawned buyer picks a stall by c4Want(); each stall has its own queue C4.Q[g] and server C4.SV[g]; buyers coming from the right spawn past their stall. Morning sheet: one stepper per ware (c4Stepper) + total; tapping a stall opens c4OpenUp(g) (restock via the husband, the betel stall's upgrade, a plot's rent, hiring a new helper). Loss events added: cau sâu, a dog knocking over tea/rice/soup, a helper ill or skimming, a rival betel stall (SAVE4.rival / cheap, 3 days), a gale, a straw fire (C4.fire empties the market), the district's levy; dues = 15 × stalls. The cat is big (≈1.9 × the lane scale at the stall). GOAL: C4_GOAL = 1200 đồng (2 quan) shown on the morning sheet, notebook and HUD; at the tally c4GoalReached() (she is with child, a brood is born) sets SAVE4.goal, which un-hides the chương V card (registerChapter id 5, hidden() / lockText "Đang khắc ván" — hub supports both). Play goes on after. Bots: careful play reaches the goal ~day 17–19, careless renting/over-ordering goes broke. Next steps (planned with the owner):
 more stalls and dishes made step by step, helpers, weather; acquaintances + resident book + the cat demanding tribute;
 village events, market dues, the teacher, take-overs, ending in the mouse wedding.
 

@@ -8,8 +8,8 @@
 #c4Money{font-size:16px}
 body.touch #c4hud .mid{position:static;transform:none}
 @media (max-width:520px){#c4hud{flex-wrap:wrap}#c4hud .mid{position:static;transform:none;order:3;width:100%;display:flex;justify-content:center}}
-#c4day,#c4up{position:fixed;inset:0;z-index:6;display:flex;align-items:safe center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35)}
-#c4day .card4,#c4up .card4{max-width:420px;width:100%;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:16px 18px;text-align:center;font-family:var(--body)}
+.c4sheet{position:fixed;inset:0;z-index:6;display:flex;align-items:safe center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35);overflow-y:auto}
+.c4sheet .card4{max-width:420px;width:100%;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:16px 18px;text-align:center;font-family:var(--body)}
 .card4 h3{margin:0 0 10px;font-family:var(--display);font-weight:900;font-size:22px}
 .card4 .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
 .card4 .nums div{border:2px solid var(--ink);padding:8px 4px;background:#f6f0e2;display:flex;flex-direction:column;gap:2px}
@@ -22,3 +22,29 @@ body.touch #c4hud .mid{position:static;transform:none}
 .card4 .row{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 .card4 .btn[disabled]{opacity:.45;cursor:not-allowed}
 #c4day .btn{margin-top:10px}
+.card4 h4{margin:12px 0 6px;font-family:var(--display);font-weight:900;font-size:16px}
+.card4 .wx{font-size:16px}
+.card4 .goal{background:rgba(47,106,76,.12);border:2px solid #2f6a4c;padding:6px 10px;margin:8px 0}
+.card4 .ware{border-top:1.5px dashed rgba(29,25,21,.3);padding-top:6px;margin-top:6px}
+.card4 .ware h5{margin:0 0 4px;font-size:15px}
+.card4 .ware .step{margin:2px 0}
+.card4 .ware .cost{margin:2px 0 4px;font-size:13px}
+.card4 .tot{margin:10px 0 8px;font-size:15px}
+.card4 .go{width:100%}
+.card4 .back{background:#e3ecd0;border:2px solid var(--ink);padding:6px 8px}
+.card4 .heard{text-align:left;border-top:2px dashed var(--ink);margin-top:8px;padding-top:6px}
+.card4 .heard p{margin:3px 0}
+.card4 .hint{font-size:13px;opacity:.75;margin:0 0 6px}
+.card4 .step{display:flex;align-items:center;justify-content:center;gap:12px}
+.card4 .step .btn{padding:6px 12px;font-size:16px}
+.card4 .step .q{font-family:var(--display);font-weight:900;font-size:20px;min-width:5.5em}
+.card4 .cost{font-size:14px;margin:6px 0 8px}
+.card4 .row.col{flex-direction:column;align-items:stretch}
+.card4 .bad{color:var(--son);font-weight:600}
+.card4 .nums .loss{background:#f2d6cf}
+#c4noteB{text-align:left}
+#c4noteB p{margin:4px 0}
+#c4Note{pointer-events:auto;cursor:pointer}
+#c4Note.new{background:var(--son);color:var(--diep)}
+/* chương IV: notices (toast) at the bottom of the screen, where nothing covers them */
+body.c4 #toast{top:auto;bottom:calc(28px + env(safe-area-inset-bottom,0px))}
