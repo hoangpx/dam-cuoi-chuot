@@ -7,10 +7,8 @@ function showChapters() {
   document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   AU.setQuiet(true);
   const box = $('#chapCards'); box.textContent = '';
-  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-  const cards = CHAPTERS.map(c => ({ ...c.card, ch: c.id, prog: c.progress() }));
-  // the next chapter is always shown as coming soon
-  cards.push({ ch: 0, num: 'Chương ' + ROMAN[CHAPTERS.length], han: '？', name: 'Sắp có', desc: 'Một lối chơi hoàn toàn khác đang được khắc ván.', prog: 'Chưa mở', bg: '#cfcbd0', locked: true });
+  // a chapter can be held back (locked()), e.g. still being made: shown greyed and closed
+  const cards = CHAPTERS.map(c => { const lk = !!(c.locked && c.locked()); return { ...c.card, ch: c.id, prog: lk ? 'Sắp mở' : c.progress(), locked: lk }; });
   cards.forEach(c => {
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = c.bg; b.disabled = !!c.locked;

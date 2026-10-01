@@ -22,6 +22,9 @@ const AU = (() => {
     // Thả Diều (chương III tranh 4): slow and easy, a bamboo flute over the hum of the kite's own flute, a soft drum now and then
     { bpm: 76, hold: 8, inst: 'sao', drone: 55, mel: [74,null,null,null,76,null,79,null,81,null,null,null,null,null,null,null,79,null,null,76,74,null,null,null,71,null,null,null,null,null,null,null,74,null,null,null,76,null,79,null,83,null,81,null,79,null,null,null,76,null,null,74,76,null,null,null,74,null,null,null,null,null,null,null],
       drum: [.35, 0, 0, 0, 0, 0, 0, 0, .2, 0, 0, 0, 0, 0, 0, 0], perc: s => (s === 6 || s === 14 ? 'mo' : null), vol: .1, oct: 0 },
+    // Chợ Làng Chuột (chương IV): a lively market tune, kèn over drum and woodblock, easy to hear for a long while
+    { bpm: 104, hold: 3, mel: [72,null,74,null,76,79,76,null,74,null,72,null,69,null,null,null,72,null,74,76,79,null,81,null,79,76,74,null,76,null,null,null,81,null,79,null,76,null,74,76,79,null,76,null,74,null,72,null,69,null,72,null,74,76,74,72,69,null,67,null,69,null,null,null],
+      drum: [.7, 0, 0, .25, .5, 0, .3, 0, .6, 0, 0, .25, .5, 0, .3, .2], perc: s => (s % 4 === 2 ? 'mo' : s === 7 ? 'mo2' : null), vol: .09, oct: 0 },
   ];
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;
