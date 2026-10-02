@@ -56,7 +56,7 @@ function howtoDraw() {
   if (HOWTO.show < .02) return;
   const A = howtoArt(), W = cv.width / DPR, H = cv.height / DPR, t = S.t;
   const needWalk = !isTouch && (!HOWTO.walk || HOWTO.why === 'idle');
-  const needTap = !HOWTO.tap || HOWTO.why;
+  const needTap = (!HOWTO.tap || HOWTO.why) && !(S.lv === 0 && !HOWTO.tap);   // tranh 1 teaches tapping at the fish itself
   if (!needWalk && !needTap) return;
   // sit on the same line as the ◀ ▶ pad when it is shown (it already clears the iPhone home bar)
   const pad = document.getElementById('pad'), pr = pad && !pad.hidden ? pad.getBoundingClientRect() : null;
