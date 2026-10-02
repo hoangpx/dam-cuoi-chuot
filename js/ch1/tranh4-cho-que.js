@@ -115,12 +115,12 @@ function t4Dyer(W) {
   const SHELF = GROUND - 265, NEW = W + 390, KX = W + 500;
   // the yard, tall like the bamboo of the other tranh: bamboo, a hoè tree, a pea vine up a pole, a red-flowered tree,
   // a basket of shells hung high; five to pick on each, above the jars
-  const PLANTS = [['tre', W + 60, [[-40, -300], [30, -326], [-10, -270], [44, -282], [8, -340]]], ['hoe', W + 180, [[-40, -300], [6, -330], [36, -296], [-14, -270], [24, -262]]],
-    ['bieu', W + 290, [[-10, -340], [10, -312], [-8, -286], [12, -262], [-6, -364]]], ['do', W + 400, [[-40, -300], [6, -330], [36, -296], [-14, -270], [24, -262]]],
-    ['diep', W + 510, [[-14, -282], [0, -290], [14, -282], [-7, -272], [7, -272]]]];
-  const spots = []; for (const [kind, x, list] of PLANTS) for (const [dx, dy] of list) spots.push({ kind, x: x + dx, y: GROUND + dy - 112, gone: false, back: 0 });
+  const PLANTS = [['tre', W + 60, [[-40, -300], [30, -326], [-10, -270], [44, -282], [8, -340]]], null,
+    ['bieu', W + 200, [[-10, -340], [10, -312], [-8, -286], [12, -262], [-6, -364]]], null,
+    ['diep', W + 330, [[-14, -282], [0, -290], [14, -282], [-7, -272], [7, -272]]]];
+  const spots = []; for (const [kind, x, list] of PLANTS.filter(Boolean)) for (const [dx, dy] of list) spots.push({ kind, x: x + dx, y: GROUND + dy - 112, gone: false, back: 0 });
   // the jars, up on a shelf out of the party's way: plain rain water, and full ones of yellow, red, black, white
-  const jars = [[W + 110, null], [W + 190, 'vang'], [W + 270, 'do']].map(([x, pig]) => ({ x, pig, l: 1, tilt: 0, kind: null, n: 0, empty: 0 }));
+  const jars = [[W + 110, null], [W + 190, 'vang'], [W + 270, 'do']].map(([x, pig]) => ({ x, pig, base: pig, l: 1, tilt: 0, kind: null, n: 0, empty: 0 }));
   const e = {
     layer: 'bg', ax: W + 300, st: 'idle', mix: {}, pour: null, k: { bounce: 0 }, mud: 0,
     onClick(wx, wy) {
@@ -158,24 +158,22 @@ function t4Dyer(W) {
       for (const s of spots) if (s.back > 0 && (s.back -= dt) <= 0) s.gone = false;      // the plants flower again
       for (const j of jars) {
         j.tilt += ((this.pour === j ? 1 : 0) - j.tilt) * Math.min(1, dt * 6);
-        if (j.empty > 0 && (j.empty -= dt) <= 0) { j.pig = null; j.kind = null; j.n = 0; j.l = 1; toast('Mưa rơi đầy chum nước lã, lại phải làm màu từ đầu.', 3); }
+        if (j.empty > 0 && (j.empty -= dt) <= 0) { j.pig = j.base; j.kind = null; j.n = 0; j.l = 1; toast(j.base ? 'Chú thợ nhuộm múc thêm một chum màu ' + (j.base === 'vang' ? 'vàng' : 'đỏ') + '.' : 'Mưa rơi đầy chum nước lã, lại phải làm màu từ đầu.', 3); }
       }
       if (this.mud > 0 && (this.mud -= dt) <= 0) this.mix = {};
       const j = this.pour;
       if (j && j.tilt > .85 && this.st === 'make') {
         const total = Object.values(this.mix).reduce((a, b) => a + b, 0), a = Math.min(.2 * dt, j.l);
         if (total < 1.2) { j.l -= a; const k = j.pig || 'nuoc'; this.mix[k] = (this.mix[k] || 0) + a; }
-        if (j.l <= .001) { j.l = 0; j.empty = 3.2; this.pour = null; S.drag = null; AU.pluck(52); toast('Hết sạch cả chum rồi! Thế bây giờ lấy màu đâu mà làm?', 3); this.settle(); }
+        if (j.l <= .001) { j.l = 0; j.empty = 3.2; this.pour = null; S.drag = null; AU.pluck(52); toast(j.base ? 'Hết cả chum màu rồi! Để chú đi múc thêm…' : 'Hết sạch cả chum rồi! Thế bây giờ lấy màu đâu mà làm?', 3); this.settle(); }
       }
     },
     draw(g) {
       // the plants
       { const x = PLANTS[0][1]; dp(g, PROPS.bamboo, x, GROUND + 4, 0, 1.06, 1.06); }
-      t4Tree(g, PLANTS[1][1], GROUND - 432, '#4f7a3a');
       { const x = PLANTS[2][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x, GROUND); g.lineTo(x, GROUND - 492); g.stroke();
         g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.beginPath(); for (let y = 0; y < 482; y += 4) { const xx = x + Math.sin(y * .09) * 12; y ? g.lineTo(xx, GROUND - y) : g.moveTo(xx, GROUND); } g.stroke();
         g.fillStyle = '#4f7a3a'; g.strokeStyle = INK; g.lineWidth = 1; for (let k = 0; k < 19; k++) { const y = 30 + k * 25, xx = x + Math.sin(y * .09) * 12; g.beginPath(); g.ellipse(xx + (k % 2 ? 9 : -9), GROUND - y, 8, 4.4, k, 0, 6.283); g.fill(); g.stroke(); } }
-      t4Tree(g, PLANTS[3][1], GROUND - 432, '#3f6a3a');
       { const x = PLANTS[4][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x + 30, GROUND); g.lineTo(x + 30, GROUND - 432); g.lineTo(x, GROUND - 432); g.stroke();
         g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, GROUND - 432); g.lineTo(x - 22, GROUND - 390); g.moveTo(x, GROUND - 432); g.lineTo(x + 22, GROUND - 390); g.stroke();
         g.fillStyle = '#b57a22'; g.beginPath(); g.moveTo(x - 26, GROUND - 390); g.lineTo(x + 26, GROUND - 390); g.lineTo(x + 18, GROUND - 366); g.lineTo(x - 18, GROUND - 366); g.closePath(); g.fill(); g.stroke(); }
