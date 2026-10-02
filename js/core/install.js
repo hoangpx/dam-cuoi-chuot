@@ -3,7 +3,7 @@
    the menu steps). Hidden when the game already runs from the home screen and on computers. */
 const INST = { prompt: window.__bip || null };
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); INST.prompt = e; instButton(); });   // Android Chrome: install in one tap
-addEventListener('appinstalled', () => { INST.prompt = null; $('#install').hidden = true; instButton(); });
+addEventListener('appinstalled', () => { trackSend('cai/da-cai-android'); INST.prompt = null; $('#install').hidden = true; instButton(); });
 const instStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 function instKind() {
   const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -11,6 +11,8 @@ function instKind() {
   if (/Android/.test(ua)) return 'android';
   return null;
 }
+// counted in GoatCounter: each time the game is opened from the home screen (once a session), and the asking mouse's answers
+try { if (instStandalone() && !sessionStorage.getItem('dcc.app')) { sessionStorage.setItem('dcc.app', '1'); setTimeout(() => trackSend('cai/mo-tu-man-hinh-chinh'), 3000); } } catch (e) {}
 function instButton() { const b = $('#bInstall'); if (b) b.hidden = instStandalone() || (!instKind() && !INST.prompt); }
 
 // little pictures of the buttons to look for, drawn like the game's ink
@@ -45,7 +47,7 @@ function showInstall() {
   $('#bInstNow').hidden = !INST.prompt;
   box.hidden = false; AU.tap && AU.tap();
 }
-$('#bInstall').addEventListener('click', showInstall);
+$('#bInstall').addEventListener('click', () => { trackSend('cai/nut-huong-dan'); showInstall(); });
 $('#bInstClose').addEventListener('click', () => { $('#install').hidden = true; });
 $('#bInstNow').addEventListener('click', async () => { const p = INST.prompt; if (!p) return; p.prompt(); try { await p.userChoice; } catch (e) {} INST.prompt = null; $('#install').hidden = true; instButton(); });
 instButton();
@@ -80,7 +82,7 @@ function instPeek() {
   })();
   box.addEventListener('click', async e => {
     const a = e.target.closest('button')?.dataset.a; if (!a) return;
-    AU.tap && AU.tap();
+    AU.tap && AU.tap(); trackSend('cai/chuot-' + { yes: 'cai-dat', no: 'de-sau', done: 'xong' }[a]);
     if (a === 'no' || a === 'done') { try { localStorage.setItem('dcc.instLater', String(Date.now())); } catch (er) {} instUnpeek(); return; }
     if (INST.prompt) { const p = INST.prompt; p.prompt(); try { await p.userChoice; } catch (er) {} INST.prompt = null; instUnpeek(); instButton(); return; }
     const spot = instArrowSpot(instKind() || 'android');
