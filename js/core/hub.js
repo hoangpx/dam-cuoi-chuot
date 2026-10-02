@@ -1,7 +1,7 @@
 /* Title → chapter picker → album, the end-screen buttons, and input that is routed to the active chapter. */
 
 function showChapters() {
-  S.mode = 'chapters'; hideChapterHuds();
+  trackLeave(); S.mode = 'chapters'; hideChapterHuds();
   $('#title').hidden = true; $('#end').hidden = true; $('#album').hidden = true; $('#chapters').hidden = false;
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
@@ -13,13 +13,14 @@ function showChapters() {
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = c.bg; b.disabled = !!c.locked;
     b.innerHTML = `<div class="num">${c.num}</div><div class="ch">${c.han}</div><b>${c.name}</b><p class="cd">${c.desc}</p><span class="st">${c.prog}</span>`;
-    b.addEventListener('click', () => { if (c.locked) return; const ch = chapterById(c.ch); if (ch.direct) ch.direct(); else showAlbum(c.ch); });   // direct(): a chapter with no album starts straight away
+    b.addEventListener('click', () => { if (c.locked) return; const ch = chapterById(c.ch); if (ch.direct) { trackSend('mo/chuong-' + c.ch); ch.direct(); } else showAlbum(c.ch); });   // direct(): a chapter with no album starts straight away
     box.appendChild(b);
   });
   setTimeout(() => { const f = $('#chapCards .card:not([disabled])'); f && f.focus(); }, 30);
 }
 function showAlbum(id) {
   const c = chapterById(id) || coverChapter();
+  trackLeave(); if (S.mode === 'chapters') trackSend('mo/chuong-' + c.id);   // picked from the chapter list
   S.chapter = c.id; S.mode = 'album'; hideChapterHuds();
   c.album();
   $('#title').hidden = true; $('#end').hidden = true; $('#chapters').hidden = true; $('#album').hidden = false;

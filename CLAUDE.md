@@ -186,3 +186,5 @@ Chương VII · Ai Ăn Vụng? (js/ch7/, SAVE7 {done[], best[] seconds, how} in 
 
 - GitHub: push only when the owner asks.
 - The claude.ai artifact copy must not include the GoatCounter `<script>` in `<head>` (its CSP blocks it).
+
+Tracking (js/core/track.js, owner): GoatCounter events at hoangpx.goatcounter.com, nothing personal. mo/chuong-N (picked from the chapter list), vao/<where> (trackEnter in each chapter's start: chuong-1/tranh-N, chuong-2/man-N, chuong-3/tranh-N, chuong-4, chuong-6/man-N, chuong-7/vu-N), xong/<where> (trackWin at each win; chương IV: xong/chuong-4/ngay-N at the end of a day), thoigian/<where>/<bucket> on leaving (trackLeave from showChapters/showAlbum, the next trackEnter, or the page hidden). No-op on localhost and in the artifact. Chương III tranh 1: the hen stays at the top right across from the nest (G3.home), chicks kept in front of and below her (g3OffHen).

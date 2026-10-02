@@ -146,6 +146,7 @@ function c4RenderStory(g, V) {
 /* ---------- the day ---------- */
 const c4Lv = () => C4_LV[SAVE4.lv];
 function startC4() {
+  trackEnter('chuong-4');
   AU.init(); AU.setSong(6); AU.setQuiet(false); hideChapterHuds();
   S.chapter = 4; S.mode = 'c4play'; document.body.classList.add('c4');   // c4: notices go to the bottom, clear of the top bar
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
@@ -677,7 +678,7 @@ function c4EndDay() {
 const c4Talk2Due = () => SAVE4.day === C4_BOOK_DAY && !SAVE4.talk2;
 function c4Talk2() { c4StoryStart(C4_TALK2, () => { SAVE4.talk2 = true; persist4(); c4MarketStart(); }); }
 function c4NewDay() {
-  SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4();
+  trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4();
   if (c4Talk2Due()) { c4Sheets(null); c4Talk2(); return; }
   C4.mins = C4_OPEN; C4.phase = 'morning'; C4.said = {}; C4.expect = []; C4.today = { sold: 0, take: 0, cogs: 0, served: 0, lost: 0, wilt: 0, wiltLoss: 0, spent: 0, got: 0, wages: 0 }; C4.spawnT = .3; C4.wed = null; C4.parade = null; C4.cat = null;
   for (const g of C4_SHOPS) if (c4Own(g)) SAVE4.shops[g].sick = false;

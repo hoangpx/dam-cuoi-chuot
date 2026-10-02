@@ -8,7 +8,7 @@ let G3_SAY = null, G3_HELP = null;
 
 function g3Layout() {
   const portrait = G3.H > G3.W;
-  G3.home = { x: Math.min(G3.W * .82, G3.W - 190), y: G3.H * (portrait ? .44 : .6) };   // the far right corner, across from the nest (owner: no tapping her by mistake)
+  G3.home = { x: Math.min(G3.W * .82, G3.W - 190), y: G3.H * (portrait ? .37 : .5) };   // the far right corner, across from the nest (owner: no tapping her by mistake)
   G3.nest = { x: G3.W * (portrait ? .32 : .2), y: G3.H * (portrait ? .76 : .8) };
   G3.field = { x0: 50, x1: G3.W - 50, y0: G3.H * (portrait ? .36 : .45), y1: G3.H - (portrait ? 110 : 40) };
   const tr = mulberry(33); G3.tufts = []; for (let i = 0; i < 9; i++) G3.tufts.push([60 + tr() * (G3.W - 120), G3.field.y0 + tr() * (G3.field.y1 - G3.field.y0), .7 + tr() * .4]);
@@ -26,6 +26,8 @@ function g3Start() {
 const g3InNest = (x, y) => { const n = G3.nest; return ((x - n.x) / 118) ** 2 + ((y - n.y) / 52) ** 2 < 1; };
 // where a dropped chick or hen counts as "in the nest": wider and taller than the nest itself, so small fingers need not be exact
 const g3DropIn = (x, y) => { const n = G3.nest; return ((x - n.x) / 175) ** 2 + ((y - n.y + 30) / 110) ** 2 < 1; };
+// chicks keep in front of and below the hen at her corner, never on her or behind her (owner)
+const g3OffHen = c => { const h = G3.hen; if (h.st === 'out' && Math.abs(c.x - h.x - 10) < 210 && c.y < h.y + 44) c.y = h.y + 44; };
 const g3Home = () => G3.chicks.filter(c => c.st === 'nest').length;
 function g3Slot(c) {                                    // spots inside the nest, two rows
   const used = new Set(G3.chicks.filter(o => o !== c && o.st === 'nest').map(o => o.slot));
@@ -77,11 +79,12 @@ function g3Update(dt) {
       const a = R() * 6.283, r = 90 + R() * 200;
       c.tx = Math.max(F.x0, Math.min(F.x1, G3.W * .56 + Math.cos(a) * r * 1.3)); c.ty = Math.max(F.y0, Math.min(F.y1, hen.y + 30 + Math.sin(a) * r * .55));   // all over the yard, not round her corner
       if (g3InNest(c.tx, c.ty)) c.tx += 220;
+      { const t = { x: c.tx, y: c.ty }; g3OffHen(t); if (t.y !== c.ty) c.ty = t.y + R() * 170; }   // a target by her feet: somewhere further down instead
       if (R() < .25) AU.cheep();
     }
     const dx = c.tx - c.x, dy = c.ty - c.y, d = Math.hypot(dx, dy), sp = 150;
     if (d > 3) { c.x += dx / d * Math.min(d, sp * dt); c.y += dy / d * Math.min(d, sp * dt); c.face = dx > 0 ? 1 : -1; }
-    c.x = Math.max(F.x0, Math.min(F.x1, c.x)); c.y = Math.max(F.y0, Math.min(F.y1, c.y));
+    c.x = Math.max(F.x0, Math.min(F.x1, c.x)); c.y = Math.max(F.y0, Math.min(F.y1, c.y)); g3OffHen(c);
   }
   if (!G3.won && g3Home() === 10) { G3.won = true; G3.smart = hen.st === 'in'; G3.winT = 0; AU.cluck(); setTimeout(() => AU.cheep(), 200); setTimeout(() => AU.cheep(), 420); }
   if (G3.won) { G3.winT += dt; if (G3.onWin) { const f = G3.onWin; G3.onWin = null; f(); } }   // the print shows the moment the last chick is home

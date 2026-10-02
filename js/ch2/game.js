@@ -38,6 +38,7 @@ function c2Load() {
   c2ShowRules();
 }
 function startC2(i) {
+  trackEnter(`chuong-2/man-${i + 1}`);
   AU.init(); AU.setSong(1); AU.setQuiet(false);
   S.chapter = 2; S.mode = 'c2play'; C2.i = i; C2.def = C2LEVELS[i]; document.body.classList.add('c2');
   PAPER = getPaper(C2.def.paper); document.documentElement.style.setProperty('--paper', PAPERS[C2.def.paper].css);
@@ -86,7 +87,7 @@ function c2Undo() {
 function c2Reset() { if (S.mode !== 'c2play') return; $('#end').hidden = true; c2Load(); AU.click(); }
 function c2Win() {
   C2.over = true; C2.endT = 0; AU.stamp(); setTimeout(() => AU.pluck(88), 160); setTimeout(() => AU.pluck(93), 320);
-  const i = C2.i; SAVE2.done[i] = true; SAVE2.best[i] = SAVE2.best[i] ? Math.min(SAVE2.best[i], C2.moves) : C2.moves; persist2();
+  const i = C2.i; SAVE2.done[i] = true; SAVE2.best[i] = SAVE2.best[i] ? Math.min(SAVE2.best[i], C2.moves) : C2.moves; persist2(); trackWin();
 }
 function c2ShowEnd() {
   const i = C2.i, last = i === C2LEVELS.length - 1, n = SAVE2.done.filter(Boolean).length;
