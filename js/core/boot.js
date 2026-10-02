@@ -10,16 +10,17 @@ const VIEW_H = 430, GROUND = 352;
 const INK = '#1d1915';
 
 
-let scale = 1, viewH = VIEW_H, offY = 0, ZOOM = 1;                       // ZOOM: a tranh may come closer on a portrait phone (tranh 4)
+let scale = 1, viewH = VIEW_H, offY = 0, ZOOM = 1, ZOOMW = 1;            // a tranh may come closer on a portrait phone (ZOOM) or stand back on a wide screen to show its tall things (ZOOMW; tranh 4)
 function resize() {
   const w = innerWidth, h = innerHeight;
   cv.width = Math.max(1, Math.round(w * DPR)); cv.height = Math.max(1, Math.round(h * DPR));
   // portrait phones: show at least 760 world px across so the whole wedding party (~330 px) fits with room ahead
-  scale = Math.max(.05, Math.min(h / VIEW_H, w / (w < h ? 640 : 560)) * (w < h ? ZOOM : 1));
-  viewH = h / scale; offY = (viewH - VIEW_H) / 2;
+  const z = w < h ? ZOOM : ZOOMW;
+  scale = Math.max(.05, Math.min(h / VIEW_H, w / (w < h ? 640 : 560)) * z);
+  viewH = h / scale; offY = (viewH - VIEW_H) * (z < 1 ? .85 : .5);            // standing back: the extra height goes to the sky, the ground stays low
 }
 addEventListener('resize', resize); resize();
-function setZoom(z) { if (z !== ZOOM) { ZOOM = z; resize(); } }
+function setZoom(z, zw = 1) { if (z !== ZOOM || zw !== ZOOMW) { ZOOM = z; ZOOMW = zw; resize(); } }
 
 let toastTimer;
 function toast(s, d = 2.8) { $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
