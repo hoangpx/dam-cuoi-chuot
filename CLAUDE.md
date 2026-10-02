@@ -192,3 +192,5 @@ Tracking (js/core/track.js, owner): GoatCounter events at hoangpx.goatcounter.co
 Chương I tranh 1 teaches in place (owner): while the fish flops on the bank a finger taps at it (fishPond drawFg); holding the fish near the cat, a finger drags a ghost fish from the groom's hand to the cat's mouth (groundCat drawFg). The corner how-to leaves out its tap finger in tranh 1 until the first tap.
 
 Hosting: GitHub Pages from main with the custom domain https://damcuoichuot.com (CNAME file in the repo, DNS A records to GitHub, HTTPS enforced; www and hoangpx.github.io/dam-cuoi-chuot redirect there). Paths in the game are relative, so nothing depends on the host.
+
+Home-screen install (js/core/install.js, owner): the button "Thêm vào màn hình chính" under the chapter cards (hidden when already standalone or on a computer) opens #install with steps for iPhone Safari, other iPhone browsers, or Android Chrome; Android's own beforeinstallprompt is caught early in index.html (window.__bip) and offered as "Cài ngay".
