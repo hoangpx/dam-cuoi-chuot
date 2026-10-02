@@ -31,6 +31,7 @@ function showAlbum(id) {
   setTimeout(() => { if (S.mode === 'album' && typeof instPeek === 'function') instPeek(); }, 1500);
 }
 $('#bChap').addEventListener('click', showChapters);
+$('#bChapTop').addEventListener('click', showChapters);
 $('#bStart').addEventListener('click', () => { AU.init(); showChapters(); });
 $('#bNext').addEventListener('click', () => chapterById(S.chapter).next());
 $('#bAlbum').addEventListener('click', () => showAlbum(S.chapter));
