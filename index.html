@@ -60,7 +60,20 @@
     <p>Mỗi chương là một lối chơi khác, cùng chung phong cách tranh khắc gỗ Đông Hồ.</p>
     <div class="grid" id="chapCards"></div>
     <div class="row"><button class="btn alt" id="bInstall" hidden>Thêm vào màn hình chính</button></div>
+    <button id="bDonate"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="4" fill="#a3332a" stroke="#1d1915" stroke-width="2.5"/><rect x="6" y="6" width="28" height="28" rx="2" fill="none" stroke="#f2ecde" stroke-width="1.4"/><path d="M20 30c-7-5-10-8.5-10-12.5a5 5 0 0 1 10-1.5a5 5 0 0 1 10 1.5c0 4-3 7.5-10 12.5z" fill="#f2ecde"/></svg><span>Ủng hộ trẻ em vùng cao</span></button>
     <p class="how">© 2026 Đám Cưới Chuột · damcuoichuot.com · giữ mọi quyền</p>
+  </div>
+</div>
+
+<div id="donate" class="ov" hidden>
+  <div class="sheet">
+    <h2>Góp chút cho em nhỏ vùng cao</h2>
+    <p>Đám Cưới Chuột chơi miễn phí. Nếu bạn thích, hãy góp một chút: <b>toàn bộ số tiền sẽ được dùng để ủng hộ trẻ em vùng cao</b>.</p>
+    <img src="img/ung-ho-qr.png" alt="Mã VietQR, TPBank, PHAM XUAN HOANG, 0000 8863 001" class="qr">
+    <p class="acc">TPBank · <b>PHAM XUAN HOANG</b><br>Số tài khoản <b>0000 8863 001</b></p>
+    <div class="row"><button class="btn alt" id="bCopyStk">Chép số tài khoản</button><button class="btn alt" id="bCopyNote">Chép nội dung</button></div>
+    <p class="how">Mở ứng dụng ngân hàng, quét mã hoặc chuyển khoản với nội dung "Dam Cuoi Chuot ung ho tre em vung cao". Xin cảm ơn tấm lòng của bạn!</p>
+    <div class="row"><button class="btn" id="bDonateClose">Đóng</button></div>
   </div>
 </div>
 
@@ -140,7 +153,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-09e';
+const VERSION = '2026-10-09f';
 const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [
@@ -188,6 +201,7 @@ const GAME_FILES = [
   'js/ch7/game.js',
   'js/core/hub.js',
   'js/core/install.js',
+  'js/core/donate.js',
   'js/core/main.js',
 ];
 // every file starts downloading now, alongside the fonts (one after another cost a network round trip each)

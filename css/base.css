@@ -41,6 +41,11 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #bChapTop{position:fixed;z-index:6;top:calc(12px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));width:46px;height:46px;border-radius:50%;border:2.5px solid var(--ink);background:#f2ecde;color:var(--ink);font-size:24px;font-weight:700;line-height:1;cursor:pointer;box-shadow:2px 2px 0 rgba(29,25,21,.35);display:grid;place-items:center;padding:0}
 #album{padding-top:calc(66px + env(safe-area-inset-top))}
 #bChapTop:active{transform:translate(1px,1px);box-shadow:1px 1px 0 rgba(29,25,21,.35)}
+#bDonate{display:inline-flex;align-items:center;gap:8px;margin:14px auto 0;align-self:center;background:none;border:0;font-family:var(--body);font-size:15px;font-weight:700;color:var(--son);cursor:pointer;padding:6px 10px}
+#bDonate span{text-decoration:underline;text-underline-offset:3px}
+#donate{background:rgba(29,25,21,.55);z-index:8}
+#donate .qr{width:min(240px,64vw);margin:12px auto 0;border:2.5px solid var(--ink);border-radius:12px;display:block;box-shadow:3px 3px 0 rgba(29,25,21,.25)}
+#donate .acc{font-size:15px;line-height:1.5}
 #install{background:rgba(29,25,21,.55);z-index:8}
 #install ol{list-style:none;padding:0;margin:14px 0 0;text-align:left;max-width:46ch;align-self:center}
 #install li{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:15px;line-height:1.45}
