@@ -8,7 +8,7 @@ let G3_SAY = null, G3_HELP = null;
 
 function g3Layout() {
   const portrait = G3.H > G3.W;
-  G3.home = { x: G3.W * (portrait ? .6 : .58), y: G3.H * (portrait ? .52 : .68) };
+  G3.home = { x: Math.min(G3.W * .82, G3.W - 190), y: G3.H * (portrait ? .44 : .6) };   // the far right corner, across from the nest (owner: no tapping her by mistake)
   G3.nest = { x: G3.W * (portrait ? .32 : .2), y: G3.H * (portrait ? .76 : .8) };
   G3.field = { x0: 50, x1: G3.W - 50, y0: G3.H * (portrait ? .36 : .45), y1: G3.H - (portrait ? 110 : 40) };
   const tr = mulberry(33); G3.tufts = []; for (let i = 0; i < 9; i++) G3.tufts.push([60 + tr() * (G3.W - 120), G3.field.y0 + tr() * (G3.field.y1 - G3.field.y0), .7 + tr() * .4]);
@@ -41,9 +41,9 @@ function g3Update(dt) {
   const hen = G3.hen, F = G3.field;
   // the hen: wander and call while out; sit while in the nest; get up after 10 s if the brood is not home
   if (hen.st === 'out') {
-    if ((hen.wanderT -= dt) <= 0) { hen.wanderT = 1.5 + R() * 2; hen.tx = G3.home.x + (R() - .5) * 160; hen.ty = G3.home.y + (R() - .5) * 50; }
+    hen.tx = G3.home.x; hen.ty = G3.home.y;                         // she stays at her corner calling (walks back there if put down elsewhere)
     const dx = hen.tx - hen.x; hen.x += Math.sign(dx) * Math.min(Math.abs(dx), 40 * dt); hen.y += (hen.ty - hen.y) * Math.min(1, dt * 1.5);
-    if (Math.abs(dx) > 2) hen.face = dx > 0 ? 1 : -1;
+    hen.face = Math.abs(dx) > 2 ? (dx > 0 ? 1 : -1) : -1;           // facing the yard and the nest
     if (!G3.won && (G3.callT -= dt) <= 0) { G3.callT = 3.6 + R() * 1.6; G3.sayT = 2.4; AU.cluck(); }
   } else if (hen.st === 'in') {
     hen.t += dt;
@@ -75,7 +75,7 @@ function g3Update(dt) {
     if ((c.retarget -= dt) <= 0) {
       c.retarget = .5 + R() * 1.1;
       const a = R() * 6.283, r = 90 + R() * 200;
-      c.tx = Math.max(F.x0, Math.min(F.x1, hen.x + Math.cos(a) * r * 1.3)); c.ty = Math.max(F.y0, Math.min(F.y1, hen.y + Math.sin(a) * r * .55));
+      c.tx = Math.max(F.x0, Math.min(F.x1, G3.W * .56 + Math.cos(a) * r * 1.3)); c.ty = Math.max(F.y0, Math.min(F.y1, hen.y + 30 + Math.sin(a) * r * .55));   // all over the yard, not round her corner
       if (g3InNest(c.tx, c.ty)) c.tx += 220;
       if (R() < .25) AU.cheep();
     }
@@ -146,7 +146,7 @@ function g3Render(ctx2, u) {
     g.fillStyle = '#a3332a'; g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 13, -Math.PI / 2, -Math.PI / 2 - k * 6.283, true); g.closePath(); g.fill();
   }
   const out = G3.chicks.filter(c => c.st !== 'nest').sort((a, b) => a.y - b.y);
-  const drawHen = () => { if (henFront) return; g.save(); g.translate(hen.x, hen.y - (hen.st === 'drag' ? 16 : 0)); g.scale(hen.face * .76, .76); c3Hen(g, A.hen, 0, 0, hen.st === 'drag' ? Math.sin(G3.t * 10) * .05 : 0, headRot); g.restore(); };
+  const drawHen = () => { if (henFront) return; g.save(); g.translate(hen.x, hen.y - (hen.st === 'drag' ? 16 : 0)); g.scale(hen.face * .76, .76); c3Hen(g, A.hen, 0, 0, hen.st === 'drag' ? Math.sin(G3.t * 10) * .05 : hen.st === 'out' ? Math.sin(G3.t * 2.4) * .035 : 0, headRot); g.restore(); };
   let henDone = false;
   for (const c of out) { if (!henDone && c.y > hen.y && c !== G3.drag?.who) { drawHen(); henDone = true; } if (c.st !== 'drag') g3DrawChick(g, c); }
   if (!henDone) drawHen();

@@ -5,7 +5,7 @@ for (const k of ['done', 'secret', 'gold']) { if (!Array.isArray(SAVE[k])) SAVE[
 function persist() { try { localStorage.setItem('dcc.v1', JSON.stringify(SAVE)); } catch (e) {} }
 
 function loadLevel(i) {
-  S.lv = i; L = LEVELS[i]; PAPER = getPaper(L.paper);
+  S.lv = i; L = LEVELS[i]; PAPER = getPaper(L.paper); setZoom(L.zoom || 1);
   document.documentElement.style.setProperty('--paper', PAPERS[L.paper].css);
   S.ents = L.build(); S.gaps = S.ents.filter(e => e.gap).map(e => e.gap);
   S.tufts = [];
@@ -61,7 +61,7 @@ function showCard() {
 // chương I: only tranh 1–3 are finished; later ones are still being carved and open only after 5 taps
 const C1_READY = 3;
 // tranh 4 (Chợ Quê) is being made; set C1_TRY = 3 to open it for trying (it then skips the 5-tap card)
-const C1_TRY = -1;                                                         // owner: tranh 4 Làng Tranh held back again (set 3 to open it)
+const C1_TRY = 3;                                                          // tranh 4 Làng Tranh open (owner)
 function buildAlbum() {
   const box = $('#cards'); box.textContent = '';
   LEVELS.forEach((lv, i) => {
@@ -283,7 +283,7 @@ function update(dt) {
     for (const e of S.ents) if (e.kind === 'hawk') e.update(dt);
   }
   const viewW = cv.width / DPR / scale;
-  const lead = innerWidth < innerHeight ? Math.min(360, viewW * .62) : viewW * .42;   // portrait: keep the last mouse on screen
+  const lead = L.zoom ? viewW * .4 : innerWidth < innerHeight ? Math.min(360, viewW * .62) : viewW * .42;   // portrait: keep the last mouse on screen (a closer tranh needs not)
   const want = Math.max(0, Math.min(L.width - viewW, groom.x - lead));
   if (Number.isFinite(want)) camX += (want - camX) * Math.min(1, dt * 4);
   if (!Number.isFinite(camX)) camX = 0;
