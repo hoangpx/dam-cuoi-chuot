@@ -12,7 +12,7 @@ function loadLevel(i) {
   const tr = mulberry(100 + i);
   for (let x = 40; x < L.width; x += 70 + tr() * 100) if (!S.gaps.some(([a, b]) => x > a - 30 && x < b + 30)) S.tufts.push({ x, k: (tr() * 3) | 0, s: .7 + tr() * .45, front: tr() < .45 });
   S.inv = []; S.parasol = false; S.hold = false; S.plate = null; S.pads = {}; S.caught = 0; S.catcher = null; S.fx = []; S.told = {}; S.cp = L.cps[0];
-  S.lastHint = -99; S.wallT = 0; S.catches = 0; S.gotSecret = false; S.reset = false;
+  S.lastHint = -99; S.wallT = 0; S.lockMove = false; S.catches = 0; S.gotSecret = false; S.reset = false;
   placeParty(S.cp);
   camX = 0; AU.setKey(L.key); AU.muteDrums(false); S.drag = null; S.manualDrum = false;
   $('#lvName').textContent = `Tranh ${i + 1} · ${L.name}`;
@@ -61,7 +61,7 @@ function showCard() {
 // chương I: only tranh 1–3 are finished; later ones are still being carved and open only after 5 taps
 const C1_READY = 3;
 // tranh 4 (Chợ Quê) is being made; set C1_TRY = 3 to open it for trying (it then skips the 5-tap card)
-const C1_TRY = -1;                                                         // owner: held back for now (was 3 off GitHub Pages)
+const C1_TRY = -1;                                                         // owner: tranh 4 Làng Tranh held back again (set 3 to open it)
 function buildAlbum() {
   const box = $('#cards'); box.textContent = '';
   LEVELS.forEach((lv, i) => {
@@ -223,7 +223,7 @@ function update(dt) {
     const walls = [];
     for (const e of S.ents) { const w = e.wall && e.wall(); if (w != null) walls.push([w, e]); }
     let dir = 0;
-    if (!frozen) {
+    if (!frozen && !S.lockMove) {                                         // lockMove: the party is busy (tranh 4: pushing the cart)
       if (keys.has('ArrowLeft') || keys.has('KeyA') || touchDir.L) dir -= 1;
       if (keys.has('ArrowRight') || keys.has('KeyD') || touchDir.R) dir += 1;
     }
@@ -258,7 +258,7 @@ function update(dt) {
       if (S.caught > 1.1) { const w = S.catcher; S.caught = 0; S.catcher = null; S.reset = false; if (w && w.st !== undefined && w.mode !== 'dog') { w.st = 'sleep'; w.t = 2.8; } if (w && w.mode === 'dog') w.alert = 0; }
     }
     const watching = S.ents.filter(w => w.watcher && w.st === 'watch' && !w.fed);
-    const gapK = S.parasol ? .42 : 1;
+    const gapK = S.parasol || S.lockMove ? .42 : 1;                    // close up under the parasol, or all pushing together
     followers.forEach(f => {
       const d = groom.x - f.gap * gapK - f.x;
       const exposed = watching.some(w => f.x > w.z0 && f.x < w.z1 && !safeFrom(w, f.x));
@@ -303,6 +303,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   if (item === 'ken') armN = -1.05;
   if (item === 'drum') armN = S.drumT > 0 ? -.4 - Math.abs(Math.sin(S.t * 22)) * .9 : S.manualDrum || S.eyeWatch ? -.4 : -.4 + Math.abs(Math.sin(S.pose * 7)) * -.6;
   if (item === 'lead') armN = -.25;
+  if (S.lockMove) armN = -1.3;                                             // pushing the cart (tranh 4): every arm reaches forward
   dp(g, M.arm, 2, hy - 50, -sw * .4);
   dp(g, M.body, 0, hy, .04);
   if (item === 'drum') dp(g, ITEM.drum, 26, hy - 18);
