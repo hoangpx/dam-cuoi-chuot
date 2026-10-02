@@ -25,6 +25,9 @@ const AU = (() => {
     // Chợ Làng Chuột (chương IV): a lively market tune, kèn over drum and woodblock, easy to hear for a long while
     { bpm: 104, hold: 3, mel: [72,null,74,null,76,79,76,null,74,null,72,null,69,null,null,null,72,null,74,76,79,null,81,null,79,76,74,null,76,null,null,null,81,null,79,null,76,null,74,76,79,null,76,null,74,null,72,null,69,null,72,null,74,76,74,72,69,null,67,null,69,null,null,null],
       drum: [.7, 0, 0, .25, .5, 0, .3, 0, .6, 0, 0, .25, .5, 0, .3, .2], perc: s => (s % 4 === 2 ? 'mo' : s === 7 ? 'mo2' : null), vol: .09, oct: 0 },
+    // Chương VI · Tìm Chuột: an easy, thinking tune in the five-note scale, slow wooden knocks
+    { bpm: 92, hold: 3, mel: [62,null,64,null,67,null,null,69,67,null,64,null,62,null,null,null,64,null,67,null,69,null,74,null,71,null,69,null,67,null,null,null,69,null,71,null,74,null,null,71,69,null,67,null,64,null,null,null,62,null,64,67,64,null,62,null,59,null,62,null,null,null,null,null],
+      drum: [.6, 0, 0, 0, .3, 0, .2, 0, .5, 0, 0, 0, .3, 0, 0, .2], perc: s => (s % 8 === 4 ? 'mo' : s === 14 ? 'mo2' : null), vol: .085, oct: 0 },
   ];
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;

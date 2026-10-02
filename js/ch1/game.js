@@ -60,17 +60,19 @@ function showCard() {
 }
 // chương I: only tranh 1–3 are finished; later ones are still being carved and open only after 5 taps
 const C1_READY = 3;
+// tranh 4 (Chợ Quê) is being made; set C1_TRY = 3 to open it for trying (it then skips the 5-tap card)
+const C1_TRY = -1;                                                         // owner: held back for now (was 3 off GitHub Pages)
 function buildAlbum() {
   const box = $('#cards'); box.textContent = '';
   LEVELS.forEach((lv, i) => {
-    if (i >= C1_READY) {
+    if (i >= C1_READY && i !== C1_TRY) {
       const b = document.createElement('button'); let taps = 0;
       b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.style.opacity = '.5';
       b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">？</div><b>Sắp có</b><span class="st">Đang khắc ván</span>`;
       b.addEventListener('click', () => { AU.init(); if (++taps >= 5) { loadLevel(i); startPlay(); } else AU.pluck(56 + taps * 2); });
       box.appendChild(b); return;
     }
-    const open = i === 0 || SAVE.done[i - 1];
+    const open = i === 0 || SAVE.done[i - 1] || i === C1_TRY;
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.disabled = !open;
     const marks = (SAVE.gold[i] ? ' ★' : '') + (SAVE.secret[i] && i > 0 ? ' ✦' : '');
@@ -95,7 +97,7 @@ function finishLevel() {
   const stats = `Bị bắt ${S.catches} lần${S.catches === 0 ? ' · Triện vàng ★' : ''}${S.lv > 0 ? (SAVE.secret[S.lv] ? ' · Có mảnh triện ✦' : ' · Chưa tìm ra mảnh triện ẩn') : ''}`;
   const tot = S.lv < C1_READY ? C1_READY : LEVELS.length;
   $('#endNote').textContent = `${S.lv + 1 === tot ? `Đã đóng triện ${SAVE.done.slice(0, tot).filter(Boolean).length}/${tot} tranh. ` : `Tranh ${S.lv + 1}/${tot} đã vào album. `}${stats}`;
-  $('#bNext').hidden = last || S.lv + 1 >= C1_READY;
+  $('#bNext').hidden = last || (S.lv + 1 >= C1_READY && S.lv + 1 !== C1_TRY);
 }
 $('#lvName').addEventListener('click', () => showAlbum(1));
 
