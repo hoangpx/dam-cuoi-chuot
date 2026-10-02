@@ -12,6 +12,7 @@ const C3 = { i: 0, game: null, view: 'play', printT: 0, W: 0, H: 0, time: 0, sho
 function c3Size() { const W = cv.width / DPR, H = cv.height / DPR, p = H > W, g = C3.game, short = g && g.short ? g.short(p) : (p ? 460 : 540); return { W, H, u: Math.min(W, H) / short }; }
 function c3Hide() { cv.style.cursor = ''; $('#c3hud').hidden = true; $('#c3end').hidden = true; $('#pad').hidden = true; $('#pad').classList.remove('split', 'pulse'); }
 function startC3(i) {
+  trackEnter(`chuong-3/tranh-${i + 1}`);
   AU.init(); AU.setSong(C3GAMES[i].song ?? 2); AU.setQuiet(false); hideChapterHuds();
   S.chapter = 3; S.mode = 'c3play'; C3.i = i; C3.game = C3GAMES[i]; C3.view = 'play'; C3.printT = 0;
   PAPER = getPaper(C3.game.paper); document.documentElement.style.setProperty('--paper', PAPERS[C3.game.paper].css);
@@ -31,6 +32,7 @@ function startC3(i) {
   cv.focus();
 }
 function c3Win() {
+  trackWin();
   if (C3.game.scoring === 'count') {                  // record = the most caught
     const n = C3.game.score(), most = SAVE3.most[C3.i] || 0, record = n > most;
     SAVE3.done[C3.i] = true; if (record) SAVE3.most[C3.i] = n; persist3();

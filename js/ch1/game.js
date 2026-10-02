@@ -82,6 +82,7 @@ function buildAlbum() {
   });
 }
 function startPlay() {
+  trackEnter(`chuong-1/tranh-${S.lv + 1}`);
   AU.init(); AU.setSong(0); AU.setQuiet(false); hideChapterHuds(); S.chapter = 1; $('#chapters').hidden = true;
   $('#album').hidden = true; $('#end').hidden = true; $('#title').hidden = true;
   S.mode = 'play'; $('#hud').hidden = false; $('#pad').hidden = !isTouch;
@@ -90,7 +91,7 @@ function startPlay() {
 }
 function finishLevel() {
   S.mode = 'end'; S.endT = 0; AU.stamp(); AU.setQuiet(true);
-  SAVE.done[S.lv] = true; if (S.catches === 0) SAVE.gold[S.lv] = true; persist();
+  SAVE.done[S.lv] = true; if (S.catches === 0) SAVE.gold[S.lv] = true; persist(); trackWin();
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   $('#endHan').textContent = L.han; $('#endTitle').textContent = L.endTitle; $('#endText').textContent = L.endText;
   const last = S.lv === LEVELS.length - 1, n = SAVE.done.filter(Boolean).length;

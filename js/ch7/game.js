@@ -21,6 +21,7 @@ function buildAlbum7() {
   });
 }
 function startC7(i) {
+  trackEnter(`chuong-7/vu-${i + 1}`);
   AU.init(); AU.setSong(8); AU.setQuiet(false); hideChapterHuds();
   S.chapter = 7; S.mode = 'c7play'; C7.i = i;
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
@@ -30,7 +31,7 @@ function startC7(i) {
 C7.close = () => showAlbum(7);
 C7.howto = () => { C7.page = 0; };
 C7.next = () => { if (C7.i + 1 < C7_CASES.length) startC7(C7.i + 1); else showAlbum(7); };
-C7.result = G => { SAVE7.done[C7.i] = true; if (!SAVE7.best[C7.i] || G.time < SAVE7.best[C7.i]) SAVE7.best[C7.i] = Math.round(G.time); persist7(); };
+C7.result = G => { trackWin(); SAVE7.done[C7.i] = true; if (!SAVE7.best[C7.i] || G.time < SAVE7.best[C7.i]) SAVE7.best[C7.i] = Math.round(G.time); persist7(); };
 
 /* ---------- the "Cách chơi" pages ---------- */
 const C7_PAGES = [

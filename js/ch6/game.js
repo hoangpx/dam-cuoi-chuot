@@ -25,6 +25,7 @@ function buildAlbum6() {
   }
 }
 function startC6(i) {
+  trackEnter(`chuong-6/man-${i + 1}`);
   AU.init(); AU.setSong(7); AU.setQuiet(false); hideChapterHuds();
   S.chapter = 6; S.mode = 'c6play'; C6.i = i;
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
@@ -33,7 +34,7 @@ function startC6(i) {
 }
 C6.close = () => showAlbum(6);
 C6.after = r => { if (r === 'win') { if (C6.i + 1 < C6_COUNT()) startC6(C6.i + 1); else showAlbum(6); } else startC6(C6.i); };
-C6.result = r => { if (r === 'win' && !SAVE6.done[C6.i]) { SAVE6.done[C6.i] = true; persist6(); } };
+C6.result = r => { if (r === 'win') trackWin(); if (r === 'win' && !SAVE6.done[C6.i]) { SAVE6.done[C6.i] = true; persist6(); } };
 
 function updateC6(dt) { if (C6.G) mdTick(C6, dt); }
 function renderC6() {
