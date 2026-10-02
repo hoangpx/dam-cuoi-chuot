@@ -2,7 +2,7 @@
 
 Anthology puzzle game in Đông Hồ woodblock style. Every chapter is its own game with different rules; they share
 the look (woodblock print engine, paper, art library), audio and menus. No build step: plain scripts served by
-GitHub Pages (https://hoangpx.github.io/dam-cuoi-chuot/).
+GitHub Pages (https://damcuoichuot.com/, custom domain via CNAME; DNS on Cloudflare, DNS-only).
 
 ## Layout
 
@@ -190,3 +190,5 @@ Chương VII · Ai Ăn Vụng? (js/ch7/, SAVE7 {done[], best[] seconds, how} in 
 Tracking (js/core/track.js, owner): GoatCounter events at hoangpx.goatcounter.com, nothing personal. mo/chuong-N (picked from the chapter list), vao/<where> (trackEnter in each chapter's start: chuong-1/tranh-N, chuong-2/man-N, chuong-3/tranh-N, chuong-4, chuong-6/man-N, chuong-7/vu-N), xong/<where> (trackWin at each win; chương IV: xong/chuong-4/ngay-N at the end of a day), thoigian/<where>/<bucket> on leaving (trackLeave from showChapters/showAlbum, the next trackEnter, or the page hidden). No-op on localhost and in the artifact. Chương III tranh 1: the hen stays at the top right across from the nest (G3.home), chicks kept in front of and below her (g3OffHen).
 
 Chương I tranh 1 teaches in place (owner): while the fish flops on the bank a finger taps at it (fishPond drawFg); holding the fish near the cat, a finger drags a ghost fish from the groom's hand to the cat's mouth (groundCat drawFg). The corner how-to leaves out its tap finger in tranh 1 until the first tap.
+
+Hosting: GitHub Pages from main with the custom domain https://damcuoichuot.com (CNAME file in the repo, DNS A records to GitHub, HTTPS enforced; www and hoangpx.github.io/dam-cuoi-chuot redirect there). Paths in the game are relative, so nothing depends on the host.
