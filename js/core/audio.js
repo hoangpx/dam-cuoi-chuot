@@ -1,9 +1,10 @@
 /* Web Audio: one song per chapter (SONGS), drums/kèn synth and small sound effects. */
 /* ---------- audio ---------- */
 const AU = (() => {
-  let c = null, master, music, sfx, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
+  let c = null, master, music, sfx, echo, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
   // Chương I: rước dâu rộn ràng (trống cái, chũm chọe, kèn); Chương II: khúc đố chậm rãi (trống con, mõ, kèn trầm, nhịp lẻ)
+  const seq = list => list.flatMap(([m, n]) => [m, ...new Array(n - 1).fill(null)]);   // [[note, steps]…] → one entry a step
   const SONGS = [
     { bpm: 112, mel: [74, null, 76, 78, 81, null, 78, 76, 74, null, 71, 74, 76, null, 74, null, 78, null, 81, 83, 81, null, 78, 76, 74, 76, 78, null, 74, null, null, null],
       drum: [1, 0, 0, 0, .7, 0, .4, 0, .7, 0, 0, 0, .7, 0, .4, 0], perc: s => s === 8 ? 'cym' : null, vol: .14, oct: 0 },
@@ -28,6 +29,12 @@ const AU = (() => {
     // Chương VI · Tìm Chuột: an easy, thinking tune in the five-note scale, slow wooden knocks
     { bpm: 92, hold: 3, mel: [62,null,64,null,67,null,null,69,67,null,64,null,62,null,null,null,64,null,67,null,69,null,74,null,71,null,69,null,67,null,null,null,69,null,71,null,74,null,null,71,69,null,67,null,64,null,null,null,62,null,64,67,64,null,62,null,59,null,62,null,null,null,null,null],
       drum: [.6, 0, 0, 0, .3, 0, .2, 0, .5, 0, 0, 0, .3, 0, 0, .2], perc: s => (s % 8 === 4 ? 'mo' : s === 14 ? 'mo2' : null), vol: .085, oct: 0 },
+    // Chương VII · Ai Ăn Vụng?: a quiet mystery to think over for a long while — đàn bầu bending into each long note,
+    // a low đàn tranh walking under it, a soft hum, an echo; D with the odd E♭ for the hush; no drums (128 steps, about a minute)
+    { bpm: 66, hold: 8, inst: 'bau', echo: true, drone: 50, vol: .075, oct: 0, drum: new Array(16).fill(0), perc: () => null,
+      mel: seq([[62,4],[65,2],[67,2],[69,8],[67,2],[65,2],[63,4],[62,8],  [69,4],[72,2],[69,2],[67,8],[65,2],[67,2],[69,4],[57,8],
+                [74,6],[72,2],[69,4],[67,4],[69,2],[67,2],[65,4],[63,8],  [62,4],[null,4],[65,2],[63,2],[62,4],[57,8],[null,8]]),
+      arp: seq([[50,6],[57,4],[62,6], [50,6],[57,4],[60,6], [48,6],[55,4],[60,6], [45,6],[57,4],[63,6]]) },
   ];
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;
@@ -38,6 +45,8 @@ const AU = (() => {
     const comp = c.createDynamicsCompressor(); master.connect(comp); comp.connect(c.destination);
     music = c.createGain(); music.gain.value = .75; music.connect(master);
     sfx = c.createGain(); sfx.gain.value = 1; sfx.connect(master);
+    echo = c.createDelay(1); echo.delayTime.value = .42; const fb = c.createGain(), lp = c.createBiquadFilter(), wet = c.createGain();   // a soft echo for the songs that ask for it
+    fb.gain.value = .38; lp.type = 'lowpass'; lp.frequency.value = 1600; wet.gain.value = .55; echo.connect(lp); lp.connect(fb); fb.connect(echo); lp.connect(wet); wet.connect(music);
     next = c.currentTime + .1;
   }
   function noise(dur) { const b = c.createBuffer(1, Math.max(1, c.sampleRate * dur), c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; const s = c.createBufferSource(); s.buffer = b; return s; }
@@ -71,6 +80,22 @@ const AU = (() => {
     const n = noise(.12), f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = mtof(m) * 2; f.Q.value = 3; n.connect(f); env(f, t, .01, vol * .5, .12).connect(dest); n.start(t); n.stop(t + .12);
     for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + dur + .02); }
   }
+  // đàn bầu: one string, the note bent up into from below, a slow vibrato that grows, a long fading tail
+  function bau(t, m, dur, dest = music, vol = .08) {
+    const f0 = mtof(m), g = c.createGain(), lp = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 1800; lp.Q.value = .5;
+    lfo.frequency.value = 4.6; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f0 * .014, t + Math.min(1.2, dur * .7)); lfo.connect(lg);
+    for (const [k, v] of [[1, 1], [2, .22], [3, .06]]) { const o = c.createOscillator(), og = c.createGain(); o.type = 'sine';
+      o.frequency.setValueAtTime(f0 * k * .94, t); o.frequency.exponentialRampToValueAtTime(f0 * k, t + .16); lg.connect(o.frequency); og.gain.value = v; o.connect(og); og.connect(lp); o.start(t); o.stop(t + dur + .05); }
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .05); g.gain.linearRampToValueAtTime(vol * .55, t + dur * .5); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    lp.connect(g); g.connect(dest); if (echo) g.connect(echo); lfo.start(t); lfo.stop(t + dur + .05);
+  }
+  // đàn tranh, low: a soft plucked string that rings and fades
+  function tranh(t, m, vol = .045) {
+    const o = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g2 = c.createGain(); o.type = 'triangle'; o.frequency.value = mtof(m); o2.type = 'sine'; o2.frequency.value = mtof(m) * 2; g2.gain.value = .3;
+    lp.type = 'lowpass'; lp.frequency.value = 1400; o.connect(lp); o2.connect(g2); g2.connect(lp);
+    const g = env(lp, t, .004, vol, 1.8); g.connect(music); if (echo) g.connect(echo); o.start(t); o2.start(t); o.stop(t + 1.85); o2.stop(t + 1.85);
+  }
   // sáo diều: the hollow hum of the flute on a kite, swelling and fading with the wind
   function drone(t, m, dur, dest = music) {
     const g = c.createGain(), trem = c.createOscillator(), tg = c.createGain();
@@ -96,7 +121,8 @@ const AU = (() => {
           const s = step % 16, MEL = so.mel;
           if (so.drum[s] && !muteDr) drum(next, so.drum[s]);
           const p = so.perc(s); if (p === 'cym') cymbal(next); else if (p === 'mo') mo(next, false); else if (p === 'mo2') mo(next, true);
-          const ML = MEL.length, m = MEL[step % ML]; if (m) { let d = 1; const H = so.hold || 3; while (!MEL[(step + d) % ML] && d < H) d++; (so.inst === 'sao' ? sao : ken)(next, m + key + so.oct, sp * d * .95, music, so.vol); }
+          const ML = MEL.length, m = MEL[step % ML]; if (m) { let d = 1; const H = so.hold || 3; while (!MEL[(step + d) % ML] && d < H) d++; (so.inst === 'sao' ? sao : so.inst === 'bau' ? bau : ken)(next, m + key + so.oct, sp * d * .95, music, so.vol); }
+          if (so.arp) { const a = so.arp[step % so.arp.length]; if (a) tranh(next, a + key); }
           if (so.drone && step % 16 === 0) drone(next, so.drone + key, sp * 16);
         }
         next += sp; step++;
