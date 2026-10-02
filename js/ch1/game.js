@@ -5,7 +5,7 @@ for (const k of ['done', 'secret', 'gold']) { if (!Array.isArray(SAVE[k])) SAVE[
 function persist() { try { localStorage.setItem('dcc.v1', JSON.stringify(SAVE)); } catch (e) {} }
 
 function loadLevel(i) {
-  S.lv = i; L = LEVELS[i]; PAPER = getPaper(L.paper); setZoom(L.zoom || 1);
+  S.lv = i; L = LEVELS[i]; PAPER = getPaper(L.paper); setZoom(L.zoom || 1, L.zoomWide || 1);
   document.documentElement.style.setProperty('--paper', PAPERS[L.paper].css);
   S.ents = L.build(); S.gaps = S.ents.filter(e => e.gap).map(e => e.gap);
   S.tufts = [];

@@ -340,7 +340,7 @@ function t4Drying(W) {
   for (let k = 0; k < 6; k++) cells.push([W + 80 + R() * 440, 30 + R() * 100]);
   const top = () => -offY + 30;                                         // y of a cloud is from the top of the view
   const [SX, SY] = cells[(R() * 18) | 0], clouds = cells.map(([x, y]) => ({ x, y, s: 1.1 + R() * .4 }));
-  const far = []; for (let x = 60; x < 4800; x += 150 + R() * 70) if (x < W - 90 || x > W + 640) far.push({ x, y: 30 + R() * 50, s: .9 + R() * .4 });   // the rest of the sky: a thinner cover, not to be moved
+  const far = []; for (let x = 60; x < 4800; x += 150 + R() * 70) if ((x < W - 90 || x > W + 640) && !(x > 650 && x < 2500)) far.push({ x, y: 30 + R() * 50, s: .9 + R() * .4 });   // the rest of the sky: a thinner cover (none over the dye house and the print house, whose jars and board stand high), not to be moved
   const e = {
     layer: 'bg', ax: W, st: 'idle', dry: 0, k: { bounce: 0 }, rainK: 1,
     onClick(wx, wy) {
@@ -510,7 +510,7 @@ function t4Gate(x, need) {
 
 /* ---------- tranh 4 ---------- */
 LEVELS[3] = {
-  han: '東湖', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
+  han: '東湖', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, zoomWide: .68, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
   intro: '', endTitle: 'Qua Làng Tranh', endText: 'Pha màu, in tranh, gọi nắng, giữ cầu: làng tranh Đông Hồ cảm tạ bốn đồng tiền. Lính cụ Lý mở cổng, đoàn rước vào chợ.',
   build: () => {
     S.coins = 0; S.coinShown = 0; S.coinFx = []; S.prints = 0;
