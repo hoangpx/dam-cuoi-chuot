@@ -52,6 +52,7 @@ function t4Purse(need) {
     },
     drawHud(g, vw) {
       const y = 70, x0 = vw - 34 - (need - 1) * 30, slot = k => x0 + k * 30;
+      g.fillStyle = 'rgba(242,236,222,.92)'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); if (g.roundRect) g.roundRect(x0 - 20, y - 18, (need - 1) * 30 + 40, 36, 18); else g.rect(x0 - 20, y - 18, (need - 1) * 30 + 40, 36); g.fill(); g.stroke();   // a paper strip, seen over the dark clouds
       for (let k = 0; k < need; k++) {
         if (k < S.coinShown) t4Coin(g, slot(k), y);
         else { g.strokeStyle = 'rgba(29,25,21,.45)'; g.lineWidth = 2; g.setLineDash([3, 3]); g.beginPath(); g.arc(slot(k), y, 11, 0, 6.283); g.stroke(); g.setLineDash([]); }
@@ -96,9 +97,11 @@ const T4_STUFF = {
 };
 // the colour of what is in the new jar: yellow and blue go green, anything else in it turns it muddy
 function t4MixCol(m) {
-  const y = m.vang || 0, b = m.xanhb || 0, other = (m.do || 0) + (m.den || 0) + (m.trang || 0);
-  if (other < .04) return y + b > 0 ? t4Mix(y, b) : T4_WATER;
-  return '#6a5a3a';
+  const y = m.vang || 0, b = m.xanhb || 0, other = (m.do || 0) + (m.den || 0) + (m.trang || 0), w = m.nuoc || 0;
+  const base = other >= .04 ? '#6a5a3a' : y + b > 0 ? t4Mix(y, b) : T4_WATER, k = w / Math.max(.001, y + b + other + w);
+  if (k < .02 || base === T4_WATER) return base;
+  const rgb = c => c[0] === '#' ? [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)) : c.match(/\d+/g).map(Number), A = rgb(base), Z = rgb(T4_WATER);
+  return 'rgb(' + A.map((v, i) => Math.round(v + (Z[i] - v) * k * .8)).join(',') + ')';
 }
 // a tree: a trunk and a heap of round leaf clouds (for the hoè and the red-flowered one)
 function t4Tree(g, x, top, leaf) {
@@ -106,18 +109,18 @@ function t4Tree(g, x, top, leaf) {
   g.fillStyle = leaf; for (const [a, b, r] of [[-44, 40, 34], [40, 36, 36], [0, 0, 44], [-26, -18, 32], [28, -20, 34], [0, 50, 34]]) { g.beginPath(); g.arc(x + a, top + b, r, 0, 6.283); g.fill(); g.stroke(); }
 }
 // every workshop starts when its keeper is tapped (owner): a "…" bubble waits over them until then
-const t4Asked = (wx, wy, kx) => Math.abs(wx - kx) < 42 && wy > GROUND - 150 && wy < GROUND + 10;
+const t4Asked = (wx, wy, kx) => Math.abs(wx - kx) < 42 && wy > GROUND - 215 && wy < GROUND + 10;   // the keeper or the bubble over them
 const t4Dots = (g, x) => t4Bubble(g, x, GROUND - 150, 56, g => { g.fillStyle = INK; for (const d of [-12, 0, 12]) { g.beginPath(); g.arc(d, 0, 3.4, 0, 6.283); g.fill(); } }, 34);
 function t4Dyer(W) {
-  const SHELF = GROUND - 160, NEW = W + 560, KX = W + 670;
+  const SHELF = GROUND - 265, NEW = W + 390, KX = W + 500;
   // the yard, tall like the bamboo of the other tranh: bamboo, a hoè tree, a pea vine up a pole, a red-flowered tree,
   // a basket of shells hung high; five to pick on each, above the jars
   const PLANTS = [['tre', W + 60, [[-40, -300], [30, -326], [-10, -270], [44, -282], [8, -340]]], ['hoe', W + 180, [[-40, -300], [6, -330], [36, -296], [-14, -270], [24, -262]]],
     ['bieu', W + 290, [[-10, -340], [10, -312], [-8, -286], [12, -262], [-6, -364]]], ['do', W + 400, [[-40, -300], [6, -330], [36, -296], [-14, -270], [24, -262]]],
     ['diep', W + 510, [[-14, -282], [0, -290], [14, -282], [-7, -272], [7, -272]]]];
-  const spots = []; for (const [kind, x, list] of PLANTS) for (const [dx, dy] of list) spots.push({ kind, x: x + dx, y: GROUND + dy, gone: false, back: 0 });
+  const spots = []; for (const [kind, x, list] of PLANTS) for (const [dx, dy] of list) spots.push({ kind, x: x + dx, y: GROUND + dy - 112, gone: false, back: 0 });
   // the jars, up on a shelf out of the party's way: plain rain water, and full ones of yellow, red, black, white
-  const jars = [[W + 110, null], [W + 190, 'vang'], [W + 270, 'do'], [W + 350, 'den'], [W + 430, 'trang']].map(([x, pig]) => ({ x, pig, l: 1, tilt: 0, kind: null, n: 0, empty: 0 }));
+  const jars = [[W + 110, null], [W + 190, 'vang'], [W + 270, 'do']].map(([x, pig]) => ({ x, pig, l: 1, tilt: 0, kind: null, n: 0, empty: 0 }));
   const e = {
     layer: 'bg', ax: W + 300, st: 'idle', mix: {}, pour: null, k: { bounce: 0 }, mud: 0,
     onClick(wx, wy) {
@@ -161,26 +164,26 @@ function t4Dyer(W) {
       const j = this.pour;
       if (j && j.tilt > .85 && this.st === 'make') {
         const total = Object.values(this.mix).reduce((a, b) => a + b, 0), a = Math.min(.2 * dt, j.l);
-        if (total < 1.2) { j.l -= a; if (j.pig) this.mix[j.pig] = (this.mix[j.pig] || 0) + a; }
+        if (total < 1.2) { j.l -= a; const k = j.pig || 'nuoc'; this.mix[k] = (this.mix[k] || 0) + a; }
         if (j.l <= .001) { j.l = 0; j.empty = 3.2; this.pour = null; S.drag = null; AU.pluck(52); toast('Hết sạch cả chum rồi! Thế bây giờ lấy màu đâu mà làm?', 3); this.settle(); }
       }
     },
     draw(g) {
       // the plants
-      { const x = PLANTS[0][1]; dp(g, PROPS.bamboo, x, GROUND + 4, 0, .62, .84); }
-      t4Tree(g, PLANTS[1][1], GROUND - 320, '#4f7a3a');
-      { const x = PLANTS[2][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x, GROUND); g.lineTo(x, GROUND - 380); g.stroke();
-        g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.beginPath(); for (let y = 0; y < 370; y += 4) { const xx = x + Math.sin(y * .09) * 12; y ? g.lineTo(xx, GROUND - y) : g.moveTo(xx, GROUND); } g.stroke();
-        g.fillStyle = '#4f7a3a'; g.strokeStyle = INK; g.lineWidth = 1; for (let k = 0; k < 14; k++) { const y = 30 + k * 25, xx = x + Math.sin(y * .09) * 12; g.beginPath(); g.ellipse(xx + (k % 2 ? 9 : -9), GROUND - y, 8, 4.4, k, 0, 6.283); g.fill(); g.stroke(); } }
-      t4Tree(g, PLANTS[3][1], GROUND - 320, '#3f6a3a');
-      { const x = PLANTS[4][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x + 30, GROUND); g.lineTo(x + 30, GROUND - 320); g.lineTo(x, GROUND - 320); g.stroke();
-        g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, GROUND - 320); g.lineTo(x - 22, GROUND - 278); g.moveTo(x, GROUND - 320); g.lineTo(x + 22, GROUND - 278); g.stroke();
-        g.fillStyle = '#b57a22'; g.beginPath(); g.moveTo(x - 26, GROUND - 278); g.lineTo(x + 26, GROUND - 278); g.lineTo(x + 18, GROUND - 254); g.lineTo(x - 18, GROUND - 254); g.closePath(); g.fill(); g.stroke(); }
+      { const x = PLANTS[0][1]; dp(g, PROPS.bamboo, x, GROUND + 4, 0, 1.06, 1.06); }
+      t4Tree(g, PLANTS[1][1], GROUND - 432, '#4f7a3a');
+      { const x = PLANTS[2][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x, GROUND); g.lineTo(x, GROUND - 492); g.stroke();
+        g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.beginPath(); for (let y = 0; y < 482; y += 4) { const xx = x + Math.sin(y * .09) * 12; y ? g.lineTo(xx, GROUND - y) : g.moveTo(xx, GROUND); } g.stroke();
+        g.fillStyle = '#4f7a3a'; g.strokeStyle = INK; g.lineWidth = 1; for (let k = 0; k < 19; k++) { const y = 30 + k * 25, xx = x + Math.sin(y * .09) * 12; g.beginPath(); g.ellipse(xx + (k % 2 ? 9 : -9), GROUND - y, 8, 4.4, k, 0, 6.283); g.fill(); g.stroke(); } }
+      t4Tree(g, PLANTS[3][1], GROUND - 432, '#3f6a3a');
+      { const x = PLANTS[4][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x + 30, GROUND); g.lineTo(x + 30, GROUND - 432); g.lineTo(x, GROUND - 432); g.stroke();
+        g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, GROUND - 432); g.lineTo(x - 22, GROUND - 390); g.moveTo(x, GROUND - 432); g.lineTo(x + 22, GROUND - 390); g.stroke();
+        g.fillStyle = '#b57a22'; g.beginPath(); g.moveTo(x - 26, GROUND - 390); g.lineTo(x + 26, GROUND - 390); g.lineTo(x + 18, GROUND - 366); g.lineTo(x - 18, GROUND - 366); g.closePath(); g.fill(); g.stroke(); }
       for (const s of spots) if (!s.gone) T4_STUFF[s.kind].draw(g, s.x, s.y + Math.sin(S.t * 2 + s.x) * 1.2, 1.3);
       // the shelf and the stand of the new jar
       g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4;
-      g.fillRect(W + 70, SHELF, 400, 10); g.strokeRect(W + 70, SHELF, 400, 10); g.fillRect(NEW - 34, SHELF, 68, 10); g.strokeRect(NEW - 34, SHELF, 68, 10);
-      g.lineWidth = 5; g.strokeStyle = '#6a4a2a'; g.beginPath(); for (const x of [W + 82, W + 270, W + 458, NEW - 26, NEW + 26]) { g.moveTo(x, SHELF + 10); g.lineTo(x, GROUND); } g.stroke();
+      g.fillRect(W + 70, SHELF, 240, 10); g.strokeRect(W + 70, SHELF, 240, 10); g.fillRect(NEW - 34, SHELF, 68, 10); g.strokeRect(NEW - 34, SHELF, 68, 10);
+      g.lineWidth = 5; g.strokeStyle = '#6a4a2a'; g.beginPath(); for (const x of [W + 82, W + 298, NEW - 26, NEW + 26]) { g.moveTo(x, SHELF + 10); g.lineTo(x, GROUND); } g.stroke();
       // the broken green jar on the ground
       g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2;
       for (const [x, r, s] of [[NEW + 56, -.4, 1], [NEW + 76, .5, .8], [NEW + 40, 1.2, .7]]) { g.save(); g.translate(x, GROUND - 4); g.rotate(r); g.scale(s, s); g.beginPath(); g.moveTo(-12, 0); g.quadraticCurveTo(-6, -16, 10, -12); g.lineTo(12, 2); g.closePath(); g.fill(); g.stroke(); g.restore(); }
@@ -263,7 +266,7 @@ function t4Block(g, ink, x, y, lit, press) {           // a carved pear-wood blo
   g.restore();
 }
 function t4Printer(W) {
-  const BX = k => W + 70 + k * 55, BY = GROUND - 38, PX = W + 180, PY = GROUND - 222, KX = W + 380;
+  const BX = k => W + 70 + k * 55, BY = GROUND - 272, PX = W + 180, PY = GROUND - 376, KX = W + 380;   // the table up high, out of the party's way
   const newOrder = () => { const o = T4_INKS.slice(); for (let i = o.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [o[i], o[j]] = [o[j], o[i]]; } return o; };
   const e = {
     layer: 'bg', ax: W, st: 'idle', t: 0, round: 0, order: newOrder(), step: 0, layers: [], press: {}, k: { bounce: 0 }, toldWrong: false,
@@ -297,15 +300,15 @@ function t4Printer(W) {
     draw(g) {
       dp(g, WP.house, W + 500, GROUND + 4, 0, .8, .8);
       // the board with the sheet, the finished ones pinned beside it
-      g.fillStyle = '#6a4a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(PX - 84, PY - 96, 168, 192); g.strokeRect(PX - 84, PY - 96, 168, 192);
-      g.fillRect(PX - 6, PY + 96, 12, GROUND - PY - 96); g.strokeRect(PX - 6, PY + 96, 12, GROUND - PY - 96);
+      g.fillStyle = '#6a4a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(PX - 72, PY - 82, 144, 164); g.strokeRect(PX - 72, PY - 82, 144, 164);
+      
       const subj = Math.min(4, this.round), done = this.st === 'done';
       if (!done) {
-        t4Print(g, subj, this.layers, PX, PY, 1.3);
+        t4Print(g, subj, this.layers, PX, PY, 1.1);
         if (this.st === 'smear') { const a = Math.min(1, this.t * 4); g.fillStyle = `rgba(42,34,29,${.55 * a})`; for (const [dx, dy, r] of [[-10, 0, 34], [14, -20, 22], [8, 26, 26], [-22, -30, 16]]) { g.beginPath(); g.ellipse(PX + dx, PY + dy, r, r * .7, dx, 0, 6.283); g.fill(); } }
       }
-      for (let k = 0; k < 5; k++) { const x = PX - 108, y = PY - 72 + k * 36; if (k < this.round) t4Print(g, k, T4_INKS, x, y, .26); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 13, y - 15.6, 26, 31.2); g.setLineDash([]); } }
-      if (done) t4Print(g, 4, T4_INKS, PX, PY, 1.3);
+      for (let k = 0; k < 5; k++) { const x = PX - 94, y = PY - 64 + k * 32; if (k < this.round) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
+      if (done) t4Print(g, 4, T4_INKS, PX, PY, 1.1);
       // the table and the blocks; while showing, the one to print next is raised
       g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10); g.strokeRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10);
       for (const x of [BX(0) - 26, BX(4) + 26]) { g.beginPath(); g.moveTo(x, BY + 18); g.lineTo(x, GROUND); g.stroke(); }
@@ -337,6 +340,7 @@ function t4Drying(W) {
   for (let k = 0; k < 6; k++) cells.push([W + 80 + R() * 440, 30 + R() * 100]);
   const top = () => -offY + 30;                                         // y of a cloud is from the top of the view
   const [SX, SY] = cells[(R() * 18) | 0], clouds = cells.map(([x, y]) => ({ x, y, s: 1.1 + R() * .4 }));
+  const far = []; for (let x = 60; x < 4800; x += 150 + R() * 70) if (x < W - 90 || x > W + 640) far.push({ x, y: 30 + R() * 50, s: .9 + R() * .4 });   // the rest of the sky: a thinner cover, not to be moved
   const e = {
     layer: 'bg', ax: W, st: 'idle', dry: 0, k: { bounce: 0 }, rainK: 1,
     onClick(wx, wy) {
@@ -352,7 +356,7 @@ function t4Drying(W) {
     drop() {},
     update(dt) {
       this.k.bounce = Math.max(0, this.k.bounce - dt);
-      const d = S.drag && S.drag.ent === this ? S.drag : null; if (d) { d.c.x = d.x + d.ox; d.c.y = Math.min(GROUND - 190, d.y + d.oy) - top(); }
+      const d = S.drag && S.drag.ent === this ? S.drag : null; if (d) { d.c.x = d.x + d.ox; d.c.y = Math.min(GROUND - 340, d.y + d.oy) - top(); }
       this.rainK += ((this.st === 'rain' || this.st === 'idle' ? 1 : 0) - this.rainK) * Math.min(1, dt * 1.5);
       if (this.st === 'rain' && clouds.every(c => Math.hypot(c.x - SX, c.y - SY) > 40 + 42 * c.s)) { this.st = 'sun'; S.drag = null; AU.pluck(84); setTimeout(() => AU.pluck(91), 160); toast('Mây tan, nắng vàng lên rồi!', 2.4); }
       if (this.st === 'sun') { this.dry = Math.min(1, this.dry + dt / 2.6); for (const c of clouds) { c.x += (c.x < SX ? -1 : 1) * 30 * dt; c.y -= 8 * dt; }
@@ -365,12 +369,14 @@ function t4Drying(W) {
       g.fillStyle = sun ? '#e8a03a' : '#b8935a'; g.strokeStyle = INK; g.lineWidth = 2;
       for (let k = 0; k < 12; k++) { g.save(); g.rotate(k * Math.PI / 6); g.beginPath(); g.moveTo(-6, -36); g.lineTo(0, -52 - (sun ? Math.sin(S.t * 4 + k) * 4 : 0)); g.lineTo(6, -36); g.closePath(); g.fill(); g.stroke(); g.restore(); }
       g.beginPath(); g.arc(0, 0, 32, 0, 6.283); g.fillStyle = sun ? '#f2c640' : '#c9ac6a'; g.fill(); g.stroke(); g.restore();
+      const vw = cv.width / DPR / scale;
+      far.forEach((c, i) => { if (c.x > camX - 140 && c.x < camX + vw + 140) c4Cloud(g, c.x, top() + c.y, c.s, i % 3, sun ? '#ece6dc' : '#5e5866'); });
       clouds.forEach((c, i) => c4Cloud(g, c.x, top() + c.y, c.s, i % 3, sun ? '#ece6dc' : '#5e5866'));   // chương IV's clouds, dark with rain
       // the drying lines and the five prints from the print house, wet and dark until the sun dries them
-      g.strokeStyle = '#7a5a2a'; g.lineWidth = 5; g.beginPath(); for (const x of [W + 40, W + 330]) { g.moveTo(x, GROUND); g.lineTo(x, GROUND - 210); } g.stroke();
-      g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(W + 40, GROUND - 200); g.quadraticCurveTo(W + 185, GROUND - 186, W + 330, GROUND - 200); g.stroke();
+      g.strokeStyle = '#7a5a2a'; g.lineWidth = 5; g.beginPath(); for (const x of [W + 40, W + 330]) { g.moveTo(x, GROUND); g.lineTo(x, GROUND - 312); } g.stroke();
+      g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(W + 40, GROUND - 302); g.quadraticCurveTo(W + 185, GROUND - 288, W + 330, GROUND - 302); g.stroke();
       for (let k = 0; k < 5; k++) {
-        const x = W + 85 + k * 50, y = GROUND - 158 + Math.abs(k - 2) * -3, sway = Math.sin(S.t * (this.st === 'rain' ? 2.4 : 1.2) + k) * .04;
+        const x = W + 85 + k * 50, y = GROUND - 260 + Math.abs(k - 2) * -3, sway = Math.sin(S.t * (this.st === 'rain' ? 2.4 : 1.2) + k) * .04;
         g.save(); g.translate(x, y - 36); g.rotate(sway); t4Print(g, k, T4_INKS, 0, 36, .38, 1 - this.dry); g.restore();
         g.fillStyle = '#a3332a'; g.fillRect(x - 3, y - 46, 6, 9);
         if (this.st === 'rain') { const ph = (S.t * 1.3 + k * .37) % 1; g.fillStyle = 'rgba(80,110,150,.7)'; g.beginPath(); g.ellipse(x - 10 + k % 3 * 9, y + 26 + ph * 40, 2, 3, 0, 0, 6.283); g.fill(); }
@@ -409,7 +415,7 @@ function t4Bridge(g0, g1) {
     held() { return S.drag && S.drag.ent === this; },
     sag(x) { if (x < g0 || x > g1) return 0; const on = this.cx > g0 && this.cx < g1, u = (x - g0) / span; return Math.sin(Math.PI * u) * (on ? (this.held() ? 4 : 10 + 16 * this.strain) : 3); },
     onClick(wx, wy) {
-      if (this.st !== 'wait' || wx < this.cx - 115 || wx > this.cx + 75 || wy < GROUND - 150 || wy > GROUND + 10) return false;
+      if (this.st !== 'wait' || wx < this.cx - 125 || wx > this.cx + 75 || wy < GROUND - 215 || wy > GROUND + 10) return false;
       if (Math.abs(groom.x - this.cx) > 420) { toast('Đến gần mà giúp ông cụ một tay!', 2.2); return true; }
       this.st = 'go'; AU.creak(); toast('Cả đoàn xúm vào đẩy xe với ông cụ!', 2.4); return true;
     },
@@ -445,8 +451,6 @@ function t4Bridge(g0, g1) {
       for (const [dy, w, c] of [[0, 7, '#c9a24a'], [-30, 3, '#7a5a2a']]) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); for (let x = g0 - 20; x <= g1 + 20; x += 10) { const yy = y(x) + dy; x === g0 - 20 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); }
       g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); for (let x = g0 - 10; x <= g1 + 10; x += 26) { g.moveTo(x, y(x) - 30); g.lineTo(x, y(x)); } g.stroke();
       g.beginPath(); for (let x = g0 - 20; x <= g1 + 20; x += 10) { const yy = y(x) + 3.5; x === g0 - 20 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke();
-      if (this.crack > 0) { g.strokeStyle = '#a3332a'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(mid - 14, y(mid) - 10); g.lineTo(mid - 4, y(mid) + 2); g.lineTo(mid + 6, y(mid) - 8); g.lineTo(mid + 14, y(mid) + 4); g.stroke(); }
-      if (this.st === 'go' && this.strain > .05 && !this.held()) { const a = .3 + .4 * Math.abs(Math.sin(S.t * 8)); g.strokeStyle = `rgba(163,51,42,${a})`; g.lineWidth = 3; g.beginPath(); g.arc(mid, y(mid) - 10, 26 + this.strain * 8, 0, 6.283); g.stroke(); }
     },
     drawMid(g) {
       const yy = x => this.arch(x) + this.sag(x), tilt = (yy(this.cx + 20) - yy(this.cx - 20)) / 40, cy = GROUND + yy(this.cx) - 4;
@@ -460,6 +464,20 @@ function t4Bridge(g0, g1) {
 }
 
 /* ---------- the market gate: lính cụ Lý wants four coins ---------- */
+function t4MarketGate(g, x) {
+  g.strokeStyle = INK; g.lineWidth = 2.4;
+  for (const px of [x - 66, x + 66]) { g.fillStyle = '#8a3a22'; g.fillRect(px - 9, GROUND - 236, 18, 236); g.strokeRect(px - 9, GROUND - 236, 18, 236); g.fillStyle = '#5b2f1f'; g.fillRect(px - 13, GROUND - 14, 26, 14); g.strokeRect(px - 13, GROUND - 14, 26, 14); }
+  g.fillStyle = '#8a3a22'; g.fillRect(x - 80, GROUND - 236, 160, 12); g.strokeRect(x - 80, GROUND - 236, 160, 12);
+  // the roof: dark tiles, the ridge curling up at both ends, a green ridge line
+  g.fillStyle = '#2a221d'; g.beginPath(); g.moveTo(x - 112, GROUND - 238); g.quadraticCurveTo(x - 96, GROUND - 252, x - 80, GROUND - 270); g.lineTo(x + 80, GROUND - 270); g.quadraticCurveTo(x + 96, GROUND - 252, x + 112, GROUND - 238); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = '#f2ecde'; g.lineWidth = 1.4; g.beginPath(); for (let k = -3; k <= 3; k++) { g.moveTo(x + k * 26 - 6, GROUND - 246); g.quadraticCurveTo(x + k * 26, GROUND - 252, x + k * 26 + 6, GROUND - 246); } g.stroke();
+  g.strokeStyle = INK; g.lineWidth = 2.4; g.fillStyle = '#2f6a4c'; g.beginPath(); g.moveTo(x - 92, GROUND - 268); g.quadraticCurveTo(x - 100, GROUND - 286, x - 112, GROUND - 284); g.lineTo(x - 84, GROUND - 276); g.lineTo(x + 84, GROUND - 276); g.lineTo(x + 112, GROUND - 284); g.quadraticCurveTo(x + 100, GROUND - 286, x + 92, GROUND - 268); g.closePath(); g.fill(); g.stroke();
+  // the board
+  g.fillStyle = '#e8b83a'; g.fillRect(x - 46, GROUND - 222, 92, 40); g.strokeRect(x - 46, GROUND - 222, 92, 40); g.strokeStyle = '#a3332a'; g.lineWidth = 2; g.strokeRect(x - 41, GROUND - 217, 82, 30);
+  g.fillStyle = '#a3332a'; g.font = '900 24px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('CHỢ', x, GROUND - 201); g.textBaseline = 'alphabetic';
+  // red lanterns hung from the eaves, clear of the board
+  for (const lx of [x - 96, x + 96]) { g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.moveTo(lx, GROUND - 240); g.lineTo(lx, GROUND - 214); g.stroke(); g.fillStyle = '#c0402f'; g.beginPath(); g.ellipse(lx, GROUND - 200, 10, 14, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#e8b83a'; g.fillRect(lx - 4, GROUND - 188, 8, 5); }
+}
 function t4Gate(x, need) {
   return {
     layer: 'bg', gateX: x, ax: x, opened: false, paid: false, k: { bounce: 0 }, told: false,
@@ -475,7 +493,8 @@ function t4Gate(x, need) {
       } else if (!this.told) { this.told = true; toast('Lính cụ Lý chống giáo: "Nộp đủ bốn đồng mới được vào chợ!"', 3.6); }
     },
     draw(g) {
-      dp(g, PROPS.gate, x, GROUND + 4);
+      for (const sx of [x + 130, x + 230]) dp(g, MP.stall, sx, GROUND + 4, 0, .85, .85);
+      t4MarketGate(g, x);
       const gx = this.opened ? x + 150 : x - 70, b = this.k.bounce > 0 ? Math.abs(Math.sin(this.k.bounce * 12)) * 6 : 0;
       // the spear, the soldier, his lacquered nón dấu
       g.strokeStyle = '#6a4a2a'; g.lineWidth = 4; g.beginPath(); g.moveTo(gx - 26, GROUND); g.lineTo(gx - 26, GROUND - 176 - b); g.stroke();
@@ -491,7 +510,7 @@ function t4Gate(x, need) {
 
 /* ---------- tranh 4 ---------- */
 LEVELS[3] = {
-  han: '東湖', name: 'Làng Tranh', paper: 'white', width: 4800, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
+  han: '東湖', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
   intro: '', endTitle: 'Qua Làng Tranh', endText: 'Pha màu, in tranh, gọi nắng, giữ cầu: làng tranh Đông Hồ cảm tạ bốn đồng tiền. Lính cụ Lý mở cổng, đoàn rước vào chợ.',
   build: () => {
     S.coins = 0; S.coinShown = 0; S.coinFx = []; S.prints = 0;
