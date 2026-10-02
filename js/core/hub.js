@@ -17,6 +17,7 @@ function showChapters() {
     box.appendChild(b);
   });
   setTimeout(() => { const f = $('#chapCards .card:not([disabled])'); f && f.focus(); }, 30);
+  setTimeout(() => { if (S.mode === 'chapters' && typeof instPeek === 'function') instPeek(); }, 1500);   // the mouse asks about the home screen
 }
 function showAlbum(id) {
   const c = chapterById(id) || coverChapter();
@@ -27,6 +28,7 @@ function showAlbum(id) {
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   AU.setQuiet(true);
   setTimeout(() => { const f = $('#cards .card:not([disabled])'); f && f.focus(); }, 30);
+  setTimeout(() => { if (S.mode === 'album' && typeof instPeek === 'function') instPeek(); }, 1500);
 }
 $('#bChap').addEventListener('click', showChapters);
 $('#bStart').addEventListener('click', () => { AU.init(); showChapters(); });

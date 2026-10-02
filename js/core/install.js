@@ -49,3 +49,45 @@ $('#bInstall').addEventListener('click', showInstall);
 $('#bInstClose').addEventListener('click', () => { $('#install').hidden = true; });
 $('#bInstNow').addEventListener('click', async () => { const p = INST.prompt; if (!p) return; p.prompt(); try { await p.userChoice; } catch (e) {} INST.prompt = null; $('#install').hidden = true; instButton(); });
 instButton();
+
+/* ---------- the peeking mouse (owner): a mouse looks up from the bottom corner of the chapter list or the album and
+   asks in a bubble whether to put the game on the home screen; on yes it shows where to tap with a bouncing arrow at
+   that very spot of the phone (Safari's Share button, or Chrome's ⋮). "Để sau" keeps it away for three days. ---------- */
+const INST_LATER = 3 * 864e5;
+function instArrowSpot(kind) {
+  const ua = navigator.userAgent, ipad = /iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), v = +((ua.match(/Version\/(\d+)/) || [])[1] || 0);
+  if (kind === 'android') return { css: 'top:6px;right:8px', dir: 'up', say: 'Chạm nút <b>⋮</b> ở góc trên này, rồi chọn <b>Thêm vào màn hình chính</b> (hoặc <b>Cài đặt ứng dụng</b>).' };
+  if (ipad || kind === 'ios-other') return { css: 'top:6px;right:64px', dir: 'up', say: 'Chạm nút <b>Chia sẻ</b> trên thanh địa chỉ, rồi chọn <b>Thêm vào MH chính</b>.' };
+  if (v >= 26) return { css: 'bottom:calc(6px + env(safe-area-inset-bottom));right:14px', dir: 'down', say: 'Chạm nút <b>•••</b> ở góc dưới này, chọn <b>Chia sẻ</b>, rồi <b>Thêm vào MH chính</b>.' };
+  return { css: 'bottom:calc(6px + env(safe-area-inset-bottom));left:calc(50% - 22px)', dir: 'down', say: 'Chạm nút <b>Chia sẻ</b> ở thanh dưới này, rồi chọn <b>Thêm vào MH chính</b>.' };
+}
+function instPeek() {
+  if (document.getElementById('instPeek') || instStandalone() || !instKind() && !INST.prompt) return;
+  let later = 0; try { later = +localStorage.getItem('dcc.instLater') || 0; } catch (e) {}
+  if (Date.now() - later < INST_LATER || INST.peeked) return;
+  INST.peeked = true;
+  const box = document.createElement('div'); box.id = 'instPeek';
+  box.innerHTML = '<canvas width="240" height="240"></canvas><div class="bub"><p>Cài mình lên màn hình chính, mở ra chơi như ứng dụng nhé?</p><div class="bt"><button class="btn" data-a="yes">Cài đặt</button><button class="btn alt" data-a="no">Để sau</button></div></div>';
+  document.body.appendChild(box);
+  const cvs = box.querySelector('canvas'), g = cvs.getContext('2d'), t0 = performance.now(), rig = c4MouseRig(0);
+  (function draw() {
+    if (!box.isConnected) return;
+    if (S.mode !== 'chapters' && S.mode !== 'album') { instUnpeek(); return; }
+    const t = (performance.now() - t0) / 1000, up = Math.min(1, t / .6), ct = C4.t; C4.t = t;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 240, 240); g.setTransform(2, 0, 0, 2, 0, 0);
+    c4Mouse(g, rig, 50, 1, 0, false, -1.5 + Math.sin(t * 6) * .35, null, 1.15, 168 + 70 * (1 - up) * (1 - up) + Math.sin(t * 2) * 1.5, 1);   // rising out of the corner, waving
+    C4.t = ct; requestAnimationFrame(draw);
+  })();
+  box.addEventListener('click', async e => {
+    const a = e.target.closest('button')?.dataset.a; if (!a) return;
+    AU.tap && AU.tap();
+    if (a === 'no' || a === 'done') { try { localStorage.setItem('dcc.instLater', String(Date.now())); } catch (er) {} instUnpeek(); return; }
+    if (INST.prompt) { const p = INST.prompt; p.prompt(); try { await p.userChoice; } catch (er) {} INST.prompt = null; instUnpeek(); instButton(); return; }
+    const spot = instArrowSpot(instKind() || 'android');
+    box.querySelector('.bub').innerHTML = `<p>${spot.say}</p><div class="bt"><button class="btn alt" data-a="done">Xong</button></div>`;
+    const ar = document.createElement('div'); ar.id = 'instArrow'; ar.className = spot.dir; ar.style.cssText = spot.css;
+    ar.innerHTML = '<svg viewBox="0 0 44 60" width="44" height="60"><path d="M22 4v40" stroke="#1d1915" stroke-width="9" stroke-linecap="round"/><path d="M22 4v40" stroke="#a3332a" stroke-width="5" stroke-linecap="round"/><path d="M6 36l16 20 16-20z" fill="#a3332a" stroke="#1d1915" stroke-width="3" stroke-linejoin="round"/></svg>';
+    document.body.appendChild(ar);
+  });
+}
+function instUnpeek() { for (const id of ['instPeek', 'instArrow']) { const el = document.getElementById(id); if (el) el.remove(); } }

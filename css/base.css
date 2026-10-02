@@ -25,6 +25,19 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 .sheet .han{font-family:var(--han);font-size:28px;color:var(--son);margin:4px 0 8px;letter-spacing:.2em}
 .sheet p{margin:8px auto 0;font-size:15px;line-height:1.55;max-width:46ch}
 .sheet .how{font-size:13px;color:#4a3f33;margin-top:12px}
+#instPeek{position:fixed;left:0;bottom:0;z-index:9;display:flex;align-items:flex-end;pointer-events:none}
+#instPeek canvas{width:120px;height:120px;margin-bottom:calc(-8px + env(safe-area-inset-bottom) * 0);flex:none}
+#instPeek .bub{pointer-events:auto;position:relative;margin:0 10px calc(70px + env(safe-area-inset-bottom)) -18px;max-width:min(250px,62vw);background:#f2ecde;border:2.5px solid var(--ink);border-radius:14px;padding:10px 12px;box-shadow:3px 3px 0 rgba(29,25,21,.3);font-family:var(--body);font-size:14px;line-height:1.4;text-align:left;animation:instIn .4s ease-out}
+#instPeek .bub::before{content:"";position:absolute;left:-12px;bottom:14px;border:10px solid transparent;border-right-color:var(--ink);border-left:0}
+#instPeek .bub p{margin:0}
+#instPeek .bt{display:flex;gap:8px;margin-top:8px}
+#instPeek .btn{font-size:14px;padding:6px 12px}
+#instArrow{position:fixed;z-index:10;pointer-events:none;width:44px;height:60px}
+#instArrow.down{animation:instBobD .8s ease-in-out infinite}
+#instArrow.up{transform:rotate(180deg);animation:instBobU .8s ease-in-out infinite}
+@keyframes instBobD{0%,100%{translate:0 -10px}50%{translate:0 0}}
+@keyframes instBobU{0%,100%{translate:0 10px}50%{translate:0 0}}
+@keyframes instIn{from{opacity:0;translate:0 10px}to{opacity:1;translate:0 0}}
 #install{background:rgba(29,25,21,.55);z-index:8}
 #install ol{list-style:none;padding:0;margin:14px 0 0;text-align:left;max-width:46ch;align-self:center}
 #install li{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:15px;line-height:1.45}
