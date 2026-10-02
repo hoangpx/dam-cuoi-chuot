@@ -19,7 +19,7 @@ function buildAlbum6() {
     const open = i === 0 || SAVE6.done[i - 1] || SAVE6.done[i];
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = ['#e9dcc0', '#d9e6c9', '#e6d3c9', '#d3dbe6', '#e4d6ea', '#e9e2c4'][Math.max(0, N - 4) % 6]; b.disabled = !open;
-    b.innerHTML = `<div class="num">Màn ${i + 1}</div><div class="ch">${N}×${N}</div><b>${i ? C6_WORD[L.d] : 'Tập chơi'}</b><span class="st${SAVE6.done[i] ? ' done' : ''}">${SAVE6.done[i] ? 'Đã tìm đủ chuột' : open ? 'Chơi' : 'Chưa mở'}</span>`;
+    b.innerHTML = `<div class="num">Màn ${i + 1}</div><div class="ch">${N}×${N}</div><b>${i ? C6_WORD[L.d] : 'Tập chơi'}</b><span class="st${SAVE6.done[i] ? ' done' : ''}">${SAVE6.done[i] ? 'Đã gọi đủ con' : open ? 'Chơi' : 'Chưa mở'}</span>`;
     b.addEventListener('click', () => { if (open) startC6(i); });
     box.appendChild(b);
   }
@@ -51,10 +51,10 @@ function c6Key(e) { if (e.code === 'Escape') showAlbum(6); }
 
 registerChapter({
   id: 6, modes: ['c6play'],
-  card: { num: 'Chương VI', han: '鼠', name: 'Tìm Chuột', desc: 'Ruộng chia thành thửa: mỗi hàng, mỗi cột, mỗi thửa giấu đúng một con chuột, không con nào đứng sát con nào. Càng lên càng khó.', bg: PAPERS.yellow.css },
+  card: { num: 'Chương VI', han: '鼠', name: 'Tìm Chuột', desc: 'Chiều rồi, chuột mẹ ra đồng gọi lũ con mải chơi về. Mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con, không chú nào đứng sát chú nào. Càng lên càng khó.', bg: PAPERS.yellow.css },
   progress: () => `${SAVE6.done.filter(Boolean).length}/${C6_COUNT()} màn`,
   hasProgress: () => SAVE6.done.some(Boolean),
-  album() { buildAlbum6(); $('#albumTitle').textContent = 'Chương VI · Tìm Chuột'; $('#albumDesc').textContent = 'Mỗi màn là một thửa ruộng giấu chuột. Xong màn này mới mở màn sau, ruộng càng lớn càng khó.'; },
+  album() { buildAlbum6(); $('#albumTitle').textContent = 'Chương VI · Tìm Chuột'; $('#albumDesc').textContent = 'Lũ chuột con mải chơi trốn khắp ruộng. Giúp chuột mẹ tìm đủ từng đứa; xong ruộng này mới sang ruộng sau, ruộng càng rộng càng khó.'; },
   hide() {},
   update: updateC6, render: renderC6, key: c6Key,
   pointer: { down: c6Down, move: c6Move, up: c6Up },

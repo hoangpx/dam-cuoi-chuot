@@ -172,7 +172,7 @@ function mdSlip(g, W, y, text, big, up) {
 function mdTutDraw(g, G, Gm, W) {
   const st = MD_TUT[Math.min(G.tut.step, MD_TUT.length - 1)], N = G.N, cs = Gm.cell, done = !!G.next;
   if (st.kind !== 'free' && !done) for (let i = 0; i < N * N; i++) if (!st.cells.includes(i) && !G.mice.has(i)) { g.fillStyle = 'rgba(29,25,21,.55)'; mdRound(g, Gm.ox + (i % N) * cs + 2, Gm.oy + ((i / N) | 0) * cs + 2, cs - 4, cs - 4, 7); g.fill(); }
-  mdSlip(g, W, Gm.oy - 14, done ? 'Giỏi lắm! Bạn đã biết cách chơi.' : st.top, true, true);
+  mdSlip(g, W, Gm.oy - 14, done ? 'Giỏi lắm! Mẹ đã gọi đủ các con về.' : st.top, true, true);
   if (!done) mdSlip(g, W, Gm.oy + Gm.size + 16, st.bot, false, false);
   if (done || G.tut.wait > 0 || st.kind === 'free') return;
   const ctr = i => [Gm.ox + (i % N + .5) * cs, Gm.oy + (((i / N) | 0) + .5) * cs], A = howtoArt(), T = G.t;
@@ -211,6 +211,9 @@ function mdDraw(en, g, W, H) {
     const found = new Set([...G.mice].map(i => G.reg[i])), hs = Math.min(1.3, (Gm.size - 30) / (N * 30)), sw = N * 30 * hs + 20;
     mdRound(g, W / 2 - sw / 2, Gm.oy - 40, sw, 48, 14); g.fillStyle = '#f2ecde'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2; g.stroke();
     for (let k = 0; k < N; k++) mdHead(g, W / 2 - (N - 1) * 15 * hs + k * 30 * hs, Gm.oy - 18, hs, G.cols[k % G.cols.length], found.has(k));
+    // mẹ chuột beside the strip, a hand to her mouth calling the children home; she claps once they are all back
+    const all = found.size === N, mx = W / 2 - sw / 2 - 26;
+    if (mx > 12) c4Mouse(g, c4MouseRig(0), mx, 1, S.pose * 2, false, all ? -1.6 + Math.abs(Math.sin(G.t * 8)) * .4 : -1.25 + Math.sin(G.t * 3) * .12, null, .42, Gm.oy - 2 - (all ? Math.abs(Math.sin(G.t * 7)) * 4 : 0), 5);
   }
   // the field: a rounded panel, rounded cells with gaps
   mdRound(g, Gm.ox - 8, Gm.oy - 8, Gm.size + 16, Gm.size + 16, 16); g.fillStyle = '#f2ecde'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2.6; g.stroke();
@@ -229,19 +232,19 @@ function mdDraw(en, g, W, H) {
   if (G.level === 1 && !SAVE6.dotted && !(G.intro > 0) && !G.over && !G.next) mdHowto(g, G, Gm);
   for (const i of G.mice) {
     const r = (i / N) | 0, c = i % N, s = cs * .82 / 168, hop = G.next ? Math.abs(Math.sin(G.t * 9 + c)) * cs * .08 : 0;
-    c4Mouse(g, c4MouseRig([0, 1, 3, 5, 6, 2, 4][r % 7]), Gm.ox + c * cs + cs * .45, 1, S.pose * 2 + i, false, G.next ? -1.4 : null, null, s, Gm.oy + (r + 1) * cs - cs * .06 - hop, i);
+    c4Mouse(g, c4MouseRig([11, 12, 13][(r + c) % 3]), Gm.ox + c * cs + cs * .45, 1, S.pose * 2 + i, false, G.next ? -1.4 : null, null, s, Gm.oy + (r + 1) * cs - cs * .06 - hop, i);
   }
   if (tut) { mdTutDraw(g, G, Gm, W); return; }
   if (G.intro > 0 && !G.over) {
     const k = Math.min(1, G.intro * 3, (1.8 - G.intro) * 6); g.globalAlpha = k;
     const bw = Math.min(W - 60, 300), bx = (W - bw) / 2, by = Gm.oy + Gm.size / 2 - 50;
     mdRound(g, bx, by, bw, 100, 14); g.fillStyle = 'rgba(242,236,222,.95)'; g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
-    g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 32px "Playfair Display", serif'; g.fillText('Tìm ' + N + ' con chuột', W / 2, by + 50);
+    g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 32px "Playfair Display", serif'; g.fillText('Gọi ' + N + ' con về', W / 2, by + 40); g.font = '600 15px "Be Vietnam Pro", sans-serif'; g.fillText('Lũ chuột con trốn chơi khắp ruộng', W / 2, by + 74);
     g.textBaseline = 'alphabetic'; g.globalAlpha = 1;
   }
   if (G.over) {
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 60px "Playfair Display", serif';
-    const txt = G.result === 'win' ? 'THẮNG' : 'THUA';
+    const txt = G.result === 'win' ? 'ĐỦ CẢ!' : 'THUA';
     g.save(); g.translate(W / 2, Gm.oy + Gm.size / 2); g.rotate(-.12); g.lineWidth = 6; g.strokeStyle = '#f2ecde'; g.strokeText(txt, 0, 0); g.fillStyle = G.result === 'win' ? '#a3332a' : INK; g.fillText(txt, 0, 0); g.restore();
     g.textBaseline = 'alphabetic';
   }
