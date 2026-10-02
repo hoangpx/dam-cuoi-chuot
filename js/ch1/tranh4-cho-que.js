@@ -96,9 +96,20 @@ const T4_STUFF = {
   diep: { pig: 'trang', draw: (g, x, y, s = 1) => { g.fillStyle = '#f6f1e4'; g.strokeStyle = INK; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x - 7 * s, y + 4 * s); g.quadraticCurveTo(x, y - 10 * s, x + 7 * s, y + 4 * s); g.closePath(); g.fill(); g.stroke(); g.beginPath(); for (const d of [-3, 0, 3]) { g.moveTo(x, y + 3 * s); g.lineTo(x + d * s, y - 4 * s); } g.stroke(); } },
 };
 // the colour of what is in the new jar: yellow and blue go green, anything else in it turns it muddy
+const t4Lerp = (A, Z, k) => 'rgb(' + A.map((v, i) => Math.round(v + (Z[i] - v) * k)).join(',') + ')';
+function t4Pair(m) {                                 // which colours are really in it
+  return ['vang', 'xanhb', 'do', 'den', 'trang'].filter(p => (m[p] || 0) >= .04);
+}
 function t4MixCol(m) {
-  const y = m.vang || 0, b = m.xanhb || 0, other = (m.do || 0) + (m.den || 0) + (m.trang || 0), w = m.nuoc || 0;
-  const base = other >= .04 ? '#6a5a3a' : y + b > 0 ? t4Mix(y, b) : T4_WATER, k = w / Math.max(.001, y + b + other + w);
+  const y = m.vang || 0, b = m.xanhb || 0, r = m.do || 0, w = m.nuoc || 0, has = t4Pair(m), tot = Object.values(m).reduce((a, c) => a + c, 0);
+  let base;
+  if (!has.length) base = T4_WATER;
+  else if (has.length === 1) base = T4_PIG[has[0]];
+  else if (has.length === 2 && has.includes('vang') && has.includes('xanhb')) base = t4Mix(y, b);
+  else if (has.length === 2 && has.includes('vang') && has.includes('do')) { const q = r / (y + r); base = q < .5 ? t4Lerp([232, 184, 58], [224, 122, 42], q * 2) : t4Lerp([224, 122, 42], [163, 51, 42], (q - .5) * 2); }   // orange
+  else if (has.length === 2 && has.includes('xanhb') && has.includes('do')) base = '#6a3f7a';   // purple
+  else base = '#6a5a3a';                                                                      // muddy
+  const k = w / Math.max(.001, tot);
   if (k < .02 || base === T4_WATER) return base;
   const rgb = c => c[0] === '#' ? [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)) : c.match(/\d+/g).map(Number), A = rgb(base), Z = rgb(T4_WATER);
   return 'rgb(' + A.map((v, i) => Math.round(v + (Z[i] - v) * k * .8)).join(',') + ')';
@@ -115,9 +126,9 @@ function t4Dyer(W) {
   const SHELF = GROUND - 265, NEW = W + 390, KX = W + 500;
   // the yard, tall like the bamboo of the other tranh: bamboo, a hoè tree, a pea vine up a pole, a red-flowered tree,
   // a basket of shells hung high; five to pick on each, above the jars
-  const PLANTS = [['tre', W + 60, [[-40, -300], [30, -326], [-10, -270], [44, -282], [8, -340]]], null,
+  const PLANTS = [null, null,
     ['bieu', W + 200, [[-10, -340], [10, -312], [-8, -286], [12, -262], [-6, -364]]], null,
-    ['diep', W + 330, [[-14, -282], [0, -290], [14, -282], [-7, -272], [7, -272]]]];
+    null];                                                               // owner: only the pea vine is left in the yard
   const spots = []; for (const [kind, x, list] of PLANTS.filter(Boolean)) for (const [dx, dy] of list) spots.push({ kind, x: x + dx, y: GROUND + dy - 112, gone: false, back: 0 });
   // the jars, up on a shelf out of the party's way: plain rain water, and full ones of yellow, red, black, white
   const jars = [[W + 110, null], [W + 190, 'vang'], [W + 270, 'do']].map(([x, pig]) => ({ x, pig, base: pig, l: 1, tilt: 0, kind: null, n: 0, empty: 0 }));
@@ -147,8 +158,12 @@ function t4Dyer(W) {
     },
     // after a pour: green done, or a muddy jar the dyer tips out
     settle() {
-      const m = this.mix, y = m.vang || 0, b = m.xanhb || 0, other = (m.do || 0) + (m.den || 0) + (m.trang || 0);
-      if (other >= .04) { this.mud = 1.6; AU.pluck(52); toast('Màu lem nhem thế này thì in làm sao! Chú thợ nhuộm đổ đi.', 3); return; }
+      const m = this.mix, y = m.vang || 0, b = m.xanhb || 0, has = t4Pair(m);
+      if (has.some(p => p !== 'vang' && p !== 'xanhb')) {
+        const orange = has.length === 2 && has.includes('vang') && has.includes('do'), purple = has.length === 2 && has.includes('xanhb') && has.includes('do');
+        this.mud = 2.2; AU.pluck(52);
+        toast(orange ? 'Màu da cam đẹp đấy, nhưng chú cần màu xanh lá cơ! Chú đổ đi nhé.' : purple ? 'Ra màu tím rồi, chưa phải xanh lá! Chú đổ đi nhé.' : 'Màu lem nhem thế này thì in làm sao! Chú thợ nhuộm đổ đi.', 3.2); return;
+      }
       if (y >= .2 && b >= .2 && b / (y + b) > .25 && b / (y + b) < .75) {
         this.st = 'done'; AU.swoosh(); t4Thanks(this, KX, 'Ra màu xanh lá rồi! Chú thợ nhuộm mừng quá, cảm tạ đoàn rước một đồng.');
       }
@@ -170,13 +185,9 @@ function t4Dyer(W) {
     },
     draw(g) {
       // the plants
-      { const x = PLANTS[0][1]; dp(g, PROPS.bamboo, x, GROUND + 4, 0, 1.06, 1.06); }
       { const x = PLANTS[2][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x, GROUND); g.lineTo(x, GROUND - 492); g.stroke();
         g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.beginPath(); for (let y = 0; y < 482; y += 4) { const xx = x + Math.sin(y * .09) * 12; y ? g.lineTo(xx, GROUND - y) : g.moveTo(xx, GROUND); } g.stroke();
         g.fillStyle = '#4f7a3a'; g.strokeStyle = INK; g.lineWidth = 1; for (let k = 0; k < 19; k++) { const y = 30 + k * 25, xx = x + Math.sin(y * .09) * 12; g.beginPath(); g.ellipse(xx + (k % 2 ? 9 : -9), GROUND - y, 8, 4.4, k, 0, 6.283); g.fill(); g.stroke(); } }
-      { const x = PLANTS[4][1]; g.strokeStyle = '#7a5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(x + 30, GROUND); g.lineTo(x + 30, GROUND - 432); g.lineTo(x, GROUND - 432); g.stroke();
-        g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, GROUND - 432); g.lineTo(x - 22, GROUND - 390); g.moveTo(x, GROUND - 432); g.lineTo(x + 22, GROUND - 390); g.stroke();
-        g.fillStyle = '#b57a22'; g.beginPath(); g.moveTo(x - 26, GROUND - 390); g.lineTo(x + 26, GROUND - 390); g.lineTo(x + 18, GROUND - 366); g.lineTo(x - 18, GROUND - 366); g.closePath(); g.fill(); g.stroke(); }
       for (const s of spots) if (!s.gone) T4_STUFF[s.kind].draw(g, s.x, s.y + Math.sin(S.t * 2 + s.x) * 1.2, 1.3);
       // the shelf and the stand of the new jar
       g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4;
