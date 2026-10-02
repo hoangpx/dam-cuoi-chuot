@@ -58,6 +58,16 @@
     <div class="han">老鼠娶親</div>
     <p>Mỗi chương là một lối chơi khác, cùng chung phong cách tranh khắc gỗ Đông Hồ.</p>
     <div class="grid" id="chapCards"></div>
+    <div class="row"><button class="btn alt" id="bInstall" hidden>Thêm vào màn hình chính</button></div>
+  </div>
+</div>
+
+<div id="install" class="ov" hidden>
+  <div class="sheet">
+    <h2 id="instTitle">Thêm vào màn hình chính</h2>
+    <p>Thêm game ra màn hình chính để mở như một ứng dụng: toàn màn hình, không có thanh địa chỉ.</p>
+    <ol id="instSteps"></ol>
+    <div class="row"><button class="btn" id="bInstNow" hidden>Cài ngay</button><button class="btn alt" id="bInstClose">Đã hiểu</button></div>
   </div>
 </div>
 
@@ -118,6 +128,8 @@
 </style>
 
 <script>
+// Android Chrome offers its install prompt early, before the game files run: keep it for js/core/install.js
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
 window.addEventListener('unhandledrejection', e => { const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; const ld = document.getElementById('loading'); if (ld) ld.remove(); el.textContent = 'Không khởi động được trò chơi: ' + (e.reason && e.reason.message || 'lỗi không rõ'); } });
 window.addEventListener('error', e => { const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; const ld = document.getElementById('loading'); if (ld) ld.remove(); el.textContent = 'Không khởi động được trò chơi: ' + (e.message || 'lỗi không rõ'); } });
 </script>
@@ -125,7 +137,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-08j';
+const VERSION = '2026-10-09a';
 const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [
@@ -172,6 +184,7 @@ const GAME_FILES = [
   'js/ch7/vu.js',
   'js/ch7/game.js',
   'js/core/hub.js',
+  'js/core/install.js',
   'js/core/main.js',
 ];
 // every file starts downloading now, alongside the fonts (one after another cost a network round trip each)

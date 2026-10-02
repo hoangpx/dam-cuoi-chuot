@@ -25,6 +25,11 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 .sheet .han{font-family:var(--han);font-size:28px;color:var(--son);margin:4px 0 8px;letter-spacing:.2em}
 .sheet p{margin:8px auto 0;font-size:15px;line-height:1.55;max-width:46ch}
 .sheet .how{font-size:13px;color:#4a3f33;margin-top:12px}
+#install{background:rgba(29,25,21,.55);z-index:8}
+#install ol{list-style:none;padding:0;margin:14px 0 0;text-align:left;max-width:46ch;align-self:center}
+#install li{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:15px;line-height:1.45}
+#install li .n{flex:none;width:26px;height:26px;border:2px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--son);color:var(--diep)}
+#install li .ic{flex:none;width:30px;display:grid;place-items:center}
 .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 .btn{font-family:var(--display);font-weight:700;font-size:18px;color:var(--diep);background:var(--son);border:2px solid var(--ink);padding:9px 20px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
 .btn.alt{background:var(--diep);color:var(--ink)}
