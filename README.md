@@ -2,7 +2,7 @@
 
 Game giải đố phong cách tranh dân gian Đông Hồ, vẽ hoàn toàn bằng Canvas 2D. Mỗi chương là một lối chơi khác.
 
-**Chơi:** https://hoangpx.github.io/dam-cuoi-chuot/ · bản cũ (một file, đoàn 5 chuột): https://hoangpx.github.io/dam-cuoi-chuot/v1/
+**Chơi:** https://damcuoichuot.com/ · bản cũ (một file, đoàn 5 chuột): https://damcuoichuot.com/v1/
 
 - 2D thuần, vẽ hoàn toàn bằng Canvas 2D: nét khắc gỗ, màu in lệch và loang, giấy dó quét điệp.
 - Không có chữ hướng dẫn: người chơi tự khám phá bằng cách chạm, kéo thả vào đồ vật và nhân vật trong tranh.
