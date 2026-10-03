@@ -61,7 +61,7 @@ function showCard() {
   const c = $('#lvCard'); c.classList.add('on'); setTimeout(() => c.classList.remove('on'), 2600);
 }
 // chương I: tranh 1–4 are finished, each opened by finishing the one before; later ones are still being carved and open only after 5 taps
-const C1_READY = 4;
+const C1_READY = 5;
 // a tranh still being made can be opened for trying: set C1_TRY to its index (it then opens without the one before)
 const C1_TRY = -1;
 function buildAlbum() {
@@ -451,7 +451,7 @@ function ch1PointerUp(e) {
 /* ---------- registration ---------- */
 registerChapter({
   id: 1, cover: true, modes: ['play', 'end'],
-  card: { num: 'Chương I', han: '老鼠娶親', name: 'Đám Cưới Chuột', desc: 'Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ. Các bức sau đang khắc ván.', bg: PAPERS.yellow.css },
+  card: { num: 'Chương I', han: '老鼠娶親', name: 'Đám Cưới Chuột', desc: 'Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', bg: PAPERS.yellow.css },
   progress: () => `${SAVE.done.slice(0, C1_READY).filter(Boolean).length}/${C1_READY} tranh`,
   hasProgress: () => SAVE.done.some(Boolean) || SAVE.secret.some(Boolean),
   boot() { loadLevel(0); },
