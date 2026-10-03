@@ -3,6 +3,20 @@
 <!-- Đám Cưới Chuột · © 2026 Hoang Pham (hoangpx). Giữ mọi quyền — all rights reserved. Bản chính thức: https://damcuoichuot.com -->
 <meta charset="utf-8">
 <title>Đám Cưới Chuột</title>
+<!-- what a shared link shows (Facebook, Zalo, Messenger…): without these Facebook took the first picture in the page, the hidden donation QR -->
+<meta name="description" content="Trò chơi bước ra từ những bức tranh Đông Hồ và những câu truyện cổ tích Việt Nam. Chơi miễn phí trên điện thoại và máy tính.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://damcuoichuot.com/">
+<meta property="og:site_name" content="Đám Cưới Chuột">
+<meta property="og:title" content="Đám Cưới Chuột – trò chơi từ tranh Đông Hồ và truyện cổ tích Việt Nam">
+<meta property="og:description" content="Theo chân đoàn chuột đón dâu qua bờ ao, ngõ tre, làng nghề, phiên chợ quê và những câu truyện cổ tích. Chơi miễn phí trên điện thoại và máy tính.">
+<meta property="og:image" content="https://damcuoichuot.com/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Đoàn chuột rước dâu trong tranh Đông Hồ">
+<meta property="og:locale" content="vi_VN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://damcuoichuot.com/img/og.jpg">
 <!-- home-screen icon and name (iPhone: Share → Add to Home Screen); opens full screen like an app -->
 <link rel="apple-touch-icon" href="img/icon-180.png?v=2">
 <link rel="icon" type="image/png" href="img/icon-192.png?v=2">
@@ -70,7 +84,7 @@
   <div class="sheet">
     <h2>Góp chút cho em nhỏ vùng cao</h2>
     <p>Đám Cưới Chuột chơi miễn phí. Nếu bạn thích, hãy góp một chút: <b>toàn bộ số tiền sẽ được dùng để ủng hộ trẻ em vùng cao</b>.</p>
-    <img src="img/ung-ho-qr.png" alt="Mã VietQR, TPBank, PHAM XUAN HOANG, 0000 8863 001" class="qr">
+    <img data-src="img/ung-ho-qr.png" alt="Mã VietQR, TPBank, PHAM XUAN HOANG, 0000 8863 001" class="qr">
     <p class="acc">TPBank · <b>PHAM XUAN HOANG</b><br>Số tài khoản <b>0000 8863 001</b></p>
     <div class="row"><button class="btn alt" id="bCopyStk">Chép số tài khoản</button><button class="btn alt" id="bCopyNote">Chép nội dung</button></div>
     <p class="how">Mở ứng dụng ngân hàng, quét mã hoặc chuyển khoản với nội dung "Dam Cuoi Chuot ung ho tre em vung cao". Xin cảm ơn tấm lòng của bạn!</p>
@@ -172,7 +186,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-10v';
+const VERSION = '2026-10-10w';
 const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [

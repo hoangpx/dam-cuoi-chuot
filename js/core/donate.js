@@ -2,7 +2,7 @@
    account; the whole sum goes to children in the highlands. No pop-ups: it only opens when tapped. Counted in
    GoatCounter as ung-ho/mo and ung-ho/chep-stk. */
 const DONATE = { stk: '00008863001', note: 'Dam Cuoi Chuot ung ho tre em vung cao' };
-$('#bDonate').addEventListener('click', () => { trackSend('ung-ho/mo'); $('#donate').hidden = false; AU.tap && AU.tap(); });
+$('#bDonate').addEventListener('click', () => { trackSend('ung-ho/mo'); const q = $('#donate .qr'); if (q && !q.src) q.src = q.dataset.src; $('#donate').hidden = false; AU.tap && AU.tap(); });
 $('#bDonateClose').addEventListener('click', () => { $('#donate').hidden = true; });
 $('#donate').addEventListener('click', e => { if (e.target.id === 'donate') $('#donate').hidden = true; });   // a tap outside the sheet closes it
 for (const [id, text, done] of [['bCopyStk', DONATE.stk, 'Đã chép số tài khoản'], ['bCopyNote', DONATE.note, 'Đã chép nội dung']]) {
