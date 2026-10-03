@@ -338,6 +338,8 @@ function t5Rain(x) {
       this.rainK += ((near ? 1 : 0) - this.rainK) * Math.min(1, dt * (this.st === 'given' ? .9 : 1.5));   // the rain dies away slowly
       if (this.st === 'given' && !this.thanked && this.t > 4.5) { this.thanked = true; m.run('Ta cảm ơn đoàn chuột, cho ta mượn chiếc lọng nhé!'); }   // she thanks them and goes while the flute plays on
       if (this.st === 'given') this.bow = Math.min(1, this.bow + dt / 3);   // slow, but not too slow
+      if (this.think == null && this.on() && this.st === 'rain' && x - camX < cv.width / DPR / scale - 70) this.think = 0;   // first sight of her alone in the rain (she is on screen)
+      if (this.think != null) this.think += dt;
     },
     draw(g) {                                                             // the rainbow behind her once the rain stops
       if (this.bow < .02) return;
@@ -354,6 +356,9 @@ function t5Rain(x) {
       if (!has && groom.x > x - 620) t5Say(g, x, GROUND - 180, Math.floor(S.t / 3.2) % 2 ? 'Hu hu… ta lạnh lắm…' : 'Mưa to quá, lạnh quá…');
       if (has && m.runT < 0 && this.t > 2) t5Say(g, x, GROUND - 230, 'Trong tim ta như có cầu vồng vậy…');
       if (!has && followers[0].item === 'parasol' && Math.abs(groom.x - x) < 700 && !S.drag) { const f = followers[0]; sparkle(g, f.x + 14 * f.face + 20, GROUND - 230, 6, .3 + .3 * Math.sin(S.t * 3)); }
+    },
+    drawFg(g) {                                                           // the groom's thought, over the parasol
+      if (this.think != null && this.think < 3.8) t5Think(g, groom.x + 20, GROUND - 262, 'Lại gì nữa đây?', Math.min(1, this.think * 4, (3.8 - this.think) * 3));
     },
     drawHud(g, vw) {                                                      // the rain, as chương IV draws it
       if (this.rainK < .02) return;
@@ -415,6 +420,18 @@ function t5Say(g, x, y, text) {
   for (const w of words) { const t = ln ? ln + ' ' + w : w; if (g.measureText(t).width > 170 && ln) { lines.push(ln); ln = w; } else ln = t; } lines.push(ln);
   const w = Math.max(...lines.map(l => g.measureText(l).width)) + 24;
   t4Bubble(g, x, y, w, g => { g.fillStyle = INK; g.font = '700 15px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; lines.forEach((l, k) => g.fillText(l, 0, (k - (lines.length - 1) / 2) * 19)); }, lines.length * 19 + 16);
+}
+
+function t5Think(g, x, y, text, a) {
+  g.save(); g.globalAlpha = a; g.font = '700 15px "Be Vietnam Pro", sans-serif';
+  const w = g.measureText(text).width + 30, h = 40, cy = y - h / 2 - 22;
+  g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 2.2;
+  const puffs = []; for (let k = 0; k < 12; k++) { const t = k / 12 * 6.283; puffs.push([x + Math.cos(t) * (w / 2 - 6), cy + Math.sin(t) * (h / 2 - 4), 13]); }
+  for (const [px, py, r] of puffs) { g.beginPath(); g.arc(px, py, r, 0, 6.283); g.fill(); g.stroke(); }
+  g.beginPath(); g.ellipse(x, cy, w / 2 - 4, h / 2, 0, 0, 6.283); g.fill();          // covers the inner edges of the puffs
+  for (const [bx, by, r] of [[x - 14, y - 10, 6], [x - 22, y + 2, 3.6]]) { g.beginPath(); g.arc(bx, by, r, 0, 6.283); g.fill(); g.stroke(); }
+  g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, cy + 1);
+  g.restore();
 }
 
 /* ---------- 5 · the oriole's cage: three taps open it ---------- */
@@ -534,22 +551,22 @@ function t5Thi(x) {
 
 /* ---------- tranh 5 ---------- */
 LEVELS[4] = {
-  han: '米糠', name: 'Tấm Cám', paper: 'sage', width: 7700, key: 0, abil: ['drum', 'ken'], cps: [160, 1800, 3000, 4300, 5200, 6000, 6700],
-  zoom: 1.3, zoomWide: .7, kenFront: true, song: 0, gapK: .75,
+  han: '米糠', name: 'Tấm Cám', paper: 'sage', width: 9600, key: 0, abil: ['drum', 'ken'], cps: [160, 1950, 3350, 4800, 6200, 7300, 8300],
+  zoom: 1.3, zoomWide: .7, kenFront: true, song: 0, gapK: .85,
   intro: '', endTitle: 'Qua chuyện Tấm Cám', endText: 'Đoàn rước đi hết con đường làng chiều hôm ấy, rồi lại rộn ràng lên đường.',
   build: () => {
     T5.chain = false; T5.meets = []; T5.musicEnd = 0; T5.holdEnd = 0; T5.bird = false; T5.dress = T5.lent = T5.down = false; T5.backUp = null; T5.bell = null; followers[0].item = 'parasol';
     return [
       decor(PROPS.bamboo, 260, GROUND + 4, .8), decor(PROPS.bamboo, 560, GROUND + 4, .9),
       t5Wait(), t5Music(), t5Field(1150), secretSpot(700, 'drum', 'Tùng! Từ ngọn tre rơi xuống một mảnh triện đỏ!'),
-      t5Rice(1950),
-      t5Bed(3150),
-      t5Dusk(3600, 4800),
-      t5Rain(4450),
-      t5Cau(5350),
-      t5Cage(6150),
-      t5Thi(6850),
-      gate(7500),
+      t5Rice(2100),
+      t5Bed(3500),
+      t5Dusk(4000, 5500),
+      t5Rain(5000),
+      t5Cau(6400),
+      t5Cage(7500),
+      t5Thi(8500),
+      gate(9400),
     ];
   },
 };
