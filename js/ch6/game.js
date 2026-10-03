@@ -52,7 +52,7 @@ function c6Key(e) { if (e.code === 'Escape') showAlbum(6); }
 
 registerChapter({
   id: 6, modes: ['c6play'],
-  card: { num: 'Chương VI', han: '鼠', name: 'Tìm Chuột', desc: 'Chiều rồi, chuột mẹ ra đồng gọi lũ con mải chơi về. Mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con, không chú nào đứng sát chú nào. Càng lên càng khó.', bg: PAPERS.yellow.css },
+  card: { num: 'Chương VI', han: '鼠', name: 'Tìm Chuột', desc: 'Chiều rồi, chuột mẹ ra đồng gọi lũ con mải chơi về. Mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con, không chú nào đứng sát chú nào. Càng lên càng khó.', bg: '#c8d8dc' },
   progress: () => `${SAVE6.done.filter(Boolean).length}/${C6_COUNT()} màn`,
   hasProgress: () => SAVE6.done.some(Boolean),
   album() { buildAlbum6(); $('#albumTitle').textContent = 'Chương VI · Tìm Chuột'; $('#albumDesc').textContent = 'Lũ chuột con mải chơi trốn khắp ruộng. Giúp chuột mẹ tìm đủ từng đứa; xong ruộng này mới sang ruộng sau, ruộng càng rộng càng khó.'; },

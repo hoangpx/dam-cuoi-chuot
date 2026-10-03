@@ -98,7 +98,48 @@ function c4Art() {
     a.fk('white', c4Rect(-62, -116, 62, -70), 2);
     for (const x of [-30, 30]) a.key(lines([[x - 8, 0, x + 8, -3]]), 1);
   });
-  C4ART = { ganh, sap, gian, gate, scaffold, hangCa, hangVai, hangBanh, che, xoi, xen, bun, lot };
+  const mat = (a, w) => a.fk('straw', c4Poly([[-w, -6], [w, -6], [w + 8, 2], [-w - 8, 2]]), 1.4);   // a straw mat on the ground
+  const hangThit = part([-100, -120, 100, 6], a => {                      // a butcher's block, a rail of hanging pork, a cleaver
+    a.fk('brown', c4Rect(-70, -46, 40, -30), 1.8); for (const x of [-60, 30]) a.fk('brown', c4Rect(x - 4, -32, x + 4, 0), 1.3);
+    a.fk('brown', c4Rect(-80, -112, 60, -106), 1.4); for (const x of [-80, 60]) a.fk('brown', c4Rect(x - 3, -110, x + 3, -46), 1.2);
+    for (const x of [-56, -22, 14]) { a.key(lines([[x, -106, x, -98]]), 1); a.fk('red', smooth([[x - 12, -98], [x + 12, -98], [x + 9, -68], [x - 9, -66]]), 1.6); a.fill('white', ell(x, -92, 9, 3)); }
+    a.fk('red', smooth([[-50, -46], [-10, -50], [0, -38], [-46, -36]]), 1.2); a.fill('white', ell(-28, -44, 12, 2.5));
+    a.fk('grey', c4Poly([[48, -50], [80, -50], [80, -36], [48, -40]]), 1.2); a.fk('brown', c4Rect(80, -46, 96, -42), 1);
+  });
+  const hangGao = part([-110, -80, 110, 6], a => {                       // two baskets heaped with rice, a measuring tin
+    mat(a, 100);
+    for (const x of [-50, 40]) { basket(a, x, () => {}); a.fk('white', smooth([[x - 30, -40], [x - 14, -58], [x + 14, -60], [x + 30, -40]]), 1.6); for (let i = 0; i < 6; i++) a.ink(circ(x - 16 + i * 6, -46 - (i % 2) * 5, .9)); }
+    a.fk('grey', c4Rect(80, -22, 100, -2), 1.2); a.fill('white', ell(90, -22, 10, 3));
+  });
+  const hangRau = part([-110, -80, 110, 6], a => {                       // baskets of greens, bundles of water spinach tied with straw
+    mat(a, 100);
+    for (const x of [-50, 40]) { basket(a, x, () => {}); for (let i = 0; i < 5; i++) { const lx = x - 22 + i * 11, ly = -46 - (i % 2) * 6; a.fk('green', smooth([[lx, ly + 8], [lx - 9, ly - 4], [lx, ly - 16], [lx + 9, ly - 4]]), 1.1); } }
+    for (const x of [80, 96]) { a.fk('green', smooth([[x - 5, -2], [x + 5, -2], [x + 8, -40], [x - 8, -40]]), 1.2); a.fk('straw', c4Rect(x - 6, -20, x + 6, -16), .8); }
+  });
+  const hangTrung = part([-100, -70, 100, 6], a => {                     // a basket of hens' eggs, a tray of duck eggs
+    mat(a, 90);
+    basket(a, -40, () => {}); for (let i = 0; i < 7; i++) a.fk('white', ell(-62 + (i % 4) * 14, -44 - Math.floor(i / 4) * 9, 6, 7.5), 1.1);
+    a.fk('straw', ell(50, -10, 40, 8), 1.4); for (let i = 0; i < 6; i++) a.fk('lilac', ell(24 + i * 10, -18 - (i % 2) * 4, 5, 6.5), 1);
+  });
+  const hangGa = part([-100, -100, 100, 6], a => {                       // a bamboo coop with hens peeping out
+    mat(a, 90);
+    a.fk('straw', smooth([[-80, -4], [80, -4], [70, -78], [-70, -78]]), 1.8);
+    for (const [x, c] of [[-40, 'yellow'], [0, 'red'], [40, 'yellow']]) { a.fk(c, ell(x, -44, 16, 12), 1.4); a.fk('red', c4Poly([[x + 8, -58], [x + 14, -66], [x + 16, -56]]), 1); a.ink(circ(x + 10, -50, 1.6)); }
+    a.key(lines([[-60, -78, -62, -4], [-20, -78, -20, -4], [20, -78, 20, -4], [60, -78, 62, -4]]), 1.6);
+  });
+  const hangQua = part([-110, -70, 110, 6], a => {                       // a flat tray of fruit: bananas, oranges, a pomelo
+    mat(a, 100);
+    a.fk('straw', ell(0, -14, 90, 12), 1.8);
+    for (let i = 0; i < 3; i++) a.fk('yellow', smooth([[-70 + i * 14, -20], [-58 + i * 14, -46], [-50 + i * 14, -44], [-58 + i * 14, -18]]), 1.2);
+    for (let i = 0; i < 5; i++) a.fk('orange', circ(-6 + (i % 3) * 18, -28 - Math.floor(i / 3) * 14, 9), 1.2);
+    a.fk('green', circ(66, -34, 18), 1.6);
+  });
+  const hangNon = part([-100, -110, 100, 6], a => {                      // a stack of conical hats, a few hung on a stick
+    mat(a, 90);
+    for (let i = 0; i < 4; i++) a.fk('straw', c4Poly([[-60, -10 - i * 10], [-20, -46 - i * 10], [20, -10 - i * 10]]), 1.4);
+    a.fk('brown', c4Rect(46, -100, 52, 0), 1.2); for (const y of [-88, -58]) a.fk('straw', c4Poly([[30, y + 20], [49, y], [68, y + 20]]), 1.2);
+  });
+  C4ART = { ganh, sap, gian, gate, scaffold, hangCa, hangVai, hangBanh, che, xoi, xen, bun, lot, hangThit, hangGao, hangRau, hangTrung, hangGa, hangQua, hangNon };
   return C4ART;
 }
 const c4StallArt = lv => { const A = c4Art(); return [A.ganh, A.sap, A.gian][lv]; };
@@ -136,7 +177,16 @@ const C4_MOUSE_SORTS = [
   { o: { robe: 'red', trim: 'yellow', head: 'brown' }, role: 'child' },
   { o: { robe: 'green', trim: 'yellow', head: 'dark' }, role: 'child' },
   { o: { robe: 'yellow', trim: 'green', head: 'grey' }, role: 'child' },
+  // more grown-ups, every colour of robe and fur (owner: a colourful crowd) — 14…25 adults, 26–27 elders
+  { o: { robe: 'pink', trim: 'white', head: 'tan' }, role: 'adult' }, { o: { robe: 'orange', trim: 'blue', head: 'brown' }, role: 'adult' },
+  { o: { robe: 'teal', trim: 'yellow', head: 'ash' }, role: 'adult' }, { o: { robe: 'blue', trim: 'pink', head: 'tan', dots: true }, role: 'adult' },
+  { o: { robe: 'cream', trim: 'red', head: 'dark' }, role: 'adult' }, { o: { robe: 'green', trim: 'orange', head: 'tan' }, role: 'adult' },
+  { o: { robe: 'lilac', trim: 'teal', head: 'ash', hat: 'dark' }, role: 'adult' }, { o: { robe: 'red', trim: 'teal', head: 'tan' }, role: 'adult' },
+  { o: { robe: 'yellow', trim: 'blue', head: 'ash' }, role: 'adult' }, { o: { robe: 'orange', trim: 'green', head: 'grey' }, role: 'adult', non: true },
+  { o: { robe: 'pink', trim: 'green', head: 'brown' }, role: 'adult' }, { o: { robe: 'teal', trim: 'red', head: 'dark' }, role: 'adult', non: true },
+  { o: { robe: 'cream', trim: 'brown', head: 'ash', hat: 'dark' }, role: 'old' }, { o: { robe: 'teal', trim: 'white', head: 'ash' }, role: 'old' },
 ];
+const C4_ADULT_SORTS2 = [0, 1, 2, 3, 4, 5, 6, 7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25], C4_OLD_SORTS2 = [8, 9, 10, 26, 27];
 let C4_MOUSE_RIGS = null;
 const c4MouseRig = i => { if (!C4_MOUSE_RIGS) C4_MOUSE_RIGS = []; return C4_MOUSE_RIGS[i] || (C4_MOUSE_RIGS[i] = buildMouse(C4_MOUSE_SORTS[i].o)); };
 // a conical hat (nón lá) over a mouse's head, in the mouse's own frame
@@ -177,6 +227,10 @@ function c4DecoBack(g, w) {
     g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath();
     for (const bx of [-66, 70]) { g.moveTo(bx, -104); g.lineTo(bx - 13 + sw, -46); g.moveTo(bx, -104); g.lineTo(bx + 13 + sw, -46); }
     g.stroke();
+    if (w.hoa) for (const bx of [-66, 70]) {                               // a flower seller: the baskets heaped with blooms
+      g.fillStyle = '#2f6a4c'; g.strokeStyle = INK; g.lineWidth = 1; for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(bx + sw - 16 + i * 8, -48 - (i % 2) * 6, 6, 3, (i - 2) * .5, 0, 6.283); g.fill(); g.stroke(); }
+      ['#c0567a', '#f2c640', '#a3332a', '#f2ecde', '#d97b2a', '#b8a5c8', '#c0567a'].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(bx + sw - 18 + i * 6, -54 - ((i * 7) % 3) * 6, 5, 0, 6.283); g.fill(); g.stroke(); });
+    }
     c4Basket(g, -66 + sw, -38, 22, 13); c4Basket(g, 70 + sw, -38, 22, 13);
     c4Stroke(g, 5, '#8a5a2a', [[-78, -105], [82, -103]]);
   }
@@ -242,16 +296,16 @@ function c4Buffalo(g, x, y, s, face, ph, moving) {
   return [x + face * (66 + 40) * s, y - (58 - 20) * s];                     // the muzzle, where the rope is tied
 }
 // the other folk at the market, from chương I's parts; face 1 = walking right. C4_TALL: how high their head is.
-const C4_TALL = { mouse: 168, duck: 58, rooster: 150, dog: 110, toad: 100 };
+const C4_TALL = { mouse: 168, duck: 58, rooster: 150, dog: 70, toad: 100 };
 function c4Critter(g, w, x, y, s) {
-  const ph = w.ph, moving = w.st === 'walk' || w.st === 'leave' || (w.st === 'queue' && w.moving), f = w.face;
+  const ph = w.ph, moving = w.st === 'walk' || w.st === 'leave' || ((w.st === 'queue' || w.st === 'toseat') && w.moving), f = w.face;
   if (w.kind === 'mouse') {
     const sort = C4_MOUSE_SORTS[w.sort], k = s * .92 * (sort.role === 'child' ? .68 : 1), L = w.look || {};
-    const busy = w.buf ? 'buf' : w.drunk ? 'drunk' : L.tool === 'dieu' ? (w.st === 'sit' ? 'dieu' : null) : (L.tool && L.tool !== 'o') ? L.tool : w.umb && (L.tool === 'o' || (typeof c4Wx === 'function' && c4Wx() === 'mua')) ? 'o' : null;
+    const busy = w.st === 'eat' ? null : w.buf ? 'buf' : w.drunk ? 'drunk' : L.tool === 'dieu' ? (w.st === 'sit' ? 'dieu' : null) : (L.tool && L.tool !== 'o') ? L.tool : w.umb && (L.tool === 'o' || (typeof c4Wx === 'function' && c4Wx() === 'mua')) ? 'o' : null;
     const arm = busy && (busy !== 'thung' || !w.carry) ? C4_TOOL_ARM[busy] : w.carry ? .4 : (w.talk ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null);
     let muzzle = null;
     if (w.buf) muzzle = c4Buffalo(g, x - f * 205 * s, y, s * 1.3, f, ph, moving);   // the buffalo plods behind on its rope
-    const sit = w.st === 'sit';
+    const sit = w.st === 'sit' || w.st === 'eat';
     if (sit) {                                                               // a low stool by the roadside
       g.save(); g.translate(x, y); g.scale(k, k);
       c4Shape(g, '#8a5a2a', [[-26, -40], [26, -40], [26, -33], [-26, -33]], 2); c4Stroke(g, 4, '#7a4a22', [[-20, -33], [-23, 0]]); c4Stroke(g, 4, '#7a4a22', [[20, -33], [23, 0]]);
@@ -275,8 +329,8 @@ function c4Critter(g, w, x, y, s) {
   else if (w.kind === 'rooster') { g.scale(-f * .85, .85); dp(g, WP.rooster, 0, bob); dp(g, WP.rHead, -18, -76 + bob, moving ? Math.sin(ph * 2) * .12 : 0); }   // drawn facing left, head apart
   else if (w.kind === 'toad') { const hop = moving ? Math.max(0, Math.sin(ph * .7)) * 16 : 0; dp(g, MP.toad, 0, -hop, 0, f * .78, .78); }
   else if (w.kind === 'dog') {
-    g.scale(f * .8, .8); const k = moving ? Math.sin(ph * 1.4) : 0;
-    dp(g, MP.dogTail, -50, -42 + bob, Math.sin(C4.t * 8 + w.seed) * .3);
+    g.scale(f * .5, .5); const k = moving ? Math.sin(ph * 1.4) : 0;          // a small village dog (owner)
+    dp(g, MP.dogTail, -44, -48 + bob, Math.sin(C4.t * 8 + w.seed) * .3, -1, 1);   // mirrored: the tail curls up behind, not forward
     dp(g, MP.dogLeg, -28, -44 + bob, k * .6); dp(g, MP.dogLeg, 36, -44 + bob, -k * .6);
     dp(g, MP.dogBody, 0, bob);
     dp(g, MP.dogLeg, -18, -44 + bob, -k * .6); dp(g, MP.dogLeg, 46, -44 + bob, k * .6);
@@ -309,4 +363,40 @@ function c4Bubble(text, side = 0, size = 16, maxW = 190) {
   p.bh = h; C4_BUB.set(key, p);
   if (C4_BUB.size > 160) C4_BUB.delete(C4_BUB.keys().next().value);       // keep the cache small
   return p;
+}
+
+/* ---------- the market's houses, each its own shape and colours (owner: easy to tell apart) ---------- */
+const C4_HOUSE_V = [
+  { w: 230, wall: 'white', roof: 'thatch', ridge: 'green', win: 'red', door: 'dark' },                 // a thatched house, whitewashed
+  { w: 200, wall: 'cream', roof: 'tile', ridge: 'yellow', win: 'blue', door: 'brown' },                // red tiles, cream walls
+  { w: 180, wall: 'tan', roof: 'straw', ridge: null, win: 'green', door: 'brown' },                    // mud walls under fresh straw
+  { w: 150, wall: 'yellow', roof: 'tile', ridge: 'red', win: 'teal', door: 'dark', tall: true },       // a narrow two-storey shophouse
+  { w: 210, wall: 'ash', roof: 'thatch', ridge: 'red', win: 'yellow', door: 'teal' },                  // grey walls, dark thatch
+  { w: 170, wall: 'rose', roof: 'tile', ridge: 'green', win: 'white', door: 'brown' },                 // soft pink walls, tiles
+];
+const C4_HOUSE_ART = [];
+function c4HouseArt(v) {
+  v = ((v | 0) % C4_HOUSE_V.length + C4_HOUSE_V.length) % C4_HOUSE_V.length;
+  if (C4_HOUSE_ART[v]) return C4_HOUSE_ART[v];
+  const o = C4_HOUSE_V[v], w = o.w, H = o.tall ? 215 : 150, top = -H, ry = top + 12, rx = w + 52;
+  return (C4_HOUSE_ART[v] = part([-rx - 4, ry - 124, rx + 4, 8], a => {
+    a.fk(o.wall, rect(-w, top, w * 2, H), 2.4);
+    for (const x of [-w, -w / 2, 0, w / 2, w - 14]) a.fk('brown', rect(x - (x === w - 14 ? 0 : 7), top, 14, H), 1.8);
+    a.fk(o.door, rect(-36, -112, 72, 112), 2); a.key(lines([[0, -112, 0, 0]]), 1.6);
+    for (const x of [-w + 40, w - 96]) { a.fk(o.win, rect(x, -112, 56, 42), 2); a.key(lines([[x + 14, -112, x + 14, -70], [x + 28, -112, x + 28, -70], [x + 42, -112, x + 42, -70]]), 1.4); }
+    if (o.tall) { for (const x of [-w + 40, -28, w - 96]) { a.fk(o.win, rect(x, top + 22, 56, 40), 2); a.key(lines([[x + 28, top + 22, x + 28, top + 62]]), 1.2); }
+      a.fk('brown', rect(-w, top + 72, w * 2, 10), 1.6); }                  // the floor between the storeys
+    const roof = smooth([[-rx, ry], [-rx + 16, ry - 16], [-w + 18, ry - 98], [w - 18, ry - 98], [rx - 16, ry - 16], [rx, ry], [w + 10, ry - 8], [-w - 10, ry - 8]]);
+    if (o.roof === 'thatch') {
+      a.fk('dark', roof, 2.6);
+      for (let r = 0; r < 4; r++) { const y = ry - 22 - r * 20, hw = rx - 24 - (r + .3) * 13, pts = []; for (let x = -hw; x <= hw; x += 18) pts.push([x, y], [x + 9, y + 5]); a.band('white', smooth(pts, false), 1.6); }
+    } else if (o.roof === 'tile') {
+      a.fk('red', roof, 2.6);
+      for (let r = 0; r < 5; r++) { const y = ry - 18 - r * 17, hw = rx - 22 - (r + .3) * 13, t = []; for (let x = -hw; x <= hw; x += 16) t.push([x, y, x - 2, y + 12]); a.key(lines([[-hw, y, hw, y]]), 1.2); a.key(lines(t), .8); }
+    } else {
+      a.fk('straw', roof, 2.6);
+      const t = []; for (let x = -rx + 20; x < rx - 20; x += 11) t.push([x * .78, ry - 92, x, ry - 4]); a.key(lines(t), .9);
+    }
+    if (o.ridge) a.fk(o.ridge, smooth([[-w + 14, ry - 96], [-w - 18, ry - 116], [-w + 26, ry - 108], [w - 26, ry - 108], [w + 18, ry - 116], [w - 14, ry - 96]]), 2);
+  }));
 }

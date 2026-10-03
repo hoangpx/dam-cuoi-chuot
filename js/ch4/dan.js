@@ -16,7 +16,14 @@ const C4_TRAITS = {
   hien:   { name: 'Hiền lành', desc: 'Dễ tính, hết hàng cũng chẳng giận mấy.', links: 2, refer: 1, gain: 1.1, loss: .5 },
   sidien: { name: 'Sĩ diện', desc: 'Thích được mời, được biếu; giảm giá thì lại chê.', links: 3, refer: 1.2, gain: 1, loss: 1.2, free: 2, half: .4 },
   itnoi:  { name: 'Ít nói', desc: 'Chẳng mấy khi kể chuyện với ai.', links: 0, refer: .3, gain: 1, loss: .9 },
+  khogan: { name: 'Khó gần', desc: 'Mua mấy lần cũng chưa chịu bắt chuyện, thân lên chậm. Nhưng đã thành mối ruột thì mua nhiều, nhiệt tình, rủ cả họ đến.', links: 3, refer: 2.4, gain: .55, loss: 1.2, meet: 5, ruot: 3 },
 };
+// a regular (owner): liking from C4_RUOT on, they buy more (a hard one far more), come often and send others
+const C4_RUOT = 80;
+const c4Ruot = id => c4Known(id) && SAVE4.folk[id].a >= C4_RUOT;
+// more given names for the households added later (kept apart so the first village stays as it was drawn)
+const C4_GIVEN2 = { m: ['Khang', 'Bình', 'Tâm', 'Nghĩa', 'Trung', 'Hiếu', 'Thuận', 'Đức', 'Toàn', 'Sang', 'Lợi', 'Tài', 'Khải', 'Thành', 'Hậu', 'Chiến', 'Hoà', 'Kiên', 'Mạnh', 'Nhân', 'Trọng', 'Vinh', 'Hải', 'Long', 'Sơn', 'Đông', 'Bắc', 'Tùng', 'Bách', 'Lâm'],
+  f: ['Thoa', 'Dung', 'Hạnh', 'Hằng', 'Khánh', 'Ngân', 'Trâm', 'Yến', 'Oanh', 'Loan', 'Phượng', 'Thu', 'Xuân', 'Hạ', 'Đông', 'Hiền', 'Thảo', 'Nhung', 'Gương', 'Lược', 'Diệu', 'Tơ', 'Chè', 'Dâu', 'Đậu', 'Mơ Lớn', 'Ngọc', 'Châu', 'Bích', 'Ngà'] };
 // the ties, how they read both ways, and their colour in the web
 const C4_RELS = {
   vc: { name: 'vợ chồng', col: '#c0567a' }, cc: { name: 'cha mẹ – con', col: '#2f5f8f' }, ae: { name: 'anh chị em', col: '#2f5f8f' },
@@ -100,7 +107,53 @@ function c4People() {
   { let n = 0; for (const p of list) if (p.look && p.look.tool === 'dieu' && ++n > 2) p.look.tool = null;
     if (!n) { const o = list.find(p => p.role === 'old' && p.g === 'm' && p.kind === 'mouse'); if (o) o.look.tool = 'dieu'; } }
   for (let k = 0; k < 5; k++) { const a = list[houses[(rnd() * C4_HOUSES) | 0].members[0]], b = list[houses[(rnd() * C4_HOUSES) | 0].members[0]]; if (a.house !== b.house) tie(a, b, 'thong'); }
-  return (C4P = { seed: SAVE4.seed, list, houses });
+  {
+    const used2 = new Set(list.map(p => p.name.split(' ').slice(1).join(' ')));
+    const given2 = g => { for (let i = 0; i < 60; i++) { const n = pick(C4_GIVEN2[g]); if (!used2.has(n)) { used2.add(n); return n; } } return pick(C4_GIVEN2[g]); };
+    const add2 = (h, g, role, as) => { const n = given2(g), pre = role === 'old' ? (g === 'm' ? pick(['ông', 'cụ ông']) : pick(['bà', 'cụ bà'])) : g === 'm' ? pick(['anh', 'chú', 'bác']) : pick(['chị', 'cô', 'thím']);
+      const p = { id: list.length, name: `${pre} ${n}`, g, role, kind: 'mouse', sort: pick(role === 'old' ? C4_OLD_SORTS : C4_ADULT_SORTS), trait: trait(), job: pick(C4_JOBS[role === 'old' ? 'old_' + g : role]), house: h.id, as, links: [] };
+      list.push(p); h.members.push(p.id); return p; };
+    const first = list.length;
+    for (let i = 0; i < 10; i++) {
+      const h = { id: houses.length, xom: C4_XOM[(i + 2) % C4_XOM.length], members: [] }; houses.push(h);
+      if (i < 4) {                                                       // a big family: grandparents, two sons and their wives, the youngest
+        const o = add2(h, 'm', 'old', 'chủ nhà'), b = add2(h, 'f', 'old', 'vợ'); tie(o, b, 'vc');
+        const s1 = add2(h, 'm', 'adult', 'con trai cả'), d1 = add2(h, 'f', 'adult', 'con dâu cả'), s2 = add2(h, 'm', 'adult', 'con trai thứ'), d2 = add2(h, 'f', 'adult', 'con dâu thứ'), u = add2(h, rnd() < .5 ? 'f' : 'm', 'adult', 'con út');
+        for (const c of [s1, s2, u]) { tie(o, c, 'cc'); tie(b, c, 'cc'); }
+        tie(s1, d1, 'vc'); tie(s2, d2, 'vc'); tie(s1, s2, 'ae'); tie(s1, u, 'ae'); tie(s2, u, 'ae'); tie(b, d1, 'dau'); tie(b, d2, 'dau'); tie(d1, d2, rnd() < .5 ? 'ghet' : 'ketnghia');
+      } else if (i < 7) {                                                 // a house full of grown children
+        const a = add2(h, 'm', 'adult', 'chủ nhà'), b = add2(h, 'f', 'adult', 'vợ'); tie(a, b, 'vc');
+        const kids = [add2(h, 'm', 'adult', 'con cả'), add2(h, 'f', 'adult', 'con thứ'), add2(h, rnd() < .5 ? 'm' : 'f', 'adult', 'con út')];
+        for (const c of kids) { tie(a, c, 'cc'); tie(b, c, 'cc'); } tie(kids[0], kids[1], 'ae'); tie(kids[1], kids[2], 'ae'); tie(kids[0], kids[2], 'ae');
+      } else { const a = add2(h, 'm', 'adult', 'chủ nhà'), b = add2(h, 'f', 'adult', 'vợ'); tie(a, b, 'vc'); if (rnd() < .5) { const o = add2(h, rnd() < .5 ? 'f' : 'm', 'old', 'mẹ già'); tie(o, a, 'cc'); } }
+      h.name = `nhà ${list[h.members[0]].name}`;
+    }
+    const fresh = list.slice(first), out2 = p => p.links.filter(l => list[l.to].house !== p.house).length;
+    for (const p of fresh) {                                            // they know people across the village too
+      const want = C4_TRAITS[p.trait].links + ((rnd() * 2) | 0);
+      for (let k = 0; k < 40 && out2(p) < want; k++) { const q = pick(list); if (q.house === p.house) continue; const hp = houses[p.house], hq = houses[q.house];
+        tie(p, q, hp.xom === hq.xom && rnd() < .6 ? 'xom' : p.g === 'm' && q.g === 'm' && q.kind === 'mouse' && rnd() < .4 ? 'nhau' : p.g === 'f' && q.g === 'f' && rnd() < .3 ? 'ketnghia' : rnd() < .12 ? 'ghet' : 'ban'); }
+      const non = C4_MOUSE_SORTS[p.sort].non, L = p.look = {};
+      if (p.g === 'f') { L.skirt = pick(C4_SKIRTS); if (!non && rnd() < .3) L.hat = 'quai'; }
+      L.tool = rnd() < .5 ? pick(p.g === 'm' ? ['thung', 'o', 'cuoc', 'ganh', 'cay'] : ['thung', 'o', 'ganh']) : null;
+      L.umbCol = pick(['#a3332a', '#c98a1c', '#2f5f8f', '#2f6a4c']); L.drinker = p.g === 'm' && p.links.some(l => l.rel === 'nhau') && rnd() < .4;
+    }
+  }
+  // habits (owner: the book should help): the double-hour each one comes to market, the ware they like, how they spend.
+  // Both are real: c4PickResident brings people at their hour, c4Spawn sends them to their ware first.
+  const r2 = mulberry((SAVE4.seed || 7) + 101), p2 = a => a[(r2() * a.length) | 0];
+  for (const p of list) {
+    const field = ['thợ cấy', 'chăn trâu', 'xay lúa', 'kéo vó', 'đánh cá'].includes(p.job);
+    p.hour = p.role === 'old' ? p2(['Mão', 'Thìn', 'Thìn', 'Tỵ']) : field ? p2(['Mão', 'Dậu', 'Thân']) : p2(['Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân']);
+    p.fav = p.role === 'old' ? p2(['trau', 'trau', 'che', 'xoi']) : p.look && p.look.drinker ? p2(['bun', 'bun', 'trau']) : p.g === 'f' ? p2(['xen', 'xoi', 'trau', 'che', 'bun']) : p2(['trau', 'che', 'bun', 'xoi', 'xen']);
+    if (p.kind === 'mouse') { const non = C4_MOUSE_SORTS[p.sort].non; p.sort = p2(p.role === 'old' ? C4_OLD_SORTS2 : C4_ADULT_SORTS2); if (non) p.sort = p2(p.role === 'old' ? C4_OLD_SORTS2 : [2, 4, 7, 23, 25]); }
+    if (p.kind === 'mouse' && p.g === 'f' && p.look && r2() < .3) p.look.hat = 'quai';   // owner: now and then the quai thao hat
+    if (p.kind === 'mouse' && r2() < .14) p.trait = 'khogan';
+    p.purse = p.trait === 'chat' ? 'chặt chẽ, tiếc từng đồng' : p.trait === 'sidien' || p.trait === 'xoi' ? 'hào phóng' : p.trait === 'khogan' ? 'kín tiếng, nhưng đã tin thì chi mạnh' : 'vừa phải';
+  }
+  const heads = list.filter(p => p.kind === 'mouse' && (p.role === 'old' || p.as === 'chủ nhà')), landlord = {};
+  for (const g of ['trau', 'che', 'xoi', 'xen', 'bun']) landlord[g] = heads[(r2() * heads.length) | 0].id;
+  return (C4P = { seed: SAVE4.seed, list, houses, landlord });
 }
 const c4F = id => SAVE4.folk[id] || (SAVE4.folk[id] = { a: 0, v: 0 });
 const c4Known = id => !!(SAVE4.folk[id] && SAVE4.folk[id].k);
@@ -118,7 +171,9 @@ function c4PickResident() {
   for (const p of P.list) {
     if (here.has(p.id)) continue;
     const f = SAVE4.folk[p.id], kw = p.kind === 'mouse' ? 1 : .55;
-    const w = kw * (f && f.k ? .4 + f.a / 50 : 1) * (f && f.inv === day ? 4 : 1) * (f && f.ref && !f.k ? 2 : 1) * (f && f.seen && !f.k ? 1.3 : 1);
+    const hr = C4_HOURS.indexOf(c4Hour(C4.mins)) - C4_HOURS.indexOf(p.hour), at = !hr ? 2.2 : Math.abs(hr) === 1 ? 1 : .55;   // their usual hour
+    if (f && f.away >= day) continue;                                     // ill at home, or sulking (events)
+    const w = at * kw * (f && f.k ? .4 + f.a / 50 + (f.a >= C4_RUOT ? .8 : 0) : 1) * (f && f.inv === day ? 4 : 1) * (f && f.ref && !f.k ? 2 : 1) * (f && f.seen && !f.k ? 1.3 : 1);
     ws.push([p, w]); sum += w;
   }
   let k = R() * sum; for (const [p, w] of ws) if ((k -= w) <= 0) return p;
@@ -128,7 +183,7 @@ function c4PickResident() {
 function c4Keen(p) {
   const f = SAVE4.folk[p.id];
   if (f && f.k) return (.4 + f.a / 60) * (f.deal ? 1.5 : 1) * (f.inv === SAVE4.day ? 1.8 : 1);
-  return c4Rep() * (f && f.seen ? 1.15 : 1) * (f && f.ref ? 1.6 : 1) * (f && f.bad ? .5 : 1);
+  return c4Rep() * (C4_TRAITS[p.trait].meet ? .8 : 1) * (f && f.seen ? 1.15 : 1) * (f && f.ref ? 1.6 : 1) * (f && f.bad ? .5 : 1);
 }
 // what a served buyer pays (a promised discount or a free treat is used up)
 function c4Pay(w, full) {
@@ -142,17 +197,19 @@ function c4Served(w) {
   const P = c4People(), p = P.list[w.pid], T = C4_TRAITS[p.trait], f = c4F(p.id), day = SAVE4.day;
   // the first purchase: she knows the face; the second: they get talking, and the buyer goes into the book
   if (!f.k && !f.seen) { f.seen = day; f.v = 1; C4.fx.push({ x: w.x, y: c4Y(w.z) - 200, t: 0, s: p.name }); return; }
+  if (!f.k && f.v + 1 < (T.meet || 2)) { f.v++; C4.fx.push({ x: w.x, y: c4Y(w.z) - 200, t: 0, s: `${p.name} · ${f.v}/${T.meet}` }); if (R() < .5) c4Say(w, c4Pick(['…', 'Ừ.', 'Gói lại đi.', 'Nhanh lên cô.'])); return; }
   if (!f.k) {
     f.k = day; f.a = 40 + (f.ref ? 15 : 0) - (f.bad ? 15 : 0); f.v++; C4.today.met = (C4.today.met || 0) + 1; C4.noteNew = true;
     C4.fx.push({ x: w.x, y: c4Y(w.z) - 200, t: 0, s: '★ ' + p.name });
   } else { f.v++; c4Bump(p.id, 4 * T.gain); }
+  if (f.a >= C4_RUOT && !f.ruot) { f.ruot = day; (f.facts = f.facts || []).push(`Ngày ${day}: thành mối ruột của quán.`); C4.fx.push({ x: w.x, y: c4Y(w.z) - 230, t: 0, s: '♥ Mối ruột!' }); toast(`${c4Cap1(p.name)} đã thành mối ruột: từ nay mua nhiều, hay ghé, rủ cả người quen.`, 3.6); AU.pluck(91); }
   if (f.inv === day) c4Bump(p.id, 3);
   if (f.deal === 'half') { c4Bump(p.id, 8 * (T.half || 1)); c4Say(w, T.half < 1 ? 'Giảm giá à? Tôi có thiếu tiền đâu!' : 'Ôi, giảm giá thật à? Quý hoá quá!'); }
   if (f.deal === 'free') { c4Bump(p.id, 15 * (T.free || 1)); c4Say(w, 'Cô biếu thật à? Ngại quá, cảm ơn cô nhé!'); }
   f.deal = null;
   c4StoryCheck(); c4AchCheck();
   // someone who likes the stall sends somebody they know
-  if (f.a >= 60 && R() < .22 * T.refer) {
+  if (f.a >= 60 && R() < .22 * T.refer * (f.a >= C4_RUOT ? 2 : 1)) {
     const cand = p.links.map(l => P.list[l.to]).filter(q => !c4Known(q.id) && !(SAVE4.folk[q.id] && SAVE4.folk[q.id].ref) && p.links.find(l => l.to === q.id).rel !== 'ghet');
     if (cand.length) {
       const q = c4Pick(cand); c4F(q.id).ref = true; SAVE4.refs = (SAVE4.refs || 0) + 1; (C4.expect = C4.expect || []).push(q.id);
@@ -208,8 +265,7 @@ function c4OpenNotes(tab) {
     h += (SAVE4.goal ? '' : `<p class="goal">Mục tiêu: để dành <b>${c4Money(C4_GOAL)}</b> thì vợ chồng mới tính chuyện con cái.</p>`)
       + (days.length ? days.map(d => `<h4>${d === SAVE4.day ? 'Hôm nay' : d === SAVE4.day + 1 ? 'Ngày mai' : 'Ngày ' + d}</h4>` + SAVE4.notes.filter(n => n.day === d).map(n => `<p>• ${n.text}</p>`).join('')).join('') : '<p>Chưa nghe được chuyện gì. Ai thì thầm thì lại gần nghe lỏm xem!</p>')
       + (open ? '' : `<p class="hint">Từ ngày ${C4_BOOK_DAY}, vợ ghi sổ những khách đã quen.</p>`);
-  } else if (C4_TAB === 'quen' && C4_WHO !== null) h += c4WhoHtml(P.list[C4_WHO]);
-  else if (C4_TAB === 'quen' && C4_PICK) {
+  } else if (C4_TAB === 'quen' && C4_PICK) {
     const free = new Set(c4Guests().map(p => p.id)), left = c4Owned().filter(g => C4_GOODS[g].keep !== 'ever' && c4Stock(g) > 0).map(g => `${c4Stock(g)} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ');
     h += `<div class="pick"><p>Sắp tan chợ còn ${left || 'ít hàng'}. Chọn khách quen để mời ghé lấy:</p>
       <div class="row"><button class="btn ${C4_PICK.deal === 'half' ? '' : 'alt'}" data-deal="half">Bán nửa giá</button><button class="btn ${C4_PICK.deal === 'free' ? '' : 'alt'}" data-deal="free">Biếu không</button></div></div>`;
@@ -222,75 +278,29 @@ function c4OpenNotes(tab) {
       return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}</div>`
       : '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
     if (seen.length) h += `<h4>Biết mặt</h4><div class="folk">${seen.map(p => `<div class="fk unk2"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>`;
-  } else if (C4_TAB === 'web') h += c4WebHtml(P, known);
+  } else if (C4_TAB === 'web') h += c4WebTab();
   else if (C4_TAB === 'chuyen') h += c4StoriesHtml();
   else if (C4_TAB === 'thanh') h += c4AchHtml();
-  else if (C4_TAB === 'nha') {
-    h += P.houses.filter(hs => hs.members.some(c4Known)).map(hs => { const n = hs.members.filter(c4Known).length;
-      return `<div class="house"><h5>${hs.xom} · ${hs.name} <span>${n}/${hs.members.length} đã quen</span></h5><div class="mem">${hs.members.map(id => { const p = P.list[id];
-        return c4Known(id) ? `<button class="fk sm" data-who="${id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>${p.as}</span></button>` : `<div class="fk sm unk"><i>?</i><span>${p.as}</span></div>`; }).join('')}</div></div>`; }).join('')
-      || '<p>Chưa quen ai.</p>';
-  }
+  else if (C4_TAB === 'nha') h += c4HousesTab();
+  const wasWeb = !!$('#qhCv');
   $('#c4noteB').innerHTML = h;
+  $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha');
   $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
   $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   $('#c4noteB').querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_PICK.deal = b.dataset.deal; const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   { const b = $('#c4noteB [data-invite]'); if (b) b.addEventListener('click', () => { const P = c4People(), ps = [...C4_PICK.sel].map(id => P.list[id]), deal = C4_PICK.deal; C4_PICK = null; c4Sheets(null); c4Invite(ps, deal); }); }
   { const b = $('#c4noteB [data-pickx]'); if (b) b.addEventListener('click', () => { C4_PICK = null; c4Sheets(null); }); }
-  $('#c4noteB').querySelectorAll('[data-who]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = +b.dataset.who; c4OpenNotes('quen'); }));
-  $('#c4noteB').querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => c4Act(C4_WHO, b.dataset.act)));
-  const bk = $('#c4noteB .bk'); if (bk) bk.addEventListener('click', () => { AU.tap(); C4_WHO = null; c4OpenNotes('quen'); });
+  $('#c4noteB').querySelectorAll('[data-who]').forEach(b => b.addEventListener('click', () => { AU.tap(); c4OpenWho(+b.dataset.who); }));
   c4Sheets('c4note');
+  if (C4_TAB === 'web') c4WebOpened(!wasWeb && QH.focus === null);
+  if (C4_TAB === 'nha') c4HousesWire();
 }
 const c4Bar = a => `<i class="bar"><i style="width:${a}%;background:${a >= 60 ? '#2f6a4c' : a >= 35 ? '#c98a1c' : '#a3332a'}"></i></i>`;
-function c4WhoHtml(p) {
-  const P = c4People(), f = SAVE4.folk[p.id], T = C4_TRAITS[p.trait], hs = P.houses[p.house], day = SAVE4.day;
-  const links = p.links.map(l => { const q = P.list[l.to], k = c4Known(q.id);
-    return `<li><i style="background:${C4_RELS[l.rel].col}"></i>${C4_RELS[l.rel].name} với ${k ? `<b>${q.name}</b>` : '<span class="unk">??? (chưa quen)</span>'}</li>`; }).join('');
-  const kn = p.links.filter(l => c4Known(l.to)).length;
-  const buy = SAVE4.day >= C4_BOOK_DAY && C4.phase === 'open';
-  return `<button class="btn alt bk">← Khách quen</button>
-    <div class="who"><img src="${c4Face(p)}" alt=""><div><h4>${p.name}</h4><p>${p.as === 'chủ nhà' ? 'chủ nhà' : p.as + ' ' + hs.name} · ${hs.xom}<br>nghề ${p.job}</p></div></div>
-    <p><b>${T.name}:</b> ${T.desc}</p>
-    <p>Hảo cảm: <b>${c4LikeWord(f.a)}</b> ${c4Bar(f.a)}</p>
-    <p>Ghé quán ${f.v} lần · quen biết ${p.links.length} người (mình đã quen ${kn})</p>
-    <ul class="ties">${links || '<li>Chẳng quen biết ai.</li>'}</ul>
-    ${f.deal ? `<p class="back">Lần tới ghé: ${f.deal === 'free' ? 'mời miễn phí' : 'giảm nửa giá'}.</p>` : ''}
-    <div class="row col">
-      <button class="btn" data-act="moi" ${!buy || f.inv === day || c4Invited() >= C4_INVITES ? 'disabled' : ''}>${f.inv === day ? 'Đã mời hôm nay' : `Mời ghé quán (hôm nay còn ${C4_INVITES - c4Invited()} lượt)`}</button>
-      <button class="btn alt" data-act="half" ${!buy || f.deal ? 'disabled' : ''}>Lần tới giảm nửa giá</button>
-      <button class="btn alt" data-act="free" ${!buy || f.deal ? 'disabled' : ''}>Lần tới mời miễn phí</button>
-    </div>`;
-}
 const C4_INVITES = 3, c4Invited = () => Object.values(SAVE4.folk).filter(f => f.inv === SAVE4.day).length;   // invitations a day
 function c4Act(id, act) {
   const p = c4People().list[id], f = c4F(id);
-  if (act === 'moi') { f.inv = SAVE4.day; (C4.expect = C4.expect || []).push(id); toast(`Đã nhắn ${p.name} ghé quán.`); }
+  if (act === 'moi') { if (c4Ruot(id)) C4.today.invRuot = (C4.today.invRuot || 0) + 1; f.inv = SAVE4.day; (C4.expect = C4.expect || []).push(id); toast(`Đã nhắn ${p.name} ghé quán.`); }
+  else if (C4_ACT_DONE[act]) { C4_ACT_DONE[act](p, f); c4Hud(); }
   else { f.deal = act; toast(act === 'free' ? `Lần tới ${p.name} ghé sẽ được mời miễn phí.` : `Lần tới ${p.name} ghé sẽ được giảm nửa giá.`, 2.6); }
-  AU.tap(); persist4(); c4OpenNotes('quen');
-}
-// the web of ties among the folk you know: houses round a circle, kin side by side; a tie to someone not yet met is a "?"
-function c4WebHtml(P, known) {
-  if (!known.length) return '<p>Chưa quen ai.</p>';
-  const W = 400, cx = W / 2, cy = W / 2, n = known.length, R0 = Math.min(125, 40 + n * 4), r = Math.max(7, Math.min(16, 300 / n)), pos = {};
-  const ks = [...known].sort((a, b) => a.house - b.house || a.id - b.id);   // households side by side round the ring
-  ks.forEach((p, i) => { const an = i / n * 6.283 - 1.57; pos[p.id] = [cx + Math.cos(an) * R0, cy + Math.sin(an) * R0, an]; });
-  let lines = '', nodes = '';
-  const drawn = new Set();
-  for (const p of ks) for (const l of p.links) {
-    const key = Math.min(p.id, l.to) + '-' + Math.max(p.id, l.to); if (drawn.has(key) || !pos[l.to]) continue; drawn.add(key);
-    const [x1, y1] = pos[p.id], [x2, y2] = pos[l.to], kin = P.list[l.to].house === p.house, k = kin ? 1 : .25;
-    // kin: a short thick stroke; other ties: a curve bent through the middle of the ring
-    const qx = cx + ((x1 + x2) / 2 - cx) * k, qy = cy + ((y1 + y2) / 2 - cy) * k;
-    lines += `<path d="M${x1} ${y1} Q${qx} ${qy} ${x2} ${y2}" fill="none" stroke="${C4_RELS[l.rel].col}" stroke-width="${kin ? 3 : 1.8}" opacity=".75"/>`;
-  }
-  for (const p of ks) {
-    const [x, y, an] = pos[p.id], f = SAVE4.folk[p.id], deg = an * 180 / Math.PI, flip = Math.cos(an) < 0;
-    const tx = x + Math.cos(an) * (r + 4), ty = y + Math.sin(an) * (r + 4);   // names run outwards along the radius
-    nodes += `<g class="nd" data-who="${p.id}"><image href="${c4Face(p)}" x="${x - r}" y="${y - r}" width="${r * 2}" height="${r * 2}"/>`
-      + `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${f.a >= 60 ? '#2f6a4c' : f.a >= 35 ? '#c98a1c' : '#a3332a'}" stroke-width="2.5"/>`
-      + `<text transform="translate(${tx} ${ty}) rotate(${flip ? deg + 180 : deg})" text-anchor="${flip ? 'end' : 'start'}" dominant-baseline="middle">${p.name}</text></g>`;
-  }
-  const legend = [...new Set(ks.flatMap(p => p.links.filter(l => c4Known(l.to)).map(l => l.rel)))].map(r => `<span><i style="background:${C4_RELS[r].col}"></i>${C4_RELS[r].name}</span>`).join('');
-  return `<svg class="web" viewBox="-30 -30 ${W + 60} ${W + 60}">${lines}${nodes}</svg><div class="legend">${legend}</div>`;
+  AU.tap(); persist4(); if ($('#qhCv')) qhFocus(id); else c4OpenNotes('quen');
 }

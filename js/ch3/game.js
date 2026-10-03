@@ -160,7 +160,7 @@ function buildAlbum3() {
 
 registerChapter({
   id: 3, modes: ['c3play'],
-  card: { num: 'Chương III', han: '眼疾手快', name: 'Nhanh Tay Nhanh Mắt', desc: 'Những trò nhanh tay nhanh mắt cho các bạn nhỏ, trong các bức tranh Đông Hồ quen thuộc. Chơi xong được tặng tranh.', bg: PAPERS.sage.css },
+  card: { num: 'Chương III', han: '眼疾手快', name: 'Nhanh Tay Nhanh Mắt', desc: 'Những trò nhanh tay nhanh mắt cho các bạn nhỏ, trong các bức tranh Đông Hồ quen thuộc. Chơi xong được tặng tranh.', bg: '#c9d6b4' },
   progress: () => `${SAVE3.done.filter(Boolean).length}/${C3GAMES.length} tranh`,
   hasProgress: () => SAVE3.done.some(Boolean),
   album() { buildAlbum3(); $('#albumTitle').textContent = 'Chương III · Nhanh Tay Nhanh Mắt'; $('#albumDesc').textContent = 'Mỗi trò chơi là một bức tranh Đông Hồ. Chơi xong được tặng tranh.'; },

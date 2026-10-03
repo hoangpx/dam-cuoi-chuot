@@ -23,5 +23,6 @@ addEventListener('resize', resize); resize();
 function setZoom(z, zw = 1) { if (z !== ZOOM || zw !== ZOOMW) { ZOOM = z; ZOOMW = zw; resize(); } }
 
 let toastTimer;
-function toast(s, d = 2.8) { $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
+// a toast may carry chương IV's coin icon (our own markup)
+function toast(s, d = 2.8) { if (String(s).includes('<i class="ic4')) $('#toastTx').innerHTML = s; else $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
 function capturePointer(e, el = cv) { try { el.setPointerCapture(e.pointerId); } catch (err) {} }

@@ -451,7 +451,7 @@ function ch1PointerUp(e) {
 /* ---------- registration ---------- */
 registerChapter({
   id: 1, cover: true, modes: ['play', 'end'],
-  card: { num: 'Chương I', han: '老鼠娶親', name: 'Đám Cưới Chuột', desc: 'Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', bg: PAPERS.yellow.css },
+  card: { num: 'Chương I', han: '老鼠娶親', name: 'Đám Cưới Chuột', desc: 'Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', bg: '#ecd593' },
   progress: () => `${SAVE.done.slice(0, C1_READY).filter(Boolean).length}/${C1_READY} tranh`,
   hasProgress: () => SAVE.done.some(Boolean) || SAVE.secret.some(Boolean),
   boot() { loadLevel(0); },

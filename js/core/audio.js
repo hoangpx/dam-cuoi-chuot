@@ -1,7 +1,7 @@
 /* Web Audio: one song per chapter (SONGS), drums/kèn synth and small sound effects. */
 /* ---------- audio ---------- */
 const AU = (() => {
-  let c = null, master, music, sfx, echo, base = .75, ducked = false, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
+  let c = null, amb = null, master, music, sfx, echo, base = .75, ducked = false, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
   // Chương I: rước dâu rộn ràng (trống cái, chũm chọe, kèn); Chương II: khúc đố chậm rãi (trống con, mõ, kèn trầm, nhịp lẻ)
   const seq = list => list.flatMap(([m, n]) => [m, ...new Array(n - 1).fill(null)]);   // [[note, steps]…] → one entry a step
@@ -182,6 +182,27 @@ const AU = (() => {
     stamp: on(() => { drum(c.currentTime, 1.6, sfx); }),
     cluck: on(() => { const t = c.currentTime; for (let i = 0; i < 3; i++) sweep('sawtooth', 520, 380, .09, 1100, .24, t + i * .13); sweep('sawtooth', 640, 430, .28, 1200, .26, t + .42); }),
     cheep: on(() => { const t = c.currentTime + Math.random() * .05; sweep('sine', 2500, 3500, .07, 3200, .1, t); sweep('sine', 2700, 3700, .06, 3400, .08, t + .1); }),
+    // chương IV's soundscape: three looping beds (crowd murmur, rain, wind) set by level, and small one-shots
+    ambient: on(lv => {
+      if (!amb) {
+        const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const bed = (type, freq, q) => { const s = c.createBufferSource(); s.buffer = buf; s.loop = true; s.playbackRate.value = .9 + Math.random() * .2; const f = c.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q; const g = c.createGain(); g.gain.value = 0; s.connect(f); f.connect(g); g.connect(sfx); s.start(); return { g, f }; };
+        amb = { crowd: bed('bandpass', 700, .7), rain: bed('highpass', 2200, .3), wind: bed('bandpass', 420, 1.2) };
+        const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = .13; lg.gain.value = 180; lfo.connect(lg); lg.connect(amb.wind.f.frequency); lfo.start();   // the wind rises and falls
+      }
+      const k = [lv.crowd || 0, lv.rain || 0, lv.wind || 0], L = amb.last || [];
+      if (L.length && k.every((v, i) => Math.abs(v - L[i]) < .03)) return;   // called every frame: only move when the level really changes
+      amb.last = k;
+      const t = c.currentTime;
+      amb.crowd.g.gain.setTargetAtTime(.05 * (lv.crowd || 0), t, .6); amb.rain.g.gain.setTargetAtTime(.07 * (lv.rain || 0), t, .8); amb.wind.g.gain.setTargetAtTime(.09 * (lv.wind || 0), t, 1.2);
+    }),
+    chatter: on(() => { const t = c.currentTime, f0 = 150 + Math.random() * 140; for (let i = 0, n = 2 + (Math.random() * 3 | 0); i < n; i++) sweep('sawtooth', f0 * (1 + Math.random() * .3), f0 * (.8 + Math.random() * .3), .09 + Math.random() * .08, 700 + Math.random() * 900, .025, t + i * (.1 + Math.random() * .08)); }),
+    step: on(() => { const t = c.currentTime, n = noise(.06), f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500 + Math.random() * 300; n.connect(f); env(f, t, .004, .05, .06).connect(sfx); n.start(t); n.stop(t + .06); }),
+    gurgle: on(() => { const t = c.currentTime; for (let i = 0; i < 14; i++) sweep('sine', 320 + Math.random() * 80, 170, .07, 300, .09, t + i * .085);   // the water in the pipe bubbling
+      const n = noise(1.1), f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; n.connect(f); env(f, t + 1.3, .2, .05, 1.1).connect(sfx); n.start(t + 1.3); n.stop(t + 2.4); }),   // then the long breath out
+    knock: on((n = 3) => { const t = c.currentTime; for (let i = 0; i < n; i++) { const o = c.createOscillator(), f = c.createBiquadFilter(); o.type = 'triangle'; o.frequency.setValueAtTime(1000, t + i * .32); o.frequency.exponentialRampToValueAtTime(720, t + i * .32 + .05); f.type = 'bandpass'; f.frequency.value = 980; f.Q.value = 6; o.connect(f); env(f, t + i * .32, .002, .3, .1).connect(sfx); o.start(t + i * .32); o.stop(t + i * .32 + .12); } }),
+    buzz: on(() => { const t = c.currentTime; sweep('sawtooth', 190 + Math.random() * 40, 230 + Math.random() * 40, .6 + Math.random() * .5, 480, .035, t); }),
+    shout: on(() => { const t = c.currentTime, f0 = 260 + Math.random() * 120; sweep('sawtooth', f0, f0 * 1.3, .14, 1100, .12, t); sweep('sawtooth', f0 * 1.3, f0 * .8, .26, 1000, .12, t + .14); }),
     tension: on(() => { const t = c.currentTime, o = c.createOscillator(); o.frequency.value = mtof(38); const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.12, t + .3); g.gain.linearRampToValueAtTime(0, t + 2.2); o.connect(g); g.connect(sfx); o.start(t); o.stop(t + 2.3); }),
   };
 })();

@@ -105,7 +105,7 @@ body.touch #c4hud .mid{position:static;transform:none}
 #c4Invite{background:#2f6a4c;color:var(--diep)}
 #c4Note.new{background:var(--son);color:var(--diep)}
 /* chương IV: notices (toast) at the bottom of the screen, where nothing covers them */
-body.c4 #toast{top:auto;bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   /* above the bottom bar (and its second row) */
 .card4 .pick{border:2px solid #2f6a4c;background:#e3ecd0;padding:6px 8px;margin:6px 0}
 .card4 .pick p{margin:2px 0 6px;font-size:14px}
 .card4 .pick .row{margin-top:4px;flex-wrap:nowrap}
@@ -115,3 +115,103 @@ body.c4 #toast{top:auto;bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .card4 .fk.unk2{cursor:default;opacity:.65}
 .card4 .loan .pays{display:flex;gap:6px}
 .card4 .loan .btn{white-space:nowrap}
+/* the book's web of bubbles (quanhe.js) and family trees */
+.c4sheet .card4.wide{max-width:min(760px,100%)}
+.card4 .qhhint{text-align:center;font-size:12px;opacity:.7;margin:2px 0 6px}
+.card4 .qhwrap{position:relative}
+#qhCv{display:block;width:100%;height:min(58vh,480px);border:2px solid rgba(29,25,21,.3);background:#fbf7ee;touch-action:none;cursor:grab}
+.card4 .qhz{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:4px}
+.card4 .qhz button{width:32px;height:32px;border:2px solid var(--ink);background:#f6f0e2;font:900 17px var(--body);color:var(--ink);cursor:pointer;padding:0}
+.card4 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:center;font-size:12px;margin:6px 0}
+.card4 .legend span{display:inline-flex;align-items:center;gap:5px}
+.card4 .legend i{width:16px;height:4px;display:inline-block}
+.card4 .legend i.q{width:12px;height:12px;border-radius:50%;background:#d9cdb2;border:1.5px dashed #8a7a5a}
+.card4 .qhc{border-top:2px solid rgba(29,25,21,.25);margin-top:8px;padding-top:8px;text-align:left}
+.card4 .qhc h5{margin:10px 0 4px;font-family:var(--display);font-weight:900;font-size:15px}
+.card4 .qhc .sm{font-size:13px;opacity:.85}
+.card4 .qhc .st{color:#c98a1c;font-size:15px;letter-spacing:1px}
+.card4 .qhc .st b{color:var(--ink);letter-spacing:0;font-size:13px;margin-left:4px}
+.card4 .qhc .who i.qq{width:80px;height:80px;border-radius:50%;background:#d9cdb2;display:grid;place-items:center;font:900 34px var(--body);font-style:normal;flex:none}
+.card4 .badges{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.card4 .badges span{border:1.5px solid;border-radius:12px;padding:1px 8px;font-size:12px;font-weight:700;background:#fffaf0}
+.card4 .hab{list-style:none;padding:0;margin:0;font-size:14px}
+.card4 .hab li{margin:2px 0}
+.card4 .ties .lk{border:0;background:none;padding:0;font:700 14px var(--body);color:#2f5f8f;text-decoration:underline;cursor:pointer}
+.card4 .ties .lk.unk{color:#8a7a5a}
+.card4 .ties small{color:#c98a1c}
+.card4 .facts{margin:0;padding-left:18px;font-size:13px}
+.card4 .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 6px}
+.card4 .acts .act{border:2px solid var(--ink);color:#fff;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--body);box-shadow:2px 2px 0 rgba(29,25,21,.3)}
+.card4 .acts .act b{font-size:14px}
+.card4 .acts .act span{font-size:11px;opacity:.9}
+.card4 .acts .act.g{background:#2f6a4c}
+.card4 .acts .act.o{background:#c98a1c}
+.card4 .acts .act.b{background:#2f5f8f}
+.card4 .acts .act[disabled]{opacity:.45;cursor:default}
+.card4 .acts:has(.act:only-child){grid-template-columns:1fr}
+.card4 .qhtop{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.card4 .qhtop button{border:2px solid rgba(29,25,21,.35);background:#f6f0e2;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;cursor:pointer;font-family:var(--body);color:var(--ink)}
+.card4 .qhtop img{width:46px;height:46px}
+.card4 .qhtop b{font-size:12px;text-align:center}
+.card4 .qhtop span{font-size:10px;opacity:.75;text-align:center}
+.card4 .houses{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.card4 .hz{border:2px solid rgba(29,25,21,.35);background:#f6f0e2;padding:8px;text-align:left;cursor:pointer;font-family:var(--body);color:var(--ink);display:flex;flex-direction:column;gap:3px}
+.card4 .hz b{font-size:13px}
+.card4 .hz span{font-size:11px;opacity:.7}
+.card4 .hz div{display:flex;gap:3px;flex-wrap:wrap}
+.card4 .hz img,.card4 .hz i{width:26px;height:26px;border-radius:50%}
+.card4 .hz i{background:#d9cdb2;display:grid;place-items:center;font:900 13px var(--body);font-style:normal}
+.card4 .tt{text-align:center;margin:8px 0 0}
+.card4 svg.tree{width:100%;max-width:520px;display:block;margin:0 auto;background:#fbf7ee;border:2px solid rgba(29,25,21,.25)}
+.card4 svg.tree .tn{cursor:pointer}
+.card4 svg.tree .nm{font:700 12px var(--body);fill:var(--ink)}
+.card4 svg.tree .as{font:11px var(--body);fill:#6a5a3a}
+.card4 svg.tree .qm{font:900 22px var(--body);fill:#5a4a32}
+@media (max-width:520px){.card4 .qhtop{grid-template-columns:repeat(2,1fr)}.card4 .acts .act b{font-size:12px}}
+/* the morning's business box (kinhdoanh.js): the guild, wholesale orders, today's tasks */
+#c4biz .biz{border-top:1.5px dashed rgba(29,25,21,.3);margin-top:8px;padding-top:6px;text-align:left}
+#c4biz h4{margin:2px 0 4px;font-family:var(--display);font-weight:900;font-size:15px}
+#c4biz p{margin:3px 0;font-size:13px}
+#c4biz .hint{opacity:.7;font-size:12px}
+#c4biz .due{color:#a3332a}
+#c4biz .offer{border:1.5px solid rgba(29,25,21,.25);background:#fffaf0;padding:6px 8px;margin:6px 0}
+#c4biz .btn{font-size:14px;padding:6px 10px;margin-top:4px}
+/* the stalls overview and the per-stall tally (kinhdoanh.js) */
+.card4 .ups{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;text-align:left}
+.card4 .upc{border:2px solid rgba(29,25,21,.35);background:#f6f0e2;padding:8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;font-family:var(--body);color:var(--ink);text-align:left;box-shadow:2px 2px 0 rgba(29,25,21,.2)}
+.card4 .upc b{font-family:var(--display);font-weight:900;font-size:15px}
+.card4 .upc .lv{font-size:12px;color:#2f5f8f;font-weight:700}
+.card4 .upc span{font-size:12px}
+.card4 .upc.empty{opacity:.75;border-style:dashed}
+.card4 .upc .bar,.card4 .byshop .bar{display:block;height:6px;background:#e3d9c2;border-radius:3px;overflow:hidden}
+.card4 .upc .bar i,.card4 .byshop .bar i{display:block;height:100%;background:#2f6a4c}
+.card4 .byshop{text-align:left;margin:0 0 8px}
+.card4 .byshop .bs{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:center;padding:5px 0;border-bottom:1px dashed rgba(29,25,21,.2)}
+.card4 .byshop .tg{font-size:11px;background:#e9dfc9;padding:1px 6px;border-radius:8px}
+.card4 .byshop b{font-size:14px}
+.card4 .byshop .gain{color:#2f6a4c;font-weight:900}
+.card4 .byshop .bad{color:#a3332a;font-weight:900}
+.card4 .byshop .bar{grid-column:1 / 3}
+.card4 .byshop small{font-size:11px;opacity:.7;text-align:right}
+/* the bottom bar: the book, today's tasks, the stalls (owner's reference: the main buttons at the bottom) */
+#c4hud .bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;pointer-events:auto;flex-wrap:wrap;justify-content:center;width:max-content;max-width:96vw}
+#c4hud .bar .tag{font-size:16px;padding:8px 14px;box-shadow:3px 3px 0 rgba(29,25,21,.3)}
+#c4hud .bar .tag.up{background:#2f6a4c;color:var(--diep)}
+#c4hud .bar .tag.ic{font-size:24px;padding:4px 14px;line-height:1.2}
+#c4hud .bar .tag.ic.up{font-size:20px}
+
+/* woodblock icons (owner: drawn in the game's own style; the weather and the hour keep their pictures) */
+.ic4{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.22em;background:center/contain no-repeat}
+.ic4.coin{width:1em;height:1em;margin-left:.12em;vertical-align:-.14em}
+.ic4.coin{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9.6' fill='%23f2c640'/%3E%3Ccircle cx='12' cy='12' r='6.8' stroke-width='.8'/%3E%3Crect x='9.6' y='9.6' width='4.8' height='4.8' fill='%23f2ecde' stroke-width='1.3'/%3E%3C/svg%3E")}
+.ic4.trau{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M12 21 C4 15 4 7 9 5 C11 4.4 12 6 12 6 C12 6 13 4.4 15 5 C20 7 20 15 12 21Z' fill='%232f6a4c'/%3E%3Cpath d='M12 7 L12 19 M12 11 L9 9 M12 14 L15 12' stroke-width='.9' stroke='%23f2ecde'/%3E%3Ccircle cx='18.5' cy='18.5' r='3' fill='%23f2c640'/%3E%3C/svg%3E")}
+.ic4.che{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3.5 11 H20.5 C20 16.5 16.5 19.5 12 19.5 C7.5 19.5 4 16.5 3.5 11Z' fill='%23f2ecde'/%3E%3Cellipse cx='12' cy='11' rx='8.5' ry='2' fill='%232f6a4c'/%3E%3Cpath d='M9 7.5 C8 6 10 5 9 3.5 M14 7.5 C13 6 15 5 14 3.5' stroke-width='1.1'/%3E%3C/svg%3E")}
+.ic4.xoi{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M5 20 H19 L17.5 10 H6.5Z' fill='%232f6a4c'/%3E%3Cellipse cx='12' cy='10' rx='5.6' ry='2.4' fill='%23f2c640'/%3E%3Cpath d='M12 12.5 V20 M8.5 14 L9 20 M15.5 14 L15 20' stroke-width='.9'/%3E%3C/svg%3E")}
+.ic4.xen{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Crect x='5' y='5' width='10' height='3' rx='1' fill='%238a5a2a'/%3E%3Crect x='5' y='16' width='10' height='3' rx='1' fill='%238a5a2a'/%3E%3Crect x='6.5' y='8' width='7' height='8' fill='%23a3332a'/%3E%3Cpath d='M7 10 H13 M7 12 H13 M7 14 H13' stroke-width='.8' stroke='%23f2ecde'/%3E%3Cpath d='M19 3 L19 21' stroke-width='1.3'/%3E%3Ccircle cx='19' cy='5' r='.9'/%3E%3C/svg%3E")}
+.ic4.bun{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 10.5 H21 C20.5 16.5 16.5 20 12 20 C7.5 20 3.5 16.5 3 10.5Z' fill='%23f2ecde'/%3E%3Cellipse cx='12' cy='10.5' rx='9' ry='2.2' fill='%23a3332a'/%3E%3Cpath d='M6.5 10.5 C8 9.6 9.5 11.4 11 10.4 C12.5 9.4 14 11.4 15.5 10.4' stroke-width='.9' stroke='%23f2ecde'/%3E%3Ccircle cx='16.8' cy='9.8' r='1.4' fill='%232f6a4c' stroke-width='.8'/%3E%3Cpath d='M15 4 L19 9 M17 3.5 L20.5 8' stroke-width='1.2' stroke='%238a5a2a'/%3E%3C/svg%3E")}
+.ic4.book{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M4 4.5 H18.5 V20.5 H4Z' fill='%23a3332a'/%3E%3Cpath d='M7 4.5 V20.5' stroke-width='1.2'/%3E%3Crect x='9.5' y='7' width='7' height='4.5' fill='%23f2ecde' stroke-width='1.1'/%3E%3Cpath d='M18.5 6 H20 V19 H18.5' fill='%23f2ecde' stroke-width='1.1'/%3E%3Crect x='12' y='14' width='3' height='3' fill='%23f2c640' stroke-width='1'/%3E%3C/svg%3E")}
+.ic4.task{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M5 3.5 H19 V20.5 H5Z' fill='%23f2ecde'/%3E%3Cpath d='M8 7.5 H16 M8 11 H16 M8 14.5 H12' stroke-width='1'/%3E%3Cpath d='M12.5 16 L15 18.5 L20.5 12' stroke='%232f6a4c' stroke-width='2.4'/%3E%3C/svg%3E")}
+.ic4.up{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M12 3 L20 11.5 H15.5 V20.5 H8.5 V11.5 H4Z' fill='%232f6a4c'/%3E%3Cpath d='M10.5 14 H13.5 M10.5 17 H13.5' stroke='%23f2ecde' stroke-width='1'/%3E%3C/svg%3E")}
+#c4hud .bar .tag .ic4{width:28px;height:28px;vertical-align:middle}
+#c4hud .bar .tag.ic{padding:6px 14px}
+#c4hud .bar .tag.up{background:#f2ecde;color:var(--ink)}

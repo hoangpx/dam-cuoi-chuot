@@ -21,6 +21,8 @@ const PL = {
   grey: ['#9d95b9', [1.2, 1.8]], yellow: ['#f2c640', [-1.2, -1]], white: ['#f2ecde', [.4, 1.2]],
   brown: ['#5b2f1f', [2.2, -1.6]], dark: ['#2a221d', [0, 0]], straw: ['#b57a22', [-1.2, -1]],
   paper: ['#e2b43c', [0, 0]], blue: ['#2f5f8f', [-1.4, 1.2]],
+  // added for chương IV's crowd: more robes and fur
+  pink: ['#c0567a', [2, -1.4]], orange: ['#d97b2a', [-1.4, -1]], teal: ['#3f8a86', [-1.6, 1.2]], cream: ['#e8d8a8', [.6, 1]], tan: ['#a0703a', [1.6, -1.2]], ash: ['#b9b0a4', [1, 1.4]], rose: ['#e2b2a6', [1.2, -1]],
 };
 
 /* ---------- path helpers ---------- */
