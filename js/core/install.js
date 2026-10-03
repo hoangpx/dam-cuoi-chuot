@@ -51,6 +51,7 @@ $('#bInstall').addEventListener('click', () => { trackSend('cai/nut-huong-dan');
 $('#bInstClose').addEventListener('click', () => { $('#install').hidden = true; });
 $('#bInstNow').addEventListener('click', async () => { const p = INST.prompt; if (!p) return; p.prompt(); try { await p.userChoice; } catch (e) {} INST.prompt = null; $('#install').hidden = true; instButton(); });
 instButton();
+$('#aGroup').addEventListener('click', () => trackSend('nhom-facebook'));   // the Facebook group link under the chapter cards
 
 /* ---------- the peeking mouse (owner): a mouse looks up from the bottom corner of the chapter list or the album and
    asks in a bubble whether to put the game on the home screen; on yes it shows where to tap with a bouncing arrow at
