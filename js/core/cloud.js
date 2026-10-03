@@ -24,7 +24,7 @@ async function cloudPush(keepalive) {
   const code = cloudCode(); if (!code) return false;
   clearTimeout(CLOUD.timer); CLOUD.timer = 0;
   try { await cloudRpc('dcc_save', { p_code: code, p_data: cloudSnapshot() }, keepalive); localStorage.setItem('dcc.cloudT', String(Date.now())); cloudStatus(); return true; }
-  catch (e) { cloudStatus('Chưa lưu được lên mạng (mất kết nối?). Game sẽ thử lại lần sau.'); return false; }
+  catch (e) { cloudStatus(lg('Chưa lưu được lên mạng (mất kết nối?). Game sẽ thử lại lần sau.', 'Could not save online (no connection?). The game will try again later.')); return false; }
 }
 // every save the game makes on this device goes up a few seconds later (a whole run of saves makes one trip)
 {
@@ -39,7 +39,7 @@ function cloudStatus(msg) {
   const st = $('#cloudSt'); if (!st) return;
   if (msg) { st.textContent = msg; return; }
   const t = +cloudGet('dcc.cloudT') || 0;
-  st.textContent = t ? 'Đã lưu lên mạng lúc ' + new Date(t).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ngày ' + new Date(t).toLocaleDateString('vi-VN') + '.' : '';
+  st.textContent = t ? lg('Đã lưu lên mạng lúc ', 'Saved online at ') + new Date(t).toLocaleTimeString(LANG_LOCALE, { hour: '2-digit', minute: '2-digit' }) + lg(' ngày ', ', ') + new Date(t).toLocaleDateString(LANG_LOCALE) + '.' : '';
 }
 function cloudRender() {
   const code = cloudCode();
@@ -56,29 +56,29 @@ $('#bCloudMake').addEventListener('click', async e => {
   const code = Array.from(a, v => CLOUD.abc[v % CLOUD.abc.length]).join('');
   try { localStorage.setItem('dcc.cloud', code); } catch (er) {}
   if (await cloudPush()) { trackSend('luu/tao'); cloudRender(); }
-  else { try { localStorage.removeItem('dcc.cloud'); } catch (er) {} $('#cloudMsg').textContent = 'Không kết nối được, bạn thử lại sau nhé.'; }
+  else { try { localStorage.removeItem('dcc.cloud'); } catch (er) {} $('#cloudMsg').textContent = lg('Không kết nối được, bạn thử lại sau nhé.', 'Could not connect. Please try again later.'); }
   b.disabled = false;
 });
 $('#bCloudCopy').addEventListener('click', async e => {
   const b = e.currentTarget, was = b.textContent;
-  try { await navigator.clipboard.writeText(cloudShow(cloudCode())); b.textContent = 'Đã chép mã'; } catch (er) { b.textContent = cloudShow(cloudCode()); }
+  try { await navigator.clipboard.writeText(cloudShow(cloudCode())); b.textContent = lg('Đã chép mã', 'Code copied'); } catch (er) { b.textContent = cloudShow(cloudCode()); }
   setTimeout(() => { b.textContent = was; }, 1800);
 });
 $('#bCloudLoad').addEventListener('click', async e => {
   const msg = $('#cloudMsg'), code = cloudParse($('#cloudIn').value);
-  if (!code) { msg.textContent = 'Mã chưa đúng: mã có dạng CHUOT-XXXX-XXXX.'; return; }
-  if (code === cloudCode()) { msg.textContent = 'Đây là mã của chính máy này rồi.'; return; }
-  const b = e.currentTarget; b.disabled = true; msg.textContent = 'Đang tìm…';
+  if (!code) { msg.textContent = lg('Mã chưa đúng: mã có dạng CHUOT-XXXX-XXXX.', 'That code does not look right: it reads CHUOT-XXXX-XXXX.'); return; }
+  if (code === cloudCode()) { msg.textContent = lg('Đây là mã của chính máy này rồi.', 'That is this device\'s own code.'); return; }
+  const b = e.currentTarget; b.disabled = true; msg.textContent = lg('Đang tìm…', 'Looking…');
   let got = null;
-  try { got = await cloudRpc('dcc_load', { p_code: code }); } catch (er) { msg.textContent = 'Không kết nối được, bạn thử lại sau nhé.'; b.disabled = false; return; }
+  try { got = await cloudRpc('dcc_load', { p_code: code }); } catch (er) { msg.textContent = lg('Không kết nối được, bạn thử lại sau nhé.', 'Could not connect. Please try again later.'); b.disabled = false; return; }
   b.disabled = false;
-  if (!got || !got.data) { msg.textContent = 'Không tìm thấy mã này. Bạn xem lại từng chữ nhé.'; return; }
-  if (!confirm('Tiến trình trên máy này sẽ được thay bằng tiến trình của mã ' + cloudShow(code) + '. Tiếp tục?')) { msg.textContent = ''; return; }
+  if (!got || !got.data) { msg.textContent = lg('Không tìm thấy mã này. Bạn xem lại từng chữ nhé.', 'No such code. Please check each letter.'); return; }
+  if (!confirm(lg('Tiến trình trên máy này sẽ được thay bằng tiến trình của mã ', 'The progress on this device will be replaced by the progress saved under ') + cloudShow(code) + lg('. Tiếp tục?', '. Go on?'))) { msg.textContent = ''; return; }
   try {
     for (const k of Object.keys(cloudSnapshot())) localStorage.removeItem(k);
     for (const [k, v] of Object.entries(got.data)) if (k.startsWith('dcc.') && !CLOUD.skip.includes(k) && typeof v === 'string') localStorage.setItem(k, v);
     localStorage.setItem('dcc.cloud', code); localStorage.setItem('dcc.cloudT', String(Date.parse(got.t) || Date.now()));
-  } catch (er) { msg.textContent = 'Máy này không cho lưu dữ liệu (chế độ ẩn danh?).'; return; }
+  } catch (er) { msg.textContent = lg('Máy này không cho lưu dữ liệu (chế độ ẩn danh?).', 'This browser will not keep data (private mode?).'); return; }
   clearTimeout(CLOUD.timer); CLOUD.timer = 0;
   trackSend('luu/tai'); location.reload();
 });

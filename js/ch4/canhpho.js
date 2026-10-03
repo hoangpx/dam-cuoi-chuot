@@ -82,7 +82,7 @@ function c4CoupleTalk(dt) {
   if (C4.phase !== 'open' || (C4.talkT -= dt) > 0) return;
   C4.talkT = 9 + R() * 8;
   const near = C4.walkers.some(w => w.st === 'walk' && Math.abs(w.x - C4_STALL) < 300);
-  if (!C4.SV.trau && near && !C4.wife.say && R() < .75) c4Say(C4.wife, c4Pick(C4_WIFE_CALL));
+  if (!(C4.SV.trau || []).length && near && !C4.wife.say && R() < .75) c4Say(C4.wife, c4Pick(C4_WIFE_CALL));
   else if (C4.porter.st === 'idle' && !C4.porter.say && R() < .4) c4Say(C4.porter, c4Pick(C4_HUSB_IDLE));
 }
 

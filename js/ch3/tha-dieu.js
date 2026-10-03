@@ -322,14 +322,14 @@ function tdOverlay(g, W, H) {
 }
 
 C3GAMES[3] = {
-  han: '放鳶', name: 'Thả Diều', paper: 'blue',
+  han: '放鳶', name: lg('Thả Diều', 'Flying the Kite'), paper: 'blue',
   short: portrait => portrait ? 460 : 940,          // wide screens: as tall a view as a phone's, so branches show as early
   song: 5,
   // steering: only by sliding a held finger (or the mouse with its button down)
   overlay: tdOverlay,
   isWon: () => TD.phase === 'done',
-  praise: () => 'Diều bay cao quá!',
-  failText: () => TD.why === 'gio' ? 'Hết giờ! Diều rơi mất rồi.' : 'Ôi! Diều vướng cành tre rồi!',
+  praise: () => lg('Diều bay cao quá!', 'The kite flies so high!'),
+  failText: () => TD.why === 'gio' ? lg('Hết giờ! Diều rơi mất rồi.', 'Time\'s up! The kite fell.') : lg('Ôi! Diều vướng cành tre rồi!', 'Oh no! The kite caught on the bamboo!'),
   clockDown: TD_TIME,                              // the clock counts down the 30 s; the record is still the time taken
   start: tdStart, update: tdUpdate, render: tdRender,
   print: 'img/ch3/tha-dieu.jpg',                   // the real print; if the file is missing the shell falls back to tdPrint

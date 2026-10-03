@@ -451,8 +451,8 @@ function ch1PointerUp(e) {
 /* ---------- registration ---------- */
 registerChapter({
   id: 1, cover: true, modes: ['play', 'end'],
-  card: { num: 'Chương I', han: '老鼠娶親', name: 'Đám Cưới Chuột', desc: 'Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', bg: '#ecd593' },
-  progress: () => `${SAVE.done.slice(0, C1_READY).filter(Boolean).length}/${C1_READY} tranh`,
+  card: { num: lg('Chương I', 'Chapter I'), han: '老鼠娶親', name: lg('Đám Cưới Chuột', 'The Mouse Wedding'), desc: lg('Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', 'Lead the wedding procession through the village: a fish for the cat, a crow from the rooster, the bride by the pond, the painters\' village and the market, and a hand for Tấm on the way. More prints are being carved.'), bg: '#ecd593' },
+  progress: () => `${SAVE.done.slice(0, C1_READY).filter(Boolean).length}/${C1_READY} ${lg('tranh', 'prints')}`,
   hasProgress: () => SAVE.done.some(Boolean) || SAVE.secret.some(Boolean),
   boot() { loadLevel(0); },
   playFirst() { loadLevel(0); startPlay(); },

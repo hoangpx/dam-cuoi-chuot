@@ -107,3 +107,14 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #lvCard{display:flex;flex-direction:column;align-items:center}
 #lvCard b{order:1;margin-top:0;font-size:clamp(24px,4.6vw,38px)}
 #lvCard .han{order:2;font-size:clamp(18px,3.2vw,28px);margin-top:8px}
+#chapters .sheet{position:relative}
+#langFlags{position:absolute;top:10px;right:12px;order:0;z-index:5}
+#langFlags .flag{width:34px;height:24px;padding:0;border:2px solid var(--ink);background:none;cursor:pointer;line-height:0;display:block;box-sizing:content-box}
+#langFlags .flag svg{width:100%;height:100%;display:block}
+#langFlags > .flag{box-shadow:2px 2px 0 var(--ink)}
+#langFlags .langMenu{position:absolute;top:32px;right:0;background:#f2ecde;border:2px solid var(--ink);box-shadow:4px 4px 0 rgba(29,25,21,.3);padding:4px;display:flex;flex-direction:column;min-width:150px}
+#langFlags .langMenu[hidden]{display:none}
+#langFlags .lang{display:flex;align-items:center;gap:10px;padding:6px 8px;border:0;background:none;font:600 15px var(--body,inherit);color:var(--ink);cursor:pointer;text-align:left}
+#langFlags .lang:hover,#langFlags .lang.here{background:rgba(163,51,42,.12)}
+#langFlags .lang .flag{width:28px;height:19px;border-width:1px}
+@media (max-width:640px){#chapters .sheet{padding-top:46px}#langFlags{top:12px;right:14px}}

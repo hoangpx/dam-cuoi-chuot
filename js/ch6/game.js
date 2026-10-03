@@ -7,7 +7,7 @@ let SAVE6 = { done: [], tut: false, dotted: false };
 try { const s = JSON.parse(localStorage.getItem('dcc.c6') || 'null'); if (s && Array.isArray(s.done)) SAVE6 = Object.assign(SAVE6, s); } catch (e) {}
 const persist6 = () => { try { localStorage.setItem('dcc.c6', JSON.stringify(SAVE6)); } catch (e) {} };
 const C6_COUNT = () => 1 + C6_LEVELS.length;
-const C6_WORD = ['', 'Dễ', 'Vừa', 'Khó', 'Rất khó'];
+const C6_WORD = ['', lg('Dễ', 'Easy'), lg('Vừa', 'Medium'), lg('Khó', 'Hard'), lg('Rất khó', 'Very hard')];
 const C6 = { i: 0, G: null, geo: null, drag: false };
 
 function buildAlbum6() {
@@ -15,11 +15,11 @@ function buildAlbum6() {
   let size = -1;
   for (let i = 0; i < C6_COUNT(); i++) {
     const L = i ? C6_LEVELS[i - 1] : null, N = L ? L.N : 4;
-    if (N !== size) { size = N; const h = document.createElement('div'); h.className = 'sec'; h.textContent = i ? `Ruộng ${N} × ${N}` : 'Tập chơi'; box.appendChild(h); }
+    if (N !== size) { size = N; const h = document.createElement('div'); h.className = 'sec'; h.textContent = i ? `${lg('Ruộng', 'Field')} ${N} × ${N}` : lg('Tập chơi', 'Practice'); box.appendChild(h); }
     const open = i === 0 || SAVE6.done[i - 1] || SAVE6.done[i];
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = ['#e9dcc0', '#d9e6c9', '#e6d3c9', '#d3dbe6', '#e4d6ea', '#e9e2c4'][Math.max(0, N - 4) % 6]; b.disabled = !open;
-    b.innerHTML = `<div class="num">Màn ${i + 1}</div><div class="ch">${N}×${N}</div><b>${i ? C6_WORD[L.d] : 'Tập chơi'}</b><span class="st${SAVE6.done[i] ? ' done' : ''}">${SAVE6.done[i] ? 'Đã gọi đủ con' : open ? 'Chơi' : 'Chưa mở'}</span>`;
+    b.innerHTML = `<div class="num">${lg('Màn', 'Level')} ${i + 1}</div><div class="ch">${N}×${N}</div><b>${i ? C6_WORD[L.d] : lg('Tập chơi', 'Practice')}</b><span class="st${SAVE6.done[i] ? ' done' : ''}">${SAVE6.done[i] ? lg('Đã gọi đủ con', 'All home') : open ? lg('Chơi', 'Play') : lg('Chưa mở', 'Locked')}</span>`;
     b.addEventListener('click', () => { if (open) startC6(i); });
     box.appendChild(b);
   }
@@ -52,10 +52,10 @@ function c6Key(e) { if (e.code === 'Escape') showAlbum(6); }
 
 registerChapter({
   id: 6, modes: ['c6play'],
-  card: { num: 'Chương VI', han: '鼠', name: 'Tìm Chuột', desc: 'Chiều rồi, chuột mẹ ra đồng gọi lũ con mải chơi về. Mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con, không chú nào đứng sát chú nào. Càng lên càng khó.', bg: '#c8d8dc' },
-  progress: () => `${SAVE6.done.filter(Boolean).length}/${C6_COUNT()} màn`,
+  card: { num: lg('Chương VI', 'Chapter VI'), han: '鼠', name: lg('Tìm Chuột', 'Find the Mice'), desc: lg('Chiều rồi, chuột mẹ ra đồng gọi lũ con mải chơi về. Mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con, không chú nào đứng sát chú nào. Càng lên càng khó.', 'Evening: mother mouse calls her playful children home from the fields. One little mouse in every row, every column and every plot, and no two side by side. It gets harder as you go.'), bg: '#c8d8dc' },
+  progress: () => `${SAVE6.done.filter(Boolean).length}/${C6_COUNT()} ${lg('màn', 'levels')}`,
   hasProgress: () => SAVE6.done.some(Boolean),
-  album() { buildAlbum6(); $('#albumTitle').textContent = 'Chương VI · Tìm Chuột'; $('#albumDesc').textContent = 'Lũ chuột con mải chơi trốn khắp ruộng. Giúp chuột mẹ tìm đủ từng đứa; xong ruộng này mới sang ruộng sau, ruộng càng rộng càng khó.'; },
+  album() { buildAlbum6(); $('#albumTitle').textContent = lg('Chương VI · Tìm Chuột', 'Chapter VI · Find the Mice'); $('#albumDesc').textContent = lg('Lũ chuột con mải chơi trốn khắp ruộng. Giúp chuột mẹ tìm đủ từng đứa; xong ruộng này mới sang ruộng sau, ruộng càng rộng càng khó.', 'The little mice are hiding all over the fields. Help their mother find every one; finish a field to open the next, and the bigger the field the harder.'); },
   hide() {},
   update: updateC6, render: renderC6, key: c6Key,
   pointer: { down: c6Down, move: c6Move, up: c6Up },

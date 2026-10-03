@@ -336,7 +336,7 @@ function ctOverlay(g, W, H) {
 }
 
 C3GAMES[2] = {
-  han: '牧牛', name: 'Chăn Trâu', paper: 'white',
+  han: '牧牛', name: lg('Chăn Trâu', 'Minding the Buffalo'), paper: 'white',
   short: portrait => portrait ? 460 : 600,
   print: 'img/ch3/chan-trau.png',                  // the reward: the real Đông Hồ print
   // the ◀ ▶ buttons only once it is roped, one at each side; they pulse until the boy first walks the ring
@@ -344,7 +344,7 @@ C3GAMES[2] = {
   overlay: ctOverlay,
   song: 4,
   isWon: () => CT.won,
-  praise: () => CT.breaks === 0 && CT.throws === 1 ? 'Tài quá! Ném một lần là trúng!' : 'Giỏi lắm! Trâu đã ngoan rồi!',
+  praise: () => CT.breaks === 0 && CT.throws === 1 ? lg('Tài quá! Ném một lần là trúng!', 'Brilliant! Roped at the first throw!') : lg('Giỏi lắm! Trâu đã ngoan rồi!', 'Well done! The buffalo is tame!'),
   start: ctStart, update: ctUpdate, render: ctRender,
   printRender(g, W, H) { g.fillStyle = '#f2ecde'; g.fillRect(W / 2 - 140, H / 2 - 180, 280, 360); },
   down: ctDown, move() {}, up() {},

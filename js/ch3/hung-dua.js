@@ -287,12 +287,12 @@ function hdRender(g) {
 }
 
 C3GAMES[1] = {
-  han: '承椰', name: 'Hứng Dừa', paper: 'white',
+  han: '承椰', name: lg('Hứng Dừa', 'Catching Coconuts'), paper: 'white',
   short: portrait => portrait ? 460 : 860,         // wide screens: zoom out so the palm is as tall as on a phone
   print: 'img/ch3/hung-dua.png',                 // the reward: the real Đông Hồ print
   isWon: () => HD.won,                           // three caught; the record is the fastest time
   song: 3, ownClock: true,
-  praise: () => HD.lost === 0 && HD.missed === 0 ? 'Mắt tinh quá! Không sai quả nào!' : 'Giỏi lắm! Đủ 3 quả rồi!',
+  praise: () => HD.lost === 0 && HD.missed === 0 ? lg('Mắt tinh quá! Không sai quả nào!', 'Sharp eyes! Not one wrong!') : lg('Giỏi lắm! Đủ 3 quả rồi!', 'Well done! Three coconuts!'),
   start: hdStart, update: hdUpdate, render: hdRender,
   printRender(g, W, H) { g.fillStyle = '#f2ecde'; g.fillRect(W / 2 - 140, H / 2 - 180, 280, 360); },
   down: hdDown, move() {}, up() {},

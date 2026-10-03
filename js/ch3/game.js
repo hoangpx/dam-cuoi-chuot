@@ -2,9 +2,9 @@
 const C3 = { i: 0, game: null, view: 'play', printT: 0, W: 0, H: 0, time: 0, shown: -1, img: null, stat: '' };
 {
   const hud = document.createElement('div'); hud.id = 'c3hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="c3Name" title="Về album tranh"></button><div class="tag" id="c3Time">0:00</div>';
+  hud.innerHTML = '<button class="tag" id="c3Name" title="' + lg('Về album tranh', 'Back to the album') + '"></button><div class="tag" id="c3Time">0:00</div>';
   const end = document.createElement('div'); end.id = 'c3end'; end.hidden = true;
-  end.innerHTML = '<p id="c3Praise"></p><p class="tag" id="c3Stat"></p><div class="row"><button class="btn" id="c3Again">Chơi lại</button><button class="btn alt" id="c3Album">Về album</button></div>';
+  end.innerHTML = '<p id="c3Praise"></p><p class="tag" id="c3Stat"></p><div class="row"><button class="btn" id="c3Again">' + lg('Chơi lại', 'Play again') + '</button><button class="btn alt" id="c3Album">' + lg('Về album', 'Back to album') + '</button></div>';
   document.body.append(hud, end);
 }
 // logical units: the short side is 540 (460 on portrait phones, so chicks are big enough for small fingers)
@@ -18,7 +18,7 @@ function startC3(i) {
   PAPER = getPaper(C3.game.paper); document.documentElement.style.setProperty('--paper', PAPERS[C3.game.paper].css);
   $('#album').hidden = true; $('#end').hidden = true; $('#title').hidden = true; $('#chapters').hidden = true;
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
-  $('#c3hud').hidden = false; $('#c3Name').textContent = `Tranh ${i + 1} · ${C3.game.name}`;
+  $('#c3hud').hidden = false; $('#c3Name').textContent = `${lg('Tranh', 'Picture')} ${i + 1} · ${C3.game.name}`;
   cv.style.cursor = C3.game.handCursor && !isTouch ? 'none' : ''; C3.pressed = false;
   $('#c3Time').style.visibility = C3.game.ownClock ? 'hidden' : '';        // e.g. Hứng Dừa draws its clock in the scene
   $('#pad').hidden = !(C3.game.pad && isTouch);                            // games that walk get the ◀ ▶ buttons on phones
@@ -27,7 +27,7 @@ function startC3(i) {
   C3.time = 0; C3.shown = -1; $('#c3Time').textContent = c3Clock(C3.game.timeLimit || C3.game.clockDown || 0); $('#c3Time').classList.remove('hurry');
   if (!C3.game.print) C3.img = null;                                        // no print yet: the game draws its own (printRender)
   else if (!C3.img || C3.img.dataset.src !== C3.game.print) { C3.img = new Image(); C3.img.dataset.src = C3.game.print; C3.img.src = C3.game.print; }
-  $('#lvHan').textContent = C3.game.han; $('#lvTitle').textContent = `Tranh ${i + 1} · ${C3.game.name}`;
+  $('#lvHan').textContent = C3.game.han; $('#lvTitle').textContent = `${lg('Tranh', 'Picture')} ${i + 1} · ${C3.game.name}`;
   const c = $('#lvCard'); c.classList.add('on'); setTimeout(() => c.classList.remove('on'), 2200);
   cv.focus();
 }
@@ -36,11 +36,11 @@ function c3Win() {
   if (C3.game.scoring === 'count') {                  // record = the most caught
     const n = C3.game.score(), most = SAVE3.most[C3.i] || 0, record = n > most;
     SAVE3.done[C3.i] = true; if (record) SAVE3.most[C3.i] = n; persist3();
-    $('#c3Stat').textContent = `Hứng được ${n} quả${record ? (most ? ' · Kỷ lục mới!' : '') : ' · Kỷ lục ' + most + ' quả'}`;
+    $('#c3Stat').textContent = lgf('Hứng được {n} quả', 'Caught {n}', { n }) + (record ? (most ? lg(' · Kỷ lục mới!', ' · New record!') : '') : lgf(' · Kỷ lục {m} quả', ' · Record {m}', { m: most }));
   } else {                                           // record = the fastest time
     const t = Math.round(C3.time * 10) / 10, best = SAVE3.best[C3.i], record = !best || t < best;
     SAVE3.done[C3.i] = true; if (record) SAVE3.best[C3.i] = t; persist3();
-    $('#c3Stat').textContent = `Thời gian ${c3Clock(t)}${record ? (best ? ' · Kỷ lục mới!' : '') : ' · Kỷ lục ' + c3Clock(best)}`;
+    $('#c3Stat').textContent = lgf('Thời gian {t}', 'Time {t}', { t: c3Clock(t) }) + (record ? (best ? lg(' · Kỷ lục mới!', ' · New record!') : '') : lg(' · Kỷ lục ', ' · Record ') + c3Clock(best));
   }
   $('#c3Praise').textContent = C3.game.praise ? C3.game.praise() : '';
   $('#pad').hidden = true;
@@ -51,9 +51,9 @@ function c3Win() {
 function c3Fail() {
   C3.view = 'over'; C3.printT = 0; AU.snort(); $('#pad').hidden = true;
   const n = C3.game.score ? C3.game.score() : 0, most = SAVE3.most[C3.i] || 0;
-  $('#c3Praise').textContent = C3.game.failText ? C3.game.failText() : 'Hết giờ!';
-  $('#c3Stat').textContent = C3.game.scoring === 'count' ? `Hứng được ${n} quả${most ? ' · Kỷ lục ' + most + ' quả' : ''}`
-    : SAVE3.best[C3.i] ? 'Kỷ lục ' + c3Clock(SAVE3.best[C3.i]) : '';
+  $('#c3Praise').textContent = C3.game.failText ? C3.game.failText() : lg('Hết giờ!', 'Time\'s up!');
+  $('#c3Stat').textContent = C3.game.scoring === 'count' ? lgf('Hứng được {n} quả', 'Caught {n}', { n }) + (most ? lgf(' · Kỷ lục {m} quả', ' · Record {m}', { m: most }) : '')
+    : SAVE3.best[C3.i] ? lg('Kỷ lục ', 'Record ') + c3Clock(SAVE3.best[C3.i]) : '';
   setTimeout(() => { if (S.mode === 'c3play' && C3.view === 'over') $('#c3end').hidden = false; }, 500);
 }
 function updateC3(dt) {
@@ -147,23 +147,23 @@ function buildAlbum3() {
   C3GAMES.forEach((gm, i) => {
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[gm.paper].css;
-    b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">${gm.han}</div><b>${gm.name}</b><span class="st${SAVE3.done[i] ? ' done' : ''}">${SAVE3.done[i] ? 'Đã có tranh' + (gm.scoring === 'count' ? (SAVE3.most[i] ? ' · ' + SAVE3.most[i] + ' quả' : '') : SAVE3.best[i] ? ' · ' + c3Clock(SAVE3.best[i]) : '') : 'Chơi'}</span>`;
+    b.innerHTML = `<div class="num">${lg('Tranh', 'Picture')} ${i + 1}</div><div class="ch">${gm.han}</div><b>${gm.name}</b><span class="st${SAVE3.done[i] ? ' done' : ''}">${SAVE3.done[i] ? lg('Đã có tranh', 'Print won') + (gm.scoring === 'count' ? (SAVE3.most[i] ? ' · ' + SAVE3.most[i] + lg(' quả', '') : '') : SAVE3.best[i] ? ' · ' + c3Clock(SAVE3.best[i]) : '') : lg('Chơi', 'Play')}</span>`;
     b.addEventListener('click', () => startC3(i));
     box.appendChild(b);
   });
   for (let k = 0; k < C3_SOON; k++) {
     const b = document.createElement('button'); b.className = 'card'; b.disabled = true; b.style.background = '#cfcbd0';
-    b.innerHTML = `<div class="num">Tranh ${C3GAMES.length + k + 1}</div><div class="ch">？</div><b>Sắp có</b><span class="st">Đang khắc ván</span>`;
+    b.innerHTML = `<div class="num">${lg('Tranh', 'Picture')} ${C3GAMES.length + k + 1}</div><div class="ch">？</div><b>${lg('Sắp có', 'Coming soon')}</b><span class="st">${lg('Đang khắc ván', 'Being carved')}</span>`;
     box.appendChild(b);
   }
 }
 
 registerChapter({
   id: 3, modes: ['c3play'],
-  card: { num: 'Chương III', han: '眼疾手快', name: 'Nhanh Tay Nhanh Mắt', desc: 'Những trò nhanh tay nhanh mắt cho các bạn nhỏ, trong các bức tranh Đông Hồ quen thuộc. Chơi xong được tặng tranh.', bg: '#c9d6b4' },
-  progress: () => `${SAVE3.done.filter(Boolean).length}/${C3GAMES.length} tranh`,
+  card: { num: lg('Chương III', 'Chapter III'), han: '眼疾手快', name: lg('Nhanh Tay Nhanh Mắt', 'Quick Hands, Quick Eyes'), desc: lg('Những trò nhanh tay nhanh mắt cho các bạn nhỏ, trong các bức tranh Đông Hồ quen thuộc. Chơi xong được tặng tranh.', 'Quick games for little ones, inside well-loved Đông Hồ prints. Win one and the print is yours.'), bg: '#c9d6b4' },
+  progress: () => `${SAVE3.done.filter(Boolean).length}/${C3GAMES.length} ${lg('tranh', 'prints')}`,
   hasProgress: () => SAVE3.done.some(Boolean),
-  album() { buildAlbum3(); $('#albumTitle').textContent = 'Chương III · Nhanh Tay Nhanh Mắt'; $('#albumDesc').textContent = 'Mỗi trò chơi là một bức tranh Đông Hồ. Chơi xong được tặng tranh.'; },
+  album() { buildAlbum3(); $('#albumTitle').textContent = lg('Chương III · Nhanh Tay Nhanh Mắt', 'Chapter III · Quick Hands, Quick Eyes'); $('#albumDesc').textContent = lg('Mỗi trò chơi là một bức tranh Đông Hồ. Chơi xong được tặng tranh.', 'Each game is a Đông Hồ print. Win it and the print is yours.'); },
   hide: c3Hide,
   update: updateC3, render: renderC3, key: c3Key,
   pointer: { down: c3Down, move: c3Move, up: c3Up },

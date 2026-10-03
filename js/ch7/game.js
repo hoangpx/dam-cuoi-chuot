@@ -115,8 +115,8 @@ function c7Key(e) { if (e.code === 'Escape') { if (C7.page >= 0 && SAVE7.how) C7
 
 registerChapter({
   id: 7, modes: ['c7play'],
-  card: { num: 'Chương VII', han: '食', name: 'Ai Ăn Vụng?', desc: 'Mâm xôi, nồi chè, đĩa cá kho… bỗng biến mất. Nghe lời khai của cả làng, dựng lại cảnh và tìm ra kẻ ăn vụng.', bg: '#dccfe4' },
-  progress: () => `${SAVE7.done.filter(Boolean).length}/${C7_CASES.length} vụ`,
+  card: { num: lg('Chương VII', 'Chapter VII'), han: '食', name: lg('Ai Ăn Vụng?', 'Who Ate It?'), desc: lg('Mâm xôi, nồi chè, đĩa cá kho… bỗng biến mất. Nghe lời khai của cả làng, dựng lại cảnh và tìm ra kẻ ăn vụng.', 'A tray of sticky rice, a pot of sweet soup, a dish of braised fish… gone! Hear the villagers out, rebuild the scene and find who ate it.'), bg: '#dccfe4' },
+  progress: () => `${SAVE7.done.filter(Boolean).length}/${C7_CASES.length} ${lg('vụ', 'cases')}`,
   hasProgress: () => SAVE7.done.some(Boolean),
   album() { buildAlbum7(); $('#albumTitle').textContent = 'Chương VII · Ai Ăn Vụng?'; $('#albumDesc').textContent = 'Mỗi vụ là một món ăn bị ăn vụng. Phá xong vụ này mới mở vụ sau.'; },
   hide() {},

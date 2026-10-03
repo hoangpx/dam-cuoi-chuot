@@ -215,3 +215,5 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 #c4hud .bar .tag .ic4{width:28px;height:28px;vertical-align:middle}
 #c4hud .bar .tag.ic{padding:6px 14px}
 #c4hud .bar .tag.up{background:#f2ecde;color:var(--ink)}
+#c4up .hands .hand{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0;text-align:left}
+#c4up .hands .hand .btn{padding:4px 12px;font-size:14px}

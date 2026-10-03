@@ -25,24 +25,24 @@ const INST_ICON = {
 function instSteps(kind) {
   const step = (n, icon, html) => `<li><span class="n">${n}</span><span class="ic">${icon || ''}</span><span>${html}</span></li>`;
   if (kind === 'ios') return [
-    step(1, INST_ICON.share, 'Chạm nút <b>Chia sẻ</b> (ô vuông có mũi tên lên) ở thanh dưới cùng của Safari.'),
-    step(2, INST_ICON.plus, 'Kéo danh sách lên, chọn <b>Thêm vào MH chính</b>.'),
-    step(3, INST_ICON.app, 'Chạm <b>Thêm</b> ở góc trên. Biểu tượng Đám Cưới Chuột hiện trên màn hình chính, mở ra là chơi toàn màn hình.'),
+    step(1, INST_ICON.share, lg('Chạm nút <b>Chia sẻ</b> (ô vuông có mũi tên lên) ở thanh dưới cùng của Safari.', 'Tap <b>Share</b> (the square with an arrow) in Safari\'s bottom bar.')),
+    step(2, INST_ICON.plus, lg('Kéo danh sách lên, chọn <b>Thêm vào MH chính</b>.', 'Scroll the list up and choose <b>Add to Home Screen</b>.')),
+    step(3, INST_ICON.app, lg('Chạm <b>Thêm</b> ở góc trên. Biểu tượng Đám Cưới Chuột hiện trên màn hình chính, mở ra là chơi toàn màn hình.', 'Tap <b>Add</b> at the top. The Đám Cưới Chuột icon appears on your home screen and opens full screen.')),
   ];
   if (kind === 'ios-other') return [
-    step(1, INST_ICON.share, 'Chạm nút <b>Chia sẻ</b> trên thanh địa chỉ (góc trên bên phải).'),
-    step(2, INST_ICON.plus, 'Chọn <b>Thêm vào MH chính</b>. Nếu không thấy, mở <b>damcuoichuot.com</b> bằng <b>Safari</b> rồi làm như trên.'),
-    step(3, INST_ICON.app, 'Chạm <b>Thêm</b>. Biểu tượng Đám Cưới Chuột hiện trên màn hình chính.'),
+    step(1, INST_ICON.share, lg('Chạm nút <b>Chia sẻ</b> trên thanh địa chỉ (góc trên bên phải).', 'Tap <b>Share</b> on the address bar (top right).')),
+    step(2, INST_ICON.plus, lg('Chọn <b>Thêm vào MH chính</b>. Nếu không thấy, mở <b>damcuoichuot.com</b> bằng <b>Safari</b> rồi làm như trên.', 'Choose <b>Add to Home Screen</b>. If it is not there, open <b>damcuoichuot.com</b> in <b>Safari</b> and do the same.')),
+    step(3, INST_ICON.app, lg('Chạm <b>Thêm</b>. Biểu tượng Đám Cưới Chuột hiện trên màn hình chính.', 'Tap <b>Add</b>. The Đám Cưới Chuột icon appears on your home screen.')),
   ];
   return [
-    step(1, INST_ICON.dots, 'Trong Chrome, chạm nút <b>⋮</b> ở góc trên bên phải.'),
-    step(2, INST_ICON.plus, 'Chọn <b>Thêm vào màn hình chính</b> (có máy ghi <b>Cài đặt ứng dụng</b>).'),
-    step(3, INST_ICON.app, 'Chạm <b>Thêm</b> hoặc <b>Cài đặt</b>. Biểu tượng Đám Cưới Chuột hiện trên màn hình chính.'),
+    step(1, INST_ICON.dots, lg('Trong Chrome, chạm nút <b>⋮</b> ở góc trên bên phải.', 'In Chrome, tap <b>⋮</b> at the top right.')),
+    step(2, INST_ICON.plus, lg('Chọn <b>Thêm vào màn hình chính</b> (có máy ghi <b>Cài đặt ứng dụng</b>).', 'Choose <b>Add to Home screen</b> (some phones say <b>Install app</b>).')),
+    step(3, INST_ICON.app, lg('Chạm <b>Thêm</b> hoặc <b>Cài đặt</b>. Biểu tượng Đám Cưới Chuột hiện trên màn hình chính.', 'Tap <b>Add</b> or <b>Install</b>. The Đám Cưới Chuột icon appears on your home screen.')),
   ];
 }
 function showInstall() {
   const kind = instKind() || 'android', box = $('#install');
-  $('#instTitle').textContent = kind === 'android' ? 'Thêm vào màn hình chính (Android)' : 'Thêm vào màn hình chính (iPhone)';
+  $('#instTitle').textContent = kind === 'android' ? lg('Thêm vào màn hình chính (Android)', 'Add to home screen (Android)') : lg('Thêm vào màn hình chính (iPhone)', 'Add to home screen (iPhone)');
   $('#instSteps').innerHTML = instSteps(kind).join('');
   $('#bInstNow').hidden = !INST.prompt;
   box.hidden = false; AU.tap && AU.tap();
@@ -59,10 +59,10 @@ $('#aGroup').addEventListener('click', () => trackSend('nhom-facebook'));   // t
 const INST_LATER = 3 * 864e5;
 function instArrowSpot(kind) {
   const ua = navigator.userAgent, ipad = /iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), v = +((ua.match(/Version\/(\d+)/) || [])[1] || 0);
-  if (kind === 'android') return { css: 'top:6px;right:8px', dir: 'up', say: 'Chạm nút <b>⋮</b> ở góc trên này, rồi chọn <b>Thêm vào màn hình chính</b> (hoặc <b>Cài đặt ứng dụng</b>).' };
-  if (ipad || kind === 'ios-other') return { css: 'top:6px;right:64px', dir: 'up', say: 'Chạm nút <b>Chia sẻ</b> trên thanh địa chỉ, rồi chọn <b>Thêm vào MH chính</b>.' };
-  if (v >= 26) return { css: 'bottom:calc(6px + env(safe-area-inset-bottom));right:14px', dir: 'down', say: 'Chạm nút <b>•••</b> ở góc dưới này, chọn <b>Chia sẻ</b>, rồi <b>Thêm vào MH chính</b>.' };
-  return { css: 'bottom:calc(6px + env(safe-area-inset-bottom));left:calc(50% - 22px)', dir: 'down', say: 'Chạm nút <b>Chia sẻ</b> ở thanh dưới này, rồi chọn <b>Thêm vào MH chính</b>.' };
+  if (kind === 'android') return { css: 'top:6px;right:8px', dir: 'up', say: lg('Chạm nút <b>⋮</b> ở góc trên này, rồi chọn <b>Thêm vào màn hình chính</b> (hoặc <b>Cài đặt ứng dụng</b>).', 'Tap <b>⋮</b> up here, then <b>Add to Home screen</b> (or <b>Install app</b>).') };
+  if (ipad || kind === 'ios-other') return { css: 'top:6px;right:64px', dir: 'up', say: lg('Chạm nút <b>Chia sẻ</b> trên thanh địa chỉ, rồi chọn <b>Thêm vào MH chính</b>.', 'Tap <b>Share</b> on the address bar, then <b>Add to Home Screen</b>.') };
+  if (v >= 26) return { css: 'bottom:calc(6px + env(safe-area-inset-bottom));right:14px', dir: 'down', say: lg('Chạm nút <b>•••</b> ở góc dưới này, chọn <b>Chia sẻ</b>, rồi <b>Thêm vào MH chính</b>.', 'Tap <b>•••</b> down here, then <b>Share</b>, then <b>Add to Home Screen</b>.') };
+  return { css: 'bottom:calc(6px + env(safe-area-inset-bottom));left:calc(50% - 22px)', dir: 'down', say: lg('Chạm nút <b>Chia sẻ</b> ở thanh dưới này, rồi chọn <b>Thêm vào MH chính</b>.', 'Tap <b>Share</b> in the bar below, then <b>Add to Home Screen</b>.') };
 }
 function instPeek() {
   if (document.getElementById('instPeek') || instStandalone() || !instKind() && !INST.prompt) return;
@@ -70,7 +70,7 @@ function instPeek() {
   if (Date.now() - later < INST_LATER || INST.peeked) return;
   INST.peeked = true;
   const box = document.createElement('div'); box.id = 'instPeek';
-  box.innerHTML = '<canvas width="240" height="240"></canvas><div class="bub"><p>Cài mình lên màn hình chính, mở ra chơi như ứng dụng nhé?</p><div class="bt"><button class="btn" data-a="yes">Cài đặt</button><button class="btn alt" data-a="no">Để sau</button></div></div>';
+  box.innerHTML = '<canvas width="240" height="240"></canvas><div class="bub"><p>' + lg('Cài mình lên màn hình chính, mở ra chơi như ứng dụng nhé?', 'Put me on your home screen and play like an app?') + '</p><div class="bt"><button class="btn" data-a="yes">' + lg('Cài đặt', 'Install') + '</button><button class="btn alt" data-a="no">' + lg('Để sau', 'Later') + '</button></div></div>';
   document.body.appendChild(box);
   const cvs = box.querySelector('canvas'), g = cvs.getContext('2d'), t0 = performance.now(), rig = c4MouseRig(0);
   (function draw() {

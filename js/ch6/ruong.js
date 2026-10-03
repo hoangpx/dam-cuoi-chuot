@@ -12,12 +12,12 @@ function mdNewGame(level) { const G = { level, hearts: MD_HEARTS, over: false, r
 // the practice field: plots 0 green, 1 red, 2 yellow, 3 blue; one mouse given; the steps below lead to the answer
 const MD_TUT_REG = [1, 3, 0, 3, 1, 3, 3, 3, 1, 1, 2, 3, 1, 2, 2, 3];
 const MD_TUT = [
-  { kind: 'mark', cells: [0, 1, 3, 6, 10, 14], hand: 'tap', top: 'Hai con chuột không được ở cùng hàng, cũng không được ở cùng cột.', bot: 'Chạm vào các ô sáng để đánh dấu không có chuột.' },
-  { kind: 'mouse', cells: [13], hand: 'dbl', top: 'Thửa vàng chỉ còn đúng một ô.', bot: 'Chạm hai lần liền để thả chuột.' },
-  { kind: 'mark', cells: [8, 9, 12], hand: 'swipe', path: [12, 8, 9], top: 'Hai con chuột không được đứng sát nhau, kể cả chéo.', bot: 'Di tay qua các ô này để đánh dấu.' },
-  { kind: 'mouse', cells: [4], hand: 'dbl', top: 'Thửa đỏ chỉ còn đúng một ô.', bot: 'Chạm hai lần liền để thả chuột.' },
-  { kind: 'mark', cells: [5, 7], hand: 'tap', top: 'Hàng này đã có chuột rồi!', bot: 'Đánh dấu các ô còn lại.' },
-  { kind: 'free', top: 'Tìm nốt con chuột cuối cùng!', bot: 'Mỗi thửa đúng một con chuột.' },
+  { kind: 'mark', cells: [0, 1, 3, 6, 10, 14], hand: 'tap', top: lg('Hai con chuột không được ở cùng hàng, cũng không được ở cùng cột.', 'No two mice in the same row, nor in the same column.'), bot: lg('Chạm vào các ô sáng để đánh dấu không có chuột.', 'Tap the lit squares to mark them: no mouse here.') },
+  { kind: 'mouse', cells: [13], hand: 'dbl', top: lg('Thửa vàng chỉ còn đúng một ô.', 'The yellow plot has just one square left.'), bot: lg('Chạm hai lần liền để thả chuột.', 'Tap twice to put a mouse there.') },
+  { kind: 'mark', cells: [8, 9, 12], hand: 'swipe', path: [12, 8, 9], top: lg('Hai con chuột không được đứng sát nhau, kể cả chéo.', 'No two mice may touch, not even corner to corner.'), bot: lg('Di tay qua các ô này để đánh dấu.', 'Slide across these squares to mark them.') },
+  { kind: 'mouse', cells: [4], hand: 'dbl', top: lg('Thửa đỏ chỉ còn đúng một ô.', 'The red plot has just one square left.'), bot: lg('Chạm hai lần liền để thả chuột.', 'Tap twice to put a mouse there.') },
+  { kind: 'mark', cells: [5, 7], hand: 'tap', top: lg('Hàng này đã có chuột rồi!', 'This row has its mouse already!'), bot: lg('Đánh dấu các ô còn lại.', 'Mark the other squares.') },
+  { kind: 'free', top: lg('Tìm nốt con chuột cuối cùng!', 'Find the last mouse!'), bot: lg('Mỗi thửa đúng một con chuột.', 'One mouse in every plot.') },
 ];
 function mdTutorial(G) {
   Object.assign(G, { N: 4, reg: MD_TUT_REG, sol: [2, 0, 3, 1], mice: new Set([2]), dots: new Set(), wrong: new Set(), next: 0, intro: 0, tut: { step: 0, wait: 0 },
@@ -126,9 +126,9 @@ function mdRules(g, Gm) {
   const n = 3, gap = 6, w = (Gm.colW - gap * (n - 1)) / n, h = 62, y = 128;
   mdRound(g, Gm.x0 - 6, y - 8, Gm.colW + 12, h + 16, 14); g.fillStyle = '#f2ecde'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2; g.stroke();
   const cards = [
-    { t: 'Mỗi thửa một con chuột', m: [1, 1, 1, 1, 'm', 0, 1, 0, 0], tint: [1, 1, 1, 1, 1, 0, 1, 0, 0] },
-    { t: 'Mỗi hàng, cột một con', m: [1, 'm', 1, 0, 1, 0, 0, 1, 0] },
-    { t: 'Không đứng sát nhau', m: [1, 1, 1, 1, 'm', 1, 1, 1, 1] },
+    { t: lg('Mỗi thửa một con chuột', 'One mouse a plot'), m: [1, 1, 1, 1, 'm', 0, 1, 0, 0], tint: [1, 1, 1, 1, 1, 0, 1, 0, 0] },
+    { t: lg('Mỗi hàng, cột một con', 'One a row and column'), m: [1, 'm', 1, 0, 1, 0, 0, 1, 0] },
+    { t: lg('Không đứng sát nhau', 'Never touching'), m: [1, 1, 1, 1, 'm', 1, 1, 1, 1] },
   ];
   cards.forEach((cd, k) => {
     const x = Gm.x0 + k * (w + gap);
@@ -172,7 +172,7 @@ function mdSlip(g, W, y, text, big, up) {
 function mdTutDraw(g, G, Gm, W) {
   const st = MD_TUT[Math.min(G.tut.step, MD_TUT.length - 1)], N = G.N, cs = Gm.cell, done = !!G.next;
   if (st.kind !== 'free' && !done) for (let i = 0; i < N * N; i++) if (!st.cells.includes(i) && !G.mice.has(i)) { g.fillStyle = 'rgba(29,25,21,.55)'; mdRound(g, Gm.ox + (i % N) * cs + 2, Gm.oy + ((i / N) | 0) * cs + 2, cs - 4, cs - 4, 7); g.fill(); }
-  mdSlip(g, W, Gm.oy - 14, done ? 'Giỏi lắm! Mẹ đã gọi đủ các con về.' : st.top, true, true);
+  mdSlip(g, W, Gm.oy - 14, done ? lg('Giỏi lắm! Mẹ đã gọi đủ các con về.', 'Well done! Mother has all her children home.') : st.top, true, true);
   if (!done) mdSlip(g, W, Gm.oy + Gm.size + 16, st.bot, false, false);
   if (done || G.tut.wait > 0 || st.kind === 'free') return;
   const ctr = i => [Gm.ox + (i % N + .5) * cs, Gm.oy + (((i / N) | 0) + .5) * cs], A = howtoArt(), T = G.t;
@@ -189,7 +189,8 @@ function mdTutDraw(g, G, Gm, W) {
   else { dp(g, A.mouse, p[0] + 14, p[1] + 22, 0, .8, .8); if (press) dp(g, A.click, p[0] + 14, p[1] + 22, 0, .8, .8); }
 }
 // split a sentence into lines that fit
-function mdWrap(g, text, w) { const out = []; let line = ''; for (const word of text.split(' ')) { const t = line ? line + ' ' + word : word; if (g.measureText(t).width > w && line) { out.push(line); line = word; } else line = t; } if (line) out.push(line); return out; }
+// words wrap at spaces; Chinese and Japanese (no spaces) may break between any two characters
+function mdWrap(g, text, w) { const cjk = /[　-鿿＀-￯]/, toks = text.match(/[　-鿿＀-￯]|[^\s　-鿿＀-￯]+/g) || [], out = []; let line = ''; for (const word of toks) { const t = !line ? word : cjk.test(word) || cjk.test(line.slice(-1)) ? line + word : line + ' ' + word; if (g.measureText(t).width > w && line) { out.push(line); line = word; } else line = t; } if (line) out.push(line); return out; }
 function mdHeart(g, x, y, s, full) {
   g.save(); g.translate(x, y); g.scale(s, s);
   g.beginPath(); g.moveTo(0, 6); g.bezierCurveTo(-12, -2, -8, -12, 0, -6); g.bezierCurveTo(8, -12, 12, -2, 0, 6); g.closePath();
@@ -200,7 +201,7 @@ function mdDraw(en, g, W, H) {
   // top: back, the level, the hearts
   mdBack(g, Gm);
   g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.font = '700 15px "Be Vietnam Pro", sans-serif'; g.fillText('Màn', W / 2, 26);
+  g.font = '700 15px "Be Vietnam Pro", sans-serif'; g.fillText(lg('Màn', 'Level'), W / 2, 26);
   g.font = '900 30px "Playfair Display", serif'; g.fillText(String(G.level + 1), W / 2, 54);
   mdRound(g, W / 2 - 58, 76, 116, 34, 17); g.fillStyle = '#f2ecde'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2; g.stroke();
   for (let k = 0; k < MD_HEARTS; k++) mdHeart(g, W / 2 - 32 + k * 32, 94, 1.25, k < G.hearts);
@@ -239,12 +240,12 @@ function mdDraw(en, g, W, H) {
     const k = Math.min(1, G.intro * 3, (1.8 - G.intro) * 6); g.globalAlpha = k;
     const bw = Math.min(W - 60, 300), bx = (W - bw) / 2, by = Gm.oy + Gm.size / 2 - 50;
     mdRound(g, bx, by, bw, 100, 14); g.fillStyle = 'rgba(242,236,222,.95)'; g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
-    g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 32px "Playfair Display", serif'; g.fillText('Gọi ' + N + ' con về', W / 2, by + 40); g.font = '600 15px "Be Vietnam Pro", sans-serif'; g.fillText('Lũ chuột con trốn chơi khắp ruộng', W / 2, by + 74);
+    g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 32px "Playfair Display", serif'; g.fillText(lgf('Gọi {n} con về', 'Call {n} little mice home', { n: N }), W / 2, by + 40); g.font = '600 15px "Be Vietnam Pro", sans-serif'; g.fillText(lg('Lũ chuột con trốn chơi khắp ruộng', 'They are hiding all over the field'), W / 2, by + 74);
     g.textBaseline = 'alphabetic'; g.globalAlpha = 1;
   }
   if (G.over) {
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 60px "Playfair Display", serif';
-    const txt = G.result === 'win' ? 'ĐỦ CẢ!' : 'THUA';
+    const txt = G.result === 'win' ? lg('ĐỦ CẢ!', 'ALL HOME!') : lg('THUA', 'LOST');
     g.save(); g.translate(W / 2, Gm.oy + Gm.size / 2); g.rotate(-.12); g.lineWidth = 6; g.strokeStyle = '#f2ecde'; g.strokeText(txt, 0, 0); g.fillStyle = G.result === 'win' ? '#a3332a' : INK; g.fillText(txt, 0, 0); g.restore();
     g.textBaseline = 'alphabetic';
   }

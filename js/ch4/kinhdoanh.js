@@ -202,11 +202,11 @@ const C4_EXTRA_EV = {
   },
   // a rival tries to lure a hired helper away
   duthue(E) {
-    const gs = C4_SHOPS.filter(g => c4Own(g) && SAVE4.shops[g].staff); if (!gs.length) return false;
-    const g = c4Pick(gs), s = SAVE4.shops[g];
-    Object.assign(E, { title: 'Bị dụ mất người làm', text: `Nhà buôn đầu chợ hứa trả ${c4Cap1(s.staff)} (hàng ${C4_GOODS[g].name.toLowerCase()}) thêm 4<i class=\"ic4 coin\"></i> một ngày để sang làm cho họ.`, opts: [
-      ['Tăng công thêm 4<i class=\"ic4 coin\"></i>/ngày', () => { s.wageUp = (s.wageUp || 0) + 4; toast(`${c4Cap1(s.staff)} ở lại, hứa làm hết lòng.`, 3); }],
-      ['Để người ta đi', () => { s.quit = true; toast(`Tối nay ${s.staff} bỏ sang nhà kia. Mai phải tìm người mới.`, 3.2); }]] });
+    const gs = c4Owned().filter(g => c4HandsOn(g).length); if (!gs.length) return false;
+    const g = c4Pick(gs), s = c4Pick(c4HandsOn(g));
+    Object.assign(E, { title: 'Bị dụ mất người làm', text: `Nhà buôn đầu chợ hứa trả ${c4Cap1(s.name)} (hàng ${C4_GOODS[g].name.toLowerCase()}) thêm 4<i class=\"ic4 coin\"></i> một ngày để sang làm cho họ.`, opts: [
+      ['Tăng công thêm 4<i class=\"ic4 coin\"></i>/ngày', () => { s.wageUp = (s.wageUp || 0) + 4; toast(`${c4Cap1(s.name)} ở lại, hứa làm hết lòng.`, 3); }],
+      ['Để người ta đi', () => { s.quit = true; toast(`Tối nay ${s.name} bỏ sang nhà kia. Vợ chồng lại phải tự bán, hoặc thuê người khác.`, 3.4); }]] });
   },
   // a flood coming: shore up the stalls now, or lose goods and a level tomorrow
   lut(E) {
@@ -279,9 +279,9 @@ function c4OpenUps() {
 }
 // the tally, stall by stall: what each brought in after its goods
 function c4ByShopHtml(d) {
-  const B = d.by || {}, rows = c4Owned().map(g => [g, B[g] || { take: 0, cogs: 0, n: 0 }]).map(([g, b]) => [g, b, b.take - b.cogs]);
+  const B = d.by || {}, rows = c4Owned().map(g => [g, B[g] || { take: 0, cogs: 0, n: 0 }]).map(([g, b]) => [g, b, b.take - b.cogs - (b.wage || 0)]);
   const max = Math.max(1, ...rows.map(r => Math.abs(r[2])));
-  return `<div class="byshop">${rows.sort((a, b) => b[2] - a[2]).map(([g, b, net]) => `<div class="bs"><span class="tg">${g === 'trau' ? c4Lv().name : c4SLv(g).name}</span><b>${C4_GOODS[g].name}</b><span class="${net >= 0 ? 'gain' : 'bad'}">${net >= 0 ? '+' : '−'}${c4Money(Math.abs(net))}</span><i class="bar"><i style="width:${Math.abs(net) / max * 100}%"></i></i><small>${b.n} ${C4_GOODS[g].unit}</small></div>`).join('')}</div>`;
+  return `<div class="byshop">${rows.sort((a, b) => b[2] - a[2]).map(([g, b, net]) => `<div class="bs"><span class="tg">${g === 'trau' ? c4Lv().name : c4SLv(g).name}</span><b>${C4_GOODS[g].name}</b><span class="${net >= 0 ? 'gain' : 'bad'}">${net >= 0 ? '+' : '−'}${c4Money(Math.abs(net))}</span><i class="bar"><i style="width:${Math.abs(net) / max * 100}%"></i></i><small>${b.n} ${C4_GOODS[g].unit}${b.wage ? ` · công ${c4Num(b.wage)}` : ''}</small></div>`).join('')}</div>`;
 }
 
 /* ---------- tables and stools (owner): who eats chè, xôi or bún sits down to it; more tables, more seats, longer patience ---------- */

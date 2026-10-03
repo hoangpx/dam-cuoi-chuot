@@ -156,7 +156,7 @@ function g3Render(ctx2, u) {
   if (G3.drag && !G3.drag.hen) g3DrawChick(g, G3.drag.who, 1.1);
   // "Trời tối rồi, mau về tổ nào!"
   if (G3.sayT > 0 && hen.st === 'out') {
-    G3_SAY = G3_SAY || slipLabel(['TRỜI TỐI RỒI,', 'MAU VỀ TỔ NÀO!'], 102);
+    G3_SAY = G3_SAY || slipLabel(lg(['TRỜI TỐI RỒI,', 'MAU VỀ TỔ NÀO!'], ['NIGHT IS FALLING,', 'HURRY HOME!']), 102);
     const k = Math.min(1, (2.4 - G3.sayT) / .15, G3.sayT / .3), S = .68, half = 110 * S;
     // just up and to the left of her head, so the trailing ink dots end at her face
     const headX = hen.x + 90 * hen.face, headY = hen.y - 217;
@@ -164,7 +164,7 @@ function g3Render(ctx2, u) {
     g.save(); g.globalAlpha = k; g.translate(x, y); dp(g, G3_SAY, 0, 0, -.03, S, S); g.restore();
   }
   if (G3.helpT > 0) {
-    G3_HELP = G3_HELP || slipLabel(['HÃY GIÚP GÀ MẸ', 'ĐƯA CÁC CON VỀ TỔ'], 120);
+    G3_HELP = G3_HELP || slipLabel(lg(['HÃY GIÚP GÀ MẸ', 'ĐƯA CÁC CON VỀ TỔ'], ['HELP MOTHER HEN', 'BRING HER CHICKS HOME']), 120);
     const k = Math.min(1, (3 - G3.helpT) / .15, G3.helpT / .3), S = .72, half = 126 * S;
     g.save(); g.globalAlpha = k; g.translate(Math.max(half + 14, Math.min(G3.W - half - 40, n.x + 20)), n.y - 108); dp(g, G3_HELP, 0, 0, .03, S, S); g.restore();
   }
@@ -179,7 +179,7 @@ function g3Render(ctx2, u) {
 let G3_TITLE = null;
 function g3RenderPrint(g, W, H, k) {
   const A = c3Art(), tall = H > W * 1.15;
-  G3_TITLE = G3_TITLE || part([-230, -34, 230, 34], a => { a.text('ĐÀN GÀ MẸ CON', 0, 2, 40, 'dark', '"Playfair Display", serif', 'ink', 900); });
+  G3_TITLE = G3_TITLE || part([-230, -34, 230, 34], a => { a.text(lg('ĐÀN GÀ MẸ CON', 'HEN AND CHICKS'), 0, 2, 40, 'dark', '"Playfair Display", serif', 'ink', 900); });
   // a landscape print on wide screens, a portrait one on phones
   const L = tall ? { fw: 260, fh: 390, title: -332, mound: [470, 272], hen: [60, 258, .95], seal: [196, 330],
       spots: [[-190, 262, 1, 1.2], [-112, 270, -1, 1.15], [150, 270, 1, 1.15], [212, 262, -1, 1.1], [-185, -20, 1, 1.05], [192, -80, -1, 1.05], [-120, -210, 1, 1], [120, -250, -1, 1], [30, -150, -1, 1.05], [-205, 120, 1, 1.1]] }
@@ -200,10 +200,10 @@ function g3RenderPrint(g, W, H, k) {
 }
 
 C3GAMES[0] = {
-  han: '母雞', name: 'Đàn Gà Mẹ Con', paper: 'white',
+  han: '母雞', name: lg('Đàn Gà Mẹ Con', 'Hen and Chicks'), paper: 'white',
   print: 'img/ch3/dan-ga-me-con.jpg',            // the reward: a photo of the real Đông Hồ print
   isWon: () => G3.won,
-  praise: () => G3.smart ? 'Bạn thật thông minh!' : 'Tuyệt vời! Bạn có một đôi tay siêu nhanh!',
+  praise: () => G3.smart ? lg('Bạn thật thông minh!', 'How clever you are!') : lg('Tuyệt vời! Bạn có một đôi tay siêu nhanh!', 'Wonderful! What quick hands you have!'),
   start: g3Start, update: g3Update, render: g3Render, printRender: g3RenderPrint,
   handCursor: true,                                // on computers the pointer is a big hand
   down: g3Down, move: g3Move, up: g3Up,
