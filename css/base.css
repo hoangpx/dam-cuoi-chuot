@@ -43,6 +43,9 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #bChapTop:active{transform:translate(1px,1px);box-shadow:1px 1px 0 rgba(29,25,21,.35)}
 #bDonate{display:inline-flex;align-items:center;gap:8px;margin:14px auto 0;align-self:center;background:none;border:0;font-family:var(--body);font-size:15px;font-weight:700;color:var(--son);cursor:pointer;padding:6px 10px}
 #bDonate[hidden]{display:none}
+#aGroup{display:inline-flex;align-items:center;gap:8px;margin:14px auto 0;align-self:center;font-family:var(--body);font-size:15px;font-weight:700;color:#2f5f8f;text-decoration:none;padding:6px 10px;text-align:left;max-width:min(420px,90vw)}
+#aGroup svg{flex:none}
+#aGroup span{text-decoration:underline;text-underline-offset:3px}
 #bDonate span{text-decoration:underline;text-underline-offset:3px}
 #donate{background:rgba(29,25,21,.55);z-index:8}
 #donate .qr{width:min(240px,64vw);margin:12px auto 0;border:2.5px solid var(--ink);border-radius:12px;display:block;box-shadow:3px 3px 0 rgba(29,25,21,.25)}
