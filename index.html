@@ -59,7 +59,7 @@
     <div class="han">老鼠娶親</div>
     <p>Mỗi chương là một lối chơi khác, cùng chung phong cách tranh khắc gỗ Đông Hồ.</p>
     <div class="grid" id="chapCards"></div>
-    <div class="row"><button class="btn alt" id="bInstall" hidden>Thêm vào màn hình chính</button></div>
+    <div class="row"><button class="btn alt" id="bCloud"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3.5 3.5h13.2l3.8 3.8v13.2h-17z" fill="#2f5f8f" stroke="#1d1915" stroke-width="1.8" stroke-linejoin="round"/><rect x="7" y="3.5" width="8.5" height="5.5" fill="#f2ecde" stroke="#1d1915" stroke-width="1.4"/><rect x="12.2" y="4.6" width="2" height="3.2" fill="#1d1915"/><rect x="6.5" y="12.5" width="11" height="8" fill="#f2ecde" stroke="#1d1915" stroke-width="1.4"/><path d="M8.5 15.2h7M8.5 17.8h7" stroke="#a3332a" stroke-width="1.3"/></svg><span>Lưu tiến trình</span></button><button class="btn alt" id="bInstall" hidden>Thêm vào màn hình chính</button></div>
     <button id="bDonate" hidden>   <!-- owner: hidden for now, to become "Ủng hộ tác giả" with a guestbook later --><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="4" fill="#a3332a" stroke="#1d1915" stroke-width="2.5"/><rect x="6" y="6" width="28" height="28" rx="2" fill="none" stroke="#f2ecde" stroke-width="1.4"/><path d="M20 30c-7-5-10-8.5-10-12.5a5 5 0 0 1 10-1.5a5 5 0 0 1 10 1.5c0 4-3 7.5-10 12.5z" fill="#f2ecde"/></svg><span>Ủng hộ trẻ em vùng cao</span></button>
     <a id="aGroup" href="https://www.facebook.com/share/g/14o62uVrE8x/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="#2f5f8f" stroke="#1d1915" stroke-width="2"/><path d="M13.4 19v-6h2l.3-2.4h-2.3V9.2c0-.7.2-1.2 1.2-1.2h1.2V5.9c-.2 0-1-.1-1.8-.1-1.8 0-3 1.1-3 3.1v1.7H9v2.4h2V19z" fill="#f2ecde"/></svg><span>Nhóm Facebook Đám Cưới Chuột: góp ý, báo lỗi, gợi ý chuyện mới</span></a>
     <p class="how">© 2026 Đám Cưới Chuột · damcuoichuot.com · giữ mọi quyền</p>
@@ -75,6 +75,24 @@
     <div class="row"><button class="btn alt" id="bCopyStk">Chép số tài khoản</button><button class="btn alt" id="bCopyNote">Chép nội dung</button></div>
     <p class="how">Mở ứng dụng ngân hàng, quét mã hoặc chuyển khoản với nội dung "Dam Cuoi Chuot ung ho tre em vung cao". Xin cảm ơn tấm lòng của bạn!</p>
     <div class="row"><button class="btn" id="bDonateClose">Đóng</button></div>
+  </div>
+</div>
+
+<div id="cloud" class="ov" hidden>
+  <div class="sheet">
+    <h2>Lưu tiến trình</h2>
+    <p id="cloudIntro">Tạo một mã lưu để giữ tiến trình trên mạng. Đổi điện thoại, chơi trên máy khác, hay lỡ xoá trình duyệt: chỉ cần nhập mã là chơi tiếp. Không cần tài khoản.</p>
+    <div class="row"><button class="btn" id="bCloudMake">Tạo mã lưu</button></div>
+    <div id="cloudHave" hidden>
+      <p>Mã lưu của bạn:</p>
+      <div id="cloudCode" class="code"></div>
+      <div class="row"><button class="btn alt" id="bCloudCopy">Chép mã</button></div>
+      <p class="how">Hãy ghi mã này lại. Game tự lưu lên mạng sau mỗi tranh, mỗi màn bạn qua. <span id="cloudSt"></span></p>
+    </div>
+    <p class="sub">Có mã lưu từ máy khác?</p>
+    <div class="row in"><input id="cloudIn" placeholder="CHUOT-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20"><button class="btn alt" id="bCloudLoad">Tải về</button></div>
+    <p id="cloudMsg" class="how"></p>
+    <div class="row"><button class="btn" id="bCloudClose">Đóng</button></div>
   </div>
 </div>
 
@@ -154,7 +172,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-10o';
+const VERSION = '2026-10-10q';
 const FONT_CHARS = '囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [
@@ -204,6 +222,7 @@ const GAME_FILES = [
   'js/core/hub.js',
   'js/core/install.js',
   'js/core/donate.js',
+  'js/core/cloud.js',
   'js/core/main.js',
 ];
 // every file starts downloading now, alongside the fonts (one after another cost a network round trip each)

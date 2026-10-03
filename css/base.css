@@ -51,6 +51,16 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #donate .qr{width:min(240px,64vw);margin:12px auto 0;border:2.5px solid var(--ink);border-radius:12px;display:block;box-shadow:3px 3px 0 rgba(29,25,21,.25)}
 #donate .acc{font-size:15px;line-height:1.5}
 #install{background:rgba(29,25,21,.55);z-index:8}
+#cloud{background:rgba(29,25,21,.55);z-index:8}
+#bCloud{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+#bCloud svg{flex:none}
+#cloud .code{font-family:var(--body);font-weight:900;font-size:clamp(22px,6.4vw,30px);letter-spacing:.08em;margin:8px auto 0;padding:8px 14px;border:2.5px dashed var(--ink);background:#fff8e6;user-select:all;-webkit-user-select:all}
+#cloud .sub{margin-top:18px;font-weight:700}
+#cloud #cloudHave{display:flex;flex-direction:column;align-items:center}
+#cloud #cloudHave[hidden]{display:none}
+#cloud .row.in{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#cloudIn{font:700 16px var(--body);letter-spacing:.03em;text-transform:uppercase;padding:9px 10px;border:2.5px solid var(--ink);background:#fff8e6;width:min(250px,64vw);box-sizing:border-box;text-align:center}
+#cloudMsg:empty{display:none}
 #install ol{list-style:none;padding:0;margin:14px 0 0;text-align:left;max-width:46ch;align-self:center}
 #install li{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:15px;line-height:1.45}
 #install li .n{flex:none;width:26px;height:26px;border:2px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--son);color:var(--diep)}
