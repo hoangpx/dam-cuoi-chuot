@@ -156,8 +156,11 @@ function startC4() {
   SAVE4.started = true; persist4();
   if (!SAVE4.intro) { c4StoryStart(); cv.focus(); return; }
   if (c4Talk2Due()) { c4Talk2(); cv.focus(); return; }
+  if (C4.day === SAVE4.day && C4.porter) { c4Resume(); return; }   // back from the chapter list the same day: carry on where it was
   c4MarketStart();
 }
+// coming back to a day still in memory: the same market, and whatever sheet was open (the morning order only if it was not yet given)
+function c4Resume() { $('#c4hud').hidden = false; c4Sheets(C4.away || null); c4Hud(); cv.focus(); }
 function c4MarketStart() {
   $('#c4hud').hidden = false;
   if (!SAVE4.plan || !SAVE4.plan.wx) { SAVE4.plan = c4Roll(SAVE4.day); SAVE4.next = c4Roll(SAVE4.day + 1); }
@@ -168,11 +171,14 @@ function c4MarketStart() {
   for (const g of C4_SHOPS) if (c4Own(g)) { const s = SAVE4.shops[g]; s.sick = false; s.say = null; }
   C4.camX = C4_STALL - c4View().vw * .5;
   for (let i = 0; i < 8; i++) c4Spawn(C4.camX - 200 + R() * (c4View().vw + 400));
+  C4.day = SAVE4.day;
+  // the page was reloaded during a day already under way: no new morning order, the market opens at the hour it had reached
+  if (SAVE4.openDay === SAVE4.day) { C4.phase = 'open'; C4.mins = Math.max(C4_OPEN, SAVE4.openMins || C4_OPEN); c4PlanEvents(); C4.events = C4.events.filter(e => e.at > C4.mins); c4Hud(); cv.focus(); return; }
   c4Hud(); c4Morning(); cv.focus();
 }
-function c4Hide() { $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
+function c4Hide() { C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
 // one sheet at a time: morning plan, stall, event, notebook, tally
-function c4Sheets(id) { for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; }
+function c4Sheets(id) { for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text, t: 0, life }; };
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
 const c4Flow = () => ({ dep: 1, gat: .85, mua: .55, ret: .8 }[c4Wx()]) * (SAVE4.plan.hoi ? 1.8 : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0));
@@ -255,6 +261,7 @@ function c4Morning() {
   go.addEventListener('click', () => {
     for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g)); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
     c4Sheets(null); C4.phase = 'open'; c4PlanEvents(); c4Hud();
+    SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
   });
   c4AmTotal(orders);
   c4Sheets('c4am');
@@ -495,6 +502,7 @@ function updateC4(dt) {
   for (const e of [...C4.walkers, C4.wife, ...C4.vendors, C4.porter, ...C4_SHOPS.map(g => SAVE4.shops[g]).filter(Boolean)]) if (e.say && (e.say.t += dt) > e.say.life) e.say = null;
   if (C4.phase === 'open') {
     const was = C4.mins; C4.mins += dt * C4_MPS;
+    if (Math.floor(was / 30) !== Math.floor(C4.mins / 30)) { SAVE4.openMins = C4.mins; persist4(); }   // every half hour of the market
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
     for (const v of C4.vendors) if ((v.callT -= dt) <= 0) { v.callT = 9 + R() * 9; if (Math.abs(v.x - C4.camX - c4View().vw / 2) < 600) c4Say(v, c4Pick(v.calls)); }
@@ -635,7 +643,7 @@ function c4Listen(c) {
 }
 function c4Leave(w, bought) { const q = w.shop && C4.Q[w.shop], i = q ? q.indexOf(w) : -1; if (i >= 0) q.splice(i, 1); w.st = 'leave'; w.face = bought ? (R() < .5 ? 1 : -1) : 1; w.sp = (w.kind === 'mouse' ? 70 : w.sp) + R() * 20; }
 function c4EndDay() {
-  C4.phase = 'night';
+  C4.phase = 'night'; SAVE4.openDay = 0;
   for (const w of C4.walkers) if (w.st !== 'leave') { w.st = 'leave'; w.face = w.x < C4_STALL ? -1 : 1; w.chat = null; w.talk = false; }
   for (const g of Object.keys(C4.Q)) { C4.Q[g] = []; C4.SV[g] = null; }
   C4.guestQ = [];
@@ -680,7 +688,7 @@ function c4Talk2() { c4StoryStart(C4_TALK2, () => { SAVE4.talk2 = true; persist4
 function c4NewDay() {
   trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4();
   if (c4Talk2Due()) { c4Sheets(null); c4Talk2(); return; }
-  C4.mins = C4_OPEN; C4.phase = 'morning'; C4.said = {}; C4.expect = []; C4.today = { sold: 0, take: 0, cogs: 0, served: 0, lost: 0, wilt: 0, wiltLoss: 0, spent: 0, got: 0, wages: 0 }; C4.spawnT = .3; C4.wed = null; C4.parade = null; C4.cat = null;
+  C4.day = SAVE4.day; C4.mins = C4_OPEN; C4.phase = 'morning'; C4.said = {}; C4.expect = []; C4.today = { sold: 0, take: 0, cogs: 0, served: 0, lost: 0, wilt: 0, wiltLoss: 0, spent: 0, got: 0, wages: 0 }; C4.spawnT = .3; C4.wed = null; C4.parade = null; C4.cat = null;
   for (const g of C4_SHOPS) if (c4Own(g)) SAVE4.shops[g].sick = false;
   for (let i = 0; i < 6; i++) c4Spawn(C4.camX - 200 + R() * (c4View().vw + 400));
   c4Hud(); c4Morning();
