@@ -7,12 +7,14 @@ function persist() { try { localStorage.setItem('dcc.v1', JSON.stringify(SAVE));
 function loadLevel(i) {
   S.lv = i; L = LEVELS[i]; PAPER = getPaper(L.paper); setZoom(L.zoom || 1, L.zoomWide || 1);
   document.documentElement.style.setProperty('--paper', PAPERS[L.paper].css);
+  followers[0].item = 'parasol';
+  followers[1].gap = L.kenFront ? 290 : 196; followers[2].gap = L.kenFront ? 196 : 290;   // tranh 5: the trumpeter walks ahead of the drummer                                         // tranh 5 lends the parasol to Tấm; every tranh starts with it
   S.ents = L.build(); S.gaps = S.ents.filter(e => e.gap).map(e => e.gap);
   S.tufts = [];
   const tr = mulberry(100 + i);
   for (let x = 40; x < L.width; x += 70 + tr() * 100) if (!S.gaps.some(([a, b]) => x > a - 30 && x < b + 30)) S.tufts.push({ x, k: (tr() * 3) | 0, s: .7 + tr() * .45, front: tr() < .45 });
   S.inv = []; S.parasol = false; S.hold = false; S.plate = null; S.pads = {}; S.caught = 0; S.catcher = null; S.fx = []; S.told = {}; S.cp = L.cps[0];
-  S.lastHint = -99; S.wallT = 0; S.lockMove = false; S.catches = 0; S.gotSecret = false; S.reset = false;
+  S.lastHint = -99; S.wallT = 0; S.lockMove = false; S.waitMove = false; S.catches = 0; S.gotSecret = false; S.reset = false;
   placeParty(S.cp);
   camX = 0; AU.setKey(L.key); AU.muteDrums(false); S.drag = null; S.manualDrum = false;
   $('#lvName').textContent = `Tranh ${i + 1} · ${L.name}`;
@@ -83,7 +85,7 @@ function buildAlbum() {
 }
 function startPlay() {
   trackEnter(`chuong-1/tranh-${S.lv + 1}`);
-  AU.init(); AU.setSong(0); AU.setQuiet(false); hideChapterHuds(); S.chapter = 1; $('#chapters').hidden = true;
+  AU.init(); AU.setSong(L.song ?? 0); AU.musicLevel(.75); AU.setQuiet(false); hideChapterHuds(); S.chapter = 1;   // a tranh may have its own song (tranh 5) $('#chapters').hidden = true;
   $('#album').hidden = true; $('#end').hidden = true; $('#title').hidden = true;
   S.mode = 'play'; $('#hud').hidden = false; $('#pad').hidden = !isTouch;
   hudKey = ''; updateHud(); $('#abil').hidden = !L.abil.length && $('#bOffer').hidden; cv.focus(); showCard();
@@ -127,6 +129,7 @@ function useAbility(k) {
   if (k.startsWith('plate:')) return setPlate(k.slice(6));
   if (!L.abil.includes(k)) return;
   if (k === 'parasol') {
+    if (followers[0].item !== 'parasol') return;                           // lent to Tấm (tranh 5)
     if (S.parasol) { S.parasol = false; S.paraCD = PARA_CD; AU.pluck(74); updateHud(); return; }
     if ((S.paraCD || 0) > 0) { toast('Lọng vừa rũ xuống, chưa giương lại kịp!', 1.6); AU.pluck(60); return; }
     S.parasol = true; S.paraT = PARA_TIME; AU.pluck(79);
@@ -224,7 +227,7 @@ function update(dt) {
     const walls = [];
     for (const e of S.ents) { const w = e.wall && e.wall(); if (w != null) walls.push([w, e]); }
     let dir = 0;
-    if (!frozen && !S.lockMove) {                                         // lockMove: the party is busy (tranh 4: pushing the cart)
+    if (!frozen && !S.lockMove && !S.waitMove) {                         // waitMove: hold still while a scene plays out (tranh 5)                                         // lockMove: the party is busy (tranh 4: pushing the cart)
       if (keys.has('ArrowLeft') || keys.has('KeyA') || touchDir.L) dir -= 1;
       if (keys.has('ArrowRight') || keys.has('KeyD') || touchDir.R) dir += 1;
     }
@@ -259,7 +262,7 @@ function update(dt) {
       if (S.caught > 1.1) { const w = S.catcher; S.caught = 0; S.catcher = null; S.reset = false; if (w && w.st !== undefined && w.mode !== 'dog') { w.st = 'sleep'; w.t = 2.8; } if (w && w.mode === 'dog') w.alert = 0; }
     }
     const watching = S.ents.filter(w => w.watcher && w.st === 'watch' && !w.fed);
-    const gapK = S.parasol || S.lockMove ? .42 : 1;                    // close up under the parasol, or all pushing together
+    const gapK = (S.parasol || S.lockMove ? .42 : 1) * (L.gapK || 1);  // close up under the parasol, or all pushing together; some tranh walk closer
     followers.forEach(f => {
       const d = groom.x - f.gap * gapK - f.x;
       const exposed = watching.some(w => f.x > w.z0 && f.x < w.z1 && !safeFrom(w, f.x));
@@ -276,6 +279,7 @@ function update(dt) {
     updateHud();
     if (S.parasol) $('#bPara').lastChild.textContent = 'Lọng ' + Math.max(0, S.paraT).toFixed(1) + 's';
     $('#abil').hidden = !L.abil.length && $('#bOffer').hidden;
+    { const ph = !isTouch || !!S.waitMove; if ($('#pad').hidden !== ph) $('#pad').hidden = ph; }   // no walk buttons while the party must wait (tranh 5)
   } else if (S.mode === 'end') {
     S.endT += dt;
     if (S.endT > 1.6 && $('#end').hidden) { $('#end').hidden = false; ($('#bNext').hidden ? $('#bAlbum') : $('#bNext')).focus(); }
@@ -432,7 +436,7 @@ function ch1PointerHit(e) {
   for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return true; } }
   { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return true; } }
   for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;
-  { const f = followers[0]; if (L.abil.includes('parasol') && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return true; } }
+  { const f = followers[0]; if (L.abil.includes('parasol') && f.item === 'parasol' && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return true; } }
   for (const [i, k] of [[1, 'drum'], [2, 'ken']]) { const f = followers[i]; if (L.abil.includes(k) && Math.abs(wx - f.x) < 40 && wy > GROUND - 150 && wy < GROUND + 8) { useAbility(k); return true; } }
   return false;
 }

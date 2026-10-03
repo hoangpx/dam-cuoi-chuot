@@ -22,7 +22,7 @@ function buildAlbum7() {
 }
 function startC7(i) {
   trackEnter(`chuong-7/vu-${i + 1}`);
-  AU.init(); AU.setSong(8); AU.setQuiet(false); hideChapterHuds();
+  AU.init(); AU.setSong(9); AU.setQuiet(false); hideChapterHuds();
   S.chapter = 7; S.mode = 'c7play'; C7.i = i;
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;

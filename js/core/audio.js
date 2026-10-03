@@ -1,7 +1,7 @@
 /* Web Audio: one song per chapter (SONGS), drums/kèn synth and small sound effects. */
 /* ---------- audio ---------- */
 const AU = (() => {
-  let c = null, master, music, sfx, echo, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
+  let c = null, master, music, sfx, echo, base = .75, ducked = false, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
   // Chương I: rước dâu rộn ràng (trống cái, chũm chọe, kèn); Chương II: khúc đố chậm rãi (trống con, mõ, kèn trầm, nhịp lẻ)
   const seq = list => list.flatMap(([m, n]) => [m, ...new Array(n - 1).fill(null)]);   // [[note, steps]…] → one entry a step
@@ -29,6 +29,11 @@ const AU = (() => {
     // Chương VI · Tìm Chuột: an easy, thinking tune in the five-note scale, slow wooden knocks
     { bpm: 92, hold: 3, mel: [62,null,64,null,67,null,null,69,67,null,64,null,62,null,null,null,64,null,67,null,69,null,74,null,71,null,69,null,67,null,null,null,69,null,71,null,74,null,null,71,69,null,67,null,64,null,null,null,62,null,64,67,64,null,62,null,59,null,62,null,null,null,null,null],
       drum: [.6, 0, 0, 0, .3, 0, .2, 0, .5, 0, 0, 0, .3, 0, 0, .2], perc: s => (s % 8 === 4 ? 'mo' : s === 14 ? 'mo2' : null), vol: .085, oct: 0 },
+    // Chương I tranh 5 · Tấm Cám: the owner's score, bars 20–27 (G | B | C | D7 | G | B | C Am7 | Cm), on the trumpet over
+    // the drum, round and round the whole tranh. One step is a sixteenth (bpm 168 = a crotchet of 84), triplets rounded
+    { bpm: 168, hold: 16, vol: .1, oct: 0,
+      mel: [79,null,79,79,null,null,74,null,74,null,null,null,71,71,79,null,78,null,78,78,null,null,75,null,74,null,null,null,71,71,78,null,76,null,76,76,null,null,71,null,71,null,null,null,69,71,74,null,74,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,79,null,79,79,null,74,null,74,null,71,71,null,71,71,79,null,78,null,78,78,null,null,75,null,74,null,null,null,71,71,78,null,76,null,null,null,76,78,78,79,81,null,null,null,null,null,79,null,76,null,null,null,null,null,null,null,75,null,null,null,null,null,null,null],
+      drum: [.8, 0, 0, 0, .35, 0, 0, 0, .65, 0, 0, 0, .35, 0, .25, 0], perc: s => (s === 4 || s === 12 ? 'mo' : null) },
     // Chương VII · Ai Ăn Vụng?: a quiet mystery to think over for a long while — đàn bầu bending into each long note,
     // a low đàn tranh walking under it, a soft hum, an echo; D with the odd E♭ for the hush; no drums (128 steps, about a minute)
     { bpm: 66, hold: 8, inst: 'bau', echo: true, drone: 50, vol: .075, oct: 0, drum: new Array(16).fill(0), perc: () => null,
@@ -39,7 +44,7 @@ const AU = (() => {
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;
   function init() {
-    if (c) { if (c.state === 'suspended') c.resume(); return; }
+    if (c) { if (c.state !== 'running') c.resume(); blip(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     c = new AC(); master = c.createGain(); master.gain.value = .8;
     const comp = c.createDynamicsCompressor(); master.connect(comp); comp.connect(c.destination);
@@ -47,8 +52,10 @@ const AU = (() => {
     sfx = c.createGain(); sfx.gain.value = 1; sfx.connect(master);
     echo = c.createDelay(1); echo.delayTime.value = .42; const fb = c.createGain(), lp = c.createBiquadFilter(), wet = c.createGain();   // a soft echo for the songs that ask for it
     fb.gain.value = .38; lp.type = 'lowpass'; lp.frequency.value = 1600; wet.gain.value = .55; echo.connect(lp); lp.connect(fb); fb.connect(echo); lp.connect(wet); wet.connect(music);
-    next = c.currentTime + .1;
+    next = c.currentTime + .1; blip();
   }
+  // iOS keeps a context silent until a sound starts inside a tap, even when it says it is running: start an empty one on every tap
+  function blip() { try { const s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, 22050); s.connect(c.destination); s.start(0); } catch (e) {} }
   function noise(dur) { const b = c.createBuffer(1, Math.max(1, c.sampleRate * dur), c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; const s = c.createBufferSource(); s.buffer = b; return s; }
   function env(node, t, a, peak, d) { const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(.001, t + d); node.connect(g); return g; }
   function drum(t, v = 1, dest = music) {
@@ -132,10 +139,24 @@ const AU = (() => {
     muteDrums(v) { muteDr = !!v; },
     songPos() { if (!c || c.state !== 'running') return null; return { step: step - (next - c.currentTime) / SP() }; },
     drumPattern() { return cur().drum; },
-    setSong(i) { if (i === song) return; song = i; step = 0; if (c) next = c.currentTime + .15; },
-    setQuiet(q) { if (q === quiet || !c) return; quiet = q; music.gain.setTargetAtTime(q ? 0 : .75, c.currentTime, .05); },
+    setSong(i) { if (i === song) return; song = i; step = 0; base = .75; if (c) next = c.currentTime + .15; },
+    setQuiet(q) { if (q === quiet || !c) return; quiet = q; music.gain.setTargetAtTime(q ? 0 : base, c.currentTime, .05); },
+    // how loud the song plays when it plays (tranh 5 keeps it low, lower still by a scene); melody() ducks under it
+    musicLevel(v) { if (Math.abs(v - base) < .005 || !c) { base = v; return; } base = v; if (!quiet && !ducked) music.gain.setTargetAtTime(base, c.currentTime, .4); },
     drumOne: on(() => drum(c.currentTime, 1.4, sfx)),
     kenNote: on(m => ken(c.currentTime, m, .3, sfx, .22)),
+    // a melody on the bamboo flute over soft held chords (tranh 5's rainbow); the song underneath goes quiet meanwhile
+    melody: on((notes, chords, bpm = 60, inst = 'sao') => {
+      const b = 60 / bpm, t0 = c.currentTime + .15; let t = t0;
+      for (const [m, n] of notes) { if (m) (inst === 'ken' ? ken : sao)(t, m, n * b * .96 + .06, sfx, inst === 'ken' ? .13 : .14); t += n * b; }
+      let tc = t0;
+      for (const [ns, n] of chords) {
+        for (const m of ns) { const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = mtof(m); g.gain.setValueAtTime(0, tc); g.gain.linearRampToValueAtTime(.035, tc + .5); g.gain.setValueAtTime(.03, tc + n * b - .3); g.gain.linearRampToValueAtTime(0, tc + n * b + .2); o.connect(g); g.connect(sfx); o.start(tc); o.stop(tc + n * b + .25); }
+        tc += n * b;
+      }
+      const len = t - c.currentTime; ducked = true; music.gain.setTargetAtTime(0, c.currentTime, .3); setTimeout(() => { ducked = false; if (!quiet) music.gain.setTargetAtTime(base, c.currentTime, .6); }, len * 1000 + 400);
+      return len;
+    }),
     tune: on(seq => { const t = c.currentTime + .1; seq.forEach(([k, , m], i) => { if (k === 'K') ken(t + i * .34, m, .3, sfx, .16); else drum(t + i * .34, 1.1, sfx); }); }),
     snort: on(() => { const t = c.currentTime, o = c.createOscillator(), f = c.createBiquadFilter(); o.type = 'sawtooth'; o.frequency.setValueAtTime(90, t); o.frequency.linearRampToValueAtTime(70, t + .5); f.type = 'lowpass'; f.frequency.value = 400; o.connect(f); env(f, t, .05, .35, .6).connect(sfx); o.start(t); o.stop(t + .62); }),
     drumHit: on(() => { const t = c.currentTime; drum(t, 1.5, sfx); drum(t + .22, 1.3, sfx); drum(t + .36, 1.6, sfx); }),
