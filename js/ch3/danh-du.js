@@ -12,6 +12,7 @@ let DD_RND = [.7, .6], DD_NARROW = .45;                                       //
 const DD_SPMAX = 5.2, DD_SP0 = 2.3, DD_CALM = 3.5;                       // start speed; seconds to win back the speed after a miss                                                          // owner: the needle must not get too fast later on
 let DD_GAIN = .1, DD_BLEED = .026, DD_LIFE = [4.6, 1.6], DD_WIDE = [.42, 0];   // bots: sharp ~30 s, good mostly win ~1 min, average about half
 let DD_QUICK = .7, DD_SLOW = 3, DD_KMAX = 1.2, DD_KMIN = .4;
+let DD_TOPBLEED2 = .02;                                                         // above 95% it bleeds slower still (owner)
 let DD_TOPBLEED = .15, DD_TOPMISS = .03;    // owner: .06 too harsh, .015 too easy                                                         // near the top it bleeds slower, so the 2% / 1% pumps can still climb
 
 /* ---------- art ---------- */
@@ -84,7 +85,7 @@ function ddUpdate(dt) {
   DD.t += dt;
   if (keys.has('Space') || keys.has('Enter')) { if (!DD.kd) { DD.kd = true; ddTap(); } } else DD.kd = false;   // a key taps too, on computers
   // the swing: a pendulum whose reach A is pumped up by good taps and bleeds away, faster the higher it is
-  if (!DD.done) DD.A = Math.max(0, DD.A - (.003 + DD_BLEED * DD.A * DD.A) * (ddH() >= .9 ? DD_TOPBLEED : 1) * dt);
+  if (!DD.done) DD.A = Math.max(0, DD.A - (.003 + DD_BLEED * DD.A * DD.A) * (ddH() >= .95 ? DD_TOPBLEED2 : ddH() >= .9 ? DD_TOPBLEED : 1) * dt);
   DD.ph += dt * 6.283 / DD_T;
   DD.pump = DD.pump.map(v => Math.max(0, v - dt));
   DD.flash = Math.max(0, DD.flash - dt);
@@ -119,7 +120,7 @@ function ddTap() {
     DD.flash = .25; DD.flashOk = true; AU.knock(1); AU.pluck(79 + Math.round(ddH() * 12));
     ddBands();
   } else {
-    DD.A = Math.max(0, DD.A - (ddH() >= .9 ? DD_TOP * DD_TOPMISS : .09)); DD.miss++; DD.calm = 1;   // near the top a miss costs less (owner: the last 10% was too harsh)
+    DD.A = Math.max(0, DD.A - (ddH() >= .95 ? DD_TOP * .015 : ddH() >= .9 ? DD_TOP * DD_TOPMISS : .09)); DD.miss++; DD.calm = 1;   // near the top a miss costs less (owner: the last 10% was too harsh)
     DD.bands = []; ddBands();                                                // the bands go; one fresh wide one, as at the start
     DD.stall = .55; DD.shake = .4;                                         // owner: the needle stops dead like a crash, the dial shakes, then it goes on
     DD.flash = .25; DD.flashOk = false; AU.knock(1); AU.thump();
