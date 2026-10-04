@@ -47,9 +47,6 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #aGroup svg{flex:none}
 #aGroup span{text-decoration:underline;text-underline-offset:3px}
 #bDonate span{text-decoration:underline;text-underline-offset:3px}
-#donate{background:rgba(29,25,21,.55);z-index:8}
-#donate .qr{width:min(240px,64vw);margin:12px auto 0;border:2.5px solid var(--ink);border-radius:12px;display:block;box-shadow:3px 3px 0 rgba(29,25,21,.25)}
-#donate .acc{font-size:15px;line-height:1.5}
 #install{background:rgba(29,25,21,.55);z-index:8}
 #cloud{background:rgba(29,25,21,.55);z-index:8}
 #bCloud{display:inline-flex;align-items:center;justify-content:center;gap:8px}

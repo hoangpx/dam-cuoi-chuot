@@ -1,5 +1,5 @@
 /* Languages (owner): Vietnamese, English, German, French, Spanish, Chinese (simplified), Japanese. LANG comes from the
-   player's choice (localStorage 'dcc.lang') or the device language. Code says lg('tiếng Việt', 'English') wherever text is
+   player's choice (localStorage 'dcc.lang') else Vietnamese (owner). Code says lg('tiếng Việt', 'English') wherever text is
    shown; the other languages look the English up in LANG_TR (i18n-tr.js), falling back to English. lgf() is lg() with
    {name} slots, so each language puts the number where its grammar wants it. The page's own HTML is translated below
    (I18N_DOM). Changing language saves it and reloads, so every text is made again in the new language.
@@ -8,8 +8,7 @@ const LANGS = ['vi', 'en', 'de', 'fr', 'es', 'zh', 'ja'];
 const LANG_NAME = { vi: 'Tiếng Việt', en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', zh: '中文', ja: '日本語' };
 const LANG = (() => {
   try { const s = localStorage.getItem('dcc.lang'); if (LANGS.includes(s)) return s; } catch (e) {}
-  const d = (navigator.language || 'vi').toLowerCase().slice(0, 2);
-  return LANGS.includes(d) ? d : 'en';
+  return 'vi';                                                                 // owner: Vietnamese unless the player picks another
 })();
 const IS_EN = LANG !== 'vi';                                                   // "not Vietnamese": English or a language made from it
 const LANG_LOCALE = { vi: 'vi-VN', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN', ja: 'ja-JP' }[LANG];
