@@ -268,8 +268,8 @@ function c4FloodMorning(back) {
 /* ---------- landlords (owner): a plot is let by someone in the village; a stranger won't even talk, a friend lets it cheap ---------- */
 function c4Landlord(g) {
   const P = c4People(), p = P.list[P.landlord[g]], known = c4Known(p.id), a = c4Like(p.id);
-  const k = a >= 80 ? .6 : a >= 60 ? .8 : a >= 35 ? 1 : 1.4;
-  const word = a >= 80 ? ' (thân thiết, cho giá hời)' : a >= 60 ? ' (quý nhà mình, bớt cho một ít)' : a >= 35 ? '' : ' (chưa ưa nhà mình, nói thách)';
+  const k = !known ? 1 : a >= 80 ? .6 : a >= 60 ? .8 : a >= 35 ? 1 : 1.4;   // a stranger pays the plain price
+  const word = !known ? '' : a >= 80 ? ' (thân thiết, cho giá hời)' : a >= 60 ? ' (quý nhà mình, bớt cho một ít)' : a >= 35 ? '' : ' (chưa ưa nhà mình, nói thách)';
   return { p, known, k, word, price: Math.round((g === 'trau' ? 300 : C4_GOODS[g].rent) * k) };
 }
 /* ---------- cụ Lý's tax (owner): by what the stalls earned ---------- */
@@ -282,7 +282,7 @@ function c4OpenUps() {
     const G = C4_GOODS[g], own = c4Own(g), lvI = g === 'trau' ? SAVE4.lv : c4SLvI(g), lvN = g === 'trau' ? C4_LV.length : C4_SHOP_LV.length;
     const name = g === 'trau' ? c4Lv().name : own ? c4SLv(g).name : 'Đất trống', L = !own && c4Landlord(g);
     return `<button class="upc ${own ? '' : 'empty'}" data-up="${g}"><b>${G.name}</b><span class="lv">${name}</span>`
-      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>${L.known ? 'thuê ' + c4Money(L.price) : 'chưa rõ chủ'}</span>`) + '</button>';
+      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>thuê ${c4Money(L.price)}</span>`) + '</button>';
   };
   $('#c4evB').innerHTML = `<div class="ups">${all.map(card).join('')}</div>`;
   $('#c4evB').querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => { AU.tap(); c4OpenUp(b.dataset.up); }));

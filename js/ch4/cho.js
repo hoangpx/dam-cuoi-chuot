@@ -746,11 +746,10 @@ function c4OpenUp(g = 'trau') {
   $('#c4upGo').hidden = true; $('#c4upB').innerHTML = '';
   if (g !== 'trau' && !c4Own(g)) {                                         // an empty plot
     $('#c4upT').textContent = 'Đất trống';
-    const L = c4Landlord(g), ok = L.known;
-    box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. ${ok ? `Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom}).` : 'Chưa biết chủ đất là ai.'}</p>`
-      + (ok ? `<p>Giá thuê: <b>${c4Money(L.price)}</b>${L.word}. Vợ chồng tự trông được; đông khách thì thuê thêm người phụ, công ${G.wage} đồng mỗi người mỗi ngày.</p><p class="hint">${c4Ware(g)}</p>`
-            : '<p class="bad">Không biết chủ là ai mà hỏi thuê. Quen thêm người trong làng thì sẽ biết; càng thân với chủ đất, giá càng rẻ.</p>');
-    if (ok) { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => c4Rent(g); }
+    const L = c4Landlord(g), ok = L.known;                                    // a plot needs no acquaintance (owner); a house does
+    box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. ${ok ? `Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom}).` : 'Chủ đất là người trong làng, nhà mình chưa quen.'}</p>`
+      + `<p>Giá thuê chỗ: <b>${c4Money(L.price)}</b>${ok ? L.word : ' (giá thường; quen thân với chủ đất thì được bớt)'}. Vợ tự trông được; đông khách thì thuê thêm người phụ.</p><p class="hint">${c4Ware(g)}</p><p class="hint">Muốn thuê hay mua cả căn nhà mặt chợ về sau thì phải quen chủ đất.</p>`;
+    { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => c4Rent(g); }
     c4Sheets('c4up'); return;
   }
   $('#c4upT').textContent = g === 'trau' ? c4Lv().name : G.name;
@@ -776,7 +775,7 @@ function c4OpenUp(g = 'trau') {
 // what each ware is like, for the plot sheet
 const c4Ware = g => ({ che: 'Bán chạy buổi sáng, trời rét hay mưa; nắng gắt thì ế. Mỗi ngày tốn củi đun. Tan chợ chè thừa phải đổ.', xoi: 'Chỉ bán buổi sáng. Đến 12:00 (giờ Ngọ) xôi thiu, thừa bao nhiêu đổ bấy nhiêu.', xen: 'Kim chỉ, lược, gương… để lâu không hỏng, nhưng lãi mỏng, bán chậm.', bun: 'Bán chạy quanh trưa. Vốn đắt, công người phụ cao; tan chợ bún thừa phải đổ.' }[g]);
 function c4Rent(g) {
-  const G = C4_GOODS[g], L = c4Landlord(g); if (!L.known || SAVE4.money < L.price) return;
+  const G = C4_GOODS[g], L = c4Landlord(g); if (SAVE4.money < L.price) return;
   SAVE4.money -= L.price; C4.today.spent += L.price;
   SAVE4.shops[g] = { own: true, stock: 0, rentK: L.k };
   C4.Q[g] = []; C4.SV[g] = [];
@@ -848,7 +847,7 @@ function renderC4() {
         if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } } });
     } else {
       items.push({ z: C4_STALL_Z, f: () => { dp(g, A.lot, sx, sy, 0, ss, ss); g.save(); g.translate(sx, sy); g.scale(ss, ss); g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK;
-        const L = c4Landlord(sh); g.fillText('Cho thuê', 0, -102); g.font = '700 13px "Playfair Display", serif'; if (L.known) g.fillText(c4Money(L.price), 0, -83); else g.fillText('chưa rõ chủ', 0, -83); g.restore(); } });
+        const L = c4Landlord(sh); g.fillText('Cho thuê', 0, -102); g.font = '700 13px "Playfair Display", serif'; g.fillText(c4Money(L.price), 0, -83); g.restore(); } });
     }
   }
   const lv = SAVE4.lv;
