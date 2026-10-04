@@ -274,7 +274,10 @@ function c4Landlord(g) {
 }
 /* ---------- cụ Lý's tax (owner): by what the stalls earned ---------- */
 const c4Earned = () => (SAVE4.earn || []).reduce((a, x) => a + Math.max(0, x), 0);
-const c4Tax = () => Math.max(10, Math.round(c4Earned() * .1) + 5 * c4Owned().length);
+// progressive (owner): 5% of the first 300 đồng earned in the last five days, 10% up to 1 200, 15% above; plus 5 a stall
+const C4_TAX_BANDS = [[300, .05], [1200, .1], [Infinity, .15]];
+const c4TaxOn = e => { let t = 0, lo = 0; for (const [hi, r] of C4_TAX_BANDS) { if (e > lo) t += (Math.min(e, hi) - lo) * r; lo = hi; } return t; };
+const c4Tax = () => Math.max(10, Math.round(c4TaxOn(c4Earned())) + 5 * c4Owned().length);
 /* ---------- every stall at a glance (owner's reference): a card each, tap to open it ---------- */
 function c4OpenUps() {
   $('#c4evT').textContent = 'Các hàng của nhà mình';

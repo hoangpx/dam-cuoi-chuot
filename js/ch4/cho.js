@@ -371,7 +371,7 @@ function c4Event(kind) {
       ['Không dâng', () => { C4.cat.st = 'sit'; C4.cat.t = 0; toast('Mèo ngồi chễm chệ trước gánh suốt một canh giờ (khoảng 2 tiếng). Khách sợ, chẳng ai dám ghé!', 3.4); }]] });
   } else if (kind === 'thue') {
     const d = c4Tax(), earn = c4Earned();
-    Object.assign(E, { title: 'Cụ Lý thu thuế chợ', text: `Cụ Lý chống gậy đến, giở sổ: "Năm phiên qua nhà ${own.length > 1 ? 'có ' + own.length + ' hàng' : 'gánh trầu'} lãi ${c4Money(earn)}. Thuế một phần mười, cộng tiền chỗ: ${d} đồng!"`, opts: [
+    Object.assign(E, { title: 'Cụ Lý thu thuế chợ', text: `Cụ Lý chống gậy đến, giở sổ: "Năm phiên qua nhà ${own.length > 1 ? 'có ' + own.length + ' hàng' : 'gánh trầu'} lãi ${c4Money(earn)}. Thuế lũy tiến: ba trăm đồng đầu năm phần trăm, đến hai quan mười phần trăm, trên nữa mười lăm phần trăm, cộng tiền chỗ: ${d} đồng!"`, opts: [
       [`Nộp ${d} đồng`, () => { sp(d); toast('Cụ Lý gật gù, ghi vào sổ.'); }, SAVE4.money >= d],
       [`Biếu thêm · ${d + 10} đồng`, () => { sp(d + 10); SAVE4.favor = 2; toast('Cụ Lý cười tít mắt, dặn tuần đinh để gánh nhà mình chỗ đẹp. Khách ghé đông hơn hai ngày tới.', 4); }, SAVE4.money >= d + 10],
       ['Xin khất', () => { if (R() < .55) { SAVE4.dues = d; toast('Cụ Lý cho khất đến sáng mai.', 3); } else { sp(Math.min(Math.max(0, SAVE4.money), d * 2)); toast(`Cụ Lý nổi giận, phạt gấp đôi!`, 3); } }]] });
