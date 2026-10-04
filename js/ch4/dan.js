@@ -237,13 +237,15 @@ function c4Gossip() {
 /* ---------- portraits: the woodblock mouse (or critter) in a round frame, drawn once per look ---------- */
 const C4_FACE = new Map();
 function c4Face(p) {
-  const key = p.kind + p.sort; if (C4_FACE.has(key)) return C4_FACE.get(key);
+  const key = (SAVE4.seed || 0) + ':' + p.id; if (C4_FACE.has(key)) return C4_FACE.get(key);   // one portrait per person (a player: many looked the same)
   const c = mk(96, 96), g = c.getContext('2d');
-  g.fillStyle = '#f6f0e2'; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.fill();
+  const X = c4FaceLook(p);
+  g.fillStyle = X.bg; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.fill();
   g.save(); g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.clip();
   const w = { kind: p.kind, sort: p.sort, M: p.kind === 'mouse' ? c4MouseRig(p.sort) : null, seed: 0, ph: 0, st: 'idle', face: 1 }, t = C4.t; C4.t = 0;
   if (p.kind === 'mouse') c4Critter(g, w, 44, 150, 1.05);                  // head and shoulders
   else { const s = { duck: 1.2, rooster: .55, dog: .62 }[p.kind]; c4Critter(g, w, 48, 82, s); }
+  if (p.kind === 'mouse') c4FaceExtras(g, X);
   C4.t = t; g.restore();
   g.strokeStyle = '#b39a6a'; g.lineWidth = 5; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.stroke();
   const url = c.toDataURL(); C4_FACE.set(key, url); return url;
@@ -305,4 +307,33 @@ function c4Act(id, act) {
   else if (C4_ACT_DONE[act]) { C4_ACT_DONE[act](p, f); c4Hud(); }
   else { f.deal = act; toast(act === 'free' ? `Lần tới ${p.name} ghé sẽ được mời miễn phí.` : `Lần tới ${p.name} ghé sẽ được giảm nửa giá.`, 2.6); }
   AU.tap(); persist4(); if ($('#qhCv')) qhFocus(id); else c4OpenNotes('quen');
+}
+
+// what makes each portrait its own (a player: many people looked alike): a pale backdrop, and one or two things on the
+// head — a woman's turban or a man's khăn xếp, a flower at the ear, the quai thao hat, glasses or a white beard for the old
+const C4_FACE_BG = ['#f6f0e2', '#f0e0d0', '#e3ecd8', '#dfe6ee', '#efe2ec', '#f3ead0', '#e6e0f0', '#e8efe9'];
+function c4FaceLook(p) {
+  let h = (SAVE4.seed || 1) ^ (p.id * 2654435761); const r = () => { h = (h * 1103515245 + 12345) >>> 0; return (h >>> 8) / 16777216; };
+  const S = p.kind === 'mouse' ? C4_MOUSE_SORTS[p.sort] : null, capped = !!(S && (S.non || S.o.hat)), old = p.role === 'old', f = p.g === 'f';
+  const X = { bg: C4_FACE_BG[(r() * C4_FACE_BG.length) | 0] };
+  if (p.look && p.look.hat === 'quai') X.quai = true;
+  else if (!capped) { const k = r(); if (f ? k < .55 : k < .45) X.wrap = f ? 'van' : 'xep'; X.wrapCol = ['#2a2320', '#3a2a5a', '#5b2f1f', '#2f4f3c'][(r() * 4) | 0]; }
+  if (f && r() < .45) X.flower = ['#c0567a', '#a3332a', '#f2c640', '#f2ecde'][(r() * 4) | 0];
+  if (old && r() < .5) X.glasses = true;
+  if (old && !f && r() < .6) X.beard = true;
+  return X;
+}
+function c4FaceExtras(g, X) {
+  g.save(); g.strokeStyle = INK; g.lineWidth = 2;
+  if (X.wrap === 'van') { g.fillStyle = X.wrapCol; g.beginPath(); g.ellipse(46, 19, 21, 8, -.18, 0, 6.283); g.fill(); g.stroke();   // khăn vấn: a rolled band round the head
+    g.strokeStyle = 'rgba(242,236,222,.5)'; g.lineWidth = 1.2; for (const x of [36, 46, 56]) { g.beginPath(); g.moveTo(x - 3, 13); g.lineTo(x + 3, 25); g.stroke(); } }
+  if (X.wrap === 'xep') { g.fillStyle = X.wrapCol; g.beginPath(); g.moveTo(28, 26); g.quadraticCurveTo(30, 6, 50, 6); g.quadraticCurveTo(68, 8, 66, 22); g.lineTo(60, 24); g.quadraticCurveTo(46, 18, 30, 30); g.closePath(); g.fill(); g.stroke();   // khăn xếp
+    g.strokeStyle = 'rgba(242,236,222,.45)'; g.lineWidth = 1.2; for (const y of [12, 17]) { g.beginPath(); g.moveTo(34, y + 6); g.quadraticCurveTo(48, y - 2, 62, y + 3); g.stroke(); } }
+  if (X.quai) { g.fillStyle = '#c99a3c'; g.beginPath(); g.ellipse(48, 13, 42, 10, -.08, 0, 6.283); g.fill(); g.stroke();   // nón quai thao: a wide flat hat with a fringe
+    g.fillStyle = '#2a2320'; g.beginPath(); g.ellipse(48, 11, 14, 4, -.08, 0, 6.283); g.fill();
+    g.strokeStyle = '#2a2320'; g.lineWidth = 1; for (let x = 12; x <= 84; x += 6) { g.beginPath(); g.moveTo(x, 20); g.lineTo(x, 26); g.stroke(); } }
+  if (X.flower) { g.fillStyle = X.flower; g.strokeStyle = INK; g.lineWidth = 1.2; for (let i = 0; i < 5; i++) { const a = i * 1.2566; g.beginPath(); g.arc(26 + Math.cos(a) * 4.5, 30 + Math.sin(a) * 4.5, 3.6, 0, 6.283); g.fill(); g.stroke(); } g.fillStyle = '#f2c640'; g.beginPath(); g.arc(26, 30, 2.4, 0, 6.283); g.fill(); }
+  if (X.glasses) { g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.arc(62, 31, 7.5, 0, 6.283); g.stroke(); g.beginPath(); g.moveTo(55, 30); g.lineTo(44, 27); g.stroke(); }
+  if (X.beard) { g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.moveTo(64, 50); g.quadraticCurveTo(70, 70, 62, 78); g.quadraticCurveTo(58, 66, 56, 52); g.closePath(); g.fill(); g.stroke(); }
+  g.restore();
 }

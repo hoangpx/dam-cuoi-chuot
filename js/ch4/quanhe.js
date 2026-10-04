@@ -194,7 +194,7 @@ function qhWire() {
   };
   cv2.addEventListener('pointerup', up); cv2.addEventListener('pointercancel', up);
   cv2.addEventListener('wheel', e => { e.preventDefault(); QH.cam.s = Math.max(.25, Math.min(2.5, QH.cam.s * (e.deltaY < 0 ? 1.12 : .89))); }, { passive: false });
-  $('#c4noteB').querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => { AU.tap(); const z = b.dataset.zoom; if (z === 'fit') qhFit(); else QH.cam.s = Math.max(.25, Math.min(2.5, QH.cam.s * (z === '+' ? 1.25 : .8))); }));
+  $('#c4noteB').querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => { AU.tap(); const z = b.dataset.zoom; if (z === 'fit') { qhFocus(null); qhFit(); } else QH.cam.s = Math.max(.25, Math.min(2.5, QH.cam.s * (z === '+' ? 1.25 : .8))); }));
   if (!QH.raf) { QH.last = 0; QH.raf = requestAnimationFrame(qhLoop); }
 }
 function qhFocus(id) {
@@ -208,13 +208,15 @@ function c4WebTab() {
   if (!QHG.nodes.length) return '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
   const rels = [...new Set(QHG.edges.map(e => e.rel))];
   return `<p class="qhhint">Chạm vào một người để xem kỹ · kéo để xem chỗ khác · hai ngón để phóng to</p>
-    <div class="qhwrap"><canvas id="qhCv"></canvas><div class="qhz"><button data-zoom="+">+</button><button data-zoom="-">−</button><button data-zoom="fit" title="Xem cả làng">⤢</button></div></div>
+    <div class="qhwrap"><canvas id="qhCv"></canvas><div class="qhz"><button data-zoom="+">+</button><button data-zoom="-">−</button><button data-zoom="fit" title="Bỏ chọn, xem cả làng">⤢</button></div></div>
     <div class="legend">${rels.map(r => `<span><i style="background:${C4_RELS[r].col}"></i>${C4_RELS[r].name}</span>`).join('')}<span><i class="q"></i>chưa quen</span></div>
     <div id="qhCard">${qhCardHtml(QH.focus)}</div>`;
 }
 function c4WebOpened(first) { qhWire(); if (first) qhFit(); qhCardWire(); }
 
 /* ---------- the card ---------- */
+// a way back from one person to the whole village (a player could not get out)
+const QH_BACK = '<button class="btn alt qback" data-qback="1">✕ Bỏ chọn · xem cả làng</button>';
 function qhCardHtml(id) {
   const P = c4People();
   if (id === null || id === undefined) {                                     // nothing tapped: who matters most, who is still a stranger
@@ -230,7 +232,7 @@ function qhCardHtml(id) {
   if (c4Known(id)) {
     const facts = [...(f.facts || []), ...SAVE4.notes.filter(n => n.text.includes(p.name)).map(n => n.text)];
     const buy = SAVE4.day >= C4_BOOK_DAY && C4.phase === 'open', unknownTies = p.links.filter(l => !c4Heard(l.to)).length;
-    return `<div class="qhc"><div class="who"><img src="${c4Face(p)}" alt=""><div><h4>${p.name}</h4><p class="st">${C4_STAR(f.a)} <b>${c4LikeWord(f.a)}</b></p><p>${addr}<br>nghề ${p.job} · ghé quán ${f.v || 0} lần</p></div></div>
+    return `<div class="qhc">${QH_BACK}<div class="who"><img src="${c4Face(p)}" alt=""><div><h4>${p.name}</h4><p class="st">${C4_STAR(f.a)} <b>${c4LikeWord(f.a)}</b></p><p>${addr}<br>nghề ${p.job} · ghé quán ${f.v || 0} lần</p></div></div>
       <div class="badges">${c4Badges(p).map(([t, c]) => `<span style="border-color:${c};color:${c}">${t}</span>`).join('')}</div>
       <h5>Thói quen</h5><ul class="hab"><li>⏰ Hay ra chợ <b>${c4Span(p.hour)}</b></li><li>♥ Thích <b>${C4_FAV_WORD[p.fav]}</b></li><li>🪙 Tiền nong: <b>${p.purse}</b></li></ul>
       <h5>Tính nết</h5><p><b>${T.name}:</b> ${T.desc}</p>
@@ -248,7 +250,7 @@ function qhCardHtml(id) {
   const via = p.links.filter(l => c4Known(l.to)).map(l => [l, P.list[l.to]]);
   const named = c4Heard(id), introBy = via.filter(([l, q]) => l.rel !== 'ghet' && SAVE4.folk[q.id].a >= 50);
   const seen = f.seen && !f.k;
-  return `<div class="qhc"><div class="who">${named ? `<img src="${c4Face(p)}" alt="">` : '<i class="qq">?</i>'}<div><h4>${named ? p.name : 'Chưa biết là ai'}</h4><p>${seen ? (C4_TRAITS[p.trait].meet ? `người khó gần: đã ghé ${f.v}/${C4_TRAITS[p.trait].meet} lần mới chịu bắt chuyện` : 'mới ghé quán 1 lần: ghé thêm lần nữa là quen') : 'chưa quen'}${named ? `<br>${addr}` : ''}</p></div></div>
+  return `<div class="qhc">${QH_BACK}<div class="who">${named ? `<img src="${c4Face(p)}" alt="">` : '<i class="qq">?</i>'}<div><h4>${named ? p.name : 'Chưa biết là ai'}</h4><p>${seen ? (C4_TRAITS[p.trait].meet ? `người khó gần: đã ghé ${f.v}/${C4_TRAITS[p.trait].meet} lần mới chịu bắt chuyện` : 'mới ghé quán 1 lần: ghé thêm lần nữa là quen') : 'chưa quen'}${named ? `<br>${addr}` : ''}</p></div></div>
     <h5>Quen ai trong sổ</h5><ul class="ties">${via.map(([l, q]) => `<li><i style="background:${C4_RELS[l.rel].col}"></i>${C4_RELS[l.rel].name} của <button class="lk" data-qf="${q.id}">${q.name}</button> <small>${C4_STAR(SAVE4.folk[q.id].a)}</small></li>`).join('') || '<li>—</li>'}</ul>
     ${named ? (introBy.length
       ? `<div class="acts"><button class="act g" data-intro="${introBy[0][1].id}" ${f.intro === day || C4.phase !== 'open' ? 'disabled' : ''}><b>Nhờ ${introBy[0][1].name} giới thiệu</b><span>${f.intro === day ? 'đã nhờ hôm nay' : C4.phase !== 'open' ? 'chỉ nhờ được lúc chợ họp' : 'họ sẽ rủ người này ra chợ'}</span></button></div>`
@@ -257,6 +259,7 @@ function qhCardHtml(id) {
 }
 function qhCardWire() {
   const box = $('#qhCard'); if (!box) return;
+  box.querySelectorAll('[data-qback]').forEach(b => b.addEventListener('click', () => { AU.tap(); qhFocus(null); qhFit(); }));
   box.querySelectorAll('[data-qf]').forEach(b => b.addEventListener('click', () => { AU.tap(); qhFocus(+b.dataset.qf); $('#qhCv').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }));
   box.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => c4Act(QH.focus, b.dataset.act)));
   box.querySelectorAll('[data-house]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_HOUSE = +b.dataset.house; c4OpenNotes('nha'); }));

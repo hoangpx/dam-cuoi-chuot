@@ -121,10 +121,10 @@ const C4_HUSB_INVITE = ['Mời cô bác ghé gánh nhà tôi!', 'Trầu ngon, ch
 function c4HusbTout(dt) {
   const P = C4.porter; if (C4.phase !== 'open' || !(P.st === 'idle' || P.st === 'walk')) return;
   if (P.st === 'walk' && P.strollX == null) P.st = 'idle';
-  if (P.strollX == null && (P.strollT = (P.strollT ?? 2) - dt) <= 0) { P.strollX = c4HusbX() - 80 + R() * 380; P.strollT = 4 + R() * 6; }
+  if (P.strollX == null && (P.strollT = (P.strollT ?? 2) - dt) <= 0) { P.strollX = c4HusbX() - 60 + R() * 200; P.strollT = 4 + R() * 6; }
   if (P.strollX != null) {
     const dx = P.strollX - P.x;
-    if (Math.abs(dx) > 3) { P.st = 'walk'; P.x += Math.sign(dx) * Math.min(Math.abs(dx), 55 * dt); P.face = Math.sign(dx); P.ph = (P.ph || 0) + dt * 8; P.z += (.3 - P.z) * Math.min(1, dt * 2); }
+    if (Math.abs(dx) > 3) { P.st = 'walk'; P.x += Math.sign(dx) * Math.min(Math.abs(dx), 55 * dt); P.face = Math.sign(dx); P.ph = (P.ph || 0) + dt * 8; P.z += (.18 - P.z) * Math.min(1, dt * 2); }
     else { P.st = 'idle'; P.strollX = null; P.face = 1; }
   }
   if ((P.toutT = (P.toutT ?? 3) - dt) > 0) return;

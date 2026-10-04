@@ -229,3 +229,4 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .evtime{position:relative;height:22px;border:2px solid var(--ink);margin-top:8px;background:#f2ecde;overflow:hidden}
 .evtime i{position:absolute;left:0;top:0;bottom:0;background:rgba(163,51,42,.35)}
 .evtime span{position:relative;display:block;font-size:12px;line-height:18px;text-align:center}
+.qhc .qback{display:block;margin:0 0 8px auto;padding:4px 12px;font-size:14px}
