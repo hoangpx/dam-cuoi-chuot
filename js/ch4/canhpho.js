@@ -127,7 +127,7 @@ function c4Palanquin(g, x, y, s) {
 function c4StreetItems(items, g, vis) {
   const S = C4.show;
   if (S) {
-    const z = .66, s = c4S(z), y = c4Y(z), ph = S.t * 6 + S.ph;
+    const z = .66, s = c4S(z) * C4_CROWD, y = c4Y(z), ph = S.t * 6 + S.ph;   // the same size as the crowd (owner: the lion dancers looked too big)
     if (S.k === 'lan') {
       const hx = S.x, jump = Math.abs(Math.sin(S.t * 3)) * 18;
       if (vis(hx - 60, 160)) items.push({ z, f: () => {

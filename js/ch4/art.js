@@ -355,8 +355,9 @@ function c4Bubble(text, side = 0, size = 16, maxW = 190) {
   const tw = Math.max(...lines.map(l => C4_MEASURE.measureText(l).width)), lh = size * 1.32;
   const w = tw / 2 + 14 + size * .25, h = lines.length * lh / 2 + 8 + size * .2, disp = '"Playfair Display", serif';
   const p = part([-w - 8, -h - 8, w + 8, h + 32], a => {
-    a.fk('white', smooth([[-w + 4, -h + 4], [0, -h], [w - 3, -h + 5], [w, 0], [w - 4, h - 4], [0, h], [-w + 3, h - 5], [-w, 0]]), 2.2);
-    lines.forEach((t, k) => a.text(t, 0, (k - (lines.length - 1) / 2) * lh, size, 'dark', disp, 'ink', 900));
+    const shape = smooth([[-w + 4, -h + 4], [0, -h], [w - 3, -h + 5], [w, 0], [w - 4, h - 4], [0, h], [-w + 3, h - 5], [-w, 0]]);
+    a.underFill(shape, '#f6f1e4'); a.fk('white', shape, 2.2);                 // a solid paper under the print (owner: easier to read)
+    lines.forEach((t, k) => a.solidText(t, 0, (k - (lines.length - 1) / 2) * lh, size, disp, 900));   // solid, not mottled: easy to read (owner)
     const dx = side * Math.min(w * .5, 40);
     for (const [k, r] of [[0, 4], [1, 3], [2, 2.2]]) a.ink(circ(dx * (1 + k * .25), h + 6 + k * 7, r));
   });

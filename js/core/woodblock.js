@@ -56,7 +56,7 @@ function tube(pts, w0, w1) {
 function part(b, draw, keepKey) {
   const [x0, y0, x1, y1] = b, W = Math.ceil((x1 - x0) * RES), H = Math.ceil((y1 - y0) * RES);
   const out = mk(W, H), col = mk(W, H), key = mk(W, H), cg = col.getContext('2d'), kg = key.getContext('2d');
-  const T = (g, dx = 0, dy = 0) => g.setTransform(RES, 0, 0, RES, (-x0 + dx) * RES, (-y0 + dy) * RES);
+  const T = (g, dx = 0, dy = 0) => g.setTransform(RES, 0, 0, RES, (-x0 + dx) * RES, (-y0 + dy) * RES), late = [], early = [];
   T(kg); kg.strokeStyle = INK; kg.fillStyle = INK; kg.lineCap = 'round'; kg.lineJoin = 'round';
   const api = {
     fill(pl, path) { const [c, [dx, dy]] = PL[pl]; T(cg, dx, dy); cg.fillStyle = c; cg.fill(path); },
@@ -69,10 +69,15 @@ function part(b, draw, keepKey) {
       g.font = `${weight ? weight + ' ' : ''}${size}px ${font}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(str, x, y);
       if (g === kg) g.fillStyle = INK;
     },
+    // a solid fill under everything (unmottled), e.g. a speech bubble's paper
+    underFill(path, col) { early.push(g => { g.fillStyle = col; g.fill(path); }); },
+    // solid ink text, printed after the mottling so small words stay easy to read (speech bubbles; owner)
+    solidText(str, x, y, size, font, weight = '') { late.push(g => { g.font = `${weight ? weight + ' ' : ''}${size}px ${font}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK; g.fillText(str, x, y); }); },
   };
   draw(api);
   mottle(cg, W, H, .55); mottle(kg, W, H, .2);
-  const og = out.getContext('2d'); og.drawImage(col, 0, 0); og.drawImage(key, 0, 0);
+  const og = out.getContext('2d'); if (early.length) { T(og); for (const f of early) f(og); og.setTransform(1, 0, 0, 1, 0, 0); } og.drawImage(col, 0, 0); og.drawImage(key, 0, 0);
+  if (late.length) { T(og); for (const f of late) f(og); og.setTransform(1, 0, 0, 1, 0, 0); }
   col.width = col.height = 0; if (!keepKey) key.width = key.height = 0;
   return { c: out, k: keepKey ? key : null, x0, y0, w: x1 - x0, h: y1 - y0 };
 }

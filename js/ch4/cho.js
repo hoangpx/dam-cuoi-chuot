@@ -747,8 +747,8 @@ function c4OpenUp(g = 'trau') {
   if (g !== 'trau' && !c4Own(g)) {                                         // an empty plot
     $('#c4upT').textContent = 'Đất trống';
     const L = c4Landlord(g), ok = L.known;                                    // a plot needs no acquaintance (owner); a house does
-    box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. ${ok ? `Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom}).` : 'Chủ đất là người trong làng, nhà mình chưa quen.'}</p>`
-      + `<p>Giá thuê chỗ: <b>${c4Money(L.price)}</b>${ok ? L.word : ' (giá thường; quen thân với chủ đất thì được bớt)'}. Vợ tự trông được; đông khách thì thuê thêm người phụ.</p><p class="hint">${c4Ware(g)}</p><p class="hint">Muốn thuê hay mua cả căn nhà mặt chợ về sau thì phải quen chủ đất.</p>`;
+    box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom})${ok ? '' : ', nhà mình chưa quen'}.</p>`
+      + `<p>Giá thuê chỗ: <b>${c4Money(L.price)}</b>${ok ? L.word : ' (giá thường; quen thân với chủ đất thì được bớt)'}. Vợ tự trông được; đông khách thì thuê thêm người phụ.</p><p class="hint">${c4Ware(g)}</p><p class="hint">Riêng nhà mặt chợ (thuê hay mua cả căn về sau) thì chưa quen sẽ không biết chủ nhà là ai mà hỏi.</p>`;
     { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => c4Rent(g); }
     c4Sheets('c4up'); return;
   }

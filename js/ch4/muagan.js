@@ -1,7 +1,7 @@
 /* ---------- buying out a neighbour's stall (owner) ----------
    Every neighbour along the row (meat, rice, greens, eggs, chickens, fruit, hats, fish, cloth, rice crackers) belongs to
-   someone in the village (c4VendorOwner). Tap their stall: if you know the owner you can ask to buy it; the price goes by
-   how much they like you (like a landlord), and a few won't sell unless you are close. Bought, it becomes one of your
+   someone in the village (c4VendorOwner), always named (owner). Tap their stall to ask to buy it: a stranger pays the plain
+   price, the better they like you the less; a few won't sell unless you are close. Bought, it becomes one of your
    wares (C4_BUYS, in C4_GOODS with buy: true): stocked each morning, sold by the couple or hired helpers, in the tally.
    And the rival betel seller (event rival) stands as a real stall across the lane, calling out cheap betel and pulling
    buyers away while you keep your price; you can buy them out too. ---------- */
@@ -38,18 +38,17 @@ function c4VendorOwner(ware) {
   const P = c4People(), lords = new Set(Object.values(P.landlord || {})), L = P.list.filter(p => p.kind === 'mouse' && p.role !== 'child' && !lords.has(p.id));
   let h = SAVE4.seed || 1; for (const c of ware) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const p = L[h % L.length], stubborn = (h >>> 8) % 4 === 0, known = c4Known(p.id), a = c4Like(p.id);
-  const k = a >= 80 ? .6 : a >= 60 ? .8 : a >= 35 ? 1 : 1.4;
-  return { p, known, stubborn: stubborn && a < 70, k, price: Math.round(C4_GOODS[C4_VENDOR_G[ware]].buy * k), word: a >= 80 ? ' (thân thiết, để giá hời)' : a >= 60 ? ' (quý nhà mình, bớt cho một ít)' : a >= 35 ? '' : ' (chưa ưa nhà mình, nói thách)' };
+  const k = !known ? 1 : a >= 80 ? .6 : a >= 60 ? .8 : a >= 35 ? 1 : 1.4;   // not yet acquainted: the plain price
+  return { p, known, stubborn: stubborn && a < 70, k, price: Math.round(C4_GOODS[C4_VENDOR_G[ware]].buy * k), word: !known ? ' (chưa quen, giá thường; quen thân thì được bớt)' : a >= 80 ? ' (thân thiết, để giá hời)' : a >= 60 ? ' (quý nhà mình, bớt cho một ít)' : a >= 35 ? '' : ' (chưa ưa nhà mình, nói thách)' };
 }
 const c4VendorMine = v => { const g = C4_VENDOR_G[v.ware]; return !!g && c4Own(g); };
 function c4BuyOpen(v) {
   const g = C4_VENDOR_G[v.ware], G = C4_GOODS[g], O = c4VendorOwner(v.ware), box = $('#c4upO');
   $('#c4upT').textContent = c4Cap1(v.name); $('#c4upB').innerHTML = ''; $('#c4upGo').hidden = true;
-  if (!O.known) box.innerHTML = `<p>Gánh ${G.name.toLowerCase()} của một nhà trong làng.</p><p class="bad">Không biết chủ gánh là ai mà hỏi mua. Quen thêm người trong làng thì sẽ biết.</p>`;
-  else if (O.stubborn) box.innerHTML = `<p>Chủ gánh: <b>${O.p.name}</b>.</p><p class="bad">${c4Cap1(O.p.name)} nhất quyết không bán: "Gánh này của mẹ tôi để lại!" Phải thật thân mới mong.</p>`;
+  if (O.stubborn) box.innerHTML = `<p>Chủ gánh: <b>${O.p.name}</b>.</p><p class="bad">${c4Cap1(O.p.name)} nhất quyết không bán: "Gánh này của mẹ tôi để lại!" Phải thật thân mới mong.</p>`;
   else {
     box.innerHTML = `<p>Chủ gánh: <b>${O.p.name}</b>. ${c4Cap1(O.p.name)} bằng lòng nhượng lại gánh ${G.name.toLowerCase()} giá <b>${c4Money(O.price)}</b>${O.word}.</p>`
-      + `<p class="hint">Bán ${G.name.toLowerCase()}: nhập ${c4Money(G.cost)} một ${G.unit}, bán ${c4Money(G.price)}${G.keep === 'ever' ? ', để lâu không hỏng' : ', tan chợ còn thừa phải bỏ'}. Vợ chồng tự bán hoặc thuê người, mỗi người công ${c4Money(G.wage)} một ngày.</p>`;
+      + `<p class="hint">Bán ${G.name.toLowerCase()}: nhập ${c4Money(G.cost)} một ${G.unit}, bán ${c4Money(G.price)}${G.keep === 'ever' ? ', để lâu không hỏng' : ', tan chợ còn thừa phải bỏ'}. Vợ tự bán hoặc thuê người, mỗi người công ${c4Money(c4Wage(g, {}))} một ngày.</p>`;
     $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < O.price; $('#c4upGo').innerHTML = `Mua lại · ${c4Money(O.price)}`;
     $('#c4upGo').onclick = () => {
       if (SAVE4.money < O.price) return;
