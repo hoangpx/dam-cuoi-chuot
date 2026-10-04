@@ -1,6 +1,6 @@
 /* Chương IV · street life (owner): a lion dance, a horse caravan, a mandarin carried past in his palanquin, quarrels
    that come to blows, children's folk games on the grass in front; each day its own paper colour and its own row of
-   houses and trees; the wife and husband calling out to passers-by with jokes. Kept light: one procession at a time,
+   houses and trees; the wife and husband calling out to passers-by with jokes. The houses and big trees are the same every day (owner). Kept light: one procession at a time,
    only what is on screen is drawn, simple paths. Hooks in cho.js: c4DayLook (day start), c4StreetUpdate (update),
    c4StreetItems (drawing), c4CoupleTalk (update). */
 
@@ -16,9 +16,10 @@ function c4DayLook() {
   C4.paperKey = key; PAPER = getPaper(key); document.documentElement.style.setProperty('--paper', PAPERS[key].css);
   // the row of houses, trees and bamboo behind the lane, and a far row, drawn afresh each day
   const r = mulberry(SAVE4.seed + SAVE4.day * 977), kinds = ['house', 'house', 'tree', 'bamboo', 'bamboo', 'house'];   // owner: no haystack, it read as a bell
+  const rs = mulberry(SAVE4.seed + 977);                                    // owner: the houses and big trees stay the same every day
   const far = [], near = [];
-  for (let x = -120; x < 1900; x += 220 + r() * 160) { const k = kinds[(r() * kinds.length) | 0]; far.push([x, k === 'hay' ? 'house' : k, .4 + r() * .08, (r() * 6) | 0]); }
-  for (let x = 160; x < C4_W + 60; x += 240 + r() * 200) { if (Math.abs(x - C4_STALL) < 150) continue; near.push([x, kinds[(r() * kinds.length) | 0], .6 + r() * .35, (r() * 6) | 0]); }
+  for (let x = -120; x < 2700; x += 220 + rs() * 160) { const k = kinds[(rs() * kinds.length) | 0]; far.push([x, k === 'hay' ? 'house' : k, .4 + rs() * .08, (rs() * 6) | 0]); }
+  for (let x = 160; x < C4_W + 60; x += 240 + rs() * 200) { if (Math.abs(x - C4_STALL) < 150) continue; near.push([x, kinds[(rs() * kinds.length) | 0], .6 + rs() * .35, (rs() * 6) | 0]); }
   C4.scene = { far, near };
   // the children's games on the grass in front, two of them, somewhere along the lane
   const games = ['dacau', 'daynhay', 'keoco', 'oanquan'], gs = [];
@@ -71,6 +72,8 @@ function c4StreetUpdate(dt) {
 const C4_FIGHT = ['Mày dám nói lại câu nữa xem!', 'Con gà nhà mày mổ hết thóc nhà tao!', 'Ai bảo mày giẫm vào chân tao!', 'Nợ tao ba đồng từ Tết năm ngoái!', 'Láo! Láo quá!', 'Đứng lại đấy!', 'Tao nói thế đấy, làm gì nhau!'];
 
 /* ---------- the couple calling out (owner: more lines, cheerful and witty) ---------- */
+const C4_WIFE_OUT = ['Hết trầu rồi cô bác ơi, mai lại có nhé!', 'Trầu bán hết sạch rồi, cảm ơn cả làng!', 'Hôm nay hết trầu rồi, mai em để phần!', 'Hết veo rồi ạ, cô bác thông cảm!'];
+const C4_WIFE_WAIT = ['Chồng em đi lấy trầu rồi, cô bác đợi tí nhé!', 'Trầu sắp về tới, ai đợi được thì đợi nhé!', 'Hết tạm thôi, chồng em gánh về ngay đây!'];
 const C4_WIFE_CALL = [
   'Trầu không cau non đây, ăn một miếng đỏ môi cả ngày!', 'Miếng trầu là đầu câu chuyện, mời các bác ghé!', 'Trầu têm cánh phượng, cau Hưng Yên, ngon nức tiếng!',
   'Ăn trầu nhà em, mẹ chồng khen dâu đảm!', 'Ai chưa có người yêu, ăn trầu nhà em là có!', 'Cau non, vỏ mỏng, bổ ra trắng như ngà!', 'Mời bà ơi, trầu cay vừa miệng, vôi không xót lưỡi!',
@@ -82,7 +85,7 @@ function c4CoupleTalk(dt) {
   if (C4.phase !== 'open' || (C4.talkT -= dt) > 0) return;
   C4.talkT = 9 + R() * 8;
   const near = C4.walkers.some(w => w.st === 'walk' && Math.abs(w.x - C4_STALL) < 300);
-  if (!(C4.SV.trau || []).length && near && !C4.wife.say && R() < .75) c4Say(C4.wife, c4Pick(C4_WIFE_CALL));
+  if (!(C4.SV.trau || []).length && near && !C4.wife.say && R() < .75) c4Say(C4.wife, c4Pick(c4Stock('trau') > 0 ? C4_WIFE_CALL : C4.porter.st !== 'idle' && C4.porter.good === 'trau' ? C4_WIFE_WAIT : C4_WIFE_OUT));
   else if (C4.porter.st === 'idle' && !C4.porter.say && R() < .4) c4Say(C4.porter, c4Pick(C4_HUSB_IDLE));
 }
 

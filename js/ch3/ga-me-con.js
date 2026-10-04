@@ -3,7 +3,7 @@
    off again. Drag the hen in first and she sits for 10 s; while she sits the chicks stay put. If the ten are not home
    when her 10 s are up, she gets up to call again and the chicks scatter. All ten home → the "Đàn Gà Mẹ Con" print. */
 const G3 = { chicks: [], hen: null, nest: null, drag: null, won: false, winT: 0, callT: 2, sayT: 0, helpT: 0, smart: false, t: 0, W: 960, H: 540 };
-const G3_ALONE = 4.5, G3_WITH_HEN = 10;
+const G3_ALONE = 3, G3_WITH_HEN = 10;                 // owner: alone in the nest a chick stays only 3 s
 let G3_SAY = null, G3_HELP = null;
 
 function g3Layout() {

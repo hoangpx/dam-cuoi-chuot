@@ -267,7 +267,7 @@ const c4Tax = () => Math.max(10, Math.round(c4Earned() * .1) + 5 * c4Owned().len
 /* ---------- every stall at a glance (owner's reference): a card each, tap to open it ---------- */
 function c4OpenUps() {
   $('#c4evT').textContent = 'Các hàng của nhà mình';
-  const all = ['trau', ...C4_SHOPS], card = g => {
+  const all = ['trau', ...C4_SHOPS, ...C4_BUYS.filter(c4Own)], card = g => {
     const G = C4_GOODS[g], own = c4Own(g), lvI = g === 'trau' ? SAVE4.lv : c4SLvI(g), lvN = g === 'trau' ? C4_LV.length : C4_SHOP_LV.length;
     const name = g === 'trau' ? c4Lv().name : own ? c4SLv(g).name : 'Đất trống', L = !own && c4Landlord(g);
     return `<button class="upc ${own ? '' : 'empty'}" data-up="${g}"><b>${G.name}</b><span class="lv">${name}</span>`

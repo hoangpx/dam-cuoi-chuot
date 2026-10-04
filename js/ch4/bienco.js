@@ -53,20 +53,21 @@ function c4EvPick(i, auto = false) {
   act();
   if (C4_HELP[E.kind] === i && C4.today) C4.today.help = (C4.today.help || 0) + 1;
   const said = (toast.n || 0) !== n0 ? $('#toastTx').innerHTML : '', d = SAVE4.money - m0;
+  const n1 = toast.n || 0; c4Hud(); const task = (toast.n || 0) !== n1 ? '<br>' + $('#toastTx').innerHTML : '';   // a task just done: said after the result, not instead
   const money = d ? ` (${d < 0 ? 'mất' : 'được'} ${c4Money(Math.abs(d))}, còn ${c4Money(SAVE4.money)})` : '';
-  if (auto) toast(`Hết giờ, đành: ${c4Plain(label)}.${said ? ' ' + said : ''}${money}`, 4.4);
-  else if (!said) toast(`${c4Plain(label)}.${money}`, 3);
-  else if (money) toast(said + money, 3.6);
+  if (auto) toast(`Hết giờ, đành: ${c4Plain(label)}.${said ? ' ' + said : ''}${money}${task}`, 4.4);
+  else if (!said) toast(`${c4Plain(label)}.${money}${task}`, 3.4);
+  else toast(said + money + task, 4.2);
   if (E.visitor) { const v = E.visitor; v.visit = null; v.st = 'leave'; v.face = v.x < C4_STALL ? -1 : 1; v.sp = 60; }
   c4Hud(); persist4();
 }
 
 /* ---------- visitors ---------- */
 function c4VisitorSpawn(kind) {
-  for (let k = 0; k < 10; k++) {
+  for (let k = 0; k < 30; k++) {                                            // (the last tries take any grown-up)
     const n = C4.walkers.length; c4Spawn(); if (C4.walkers.length === n) continue;
     const w = C4.walkers[C4.walkers.length - 1], S = C4_MOUSE_SORTS[w.sort];
-    if (w.kind !== 'mouse' || !S || S.role === 'child' || w.buf || w.hoa || (C4_VISIT_OLD.has(kind) !== (S.role === 'old'))) continue;
+    if (w.kind !== 'mouse' || !S || S.role === 'child' || w.buf || w.hoa || (k < 20 && C4_VISIT_OLD.has(kind) !== (S.role === 'old'))) continue;
     const vx = C4_STALL - 150 - R() * 30 - 55 * C4.walkers.filter(o => o.visit).length;                                  // just left of the betel stall, in view
     Object.assign(w, { visit: kind, buy: false, shop: null, guest: false, drunk: false, smokeX: undefined, cd: 1e9, sp: 55, visitX: vx, visitT: 45, face: w.x < vx ? 1 : -1 });
     return true;
@@ -89,7 +90,7 @@ function c4VisitorsUpdate(dt) {
 function c4VisitItems(items, g, vis) {
   for (const v of C4.walkers) {
     if (!v.visit || !vis(v.x, 60)) continue;
-    const s = c4S(v.z) * C4_CROWD, y = c4Y(v.z) - C4_TALL.mouse * s - 30 - Math.abs(Math.sin(C4.t * 3)) * 6;
+    const s = c4S(v.z) * C4_CROWD, y = c4Y(v.z) - C4_TALL.mouse * s * .9 - 10 - Math.abs(Math.sin(C4.t * 3)) * 4;   // just over the head (owner)
     items.push({ z: v.z + .001, f: () => { g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.arc(v.x, y, 13, 0, 6.283); g.fill(); g.stroke();
       g.fillStyle = '#f2ecde'; g.font = '900 18px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', v.x, y + 1); } });
   }
@@ -98,7 +99,7 @@ function c4VisitItems(items, g, vis) {
 function c4VisitorTap(x, y) {
   for (const v of C4.walkers) {
     if (!v.visit) continue;
-    const s = c4S(v.z) * C4_CROWD, top = c4Y(v.z) - C4_TALL.mouse * s - 46;
+    const s = c4S(v.z) * C4_CROWD, top = c4Y(v.z) - C4_TALL.mouse * s - 40;   // the person or the "!" above
     if (Math.abs(x - v.x) < 60 * s + 10 && y > top && y < c4Y(v.z) + 14) {
       AU.tap(); C4.evWho = v.name; C4.ev = null; c4Event(v.visit); C4.evWho = null;
       if (C4.today) C4.today.visit = (C4.today.visit || 0) + 1;

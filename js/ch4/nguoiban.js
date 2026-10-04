@@ -31,7 +31,7 @@ function c4SellersUpdate(dt) {
   for (const g of Object.keys(C4_GOODS)) if (!Array.isArray(C4.SV[g])) C4.SV[g] = [];
   const open = C4.phase === 'open';
   const want = g => (C4.Q[g] || []).filter(w => !C4.SV[g].some(s => s.who === w)).length;   // buyers not being served yet
-  const members = [W]; if (c4HusbFree()) members.push(P);
+  const members = [W];                                                      // the husband never sells: he fetches the goods and calls people in (c4HusbTout)
   for (const m of members) {
     if (c4SaleBy(m)) continue;
     let to = null;
@@ -111,6 +111,79 @@ function c4HandsBlock(g) {
       if (C4.phase === 'open' && !h.nowage) { const w = Math.min(Math.max(0, SAVE4.money), c4Wage(g, h)); SAVE4.money -= w; C4.today.wages += w; paid = `, trả công hôm nay ${c4Money(w)}`; }
       H.splice(H.indexOf(h), 1); toast(`${c4Cap1(h.name)} nghỉ việc${paid}.`); persist4(); c4Hud(); draw();
     }));
+  };
+  draw(); return el;
+}
+
+/* ---------- the husband between errands (a player): he strolls about in front of the stalls calling people in,
+   and now and then talks a passer-by into buying at one of our stalls that has goods ---------- */
+const C4_HUSB_INVITE = ['Mời cô bác ghé gánh nhà tôi!', 'Trầu ngon, chè nóng đây, mời vào!', 'Ghé xem một tí, không mua cũng được!', 'Bà con ơi, hàng nhà tôi tươi nhất chợ!', 'Mời bác ghé, vợ tôi bán vui lắm!', 'Ai đi qua cũng ghé một tí nào!'];
+function c4HusbTout(dt) {
+  const P = C4.porter; if (C4.phase !== 'open' || !(P.st === 'idle' || P.st === 'walk')) return;
+  if (P.st === 'walk' && P.strollX == null) P.st = 'idle';
+  if (P.strollX == null && (P.strollT = (P.strollT ?? 2) - dt) <= 0) { P.strollX = c4HusbX() - 80 + R() * 380; P.strollT = 4 + R() * 6; }
+  if (P.strollX != null) {
+    const dx = P.strollX - P.x;
+    if (Math.abs(dx) > 3) { P.st = 'walk'; P.x += Math.sign(dx) * Math.min(Math.abs(dx), 55 * dt); P.face = Math.sign(dx); P.ph = (P.ph || 0) + dt * 8; P.z += (.3 - P.z) * Math.min(1, dt * 2); }
+    else { P.st = 'idle'; P.strollX = null; P.face = 1; }
+  }
+  if ((P.toutT = (P.toutT ?? 3) - dt) > 0) return;
+  P.toutT = 5 + R() * 5;
+  if (!P.say) c4Say(P, c4Pick(C4_HUSB_INVITE));
+  const goods = c4Owned().filter(g => c4Stock(g) > 0 && c4Open(g)); if (!goods.length || R() > .4) return;
+  const w = C4.walkers.find(w => w.st === 'walk' && !w.buy && !w.visit && !w.rival && w.kind === 'mouse' && !w.buf && !w.drunk && w.pid !== undefined && Math.abs(w.x - P.x) < 320);
+  if (!w) return;
+  const g = c4Pick(goods); Object.assign(w, { buy: true, shop: g, face: C4_GOODS[g].x + c4QX(g) > w.x ? 1 : -1 });
+  setTimeout(() => c4Say(w, c4Pick(['Ừ thì ghé một tí!', 'Anh mời khéo thế, ghé xem!', 'Thôi được, mua ít!'])), 600);
+}
+
+/* ---------- hired porters (a player): once there is more than the betel stall, up to two porters can be hired to fetch
+   goods when the husband is already out; a few tens of đồng a day each. SAVE4.porters = [{ name, sort, unpaid }];
+   on the market each has C4.gang[i] = { x, z, st idle|out|away|back, ph, say, good, qty, cost }. ---------- */
+const C4_PORTER_WAGE = 30, C4_PORTERS_MAX = 2;
+const c4Porters = () => SAVE4.porters || (SAVE4.porters = []);
+const c4PorterHome = i => c4HusbX() + 50 + i * 44;
+function c4Gang() {
+  const L = c4Porters(), G = C4.gang || (C4.gang = []);
+  while (G.length < L.length) G.push({ x: c4PorterHome(G.length), z: .05, st: 'idle', ph: 0, say: null, t: 0 });
+  G.length = L.length; return G;
+}
+// whoever can fetch now: the husband first, else a free porter
+function c4Carrier() { if (c4HusbFree()) return { who: C4.porter, name: 'chồng' }; const G = c4Gang(), i = G.findIndex(p => p.st === 'idle'); return i < 0 ? null : { who: G[i], name: c4Porters()[i].name }; }
+function c4GangUpdate(dt) {
+  c4Gang().forEach((p, i) => {
+    if (p.st === 'out') { p.x -= 150 * dt; p.z = Math.min(.3, p.z + dt * .2); p.ph += dt * 10; if (p.x <= Math.min(C4_OFF, C4.camX - 110)) { p.st = 'away'; p.t = 2.4; } }
+    else if (p.st === 'away') { if ((p.t -= dt) <= 0) p.st = 'back'; }
+    else if (p.st === 'back') { const hx = c4PorterHome(i); p.x += 140 * dt; p.ph += dt * 10; if (p.x >= hx - 60) p.z = Math.max(.05, p.z - dt * .5); if (p.x >= hx) { p.x = hx; p.z = .05; p.st = 'idle'; if (p.good) c4Receive(p.good, p.qty, p.cost); p.good = null; c4Say(p, c4Pick(['Hàng về rồi đây!', 'Đủ cả, bà chủ đếm đi!', 'Nặng mà vui!'])); } }
+  });
+}
+function c4GangItems(items, head, vis) {
+  c4Gang().forEach((p, i) => {
+    if (p.st === 'away' || !vis(p.x, 80)) return;
+    const walk = p.st === 'out' || p.st === 'back', load = p.st === 'back', rig = c4MouseRig(c4Porters()[i].sort || 5);
+    items.push({ z: p.z, f: () => c4Mouse(ctx, rig, p.x, p.st === 'out' ? -1 : 1, walk ? p.ph : C4.t * 2, walk, load ? -1.35 : null, load ? WP.basket : null, c4S(p.z), c4Y(p.z), 5.5 + i) });
+    head(p.x, p.z, 168, p, 2);
+  });
+}
+function c4PayPorters(d, quits) {
+  const L = c4Porters();
+  for (const h of [...L]) {
+    if (SAVE4.money >= C4_PORTER_WAGE) { SAVE4.money -= C4_PORTER_WAGE; d.wages += C4_PORTER_WAGE; h.unpaid = 0; }
+    else if (++h.unpaid >= 2) { quits.push(`${c4Cap1(h.name)} (gánh hàng) hai hôm không được trả công, bỏ việc.`); L.splice(L.indexOf(h), 1); }
+  }
+  C4.gang = null;
+}
+// on the betel stall's sheet, only once there is more than one stall
+function c4PortersBlock() {
+  const el = document.createElement('div'); el.className = 'hands'; const L = c4Porters();
+  const draw = () => {
+    el.innerHTML = `<h4>Người gánh hàng</h4><p class="hint">Nhiều hàng thì một mình chồng gánh không xuể. Thuê người gánh hàng: khi chồng đang đi, người này đi lấy hàng thay. Công ${c4Money(C4_PORTER_WAGE)} một ngày.</p>`
+      + (L.length ? L.map((h, i) => `<div class="hand"><span>${c4Cap1(h.name)} · công ${c4Money(C4_PORTER_WAGE)}/ngày</span><button class="btn alt" data-off="${i}">Cho nghỉ</button></div>`).join('') : '<p>Chưa thuê ai: chồng gánh một mình.</p>')
+      + (L.length < C4_PORTERS_MAX ? `<button class="btn" data-hire="1">Thuê người gánh hàng · ${c4Money(C4_PORTER_WAGE)}/ngày</button>` : '');
+    el.querySelector('[data-hire]')?.addEventListener('click', () => { L.push({ name: c4Pick(C4_NAMES.mouse.filter(n => !L.some(o => o.name === n))), sort: c4Pick(C4_HELPERS), unpaid: 0 }); C4.gang = null; AU.stamp(); toast(`${c4Cap1(L[L.length - 1].name)} nhận việc gánh hàng.`); persist4(); draw(); });
+    el.querySelectorAll('[data-off]').forEach(b => b.addEventListener('click', () => { const i = +b.dataset.off, G = c4Gang(); if (G[i] && G[i].st !== 'idle') { toast('Người ấy đang đi lấy hàng, đợi về đã.', 2.4); return; }
+      let paid = ''; if (C4.phase === 'open') { const w = Math.min(Math.max(0, SAVE4.money), C4_PORTER_WAGE); SAVE4.money -= w; C4.today.wages += w; paid = `, trả công hôm nay ${c4Money(w)}`; }
+      const h = L.splice(i, 1)[0]; C4.gang = null; toast(`${c4Cap1(h.name)} nghỉ việc${paid}.`); persist4(); c4Hud(); draw(); }));
   };
   draw(); return el;
 }
