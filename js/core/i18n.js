@@ -23,7 +23,7 @@ const I18N_DOM = [
   ['#cv', 'The Mouse Wedding', 'aria-label'],
   ['#bL', 'Walk left', 'aria-label'], ['#bR', 'Walk right', 'aria-label'],
   ['#chapters .sheet > p:not(.how)', 'Each chapter is a different game, all in the style of Đông Hồ woodblock prints and Vietnamese folk tales.'],
-  ['#bCloud span', 'Save progress'], ['#bInstall', 'Add to home screen'],
+  ['#bCloud span', 'Save progress'], ['#bInstall span', 'Add to home screen'],
   ['#aGroup span', 'Đám Cưới Chuột Facebook group: feedback, bugs, ideas for new stories'],
   ['#chapters .sheet > p.how', '© 2026 Đám Cưới Chuột · The Mouse Wedding · damcuoichuot.com · all rights reserved'],
   ['#cloud h2', 'Save progress'],

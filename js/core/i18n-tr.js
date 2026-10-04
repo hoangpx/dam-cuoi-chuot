@@ -101,6 +101,10 @@ const LANG_TR = (() => {
     ['The kite flies so high!', 'Der Drachen fliegt so hoch!', 'Le cerf-volant vole si haut !', '¡La cometa vuela muy alto!', '风筝飞得好高！', 'たこが高くあがった！'],
     ["Time's up! The kite fell.", 'Die Zeit ist um! Der Drachen ist abgestürzt.', 'Temps écoulé ! Le cerf-volant est tombé.', '¡Se acabó el tiempo! La cometa cayó.', '时间到！风筝掉下来了。', '時間切れ！たこが落ちた。'],
     ['Oh no! The kite caught on the bamboo!', 'Oh nein! Der Drachen hängt im Bambus fest!', 'Oh non ! Le cerf-volant s’est pris dans le bambou !', '¡Oh, no! ¡La cometa se enganchó en el bambú!', '哎呀！风筝挂在竹子上了！', 'あっ！たこが竹にひっかかった！'],
+    ['Swinging High', 'Hoch hinaus schaukeln', 'La balançoire', 'El columpio', '荡秋千', 'ぶらんこ'],
+    ["Time's up! The swing never reached the bar.", 'Die Zeit ist um! Die Schaukel hat den Balken nicht erreicht.', 'Temps écoulé ! La balançoire n’a pas atteint la barre.', '¡Se acabó el tiempo! El columpio no llegó a la barra.', '时间到！秋千没荡到横梁。', '時間切れ！ぶらんこは横木まで届かなかった。'],
+    ['Perfect rhythm! Not one miss!', 'Perfekter Takt! Kein einziger Fehler!', 'Rythme parfait ! Pas une erreur !', '¡Ritmo perfecto! ¡Ni un fallo!', '节奏完美！一次都没失手！', '完ぺきなリズム！ミスなし！'],
+    ['Up to the bar! Well done!', 'Bis zum Balken! Gut gemacht!', 'Jusqu’à la barre ! Bravo !', '¡Hasta la barra! ¡Muy bien!', '荡到横梁了！真棒！', '横木まで届いた！すごい！'],
     // chương VI
     ['Easy', 'Leicht', 'Facile', 'Fácil', '简单', 'かんたん'],
     ['Medium', 'Mittel', 'Moyen', 'Medio', '中等', 'ふつう'],

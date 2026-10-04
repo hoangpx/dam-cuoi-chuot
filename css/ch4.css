@@ -217,3 +217,12 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 #c4hud .bar .tag.up{background:#f2ecde;color:var(--ink)}
 #c4up .hands .hand{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0;text-align:left}
 #c4up .hands .hand .btn{padding:4px 12px;font-size:14px}
+#c4ev .hao{text-align:left;line-height:1.55}
+.stars{color:#c9961a;letter-spacing:2px}
+.haolist{display:flex;flex-direction:column;gap:10px;text-align:left}
+.haoc{border:2px solid var(--ink);padding:8px 12px;background:rgba(255,255,255,.35)}
+.haoc p{margin:2px 0}
+.haoc .rep{color:#2f6a4c;font-weight:600}
+.haoc.dop .rep{color:#a3332a}
+.haoc.lo .rep{color:#6b6157;font-style:italic}
+.haoc .rep{color:#a3332a}
