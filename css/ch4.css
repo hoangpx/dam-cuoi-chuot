@@ -230,3 +230,8 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .evtime i{position:absolute;left:0;top:0;bottom:0;background:rgba(163,51,42,.35)}
 .evtime span{position:relative;display:block;font-size:12px;line-height:18px;text-align:center}
 .qhc .qback{display:block;margin:0 0 8px auto;padding:4px 12px;font-size:14px}
+.autof .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.autof .row .btn{padding:6px 12px;font-size:14px}
+.autof .auto3{display:flex;flex-direction:column;gap:6px;text-align:left}
+.autof .auto3 label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px}
+.autof select{font:inherit;padding:4px 8px;border:2px solid var(--ink);background:#f2ecde;min-width:120px}

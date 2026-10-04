@@ -169,3 +169,42 @@ function c4TripItems(items, head, vis) {
     head(p.x, p.z, 168, p, 2);
   }
 }
+
+/* ---------- fetching by itself (owner): from a stall's second level (Sạp tre; the betel stall: Sạp lều), its sheet sets
+   when to send someone (stock down to 0/5/…/50), how much to bring (5…50) and until what hour (6:00 … 18:00, or till
+   closing). SAVE4.auto[g] = { at, q, until } (at null = off; an old number = at, fill up, till closing). ---------- */
+const C4_AUTO_AT = [0, 5, 10, 20, 30, 40, 50], C4_AUTO_Q = [5, 10, 20, 30, 40, 50], C4_AUTO_UNTIL = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+const c4AutoOk = g => (g === 'trau' ? SAVE4.lv : C4_GOODS[g].buy ? 0 : c4SLvI(g)) >= 1;   // from the second level (owner: lvl 2)
+const c4Fetching = g => (['out', 'away', 'back'].includes(C4.porter.st) && C4.porter.good === g) || (C4.trips || []).some(t => t.good === g);
+function c4AutoGet(g) {
+  const v = (SAVE4.auto || {})[g];
+  if (typeof v === 'number') return v ? { at: v, q: 50, until: 0 } : { at: null, q: 20, until: 0 };
+  return v || { at: null, q: 20, until: 0 };
+}
+function c4AutoUpdate(dt) {
+  if (C4.phase !== 'open' || (C4.autoT = (C4.autoT || 0) - dt) > 0) return;
+  C4.autoT = 1;
+  for (const g of c4Owned()) {
+    const A = c4AutoGet(g), st = c4Stock(g);
+    if (A.at === null || !c4AutoOk(g) || st > A.at || c4Fetching(g)) continue;
+    if (A.until && C4.mins >= A.until * 60) continue;                       // past the hour set: no more trips today
+    const q = Math.min(A.q, Math.floor(c4Cap(g) - st)); if (q < 5) continue;
+    const c = c4Carrier(g); if (!c) continue;
+    if (c.hand) c4SendTrip(c, g, q, c4CostMid(g)); else Object.assign(C4.porter, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null, strollX: null });
+    toast(`Còn ${st} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}: ${c.name} tự đi lấy thêm ${q}.`, 3);
+  }
+}
+function c4AutoBlock(g) {
+  const el = document.createElement('div'); el.className = 'hands autof';
+  if (!c4AutoOk(g)) { el.innerHTML = `<p class="hint">Lên ${g === 'trau' ? C4_LV[1].name : C4_SHOP_LV[1].name} thì mở khoá: tự sai người đi lấy hàng khi sắp hết.</p>`; return el; }
+  const A = c4AutoGet(g), u = C4_GOODS[g].unit, opt = (v, t, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${t}</option>`;
+  el.innerHTML = `<h4>Tự đi lấy hàng</h4><p class="hint">Chồng (hoặc người làm thuê nếu chồng vắng) tự đi lấy, giá giữa ngày.</p><div class="auto3">`
+    + `<label>Khi còn <select data-k="at">${opt('', 'Tắt', A.at === null ? '' : null)}${C4_AUTO_AT.map(n => opt(n, n + ' ' + u, A.at)).join('')}</select></label>`
+    + `<label>lấy thêm <select data-k="q">${C4_AUTO_Q.map(n => opt(n, n + ' ' + u, A.q)).join('')}</select></label>`
+    + `<label>chỉ đi trước <select data-k="until">${C4_AUTO_UNTIL.map(h => opt(h, h + ':00', A.until)).join('')}${opt(0, 'tan chợ', A.until)}</select></label></div>`;
+  el.querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => {
+    const cur = c4AutoGet(g), k = sel.dataset.k, v = sel.value === '' ? null : +sel.value;
+    (SAVE4.auto = SAVE4.auto || {})[g] = { ...cur, [k]: v }; AU.tap(); persist4();
+  }));
+  return el;
+}
