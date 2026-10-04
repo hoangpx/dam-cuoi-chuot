@@ -90,7 +90,7 @@ function c4BizHtml() {
   }
   // today's tasks
   const T = c4Tasks();
-  h += `<div class="biz"><h4>Việc hôm nay ${SAVE4.streak ? `· chuỗi ${SAVE4.streak} ngày` : ''}</h4>${T.map(t => `<p>${t.done ? '✓' : '○'} ${t.text} <span class="hint">+${t.prize} đồng</span></p>`).join('')}<p class="hint">Làm đủ ba việc trong ngày để nối chuỗi: 3 ngày được 30<i class=\"ic4 coin\"></i>, 5 ngày được "lộc chợ" (khách đông hơn cả ngày), 7 ngày được 100<i class=\"ic4 coin\"></i>.</p></div>`;
+  h += `<div class="biz"><h4>Việc hôm nay ${SAVE4.streak ? `· chuỗi ${SAVE4.streak} ngày` : ''}</h4>${T.map(t => `<p>${t.done ? '✓' : '○'} ${t.text} <span class="hint">+${t.prize} đồng</span></p>`).join('')}<p class="hint">Làm đủ ba việc trong ngày để nối chuỗi: 3 ngày được 30 đồng, 5 ngày được "lộc chợ" (khách đông hơn cả ngày), 7 ngày được 100 đồng.</p></div>`;
   return h;
 }
 function c4BizWire(box) {
@@ -124,7 +124,7 @@ function c4DelivUpdate() {
     P.t = 0; C4.deliv = null; const o = D.o; let pay = o.pay + o.dep, note;
     const r = R();
     if (r < .1) { pay = Math.round(pay * .5); note = `Đường về gặp kẻ cướp, chồng chạy thoát nhưng mất nửa tiền: chỉ còn ${c4Money(pay)}.`; }
-    else if (r < .25) { pay += 30; note = `${c4Cap1(o.vil)} khen hàng tốt, thưởng thêm 30<i class=\"ic4 coin\"></i>, hẹn lần sau đặt tiếp!`; SAVE4.wsGood = (SAVE4.wsGood || 0) + 1; }
+    else if (r < .25) { pay += 30; note = `${c4Cap1(o.vil)} khen hàng tốt, thưởng thêm 30 đồng, hẹn lần sau đặt tiếp!`; SAVE4.wsGood = (SAVE4.wsGood || 0) + 1; }
     else note = `Chồng giao xong hàng cho ${o.vil}, mang về ${c4Money(pay)}.`;
     SAVE4.money += pay; C4.today.got += pay; C4.today.ws = (C4.today.ws || 0) + 1; persist4(); c4Hud();
     setTimeout(() => toast(note, 4), 1500);
@@ -132,39 +132,40 @@ function c4DelivUpdate() {
 }
 
 /* ---------- đợt 4: "Việc hôm nay" ---------- */
+// owner: only things the player does by tapping, never the luck of the crowd (no "serve N customers"); some days none, some days three
 const C4_TASKS = [
-  { k: 'sold', make: () => { const cap = c4Owned().reduce((a, g) => a + c4Cap(g), 0); const n = Math.max(20, Math.round(cap * .35 / 5) * 5); return { n, text: `Bán được ${n} món`, prize: 10 }; }, done: (t, d) => d.sold >= t.n },
-  { k: 'served', make: () => { const n = 10 + c4Owned().length * 4; return { n, text: `Phục vụ ${n} lượt khách`, prize: 10 }; }, done: (t, d) => d.served >= t.n },
-  { k: 'lost', make: () => ({ n: 2, text: 'Không để quá 2 khách bỏ đi', prize: 12 }), done: (t, d) => d.lost <= t.n, end: true },
+  { k: 'news', make: () => { const n = R() < .4 ? 2 : 1; return { n, text: n > 1 ? 'Hóng được hai tin đồn' : 'Hóng được một tin đồn', prize: n > 1 ? 12 : 8 }; }, done: (t, d) => (d.news || 0) >= t.n },
+  { k: 'help', make: () => ({ n: 1, text: 'Giúp một người (cho bà cụ ăn xin, trông con hộ, cho vay, đi dập lửa…)', prize: 10 }), done: (t, d) => (d.help || 0) >= 1, from: () => (C4.events || []).some(e => ['xin', 'trong', 'vay', 'chiu', 'lua', 'omdau', 'caicau'].includes(e.kind)) },
+  { k: 'visit', make: () => ({ n: 1, text: 'Tiếp chuyện một người ghé gánh (có dấu !)', prize: 6 }), done: (t, d) => (d.visit || 0) >= 1, from: () => (C4.events || []).some(e => C4_VISIT.has(e.kind)) },
   { k: 'met', make: () => ({ n: 1, text: 'Quen thêm một khách mới', prize: 10 }), done: (t, d) => (d.met || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY },
   { k: 'tea', make: () => ({ n: 2, text: 'Mời nước hai người quen', prize: 8 }), done: (t, d) => (d.tea || 0) >= 2, from: () => SAVE4.day >= C4_BOOK_DAY },
   { k: 'ask', make: () => ({ n: 1, text: 'Hỏi chuyện nhà một người', prize: 8 }), done: (t, d) => (d.ask || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY },
-  { k: 'gain', make: () => { const n = Math.max(20, Math.round((SAVE4.best || 40) * .6 / 5) * 5); return { n, text: `Lãi từ ${n} đồng trở lên`, prize: 15 }; }, done: (t, d) => d.take - d.cogs - d.wiltLoss - d.spent - d.wages + d.got >= t.n, end: true },
   { k: 'ws', make: () => ({ n: 1, text: 'Giao một đơn hàng sỉ', prize: 15 }), done: (t, d) => (d.ws || 0) >= 1, from: () => (SAVE4.ws || []).some(o => o.day === SAVE4.day) },
   { k: 'ruot', make: () => ({ n: 1, text: 'Mời một mối ruột ghé quán', prize: 10 }), done: (t, d) => (d.invRuot || 0) >= 1, from: () => c4People().list.some(p => c4Ruot(p.id)) },
 ];
 function c4Tasks() {
   if (SAVE4.taskDay !== SAVE4.day) {
-    SAVE4.taskDay = SAVE4.day; const pool = C4_TASKS.filter(t => !t.from || t.from()), pick = [];
-    while (pick.length < 3 && pool.length) pick.push(pool.splice((R() * pool.length) | 0, 1)[0]);
+    SAVE4.taskDay = SAVE4.day; const pool = C4_TASKS.filter(t => !t.from || t.from()), pick = [], want = c4Pick([0, 1, 1, 2, 2, 3]);
+    while (pick.length < want && pool.length) pick.push(pool.splice((R() * pool.length) | 0, 1)[0]);
     SAVE4.tasks = pick.map(t => ({ k: t.k, ...t.make(), done: false, paid: false }));
   }
   const d = C4.today || {};
-  for (const t of SAVE4.tasks) { const T = C4_TASKS.find(x => x.k === t.k); if (!t.done && !T.end && C4.phase === 'open' && T.done(t, d)) { t.done = true; toast(`Xong việc: ${t.text}!`, 2.4); AU.pluck(90); } }
+  for (const t of SAVE4.tasks) { const T = C4_TASKS.find(x => x.k === t.k); if (!T) continue; if (!t.done && !T.end && C4.phase === 'open' && T.done(t, d)) { t.done = true; toast(`Xong việc: ${t.text}!`, 2.4); AU.pluck(90); } }
   return SAVE4.tasks;
 }
-function c4TasksHud() { const T = c4Tasks(), n = T.filter(t => t.done).length; return `<i class="ic4 task"></i> ${n}/${T.length}`; }
+function c4TasksHud() { const T = c4Tasks(), n = T.filter(t => t.done).length; return T.length ? `<i class="ic4 task"></i> ${n}/${T.length}` : ''; }
 // the evening: the tasks that are judged at closing, the prizes, the streak
 function c4TasksEnd(d, lines) {
   const T = c4Tasks(); let got = 0;
-  for (const t of T) { const X = C4_TASKS.find(x => x.k === t.k); if (!t.done && X.done(t, d)) t.done = true; if (t.done && !t.paid) { t.paid = true; got += t.prize; } }
+  if (!T.length) return;                                                   // a day without tasks: the streak just waits
+  for (const t of T) { const X = C4_TASKS.find(x => x.k === t.k); if (!X) continue; if (!t.done && X.done(t, d)) t.done = true; if (t.done && !t.paid) { t.paid = true; got += t.prize; } }
   if (got) { SAVE4.money += got; d.got += got; }
   const all = T.every(t => t.done);
   SAVE4.streak = all ? (SAVE4.streak || 0) + 1 : 0;
   let bonus = '';
-  if (all && SAVE4.streak === 3) { SAVE4.money += 30; d.got += 30; bonus = ' Chuỗi 3 ngày: thưởng 30<i class=\"ic4 coin\"></i>!'; }
+  if (all && SAVE4.streak === 3) { SAVE4.money += 30; d.got += 30; bonus = ' Chuỗi 3 ngày: thưởng 30 đồng!'; }
   if (all && SAVE4.streak === 5) { SAVE4.loc = SAVE4.day + 1; bonus = ' Chuỗi 5 ngày: mai được "lộc chợ", khách đông hơn cả ngày!'; }
-  if (all && SAVE4.streak % 7 === 0 && SAVE4.streak) { SAVE4.money += 100; d.got += 100; bonus = ` Chuỗi ${SAVE4.streak} ngày: thưởng 100<i class=\"ic4 coin\"></i>!`; }
+  if (all && SAVE4.streak % 7 === 0 && SAVE4.streak) { SAVE4.money += 100; d.got += 100; bonus = ` Chuỗi ${SAVE4.streak} ngày: thưởng 100 đồng!`; }
   lines.push(`Việc hôm nay: xong ${T.filter(t => t.done).length}/${T.length}${got ? `, được ${got} đồng` : ''}.${all ? ` Chuỗi ${SAVE4.streak} ngày.` : ' Chuỗi đứt.'}${bonus}`);
 }
 
@@ -180,7 +181,7 @@ const C4_EXTRA_EV = {
     Object.assign(E, { title: 'Hai nhà cãi nhau', text: `${c4Cap1(a.name)} và ${b.name} cãi nhau to ngay trước quán, chuyện con gà sang vườn bên mổ thóc. Cả hai quay sang hỏi: "Cô bảo ai đúng?"`, opts: [
       [`Bênh ${a.name}`, () => { c4Bump(a.id, 15); c4Bump(b.id, -22); kin(b, -8); c4F(b.id).away = SAVE4.day + 2; toast(`${c4Cap1(a.name)} hả hê. ${c4Cap1(b.name)} giận, mấy hôm không thèm ra chợ.`, 3.6); }],
       [`Bênh ${b.name}`, () => { c4Bump(b.id, 15); c4Bump(a.id, -22); kin(a, -8); c4F(a.id).away = SAVE4.day + 2; toast(`${c4Cap1(b.name)} hả hê. ${c4Cap1(a.name)} giận, mấy hôm không thèm ra chợ.`, 3.6); }],
-      ['Mời cả hai chén nước làm hoà · 20<i class=\"ic4 coin\"></i>', () => { SAVE4.money -= 20; C4.today.spent += 20; if (R() < .65) { c4Bump(a.id, 10); c4Bump(b.id, 10); kin(a, 3); kin(b, 3); toast('Hai bên bắt tay làm lành. Ai cũng khen cô chủ quán khéo ăn khéo nói.', 3.6); } else { c4Bump(a.id, -5); c4Bump(b.id, -5); toast('Chén nước chưa uống xong lại cãi tiếp. Mất toi hai mươi đồng.', 3.4); } }, SAVE4.money >= 20],
+      ['Mời cả hai chén nước làm hoà · 20 đồng', () => { SAVE4.money -= 20; C4.today.spent += 20; if (R() < .65) { c4Bump(a.id, 10); c4Bump(b.id, 10); kin(a, 3); kin(b, 3); toast('Hai bên bắt tay làm lành. Ai cũng khen cô chủ quán khéo ăn khéo nói.', 3.6); } else { c4Bump(a.id, -5); c4Bump(b.id, -5); toast('Chén nước chưa uống xong lại cãi tiếp. Mất toi hai mươi đồng.', 3.4); } }, SAVE4.money >= 20],
       ['Lờ đi', () => { if (R() < .5) { c4Bump(a.id, -5); c4Bump(b.id, -5); toast('Hai người bảo cô chủ quán "ba phải".', 3); } }]] });
   },
   // a regular falls ill: visiting wins them and their family; ignoring them is remembered
@@ -188,7 +189,7 @@ const C4_EXTRA_EV = {
     const ks = c4KnownList(60).filter(p => !(SAVE4.folk[p.id].away >= SAVE4.day)); if (!ks.length) return false;
     const p = c4Pick(ks), f = c4F(p.id); f.away = SAVE4.day + 2;
     Object.assign(E, { title: 'Khách quen ốm', text: `Nghe tin ${p.name} ốm nằm nhà mấy hôm nay, không ra chợ được.`, opts: [
-      ['Sai chồng mang quà đến thăm · 15<i class=\"ic4 coin\"></i>', () => { SAVE4.money -= 15; C4.today.spent += 15; c4Bump(p.id, 18); for (const l of p.links) if (c4Known(l.to)) c4Bump(l.to, 4); (f.facts = f.facts || []).push(`Ngày ${SAVE4.day}: ốm, được nhà mình đến thăm.`); toast(`${c4Cap1(p.name)} cảm động lắm, cả nhà người ta nhớ ơn.`, 3.4); }, SAVE4.money >= 15],
+      ['Sai chồng mang quà đến thăm · 15 đồng', () => { SAVE4.money -= 15; C4.today.spent += 15; c4Bump(p.id, 18); for (const l of p.links) if (c4Known(l.to)) c4Bump(l.to, 4); (f.facts = f.facts || []).push(`Ngày ${SAVE4.day}: ốm, được nhà mình đến thăm.`); toast(`${c4Cap1(p.name)} cảm động lắm, cả nhà người ta nhớ ơn.`, 3.4); }, SAVE4.money >= 15],
       ['Để khi khác', () => { c4Bump(p.id, -8); toast(`${c4Cap1(p.name)} hơi tủi: "Quen thế mà chẳng hỏi han."`, 3); }]] });
   },
   // a family orders a feast for tomorrow afternoon: enough stock then, or they are put out
@@ -204,22 +205,22 @@ const C4_EXTRA_EV = {
   duthue(E) {
     const gs = c4Owned().filter(g => c4HandsOn(g).length); if (!gs.length) return false;
     const g = c4Pick(gs), s = c4Pick(c4HandsOn(g));
-    Object.assign(E, { title: 'Bị dụ mất người làm', text: `Nhà buôn đầu chợ hứa trả ${c4Cap1(s.name)} (hàng ${C4_GOODS[g].name.toLowerCase()}) thêm 4<i class=\"ic4 coin\"></i> một ngày để sang làm cho họ.`, opts: [
-      ['Tăng công thêm 4<i class=\"ic4 coin\"></i>/ngày', () => { s.wageUp = (s.wageUp || 0) + 4; toast(`${c4Cap1(s.name)} ở lại, hứa làm hết lòng.`, 3); }],
+    Object.assign(E, { title: 'Bị dụ mất người làm', text: `Nhà buôn đầu chợ hứa trả ${c4Cap1(s.name)} (hàng ${C4_GOODS[g].name.toLowerCase()}) thêm 4 đồng một ngày để sang làm cho họ.`, opts: [
+      ['Tăng công thêm 4 đồng/ngày', () => { s.wageUp = (s.wageUp || 0) + 4; toast(`${c4Cap1(s.name)} ở lại, hứa làm hết lòng.`, 3); }],
       ['Để người ta đi', () => { s.quit = true; toast(`Tối nay ${s.name} bỏ sang nhà kia. Vợ chồng lại phải tự bán, hoặc thuê người khác.`, 3.4); }]] });
   },
   // a flood coming: shore up the stalls now, or lose goods and a level tomorrow
   lut(E) {
     if (c4Wx() !== 'mua' || SAVE4.flood) return false;
     Object.assign(E, { title: 'Nước sông lên', text: 'Mưa mãi không ngớt, nước sông dâng gần tới chợ. Các nhà rủ nhau đắp bờ, kê hàng lên cao.', opts: [
-      ['Đắp bờ, kê hàng · 30<i class=\"ic4 coin\"></i>', () => { SAVE4.money -= 30; C4.today.spent += 30; toast('Hàng quán nhà mình cao ráo, yên tâm.', 3); }, SAVE4.money >= 30],
+      ['Đắp bờ, kê hàng · 30 đồng', () => { SAVE4.money -= 30; C4.today.spent += 30; toast('Hàng quán nhà mình cao ráo, yên tâm.', 3); }, SAVE4.money >= 30],
       ['Chắc không sao đâu', () => { SAVE4.flood = SAVE4.day + 1; toast('Mong là trời thương…', 2.6); }]] });
   },
   // a merchant from another village buys a big lot on the spot
   khachla(E) {
     const n = Math.min(c4Stock('trau'), 20 + ((R() * 3) | 0) * 5); if (n < 15) return false;
     const vil = c4Pick(C4_VILLAGES);
-    Object.assign(E, { title: 'Lái buôn làng bên', text: `Một lái buôn ${vil} ghé hỏi mua ${n} miếng trầu, trả 7<i class=\"ic4 coin\"></i> một miếng, lấy ngay.`, opts: [
+    Object.assign(E, { title: 'Lái buôn làng bên', text: `Một lái buôn ${vil} ghé hỏi mua ${n} miếng trầu, trả 7 đồng một miếng, lấy ngay.`, opts: [
       [`Bán · ${c4Money(n * 7)}`, () => { SAVE4.stock -= n; SAVE4.money += n * 7; C4.today.take += n * 7; C4.today.cogs += n * c4Unit('trau'); C4.today.sold += n; AU.pluck(88); toast('Lái buôn trả tiền sòng phẳng, hẹn phiên sau ghé tiếp.', 3); }],
       ['Để dành bán cho khách quen', () => toast('Khách quen mới là lộc lâu dài.', 2.4)]] });
   },
@@ -281,7 +282,7 @@ function c4OpenUps() {
 function c4ByShopHtml(d) {
   const B = d.by || {}, rows = c4Owned().map(g => [g, B[g] || { take: 0, cogs: 0, n: 0 }]).map(([g, b]) => [g, b, b.take - b.cogs - (b.wage || 0)]);
   const max = Math.max(1, ...rows.map(r => Math.abs(r[2])));
-  return `<div class="byshop">${rows.sort((a, b) => b[2] - a[2]).map(([g, b, net]) => `<div class="bs"><span class="tg">${g === 'trau' ? c4Lv().name : c4SLv(g).name}</span><b>${C4_GOODS[g].name}</b><span class="${net >= 0 ? 'gain' : 'bad'}">${net >= 0 ? '+' : '−'}${c4Money(Math.abs(net))}</span><i class="bar"><i style="width:${Math.abs(net) / max * 100}%"></i></i><small>${b.n} ${C4_GOODS[g].unit}${b.wage ? ` · công ${c4Num(b.wage)}` : ''}</small></div>`).join('')}</div>`;
+  return `<div class="byshop">${rows.sort((a, b) => b[2] - a[2]).map(([g, b, net]) => `<div class="bs"><span class="tg">${g === 'trau' ? c4Lv().name : c4SLv(g).name}</span><b>${C4_GOODS[g].name}</b><span class="${net >= 0 ? 'gain' : 'bad'}">${net >= 0 ? '+' : '−'}${c4Money(Math.abs(net))}</span><i class="bar"><i style="width:${Math.abs(net) / max * 100}%"></i></i><small>${b.n} ${C4_GOODS[g].unit}${b.wage ? ` · công ${c4Money(b.wage)}` : ''}</small></div>`).join('')}</div>`;
 }
 
 /* ---------- tables and stools (owner): who eats chè, xôi or bún sits down to it; more tables, more seats, longer patience ---------- */

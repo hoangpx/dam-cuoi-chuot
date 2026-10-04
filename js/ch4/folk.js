@@ -9,20 +9,20 @@ const C4_NAMES = {
 // how often each kind turns up at the market
 const C4_KINDS = [['mouse', .64], ['duck', .1], ['rooster', .08], ['dog', .09]];
 // the neighbours who keep a stall along the lane; they call out their wares now and then
-// sellers along the front edge of the lane (z 1.03), laid out on mats (owner: the market sells everything)
+// more sellers (owner: the market sells everything); all in the one row behind the lane now, with ours (a player: the front row stole the eye)
 const C4_VENDORS_FRONT = [
-  { x: 260, name: 'bác hàng thịt', M: 18, ware: 'hangThit', calls: ['Thịt lợn mới mổ sáng nay đây!', 'Ba chỉ, nạc vai, xương ống đây!', 'Thịt tươi rói, mua về kho tộ thì ngon!'] },
-  { x: 560, name: 'chị hàng gạo', M: 22, ware: 'hangGao', calls: ['Gạo tám thơm mới xay đây!', 'Gạo nếp cái hoa vàng, đồ xôi dẻo lắm!', 'Một đấu gạo, ăn no cả nhà!'] },
-  { x: 880, name: 'bà hàng rau', M: 26, ware: 'hangRau', calls: ['Rau muống, rau ngót, rau đay đây!', 'Rau nhà trồng, không tưới phân đâu!', 'Mua bó rau về nấu canh cua nào!'] },
-  { x: 1200, name: 'cô hàng trứng', M: 14, ware: 'hangTrung', calls: ['Trứng gà ta, trứng vịt lộn đây!', 'Trứng mới đẻ, còn ấm tay!', 'Mua chục trứng tặng thêm một quả!'] },
-  { x: 1520, name: 'chú hàng gà', M: 19, ware: 'hangGa', calls: ['Gà ri, gà mái ghẹ đây!', 'Gà nhà nuôi, thịt chắc lắm!', 'Mua gà về cúng rằm đi cô ơi!'] },
-  { x: 1840, name: 'chị hàng hoa quả', M: 24, ware: 'hangQua', calls: ['Chuối tiêu, cam sành, bưởi Diễn đây!', 'Quả ngọt như mía lùi!', 'Mua nải chuối về thắp hương đi!'] },
-  { x: 2160, name: 'cụ hàng nón', M: 26, ware: 'hangNon', calls: ['Nón lá làng Chuông đây!', 'Nón quai thao cho cô dâu đây!', 'Che nắng che mưa, đội vào là xinh!'] },
+  { x: 2700, name: 'bác hàng thịt', M: 18, ware: 'hangThit', calls: ['Thịt lợn mới mổ sáng nay đây!', 'Ba chỉ, nạc vai, xương ống đây!', 'Thịt tươi rói, mua về kho tộ thì ngon!'] },
+  { x: 2930, name: 'chị hàng gạo', M: 22, ware: 'hangGao', calls: ['Gạo tám thơm mới xay đây!', 'Gạo nếp cái hoa vàng, đồ xôi dẻo lắm!', 'Một đấu gạo, ăn no cả nhà!'] },
+  { x: 3160, name: 'bà hàng rau', M: 26, ware: 'hangRau', calls: ['Rau muống, rau ngót, rau đay đây!', 'Rau nhà trồng, không tưới phân đâu!', 'Mua bó rau về nấu canh cua nào!'] },
+  { x: 3390, name: 'cô hàng trứng', M: 14, ware: 'hangTrung', calls: ['Trứng gà ta, trứng vịt lộn đây!', 'Trứng mới đẻ, còn ấm tay!', 'Mua chục trứng tặng thêm một quả!'] },
+  { x: 3620, name: 'chú hàng gà', M: 19, ware: 'hangGa', calls: ['Gà ri, gà mái ghẹ đây!', 'Gà nhà nuôi, thịt chắc lắm!', 'Mua gà về cúng rằm đi cô ơi!'] },
+  { x: 2225, name: 'chị hàng hoa quả', M: 24, ware: 'hangQua', calls: ['Chuối tiêu, cam sành, bưởi Diễn đây!', 'Quả ngọt như mía lùi!', 'Mua nải chuối về thắp hương đi!'] },
+  { x: 3840, name: 'cụ hàng nón', M: 26, ware: 'hangNon', calls: ['Nón lá làng Chuông đây!', 'Nón quai thao cho cô dâu đây!', 'Che nắng che mưa, đội vào là xinh!'] },
 ];
 const C4_VENDORS = [
-  { x: 1180, name: 'bà hàng cá', M: 'c', ware: 'hangCa', calls: ['Cá rô đồng đây! Cá tươi đây!', 'Cá chép béo lắm, mua đi cô bác ơi!', 'Tươi rói, vừa kéo lưới sáng nay!'] },
-  { x: 1560, name: 'cô hàng vải', M: 'd', ware: 'hangVai', calls: ['Vải mới về, mời cô bác xem!', 'Lụa Hà Đông mát lắm đây!', 'May áo cưới thì ghé em nhé!'] },
-  { x: 1930, name: 'chị bánh đa', M: 'a', ware: 'hangBanh', calls: ['Bánh đa nóng giòn đây!', 'Bánh đa vừng, bánh đa đỏ đây!', 'Ăn một chiếc là nhớ cả năm!'] },
+  { x: 935, name: 'bà hàng cá', M: 'c', ware: 'hangCa', calls: ['Cá rô đồng đây! Cá tươi đây!', 'Cá chép béo lắm, mua đi cô bác ơi!', 'Tươi rói, vừa kéo lưới sáng nay!'] },
+  { x: 1365, name: 'cô hàng vải', M: 'd', ware: 'hangVai', calls: ['Vải mới về, mời cô bác xem!', 'Lụa Hà Đông mát lắm đây!', 'May áo cưới thì ghé em nhé!'] },
+  { x: 1795, name: 'chị bánh đa', M: 'a', ware: 'hangBanh', calls: ['Bánh đa nóng giòn đây!', 'Bánh đa vừng, bánh đa đỏ đây!', 'Ăn một chiếc là nhớ cả năm!'] },
 ];
 const C4_CHATS = [
   // chuyện cười, châm biếm

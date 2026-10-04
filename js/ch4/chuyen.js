@@ -84,7 +84,7 @@ const C4_ACH = [
   ['buon', 'Buôn bán', [
     ['mo', 'Mở hàng', 'Bán được món hàng đầu tiên', () => (SAVE4.sold || 0) >= 1],
     ['tuan', 'Một tuần', 'Buôn bán qua bảy ngày', () => SAVE4.day > 7],
-    ['dat', 'Ngày đắt hàng', 'Lãi hơn 200<i class=\"ic4 coin\"></i> trong một ngày', () => (SAVE4.best || 0) >= 200],
+    ['dat', 'Ngày đắt hàng', 'Lãi hơn 200 đồng trong một ngày', () => (SAVE4.best || 0) >= 200],
     ['sap', 'Sạp lều', 'Dựng được sạp lều', () => SAVE4.lv >= 1],
     ['hai', 'Hai gánh', 'Thuê thêm một chỗ bán', () => C4_SHOPS.some(c4Own)],
     ['gian', 'Gian mái ngói', 'Dựng được gian mái ngói', () => SAVE4.lv >= 2],

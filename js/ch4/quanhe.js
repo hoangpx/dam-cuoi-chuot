@@ -239,7 +239,7 @@ function qhCardHtml(id) {
       ${f.deal ? `<p class="back">Lần tới ghé: ${f.deal === 'free' ? 'mời miễn phí' : 'giảm nửa giá'}.</p>` : ''}
       <div class="acts">
         <button class="act g" data-act="moi" ${!buy || f.inv === day || c4Invited() >= C4_INVITES ? 'disabled' : ''}><b>Mời ghé</b><span>${f.inv === day ? 'đã mời' : `còn ${C4_INVITES - c4Invited()} lượt hôm nay`}</span></button>
-        <button class="act o" data-act="tea" ${f.tea === day || SAVE4.money < 3 ? 'disabled' : ''}><b>Mời nước</b><span>${f.tea === day ? 'đã mời hôm nay' : '3<i class=\"ic4 coin\"></i> · thêm thân'}</span></button>
+        <button class="act o" data-act="tea" ${f.tea === day || SAVE4.money < 3 ? 'disabled' : ''}><b>Mời nước</b><span>${f.tea === day ? 'đã mời hôm nay' : '3 đồng · thêm thân'}</span></button>
         <button class="act b" data-act="ask" ${f.ask === day || !unknownTies || f.a < 35 ? 'disabled' : ''}><b>Hỏi chuyện nhà</b><span>${!unknownTies ? 'đã biết hết' : f.a < 35 ? 'chưa đủ thân' : f.ask === day ? 'mai hỏi tiếp' : `còn ${unknownTies} người chưa biết`}</span></button>
       </div>
       <div class="row col"><button class="btn alt" data-act="half" ${!buy || f.deal ? 'disabled' : ''}>Lần tới giảm nửa giá</button><button class="btn alt" data-act="free" ${!buy || f.deal ? 'disabled' : ''}>Lần tới mời miễn phí</button><button class="btn alt" data-house="${p.house}">Xem gia phả ${hs.name}</button></div></div>`;

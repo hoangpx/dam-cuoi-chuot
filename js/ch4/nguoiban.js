@@ -38,9 +38,9 @@ function c4SellersUpdate(dt) {
     if (open) {
       // what each stall still needs once its helpers and the other partner are counted
       const need = g => { if (!c4Stock(g) || !c4Open(g)) return 0; const free = c4HandsOn(g).filter(h => !c4SaleBy(h)).length + members.filter(o => o !== m && o.to === g && !c4SaleBy(o)).length; return want(g) - free; };
-      const here = m.to && need(m.to) > 0 ? m.to : null;
+      const here = m.to && need(m.to) > 0 && !(m === P && m.to === 'trau') ? m.to : null;   // the husband never sells betel: she does (a player found two at it far too easy)
       if (here) to = here;
-      else { let best = -1e9; for (const g of c4Owned()) { const n = need(g); if (n <= 0) continue; const q = C4.Q[g][0], sc = n * 40 + (q ? q.wait : 0) * 6 - Math.abs(c4SellX(g, 0) - m.x) / 30; if (sc > best) { best = sc; to = g; } } }
+      else { let best = -1e9; for (const g of c4Owned()) { if (m === P && g === 'trau') continue; const n = need(g); if (n <= 0) continue; const q = C4.Q[g][0], sc = n * 40 + (q ? q.wait : 0) * 6 - Math.abs(c4SellX(g, 0) - m.x) / 30; if (sc > best) { best = sc; to = g; } } }
     }
     if (m === W) to = to || 'trau';
     m.to = to;
