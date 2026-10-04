@@ -755,7 +755,8 @@ function c4OpenUp(g = 'trau') {
   }
   $('#c4upT').textContent = g === 'trau' ? c4Lv().name : G.name;
   const carry = c4Carrier(g);                                                // the husband, or a hired hand if he is out (nguoiban.js)
-  if (!carry) box.innerHTML = c4AllHands().length ? '<p>Chồng và người làm thuê đều đang bận…</p>' : '<p>Chồng đang đi lấy hàng…</p>';
+  const husb = C4.deliv && C4.deliv.out ? `chồng đang gánh hàng đi giao cho ${C4.deliv.o.vil}` : 'chồng đang đi lấy hàng';   // (a player: delivering is not fetching)
+  if (!carry) box.innerHTML = c4AllHands().length ? `<p>${c4Cap1(husb)}, người làm thuê cũng đều đang bận…</p>` : `<p>${c4Cap1(husb)}…</p>`;
   else if (C4.phase !== 'open') box.innerHTML = '';
   else {
     box.innerHTML = `<h4>Nhập thêm ${G.name.toLowerCase()}</h4><div class="ord"></div><button class="btn get">Sai ${carry.name} đi lấy</button>`;
