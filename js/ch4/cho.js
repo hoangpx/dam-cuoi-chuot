@@ -537,7 +537,7 @@ function updateC4(dt) {
       else { AU.snort(); toast(`Không đủ ${W.n} miếng trầu, nhà ${W.who} giận dỗi bỏ đi.`, 3.4); }
       c4Hud();
     }
-    c4DelivUpdate(); c4ExtraUpdate(); c4StreetUpdate(dt); c4CoupleTalk(dt); c4Ambience(dt); c4FlowerSeller(dt); c4VisitorsUpdate(dt); c4RivalUpdate(dt); c4RivalWalk(dt); c4HusbTout(dt); c4GangUpdate(dt);
+    c4DelivUpdate(); c4ExtraUpdate(); c4StreetUpdate(dt); c4CoupleTalk(dt); c4Ambience(dt); c4FlowerSeller(dt); c4VisitorsUpdate(dt); c4RivalUpdate(dt); c4RivalWalk(dt); c4HusbTout(dt); c4TripsUpdate(dt);
     if (C4.mins >= C4_CLOSE) { C4.mins = C4_CLOSE - 1; c4EndDay(); }
   }
   // the cat: on the roof, a leap down, the decision; fed it goes back over the roof; refused it sits, then takes betel
@@ -663,7 +663,7 @@ function c4EndDay() {
   for (const g of c4Owned()) { const G = C4_GOODS[g], n = c4Stock(g); if (n && G.keep !== 'ever') { d.wilt += n; d.wiltLoss += n * c4Unit(g); lines.push(`${n} ${G.unit} ${G.name.toLowerCase()}`); c4SetStock(g, 0); } }
   d.wiltLoss = Math.round(d.wiltLoss);
   // helpers are paid; one owed two days running walks out
-  const quits = []; c4PayHands(d, quits); c4PayPorters(d, quits);
+  const quits = []; c4PayHands(d, quits); C4.trips = [];
   const extra = []; c4PayRents(d, extra);
   const gossip = SAVE4.day >= C4_BOOK_DAY ? c4Gossip() : 0;
   c4TasksEnd(d, extra);
@@ -752,16 +752,16 @@ function c4OpenUp(g = 'trau') {
     c4Sheets('c4up'); return;
   }
   $('#c4upT').textContent = g === 'trau' ? c4Lv().name : G.name;
-  const carry = c4Carrier();                                                 // the husband, or a hired porter if he is out (nguoiban.js)
-  if (!carry) box.innerHTML = c4Porters().length ? '<p>Chồng và người gánh hàng đều đang đi lấy hàng…</p>' : '<p>Chồng đang đi lấy hàng…</p>';
+  const carry = c4Carrier(g);                                                // the husband, or a hired hand if he is out (nguoiban.js)
+  if (!carry) box.innerHTML = c4AllHands().length ? '<p>Chồng và người làm thuê đều đang bận…</p>' : '<p>Chồng đang đi lấy hàng…</p>';
   else if (C4.phase !== 'open') box.innerHTML = '';
   else {
     box.innerHTML = `<h4>Nhập thêm ${G.name.toLowerCase()}</h4><div class="ord"></div><button class="btn get">Sai ${carry.name} đi lấy</button>`;
     let q = 0; c4Stepper(box.querySelector('.ord'), g, v => { q = v; }, true);
-    box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } Object.assign(carry.who, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
+    box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
-  box.appendChild(c4HandsBlock(g));
-  if (g === 'trau' && c4Owned().length > 1) box.appendChild(c4PortersBlock());   // porters: only once there is more than the betel stall (a player)                                        // who sells here: the couple, or hired helpers (nguoiban.js)
+  if (c4Owned().length > 1 || c4Hands(g).length) box.appendChild(c4HandsBlock(g));   // hiring only once there is more than the betel stall (a player)
+                                        // who sells here: the couple, or hired helpers (nguoiban.js)
   if (g !== 'trau' && !C4_GOODS[g].buy) c4ShopUpBlock(g);                   // a bought stall has no upgrades (yet)
   if (g === 'trau') {
     const nx = C4_LV[SAVE4.lv + 1];
@@ -834,7 +834,7 @@ function renderC4() {
       if (mine && c4Stock(vg) <= 0 && C4.phase === 'open') { g.font = '900 14px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', v.x + 50, c4Y(wz) - 90 * c4S(wz)); } } });
     if (mine) c4HandItems(items, vg, head); else head(v.x - 40, vz, 168 * .95, v, 0);
   }
-  c4RivalItems(items, g, head, vis); c4GangItems(items, head, vis);                                      // the rival betel stall across the lane (muagan.js)
+  c4RivalItems(items, g, head, vis); c4TripItems(items, head, vis);                                      // the rival betel stall across the lane (muagan.js)
   // the couple's other plots: rented ones with their stall and helper, empty ones with a board
   for (const sh of C4_SHOPS) {
     const G = C4_GOODS[sh], sx = G.x, sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z); if (!vis(sx, 200)) continue;
