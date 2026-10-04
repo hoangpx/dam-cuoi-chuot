@@ -193,7 +193,7 @@ function c4StreetItems(items, g, vis) {
 function c4Ambience(dt) {
   const V = c4View(), on = w => Math.abs(w.x - C4.camX - V.vw / 2) < V.vw * .6, here = C4.walkers.filter(on);
   const n = here.length, moving = here.filter(w => w.st === 'walk' || w.st === 'leave').length, wx = c4Wx();
-  AU.ambient({ crowd: Math.min(1, n / 16) * (SAVE4.plan && SAVE4.plan.hoi ? 1.2 : 1), rain: wx === 'mua' ? 1 : 0, wind: wx === 'ret' ? .9 : wx === 'mua' ? .4 : .15 });
+  AU.ambient({ rain: wx === 'mua' ? .4 : 0 });   // owner: no wind or crowd hiss (it sounded like rushing water); only rain on rainy days
   if (R() < n * .22 * dt) AU.chatter();
   if (R() < moving * .5 * dt) AU.step();
   if (here.some(w => w.kind === 'dog') && R() < dt / 10) AU.bark();

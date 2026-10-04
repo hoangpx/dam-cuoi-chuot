@@ -509,7 +509,7 @@ function c4GoalReached() {
 function updateC4(dt) {
   C4.t += dt;
   if (C4.phase === 'story') { c4StoryUpdate(dt); return; }
-  if (C4.paused) { AU.ambient({ crowd: .25 }); return; }                 // a sheet is open: the market waits, the murmur goes quiet
+  if (C4.paused) { AU.ambient({}); return; }                            // a sheet is open: the market waits, the rain bed goes quiet
   for (const f of C4.fx) f.t += dt; C4.fx = C4.fx.filter(f => f.t < 1.2);
   for (const e of [...C4.walkers, C4.wife, ...C4.vendors, C4.porter, ...C4_SHOPS.map(g => SAVE4.shops[g]).filter(Boolean), ...c4AllHands().map(o => o.h)]) if (e.say && (e.say.t += dt) > e.say.life) e.say = null;
   if (C4.phase === 'open') {
@@ -641,7 +641,7 @@ function c4Listen(c) {
 }
 function c4Leave(w, bought) { const q = w.shop && C4.Q[w.shop], i = q ? q.indexOf(w) : -1; if (i >= 0) q.splice(i, 1); w.st = 'leave'; w.face = bought ? (R() < .5 ? 1 : -1) : 1; w.sp = (w.kind === 'mouse' ? 70 : w.sp) + R() * 20; }
 function c4EndDay() {
-  AU.ambient({ wind: .2 });
+  AU.ambient({});
   C4.phase = 'night'; SAVE4.openDay = 0;
   for (const w of C4.walkers) if (w.st !== 'leave') { w.st = 'leave'; w.face = w.x < C4_STALL ? -1 : 1; w.chat = null; w.talk = false; }
   for (const g of Object.keys(C4.Q)) { C4.Q[g] = []; C4.SV[g] = []; }
