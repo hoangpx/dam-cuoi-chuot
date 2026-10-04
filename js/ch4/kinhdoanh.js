@@ -243,7 +243,7 @@ const C4_EXTRA_EV = {
       ['Thôi, coi như của đi thay người', () => { SAVE4.phuc = 1; toast('Cả chợ khen nhà mình rộng lượng.', 2.8); }]] });
   },
 };
-const c4ExtraPool = own => ['caicau', 'omdau', 'cotiec', 'lut', 'khachla', 'bototron', ...(own.length > 1 ? ['duthue'] : [])];
+const c4ExtraPool = own => ['caicau', 'omdau', 'cotiec', 'lut', 'khachla', 'bototron', 'mung', 'tang', ...(own.length > 1 ? ['duthue'] : [])];
 // the feast is collected at giờ Thân; a flood the morning after a gamble
 function c4ExtraUpdate() {
   const F = SAVE4.feast;
@@ -353,3 +353,32 @@ function c4TablesWire(g) {
   const b = $('#c4upB [data-table]'); if (!b) return;
   b.addEventListener('click', () => { const cost = c4TableCost(g); if (SAVE4.money < cost) return; SAVE4.money -= cost; C4.today.spent += cost; SAVE4.shops[g].tables = c4Tables(g) + 1; AU.stamp(); persist4(); c4Hud(); toast(`Kê thêm một bàn hai ghế cho hàng ${C4_GOODS[g].name.toLowerCase()}.`, 2.6); c4OpenUp(g); });
 }
+
+/* ---------- weddings and funerals in the village (owner): they cost a gift, and win the household (and their friends) over;
+   staying away leaves them hurt. Timed like the other happenings: when the time runs out, you did not go. ---------- */
+// a household you know: its people, and everyone tied to them
+function c4Household(p) { const P = c4People(); return { all: P.list.filter(q => q.house === p.house), ties: p.links.map(l => P.list[l.to]) }; }
+function c4Warm(p, me, house, ties) {
+  const H = c4Household(p);
+  c4Bump(p.id, me); for (const q of H.all) if (q.id !== p.id && c4Known(q.id)) c4Bump(q.id, house);
+  if (ties) for (const q of H.ties) if (c4Known(q.id)) c4Bump(q.id, ties);
+}
+Object.assign(C4_EXTRA_EV, {
+  mung(E) {
+    const ks = c4KnownList(15).filter(p => p.kind === 'mouse'); if (!ks.length) return false;
+    const olds = ks.filter(q => q.role === 'old' || /^(bác|ông|bà)/.test(q.name)), p = c4Pick(olds.length ? olds : ks), sp = n => { SAVE4.money -= n; C4.today.spent += n; };
+    Object.assign(E, { title: 'Đám cưới', text: `Nhà ${p.name} cưới con, sang đánh tiếng mời nhà mình đi ăn cỗ mừng cô dâu chú rể. Mừng càng hậu thì nhà ấy và bạn bè họ càng quý.`, opts: [
+      ['Mừng 10 đồng', () => { sp(10); c4Warm(p, 6, 3, 0); toast(`${c4Cap1(p.name)} cảm ơn, mời nhà mình ngồi mâm trên. Cả nhà ấy quý nhà mình hơn.`, 3.4); }, SAVE4.money >= 10],
+      ['Mừng 30 đồng', () => { sp(30); c4Warm(p, 12, 6, 2); toast(`Phong bì dày dặn! Nhà ${p.name} và bạn bè họ đều mến nhà mình hơn.`, 3.4); }, SAVE4.money >= 30],
+      ['Mừng 60 đồng, thật hậu', () => { sp(60); c4Warm(p, 20, 10, 5); toast(`Cả đám cưới xôn xao khen nhà mình chịu chơi. ${c4Cap1(p.name)} nhớ mãi, nhà ấy và bạn bè họ quý nhà mình lắm.`, 3.8); }, SAVE4.money >= 60],
+      ['Bận bán hàng, không đi', () => { c4Warm(p, -6, -3, 0); toast(`${c4Cap1(p.name)} hơi phật ý: "Mời mà chẳng thấy mặt!"`, 3.2); }]] });
+  },
+  tang(E) {
+    const ks = c4KnownList(10).filter(p => p.kind === 'mouse'); if (!ks.length) return false;
+    const p = c4Pick(ks), sp = n => { SAVE4.money -= n; C4.today.spent += n; }, who = c4Pick(['ông cụ thân sinh', 'bà cụ thân sinh', 'cụ ông bên nội', 'cụ bà bên ngoại']);
+    Object.assign(E, { title: 'Đám ma', text: `Nhà ${p.name} có tang: ${who} vừa mất. Cả xóm đi phúng viếng. Đi đưa tang thì nhà ấy nhớ ơn lắm, nhưng gánh hàng phải bỏ trống một lúc.`, opts: [
+      ['Phúng 10 đồng', () => { sp(10); c4Warm(p, 8, 4, 0); toast(`Nhà ${p.name} cảm động vì nhà mình đến thắp nén hương.`, 3.2); }, SAVE4.money >= 10],
+      ['Phúng 30 đồng và đi đưa tang', () => { sp(30); c4Warm(p, 18, 9, 4); C4.shut = Math.max(C4.shut || 0, 25); if (C4.today) C4.today.help = (C4.today.help || 0) + 1; toast(`Vợ chồng đi đưa tang, gánh hàng đóng một lúc. Nhà ${p.name} và người quen của họ nhớ ơn lắm.`, 3.8); }, SAVE4.money >= 30],
+      ['Không đi', () => { c4Warm(p, -8, -4, -1); toast(`Người ta xì xào: "Hàng xóm có tang mà nhà ấy không ló mặt!"`, 3.2); }]] });
+  },
+});
