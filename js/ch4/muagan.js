@@ -71,9 +71,10 @@ function c4RivalUpdate(dt) {
   const R0 = C4.rivalM || (C4.rivalM = { say: null, callT: 2, M: c4MouseRig(20) });
   if ((R0.callT -= dt) <= 0) { R0.callT = 7 + R() * 7; c4Say(R0, c4Pick(C4_RIVAL_CALL)); }
   // while we keep our price, some passers-by turn off to the cheaper stall
-  if (SAVE4.cheap > 0 || R() > dt * .5) return;
-  const w = C4.walkers.find(w => w.st === 'walk' && !w.buy && !w.visit && w.kind === 'mouse' && !w.buf && Math.abs(w.x - C4_RIVAL_X) < 260 && !w.rival);
-  if (w) { w.rival = true; w.st = 'torival'; w.cd = 1e9; }
+  if (SAVE4.cheap > 0 || R() > dt * 1.2) return;
+  // (a player: the rival barely hurt) — buyers on their way to our betel stall are lured too, not only passers-by
+  const w = C4.walkers.find(w => w.st === 'walk' && !w.visit && w.kind === 'mouse' && !w.buf && Math.abs(w.x - C4_RIVAL_X) < 300 && !w.rival && (!w.buy || w.shop === 'trau') && !w.guest);
+  if (w) { w.rival = true; w.buy = false; w.shop = null; w.st = 'torival'; w.cd = 1e9; }
 }
 function c4RivalWalk(dt) {
   for (const w of C4.walkers) {

@@ -63,6 +63,9 @@ function c4DrawShopLv(g, x, y, s, lv, ware = 'che') {
 const C4_GUILD = { day: 6, known: 8, fee: 200, dues: 20, off: .85 };          // from day 6, knowing 8 folk; 15% off the goods
 const C4_VILLAGES = ['làng Đông Hồ', 'làng Bát Tràng', 'làng Vạn Phúc', 'làng Thổ Hà', 'làng Phù Lưu', 'làng Đình Bảng', 'chợ huyện', 'làng chài ven sông'];
 const c4Guild = () => !!SAVE4.guild;
+// when an order is to go out, as the guild says it: only roughly; the husband leaves at some moment in it and is gone a good while
+const C4_SLOTS = [{ w: 'sáng sớm', a: 300, b: 420 }, { w: 'gần trưa', a: 570, b: 690 }, { w: 'buổi chiều', a: 780, b: 900 }, { w: 'chiều muộn', a: 900, b: 1020 }];
+const c4Slot = o => C4_SLOTS[o.slot || 0];
 // today's offers (rolled once a morning) and the orders taken: { id, vil, g, n, unit, pay, day, dep }
 function c4RollOffers() {
   if (!c4Guild() || SAVE4.offerDay === SAVE4.day) return;
@@ -70,7 +73,7 @@ function c4RollOffers() {
   const own = c4Owned(), k = 1 + (R() < .5 ? 1 : 0);
   for (let i = 0; i < k; i++) {
     const g = c4Pick(own), G = C4_GOODS[g], n = Math.round((g === 'trau' ? 30 : 12) * (1 + R() * 2)), unit = Math.round(c4Cost(g) * (1.7 + R() * .5) * 10) / 10;
-    SAVE4.offers.push({ id: SAVE4.day * 10 + i, vil: c4Pick(C4_VILLAGES), g, n, unit, pay: Math.round(n * unit), day: SAVE4.day + 1 + ((R() * 2) | 0), dep: Math.round(n * unit * .2) });
+    SAVE4.offers.push({ id: SAVE4.day * 10 + i, vil: c4Pick(C4_VILLAGES), g, n, unit, pay: Math.round(n * unit), day: SAVE4.day + 1 + ((R() * 2) | 0), dep: Math.round(n * unit * .2), slot: (R() * C4_SLOTS.length) | 0 });
   }
 }
 function c4BizHtml() {
@@ -84,8 +87,8 @@ function c4BizHtml() {
     c4RollOffers();
     const mine = (SAVE4.ws || []), offers = (SAVE4.offers || []).filter(o => !mine.some(m => m.id === o.id));
     h += `<div class="biz"><h4>Đơn hàng sỉ · phường buôn</h4>`
-      + (mine.length ? mine.map(o => `<p class="${o.day === day ? 'due' : ''}">• ${o.day === day ? '<b>Hôm nay giao</b>' : 'Ngày ' + o.day + ' giao'}: ${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()} cho ${o.vil}, được ${c4Money(o.pay)} (tiền hàng ${c4Money(Math.round(o.n * c4Cost(o.g)))})</p>`).join('') : '')
-      + (offers.length && mine.length < 2 ? offers.map(o => `<div class="offer"><p>${c4Cap1(o.vil)} đặt <b>${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()}</b>, giao ngày ${o.day}, trả ${c4Money(o.pay)}. Nhận đơn phải đặt cọc ${o.dep} đồng; trễ hẹn mất cọc, mất tiếng.</p><button class="btn alt" data-take="${o.id}" ${SAVE4.money < o.dep ? 'disabled' : ''}>Nhận đơn · cọc ${o.dep} đồng</button></div>`).join('') : '')
+      + (mine.length ? mine.map(o => `<p class="${o.day === day ? 'due' : ''}">• ${o.day === day ? `<b>Hôm nay giao, ${c4Slot(o).w}</b>` : `Ngày ${o.day} giao, ${c4Slot(o).w}`}: ${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()} cho ${o.vil}, được ${c4Money(o.pay)} (tiền hàng ${c4Money(Math.round(o.n * c4Cost(o.g)))})</p>`).join('') : '')
+      + (offers.length && mine.length < 2 ? offers.map(o => `<div class="offer"><p>${c4Cap1(o.vil)} đặt <b>${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()}</b>, giao ngày ${o.day}, ${c4Slot(o).w}, trả ${c4Money(o.pay)}. Nhận đơn phải đặt cọc ${o.dep} đồng; trễ hẹn mất cọc, mất tiếng.</p><button class="btn alt" data-take="${o.id}" ${SAVE4.money < o.dep ? 'disabled' : ''}>Nhận đơn · cọc ${o.dep} đồng</button></div>`).join('') : '')
       + (!mine.length && !offers.length ? '<p class="hint">Hôm nay chưa có làng nào đặt hàng.</p>' : '') + '</div>';
   }
   // today's tasks
@@ -100,7 +103,7 @@ function c4BizWire(box) {
   }));
   box.querySelectorAll('[data-take]').forEach(b => b.addEventListener('click', () => {
     const o = (SAVE4.offers || []).find(x => x.id === +b.dataset.take); if (!o || SAVE4.money < o.dep) return;
-    SAVE4.money -= o.dep; (SAVE4.ws = SAVE4.ws || []).push(o); AU.pluck(84); toast(`Nhận đơn của ${o.vil}. Ngày ${o.day} chồng gánh hàng đi giao từ sáng (5:00), trưa (11:00) mới về.`, 3.2); persist4(); c4BizRefresh(); c4AfterMoney();
+    SAVE4.money -= o.dep; (SAVE4.ws = SAVE4.ws || []).push(o); AU.pluck(84); toast(`Nhận đơn của ${o.vil}. Ngày ${o.day}, ${c4Slot(o).w}, chồng gánh hàng đi giao, đi mất một lúc lâu.`, 3.2); persist4(); c4BizRefresh(); c4AfterMoney();
   }));
 }
 function c4BizRefresh() { const box = $('#c4biz'); if (!box) return; box.innerHTML = c4BizHtml(); c4BizWire(box); }
@@ -110,8 +113,7 @@ function c4ShipOrders() {
   for (const o of due) {
     const cost = Math.round(o.n * c4Cost(o.g));
     if (SAVE4.money < cost || C4.deliv) { o.fail = true; lines.push(`Không đủ ${c4Money(cost)} lấy hàng giao cho ${o.vil}: mất cọc, ${o.vil} chê nhà mình thất hứa.`); SAVE4.wsBad = (SAVE4.wsBad || 0) + 1; continue; }
-    SAVE4.money -= cost; C4.today.spent += cost; C4.deliv = { o, until: 11 * 60 };
-    Object.assign(C4.porter, { st: 'out', good: null, qty: 0, cost: 0, deliv: true });
+    const S = c4Slot(o); SAVE4.money -= cost; C4.today.spent += cost; C4.deliv = { o, go: S.a + R() * (S.b - S.a), out: false };   // goods bought at the open; he sets off at some moment in the slot
   }
   SAVE4.ws = (SAVE4.ws || []).filter(o => o.day > SAVE4.day);
   if (lines.length) setTimeout(() => toast(lines.join(' '), 4.4), 600);
@@ -119,9 +121,18 @@ function c4ShipOrders() {
 // the husband stays away while delivering; back at noon with the money (and a story)
 function c4DelivUpdate() {
   const D = C4.deliv, P = C4.porter; if (!D) return;
-  if (P.st === 'away') P.t = 1;                                             // keep him away until the hour
-  if (C4.mins >= D.until && P.st === 'away') {
-    P.t = 0; C4.deliv = null; const o = D.o; let pay = o.pay + o.dep, note;
+  if (!D.out) {                                                             // his moment comes (if he is out fetching, as soon as he is back)
+    if (C4.mins < D.go || !c4HusbFree()) return;
+    D.out = true; D.until = C4.mins + 140 + R() * 40; Object.assign(P, { st: 'out', good: null, qty: 0, cost: 0, deliv: true, strollX: null });
+    toast(`Chồng gánh hàng đi giao cho ${D.o.vil}.`, 2.8); return;
+  }
+  if (P.st === 'away') P.t = 1;                                             // keep him away a good while
+  if (C4.mins >= D.until && P.st === 'away') c4DelivPay(D);
+}
+// the money for a delivery (also settled at closing if he was still on the road)
+function c4DelivPay(D) {
+  {
+    C4.porter.t = 0; C4.deliv = null; const o = D.o; let pay = o.pay + o.dep, note;
     const r = R();
     if (r < .1) { pay = Math.round(pay * .5); note = `Đường về gặp kẻ cướp, chồng chạy thoát nhưng mất nửa tiền: chỉ còn ${c4Money(pay)}.`; }
     else if (r < .25) { pay += 30; note = `${c4Cap1(o.vil)} khen hàng tốt, thưởng thêm 30 đồng, hẹn lần sau đặt tiếp!`; SAVE4.wsGood = (SAVE4.wsGood || 0) + 1; }
@@ -236,7 +247,7 @@ const c4ExtraPool = own => ['caicau', 'omdau', 'cotiec', 'lut', 'khachla', 'boto
 // the feast is collected at giờ Thân; a flood the morning after a gamble
 function c4ExtraUpdate() {
   const F = SAVE4.feast;
-  if (F && F.day === SAVE4.day && C4.mins >= 15 * 60 && C4.phase === 'open' && !F.done) {
+  if (F && F.day === SAVE4.day && C4.mins >= (F.at || (F.at = 15 * 60 + R() * 110)) && C4.phase === 'open' && !F.done) {   // some moment in giờ Thân, not always 15:00
     F.done = true; SAVE4.feast = null; const p = c4People().list[F.pid];
     if (Object.entries(F.need).every(([g, n]) => c4Stock(g) >= n)) {
       for (const [g, n] of Object.entries(F.need)) { c4SetStock(g, c4Stock(g) - n); C4.today.sold += n; C4.today.cogs += n * c4Unit(g); }

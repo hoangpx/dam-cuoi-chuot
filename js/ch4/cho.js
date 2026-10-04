@@ -21,7 +21,8 @@ const c4Y = z => C4_Y0 + z * C4_D, c4S = z => .62 + .42 * z;
 const C4_CROWD = .86;                                                         // passers-by drawn this much smaller (owner: our stalls stand out)              // where depth z stands on screen, and how big
 const C4_STALL_Z = .12, C4_WIFE_Z = .07, C4_Q_Z = .32;
 const C4_OPEN = 5 * 60, C4_CLOSE = 19 * 60, C4_MPS = 4;                 // market hours (game minutes), game minutes per second
-let C4_PACE = .85;                                                           // how many come overall (a player reached 2 quan by day 6: bots now ~day 14 with the stall upgraded, past 20 without)
+let C4_BUY0 = 1;                                                            // a buyer takes 1–3 (C4_BUY0 … +2)
+let C4_PACE = .62;                                                          // how many come (a player: ~20 buyers a day; bots: ~15–30 a day, 2 quan ~day 17 with the stall upgraded)
 const C4_GOAL = 1200;                                                     // 2 quan: then the children come, and chương V
 // savings towards the goal: the purse less what is owed (borrowed money is not saved money)
 const c4Net = () => SAVE4.money - SAVE4.debt - (SAVE4.loans || []).reduce((a, L) => a + L.owe, 0);
@@ -193,7 +194,7 @@ const c4Flow = () => ({ dep: 1, gat: .85, mua: .55, ret: .8 }[c4Wx()]) * (SAVE4.
 function c4Want(g) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
   if (!c4Own(g)) return 0;
-  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .6 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
+  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
   return base * (G.wx[c4Wx()] || 1);
 }
 function c4Spawn(atX, guest = null) {
@@ -357,7 +358,7 @@ function c4PlanEvents() {
   SAVE4.taskDay = null; c4Tasks();                                         // today's tasks, now that today's happenings are known
 }
 // how many a buyer takes: one to three; a regular twice that, a hard-won regular three times
-const c4BuyN = P => { const n = 1 + ((R() * 3) | 0); return P && c4Ruot(P.id) ? n * (C4_TRAITS[P.trait].ruot || 2) : n; };
+const c4BuyN = P => { const n = C4_BUY0 + ((R() * 3) | 0); return P && c4Ruot(P.id) ? n * (C4_TRAITS[P.trait].ruot || 2) : n; };
 const c4Someone = () => c4Pick([...C4.walkers.filter(w => w.kind === 'mouse' && C4_MOUSE_SORTS[w.sort].role !== 'child').map(w => w.name), 'bà Ba', 'chú Năm', 'cô Tư']);
 const c4Cap1 = s => s[0].toUpperCase() + s.slice(1);
 function c4Event(kind) {
@@ -389,8 +390,8 @@ function c4Event(kind) {
       ['Không bán chịu', () => toast(`${c4Cap1(who)} bĩu môi bỏ đi.`)]] });
   } else if (kind === 'cuoi') {
     const n = 30 + ((R() * 3) | 0) * 10;
-    Object.assign(E, { title: 'Nhà có cưới', text: `Nhà ${who} cưới con, đặt ${n} miếng trầu têm cánh phượng, trả 9 đồng một miếng. Đến ${c4At('Thân')} nhà trai đến lấy.`, opts: [
-      ['Nhận', () => { C4.wed = { n, who }; toast(`Nhớ để dành đủ trầu đến ${c4At('Thân')}!`, 3.4); }],
+    Object.assign(E, { title: 'Nhà có cưới', text: `Nhà ${who} cưới con, đặt ${n} miếng trầu têm cánh phượng, trả 9 đồng một miếng. Nhà trai đến lấy lúc nào đó trong ${c4Span('Thân')}.`, opts: [
+      ['Nhận', () => { C4.wed = { n, who, at: 15 * 60 + R() * 110 }; toast(`Nhớ để dành đủ trầu, nhà trai đến lấy trong ${c4Span('Thân')}!`, 3.4); }],
       ['Không nhận', () => {}]] });
   } else if (kind === 'boi') {
     Object.assign(E, { title: 'Thầy bói', text: 'Ông thầy bói chống gậy ghé gánh: "Gieo một quẻ, biết ngày mai lành dữ, chỉ năm đồng! Bói vui thì một đồng thôi!"', opts: [
@@ -531,7 +532,7 @@ function updateC4(dt) {
       if (c4Wx() === 'gat' && SAVE4.stock > 4) { const n = Math.floor(SAVE4.stock * .25); SAVE4.stock -= n; C4.today.wilt += n; C4.today.wiltLoss += n * c4Unit('trau'); toast(`Nắng gắt, ${n} miếng trầu héo rũ.`, 3); }
       c4Hud();
     }
-    if (C4.wed && C4.mins >= 15 * 60) {
+    if (C4.wed && C4.mins >= (C4.wed.at || 15 * 60)) {
       const W = C4.wed; C4.wed = null;
       if (SAVE4.stock >= W.n) { SAVE4.stock -= W.n; const pay = W.n * 9; SAVE4.money += pay; C4.today.take += pay; C4.today.cogs += W.n * c4Unit('trau'); C4.today.sold += W.n; AU.drumHit(); toast(`Nhà ${W.who} đến lấy ${W.n} miếng trầu, trả ${c4Money(pay)}!`, 3.4); C4.fx.push({ x: C4_STALL + 40, y: c4Y(C4_STALL_Z) - 230, t: 0, s: '+' + pay }); }
       else { AU.snort(); toast(`Không đủ ${W.n} miếng trầu, nhà ${W.who} giận dỗi bỏ đi.`, 3.4); }
@@ -656,6 +657,7 @@ function c4EndDay() {
   for (const w of C4.walkers) if (w.st !== 'leave') { w.st = 'leave'; w.face = w.x < C4_STALL ? -1 : 1; w.chat = null; w.talk = false; }
   for (const g of Object.keys(C4.Q)) { C4.Q[g] = []; C4.SV[g] = []; }
   C4.guestQ = []; C4.seats = {};
+  if (C4.deliv) c4DelivPay(C4.deliv);                                       // a delivery still on the road is settled now
   C4.cat = null; C4.shut = 0; C4.parade = null; C4.fire = 0;
   if (C4.kid) { SAVE4.money += 10; C4.kid = null; }
   const d = C4.today, lines = [];
