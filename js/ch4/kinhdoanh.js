@@ -23,7 +23,7 @@ function c4ShopUpBlock(g) {
   const now = `<p class="nx">Đang là <b>${cur.name}</b>: chứa ${Math.round(G.cap * cur.cap)} ${G.unit}${cur.daily ? ` · tiền nhà ${Math.round(G.rent * cur.daily)} đồng/ngày` : ''}</p>`;
   if (!nx) { $('#c4upB').innerHTML = `<h4>Cơ ngơi</h4>${now}<p>Nhà của mình, không phải trả tiền thuê. Khách quen tìm đến tận nơi.</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
   const L = c4Landlord(g), cost = Math.round(G.rent * nx.up * (nx.house ? L.k : 1));
-  if (nx.house && !L.known) { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="bad">Muốn ${nx.house === 'own' ? 'mua' : 'thuê'} nhà mặt chợ phải quen ${L.p.name}, chủ căn nhà. Càng thân giá càng rẻ.</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
+  if (nx.house && !L.known) { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="bad">Muốn ${nx.house === 'own' ? 'mua' : 'thuê'} nhà mặt chợ: không biết chủ căn nhà là ai mà hỏi. Quen thêm người trong làng thì sẽ biết; càng thân giá càng rẻ.</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
   $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="nx">Lên <b>${nx.name}</b>: chứa ${Math.round(G.cap * nx.cap)} ${G.unit} · bán nhanh hơn · khách ghé đông hơn${nx.daily ? ` · <b>tiền nhà ${Math.round(G.rent * nx.daily)} đồng mỗi tối</b> (hai tối không trả là bị đuổi về quầy)` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`;
   $('#c4upB').insertAdjacentHTML('beforeend', c4TablesBlock(g)); c4TablesWire(g);
   const b = $('#c4upGo'); b.hidden = false; b.disabled = SAVE4.money < cost; b.innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(cost)}`;
@@ -270,7 +270,7 @@ function c4OpenUps() {
     const G = C4_GOODS[g], own = c4Own(g), lvI = g === 'trau' ? SAVE4.lv : c4SLvI(g), lvN = g === 'trau' ? C4_LV.length : C4_SHOP_LV.length;
     const name = g === 'trau' ? c4Lv().name : own ? c4SLv(g).name : 'Đất trống', L = !own && c4Landlord(g);
     return `<button class="upc ${own ? '' : 'empty'}" data-up="${g}"><b>${G.name}</b><span class="lv">${name}</span>`
-      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>${L.known ? 'thuê ' + c4Money(L.price) : 'chủ: ' + L.p.name}</span>`) + '</button>';
+      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>${L.known ? 'thuê ' + c4Money(L.price) : 'chưa rõ chủ'}</span>`) + '</button>';
   };
   $('#c4evB').innerHTML = `<div class="ups">${all.map(card).join('')}</div>`;
   $('#c4evB').querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => { AU.tap(); c4OpenUp(b.dataset.up); }));

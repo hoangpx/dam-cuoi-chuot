@@ -261,9 +261,10 @@ function c4OpenNotes(tab) {
   const seen = P.list.filter(p => !c4Known(p.id) && SAVE4.folk[p.id] && SAVE4.folk[p.id].seen);
   if (open) h += `<p class="cnt">${known.length} người quen · ${seen.length} người biết mặt</p>`;
   if (C4_TAB === 'tin') {
-    const days = [...new Set(SAVE4.notes.map(n => n.day))].sort();
+    const days = [SAVE4.day, SAVE4.day + 1].filter(d => SAVE4.notes.some(n => n.day === d));   // owner: only today and tomorrow, past days only confuse
+    const now = (t, d) => d !== SAVE4.day ? t : t.replace(/^Mai /, 'Hôm nay ').replace(/ mai /, ' hôm nay ');   // news heard yesterday about "tomorrow" is about today now
     h += (SAVE4.goal ? '' : `<p class="goal">Mục tiêu: để dành <b>${c4Money(C4_GOAL)}</b> thì vợ chồng mới tính chuyện con cái.</p>`)
-      + (days.length ? days.map(d => `<h4>${d === SAVE4.day ? 'Hôm nay' : d === SAVE4.day + 1 ? 'Ngày mai' : 'Ngày ' + d}</h4>` + SAVE4.notes.filter(n => n.day === d).map(n => `<p>• ${n.text}</p>`).join('')).join('') : '<p>Chưa nghe được chuyện gì. Ai thì thầm thì lại gần nghe lỏm xem!</p>')
+      + (days.length ? days.map(d => `<h4>${d === SAVE4.day ? 'Hôm nay' : d === SAVE4.day + 1 ? 'Ngày mai' : ''}</h4>` + SAVE4.notes.filter(n => n.day === d).map(n => `<p>• ${now(n.text, d)}</p>`).join('')).join('') : '<p>Chưa nghe được chuyện gì. Ai thì thầm thì lại gần nghe lỏm xem!</p>')
       + (open ? '' : `<p class="hint">Từ ngày ${C4_BOOK_DAY}, vợ ghi sổ những khách đã quen.</p>`);
   } else if (C4_TAB === 'quen' && C4_PICK) {
     const free = new Set(c4Guests().map(p => p.id)), left = c4Owned().filter(g => C4_GOODS[g].keep !== 'ever' && c4Stock(g) > 0).map(g => `${c4Stock(g)} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ');

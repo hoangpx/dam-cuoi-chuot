@@ -735,9 +735,9 @@ function c4OpenUp(g = 'trau') {
   if (g !== 'trau' && !c4Own(g)) {                                         // an empty plot
     $('#c4upT').textContent = 'Đất trống';
     const L = c4Landlord(g), ok = L.known;
-    box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom}).</p>`
+    box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. ${ok ? `Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom}).` : 'Chưa biết chủ đất là ai.'}</p>`
       + (ok ? `<p>Giá thuê: <b>${c4Money(L.price)}</b>${L.word}. Vợ chồng tự trông được; đông khách thì thuê thêm người phụ, công ${G.wage} đồng mỗi người mỗi ngày.</p><p class="hint">${c4Ware(g)}</p>`
-            : `<p class="bad">Chưa quen ${L.p.name} nên không hỏi thuê được. Hãy làm quen (Sổ tay → Quan hệ): càng thân thì giá càng rẻ.</p>`);
+            : '<p class="bad">Không biết chủ là ai mà hỏi thuê. Quen thêm người trong làng thì sẽ biết; càng thân với chủ đất, giá càng rẻ.</p>');
     if (ok) { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => c4Rent(g); }
     c4Sheets('c4up'); return;
   }
@@ -770,7 +770,7 @@ function c4Rent(g) {
 }
 function c4DoUp() {
   const nx = C4_LV[SAVE4.lv + 1]; if (!nx || SAVE4.money < nx.up || C4.build) return;
-  if (nx.house) { const L = c4Landlord('trau'); if (!L.known) { toast(`Phải quen ${L.p.name}, chủ căn nhà, mới hỏi thuê hay mua được.`, 3.4); return; } SAVE4.rentKTrau = L.k; }
+  if (nx.house) { const L = c4Landlord('trau'); if (!L.known) { toast('Không biết chủ căn nhà là ai mà hỏi thuê hay mua.', 3.4); return; } SAVE4.rentKTrau = L.k; }
   SAVE4.money -= nx.up; C4.build = { to: SAVE4.lv + 1, t: 0 };
   for (const w of [...C4.Q.trau]) c4Leave(w, false); C4.SV.trau = [];
   c4Sheets(null); persist4(); c4Hud(); AU.stamp();
@@ -831,7 +831,7 @@ function renderC4() {
         if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } } });
     } else {
       items.push({ z: C4_STALL_Z, f: () => { dp(g, A.lot, sx, sy, 0, ss, ss); g.save(); g.translate(sx, sy); g.scale(ss, ss); g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK;
-        const L = c4Landlord(sh); g.fillText('Cho thuê', 0, -102); g.font = '700 13px "Playfair Display", serif'; if (L.known) { const t = c4Num(L.price), w = g.measureText(t).width; g.fillText(t, -8, -83); g.fillStyle = '#f2c640'; g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.arc(w / 2 + 2, -87, 6, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#f2ecde'; g.fillRect(w / 2, -89, 4, 4); g.strokeRect(w / 2, -89, 4, 4); } else g.fillText('hỏi ' + L.p.name, 0, -83); g.restore(); } });
+        const L = c4Landlord(sh); g.fillText('Cho thuê', 0, -102); g.font = '700 13px "Playfair Display", serif'; if (L.known) { const t = c4Num(L.price), w = g.measureText(t).width; g.fillText(t, -8, -83); g.fillStyle = '#f2c640'; g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.arc(w / 2 + 2, -87, 6, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#f2ecde'; g.fillRect(w / 2, -89, 4, 4); g.strokeRect(w / 2, -89, 4, 4); } else g.fillText('chưa rõ chủ', 0, -83); g.restore(); } });
     }
   }
   const lv = SAVE4.lv;
