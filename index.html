@@ -15,6 +15,9 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Đoàn chuột rước dâu trong tranh Đông Hồ">
 <meta property="og:locale" content="vi_VN">
+<!-- search engines (owner: be found on Google): the one address, and what this page is -->
+<link rel="canonical" href="https://damcuoichuot.com/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Đám Cưới Chuột","alternateName":"Dam Cuoi Chuot","url":"https://damcuoichuot.com/","image":"https://damcuoichuot.com/img/og.jpg","description":"Trò chơi bước ra từ những bức tranh Đông Hồ và những câu truyện cổ tích Việt Nam: đám cưới chuột, chữ là luật, nhanh tay nhanh mắt, vợ chồng khởi nghiệp, tìm chuột, ai ăn vụng. Chơi miễn phí trên điện thoại và máy tính.","inLanguage":"vi","genre":["Puzzle","Casual","Educational"],"gamePlatform":["Web browser","Android","iOS"],"applicationCategory":"Game","operatingSystem":"Any","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"VND"},"author":{"@type":"Person","name":"Hoang Pham"},"keywords":"đám cưới chuột, tranh Đông Hồ, trò chơi Việt Nam, game cổ tích, game giải đố, game miễn phí"}</script>
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://damcuoichuot.com/img/og.jpg">
 <!-- home-screen icon and name (iPhone: Share → Add to Home Screen); opens full screen like an app -->
@@ -144,6 +147,17 @@
 
 <div id="err" hidden></div>
 <!-- shown from the first paint (plain HTML + inline CSS, no fonts or scripts needed) until the loader has run every file -->
+<!-- words for search engines and screen readers (the game itself is drawn on a canvas, which they cannot read); off screen for players -->
+<section id="about" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">
+  <h1>Đám Cưới Chuột – trò chơi từ tranh Đông Hồ và truyện cổ tích Việt Nam</h1>
+  <p>Trò chơi miễn phí trên điện thoại và máy tính, vẽ theo lối tranh khắc gỗ Đông Hồ.</p>
+  <h2>Chương I · Đám Cưới Chuột</h2><p>Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường.</p>
+  <h2>Chương II · Chữ Là Luật</h2><p>Trò chơi giải đố: chữ khắc gỗ chính là luật chơi. Đẩy chữ để ghép, phá hay đổi luật rồi đưa chuột tới cổng. Có phần Nhập môn, Cao thủ và Biến hoá.</p>
+  <h2>Chương III · Nhanh Tay Nhanh Mắt</h2><p>Những trò nhanh tay nhanh mắt cho các bạn nhỏ trong các bức tranh Đông Hồ quen thuộc: đàn gà mẹ con, hứng dừa, chăn trâu thả diều, đánh đu.</p>
+  <h2>Chương IV · Vợ Chồng Khởi Nghiệp</h2><p>Vợ chồng chuột mới cưới ra chợ quê buôn bán, để dành đủ hai quan tiền. Quen khách, nâng cấp gánh hàng, thuê người làm.</p>
+  <h2>Chương VI · Tìm Chuột</h2><p>Chuột mẹ ra đồng gọi lũ con về: mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con.</p>
+  <h2>Chương VII · Ai Ăn Vụng?</h2><p>Mâm xôi, nồi cơm nếp, đĩa cá kho bỗng biến mất. Nghe lời khai của cả làng và tìm ra kẻ ăn vụng.</p>
+</section>
 <div id="loading"><div class="lc">
   <div class="seal">囍</div>
   <b>Đám Cưới Chuột</b>
@@ -173,7 +187,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-16k';
+const VERSION = '2026-10-16l';
 const FONT_CHARS = '守生橋鑰戶石雲開鎖飛拉走弱和不有囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [

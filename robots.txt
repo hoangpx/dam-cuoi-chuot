@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://damcuoichuot.com/sitemap.xml
