@@ -42,9 +42,9 @@ function renderC6() {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = PAPERS.yellow.base; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   for (let px = 0; px < W; px += PAPER.width) ctx.drawImage(PAPER, px, 0, PAPER.width, Math.max(H, PAPER.height));
-  if (C6.G) mdDraw(C6, ctx, W, H);
+  if (C6.G) { const st = safeTop(); ctx.translate(0, st); mdDraw(C6, ctx, W, H - st); }
 }
-function c6Pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+function c6Pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - safeTop()]; }
 function c6Down(e) { if (S.mode !== 'c6play' || !C6.G) return; const [x, y] = c6Pos(e); mdDown(C6, x, y); C6.drag = true; capturePointer(e); }
 function c6Move(e) { if (!C6.drag || !C6.G) return; const [x, y] = c6Pos(e); mdMove(C6, x, y); }
 function c6Up(e) { if (!C6.drag) return; C6.drag = false; if (C6.G) mdUp(C6); }

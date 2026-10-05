@@ -3,18 +3,18 @@
 const C2 = { i: 0, def: null, st: null, hist: [], moves: 0, over: false, endT: 0, last: 0, deadToast: false, t: 0 };
 let SAVE2 = { done: [], best: [] };
 try { const s = JSON.parse(localStorage.getItem('dcc.c2') || 'null'); if (s && Array.isArray(s.done)) SAVE2 = Object.assign(SAVE2, s); } catch (e) {}
-for (const k of ['done', 'best']) { if (!Array.isArray(SAVE2[k])) SAVE2[k] = []; while (SAVE2[k].length < C2LEVELS.length) SAVE2[k].push(k === 'done' ? false : 0); }
+for (const k of ['done', 'best', 'paid']) { if (!Array.isArray(SAVE2[k])) SAVE2[k] = []; while (SAVE2[k].length < C2LEVELS.length) SAVE2[k].push(k === 'best' ? 0 : false); }
 const persist2 = () => { try { localStorage.setItem('dcc.c2', JSON.stringify(SAVE2)); } catch (e) {} };
-const c2Sig = r => r.a + ':' + (r.prop || r.to) + ':' + r.cells.map(o => o.id).join(',');
+const c2Sig = r => r.a + ':' + r.verb + (r.neg ? '!' : '') + ':' + (r.prop || r.to) + ':' + r.cells.map(o => o.id).join(',');
 const c2Clone = objs => objs.map(o => ({ ...o }));
-/* ---------- the rules sheet: how the game works, and on the first maps (C2_TIPS) the map's own hint ---------- */
-const C2_TIPS = 3;
+/* ---------- the rules sheet: how the game works. Gợi ý is bought once per map (js/core/goiy.js, SAVE2.paid), then free to reread: the chain of rules (C2_CHAIN) ---------- */
 {
   const el = document.createElement('div'); el.id = 'c2help'; el.hidden = true;
   const w = t => `<b class="w">${t}</b>`;
   el.innerHTML = `<div class="card2"><div id="c2law"><h3>Luật chơi</h3><ul>
     <li>Chữ là luật: xếp ${w('VẬT')} ${w('LÀ')} ${w('TÍNH CHẤT')} thành một hàng ngang (trái sang phải) hoặc hàng dọc (trên xuống dưới) thì câu đó thành luật. Tách một chữ ra là luật mất.</li>
     <li>${w('ĐI')} vật bạn điều khiển · ${w('THẮNG')} chạm vào là qua tranh · ${w('CHẶN')} không đi qua được · ${w('ĐẨY')} đẩy được · ${w('NÓNG')} chạm vào là cháy · ${w('CHÌM')} vật nào rơi vào thì cả hai cùng mất.</li>
+    <li id="c2more">Chữ mới: ${w('MỞ')} gặp ${w('KHOÁ')} thì cả hai cùng mất (thứ KHOÁ chặn mọi thứ trừ thứ MỞ) · ${w('BAY')} chỉ chạm được thứ cũng BAY · ${w('KÉO')} đi theo sau thứ rời khỏi nó · ${w('CHẠY')} tự đi mỗi bước, gặp vật chặn thì quay đầu · ${w('YẾU')} có gì chung ô là vỡ.<br>${w('VÀ')} nối nhiều vật hay nhiều tính chất · ${w('KHÔNG')} xoá một tính chất · ${w('CÓ')}: vật mất đi để lại thứ nó có · ${w('CHỮ')} là chính các ô chữ.</li>
     <li>${w('VẬT')} ${w('LÀ')} ${w('VẬT')}, ví dụ ${w('MÈO')} ${w('LÀ')} ${w('CÁ')}: mọi con mèo hóa thành cá.</li>
     <li>Đi vào chữ là đẩy chữ. Chữ có đinh ghim ở góc thì không đẩy được; chữ đã vào góc hay sát mép thì không kéo ra được nữa.</li>
     <li id="c2ctl"></li></ul></div>
@@ -24,10 +24,9 @@ const C2_TIPS = 3;
   $('#c2ctl').textContent = isTouch ? 'Vuốt trên tranh hoặc bấm các nút mũi tên để đi · ↶ hoàn tác · ⟲ chơi lại.' : '← ↑ → ↓ để đi · Z hoàn tác · R chơi lại.';
   el.addEventListener('click', e => { if (e.target === el || e.target.id === 'c2Go') c2HelpClose(); });
 }
-// which: 'law' (how the game works) or 'tip' (this map's hint, first C2_TIPS maps only)
 function c2HelpOpen(which) {
-  $('#c2law').hidden = which !== 'law'; $('#c2tip').hidden = which !== 'tip';
-  if (which === 'tip') $('#c2tip p').textContent = C2.def.hint || '';
+  $('#c2law').hidden = which !== 'law'; $('#c2tip').hidden = which !== 'tip'; $('#c2more').hidden = !C2.def.bh;
+  if (which === 'tip') $('#c2tip p').textContent = C2_CHAIN[C2.i] || '';
   $('#c2help').hidden = false; C2.help = which;
 }
 function c2HelpClose() { $('#c2help').hidden = true; cv.focus(); }
@@ -51,11 +50,11 @@ function startC2(i) {
   $('#lvHan').textContent = C2.def.han; $('#lvTitle').textContent = `Tranh ${i + 1} · ${C2.def.name}`;
   const c = $('#lvCard'); c.classList.add('on'); setTimeout(() => c.classList.remove('on'), 2200);
   C2.hinted = false;
-  $('#c2help').hidden = true; $('#c2Tip').hidden = !(i < C2_TIPS && C2.def.hint);   // only opens when asked; hints on the first maps only
+  $('#c2help').hidden = true; $('#c2Tip').hidden = false;
 }
 function c2ShowRules() {
   const seen = new Set(), chips = [];
-  for (const r of C2.st.rules) { const t = `${C2K[r.a].vi} LÀ ${r.prop ? C2P[r.prop].vi : C2K[r.to].vi}`; if (!seen.has(t)) { seen.add(t); chips.push(t); } }
+  for (const r of C2.st.rules) { const t = `${C2K[r.a].vi} ${r.verb === 'has' ? 'CÓ' : 'LÀ'} ${r.neg ? 'KHÔNG ' : ''}${r.prop ? C2P[r.prop].vi : C2K[r.to].vi}`; if (!seen.has(t)) { seen.add(t); chips.push(t); } }
   $('#c2rules').innerHTML = chips.length ? chips.map(t => `<span class="rule">${t}</span>`).join('') : '<span class="rule">Chưa có luật nào</span>';
 }
 function c2Move(dx, dy) {
@@ -92,7 +91,7 @@ function c2Win() {
 function c2ShowEnd() {
   const i = C2.i, last = i === C2LEVELS.length - 1, n = SAVE2.done.filter(Boolean).length;
   $('#endHan').textContent = C2.def.han; $('#endTitle').textContent = C2.def.name;
-  $('#endText').textContent = last ? `Đủ ${C2LEVELS.length} tranh chữ khắc gỗ, kể cả các tranh Cao thủ. Chương II hoàn thành.` : i === C2_FIRST_HARD - 1 ? 'Xong phần Nhập môn. Phần Cao thủ đã mở.' : C2.def.hard ? 'Tự nghĩ ra được. Cao thủ thật!' : 'Luật đã nằm trong tay người chơi. Tranh tiếp theo khó hơn một chút.';
+  $('#endText').textContent = last ? `Đủ ${C2LEVELS.length} tranh chữ khắc gỗ, kể cả các tranh Cao thủ. Chương II hoàn thành.` : i === C2_FIRST_HARD - 1 ? 'Xong phần Nhập môn. Phần Cao thủ và phần Biến hoá đã mở.' : C2.def.bh ? 'Chữ mới, luật mới, vẫn tìm ra lối. Giỏi!' : C2.def.hard ? 'Tự nghĩ ra được. Cao thủ thật!' : 'Luật đã nằm trong tay người chơi. Tranh tiếp theo khó hơn một chút.';
   $('#endNote').textContent = `Số bước: ${C2.moves} · Kỷ lục: ${SAVE2.best[i]} · Đã đóng triện ${n}/${C2LEVELS.length} tranh`;
   $('#bNext').hidden = last; $('#end').hidden = false; ($('#bNext').hidden ? $('#bAlbum') : $('#bNext')).focus();
 }
@@ -116,8 +115,14 @@ function c2Key(e) {
 }
 $('#c2Undo').addEventListener('click', () => { c2Undo(); cv.focus(); });
 $('#c2Reset').addEventListener('click', () => { c2Reset(); cv.focus(); });
-for (const [id, which] of [['#c2Help', 'law'], ['#c2Tip', 'tip']]) $(id).addEventListener('click', () => { if ($('#c2help').hidden || C2.help !== which) c2HelpOpen(which); else c2HelpClose(); });
-function c2Hint() { if (S.mode !== 'c2play') return; C2.hinted = true; toast(C2.def.hint, 10); }
+for (const [id, which] of [['#c2Help', 'law'], ['#c2Tip', 'tip']]) $(id).addEventListener('click', () => { if (which === 'tip') { c2HintAsk(); return; } if ($('#c2help').hidden || C2.help !== which) c2HelpOpen(which); else c2HelpClose(); });
+// a bought hint: paid once for this map, then free to read again (owner)
+function c2HintAsk() {
+  if (S.mode !== 'c2play') return;
+  if (!$('#c2help').hidden && C2.help === 'tip') { c2HelpClose(); return; }
+  if (SAVE2.paid[C2.i]) { c2HelpOpen('tip'); return; }
+  hintBuy('Xem chuỗi luật cần ghép ở tranh này. Mua một lần, xem lại bao nhiêu lần cũng được.', () => { SAVE2.paid[C2.i] = true; persist2(); C2.hinted = true; c2HelpOpen('tip'); });
+}
 
 $('#c2Name').addEventListener('click', () => showAlbum(2));
 document.querySelectorAll('#c2pad button').forEach(b => {
@@ -157,10 +162,11 @@ function renderC2() {
   for (const o of order) {
     const cx = ox + ((o.rx ?? o.x) + .5) * ts, cy = oy + ((o.ry ?? o.y) + .5) * ts, pop = 1 + (o.pop || 0) * .6;
     if (o.t === 'thing') {
-      const you = c2Has(st, o.k, 'you'), sc = ts / 84 * (o.k === 'fish' ? 1.4 : 1) * pop;
-      dp(ctx, C2T[o.k], cx, cy + (you ? bob : 0), 0, sc * (o.k === 'mouse' && o.face < 0 ? -1 : 1), sc);
+      const you = c2Has(st, o.k, 'you'), fly = c2Has(st, o.k, 'float'), sc = ts / 84 * (o.k === 'fish' ? 1.4 : 1) * pop * (fly ? .9 : 1);
+      if (fly) { ctx.fillStyle = 'rgba(29,25,21,.16)'; ctx.beginPath(); ctx.ellipse(cx, cy + ts * .34, ts * .3, ts * .08, 0, 0, 6.283); ctx.fill(); }   // floaters hover over their shadow
+      dp(ctx, C2T[o.k], cx, cy + (you ? bob : 0) - (fly ? ts * .14 + Math.sin(C2.t * 2.2 + o.id) * ts * .04 : 0), 0, sc * (o.k === 'mouse' && o.face < 0 ? -1 : 1), sc);
     } else {
-      const key = o.t === 'noun' ? 'n:' + o.k : o.t === 'is' ? 'is' : 'p:' + o.p, sc = ts / 84 * pop;
+      const key = o.t === 'noun' ? 'n:' + o.k : o.t === 'prop' ? 'p:' + o.p : o.t, sc = ts / 84 * pop;
       if (active.has(o.id)) { ctx.fillStyle = 'rgba(242,198,64,.6)'; ctx.fillRect(cx - ts * .5 + 1, cy - ts * .5 + 1, ts - 2, ts - 2); }
       dp(ctx, C2T.tiles[key + (o.fix ? ':f' : '')], cx, cy, 0, sc, sc);
     }
@@ -174,8 +180,8 @@ function renderC2() {
 function buildAlbum2() {
   const box = $('#cards'); box.textContent = '';
   C2LEVELS.forEach((lv, i) => {
-    if (i === 0 || i === C2_FIRST_HARD) { const h = document.createElement('div'); h.className = 'sec'; h.textContent = i === 0 ? 'Nhập môn' : 'Cao thủ · mở sau tranh 4'; box.appendChild(h); }
-    const open = i === 0 || SAVE2.done[i - 1] || (i === C2_FIRST_HARD && SAVE2.done[3]);
+    if (i === 0 || i === C2_FIRST_HARD || i === C2_FIRST_BH) { const h = document.createElement('div'); h.className = 'sec'; h.textContent = i === 0 ? 'Nhập môn' : i === C2_FIRST_HARD ? 'Cao thủ · mở sau tranh 4' : `Biến hoá · chữ mới · mở sau tranh ${C2_FIRST_HARD}`; box.appendChild(h); }
+    const open = i === 0 || SAVE2.done[i - 1] || (i === C2_FIRST_HARD && SAVE2.done[3]) || (i === C2_FIRST_BH && SAVE2.done[C2_FIRST_HARD - 1]);
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.disabled = !open;
     b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">${lv.han}</div><b>${lv.name}</b><span class="st${SAVE2.done[i] ? ' done' : ''}">${SAVE2.done[i] ? 'Đã đóng triện · ' + SAVE2.best[i] + ' bước' : open ? 'Chơi' : 'Chưa mở'}</span>`;

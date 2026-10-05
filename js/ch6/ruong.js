@@ -41,7 +41,7 @@ function mdField(G) {
 function mdGeo(G, W, H) {
   const colW = Math.min(W - 24, 470), x0 = (W - colW) / 2, tut = G.tut && !G.over;
   const top = 250, size = Math.max(160, Math.min(colW - 20, H - top - (tut ? 100 : 40))), cell = size / G.N;
-  return { size, cell, ox: (W - size) / 2, oy: top, colW, x0, back: [x0 + 30, 44] };
+  return { size, cell, ox: (W - size) / 2, oy: top, colW, x0, back: [x0 + 30, 44], tip: [x0 + colW - 30, 44] };
 }
 function mdCell(en, x, y) { const G = en.G, Gm = en.geo; if (!Gm) return -1; const c = Math.floor((x - Gm.ox) / Gm.cell), r = Math.floor((y - Gm.oy) / Gm.cell); return r >= 0 && c >= 0 && r < G.N && c < G.N ? r * G.N + c : -1; }
 // a cell is ruled out once a mouse sits in its row, column, plot, or next to it
@@ -55,6 +55,7 @@ function mdDown(en, x, y) {
   if (Math.hypot(x - Gm.back[0], y - Gm.back[1]) < 30) { en.close(); return; }
   if (G.over) { en.after(G.result); return; }
   if (G.next) return;
+  if (!G.tut && Math.hypot(x - Gm.tip[0], y - Gm.tip[1]) < 30) { hintBuy('Thả đúng chỗ một con chuột vào một hàng còn trống. Không mất tim.', () => mdHint(G)); return; }
   if (G.intro > 0) { G.intro = 0; return; }                                 // a tap skips the 'Tìm N con chuột' card
   const i = mdCell(en, x, y); G.press = i >= 0 ? { i, moved: false, wipe: G.dots.has(i) } : null;
 }
@@ -91,6 +92,17 @@ function mdPlace(G, i) {
     if (!G.tut) G.hearts--; G.shake = { i, t: .7 }; G.wrong.add(i); AU.snort();   // the red × stays, to be remembered
     if (G.hearts <= 0) { G.over = true; G.result = 'lose'; }
   }
+}
+// a bought hint (js/core/goiy.js): the right mouse in the first row that has none yet
+function mdHint(G) {
+  const N = G.N; if (G.over || G.next) return false;
+  for (let r = 0; r < N; r++) {
+    const i = r * N + G.sol[r]; if (G.mice.has(i)) continue;
+    G.pending = null; G.dots.delete(i); G.mice.add(i); G.hinted = (G.hinted || 0) + 1; AU.pluck(80 + G.mice.size);
+    if (G.mice.size === N) { G.next = 1.4; AU.kenCall(); }
+    return true;
+  }
+  return false;
 }
 function mdTick(en, dt) {
   const G = en.G; G.t += dt; if (G.intro > 0) G.intro -= dt;
@@ -155,6 +167,12 @@ function mdHowto(g, G, Gm) {
   if (isTouch) dp(g, A.finger, x + 5, y - 2, -.15, 1.05, 1.05); else { dp(g, A.mouse, x + 10, y + 16, 0, .7, .7); if (sweep > 0 && sweep < 1) dp(g, A.click, x + 10, y + 16, 0, .7, .7); }
   g.globalAlpha = 1;
 }
+// the hint button, top right: a lamp-lit "?" and its word
+function mdTipBtn(g, Gm) {
+  const [cx, cy] = Gm.tip; g.fillStyle = '#f2c640'; g.strokeStyle = INK; g.lineWidth = 2.6; g.beginPath(); g.arc(cx, cy, 22, 0, 6.283); g.fill(); g.stroke();
+  g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 24px "Playfair Display", serif'; g.fillText('?', cx, cy + 1);
+  g.font = '700 11px "Be Vietnam Pro", sans-serif'; g.fillText(lg('Gợi ý', 'Hint'), cx, cy + 34); g.textBaseline = 'alphabetic';
+}
 function mdBack(g, Gm) {
   const [cx, cy] = Gm.back; g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 2.6; g.beginPath(); g.arc(cx, cy, 22, 0, 6.283); g.fill(); g.stroke();
   g.lineWidth = 3.4; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); g.moveTo(cx + 9, cy); g.lineTo(cx - 9, cy); g.moveTo(cx - 2, cy - 7); g.lineTo(cx - 9, cy); g.lineTo(cx - 2, cy + 7); g.stroke();
@@ -199,7 +217,7 @@ function mdHeart(g, x, y, s, full) {
 function mdDraw(en, g, W, H) {
   const G = en.G, Gm = en.geo = mdGeo(G, W, H), N = G.N, cs = Gm.cell, tut = G.tut && !G.over;
   // top: back, the level, the hearts
-  mdBack(g, Gm);
+  mdBack(g, Gm); if (!tut && !G.over) mdTipBtn(g, Gm);
   g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.font = '700 15px "Be Vietnam Pro", sans-serif'; g.fillText(lg('Màn', 'Level'), W / 2, 26);
   g.font = '900 30px "Playfair Display", serif'; g.fillText(String(G.level + 1), W / 2, 54);

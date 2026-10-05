@@ -2,13 +2,9 @@
    some cells (chum, cối, cây cau, đống rơm, giếng block the cell; giường tre, ghế băng, chiếu hoa, ghế đẩu can be sat on). N−1 villagers
    and the stolen dish each stand in their own row and column. Each one's statement shows when they are picked in the
    strip of portraits. Tools: Ghi chú (a little portrait of the picked one), Gạch (×, drag for many), Đặt (put the picked one
-   there), Xoá (clear a cell), Gợi ý (once a case: puts the picked one, or the first one still wrong, where they belong).
+   there), Xoá (clear a cell), Gợi ý (bought for 1 quan of chương IV's money, js/core/goiy.js: puts the picked one, or the first one still wrong, where they belong).
    Undo; a clock. With everyone placed, Nộp lời giải: right → the culprit, the one villager in the dish's room, is named;
    wrong → "Chưa đúng rồi" (owner: no telling which). Cases come from cases.js (tools/gen-anvung.js). */
-const C7_AD_SECS = 60;   // a hint costs this long in front of the advert (owner: no limit on hints, a one-minute advert each)
-// the advert board: a stand-in for a real advert later, village notices that turn over while the minute runs
-const C7_ADS = [['dish', 'Xôi gấc bà Ba', 'Dẻo thơm, ăn một lần là nhớ'], ['chong', 'Giường tre ông Bờm', 'Nằm mát suốt cả mùa hè'], ['coi', 'Gạo giã chú Vện', 'Giã tay, hạt trắng, cơm dẻo'],
-  ['chum', 'Nước mưa chum bà Cả', 'Trong vắt, nấu chè thơm ngon'], ['rom', 'Rơm khô bác Trâu', 'Lợp mái, đun bếp, lót ổ gà']];
 const C7_FLOOR = {
   'Gian bếp': '#d8b08a', 'Nhà ngang': '#ead3ad', 'Gian thờ': '#efc6d2', 'Nhà kho': '#cdb796', 'Chái bếp': '#c9a98a',
   'Sân gạch': '#c98a6a', 'Vườn cau': '#a9cf8f', 'Bờ ao': '#a3d0e0', 'Chuồng gà': '#e8d692', 'Ngõ trúc': '#bcd8a6',
@@ -18,6 +14,11 @@ const C7_BLOCK = new Set(['chum', 'coi', 'cau', 'rom', 'gieng']);
 const C7_THING = { chum: 'Chum nước', coi: 'Cối giã gạo', cau: 'Cây cau', rom: 'Đống rơm', gieng: 'Giếng nước', chong: 'Giường tre', phan: 'Ghế băng', chieu: 'Chiếu hoa', ghe: 'Ghế đẩu' };
 const C7_TOOLS = [['notes', 'Ghi chú'], ['cross', 'Gạch'], ['place', 'Đặt'], ['erase', 'Xoá'], ['hint', 'Gợi ý']];
 const c7Cap = s => s[0].toUpperCase() + s.slice(1);
+// the stolen food (owner: draw the real thing and name it, not a covered dish called "Món ăn"): its picture and a short label
+const C7_FOOD = { 'quả dưa hấu': ['dua', 'Dưa hấu'], 'buồng chuối': ['chuoi', 'Buồng chuối'], 'nải chuối cúng': ['naichuoi', 'Nải chuối'], 'hộp mứt Tết': ['mut', 'Mứt Tết'],
+  'rổ trứng': ['trung', 'Rổ trứng'], 'đĩa bánh dày': ['banhday', 'Bánh dày'], 'mâm xôi': ['xoi', 'Mâm xôi'], 'đĩa bánh chưng': ['banhchung', 'Bánh chưng'], 'đĩa xôi gấc': ['xoigac', 'Xôi gấc'],
+  'chõ bánh giầy': ['chobanh', 'Bánh giầy'], 'nồi cơm nếp': ['comnep', 'Cơm nếp'], 'hũ mật ong': ['matong', 'Mật ong'], 'đĩa cá kho': ['cakho', 'Cá kho'] };
+const c7Food = e => C7_FOOD[e.name] || ['dish', c7Cap(e.name)];
 
 function c7NewGame(i) {
   const K = C7_CASES[i], N = K.N;
@@ -72,7 +73,7 @@ function c7Down(en, x, y) {
   if (y > Gm.toolY && y < Gm.toolY + 52) {
     const w = Gm.colW / 5, k = Math.floor((x - Gm.x0) / w); if (k < 0 || k > 4) return;
     const t = C7_TOOLS[k][0]; AU.tap();
-    if (t === 'hint') { if (!G.over && G.placed.some((p, k) => p !== G.sol[k])) { G.sheet = 'ad'; G.adT = C7_AD_SECS; } } else G.tool = t;
+    if (t === 'hint') { if (!G.over && G.placed.some((p, k) => p !== G.sol[k])) hintBuy('Đặt đúng chỗ một người: người đang chọn, hoặc người đầu tiên còn sai.', () => c7Hint(G)); } else G.tool = t;
     return;
   }
   // the portraits
@@ -122,7 +123,7 @@ function c7SheetTap(en, x, y) {
   for (const [bx, by, bw, bh, act] of b) if (x > bx && x < bx + bw && y > by && y < by + bh) { AU.tap(); act(); return; }
   if (G.sheet === 'legend') { AU.tap(); G.sheet = null; }   // the key closes on any tap
 }
-function c7Tick(en, dt) { const G = en.G; G.t += dt; if (G.sheet === 'ad' && G.adT > 0) G.adT = Math.max(0, G.adT - dt); if (!G.over && !G.sheet) G.time += dt; if (G.shake && (G.shake.t -= dt) <= 0) G.shake = null; }
+function c7Tick(en, dt) { const G = en.G; G.t += dt; if (!G.over && !G.sheet) G.time += dt; if (G.shake && (G.shake.t -= dt) <= 0) G.shake = null; }
 
 /* ---------- drawing ---------- */
 function c7Round(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
@@ -172,12 +173,67 @@ function c7Thing(g, type, x, y, s) {
     g.strokeStyle = '#a3332a'; g.lineWidth = 3; g.strokeRect(-19, -13, 38, 26);
     g.fillStyle = '#a3332a'; for (let k = 0; k < 4; k++) { const a = k * 1.571; g.beginPath(); g.ellipse(Math.cos(a) * 5, Math.sin(a) * 5, 4, 2.4, a, 0, 6.283); g.fill(); }
     g.fillStyle = '#2f6a4c'; g.beginPath(); g.arc(0, 0, 2.4, 0, 6.283); g.fill();
+
+  } else if (type === 'dua') {                  // a whole watermelon, dark stripes, a cut slice in front
+    g.fillStyle = '#3f7a3a'; g.beginPath(); g.ellipse(-3, -2, 22, 18, 0, 0, 6.283); g.fill(); g.stroke();
+    g.strokeStyle = '#1f4a2a'; g.lineWidth = 2.6; for (const k of [-14, -6, 2, 10]) { g.beginPath(); g.moveTo(k - 2, -18); g.quadraticCurveTo(k + 4, -2, k - 2, 15); g.stroke(); }
+    g.strokeStyle = INK; g.lineWidth = 2.2; g.fillStyle = '#d9473a'; g.beginPath(); g.moveTo(3, 16); g.lineTo(23, 16); g.arc(13, 16, 10, 0, Math.PI, false); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = '#3f7a3a'; g.lineWidth = 2.4; g.beginPath(); g.arc(13, 16, 10, 0, Math.PI, false); g.stroke();
+    g.fillStyle = INK; for (const [a, b] of [[9, 19], [13, 22], [17, 19]]) { g.beginPath(); g.ellipse(a, b, 1.2, 2, 0, 0, 6.283); g.fill(); }
+  } else if (type === 'chuoi') {                // a whole bunch of bananas on its stalk, tier on tier
+    line(5, '#6a4a22', [0, -26], [0, 24]);
+    g.strokeStyle = INK; g.lineWidth = 1.6;
+    for (const [ty, n] of [[-14, 4], [-2, 5], [10, 5], [21, 4]]) for (let k = 0; k < n; k++) { const x = (k - (n - 1) / 2) * 8; g.fillStyle = k % 2 ? '#e8c547' : '#f0d35a'; g.beginPath(); g.ellipse(x, ty, 3.6, 8, x * .04, 0, 6.283); g.fill(); g.stroke(); }
+    g.fillStyle = '#7a4a2a'; g.beginPath(); g.ellipse(0, -24, 4, 3, 0, 0, 6.283); g.fill();
+  } else if (type === 'naichuoi') {             // one hand of bananas on the altar plate
+    g.fillStyle = '#f2ecde'; g.beginPath(); g.ellipse(0, 14, 24, 8, 0, 0, 6.283); g.fill(); g.stroke();
+    for (let k = 0; k < 5; k++) { const a = -1.1 + k * .55; g.save(); g.translate(0, 10); g.rotate(a); g.fillStyle = k % 2 ? '#e8c547' : '#f0d35a'; g.beginPath(); g.ellipse(0, -14, 4.5, 13, 0, 0, 6.283); g.fill(); g.stroke(); g.restore(); }
+    g.fillStyle = '#6a4a22'; g.beginPath(); g.arc(0, 11, 4, 0, 6.283); g.fill(); g.stroke();
+  } else if (type === 'mut') {                  // a red Tết jam box: round lid, gold rim, a gold flower
+    g.fillStyle = '#a3332a'; g.beginPath(); g.ellipse(0, 12, 24, 9, 0, 0, 6.283); g.fill(); g.stroke(); g.fillRect(-24, -4, 48, 16); g.beginPath(); g.moveTo(-24, -4); g.lineTo(-24, 12); g.moveTo(24, -4); g.lineTo(24, 12); g.stroke();
+    g.fillStyle = '#c0453a'; g.beginPath(); g.ellipse(0, -4, 24, 9, 0, 0, 6.283); g.fill(); g.stroke();
+    g.strokeStyle = '#e8c547'; g.lineWidth = 2.4; g.beginPath(); g.ellipse(0, -4, 18, 6, 0, 0, 6.283); g.stroke();
+    g.fillStyle = '#e8c547'; for (let k = 0; k < 5; k++) { const a = k * 1.257; g.beginPath(); g.ellipse(Math.cos(a) * 4, -4 + Math.sin(a) * 1.6, 3, 1.6, a, 0, 6.283); g.fill(); }
+  } else if (type === 'trung') {                // a bamboo basket heaped with eggs
+    g.fillStyle = '#f6efd8'; for (const [a, b] of [[-12, -4], [0, -8], [12, -4], [-6, -14], [6, -14]]) { g.beginPath(); g.ellipse(a, b, 7, 9, 0, 0, 6.283); g.fill(); g.stroke(); }
+    g.fillStyle = '#b57a3a'; g.beginPath(); g.moveTo(-24, -2); g.lineTo(24, -2); g.quadraticCurveTo(22, 24, 0, 24); g.quadraticCurveTo(-22, 24, -24, -2); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = '#7a4a22'; g.lineWidth = 1.4; g.beginPath(); for (let k = -16; k <= 16; k += 8) { g.moveTo(k, 0); g.lineTo(k * .8, 20); } g.moveTo(-22, 8); g.lineTo(22, 8); g.stroke();
+  } else if (type === 'banhday') {             // round white rice cakes on a banana leaf on a plate
+    g.fillStyle = '#f2ecde'; g.beginPath(); g.ellipse(0, 12, 24, 8, 0, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = '#4f8a4a'; g.beginPath(); g.ellipse(0, 6, 20, 7, 0, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = '#fbf7ee'; for (const [a, b] of [[-9, 2], [9, 2], [0, -6]]) { g.beginPath(); g.ellipse(a, b, 9, 5.5, 0, 0, 6.283); g.fill(); g.stroke(); }
+  } else if (type === 'xoi' || type === 'xoigac') {   // a heaped mound of sticky rice (white, or red with gấc) on a tray
+    g.fillStyle = type === 'xoi' ? '#8a5a2a' : '#f2ecde'; g.beginPath(); g.ellipse(0, 12, 25, 9, 0, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = type === 'xoi' ? '#f6efd8' : '#d9473a'; g.beginPath(); g.moveTo(-19, 10); g.quadraticCurveTo(-18, -18, 0, -18); g.quadraticCurveTo(18, -18, 19, 10); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = type === 'xoi' ? '#e2b43c' : '#f0a090'; for (const [a, b] of [[-8, -6], [4, -10], [9, 0], [-2, 3], [-12, 4]]) { g.beginPath(); g.arc(a, b, 1.8, 0, 6.283); g.fill(); }
+  } else if (type === 'banhchung') {           // a square green bánh chưng tied with bamboo strings, on a plate
+    g.fillStyle = '#f2ecde'; g.beginPath(); g.ellipse(0, 14, 24, 8, 0, 0, 6.283); g.fill(); g.stroke();
+    shape('#3f7a3a', [[-15, -16], [15, -16], [15, 12], [-15, 12]]); shape('#5a9a4a', [[-15, -16], [-9, -21], [21, -21], [15, -16]]);
+    line(2.6, '#e8d8a8', [-5, -19], [-5, 12]); line(2.6, '#e8d8a8', [6, -19], [6, 12]); line(2.6, '#e8d8a8', [-15, -6], [15, -6]); line(2.6, '#e8d8a8', [-15, 3], [15, 3]);
+  } else if (type === 'chobanh') {             // a wooden steamer with round bánh giầy on top
+    shape('#a0703a', [[-22, -4], [22, -4], [19, 22], [-19, 22]]); g.strokeStyle = '#6a4a22'; g.lineWidth = 2; g.beginPath(); g.moveTo(-21, 6); g.lineTo(21, 6); g.moveTo(-20, 14); g.lineTo(20, 14); g.stroke(); g.strokeStyle = INK; g.lineWidth = 2.4;
+    g.fillStyle = '#fbf7ee'; for (const [a, b] of [[-11, -8], [0, -10], [11, -8], [-5, -16], [6, -16]]) { g.beginPath(); g.ellipse(a, b, 7, 4.5, 0, 0, 6.283); g.fill(); g.stroke(); }
+  } else if (type === 'comnep') {              // a clay rice pot, lid ajar, steam rising
+    g.fillStyle = '#5b3a24'; g.beginPath(); g.moveTo(-20, -6); g.bezierCurveTo(-26, 18, -16, 24, 0, 24); g.bezierCurveTo(16, 24, 26, 18, 20, -6); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#f6efd8'; g.beginPath(); g.ellipse(0, -6, 20, 5, 0, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = '#7a4a2a'; g.beginPath(); g.ellipse(6, -11, 17, 4.5, -.25, 0, 6.283); g.fill(); g.stroke(); g.beginPath(); g.arc(7, -16, 3, 0, 6.283); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(29,25,21,.45)'; g.lineWidth = 1.6; for (const k of [-10, -3]) { g.beginPath(); g.moveTo(k, -14); g.quadraticCurveTo(k - 4, -19, k, -24); g.quadraticCurveTo(k + 4, -28, k, -32); g.stroke(); }
+  } else if (type === 'matong') {              // an amber honey jar, cloth lid tied with string, a drip
+    g.fillStyle = '#e2a23c'; g.beginPath(); g.moveTo(-12, -12); g.bezierCurveTo(-26, -4, -24, 22, -8, 24); g.lineTo(8, 24); g.bezierCurveTo(24, 22, 26, -4, 12, -12); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#c0453a'; g.beginPath(); g.moveTo(-15, -12); g.lineTo(15, -12); g.lineTo(11, -20); g.lineTo(-11, -20); g.closePath(); g.fill(); g.stroke(); line(2, '#e8d8a8', [-13, -14], [13, -14]); g.strokeStyle = INK; g.lineWidth = 2.4;
+    g.fillStyle = '#f6efd8'; g.beginPath(); g.ellipse(0, 6, 9, 7, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#b57a22'; g.font = '700 9px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('蜜', 0, 6.5);
+    g.fillStyle = '#e2a23c'; g.beginPath(); g.moveTo(-14, -10); g.quadraticCurveTo(-17, -2, -15, 2); g.quadraticCurveTo(-12, -2, -12, -8); g.fill();
+  } else if (type === 'cakho') {               // a clay pot of braised fish, a tail sticking out
+    g.fillStyle = '#7a4a2a'; g.beginPath(); g.moveTo(-22, -4); g.bezierCurveTo(-26, 18, -14, 22, 0, 22); g.bezierCurveTo(14, 22, 26, 18, 22, -4); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#9a5a2a'; g.beginPath(); g.ellipse(0, -4, 22, 6, 0, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = '#b5703a'; g.beginPath(); g.ellipse(-3, -6, 13, 4.5, 0, 0, 6.283); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(9, -6); g.lineTo(20, -14); g.lineTo(19, -1); g.closePath(); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(-11, -7, 1.3, 0, 6.283); g.fill();
   } else if (type === 'dish') { g.fillStyle = '#f2ecde'; g.beginPath(); g.ellipse(0, 8, 22, 8, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#e8e2d0'; g.beginPath(); g.ellipse(0, -2, 16, 13, 0, Math.PI, 0); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#a3332a'; g.beginPath(); g.arc(0, -14, 3, 0, 6.283); g.fill(); }
   g.restore();
 }
 function c7Token(g, G, e, x, y, r, ring, lw = 3) {
   g.save(); g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fillStyle = C7_TOK[e % C7_TOK.length]; g.fill();
-  if (G.ents[e].dish) { g.restore(); g.fillStyle = '#f6f0e2'; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); c7Thing(g, 'dish', x, y + r * .1, r * 1.8); g.strokeStyle = '#a3332a'; g.lineWidth = lw; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.stroke(); return; }
+  if (G.ents[e].dish) { g.restore(); g.fillStyle = '#f6f0e2'; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); c7Thing(g, c7Food(G.ents[e])[0], x, y + r * .1, r * 1.8); g.strokeStyle = '#a3332a'; g.lineWidth = lw; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.stroke(); return; }
   g.clip(); const im = c7Face(G.ents[e]); if (im.complete) g.drawImage(im, x - r * 1.08, y - r * 1.08, r * 2.16, r * 2.16); g.restore();
   g.strokeStyle = ring || C7_TOK[e % C7_TOK.length]; g.lineWidth = lw; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.stroke();
 }
@@ -259,7 +315,7 @@ function c7Draw(en, g, W, H) {
     c7Token(g, G, k, x, y, pr);
     if (G.placed[k] >= 0) { g.fillStyle = '#2f6a4c'; g.beginPath(); g.arc(x + pr * .8, y - pr * .8, 6, 0, 6.283); g.fill(); g.strokeStyle = '#fbf7ee'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + pr * .8 - 3, y - pr * .8); g.lineTo(x + pr * .8 - 1, y - pr * .8 + 2.5); g.lineTo(x + pr * .8 + 3, y - pr * .8 - 2.5); g.stroke(); }
     // the name without the title (bà, chú, cô…), shrunk to fit its slot
-    const nm = e.dish ? 'Món ăn' : c7Cap(e.name.split(' ').slice(1).join(' ') || e.name); let fz = 11.5;
+    const nm = e.dish ? c7Food(e)[1] : c7Cap(e.name.split(' ').slice(1).join(' ') || e.name); let fz = 11.5;
     do { g.font = '700 ' + fz + 'px "Be Vietnam Pro", sans-serif'; } while (g.measureText(nm).width > pw - 4 && --fz > 7.5);
     g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm, x, Gm.stripY + pr * 2 + 14);
   });
@@ -302,30 +358,8 @@ function c7DrawLegend(en, g, W, H) {
   c7Wood(g, ...b, 'Đóng', 'paper'); btns.push([b[0], b[1], b[2] + 4, 48, () => { G.sheet = null; }]);
   g.textBaseline = 'alphabetic';
 }
-function c7DrawAd(en, g, W, H) {
-  const G = en.G, left = Math.ceil(G.adT), k = Math.min(C7_ADS.length - 1, Math.floor((C7_AD_SECS - G.adT) / (C7_AD_SECS / C7_ADS.length))), [thing, head, line] = C7_ADS[k];
-  g.fillStyle = 'rgba(29,25,21,.7)'; g.fillRect(0, 0, W, H);
-  const bw = Math.min(W - 40, 380), bh = 430, bx = (W - bw) / 2, by = (H - bh) / 2;
-  c7Round(g, bx, by, bw, bh, 18); g.fillStyle = '#fbf7ee'; g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
-  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(29,25,21,.55)'; g.font = '700 12px "Be Vietnam Pro", sans-serif'; g.fillText(left > 0 ? 'QUẢNG CÁO · gợi ý sau ' + left + ' giây' : 'QUẢNG CÁO · gợi ý đã sẵn sàng', W / 2, by + 24);
-  // the notice board: red paper, ink frame, the thing, the words
-  const px = bx + 24, py = by + 44, pw = bw - 48, ph = 230;
-  g.fillStyle = INK; g.fillRect(px + 4, py + 4, pw, ph); g.fillStyle = '#a3332a'; g.fillRect(px, py, pw, ph); g.strokeStyle = INK; g.lineWidth = 2.5; g.strokeRect(px, py, pw, ph);
-  g.strokeStyle = 'rgba(242,236,222,.6)'; g.lineWidth = 1.2; g.strokeRect(px + 6, py + 6, pw - 12, ph - 12);
-  const bob = Math.sin(G.t * 2.4) * 3; g.fillStyle = '#f2ecde'; g.beginPath(); g.arc(W / 2, py + 72, 46, 0, 6.283); g.fill(); g.strokeStyle = INK; g.lineWidth = 2; g.stroke(); c7Thing(g, thing, W / 2, py + 72 + bob, 64);
-  g.fillStyle = '#f2ecde'; g.font = '900 24px "Playfair Display", serif'; g.fillText(head, W / 2, py + 152); g.font = '500 15px "Be Vietnam Pro", sans-serif'; g.fillText(line, W / 2, py + 184);
-  g.font = '600 12px "Be Vietnam Pro", sans-serif'; g.fillStyle = 'rgba(242,236,222,.75)'; g.fillText('Rao vặt làng Chuột', W / 2, py + 212);
-  // the minute running down
-  const ry = py + ph + 28; g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(px, ry - 4, pw, 8); g.fillStyle = '#a3332a'; g.fillRect(px, ry - 4, pw * (1 - G.adT / C7_AD_SECS), 8);
-  const btns = en.sheetBtns = [], y = by + bh - 66, half = (bw - 52) / 2;
-  if (left > 0) { c7Wood(g, bx + 20, y, bw - 44, 44, 'Thôi, tự nghĩ tiếp', 'paper'); btns.push([bx + 20, y, bw - 40, 48, () => { G.sheet = null; }]); }
-  else { c7Wood(g, bx + 20, y, half, 44, 'Thôi', 'paper'); btns.push([bx + 20, y, half + 4, 48, () => { G.sheet = null; }]);
-    c7Wood(g, bx + 32 + half, y, half, 44, 'Nhận gợi ý', 'son'); btns.push([bx + 32 + half, y, half + 4, 48, () => { G.sheet = null; c7Hint(G); }]); }
-  g.textBaseline = 'alphabetic';
-}
 function c7DrawSheet(en, g, W, H) {
   if (en.G.sheet === 'legend') return c7DrawLegend(en, g, W, H);
-  if (en.G.sheet === 'ad') return c7DrawAd(en, g, W, H);
   const G = en.G, win = G.sheet === 'win';
   g.fillStyle = 'rgba(29,25,21,.55)'; g.fillRect(0, 0, W, H);
   const bw = Math.min(W - 40, 380), bh = win ? 330 : 270, bx = (W - bw) / 2, by = (H - bh) / 2;

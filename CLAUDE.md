@@ -156,9 +156,8 @@ Chương VII · Ai Ăn Vụng? (js/ch7/, SAVE7 {done[], best[] seconds, how} in 
 
 - Vietnamese first and large, Hán characters under it and small (cards, sheets, level card, chương II word tiles);
   keep Hán to a minimum.
-- No hint text; players discover by tapping and dragging. Exception the owner asked for: chương II has two HUD buttons,
-  "Luật chơi" (how the game works) and "Gợi ý" (the map's hint, only on the first C2_TIPS = 3 maps), each opening #c2help
-  only when tapped; a move closes it. Controls: walk (← → / ◀ ▶) and tap/drag only.
+- No hint text; players discover by tapping and dragging. Exceptions the owner asked for: chương II's "Luật chơi" button
+  (#c2help, only when tapped; a move closes it), and bought hints (Gợi ý) in chương II, VI and VII, see below. Controls: walk (← → / ◀ ▶) and tap/drag only.
 - A brand-new player (no saved progress in any chapter: each chapter's `hasProgress()`) skips the menus and starts
   chương I tranh 1 (`playFirst()`); returning players go straight to the chapter picker (the old #title sheet is never shown). AU.init() runs at boot so the audio device opens silently before the first tap (opening it on the tap froze the page ~1 s). The party never starts
   left of x 340 so all four mice are on screen.
@@ -177,7 +176,9 @@ Chương VII · Ai Ăn Vụng? (js/ch7/, SAVE7 {done[], best[] seconds, how} in 
   maps (`ch2-solutions.json`), returning frame hashes. Hashes depend on the browser and font files, so compare
   against a run of the previous commit made in the same browser session (git stash → run → stash pop → run);
   `snapshot.json` is only an example of the output.
-- Chương II maps: verify solvability by replaying solutions through `c2Parse/c2Settle/c2Step`.
+- Chương II maps: every map must be solvable: `node --max-old-space-size=8000 tools/c2-solve.js [index…] --out` solves by BFS with the
+  game's engine and writes js/ch2/solutions.js (C2_SOL, the hint's road). Rerun it for any map you add or change, and check for
+  cheap ways round the idea (a word pushed into water makes a gap; a fixed noun can be the far end of a new rule: W = G, N = 9…).
 - Look at real screenshots (desktop and mobile), not just numbers.
 
 ## Publishing
@@ -262,3 +263,31 @@ Chương III tranh 1: alone in the nest a chick stays 3 s (G3_ALONE, owner).
 - Chương I tranh 4 dyer (a player got stuck): when the new jar is full and still not green (one colour only, only water, too much water, or yellow/blue out of balance) the dyer tips it out and says why (settle), so it never stays stuck.
 - Walkouts (owner): a known buyer who leaves unserved loses 4 liking (12 when sold out) × trait, shown as a floating 'Name −n'; at ≤ C4_DROP (10) they drop out of the book back to a stranger (f.k=0, f.v=1, f.bad so they restart cooler, f.lost counts, a fact line, a toast). Invited end-of-day guests: each may come on time, late (35%, 5–15 s ≈ half an hour to an hour later, says sorry) or not at all (5–40%, likelier the less they like us, less likely when it's free; a toast says so). Guests still queued at closing are lost.
 - End-of-day tally (owner): besides "Sang ngày mới" a second button "Đi ngủ, mai cố gắng tiếp" moves the save to the next day (c4DayAdvance) and goes back to the chapter list; entering chương IV again opens that morning (C4.day ≠ SAVE4.day → c4MarketStart). The goal check runs first, as for the other button.
+- Relationship web (owner): the bubbles' swell on tap bounces only slightly (spring ~ζ .75, focus 1.55×, ties 1.08×), and the web is spread out (repel 5200, gap 30, strings kin 85 / other 170 / focused 135+, start ring wider, weaker pull to the middle).
+
+Bought hints (owner, js/core/goiy.js): chương II, VI and VII hints cost HINT_COST 600 đồng = 1 quan out of chương IV's purse
+(SAVE4.money; SAVE4.hints / hintSpent count them), so hints slow the 2-quan goal. hintBuy(what, give) shows #hintBuy: the price, what
+it does and the purse; not enough money → "Không đủ tiền… sang chương Vợ Chồng Khởi Nghiệp buôn bán kiếm tiền" (nothing free at the
+start); give() may return false (nothing to give) and then nothing is taken. Chương I and III have no hints (owner).
+- Chương VI: a "?" button top right of the field (not on the practice field): puts the right mouse in the first row without one, no
+  heart lost (mdHint).
+- Chương VII: the Gợi ý tool now buys the hint (the one-minute advert board is gone).
+- Chương II: Gợi ý on every map, bought once per map (SAVE2.paid[i]) and then free to reread (owner). It shows only the chain of
+  rules (C2_CHAIN in levels.js, written by hand from the intended or the solver's road, e.g. "Ghép TƯỜNG LÀ CỔNG → trả chữ về →
+  ghép CỔNG LÀ THẮNG") in #c2tip. solver.js / solutions.js are tools only (not in GAME_FILES); add a C2_CHAIN line for any new map.
+  The chain must name every rule to make AND to break, in order (owner: tranh 2 needs "Phá TƯỜNG LÀ CHẶN → ghép CỔNG LÀ THẮNG").
+  Check with node --max-old-space-size=14000 tools/c2-chain.js [index…]: "Ghép X"/"Phá X" steps (A VÀ B LÀ X = two rules; a trailing
+  "(…)" is ignored) must happen in order on a winning road, and at the win each named rule stands or not as its last step left it.
+Chương II engine (rewritten after Baba Is You, owner; js/ch2/engine.js): grid index and per-kind bit masks (st.pm) so the solver is
+quick; settle keeps the rules when no word moved. Grammar NOUN (VÀ NOUN)* LÀ|CÓ [KHÔNG] PROP|NOUN (VÀ …)*. New words: VÀ, KHÔNG
+(removes a property / blocks a transform), CÓ (what is left when a thing is destroyed), nouns CHÌA, CỬA, ĐÁ, MÂY, CHỮ (the word tiles
+themselves; pinned words never move even when CHỮ LÀ ĐI), NOUN LÀ itself (no transform); properties MỞ/KHOÁ (shut blocks all but
+open, the two meeting destroy each other), BAY (floaters only meet floaters: sink, heat, win, open/shut, weak), KÉO (follows what
+walks away from it, blocks like CHẶN), CHẠY (steps each turn, turns back when blocked; dirs: [[x, y, 'L']] in a map), YẾU (breaks
+when sharing a cell). Legend in levels.js. The old 14 maps give the same shortest solutions as before.
+New section Biến hoá (bh: true, C2_FIRST_BH; opens after Nhập môn, like Cao thủ opening after tranh 4), 12 maps: Chìa mở cửa,
+Vò vỡ, Kéo đá, Chữ kéo, Không chặn, Mèo đẩy chữ, Lửa có cổng, Chìa đẻ chìa, Bay qua sông, Bắc cầu đá, Chữ là mình (generated: random
+boards solved, the longest kept), Chuột là chuột. New things drawn in art.js (key, door, rock, cloud; floaters hover over a shadow).
+- iPhone notch (owner: chương VII's top buttons beside the notch could not be tapped): boot.js safeTop() reads env(safe-area-inset-top) from a probe; chương VI and VII draw their canvas below it (renderC6/renderC7 translate by it, c6Pos/c7Pos/c7HowTap subtract it). Any new canvas-drawn top bar must do the same.
+- Chương VII how-to, furniture page (owner: tiles ran into the words on short desktop windows): the picture is min(width × .92, H − 330) tall and the tiles shrink (5 a row when short) to fit inside it.
+- Chương VII stolen food (owner: "Món ăn" with a covered dish was unclear): each of the 13 foods in the cases has its own drawing in c7Thing (dua, chuoi, naichuoi, mut, trung, banhday, xoi, banhchung, xoigac, chobanh, comnep, matong, cakho) and a short label in the strip (C7_FOOD by the dish name; a new food needs a line there, else the old covered dish and its own name).

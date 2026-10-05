@@ -8,6 +8,9 @@ const DPR = Math.min(devicePixelRatio || 1, isTouch ? 1.5 : 2);
 const RES = isTouch ? 1.25 : 2;                        // part pre-render resolution
 const VIEW_H = 430, GROUND = 352;
 const INK = '#1d1915';
+// where the iPhone's notch / status bar ends (CSS safe area): canvas-drawn top bars (chương VI, VII) start below it (owner: the
+// top buttons beside the notch could not be tapped)
+const safeTop = (() => { const p = document.createElement('div'); p.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none'; document.body.appendChild(p); return () => p.offsetHeight; })();
 
 
 let scale = 1, viewH = VIEW_H, offY = 0, ZOOM = 1, ZOOMW = 1;            // a tranh may come closer on a portrait phone (ZOOM) or stand back on a wide screen to show its tall things (ZOOMW; tranh 4)

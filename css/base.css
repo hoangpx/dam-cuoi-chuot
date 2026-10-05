@@ -113,3 +113,10 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #langFlags .lang:hover,#langFlags .lang.here{background:rgba(163,51,42,.12)}
 #langFlags .lang .flag{width:28px;height:19px;border-width:1px}
 @media (max-width:640px){#chapters .sheet{padding-top:46px}#langFlags{top:12px;right:14px}}
+/* the hint purchase sheet (js/core/goiy.js), over every chapter */
+#hintBuy{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.45)}
+#hintBuy .hcard{max-width:380px;width:100%;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:14px 18px 16px;text-align:center}
+#hintBuy h3{margin:0 0 8px;font-family:var(--display);font-weight:900;font-size:22px}
+#hintBuy p{margin:0 0 8px;font-size:15px;line-height:1.5}
+#hintBuy .hpurse{font-size:14px;opacity:.85}
+#hintBuy .hbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}

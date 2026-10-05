@@ -44,7 +44,7 @@ const C7_PAGES = [
 ];
 function c7HowGeo(W, H) { const colW = Math.min(W - 24, 470), x0 = (W - colW) / 2; return { colW, x0, back: [x0 + 24, 40], skip: [x0 + colW - 30, 40], go: [x0, H - 70, colW, 50] }; }
 function c7HowTap(x, y) {
-  const Gm = c7HowGeo(cv.width / DPR, cv.height / DPR), [gx, gy, gw, gh] = Gm.go;
+  const Gm = c7HowGeo(cv.width / DPR, cv.height / DPR - safeTop()), [gx, gy, gw, gh] = Gm.go;
   if (Math.hypot(x - Gm.back[0], y - Gm.back[1]) < 26) { AU.tap(); if (C7.page > 0) C7.page--; else if (!SAVE7.how) showAlbum(7); else C7.page = -1; return; }
   if (Math.abs(x - Gm.skip[0]) < 40 && Math.abs(y - Gm.skip[1]) < 20 || (x > gx && x < gx + gw && y > gy && y < gy + gh)) {
     AU.tap(); const skip = Math.abs(x - Gm.skip[0]) < 40 && y < 70;
@@ -61,7 +61,7 @@ function c7DrawHow(g, W, H) {
   g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(0, 70, W, 4); g.fillStyle = '#a3332a'; g.fillRect(0, 70, W * (C7.page + 1) / C7_PAGES.length, 4);
   g.fillStyle = INK; g.font = '900 28px "Playfair Display", serif'; g.fillText(P.title, W / 2, 112);
   // the picture
-  const pw = Gm.colW, ph = Math.min(pw * .92, H - 400), px = Gm.x0, py = 140;
+  const pw = Gm.colW, ph = Math.min(pw * .92, H - 330), px = Gm.x0, py = 140;   // room left for three lines of words and the button
   c7Round(g, px, py, pw, ph, 18); g.fillStyle = '#fbf7ee'; g.fill(); g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 2; g.stroke();
   const bs = Math.min(pw - 40, ph - 30), bx = W / 2 - bs / 2, byy = py + (ph - bs) / 2;
   if (P.show === 'part' || P.show === 'full' || P.show === 'rooms') {
@@ -78,15 +78,16 @@ function c7DrawHow(g, W, H) {
     c7Thing(g, 'chum', x0 + q * 1.5, y0 + q * 1.5, q * .9); g.strokeStyle = INK; g.lineWidth = 3.4; g.strokeRect(x0, y0, s, s);
   } else if (P.show === 'things') {
     const groups = [['Ngồi được', ['chong', 'phan', 'chieu', 'ghe'], '#2f6a4c'], ['Không đứng được', ['chum', 'coi', 'cau', 'rom', 'gieng'], '#a3332a']];
-    let y = py + 22; const cw = (pw - 40) / 4;
+    const cols = ph < 330 ? 5 : 4, rows = groups.reduce((n, gr) => n + Math.ceil(gr[1].length / cols), 0);
+    let y = py + 22; const cw = Math.max(40, Math.min((pw - 40) / cols, (ph - 22 - 32 * groups.length - 8 * rows) / (.72 * rows)));   // every row and label fits in ph (owner: it ran into the words on short screens)
     for (const [label, list, col] of groups) {
       g.fillStyle = col; g.beginPath(); g.arc(px + 26, y, 6, 0, 6.283); g.fill(); g.fillStyle = INK; g.font = '800 14px "Be Vietnam Pro", sans-serif'; g.textAlign = 'left'; g.fillText(label, px + 40, y); y += 16;
-      list.forEach((t, k) => { const cx = px + 20 + (k % 4) * cw, cy = y + ((k / 4) | 0) * (cw * .72 + 8); c7Round(g, cx + 3, cy, cw - 6, cw * .72, 12); g.fillStyle = '#f2e8d6'; g.fill(); g.strokeStyle = 'rgba(29,25,21,.25)'; g.lineWidth = 1.4; g.stroke();
-        c7Thing(g, t, cx + cw / 2, cy + cw * .28, cw * .45); g.fillStyle = INK; g.font = '700 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillText(C7_THING[t], cx + cw / 2, cy + cw * .6); });
-      y += Math.ceil(list.length / 4) * (cw * .72 + 8) + 16;
+      list.forEach((t, k) => { const cx = px + (pw - cw * cols) / 2 + (k % cols) * cw, cy = y + ((k / cols) | 0) * (cw * .72 + 8); c7Round(g, cx + 3, cy, cw - 6, cw * .72, 12); g.fillStyle = '#f2e8d6'; g.fill(); g.strokeStyle = 'rgba(29,25,21,.25)'; g.lineWidth = 1.4; g.stroke();
+        c7Thing(g, t, cx + cw / 2, cy + cw * .28, cw * .45); g.fillStyle = INK; g.font = (cw < 75 ? '700 9.5px' : '700 11px') + ' "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillText(C7_THING[t], cx + cw / 2, cy + cw * .6); });
+      y += Math.ceil(list.length / cols) * (cw * .72 + 8) + 16;
     }
   } else if (P.show === 'tools') {
-    const rows = [['notes', 'Ghi chú', 'Ghim ảnh nhỏ của người đang chọn vào ô có thể là chỗ của họ.'], ['cross', 'Gạch', 'Gạch bỏ ô chắc chắn không có ai. Di tay để gạch nhiều ô.'], ['place', 'Đặt', 'Đặt người đang chọn vào ô bạn tin chắc.'], ['erase', 'Xoá', 'Xoá hết trong ô: ghi chú, gạch và người.'], ['hint', 'Gợi ý', 'Xem một phút quảng cáo để được đặt đúng chỗ một người.']];
+    const rows = [['notes', 'Ghi chú', 'Ghim ảnh nhỏ của người đang chọn vào ô có thể là chỗ của họ.'], ['cross', 'Gạch', 'Gạch bỏ ô chắc chắn không có ai. Di tay để gạch nhiều ô.'], ['place', 'Đặt', 'Đặt người đang chọn vào ô bạn tin chắc.'], ['erase', 'Xoá', 'Xoá hết trong ô: ghi chú, gạch và người.'], ['hint', 'Gợi ý', 'Trả 1 quan (tiền buôn bán ở chương Vợ Chồng Khởi Nghiệp) để được đặt đúng chỗ một người.']];
     const rh = Math.min(70, (ph - 20) / 5);
     rows.forEach(([t, name, txt], k) => { const y = py + 10 + k * rh; g.fillStyle = '#fbf7ee'; g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.arc(px + 36, y + rh / 2, 20, 0, 6.283); g.fill(); g.stroke(); c7Icon(g, t, px + 36, y + rh / 2, false);
       g.textAlign = 'left'; g.fillStyle = INK; g.font = '800 15px "Be Vietnam Pro", sans-serif'; g.fillText(name, px + 66, y + rh / 2 - 11); g.font = '500 13px "Be Vietnam Pro", sans-serif';
@@ -105,9 +106,10 @@ function renderC7() {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = PAPERS.yellow.base; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   for (let px = 0; px < W; px += PAPER.width) ctx.drawImage(PAPER, px, 0, PAPER.width, Math.max(H, PAPER.height));
-  if (C7.page >= 0) c7DrawHow(ctx, W, H); else if (C7.G) c7Draw(C7, ctx, W, H);
+  const st = safeTop(); ctx.translate(0, st);   // below the notch
+  if (C7.page >= 0) c7DrawHow(ctx, W, H - st); else if (C7.G) c7Draw(C7, ctx, W, H - st);
 }
-function c7Pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+function c7Pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - safeTop()]; }
 function c7PDown(e) { if (S.mode !== 'c7play') return; const [x, y] = c7Pos(e); if (C7.page >= 0) { c7HowTap(x, y); return; } c7Down(C7, x, y); C7.drag = true; capturePointer(e); }
 function c7PMove(e) { if (!C7.drag || C7.page >= 0) return; const [x, y] = c7Pos(e); c7Move(C7, x, y); }
 function c7PUp(e) { if (!C7.drag) return; C7.drag = false; if (C7.page < 0) c7Up(C7); }

@@ -56,7 +56,7 @@ function qhBuild() {
     const p = P.list[id];
     let o = QH.pos.get(id);
     if (!o) {                                                              // households start side by side round a circle, then settle
-      const an = (p.house / P.houses.length) * 6.283 + (i++ % 3) * .12, rr = 120 + Math.sqrt(n) * 22 + (st === 'k' ? 0 : 60);
+      const an = (p.house / P.houses.length) * 6.283 + (i++ % 3) * .12, rr = 160 + Math.sqrt(n) * 32 + (st === 'k' ? 0 : 80);
       o = { x: Math.cos(an) * rr + (R() - .5) * 30, y: Math.sin(an) * rr + (R() - .5) * 30, vx: 0, vy: 0, k: 1, kv: 0 };
       QH.pos.set(id, o);
     }
@@ -80,25 +80,25 @@ function qhStep(dt) {
   for (let i = 0; i < N.length; i++) for (let j = i + 1; j < N.length; j++) {    // bubbles push each other apart
     const a = N[i].o, b = N[j].o; let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
     if (d2 < 1) { dx = R() - .5; dy = R() - .5; d2 = 1; }
-    const d = Math.sqrt(d2), min = N[i].r * a.k + N[j].r * b.k + 14;
-    let f = 2600 / d2; if (d < min) f += (min - d) * .6;
+    const d = Math.sqrt(d2), min = N[i].r * a.k + N[j].r * b.k + 30;   // owner: spread out, airier
+    let f = 5200 / d2; if (d < min) f += (min - d) * .6;
     a.vx -= dx / d * f; a.vy -= dy / d * f; b.vx += dx / d * f; b.vy += dy / d * f;
   }
   for (const e of G.edges) {                                               // the strings
     const a = e.a.o, b = e.b.o, dx = b.x - a.x, dy = b.y - a.y, d = Math.max(1, Math.hypot(dx, dy));
     const hot = F && (e.a === F || e.b === F);
-    const rest = hot ? 105 + e.a.r * e.a.o.k + e.b.r : e.kin ? 60 : 120, k = hot ? .09 : e.kin ? .05 : .02;
+    const rest = hot ? 135 + e.a.r * e.a.o.k + e.b.r : e.kin ? 85 : 170, k = hot ? .09 : e.kin ? .05 : .02;
     const f = (d - rest) * k; a.vx += dx / d * f; a.vy += dy / d * f; b.vx -= dx / d * f; b.vy -= dy / d * f;
   }
   for (const nd of N) {
     const o = nd.o, focus = F === nd;
-    const g = focus ? .12 : F && !near.has(nd.id) ? .002 : .006;               // the one tapped is drawn to the middle
+    const g = focus ? .12 : F && !near.has(nd.id) ? .0015 : .004;               // the one tapped is drawn to the middle
     o.vx -= o.x * g; o.vy -= o.y * g;
     if (QH.drag && QH.drag.node === nd) { o.vx = o.vy = 0; continue; }
     o.vx *= .82; o.vy *= .82; o.x += o.vx * dt * 30; o.y += o.vy * dt * 30;
     if (focus) { const k = Math.min(1, dt * 5); o.x -= o.x * k; o.y -= o.y * k; }   // glides to the middle
-    const want = focus ? 1.7 : F && near.has(nd.id) ? 1.12 : 1;               // and swells, springy
-    o.kv += (want - o.k) * 18 * dt; o.kv *= Math.pow(.0008, dt); o.k += o.kv * dt * 6;   // springy, but only a little
+    const want = focus ? 1.55 : F && near.has(nd.id) ? 1.08 : 1;              // and swells, with just a hint of bounce (owner: less springy)
+    o.kv += (want - o.k) * 10 * dt; o.kv *= Math.pow(.00001, dt); o.k += o.kv * dt * 6;
   }
 }
 function qhDraw() {

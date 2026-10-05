@@ -59,6 +59,27 @@ function buildC2Parts() {
     a.fk('green', rect(-30, -12, 60, 10), 1.6);
     a.fk('dark', ell(0, -33, 15, 5), 1.8); a.fill('yellow', ell(-16, 12, 4, 12));
   });
+  // the Baba-style things (owner): a bronze key, a red-lacquer door, a grey rock, a cloud
+  T.key = part([-42, -30, 42, 30], a => {
+    a.fk('yellow', circ(-20, 0, 15), 2.6); a.fill('paper', circ(-24, -4, 6)); a.fk('white', circ(-20, 0, 6), 1.8);
+    a.fk('yellow', rect(-6, -5, 42, 10), 2.4); a.fk('yellow', rect(22, 4, 7, 12), 2); a.fk('yellow', rect(31, 4, 6, 9), 2);
+    a.key(lines([[-14, 10, -26, 10]]), 1);
+  });
+  T.door = part([-40, -46, 40, 44], a => {
+    a.fk('red', rect(-32, -40, 64, 80), 2.8); a.fk('brown', rect(-36, -44, 72, 8), 2.2);
+    a.key(lines([[0, -36, 0, 40]]), 1.8);
+    for (const x of [-16, 16]) for (const y of [-22, -2, 18]) a.fk('yellow', circ(x, y, 3.2), 1.2);
+    a.fk('yellow', rect(-9, 2, 18, 14), 2); a.ink(circ(0, 8, 2.4)); a.key(lines([[0, 9, 0, 13]]), 1.6);
+  });
+  T.rock = part([-42, -40, 42, 40], a => {
+    a.fk('ash', smooth([[-36, 26], [-34, -4], [-18, -30], [8, -34], [30, -16], [38, 14], [26, 32], [-12, 34]]), 2.8);
+    a.fill('grey', smooth([[-10, 30], [16, 26], [30, 12], [22, 28]])); a.fill('white', ell(-12, -16, 9, 5, -.5));
+    a.key(smooth([[-18, -2], [-6, 6], [4, 2], [12, 12]], false), 1.4); a.key(smooth([[10, -18], [16, -8]], false), 1.2);
+  });
+  T.cloud = part([-46, -34, 46, 30], a => {
+    a.fk('white', smooth([[-40, 16], [-42, -2], [-26, -12], [-18, -28], [2, -30], [14, -18], [30, -22], [42, -6], [40, 14], [24, 22], [-20, 22]]), 2.6);
+    a.band('blue', smooth([[-26, 4], [-16, -8], [-4, -2], [-10, 8], [-20, 6]], false), 2.4); a.band('blue', smooth([[8, 2], [18, -10], [30, -4], [24, 8]], false), 2.4);
+  });
   const tile = (han, vi, kind, fixed) => part([-42, -42, 42, 42], a => {
     a.fk(kind === 'noun' ? 'white' : kind === 'is' ? 'yellow' : 'green', rect(-36, -36, 72, 72), 2.8);
     if (kind === 'noun') a.fill('red', rect(-36, -36, 72, 9)); else if (kind === 'prop') a.fill('white', rect(-36, -36, 72, 9));
@@ -69,7 +90,7 @@ function buildC2Parts() {
     if (fixed) for (const [x, y] of [[-29, -29], [29, -29], [-29, 29], [29, 29]]) a.ink(circ(x, y, 3.2));
   });
   for (const k in C2K) { T.tiles['n:' + k] = tile(C2K[k].han, C2K[k].vi, 'noun', false); T.tiles['n:' + k + ':f'] = tile(C2K[k].han, C2K[k].vi, 'noun', true); }
-  T.tiles.is = tile('是', 'LÀ', 'is', false); T.tiles['is:f'] = tile('是', 'LÀ', 'is', true);
+  for (const k in C2OPS) { T.tiles[k] = tile(C2OPS[k].han, C2OPS[k].vi, 'is', false); T.tiles[k + ':f'] = tile(C2OPS[k].han, C2OPS[k].vi, 'is', true); }
   for (const p in C2P) { T.tiles['p:' + p] = tile(C2P[p].han, C2P[p].vi, 'prop', false); T.tiles['p:' + p + ':f'] = tile(C2P[p].han, C2P[p].vi, 'prop', true); }
   return T;
 }
