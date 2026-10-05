@@ -225,13 +225,17 @@ function c4Snubbed(w, empty) {
   else if (empty) f.bad = true;
 }
 // in the evening: people who dislike the stall and love to talk spread it to those they know
+// gossips who dislike the stall talk at night: their known ties like us 5 less, the unmet ones will be half as keen and start cooler.
+// Returns who talked and who was hurt, so the tally can say it plainly (a player: the bare line seemed to change nothing)
 function c4Gossip() {
-  const P = c4People(); let n = 0;
+  const P = c4People(), R0 = { n: 0, who: [], hurt: [], cold: 0 };
   for (const p of P.list) {
     const f = SAVE4.folk[p.id]; if (!f || !f.k || f.a >= 25 || !C4_TRAITS[p.trait].gossip) continue;
-    for (const l of p.links) { const g = c4F(l.to); if (g.k) c4Bump(l.to, -5); else g.bad = true; n++; }
+    let any = false;
+    for (const l of p.links) { const g = c4F(l.to); if (g.k) { c4Bump(l.to, -5); R0.hurt.push(P.list[l.to].name); } else if (!g.bad) { g.bad = true; R0.cold++; } else continue; R0.n++; any = true; }
+    if (any) R0.who.push(p.name);
   }
-  return n;
+  return R0.n ? R0 : 0;
 }
 
 /* ---------- portraits: the woodblock mouse (or critter) in a round frame, drawn once per look ---------- */

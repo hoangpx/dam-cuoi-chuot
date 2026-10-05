@@ -166,6 +166,16 @@ function t4Dyer(W) {
       }
       if (y >= .2 && b >= .2 && b / (y + b) > .25 && b / (y + b) < .75) {
         this.st = 'done'; AU.swoosh(); t4Thanks(this, KX, 'Ra màu xanh lá rồi! Chú thợ nhuộm mừng quá, cảm tạ đoàn rước một đồng.');
+        return;
+      }
+      // the new jar full and still not green: it would be stuck for good (a player), so the dyer tips it out and says why
+      const tot = Object.values(m).reduce((p, c) => p + c, 0);
+      if (tot >= 1.15) {
+        const why = !has.length ? 'Cả chum toàn nước lã, chẳng có màu gì!'
+          : has.length === 1 ? `Cả chum toàn màu ${has[0] === 'vang' ? 'vàng' : 'xanh dương'}, đầy rồi không pha thêm được!`
+          : y < .2 || b < .2 ? 'Nước lã nhiều quá, màu nhạt thếch!'
+          : b / (y + b) <= .25 ? 'Vàng nhiều quá, chưa ra xanh lá!' : 'Xanh dương nhiều quá, chưa ra xanh lá!';
+        this.mud = 2.2; AU.pluck(52); toast(why + ' Chú thợ nhuộm đổ đi, pha lại nhé: vàng với xanh dương, mỗi thứ một nửa.', 3.8);
       }
     },
     update(dt) {

@@ -74,7 +74,7 @@ function c4Money(d) { d = Math.round(d); const a = Math.abs(d), q = Math.floor(a
 const c4Num = d => (d < 0 ? '−' : '') + Math.abs(Math.round(d)).toLocaleString('vi-VN');
 // the weather (fine, scorching, rain, cold) and what else a day brings
 const C4_WX = { dep: 'Trời nắng đẹp.', gat: 'Nắng gắt như đổ lửa: đồ tươi mau hỏng, ít người uống chè.', mua: 'Trời mưa rả rích, chợ vắng hơn.', ret: 'Trời rét căm căm: ai cũng muốn bát chè nóng.' };
-function c4Roll(day) { const r = R(); return { wx: r < .45 ? 'dep' : r < .65 ? 'gat' : r < .85 ? 'mua' : 'ret', hoi: R() < .16, meo: R() < .3, thue: day % C4_DUES_EVERY === 0, cuoi: R() < .2 }; }
+function c4Roll(day) { const r = R(); return { wx: r < .45 ? 'dep' : r < .65 ? 'gat' : r < .85 ? 'mua' : 'ret', hoi: R() < .16, meo: R() < .3, thue: day % C4_DUES_EVERY === 0, cuoi: R() < (day <= 6 ? .4 : .2) }; }   // wedding betel orders: more often in the first days (a player)
 const c4Wx = () => (SAVE4.plan && SAVE4.plan.wx) || 'dep';
 // the view: a phone shows ~430 units across with the lane in its lower part; a wide screen the whole height of the scene
 function c4View() {
@@ -352,7 +352,11 @@ function c4PlanEvents() {
   if (own.includes('che') || own.includes('xoi') || own.includes('bun')) pool.push('do2', 'do2');
   if (own.length > 1) pool.push('om', 'bot', 'om');
   for (let i = 0; i < 3 && pool.length; i++) ev.push({ at: at(7, 16.5), kind: pool.splice((R() * pool.length) | 0, 1)[0] });
-  if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });   // Hảo cảm: one or two verdicts a day (haocam.js)
+  if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });
+  if (SAVE4.day <= 5) {                                                     // a player: the first days were too quiet — a knock (thief, gale, bad areca) and often an order
+    ev.push({ at: at(8, 15.5), kind: c4Pick(['trom', 'gio', 'trom', 'sau']) });
+    if (R() < .55) ev.push({ at: at(7, 10.5), kind: 'cotiec' });
+  }   // Hảo cảm: one or two verdicts a day (haocam.js)
   if (p.cuoi || R() < .2) C4.parade = { at: at(9, 11), x: null };       // a wedding procession goes through the market
   C4.events = ev.sort((a, b) => a.at - b.at); C4.evRepl = 0;
   SAVE4.taskDay = null; c4Tasks();                                         // today's tasks, now that today's happenings are known
@@ -684,7 +688,7 @@ function c4EndDay() {
     + (d.spent ? `<br>Chi khác (củi, lễ, tiền chợ, cho vay…): ${c4Money(d.spent)}` : '')
     + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '')
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
-    + (gossip ? '<br><span class="bad">Có người không ưa quán, đi nói ra nói vào với hàng xóm.</span>' : '')
+    + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.slice(0, 4).join(', ')}${gossip.hurt.length > 4 ? ' và ' + (gossip.hurt.length - 4) + ' người nữa' : ''} bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
     + (quits.length ? `<br><span class="bad">${quits.join(' ')}</span>` : '')
     + (extra.length ? `<br>${extra.join('<br>')}` : '')
     + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);

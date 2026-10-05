@@ -205,7 +205,7 @@ const C4_EXTRA_EV = {
   },
   // a family orders a feast for tomorrow afternoon: enough stock then, or they are put out
   cotiec(E) {
-    const ks = c4KnownList(40); if (!ks.length || SAVE4.feast) return false;
+    const k40 = c4KnownList(40), ks = k40.length ? k40 : c4People().list.filter(p => p.kind === 'mouse' && p.role !== 'child'); if (!ks.length || SAVE4.feast) return false;   // early on, anyone in the village (a player)
     const p = c4Pick(ks), need = { trau: 25 + ((R() * 4) | 0) * 5 }; for (const g of ['xoi', 'bun', 'che']) if (c4Own(g) && R() < .7) need[g] = 10 + ((R() * 3) | 0) * 5;
     const pay = Math.round(Object.entries(need).reduce((a, [g, n]) => a + n * c4Price(g) * 1.3, 0));
     Object.assign(E, { title: 'Nhà có cỗ', text: `${c4Cap1(p.name)} sắp làm cỗ mừng thọ, muốn đặt ${Object.entries(need).map(([g, n]) => `${n} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ')}. Chiều mai ${c4At('Thân')} đến lấy, trả ${c4Money(pay)}.`, opts: [
