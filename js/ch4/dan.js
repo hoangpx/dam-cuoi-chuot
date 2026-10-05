@@ -221,9 +221,18 @@ function c4Served(w) {
 function c4Snubbed(w, empty) {
   if (w.pid === undefined || SAVE4.day < C4_BOOK_DAY) return;
   const p = c4People().list[w.pid], T = C4_TRAITS[p.trait], f = c4F(p.id);
-  if (f.k) c4Bump(p.id, -(empty ? 12 : 4) * T.loss);
-  else if (empty) f.bad = true;
+  if (f.k) {
+    const d = Math.round((empty ? 12 : 4) * T.loss); c4Bump(p.id, -d);
+    C4.fx.push({ x: w.x, y: c4Y(w.z) - 200, t: 0, s: `${p.name} −${d}` });
+    // liked us too little: back to a stranger (owner) — met again later they start cooler
+    if (f.a <= C4_DROP) {
+      f.k = 0; f.v = 1; f.bad = true; f.ruot = 0; f.lost = (f.lost || 0) + 1; C4.noteNew = true;
+      (f.facts = f.facts || []).push(`Ngày ${SAVE4.day}: giận bỏ đi, không còn là khách quen.`);
+      toast(`${c4Cap1(p.name)} bực mình bỏ đi: "Từ giờ tôi mua chỗ khác!" Không còn là khách quen nữa.`, 3.6);
+    }
+  } else if (empty) f.bad = true;
 }
+const C4_DROP = 10;   // known buyers whose liking falls this low walk out of the book
 // in the evening: people who dislike the stall and love to talk spread it to those they know
 // gossips who dislike the stall talk at night: their known ties like us 5 less, the unmet ones will be half as keen and start cooler.
 // Returns who talked and who was hurt, so the tally can say it plainly (a player: the bare line seemed to change nothing)
