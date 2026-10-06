@@ -502,8 +502,20 @@ function c4Bankrupt(why) {
   $('#c4evB').innerHTML = why ? why + ' Hai vợ chồng đành làm lại từ đầu với hai bàn tay trắng.' : `Nợ lái buôn ${c4Money(SAVE4.debt)} đã ba buổi sáng không trả nổi. Lái buôn thu hết gánh hàng để trừ nợ. Hai vợ chồng đành làm lại từ đầu với hai bàn tay trắng.`;
   const box = $('#c4evO'); box.innerHTML = '';
   const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Làm lại từ đầu';
-  b.addEventListener('click', () => { const keep = { best: SAVE4.best, goal: SAVE4.goal }; SAVE4 = C4_NEW(); Object.assign(SAVE4, { intro: true, started: true }, keep); persist4(); c4Sheets(null); c4MarketStart(); });
+  b.addEventListener('click', c4StartOver);
   box.appendChild(b); C4.phase = 'morning'; c4Sheets('c4ev');
+}
+// back to day one with empty hands (bankrupt, or the player's own choice); the record and a reached goal (chương V) are kept
+function c4StartOver() { const keep = { best: SAVE4.best, goal: SAVE4.goal }; SAVE4 = C4_NEW(); Object.assign(SAVE4, { intro: true, started: true }, keep); persist4(); c4Sheets(null); c4MarketStart(); }
+// owner: a "start over" button (small, at the foot of the morning and evening sheets) asks first, in plain words, what is lost
+function c4AskStartOver() {
+  const back = C4.sheet; AU.tap(); C4.ev = null;
+  $('#c4evT').textContent = 'Khởi nghiệp lại từ đầu?';
+  $('#c4evB').innerHTML = `Toàn bộ cơ nghiệp sẽ mất hết: <b>${c4Money(SAVE4.money)}</b> trong túi, gánh hàng, sạp quán, người làm, khách quen và mọi điều đã ghi trong sổ tay.<br><br>Hai vợ chồng sẽ quay về ngày đầu tiên với hai bàn tay trắng. Chẳng ai còn nhớ mặt, mọi thứ phải gây dựng lại, muôn vàn khó khăn.<br><br><b>Bạn có chắc không?</b>`;
+  const box = $('#c4evO'); box.innerHTML = '';
+  const no = document.createElement('button'); no.className = 'btn'; no.textContent = 'Thôi, giữ cơ nghiệp'; no.addEventListener('click', () => { AU.tap(); c4Sheets(back); });
+  const yes = document.createElement('button'); yes.className = 'btn alt'; yes.textContent = 'Chắc chắn, làm lại từ đầu'; yes.addEventListener('click', () => { AU.snort(); c4StartOver(); toast('Hai vợ chồng lại bắt đầu từ gánh trầu đầu tiên. Cố lên!', 3.4); });
+  box.append(no, yes); c4Sheets('c4ev');
 }
 // the goal reached: she is with child, and in time a brood of mice is born — chương V opens
 function c4GoalReached() {
@@ -1020,11 +1032,11 @@ function c4Key(e) {
   hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
-    sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div>'),
+    sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'),
     sheet('c4up', '<h3 id="c4upT"></h3><div id="c4upO"></div><div id="c4upB"></div><div class="row"><button class="btn" id="c4upGo"></button><button class="btn alt" id="c4upX">Đóng</button></div>'),
     sheet('c4ev', '<h3 id="c4evT"></h3><p id="c4evB"></p><div class="row col" id="c4evO"></div>'),
     sheet('c4note', '<h3>Sổ tay</h3><div id="c4noteB"></div><div class="row"><button class="btn alt" id="c4noteX">Đóng</button></div>'),
-    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button>'));
+    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'));
   $('#c4Name').addEventListener('click', () => showChapters());
   $('#c4Invite').addEventListener('click', () => { if (c4CanInvite()) { AU.tap(); C4_PICK = { deal: 'half', sel: new Set() }; C4_WHO = null; c4OpenNotes('quen'); } });
   $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
@@ -1035,6 +1047,7 @@ function c4Key(e) {
   $('#c4dayGo').addEventListener('click', () => { c4Sheets(null); if (!SAVE4.goal && c4Net() >= C4_GOAL) c4GoalReached(); else c4NewDay(); });
   // owner: end the day and leave for the chapter list; coming back starts the next morning
   $('#c4daySleep').addEventListener('click', () => { c4Sheets(null); if (!SAVE4.goal && c4Net() >= C4_GOAL) { c4GoalReached(); return; } c4DayAdvance(); showChapters(); });
+  document.querySelectorAll('[data-restart]').forEach(b => b.addEventListener('click', c4AskStartOver));
   $('#c4upX').addEventListener('click', () => c4Sheets(null));
   $('#c4noteX').addEventListener('click', () => { C4_WHO = null; C4_PICK = null; c4Sheets(null); });
   for (const id of ['c4up', 'c4note']) $('#' + id).addEventListener('click', e => { if (e.target.id === id) c4Sheets(null); });

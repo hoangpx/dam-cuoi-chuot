@@ -265,8 +265,9 @@ Chương III tranh 1: alone in the nest a chick stays 3 s (G3_ALONE, owner).
 - End-of-day tally (owner): besides "Sang ngày mới" a second button "Đi ngủ, mai cố gắng tiếp" moves the save to the next day (c4DayAdvance) and goes back to the chapter list; entering chương IV again opens that morning (C4.day ≠ SAVE4.day → c4MarketStart). The goal check runs first, as for the other button.
 - Relationship web (owner): the bubbles' swell on tap bounces only slightly (spring ~ζ .75, focus 1.55×, ties 1.08×), and the web is spread out (repel 5200, gap 30, strings kin 85 / other 170 / focused 135+, start ring wider, weaker pull to the middle).
 
-Bought hints (owner, js/core/goiy.js): chương II, VI and VII hints cost HINT_COST 600 đồng = 1 quan out of chương IV's purse
-(SAVE4.money; SAVE4.hints / hintSpent count them), so hints slow the 2-quan goal. hintBuy(what, give) shows #hintBuy: the price, what
+Bought hints (owner, js/core/goiy.js): chương II, VI and VII hints are paid out of chương IV's purse (SAVE4.money; SAVE4.hints /
+hintSpent count them), so hints slow the 2-quan goal. The price follows the purse (owner, 2026-10-06: "like 20% of income"):
+hintCost() = 20% up to 10 quan + 30% above (10 quan → 2 quan, 20 → 5), at least HINT_MIN 1 quan; the sheet says how it is reckoned. hintBuy(what, give) shows #hintBuy: the price, what
 it does and the purse; not enough money → "Không đủ tiền… sang chương Vợ Chồng Khởi Nghiệp buôn bán kiếm tiền" (nothing free at the
 start); give() may return false (nothing to give) and then nothing is taken. Chương I and III have no hints (owner).
 - Chương VI: a "?" button top right of the field (not on the practice field): puts the right mouse in the first row without one, no
@@ -294,3 +295,4 @@ boards solved, the longest kept), Chuột là chuột. New things drawn in art.j
 - Search engines (owner: be found on Google): robots.txt and sitemap.xml at the root (update sitemap lastmod on big changes), a canonical link and a JSON-LD VideoGame block in <head>, and #about: an off-screen section (h1 + a line per chapter) before #loading, since the game itself is canvas. Google Search Console verification (DNS TXT) is the owner's to do.
 - Spelling (owner): tone marks in the new style everywhere (hoá, khoá, xoá, oà, luỹ — not hóa/khóa); "bánh giầy" (not bánh dày); in chương II a negative rule reads NOUN KHÔNG PROP (never "LÀ KHÔNG").
 - Hired hands' names (a player reported an error when hiring): c4HandName() picks title + young name (C4_HAND_TITLES × C4_HAND_NAMES, 168), never a villager's or another hand's, else "người làm thứ N"; the old 11-name list ran out at the 12th hire (nameless hand, the stall sheet then threw). c4Hands repairs nameless hands in old saves; the hire button refuses past C4_HANDS_MAX; trip flags are cleared at market start (a reload mid-trip left the hand away all day).
+- Start over (owner): a small underlined "Khởi nghiệp lại từ đầu" at the foot of the morning (#c4am) and evening (#c4day) sheets → c4AskStartOver: a sheet saying the purse, stalls, helpers, regulars and notebook are all lost and it will be far harder, "Bạn có chắc không?" — Thôi, giữ cơ nghiệp (back to the sheet it came from) / Chắc chắn, làm lại từ đầu → c4StartOver (shared with bankruptcy: day 1, intro skipped, record and reached goal kept).

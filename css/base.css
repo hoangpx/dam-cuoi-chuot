@@ -120,3 +120,4 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #hintBuy p{margin:0 0 8px;font-size:15px;line-height:1.5}
 #hintBuy .hpurse{font-size:14px;opacity:.85}
 #hintBuy .hbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+#hintBuy .hrule{display:inline-block;margin-top:6px;font-size:12.5px;opacity:.75;line-height:1.4}

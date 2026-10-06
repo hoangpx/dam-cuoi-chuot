@@ -22,6 +22,8 @@ body.touch #c4hud .mid{position:static;transform:none}
 .card4 .row{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 .card4 .btn[disabled]{opacity:.45;cursor:not-allowed}
 #c4day .btn{margin-top:10px}
+/* start over (owner): small and quiet at the foot of the morning and evening sheets, so it is not hit by mistake */
+.c4restart{display:block;margin:16px auto 0;background:none;border:0;padding:4px 8px;color:#a3332a;text-decoration:underline;font:inherit;font-size:13px;cursor:pointer;opacity:.8}
 .card4 h4{margin:12px 0 6px;font-family:var(--display);font-weight:900;font-size:16px}
 .card4 .wx{font-size:16px}
 .card4 .goal{background:rgba(47,106,76,.12);border:2px solid #2f6a4c;padding:6px 10px;margin:8px 0}
