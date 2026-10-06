@@ -5,7 +5,7 @@ const CAT = buildCat();
 const WP = buildWorldParts();
 const MP = buildMoreParts();
 const MICE = {
-  groom: buildMouse({ robe: 'green', trim: 'red', head: 'dark', hat: 'dark', dots: true }),
+  groom: buildMouse({ robe: 'green', trim: 'red', head: 'ltred', hat: 'dark', dots: true }),   // a light red face (owner)
   a: buildMouse({ robe: 'red', trim: 'green', head: 'brown' }),
   b: buildMouse({ robe: 'lilac', trim: 'red', head: 'dark' }),
   c: buildMouse({ robe: 'green', trim: 'yellow', head: 'brown' }),
