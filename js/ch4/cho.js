@@ -681,7 +681,7 @@ function c4EndDay() {
   for (const w of C4.walkers) if (w.st !== 'leave') { w.st = 'leave'; w.face = w.x < C4_STALL ? -1 : 1; w.chat = null; w.talk = false; }
   for (const g of Object.keys(C4.Q)) { C4.Q[g] = []; C4.SV[g] = []; }
   C4.guestQ = []; C4.seats = {};
-  if (C4.deliv) c4DelivPay(C4.deliv);                                       // a delivery still on the road is settled now
+  for (let k = 0; C4.deliv && k < 6; k++) c4DelivPay(C4.deliv);           // deliveries still under way (or waiting their turn) at closing are settled now
   C4.cat = null; C4.shut = 0; C4.parade = null; C4.fire = 0;
   if (C4.kid) { SAVE4.money += 10; C4.kid = null; }
   const d = C4.today, lines = [];

@@ -101,7 +101,9 @@ function c4VisitorTap(x, y) {
     if (!v.visit) continue;
     const s = c4S(v.z) * C4_CROWD, top = c4Y(v.z) - C4_TALL.mouse * s - 40;   // the person or the "!" above
     if (Math.abs(x - v.x) < 60 * s + 10 && y > top && y < c4Y(v.z) + 14) {
-      AU.tap(); C4.evWho = v.name; C4.ev = null; c4Event(v.visit); C4.evWho = null;
+      AU.tap(); C4.evWho = v.name; C4.ev = null; c4Event(v.visit);
+      if (!(C4.sheet === 'c4ev' && C4.ev)) for (const k of [...C4_VISIT].filter(k => k !== v.visit).sort(() => R() - .5)) { C4.ev = null; c4Event(k); if (C4.sheet === 'c4ev' && C4.ev) { v.visit = k; break; } }   // (a player: some '!' only said goodbye)
+      C4.evWho = null;
       if (C4.today) C4.today.visit = (C4.today.visit || 0) + 1;
       if (C4.sheet === 'c4ev' && C4.ev) C4.ev.visitor = v;
       else { toast(`${c4Cap1(v.name || 'Người ấy')} chào rồi đi.`, 2.4); v.visit = null; v.st = 'leave'; v.face = -1; }

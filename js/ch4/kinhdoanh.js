@@ -109,11 +109,14 @@ function c4BizWire(box) {
 function c4BizRefresh() { const box = $('#c4biz'); if (!box) return; box.innerHTML = c4BizHtml(); c4BizWire(box); }
 // the market opens: an order due today goes out with the husband (goods bought now at the guild price), he is back at noon
 function c4ShipOrders() {
-  const due = (SAVE4.ws || []).filter(o => o.day === SAVE4.day), lines = [];
+  const due = (SAVE4.ws || []).filter(o => o.day === SAVE4.day).sort((a, b) => (a.slot || 0) - (b.slot || 0)), lines = [];
+  C4.delivQ = [];
   for (const o of due) {
     const cost = Math.round(o.n * c4Cost(o.g));
-    if (SAVE4.money < cost || C4.deliv) { o.fail = true; lines.push(`Không đủ ${c4Money(cost)} lấy hàng giao cho ${o.vil}: mất cọc, ${o.vil} chê nhà mình thất hứa.`); SAVE4.wsBad = (SAVE4.wsBad || 0) + 1; continue; }
-    const S = c4Slot(o); SAVE4.money -= cost; C4.today.spent += cost; C4.deliv = { o, go: S.a + R() * (S.b - S.a), out: false };   // goods bought at the open; he sets off at some moment in the slot
+    if (SAVE4.money < cost) { o.fail = true; lines.push(`Không đủ ${c4Money(cost)} lấy hàng giao cho ${o.vil} (trong túi có ${c4Money(SAVE4.money)}): mất cọc, ${o.vil} chê nhà mình thất hứa.`); SAVE4.wsBad = (SAVE4.wsBad || 0) + 1; continue; }
+    const S = c4Slot(o), D = { o, go: S.a + R() * (S.b - S.a), out: false };   // goods bought at the open; he sets off at some moment in the slot
+    SAVE4.money -= cost; C4.today.spent += cost;
+    if (C4.deliv) C4.delivQ.push(D); else C4.deliv = D;                     // (a player: two orders the same day, the second was dropped) — one after the other
   }
   SAVE4.ws = (SAVE4.ws || []).filter(o => o.day > SAVE4.day);
   if (lines.length) setTimeout(() => toast(lines.join(' '), 4.4), 600);
@@ -139,6 +142,7 @@ function c4DelivPay(D) {
     else note = `Chồng giao xong hàng cho ${o.vil}, mang về ${c4Money(pay)}.`;
     SAVE4.money += pay; C4.today.got += pay; C4.today.ws = (C4.today.ws || 0) + 1; persist4(); c4Hud();
     setTimeout(() => toast(note, 4), 1500);
+    if (C4.delivQ && C4.delivQ.length) { const N = C4.delivQ.shift(); N.go = Math.max(N.go, C4.mins + 10); C4.deliv = N; }   // the next order of the day
   }
 }
 

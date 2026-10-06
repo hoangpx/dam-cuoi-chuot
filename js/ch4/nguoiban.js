@@ -113,9 +113,10 @@ function c4HandsBlock(g) {
   const draw = () => {
     el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, mỗi người công ${c4Money(c4Wage(g, {}))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
       + (H.length ? H.map((h, i) => `<div class="hand"><span>${c4Cap1(h.name)}${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày</span><button class="btn alt" data-off="${i}">Cho nghỉ</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
-      + (H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4Wage(g, {}))}/ngày</button>` : '');
+      + (H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4Wage(g, {}))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
-      if (H.length >= C4_HANDS_MAX) { draw(); return; }                       // (a double tap could hire past the limit)
+      if (H.length >= C4_HANDS_MAX || Date.now() - (c4HandsBlock.last || 0) < 800) { draw(); return; }   // (a double tap could hire past the limit; a lagging tap hired twice)
+      c4HandsBlock.last = Date.now();
       H.push({ name: c4HandName(), sort: c4Pick(C4_HELPERS), unpaid: 0 });
       AU.stamp(); toast(`${c4Cap1(H[H.length - 1].name)} nhận bán ${G.name.toLowerCase()}.`); persist4(); draw();
     });
