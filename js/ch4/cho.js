@@ -174,7 +174,7 @@ function c4MarketStart() {
     today: { sold: 0, take: 0, cogs: 0, served: 0, lost: 0, wilt: 0, wiltLoss: 0, spent: 0, got: 0, wages: 0 }, chatT: 1, wife: { say: null },
     porter: { x: c4HusbX(), z: .04, st: 'idle', ph: 0, say: null, t: 0 }, vendors: [...C4_VENDORS, ...C4_VENDORS_FRONT].map(v => ({ ...v, M: typeof v.M === 'number' ? c4MouseRig(v.M) : MICE[v.M], say: null, callT: 3 + R() * 8 })) });
   for (const g of Object.keys(C4_GOODS)) { C4.Q[g] = []; C4.SV[g] = []; }
-  for (const { h } of c4AllHands()) h.say = null;
+  for (const { h } of c4AllHands()) { h.say = null; h.trip = false; }   // a reload mid-trip lost the trip: the hand is back at the stall
   for (const g of C4_SHOPS) if (c4Own(g)) { const s = SAVE4.shops[g]; s.sick = false; s.say = null; }
   C4.camX = C4_STALL - c4View().vw * .5;
   c4DayLook();
@@ -222,7 +222,7 @@ function c4Spawn(atX, guest = null) {
   if (kind === 'mouse' && role === 'child' && atX === undefined && R() < .5) {             // a gang of children chasing each other
     const lead = C4.walkers[C4.walkers.length - 1]; lead.sp = 150; lead.cd = 99;
     for (let i = 1; i <= 1 + ((R() * 2) | 0); i++) { const s2 = 11 + ((R() * 3) | 0); C4.walkers.push({ ...lead, pid: undefined, sort: s2, M: c4MouseRig(s2), seed: R() * 6, name: c4Pick(C4_NAMES.child), x: lead.x - lead.face * 60 * i, z: Math.min(.98, lead.z + (R() - .5) * .2), ph: R() * 6, say: null }); }
-    if (R() < .5) c4Say(lead, c4Pick(['Đuổi được tao đi!', 'Ú òa!', 'Chạy nhanh lên!']));
+    if (R() < .5) c4Say(lead, c4Pick(['Đuổi được tao đi!', 'Ú oà!', 'Chạy nhanh lên!']));
   }
 }
 
@@ -375,7 +375,7 @@ function c4Event(kind) {
       ['Không dâng', () => { C4.cat.st = 'sit'; C4.cat.t = 0; toast('Mèo ngồi chễm chệ trước gánh suốt một canh giờ (khoảng 2 tiếng). Khách sợ, chẳng ai dám ghé!', 3.4); }]] });
   } else if (kind === 'thue') {
     const d = c4Tax(), earn = c4Earned();
-    Object.assign(E, { title: 'Cụ Lý thu thuế chợ', text: `Cụ Lý chống gậy đến, giở sổ: "Năm phiên qua nhà ${own.length > 1 ? 'có ' + own.length + ' hàng' : 'gánh trầu'} lãi ${c4Money(earn)}. Thuế lũy tiến: ba trăm đồng đầu năm phần trăm, đến hai quan mười phần trăm, trên nữa mười lăm phần trăm, cộng tiền chỗ: ${d} đồng!"`, opts: [
+    Object.assign(E, { title: 'Cụ Lý thu thuế chợ', text: `Cụ Lý chống gậy đến, giở sổ: "Năm phiên qua nhà ${own.length > 1 ? 'có ' + own.length + ' hàng' : 'gánh trầu'} lãi ${c4Money(earn)}. Thuế luỹ tiến: ba trăm đồng đầu năm phần trăm, đến hai quan mười phần trăm, trên nữa mười lăm phần trăm, cộng tiền chỗ: ${d} đồng!"`, opts: [
       [`Nộp ${d} đồng`, () => { sp(d); toast('Cụ Lý gật gù, ghi vào sổ.'); }, SAVE4.money >= d],
       [`Biếu thêm · ${d + 10} đồng`, () => { sp(d + 10); SAVE4.favor = 2; toast('Cụ Lý cười tít mắt, dặn tuần đinh để gánh nhà mình chỗ đẹp. Khách ghé đông hơn hai ngày tới.', 4); }, SAVE4.money >= d + 10],
       ['Xin khất', () => { if (R() < .55) { SAVE4.dues = d; toast('Cụ Lý cho khất đến sáng mai.', 3); } else { sp(Math.min(Math.max(0, SAVE4.money), d * 2)); toast(`Cụ Lý nổi giận, phạt gấp đôi!`, 3); } }]] });

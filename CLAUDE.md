@@ -279,8 +279,8 @@ start); give() may return false (nothing to give) and then nothing is taken. Ch�
   Check with node --max-old-space-size=14000 tools/c2-chain.js [index…]: "Ghép X"/"Phá X" steps (A VÀ B LÀ X = two rules; a trailing
   "(…)" is ignored) must happen in order on a winning road, and at the win each named rule stands or not as its last step left it.
 Chương II engine (rewritten after Baba Is You, owner; js/ch2/engine.js): grid index and per-kind bit masks (st.pm) so the solver is
-quick; settle keeps the rules when no word moved. Grammar NOUN (VÀ NOUN)* LÀ|CÓ [KHÔNG] PROP|NOUN (VÀ …)*. New words: VÀ, KHÔNG
-(removes a property / blocks a transform), CÓ (what is left when a thing is destroyed), nouns CHÌA, CỬA, ĐÁ, MÂY, CHỮ (the word tiles
+quick; settle keeps the rules when no word moved. Grammar NOUN (VÀ NOUN)* (LÀ PROP|NOUN | CÓ NOUN | KHÔNG PROP) (VÀ …)*. New words: VÀ, KHÔNG
+(stands in place of LÀ and removes a property: TƯỜNG KHÔNG CHẶN; owner: "LÀ KHÔNG" is not Vietnamese), CÓ (what is left when a thing is destroyed), nouns CHÌA, CỬA, ĐÁ, MÂY, CHỮ (the word tiles
 themselves; pinned words never move even when CHỮ LÀ ĐI), NOUN LÀ itself (no transform); properties MỞ/KHOÁ (shut blocks all but
 open, the two meeting destroy each other), BAY (floaters only meet floaters: sink, heat, win, open/shut, weak), KÉO (follows what
 walks away from it, blocks like CHẶN), CHẠY (steps each turn, turns back when blocked; dirs: [[x, y, 'L']] in a map), YẾU (breaks
@@ -292,3 +292,5 @@ boards solved, the longest kept), Chuột là chuột. New things drawn in art.j
 - Chương VII how-to, furniture page (owner: tiles ran into the words on short desktop windows): the picture is min(width × .92, H − 330) tall and the tiles shrink (5 a row when short) to fit inside it.
 - Chương VII stolen food (owner: "Món ăn" with a covered dish was unclear): each of the 13 foods in the cases has its own drawing in c7Thing (dua, chuoi, naichuoi, mut, trung, banhday, xoi, banhchung, xoigac, chobanh, comnep, matong, cakho) and a short label in the strip (C7_FOOD by the dish name; a new food needs a line there, else the old covered dish and its own name).
 - Search engines (owner: be found on Google): robots.txt and sitemap.xml at the root (update sitemap lastmod on big changes), a canonical link and a JSON-LD VideoGame block in <head>, and #about: an off-screen section (h1 + a line per chapter) before #loading, since the game itself is canvas. Google Search Console verification (DNS TXT) is the owner's to do.
+- Spelling (owner): tone marks in the new style everywhere (hoá, khoá, xoá, oà, luỹ — not hóa/khóa); "bánh giầy" (not bánh dày); in chương II a negative rule reads NOUN KHÔNG PROP (never "LÀ KHÔNG").
+- Hired hands' names (a player reported an error when hiring): c4HandName() picks title + young name (C4_HAND_TITLES × C4_HAND_NAMES, 168), never a villager's or another hand's, else "người làm thứ N"; the old 11-name list ran out at the 12th hire (nameless hand, the stall sheet then threw). c4Hands repairs nameless hands in old saves; the hire button refuses past C4_HANDS_MAX; trip flags are cleared at market start (a reload mid-trip left the hand away all day).

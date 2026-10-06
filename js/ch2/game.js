@@ -14,8 +14,8 @@ const c2Clone = objs => objs.map(o => ({ ...o }));
   el.innerHTML = `<div class="card2"><div id="c2law"><h3>Luật chơi</h3><ul>
     <li>Chữ là luật: xếp ${w('VẬT')} ${w('LÀ')} ${w('TÍNH CHẤT')} thành một hàng ngang (trái sang phải) hoặc hàng dọc (trên xuống dưới) thì câu đó thành luật. Tách một chữ ra là luật mất.</li>
     <li>${w('ĐI')} vật bạn điều khiển · ${w('THẮNG')} chạm vào là qua tranh · ${w('CHẶN')} không đi qua được · ${w('ĐẨY')} đẩy được · ${w('NÓNG')} chạm vào là cháy · ${w('CHÌM')} vật nào rơi vào thì cả hai cùng mất.</li>
-    <li id="c2more">Chữ mới: ${w('MỞ')} gặp ${w('KHOÁ')} thì cả hai cùng mất (thứ KHOÁ chặn mọi thứ trừ thứ MỞ) · ${w('BAY')} chỉ chạm được thứ cũng BAY · ${w('KÉO')} đi theo sau thứ rời khỏi nó · ${w('CHẠY')} tự đi mỗi bước, gặp vật chặn thì quay đầu · ${w('YẾU')} có gì chung ô là vỡ.<br>${w('VÀ')} nối nhiều vật hay nhiều tính chất · ${w('KHÔNG')} xoá một tính chất · ${w('CÓ')}: vật mất đi để lại thứ nó có · ${w('CHỮ')} là chính các ô chữ.</li>
-    <li>${w('VẬT')} ${w('LÀ')} ${w('VẬT')}, ví dụ ${w('MÈO')} ${w('LÀ')} ${w('CÁ')}: mọi con mèo hóa thành cá.</li>
+    <li id="c2more">Chữ mới: ${w('MỞ')} gặp ${w('KHOÁ')} thì cả hai cùng mất (thứ KHOÁ chặn mọi thứ trừ thứ MỞ) · ${w('BAY')} chỉ chạm được thứ cũng BAY · ${w('KÉO')} đi theo sau thứ rời khỏi nó · ${w('CHẠY')} tự đi mỗi bước, gặp vật chặn thì quay đầu · ${w('YẾU')} có gì chung ô là vỡ.<br>${w('VÀ')} nối nhiều vật hay nhiều tính chất · ${w('KHÔNG')} đứng thay chữ LÀ để xoá một tính chất (TƯỜNG KHÔNG CHẶN) · ${w('CÓ')}: vật mất đi để lại thứ nó có · ${w('CHỮ')} là chính các ô chữ.</li>
+    <li>${w('VẬT')} ${w('LÀ')} ${w('VẬT')}, ví dụ ${w('MÈO')} ${w('LÀ')} ${w('CÁ')}: mọi con mèo hoá thành cá.</li>
     <li>Đi vào chữ là đẩy chữ. Chữ có đinh ghim ở góc thì không đẩy được; chữ đã vào góc hay sát mép thì không kéo ra được nữa.</li>
     <li id="c2ctl"></li></ul></div>
     <div id="c2tip"><h3>Gợi ý</h3><p></p></div>
@@ -54,7 +54,7 @@ function startC2(i) {
 }
 function c2ShowRules() {
   const seen = new Set(), chips = [];
-  for (const r of C2.st.rules) { const t = `${C2K[r.a].vi} ${r.verb === 'has' ? 'CÓ' : 'LÀ'} ${r.neg ? 'KHÔNG ' : ''}${r.prop ? C2P[r.prop].vi : C2K[r.to].vi}`; if (!seen.has(t)) { seen.add(t); chips.push(t); } }
+  for (const r of C2.st.rules) { const t = `${C2K[r.a].vi} ${r.verb === 'has' ? 'CÓ' : r.neg ? 'KHÔNG' : 'LÀ'} ${r.prop ? C2P[r.prop].vi : C2K[r.to].vi}`; if (!seen.has(t)) { seen.add(t); chips.push(t); } }
   $('#c2rules').innerHTML = chips.length ? chips.map(t => `<span class="rule">${t}</span>`).join('') : '<span class="rule">Chưa có luật nào</span>';
 }
 function c2Move(dx, dy) {

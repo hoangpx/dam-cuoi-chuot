@@ -15,7 +15,7 @@ const FOLK = [
 ];
 // the other villagers (owner: many kinds, so nobody is mistaken for another)
 const BEASTS = [['bác Gà Trống', 'm', 'rooster'], ['chị Gà Mái', 'f', 'hen'], ['cậu Mèo Mướp', 'm', 'cat'], ['chú Chó Vện', 'm', 'dog'], ['bác Trâu', 'm', 'buffalo'], ['cô Bò Vàng', 'f', 'cow'], ['ông Lợn Ỉn', 'm', 'pig'], ['cô Vịt Bầu', 'f', 'duck']];
-const DISHES = ['mâm xôi', 'nồi chè', 'đĩa bánh chưng', 'buồng chuối', 'đĩa cá kho', 'hũ mật ong', 'rổ trứng', 'đĩa xôi gấc', 'nải chuối cúng', 'quả dưa hấu', 'hộp mứt Tết', 'chõ bánh giầy', 'nồi cơm nếp', 'đĩa bánh dày'];
+const DISHES = ['mâm xôi', 'nồi chè', 'đĩa bánh chưng', 'buồng chuối', 'đĩa cá kho', 'hũ mật ong', 'rổ trứng', 'đĩa xôi gấc', 'nải chuối cúng', 'quả dưa hấu', 'hộp mứt Tết', 'chõ bánh giầy', 'nồi cơm nếp', 'đĩa bánh giầy'];
 const TITLES = [d => `${cap(d)} biến mất`, d => `Ai ăn vụng ${d}?`, d => `${cap(d)} không cánh mà bay`, d => `Chuyện ${d} đêm rằm`, d => `Đêm qua, ${d} đâu rồi?`, d => `Dấu vết bên ${d}`, d => `${cap(d)} chỉ còn cái vỏ`];
 const cap = s => s[0].toUpperCase() + s.slice(1);
 

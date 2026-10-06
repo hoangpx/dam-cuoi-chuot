@@ -16,8 +16,8 @@ const C7_TOOLS = [['notes', 'Ghi chú'], ['cross', 'Gạch'], ['place', 'Đặt'
 const c7Cap = s => s[0].toUpperCase() + s.slice(1);
 // the stolen food (owner: draw the real thing and name it, not a covered dish called "Món ăn"): its picture and a short label
 const C7_FOOD = { 'quả dưa hấu': ['dua', 'Dưa hấu'], 'buồng chuối': ['chuoi', 'Buồng chuối'], 'nải chuối cúng': ['naichuoi', 'Nải chuối'], 'hộp mứt Tết': ['mut', 'Mứt Tết'],
-  'rổ trứng': ['trung', 'Rổ trứng'], 'đĩa bánh dày': ['banhday', 'Bánh dày'], 'mâm xôi': ['xoi', 'Mâm xôi'], 'đĩa bánh chưng': ['banhchung', 'Bánh chưng'], 'đĩa xôi gấc': ['xoigac', 'Xôi gấc'],
-  'chõ bánh giầy': ['chobanh', 'Bánh giầy'], 'nồi cơm nếp': ['comnep', 'Cơm nếp'], 'hũ mật ong': ['matong', 'Mật ong'], 'đĩa cá kho': ['cakho', 'Cá kho'] };
+  'rổ trứng': ['trung', 'Rổ trứng'], 'đĩa bánh giầy': ['banhday', 'Bánh giầy'], 'mâm xôi': ['xoi', 'Mâm xôi'], 'đĩa bánh chưng': ['banhchung', 'Bánh chưng'], 'đĩa xôi gấc': ['xoigac', 'Xôi gấc'],
+  'chõ bánh giầy': ['chobanh', 'Chõ bánh'], 'nồi cơm nếp': ['comnep', 'Cơm nếp'], 'hũ mật ong': ['matong', 'Mật ong'], 'đĩa cá kho': ['cakho', 'Cá kho'] };
 const c7Food = e => C7_FOOD[e.name] || ['dish', c7Cap(e.name)];
 
 function c7NewGame(i) {

@@ -134,7 +134,7 @@ function pomeloDitch(treeX, g0, g1) {
 /* ---------- tranh 2 ---------- */
 LEVELS[1] = {
   han: '竹巷', name: 'Ngõ Tre', paper: 'pink', width: 2800, key: 2, abil: ['drum', 'parasol'], cps: [160, 720, 1640, 2160],
-  intro: 'Mở khóa Trống (phím 1) và Lọng (phím 3). Tiếng trống làm muông thú giật mình. Lọng che khỏi con mắt trên cao, nhưng chỉ giương được 3 giây.',
+  intro: 'Mở khoá Trống (phím 1) và Lọng (phím 3). Tiếng trống làm muông thú giật mình. Lọng che khỏi con mắt trên cao, nhưng chỉ giương được 3 giây.',
   endTitle: 'Qua Ngõ Tre', endText: 'Gà trống, mèo trên mái, rãnh sâu đều đã qua. Ra khỏi ngõ là tới bờ ao.',
   build: () => [
     decor(WP.hanFor('竹巷'), 70, 120, .7), decor(PROPS.bamboo, 360, GROUND + 4, .95), decor(WP.fence, 700, GROUND + 4),

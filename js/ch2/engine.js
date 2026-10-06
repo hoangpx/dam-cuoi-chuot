@@ -1,5 +1,5 @@
 /* Pure rules engine (no drawing): parse a map, read the rules, settle, step. After Baba Is You (owner): besides
-   NOUN LÀ PROP / NOUN LÀ NOUN there are VÀ (and: CHUỘT VÀ MÈO LÀ ĐI, TƯỜNG LÀ CHẶN VÀ ĐẨY), KHÔNG (not: MÈO LÀ KHÔNG NÓNG),
+   NOUN LÀ PROP / NOUN LÀ NOUN there are VÀ (and: CHUỘT VÀ MÈO LÀ ĐI, TƯỜNG LÀ CHẶN VÀ ĐẨY), KHÔNG in place of LÀ (not: MÈO KHÔNG NÓNG, TƯỜNG KHÔNG CHẶN — owner: "là không" is not Vietnamese),
    CÓ (has: CHUM CÓ CHÌA, what is left when it is destroyed), the noun CHỮ (the word tiles themselves) and NOUN LÀ NOUN for
    itself (CHUỘT LÀ CHUỘT: nothing can turn it into anything else).
    Properties: ĐI you · ĐẨY push · CHẶN stop · CHÌM sink (it and whatever shares its cell go) · NÓNG hot (burns what is ĐI)
@@ -34,7 +34,7 @@ function c2ParseRules(st) {
   const W = st.W, H = st.H, txt = new Array(W * H);
   for (const o of st.objs) if (o.t !== 'thing') txt[o.y * W + o.x] = o;
   const rules = [], at = (x, y) => x >= 0 && y >= 0 && x < W && y < H ? txt[y * W + x] : undefined;
-  // NOUN (VÀ NOUN)* (LÀ|CÓ) [KHÔNG] (PROP|NOUN) (VÀ [KHÔNG] (PROP|NOUN))*
+  // NOUN (VÀ NOUN)* (LÀ (PROP|NOUN) | CÓ NOUN | KHÔNG PROP) (VÀ …)*
   const scan = (x, y, dx, dy) => {
     const pv = at(x - dx, y - dy); if (pv && (pv.t === 'and' || pv.t === 'noun')) { const pp = at(x - 2 * dx, y - 2 * dy); if (pv.t === 'and' && pp && pp.t === 'noun') return; }
     let cx = x, cy = y; const subj = [], cells = [];
@@ -44,21 +44,20 @@ function c2ParseRules(st) {
       const a = at(cx, cy); if (a && a.t === 'and') { const nx = at(cx + dx, cy + dy); if (nx && nx.t === 'noun') { cells.push(a); cx += dx; cy += dy; continue; } }
       break;
     }
-    const v = at(cx, cy); if (!v || (v.t !== 'is' && v.t !== 'has')) return;
+    const v = at(cx, cy); if (!v || (v.t !== 'is' && v.t !== 'has' && v.t !== 'not')) return;
     cells.push(v); cx += dx; cy += dy;
     const objsR = [];
     for (;;) {
-      let neg = false, o = at(cx, cy), used = [];
-      if (o && o.t === 'not' && v.t === 'is') { neg = true; used.push(o); cx += dx; cy += dy; o = at(cx, cy); }
-      if (!o || !(o.t === 'noun' || (o.t === 'prop' && v.t === 'is'))) break;
+      const neg = v.t === 'not', o = at(cx, cy), used = [];
+      if (!o || !(v.t === 'not' ? o.t === 'prop' : o.t === 'noun' || (o.t === 'prop' && v.t === 'is'))) break;
       used.push(o); objsR.push({ o, neg, used }); cx += dx; cy += dy;
       const a = at(cx, cy), nx = at(cx + dx, cy + dy);
-      if (a && a.t === 'and' && nx && (nx.t === 'noun' || nx.t === 'prop' || nx.t === 'not')) { objsR[objsR.length - 1].and = a; cx += dx; cy += dy; continue; }
+      if (a && a.t === 'and' && nx && (nx.t === 'noun' || nx.t === 'prop')) { objsR[objsR.length - 1].and = a; cx += dx; cy += dy; continue; }
       break;
     }
     if (!objsR.length) return;
     const all = [...cells]; for (const r of objsR) { all.push(...r.used); if (r.and) all.push(r.and); }
-    for (const s of subj) for (const r of objsR) rules.push({ a: s.k, verb: v.t, neg: r.neg, prop: r.o.t === 'prop' ? r.o.p : null, to: r.o.t === 'noun' ? r.o.k : null, cells: all });
+    for (const s of subj) for (const r of objsR) rules.push({ a: s.k, verb: v.t === 'has' ? 'has' : 'is', neg: r.neg, prop: r.o.t === 'prop' ? r.o.p : null, to: r.o.t === 'noun' ? r.o.k : null, cells: all });
   };
   for (let i = 0; i < W * H; i++) if (txt[i] && txt[i].t === 'noun') { const x = i % W, y = (i / W) | 0; scan(x, y, 1, 0); scan(x, y, 0, 1); }
   return rules;

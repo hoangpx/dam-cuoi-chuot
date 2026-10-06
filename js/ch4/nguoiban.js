@@ -5,9 +5,23 @@
    [{ who, t, by }] with by = C4.wife, C4.porter or a helper. */
 const C4_HANDS_MAX = 3, C4_COUPLE_SP = 120;
 C4_GOODS.trau.wage = 6;
+// a hired hand's name (a player hit an error): the old list had 11 names (one of them cụ Lý, the headman) for up to
+// 3 helpers a stall, so the 12th hire got no name and the stall sheet broke. Young folk's names, never a villager's or
+// another hand's; a numbered one if every name is taken
+const C4_HAND_TITLES = ['anh', 'chị', 'cô', 'chú', 'cậu', 'thím'];
+const C4_HAND_NAMES = ['Tèo', 'Tí', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Mùi', 'Dậu', 'Tuất', 'Hợi', 'Mít', 'Na', 'Bưởi', 'Cốm', 'Sen', 'Đào', 'Lựu', 'Ngô', 'Khoai', 'Bống', 'Cò', 'Tép', 'Hến', 'Thóc', 'Gạo', 'Vừng', 'Lạc', 'Nhãn'];
+function c4HandName() {
+  const taken = new Set(Object.values(SAVE4.hands || {}).flat().map(h => h && h.name));
+  try { for (const p of c4People().list) taken.add(p.name); } catch (e) {}
+  const free = [];
+  for (const t of C4_HAND_TITLES) for (const n of C4_HAND_NAMES) if (!taken.has(t + ' ' + n)) free.push(t + ' ' + n);
+  if (free.length) return c4Pick(free);
+  for (let i = 1; ; i++) if (!taken.has('người làm thứ ' + i)) return 'người làm thứ ' + i;
+}
 function c4Hands(g) {
   const H = SAVE4.hands || (SAVE4.hands = {});
   if (!H[g]) H[g] = [];
+  for (let i = H[g].length - 1; i >= 0; i--) if (!H[g][i]) H[g].splice(i, 1); else if (!H[g][i].name) H[g][i].name = c4HandName();   // saves hit by the old bug
   const s = g !== 'trau' && SAVE4.shops && SAVE4.shops[g];
   if (s && s.staff) { H[g].push({ name: s.staff, sort: s.sort || 1, unpaid: s.unpaid || 0, wageUp: s.wageUp || 0 }); delete s.staff; }   // old saves: one helper per stall
   return H[g];
@@ -101,7 +115,8 @@ function c4HandsBlock(g) {
       + (H.length ? H.map((h, i) => `<div class="hand"><span>${c4Cap1(h.name)}${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày</span><button class="btn alt" data-off="${i}">Cho nghỉ</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
       + (H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4Wage(g, {}))}/ngày</button>` : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
-      H.push({ name: c4Pick(C4_NAMES.mouse.filter(n => !c4AllHands().some(o => o.h.name === n))), sort: c4Pick(C4_HELPERS), unpaid: 0 });
+      if (H.length >= C4_HANDS_MAX) { draw(); return; }                       // (a double tap could hire past the limit)
+      H.push({ name: c4HandName(), sort: c4Pick(C4_HELPERS), unpaid: 0 });
       AU.stamp(); toast(`${c4Cap1(H[H.length - 1].name)} nhận bán ${G.name.toLowerCase()}.`); persist4(); draw();
     });
     el.querySelectorAll('[data-off]').forEach(b => b.addEventListener('click', () => {

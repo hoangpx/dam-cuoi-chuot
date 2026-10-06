@@ -25,7 +25,7 @@ const C2LEVELS = [
   },
   {
     han: '拼字', name: 'Ghép chữ', paper: 'pink', key: 2,
-    hint: "Ghép lại CỔNG LÀ THẮNG, lần này có tường cản. Tính trước đường đẩy: đẩy nhầm một chữ vào góc là phải hoàn tác (Z).",
+    hint: "Lần này TƯỜNG LÀ CHẶN chắn lối tới các chữ. Phá câu đó trước rồi mới ghép được CỔNG LÀ THẮNG. Tính trước đường đẩy: đẩy nhầm một chữ vào góc là phải hoàn tác (Z).",
     map: ["..........",".W=3G...g.","..w.wwww..",".w.wM=1.w.",".w.w.ww.m.","...ww.w6=.",".........."],
     fixed: [],
   },
@@ -43,7 +43,7 @@ const C2LEVELS = [
   },
   {
     han: '變形', name: 'Biến hình', paper: 'sage', key: -2,
-    hint: "Mèo rất nóng, chạm vào là chết (MÈO LÀ NÓNG). Nếu ghép được MÈO LÀ CÁ thì mèo hóa cá, đi qua thoải mái.",
+    hint: "Mèo rất nóng, chạm vào là chết (MÈO LÀ NÓNG). Nếu ghép được MÈO LÀ CÁ thì mèo hoá cá, đi qua thoải mái.",
     map: ["...=.w....","m.C.Gw....","M=1.ww....","w.S=.c...g","w...6w....",".....w....","C=5..wW=3."],
     fixed: [[0,6],[1,6],[2,6],[6,6],[7,6],[8,6]],
   },
@@ -55,7 +55,7 @@ const C2LEVELS = [
   },
   {
     han: '火門', name: 'Lửa thành cổng', paper: 'pink', key: 2,
-    hint: "Lửa cháy rực chắn đường (LỬA LÀ NÓNG). Nếu ghép được LỬA LÀ CỔNG thì mọi ngọn lửa hóa thành cổng, chạm vào là thắng.",
+    hint: "Lửa cháy rực chắn đường (LỬA LÀ NÓNG). Nếu ghép được LỬA LÀ CỔNG thì mọi ngọn lửa hoá thành cổng, chạm vào là thắng.",
     map: ["Gw...f....","ww..mf....","=F...f..g.",".w..Mf....","6www=f....",".=..1f....",".....fF=5."],
     fixed: [[6,6],[7,6],[8,6]],
   },
@@ -75,7 +75,7 @@ const C2LEVELS = [
   {
     han: "借還", name: "Mượn tạm", paper: "pink", key: 2, hard: true,
     riddle: "Cổng bị tường vây kín. Có mượn thì phải có trả.",
-    hint: "Mượn chữ CỔNG và LÀ để ghép dọc TƯỜNG LÀ CỔNG: mọi bức tường hóa thành cổng, và vẫn là cổng dù luật mất. Rồi trả hai chữ về để ghép lại CỔNG LÀ THẮNG.",
+    hint: "Mượn chữ CỔNG và LÀ để ghép dọc TƯỜNG LÀ CỔNG: mọi bức tường hoá thành cổng, và vẫn là cổng dù luật mất. Rồi trả hai chữ về để ghép lại CỔNG LÀ THẮNG.",
     map: ["ww.W=3ww","ww...m.w","w.G..w.w","w6.=..ww","w...w..w","wM=1.wgw","wwwwwwww"],
     fixed: [[3,0],[4,0],[5,0],[1,5],[2,5],[3,5]],
   },
@@ -134,8 +134,8 @@ const C2LEVELS = [
   },
   {
     han: "不止", name: "Không chặn", paper: "sage", key: -2, bh: true,
-    hint: "TƯỜNG LÀ CHẶN bị ghim cứng. Xếp dọc TƯỜNG / LÀ / KHÔNG ngay trên chữ CHẶN ấy: TƯỜNG LÀ KHÔNG CHẶN thắng luật cũ.",
-    map: ["G=6.......", ".....W....", "M...=..www", "=......wgw", "1.m....www", "....-.....", "...W=3...."],
+    hint: "TƯỜNG LÀ CHẶN bị ghim cứng. Xếp dọc TƯỜNG / KHÔNG ngay trên chữ CHẶN ấy: TƯỜNG KHÔNG CHẶN thắng luật cũ.",
+    map: ["G=6.......", ".....W....", "M......www", "=......wgw", "1.m....www", "....-.....", "...W=3...."],
     fixed: [[0, 0], [1, 0], [2, 0], [0, 2], [0, 3], [0, 4], [3, 6], [4, 6], [5, 6]],
   },
   {
@@ -164,7 +164,7 @@ const C2LEVELS = [
   },
   {
     han: "石橋", name: "Bắc cầu đá", paper: "sage", key: -2, bh: true,
-    hint: "Bay qua sông, kéo đá theo sau: đá không bay nên rơi xuống nước, nước chìm theo. Lấp đủ hai ô rồi bỏ chữ BAY để vào cổng.",
+    hint: "Bay qua sông, kéo đá theo sau: đá không bay nên rơi xuống sông, đá với nước cùng mất thành chỗ đặt chân. Lấp đủ hai ô rồi bỏ chữ BAY để vào cổng.",
     map: ["M=1...~~...", "N=4...~~...", "R=<...~~.g.", "R=3...~~...", "rr.m..~~G=6", "M=..9.~~...", "......~~..."],
     fixed: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2], [0, 3], [1, 3], [2, 3], [8, 4], [9, 4], [10, 4], [0, 5], [1, 5]],
   },
@@ -201,8 +201,8 @@ const C2_CHAIN = [
   "Phá CHUM LÀ CHẶN → ghép CHUM LÀ YẾU → bước vào chum → đẩy chìa vào cửa",
   "Ghép ĐÁ LÀ KÉO → kéo đá ra khỏi ngõ",
   "Kéo chữ ra khỏi góc → ghép CỔNG LÀ THẮNG",
-  "Ghép TƯỜNG LÀ KHÔNG CHẶN",
-  "Ghép MÈO LÀ CHẠY → mèo đẩy chữ → CỔNG LÀ THẮNG",
+  "Ghép TƯỜNG KHÔNG CHẶN",
+  "Ghép MÈO LÀ CHẠY → mèo tự đẩy chữ THẮNG thành CỔNG LÀ THẮNG",
   "Ghép LỬA LÀ YẾU → đẩy chum vào lửa → cổng hiện ra",
   "Ghép CHÌA CÓ CHÌA → đẩy chìa qua ba cửa",
   "Ghép CHUỘT VÀ CỔNG LÀ BAY → bay qua sông",
