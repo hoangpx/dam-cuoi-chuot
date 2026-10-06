@@ -315,8 +315,12 @@ function c4AfterMoney() { persist4(); c4Hud(); c4LoanUI(); if (C4.orders) c4AmTo
 function c4AmTotal(orders) {
   const el = $('#c4amO .tot'); if (!el) return;
   const sum = Object.entries(orders).reduce((a, [g, q]) => a + q * c4Cost(g) + (g === 'che' && q ? C4_GOODS.che.fuel : 0), 0);
-  el.innerHTML = `Tổng tiền hàng: <b>${c4Money(sum)}</b>${sum > SAVE4.money ? ` · mua chịu ${c4Money(sum - SAVE4.money)}` : ''}${SAVE4.debt + Math.max(0, sum - SAVE4.money) > C4_DEBT ? ' · <span class="bad">quá hạn mức nợ!</span>' : ''}`;
-  const go = $('#c4amO .go'); if (go) go.disabled = SAVE4.debt + Math.max(0, sum - SAVE4.money) > C4_DEBT;
+  // only the part bought on credit counts against the trader's limit (a player owed 304 of 300 and could not even open
+  // the market with nothing ordered): with no new credit the market always opens, and the sheet says what to do
+  const credit = Math.max(0, sum - SAVE4.money), over = credit > 0 && SAVE4.debt + credit > C4_DEBT, room = Math.max(0, C4_DEBT - SAVE4.debt);
+  el.innerHTML = `Tổng tiền hàng: <b>${c4Money(sum)}</b>${credit ? ` · mua chịu ${c4Money(credit)}` : ''}${over ? ' · <span class="bad">quá hạn mức nợ!</span>' : ''}`
+    + (over || (SAVE4.money < c4Cost('trau') * 5 && !room) ? `<p class="bad">Lái buôn chỉ cho chịu tối đa ${c4Money(C4_DEBT)}${SAVE4.debt ? `, nhà mình đã nợ ${c4Money(SAVE4.debt)}` : ''}${room ? ` (còn chịu được ${c4Money(room)})` : ''}. Muốn nhập thêm thì trả bớt nợ lái buôn hoặc vay tiền ở ô Tiền nong phía trên rồi mua bằng tiền mặt. Không nhập gì vẫn họp chợ được.</p>` : '');
+  const go = $('#c4amO .go'); if (go) go.disabled = over;
 }
 // a stepper for one ware: how many, what it costs
 // goods fetched during the day cost more than the morning's (the trader's best is gone, the husband walks twice)
