@@ -46,7 +46,10 @@ function c4FaceImg(p) {
   if (!im) { im = new Image(); im.src = url; QH.img.set(url, im); }
   return im;
 }
-function qhRadius(p, st) { return st === 'k' ? Math.min(34, 15 + c4Imp(p) * 1.5) : st === 'seen' ? 14 : 11; }
+function qhRadius(p, st) { return st === 'k' ? 22 : st === 'seen' ? 17 : 14; }
+// each xóm has its own colour (the rim of its bubbles); the one who knows the most in a xóm sits in the middle of it (owner: tidy groups)
+const C4_XOM_COL = ['#2f5f8f', '#e0872a', '#4a9a5a', '#8a5aa0', '#c0567a'];
+const qhGroupCol = nd => C4_XOM_COL[Math.max(0, C4_XOM.indexOf(c4People().houses[nd.p.house].xom)) % C4_XOM_COL.length];
 function qhBuild() {
   const P = c4People(), on = c4WebNodes();
   if (QH.seed !== SAVE4.seed) { QH.pos.clear(); QH.seed = SAVE4.seed; QH.focus = null; }
@@ -69,7 +72,8 @@ function qhBuild() {
     if (nd.st !== 'k' && b.st !== 'k') continue;                           // a tie is only known through someone met
     edges.push({ a: nd, b, rel: l.rel, kin: nd.p.house === b.p.house });
   }
-  return { nodes, edges, byId };
+  const PPx = P;
+  return { nodes, edges, byId, xomOf: nd => PPx.houses[nd.p.house].xom };
 }
 let QHG = null;
 function qhStep(dt) {
@@ -93,12 +97,13 @@ function qhStep(dt) {
   for (const nd of N) {
     const o = nd.o, focus = F === nd;
     const g = focus ? .12 : F && !near.has(nd.id) ? .0015 : .004;               // the one tapped is drawn to the middle
-    o.vx -= o.x * g; o.vy -= o.y * g;
+    if (focus) { o.vx = o.vy = 0; } else { o.vx -= o.x * g; o.vy -= o.y * g; }   // the tapped one glides to the middle without springing (owner)
     if (QH.drag && QH.drag.node === nd) { o.vx = o.vy = 0; continue; }
-    o.vx *= .82; o.vy *= .82; o.x += o.vx * dt * 30; o.y += o.vy * dt * 30;
+    const dm = Math.pow(1e-6, dt); o.vx *= dm; o.vy *= dm;   // heavy damping: the bubbles settle without wobbling (owner)
+    o.x += o.vx * dt * 12; o.y += o.vy * dt * 12;
     if (focus) { const k = Math.min(1, dt * 5); o.x -= o.x * k; o.y -= o.y * k; }   // glides to the middle
     const want = focus ? 1.55 : F && near.has(nd.id) ? 1.08 : 1;              // and swells, with just a hint of bounce (owner: less springy)
-    o.kv += (want - o.k) * 10 * dt; o.kv *= Math.pow(.00001, dt); o.k += o.kv * dt * 6;
+    o.k += (want - o.k) * Math.min(1, dt * 8); o.kv = 0;   // swells straight to its size, no bounce (owner)
   }
 }
 function qhDraw() {
@@ -113,7 +118,7 @@ function qhDraw() {
   // strings: dashed and soft; the tapped one's bold, solid, with what the tie is
   for (const e of QHG.edges) {
     const hot = F && (e.a === F || e.b === F), fade = F && !hot;
-    g.globalAlpha = fade ? .12 : hot ? 1 : .55; g.strokeStyle = C4_RELS[e.rel].col; g.lineWidth = (hot ? 3.4 : e.kin ? 2 : 1.4) / Math.sqrt(C.s);
+    g.globalAlpha = fade ? .06 : hot ? 1 : e.a.p.house === e.b.p.house || QHG.xomOf(e.a) === QHG.xomOf(e.b) ? .32 : .07; g.strokeStyle = C4_RELS[e.rel].col; g.lineWidth = (hot ? 3.4 : e.kin ? 2 : 1.4) / Math.sqrt(C.s);
     g.setLineDash(hot ? [] : [5, 4]); g.beginPath(); g.moveTo(e.a.o.x, e.a.o.y); g.lineTo(e.b.o.x, e.b.o.y); g.stroke();
   }
   g.setLineDash([]); g.globalAlpha = 1;
@@ -123,17 +128,25 @@ function qhDraw() {
     const o = nd.o, r = nd.r * o.k, fade = F && nd !== F && !near.has(nd.id), f = SAVE4.folk[nd.id];
     g.globalAlpha = fade ? .16 : 1;
     if (nd === F) { g.fillStyle = 'rgba(201,138,28,.25)'; g.beginPath(); g.arc(o.x, o.y, r + 10, 0, 6.283); g.fill(); }
+    if (nd.hub) { g.fillStyle = 'rgba(244,196,70,.4)'; g.beginPath(); g.arc(o.x, o.y, r + 9, 0, 6.283); g.fill(); }
+    g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.arc(o.x + 1.5, o.y + 4, r, 0, 6.283); g.fill();
     if (nd.st === 'k' || nd.st === 'seen') {
       const im = c4FaceImg(nd.p);
       g.save(); g.beginPath(); g.arc(o.x, o.y, r, 0, 6.283); g.clip(); g.fillStyle = '#f6f0e2'; g.fill();
       if (im.complete && im.naturalWidth) g.drawImage(im, o.x - r, o.y - r, r * 2, r * 2); g.restore();
-      g.lineWidth = nd.st === 'k' ? 3 : 2; g.setLineDash(nd.st === 'k' ? [] : [4, 3]);
-      g.strokeStyle = nd.st === 'k' ? (f.a >= C4_RUOT ? '#c0567a' : f.a >= 60 ? '#2f6a4c' : f.a >= 35 ? '#c98a1c' : '#a3332a') : '#8a7a5a';
+      g.lineWidth = nd.st === 'k' ? 4 : 2.5; g.setLineDash(nd.st === 'k' ? [] : [4, 3]);
+      g.strokeStyle = qhGroupCol(nd);
       g.beginPath(); g.arc(o.x, o.y, r, 0, 6.283); g.stroke(); g.setLineDash([]);
+      if (nd.st === 'k') { g.fillStyle = f.a >= C4_RUOT ? '#c0567a' : f.a >= 60 ? '#2f6a4c' : f.a >= 35 ? '#c98a1c' : '#a3332a'; g.strokeStyle = '#fbf7ee'; g.lineWidth = 1.6; g.beginPath(); g.arc(o.x + r * .72, o.y + r * .72, 5.5, 0, 6.283); g.fill(); g.stroke(); }
     } else {
       g.fillStyle = '#d9cdb2'; g.strokeStyle = '#8a7a5a'; g.lineWidth = 1.6; g.setLineDash([3, 3]);
       g.beginPath(); g.arc(o.x, o.y, r, 0, 6.283); g.fill(); g.stroke(); g.setLineDash([]);
       g.fillStyle = '#5a4a32'; g.font = `900 ${Math.round(r)}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', o.x, o.y + 1);
+    }
+    if (nd.hub && !fade && (C.s > .5 || nd === F)) {                       // the one who knows the most in the xóm
+      g.font = '700 10px "Be Vietnam Pro", sans-serif'; const tw = g.measureText('Quen rộng nhất').width + 12, ty = o.y - r - 17;
+      g.fillStyle = '#fff3c4'; g.strokeStyle = '#c98a1c'; g.lineWidth = 1.2; g.beginPath(); g.rect(o.x - tw / 2, ty - 8, tw, 16); g.fill(); g.stroke();
+      g.fillStyle = '#5a3a0a'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Quen rộng nhất', o.x, ty + .5);
     }
     // the name under the bubble (strangers only once someone has named them)
     const name = nd.st === 'q' ? '' : nd.p.name;
@@ -152,8 +165,8 @@ function qhDraw() {
 }
 function qhLoop(t) {
   if (!$('#qhCv') || $('#c4note').hidden) { QH.raf = 0; return; }
-  const dt = Math.min(.05, (t - (QH.last || t)) / 1000) || .016; QH.last = t;
-  qhStep(dt); qhDraw();
+  // nothing moves now (owner): the web is laid out once and stays fixed; it only redraws when touched
+  if (QH.dirty) { QH.dirty = false; qhDraw(); }
   QH.raf = requestAnimationFrame(qhLoop);
 }
 function qhFit() {                                                          // zoom to show every bubble
@@ -174,12 +187,12 @@ function qhWire() {
   const d = devicePixelRatio || 1; cv2.width = cv2.clientWidth * d; cv2.height = cv2.clientHeight * d;
   const pt = e => { const r = cv2.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   cv2.addEventListener('pointerdown', e => {
-    cv2.setPointerCapture(e.pointerId); const [x, y] = pt(e); QH.ptrs.set(e.pointerId, [x, y]);
+    QH.dirty = true; cv2.setPointerCapture(e.pointerId); const [x, y] = pt(e); QH.ptrs.set(e.pointerId, [x, y]);
     if (QH.ptrs.size === 2) { const [a, b] = [...QH.ptrs.values()]; QH.pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), s: QH.cam.s }; QH.drag = null; return; }
-    const h = qhHit(x, y); QH.drag = { node: h.node, x, y, cx: QH.cam.x, cy: QH.cam.y, moved: false };
+    const h = qhHit(x, y); QH.drag = { node: null, hit: h.node, x, y, cx: QH.cam.x, cy: QH.cam.y, moved: false };
   });
   cv2.addEventListener('pointermove', e => {
-    if (!QH.ptrs.has(e.pointerId)) return; const [x, y] = pt(e); QH.ptrs.set(e.pointerId, [x, y]);
+    QH.dirty = true; if (!QH.ptrs.has(e.pointerId)) return; const [x, y] = pt(e); QH.ptrs.set(e.pointerId, [x, y]);
     if (QH.pinch && QH.ptrs.size === 2) { const [a, b] = [...QH.ptrs.values()]; QH.cam.s = Math.max(.25, Math.min(2.5, QH.pinch.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / QH.pinch.d)); return; }
     const D = QH.drag; if (!D) return;
     if (Math.hypot(x - D.x, y - D.y) > 6) D.moved = true;
@@ -190,33 +203,89 @@ function qhWire() {
   const up = e => {
     QH.ptrs.delete(e.pointerId); if (QH.ptrs.size < 2) QH.pinch = null;
     const D = QH.drag; QH.drag = null; if (!D || D.moved) return;
-    AU.tap(); qhFocus(D.node ? D.node.id : null);
+    AU.tap(); qhFocus(D.hit ? D.hit.id : null);
   };
   cv2.addEventListener('pointerup', up); cv2.addEventListener('pointercancel', up);
-  cv2.addEventListener('wheel', e => { e.preventDefault(); QH.cam.s = Math.max(.25, Math.min(2.5, QH.cam.s * (e.deltaY < 0 ? 1.12 : .89))); }, { passive: false });
-  $('#c4noteB').querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => { AU.tap(); const z = b.dataset.zoom; if (z === 'fit') { qhFocus(null); qhFit(); } else QH.cam.s = Math.max(.25, Math.min(2.5, QH.cam.s * (z === '+' ? 1.25 : .8))); }));
+  cv2.addEventListener('wheel', e => { e.preventDefault(); QH.dirty = true; QH.cam.s = Math.max(.25, Math.min(2.5, QH.cam.s * (e.deltaY < 0 ? 1.12 : .89))); }, { passive: false });
+  $('#c4noteB').querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => { AU.tap(); QH.dirty = true; const z = b.dataset.zoom; if (z === 'fit') { qhFocus(null); qhFit(); } else QH.cam.s = Math.max(.25, Math.min(2.5, QH.cam.s * (z === '+' ? 1.25 : .8))); }));
   if (!QH.raf) { QH.last = 0; QH.raf = requestAnimationFrame(qhLoop); }
 }
+// the layout is worked out once (the springs settle), then every bubble stays where it is
+function qhLayout() {
+  const P = c4People(), groups = new Map();
+  for (const nd of QHG.nodes) { const k = P.houses[nd.p.house].xom; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(nd); }
+  const G = [];
+  for (const [xom, ms] of groups) {
+    ms.sort((p, q) => (q.st === 'k') - (p.st === 'k') || c4Imp(q.p) - c4Imp(p.p) || p.id - q.id);
+    const hub = ms[0]; hub.hub = hub.st === 'k'; if (hub.hub) hub.r = 30;
+    const rest = ms.slice(1).sort((p, q) => p.p.house - q.p.house || p.id - q.id);
+    const placed = [{ nd: hub, x: 0, y: 0 }]; let ring = 0, rr = hub.r + 66, i = 0;
+    while (i < rest.length) {
+      const cap = Math.max(5, Math.floor(6.283 * rr / 64)), take = Math.min(cap, rest.length - i);
+      for (let j = 0; j < take; j++) { const an = ring * .5 + j / take * 6.283 - 1.5708; placed.push({ nd: rest[i + j], x: Math.cos(an) * rr, y: Math.sin(an) * rr }); }
+      i += take; ring++; rr += 68;
+    }
+    G.push({ xom, placed, R: Math.max(...placed.map(q => Math.hypot(q.x, q.y) + q.nd.r)) + 36, x: 0, y: 0 });
+  }
+  G.sort((p, q) => q.placed.length - p.placed.length);
+  const done = [];
+  for (const g of G) {
+    if (done.length) {
+      let found = false;
+      for (let d = 0; d < 5000 && !found; d += 16) for (let an = 0; an < 6.283 && !found; an += .12) {
+        const x = Math.cos(an) * d, y = Math.sin(an) * d;
+        if (done.every(o => Math.hypot(x - o.x, y - o.y) >= o.R + g.R + 12)) { g.x = x; g.y = y; found = true; }
+      }
+    }
+    done.push(g);
+  }
+  for (const g of G) for (const q of g.placed) { q.nd.o.x = g.x + q.x; q.nd.o.y = g.y + q.y; q.nd.o.vx = q.nd.o.vy = 0; }
+  qhPose();
+}
+// the sizes of the tapped one and its ties (set at once, no swelling)
+function qhPose() {
+  const F = QH.focus !== null && QHG ? QHG.byId.get(QH.focus) : null, near = new Set();
+  if (F) for (const e of QHG.edges) { if (e.a === F) near.add(e.b.id); if (e.b === F) near.add(e.a.id); }
+  for (const nd of QHG.nodes) nd.o.k = F === nd ? 1.55 : F && near.has(nd.id) ? 1.08 : 1;
+}
 function qhFocus(id) {
-  QH.focus = id;
-  if (id !== null) { const nd = QHG.byId.get(id); if (nd) { nd.o.kv += .8; Object.assign(QH.cam, { x: 0, y: 0, s: Math.max(QH.cam.s, .9) }); } }
+  QH.focus = id; QH.dirty = true; qhPose();
+  if (id !== null) { const nd = QHG.byId.get(id); if (nd) { Object.assign(QH.cam, { x: 0, y: 0, s: Math.max(QH.cam.s, .9) }); } }
   const c = $('#qhCard'); if (c) { c.innerHTML = qhCardHtml(id); qhCardWire(); }
 }
 // the web tab's html: the canvas, its zoom buttons, the legend of strings, and the card of whoever is tapped
 function c4WebTab() {
-  QHG = qhBuild();
+  QHG = qhBuild(); qhLayout();
   if (!QHG.nodes.length) return '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
-  const rels = [...new Set(QHG.edges.map(e => e.rel))];
+  const rels = [...new Set(QHG.edges.map(e => e.rel))], PP = c4People();
+  const xoms = [...new Set(QHG.nodes.map(n => PP.houses[n.p.house].xom))].map(x => `<span><i style="background:${C4_XOM_COL[Math.max(0, C4_XOM.indexOf(x)) % C4_XOM_COL.length]}"></i>${x}</span>`).join('');
   return `<p class="qhhint">Chạm vào một người để xem kỹ · kéo để xem chỗ khác · hai ngón để phóng to</p>
     <div class="qhwrap"><canvas id="qhCv"></canvas><div class="qhz"><button data-zoom="+">+</button><button data-zoom="-">−</button><button data-zoom="fit" title="Bỏ chọn, xem cả làng">⤢</button></div></div>
-    <div class="legend">${rels.map(r => `<span><i style="background:${C4_RELS[r].col}"></i>${C4_RELS[r].name}</span>`).join('')}<span><i class="q"></i>chưa quen</span></div>
+    <div class="legend">${xoms}${rels.map(r => `<span><i style="background:${C4_RELS[r].col}"></i>${C4_RELS[r].name}</span>`).join('')}<span><i class="q"></i>chưa quen</span></div>
     <div id="qhCard">${qhCardHtml(QH.focus)}</div>`;
 }
-function c4WebOpened(first) { qhWire(); if (first) qhFit(); qhCardWire(); }
+function c4WebOpened(first) { QH.dirty = true; qhWire(); if (first) qhFit(); qhCardWire(); }
 
 /* ---------- the card ---------- */
 // a way back from one person to the whole village (a player could not get out)
-const QH_BACK = '<button class="btn alt qback" data-qback="1">✕ Bỏ chọn · xem cả làng</button>';
+const QH_BACK = '<button class="btn alt qback" data-qback="1">← Về danh sách khách quen</button>';
+function qhTieSvg(p) {
+  const P = c4People(), L = p.links, n = L.length;
+  if (!n) return '<p>Chẳng quen biết ai.</p>';
+  const R = n <= 6 ? 92 : n <= 10 ? 108 : 124, S = 2 * (R + 40), c = S / 2;
+  let defs = '', lines = '', nodes = '';
+  const face = (q, x, y, r, i, dash) => { defs += `<clipPath id="qtc${i}"><circle cx="${x}" cy="${y}" r="${r}"/></clipPath>`; return `<image href="${c4Face(q)}" x="${x - r}" y="${y - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#qtc${i})"/>`; };
+  L.forEach((l, i) => {
+    const q = P.list[l.to], an = -Math.PI / 2 + i / n * 2 * Math.PI, x = c + Math.cos(an) * R, y = c + Math.sin(an) * R, k = c4Known(q.id), h = c4Heard(q.id), col = C4_RELS[l.rel].col;
+    lines += `<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="${k ? 2.2 : 1.4}" ${k ? '' : 'stroke-dasharray="4 3"'}/>`;
+    const mx = c + Math.cos(an) * R * .52, my = c + Math.sin(an) * R * .52, t = C4_RELS[l.rel].name, w = t.length * 5 + 8;
+    lines += `<rect x="${(mx - w / 2).toFixed(1)}" y="${(my - 7).toFixed(1)}" width="${w}" height="14" rx="3" fill="#fbf7ee" opacity=".92"/><text x="${mx.toFixed(1)}" y="${(my + 3.5).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${col}">${t}</text>`;
+    nodes += `<g data-qf="${q.id}" style="cursor:pointer">${h ? face(q, x, y, 17, i) + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="17" fill="none" stroke="${k ? col : '#8a7a5a'}" stroke-width="${k ? 3 : 2}" ${k ? '' : 'stroke-dasharray="3 2"'}/>` : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="17" fill="#d9cdb2" stroke="#8a7a5a" stroke-width="1.6" stroke-dasharray="3 3"/><text x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" text-anchor="middle" font-size="18" font-weight="900" fill="#5a4a32">?</text>`}
+      <text x="${x.toFixed(1)}" y="${(y + 29).toFixed(1)}" text-anchor="middle" font-size="10" fill="#1d1915" stroke="#fbf7ee" stroke-width="3" paint-order="stroke">${h ? q.name : 'chưa biết'}</text></g>`;
+  });
+  const me = face(p, c, c, 25, 'm') + `<circle cx="${c}" cy="${c}" r="25" fill="none" stroke="#c98a1c" stroke-width="3.5"/>`;
+  return `<svg class="tiesvg" viewBox="0 0 ${S} ${S}" width="100%" style="max-width:${S + 40}px;display:block;margin:6px auto">${'<defs>' + defs + '</defs>'}${lines}${nodes}${me}</svg>`;
+}
 function qhCardHtml(id) {
   const P = c4People();
   if (id === null || id === undefined) {                                     // nothing tapped: who matters most, who is still a stranger
@@ -236,7 +305,8 @@ function qhCardHtml(id) {
       <div class="badges">${c4Badges(p).map(([t, c]) => `<span style="border-color:${c};color:${c}">${t}</span>`).join('')}</div>
       <h5>Thói quen</h5><ul class="hab"><li>⏰ Hay ra chợ <b>${c4Span(p.hour)}</b></li><li>♥ Thích <b>${C4_FAV_WORD[p.fav]}</b></li><li>🪙 Tiền nong: <b>${p.purse}</b></li></ul>
       <h5>Tính nết</h5><p><b>${T.name}:</b> ${T.desc}</p>
-      <h5>Quan hệ (${p.links.length})</h5><ul class="ties">${p.links.map(l => tie(l, P.list[l.to])).join('') || '<li>Chẳng quen biết ai.</li>'}</ul>
+      ${(() => { const hh = (SAVE4.hao || []).filter(x => x.pid === id || (x.pid == null && x.name === p.name)).pop(); return hh ? `<h5>Họ nhận xét về gánh mình</h5><p class="haoq">${C4_HAO_STAR(hh.star)} “${hh.say}”<br><i>${hh.who === 'v' ? 'Vợ' : 'Chồng'} đáp: ${hh.reply}</i></p>` : ''; })()}
+      <h5>Quan hệ (${p.links.length})</h5>${qhTieSvg(p)}
       ${facts.length ? `<h5>Điều đã biết (${facts.length})</h5><ul class="facts">${facts.map(t => `<li>${t}</li>`).join('')}</ul>` : ''}
       ${f.deal ? `<p class="back">Lần tới ghé: ${f.deal === 'free' ? 'mời miễn phí' : 'giảm nửa giá'}.</p>` : ''}
       <div class="acts">
@@ -244,7 +314,7 @@ function qhCardHtml(id) {
         <button class="act o" data-act="tea" ${f.tea === day || SAVE4.money < 3 ? 'disabled' : ''}><b>Mời nước</b><span>${f.tea === day ? 'đã mời hôm nay' : '3 đồng · thêm thân'}</span></button>
         <button class="act b" data-act="ask" ${f.ask === day || !unknownTies || f.a < 35 ? 'disabled' : ''}><b>Hỏi chuyện nhà</b><span>${!unknownTies ? 'đã biết hết' : f.a < 35 ? 'chưa đủ thân' : f.ask === day ? 'mai hỏi tiếp' : `còn ${unknownTies} người chưa biết`}</span></button>
       </div>
-      <div class="row col"><button class="btn alt" data-act="half" ${!buy || f.deal ? 'disabled' : ''}>Lần tới giảm nửa giá</button><button class="btn alt" data-act="free" ${!buy || f.deal ? 'disabled' : ''}>Lần tới mời miễn phí</button><button class="btn alt" data-house="${p.house}">Xem gia phả ${hs.name}</button></div></div>`;
+      <div class="row col"><button class="btn alt" data-act="half" ${!buy || f.deal ? 'disabled' : ''}>Lần tới giảm nửa giá</button><button class="btn alt" data-act="free" ${!buy || f.deal ? 'disabled' : ''}>Lần tới mời miễn phí</button></div></div>`;
   }
   // not met yet: how they are tied to the folk you know, and who could bring them along
   const via = p.links.filter(l => c4Known(l.to)).map(l => [l, P.list[l.to]]);
@@ -259,14 +329,13 @@ function qhCardHtml(id) {
 }
 function qhCardWire() {
   const box = $('#qhCard'); if (!box) return;
-  box.querySelectorAll('[data-qback]').forEach(b => b.addEventListener('click', () => { AU.tap(); qhFocus(null); qhFit(); }));
-  box.querySelectorAll('[data-qf]').forEach(b => b.addEventListener('click', () => { AU.tap(); qhFocus(+b.dataset.qf); $('#qhCv').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }));
-  box.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => c4Act(QH.focus, b.dataset.act)));
-  box.querySelectorAll('[data-house]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_HOUSE = +b.dataset.house; c4OpenNotes('nha'); }));
+  box.querySelectorAll('[data-qback]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; c4OpenNotes('quen'); }));
+  box.querySelectorAll('[data-qf]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = +b.dataset.qf; c4OpenNotes('quen'); $('#c4note').scrollTop = 0; }));
+  box.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => c4Act(C4_WHO, b.dataset.act)));
   box.querySelectorAll('[data-intro]').forEach(b => b.addEventListener('click', () => {
-    const P = c4People(), q = P.list[QH.focus], by = P.list[+b.dataset.intro], f = c4F(q.id);
+    const P = c4People(), q = P.list[C4_WHO], by = P.list[+b.dataset.intro], f = c4F(q.id);
     f.intro = SAVE4.day; f.ref = true; (C4.expect = C4.expect || []).push(q.id);
-    toast(`${c4Cap1(by.name)} hứa sẽ rủ ${q.name} ra chợ ghé quán.`, 3); AU.pluck(84); persist4(); qhFocus(q.id);
+    toast(`${c4Cap1(by.name)} hứa sẽ rủ ${q.name} ra chợ ghé quán.`, 3); AU.pluck(84); persist4(); c4OpenNotes('quen');
   }));
 }
 const C4_ACT_DONE = {
@@ -332,4 +401,4 @@ function c4HousesWire() {
   B.querySelectorAll('.tn[data-qf]').forEach(b => b.addEventListener('click', () => { AU.tap(); c4OpenWho(+b.dataset.qf); }));
 }
 // open the web on one person (from Khách quen, Gia phả, …)
-function c4OpenWho(id) { QH.focus = id; c4OpenNotes('web'); const nd = QHG && QHG.byId.get(id); if (nd) { nd.o.kv += .8; Object.assign(QH.cam, { x: 0, y: 0, s: 1 }); } }
+function c4OpenWho(id) { QH.dirty = true; QH.focus = id; qhPose(); c4OpenNotes('web'); const nd = QHG && QHG.byId.get(id); if (nd) { Object.assign(QH.cam, { x: 0, y: 0, s: 1 }); } }

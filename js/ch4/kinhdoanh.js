@@ -12,6 +12,15 @@ const C4_SHOP_LV = [
   { name: 'Thuê nhà mặt chợ', cap: 3.2, serve: .6, want: 1.8, up: 3, daily: .1, house: 'rent' },
   { name: 'Nhà của mình', cap: 3.6, serve: .55, want: 2.1, up: 14, house: 'own' },
 ];
+// the price of a house to buy (owner): 90 % of the purse you have now, but never below the market's floor for the day; the
+// market lifts that floor a little every day, and the price can change later, so the sheet says to buy now
+const c4HouseFloor = (base, day = SAVE4.day) => Math.round(base * (1 + .06 * (day - 1)));
+const c4HousePrice = base => Math.max(c4HouseFloor(base), Math.round(SAVE4.money * .9));
+const c4UpPrice = (nx, base) => nx.house === 'own' ? c4HousePrice(base) : base;
+function c4HouseNote(base) {
+  const p = c4HousePrice(base), f = c4HouseFloor(base), t = c4HouseFloor(base, SAVE4.day + 1);
+  return `<p class="hint">Giá nhà hôm nay <b>${c4Money(p)}</b>: 90 % số tiền đang có, nhưng không dưới ${c4Money(f)}. Thị trường lên giá theo ngày, ngày mai giá sàn là ${c4Money(t)}, và giá có thể đổi về sau. Mua ngay kẻo lỡ.</p>`;
+}
 const c4SLvI = g => (SAVE4.shops[g] && SAVE4.shops[g].lv) || 0;
 const c4SLv = g => C4_SHOP_LV[c4SLvI(g)];
 // the betel stall goes on past its tiled stall too (C4_LV in cho.js gets the two house levels)
@@ -22,11 +31,13 @@ function c4ShopUpBlock(g) {
   const G = C4_GOODS[g], i = c4SLvI(g), nx = C4_SHOP_LV[i + 1], cur = C4_SHOP_LV[i];
   const now = `<p class="nx">Đang là <b>${cur.name}</b>: chứa ${Math.round(G.cap * cur.cap)} ${G.unit}${cur.daily ? ` · tiền nhà ${Math.round(G.rent * cur.daily)} đồng/ngày` : ''}</p>`;
   if (!nx) { $('#c4upB').innerHTML = `<h4>Cơ ngơi</h4>${now}<p>Nhà của mình, không phải trả tiền thuê. Khách quen tìm đến tận nơi.</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
-  const L = c4Landlord(g), cost = Math.round(G.rent * nx.up * (nx.house ? L.k : 1));
+  if (!c4UpAllowed(nx)) { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="hint">Mua nhà sẽ có sau.</p>` + c4TablesBlock(g); c4TablesWire(g); $('#c4upGo').hidden = true; return; }
+  const L = c4Landlord(g), base = Math.round(G.rent * nx.up * (nx.house ? L.k : 1)), cost = c4UpPrice(nx, base);
   if (nx.house && !L.known) { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="bad">Muốn ${nx.house === 'own' ? 'mua' : 'thuê'} nhà mặt chợ: không biết chủ căn nhà là ai mà hỏi. Quen thêm người trong làng thì sẽ biết; càng thân giá càng rẻ.</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
   $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="nx">Lên <b>${nx.name}</b>: chứa ${Math.round(G.cap * nx.cap)} ${G.unit} · bán nhanh hơn · khách ghé đông hơn${nx.daily ? ` · <b>tiền nhà ${Math.round(G.rent * nx.daily)} đồng mỗi tối</b> (hai tối không trả là bị đuổi về quầy)` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`;
   $('#c4upB').insertAdjacentHTML('beforeend', c4TablesBlock(g)); c4TablesWire(g);
   const b = $('#c4upGo'); b.hidden = false; b.disabled = SAVE4.money < cost; b.innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(cost)}`;
+  if (nx.house === 'own') $('#c4upB').insertAdjacentHTML('beforeend', c4HouseNote(base));
   b.onclick = () => { if (SAVE4.money < cost) return; SAVE4.money -= cost; C4.today.spent += cost; SAVE4.shops[g].lv = i + 1; SAVE4.shops[g].late = 0; if (nx.house) SAVE4.shops[g].rentK = L.k; AU.stamp(); AU.pluck(88); persist4(); c4Hud(); c4Sheets(null);
     toast(nx.house === 'own' ? `Đã mua đứt căn nhà bán ${G.name.toLowerCase()}! Từ nay là cơ ngơi của mình.` : `Hàng ${G.name.toLowerCase()} lên ${nx.name.toLowerCase()}.`, 3.4); };
 }
@@ -40,6 +51,12 @@ function c4PayRents(d, lines) {
   for (const g of C4_SHOPS) { const s = SAVE4.shops[g]; if (!s || !s.own || !c4SLv(g).daily) continue;
     pay(C4_GOODS[g].name.toLowerCase(), Math.round(C4_GOODS[g].rent * c4SLv(g).daily * (s.rentK || 1)), s.late || 0, v => { if (v === 'out') { s.lv = 2; s.late = 0; } else s.late = v; }); }
 }
+// the rented houses (owner): a landlord may ask for 10 % more on the rent now and then, at least a week after the last ask
+const c4RentPlots = () => [...C4_SHOPS.filter(g => SAVE4.shops[g] && SAVE4.shops[g].own && c4SLv(g).daily), ...(c4Lv().daily ? ['trau'] : [])];
+const c4RentOf = g => g === 'trau' ? Math.round(c4Lv().daily * (SAVE4.rentKTrau || 1)) : Math.round(C4_GOODS[g].rent * c4SLv(g).daily * (SAVE4.shops[g].rentK || 1));
+const c4AskDay = g => g === 'trau' ? SAVE4.askTrau : SAVE4.shops[g].askDay;
+const c4SetAsk = g => { if (g === 'trau') SAVE4.askTrau = SAVE4.day; else SAVE4.shops[g].askDay = SAVE4.day; };
+const c4RaiseRent = g => { if (g === 'trau') SAVE4.rentKTrau = (SAVE4.rentKTrau || 1) * 1.1; else SAVE4.shops[g].rentK = (SAVE4.shops[g].rentK || 1) * 1.1; };
 // drawn behind a stall: an awning for a sạp, a counter for a quầy, a house for the house levels
 const C4_SHOP_HOUSE = { trau: 3, che: 1, xoi: 5, xen: 4, bun: 2 };   // each stall's house its own kind
 function c4DrawShopLv(g, x, y, s, lv, ware = 'che') {
@@ -116,6 +133,7 @@ function c4ShipOrders() {
     if (SAVE4.money < cost) { o.fail = true; lines.push(`Không đủ ${c4Money(cost)} lấy hàng giao cho ${o.vil} (trong túi có ${c4Money(SAVE4.money)}): mất cọc, ${o.vil} chê nhà mình thất hứa.`); SAVE4.wsBad = (SAVE4.wsBad || 0) + 1; continue; }
     const S = c4Slot(o), D = { o, go: S.a + R() * (S.b - S.a), out: false };   // goods bought at the open; he sets off at some moment in the slot
     SAVE4.money -= cost; C4.today.spent += cost;
+    c4LogAdd({ src: 'si', g: o.g, q: o.n, cost, who: o.vil });
     if (C4.deliv) C4.delivQ.push(D); else C4.deliv = D;                     // (a player: two orders the same day, the second was dropped) — one after the other
   }
   SAVE4.ws = (SAVE4.ws || []).filter(o => o.day > SAVE4.day);
@@ -154,14 +172,25 @@ const C4_TASKS = [
   { k: 'visit', make: () => ({ n: 1, text: 'Tiếp chuyện một người ghé gánh (có dấu !)', prize: 6 }), done: (t, d) => (d.visit || 0) >= 1, from: () => (C4.events || []).some(e => C4_VISIT.has(e.kind)) },
   { k: 'met', make: () => ({ n: 1, text: 'Quen thêm một khách mới', prize: 10 }), done: (t, d) => (d.met || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY },
   { k: 'tea', make: () => ({ n: 2, text: 'Mời nước hai người quen', prize: 8 }), done: (t, d) => (d.tea || 0) >= 2, from: () => SAVE4.day >= C4_BOOK_DAY },
-  { k: 'ask', make: () => ({ n: 1, text: 'Hỏi chuyện nhà một người', prize: 8 }), done: (t, d) => (d.ask || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY },
   { k: 'ws', make: () => ({ n: 1, text: 'Giao một đơn hàng sỉ', prize: 15 }), done: (t, d) => (d.ws || 0) >= 1, from: () => (SAVE4.ws || []).some(o => o.day === SAVE4.day) },
   { k: 'ruot', make: () => ({ n: 1, text: 'Mời một mối ruột ghé quán', prize: 10 }), done: (t, d) => (d.invRuot || 0) >= 1, from: () => c4People().list.some(p => c4Ruot(p.id)) },
 ];
 function c4Tasks() {
   if (SAVE4.taskDay !== SAVE4.day) {
-    SAVE4.taskDay = SAVE4.day; const pool = C4_TASKS.filter(t => !t.from || t.from()), pick = [], want = c4Pick([0, 1, 1, 2, 2, 3]);
-    while (pick.length < want && pool.length) pick.push(pool.splice((R() * pool.length) | 0, 1)[0]);
+    SAVE4.taskDay = SAVE4.day;
+    // one or two tasks a day (owner), coming in gradually: each kind opens on its own day (t.d), none repeats within three days,
+    // and kinds not yet seen come up more often, so the days do not feel alike
+    const seen = SAVE4.taskSeen || (SAVE4.taskSeen = {});
+    if (SAVE4.taskHistDay === SAVE4.day && (SAVE4.taskHist || []).length) for (const k of SAVE4.taskHist.pop()) seen[k] = Math.max(0, (seen[k] || 1) - 1);
+    const recent = new Set((SAVE4.taskHist || []).slice(-3).flat());
+    let pool = C4_TASKS.filter(t => (t.d || 1) <= SAVE4.day && (!t.from || t.from()));
+    const fresh = pool.filter(t => !recent.has(t.k)); if (fresh.length) pool = fresh;
+    const pick = [], want = SAVE4.day < 5 ? 1 : c4Pick([1, 1, 2]);
+    while (pick.length < want && pool.length) {
+      const w = pool.map(t => (seen[t.k] ? 1 : 4)), tot = w.reduce((a, b) => a + b, 0); let r = R() * tot, i = 0; while (i < w.length - 1 && (r -= w[i]) > 0) i++;
+      pick.push(pool.splice(i, 1)[0]);
+    }
+    SAVE4.taskHist = [...(SAVE4.taskHist || []), pick.map(t => t.k)].slice(-6); SAVE4.taskHistDay = SAVE4.day; for (const t of pick) seen[t.k] = (seen[t.k] || 0) + 1;
     SAVE4.tasks = pick.map(t => ({ k: t.k, ...t.make(), done: false, paid: false }));
   }
   const d = C4.today || {};
@@ -176,6 +205,7 @@ function c4TasksEnd(d, lines) {
   for (const t of T) { const X = C4_TASKS.find(x => x.k === t.k); if (!X) continue; if (!t.done && X.done(t, d)) t.done = true; if (t.done && !t.paid) { t.paid = true; got += t.prize; } }
   if (got) { SAVE4.money += got; d.got += got; }
   const all = T.every(t => t.done);
+  SAVE4.taskLog = [...(SAVE4.taskLog || []), { day: SAVE4.day, n: T.length, ok: T.filter(t => t.done).length, got }].slice(-12);   // the book's Việc tab shows the last days
   SAVE4.streak = all ? (SAVE4.streak || 0) + 1 : 0;
   let bonus = '';
   if (all && SAVE4.streak === 3) { SAVE4.money += 30; d.got += 30; bonus = ' Chuỗi 3 ngày: thưởng 30 đồng!'; }
@@ -187,6 +217,149 @@ function c4TasksEnd(d, lines) {
 /* ---------- đợt 4: happenings that last and come back ---------- */
 // each returns false when it does not fit today; E gets title, text, opts like the others in c4Event
 const c4KnownList = (min = 0) => c4People().list.filter(p => c4Known(p.id) && SAVE4.folk[p.id].a >= min);
+// the book's Đơn hàng tab (owner): today's orders — the morning order, fetches in the middle of the day, goods bought from a
+// passer-by, the wholesale orders due — and the customers who have booked for later today
+const C4_RICH = 6000;                                                       // 10 quan (600 đồng a quan): rich enough to be robbed and sued (owner)
+function c4OrdersTab() {
+  const L = SAVE4.log && SAVE4.log.day === SAVE4.day ? SAVE4.log.items : [];
+  const row = i => `${C4_GOODS[i.g].name} · ${i.q} ${C4_GOODS[i.g].unit} · ${c4Money(i.cost)}${i.who ? ' · giao từ ' + i.who : ''}`;
+  const sec = (title, items) => items.length ? `<h4>${title}</h4>` + items.map(i => `<p>• ${row(i)}</p>`).join('') : '';
+  let h = sec('Đặt buổi sáng', L.filter(i => i.src === 'sang')) + sec('Lấy thêm giữa ngày', L.filter(i => i.src === 'giua'))
+    + sec('Mua vặt', L.filter(i => i.src === 'vat')) + sec('Đơn sỉ từ làng', L.filter(i => i.src === 'si'));
+  if (C4.wed) h += `<h4>Đám cưới</h4><p>• Nhà trai hẹn lấy ${C4.wed.n} miếng trầu lúc giờ Thân.</p>`;
+  const spent = L.reduce((a, i) => a + i.cost, 0);
+  if (!h) return '<p>Hôm nay chưa đặt đơn nào. Đặt hàng buổi sáng ở tờ Họp chợ trước khi mở cửa.</p>';
+  return h + `<p class="cnt">Đã chi ${c4Money(spent)} tiền hàng hôm nay</p>`;
+}
+// the private house (owner): once a market house of the last kind is bought, at the day's end the tally offers to buy a
+// private house (nhà riêng) as well. Its living room starts empty, with a button to shop; the things get dearer down the list
+// the house features (buying a house, the private house, decorating it) are on hold: set to true to bring them back
+const C4_HOUSE_ON = false;
+const c4UpAllowed = nx => !(nx && nx.house === 'own' && !C4_HOUSE_ON);
+const C4_HOME_BASE = 20000;
+const C4_SHOP_ITEMS = [['banghe', 'Bàn ghế gỗ', 300], ['amchen', 'Bộ ấm chén', 500], ['tranhcuoi', 'Tranh cưới', 800], ['denlong', 'Đèn lồng', 1200],
+  ['caudoi', 'Câu đối', 1500], ['giuongcuoi', 'Giường cưới', 2500], ['mamtrau', 'Mâm trầu đặc biệt', 3500], ['tuong', 'Tương', 4000],
+  ['dongdo', 'Đồ đồng', 6000], ['dococ', 'Đồ cổ', 9000], ['vangbac', 'Vàng bạc', 15000], ['tolua', 'Tơ lụa', 25000], ['ngoc', 'Ngọc quý', 50000]];
+const c4HasLastHouse = () => C4_HOUSE_ON && ((C4_LV[SAVE4.lv] && C4_LV[SAVE4.lv].house === 'own') || c4Owned().some(g => g !== 'trau' && c4SLv(g).house === 'own'));
+const c4HasHome = () => !!(SAVE4.home && SAVE4.home.own);
+const c4HomePrice = () => c4HousePrice(C4_HOME_BASE);
+// at the tally: the offer, once the last house is there and no private house yet
+function c4HomeOffer() {
+  const box = $('#c4homeN'); if (!box) return; box.innerHTML = '';
+  if (c4HasHome() || !c4HasLastHouse()) return;
+  const p = c4HomePrice(), b = document.createElement('button'); b.className = 'btn go'; b.textContent = `Mua nhà riêng · ${c4Money(p)}`;
+  b.disabled = SAVE4.money < p;
+  b.addEventListener('click', () => { if (SAVE4.money < c4HomePrice()) return; const q = c4HomePrice(); SAVE4.money -= q; C4.today.spent += q; SAVE4.home = { own: true, items: [] }; AU.stamp(); AU.pluck(88); persist4(); c4Hud(); b.remove(); box.innerHTML = '<p class="hint">Đã mua nhà riêng. Vào phòng khách bằng nút Nhà riêng trên thanh trên.</p>'; toast('Đã có nhà riêng của mình!', 3.2); });
+  box.innerHTML = c4HouseNote(C4_HOME_BASE); box.appendChild(b);
+}
+// the living room: the things and where they stand
+const C4_ART_INK = '#1d1915';
+const C4_ITEM_ART = {
+  banghe: `<rect x="6" y="30" width="48" height="7" fill="#8a5a2b" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="12" y="37" width="5" height="18" fill="#5b2f1f"/><rect x="43" y="37" width="5" height="18" fill="#5b2f1f"/><rect x="3" y="50" width="12" height="5" fill="#8a5a2b" stroke="${C4_ART_INK}" stroke-width="1.5"/><rect x="45" y="50" width="12" height="5" fill="#8a5a2b" stroke="${C4_ART_INK}" stroke-width="1.5"/>`,
+  amchen: `<rect x="6" y="40" width="48" height="6" fill="#b57a22" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M12 40 Q17 30 22 40 Z" fill="#f2ecde" stroke="${C4_ART_INK}" stroke-width="1.5"/><path d="M24 40 Q29 30 34 40 Z" fill="#f2ecde" stroke="${C4_ART_INK}" stroke-width="1.5"/><ellipse cx="46" cy="32" rx="8" ry="6" fill="#2f5f8f" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="42" y="25" width="8" height="2" fill="${C4_ART_INK}"/><path d="M53 31 Q58 26 58 20" stroke="${C4_ART_INK}" stroke-width="2" fill="none"/>`,
+  tranhcuoi: `<rect x="12" y="4" width="36" height="52" fill="#f2ecde" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="8" y="2" width="44" height="5" fill="#a3332a"/><rect x="8" y="53" width="44" height="5" fill="#a3332a"/><text x="30" y="38" font-family="Ma Shan Zheng, KaiTi, serif" font-size="24" text-anchor="middle" fill="#a3332a">囍</text>`,
+  denlong: `<line x1="30" y1="0" x2="30" y2="8" stroke="${C4_ART_INK}" stroke-width="1.5"/><path d="M14 10 Q30 6 46 10 Q52 30 46 46 Q30 52 14 46 Q8 30 14 10 Z" fill="#c8392d" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M22 12 Q18 30 22 46 M30 10 Q30 30 30 50 M38 12 Q42 30 38 46" stroke="${C4_ART_INK}" stroke-width="1" fill="none"/><rect x="22" y="50" width="16" height="4" fill="#f2c640" stroke="${C4_ART_INK}" stroke-width="1"/><line x1="30" y1="54" x2="30" y2="60" stroke="#f2c640" stroke-width="2"/>`,
+  caudoi: `<rect x="8" y="4" width="18" height="52" fill="#a3332a" stroke="${C4_ART_INK}" stroke-width="1.5"/><rect x="34" y="4" width="18" height="52" fill="#a3332a" stroke="${C4_ART_INK}" stroke-width="1.5"/><line x1="17" y1="10" x2="17" y2="50" stroke="#f2c640" stroke-width="2"/><line x1="43" y1="10" x2="43" y2="50" stroke="#f2c640" stroke-width="2"/><circle cx="17" cy="16" r="2" fill="#f2ecde"/><circle cx="43" cy="16" r="2" fill="#f2ecde"/>`,
+  giuongcuoi: `<rect x="4" y="18" width="52" height="22" fill="#5b2f1f" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="6" y="36" width="48" height="8" fill="#f2ecde" stroke="${C4_ART_INK}" stroke-width="1.5"/><rect x="8" y="44" width="5" height="12" fill="#5b2f1f"/><rect x="47" y="44" width="5" height="12" fill="#5b2f1f"/><path d="M4 18 Q30 2 56 18" fill="none" stroke="#a3332a" stroke-width="5"/><line x1="12" y1="12" x2="12" y2="18" stroke="#a3332a" stroke-width="2"/><line x1="48" y1="12" x2="48" y2="18" stroke="#a3332a" stroke-width="2"/>`,
+  mamtrau: `<ellipse cx="30" cy="40" rx="26" ry="10" fill="#b57a22" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M14 38 Q20 26 26 36 Q20 42 14 38Z" fill="#2f6a4c" stroke="${C4_ART_INK}" stroke-width="1"/><path d="M30 36 Q36 24 42 34 Q36 40 30 36Z" fill="#2f6a4c" stroke="${C4_ART_INK}" stroke-width="1"/><circle cx="22" cy="44" r="3" fill="#8a5a2b" stroke="${C4_ART_INK}" stroke-width="1"/><circle cx="38" cy="45" r="3" fill="#8a5a2b" stroke="${C4_ART_INK}" stroke-width="1"/><rect x="44" y="30" width="8" height="8" fill="#a3332a" stroke="${C4_ART_INK}" stroke-width="1"/>`,
+  tuong: `<rect x="18" y="6" width="24" height="6" fill="#5b2f1f" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="20" y="12" width="20" height="8" fill="#a0703a" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M18 20 Q10 36 16 56 L44 56 Q50 36 42 20 Z" fill="#a0703a" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="20" y="32" width="20" height="10" fill="#f2ecde" stroke="${C4_ART_INK}" stroke-width="1"/><path d="M24 36 H36" stroke="#a3332a" stroke-width="2"/>`,
+  dongdo: `<ellipse cx="30" cy="30" rx="22" ry="7" fill="#c69a3a" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M8 30 L8 44 Q30 54 52 44 L52 30 Z" fill="#b8862b" stroke="${C4_ART_INK}" stroke-width="2"/><circle cx="8" cy="36" r="3" fill="none" stroke="${C4_ART_INK}" stroke-width="2"/><circle cx="52" cy="36" r="3" fill="none" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M16 40 Q30 46 44 40" stroke="${C4_ART_INK}" stroke-width="1" fill="none"/>`,
+  dococ: `<path d="M22 10 L38 10 L38 16 Q48 22 46 36 Q44 54 30 56 Q16 54 14 36 Q12 22 22 16 Z" fill="#2f5f8f" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M14 30 Q30 36 46 30" stroke="#f2ecde" stroke-width="3" fill="none"/><path d="M20 44 l4 -4 l3 3 M36 40 l-3 4" stroke="#f2ecde" stroke-width="1.5" fill="none"/>`,
+  vangbac: `<rect x="6" y="34" width="48" height="20" fill="#5b2f1f" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M6 34 Q30 18 54 34 Z" fill="#7a4a2a" stroke="${C4_ART_INK}" stroke-width="2"/><ellipse cx="18" cy="24" rx="6" ry="3" fill="#f2c640" stroke="${C4_ART_INK}" stroke-width="1.2"/><ellipse cx="30" cy="20" rx="6" ry="3" fill="#f2c640" stroke="${C4_ART_INK}" stroke-width="1.2"/><ellipse cx="42" cy="24" rx="5" ry="2.5" fill="#d8d8d8" stroke="${C4_ART_INK}" stroke-width="1.2"/><rect x="27" y="40" width="6" height="6" fill="#f2c640" stroke="${C4_ART_INK}" stroke-width="1"/>`,
+  tolua: `<rect x="8" y="40" width="44" height="10" fill="#c0567a" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="10" y="28" width="40" height="10" fill="#3f8a86" stroke="${C4_ART_INK}" stroke-width="2"/><rect x="12" y="16" width="36" height="10" fill="#f2c640" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M44 50 Q54 54 50 60" stroke="#c0567a" stroke-width="4" fill="none"/>`,
+  ngoc: `<rect x="10" y="48" width="40" height="8" fill="#a3332a" stroke="${C4_ART_INK}" stroke-width="1.5"/><polygon points="30,8 44,24 36,48 24,48 16,24" fill="#4f9a6a" stroke="${C4_ART_INK}" stroke-width="2"/><path d="M16 24 H44 M30 8 L24 48 M30 8 L36 48" stroke="#2f5a3e" stroke-width="1" fill="none"/><path d="M50 4 L50 12 M46 8 L54 8" stroke="#fff6d2" stroke-width="1.5"/>`,
+};
+// where each thing stands in the room (top-left corner, in the room's 360 × 260 picture)
+const C4_ROOM_SLOT = { denlong: [206, 22], tranhcuoi: [300, 70], caudoi: [112, 92], dococ: [306, 134], tolua: [124, 150], giuongcuoi: [60, 176],
+  banghe: [196, 196], amchen: [206, 196], mamtrau: [344, 220], tuong: [60, 236], dongdo: [384, 170], vangbac: [404, 236], ngoc: [222, 96] };
+const c4ItemSvg = (id, px = 60) => `<svg viewBox="0 0 60 60" width="${px}" height="${px}" aria-hidden="true">${C4_ITEM_ART[id] || ''}</svg>`;
+// the living room, in one-point perspective like an old house's hall: terracotta floor tiles running to the vanishing point,
+// carved wooden pillars, an ancestor altar on the back wall, a lattice window with sunbeams, and the things bought in place
+function c4RoomSvg(items) {
+  const K = C4_ART_INK, VX = 240, VY = 128;
+  const toVP = (bx) => VX + (bx - VX) * (200 - VY) / (300 - VY);          // a floor line from the bottom edge to the back wall
+  const floorX = [-260, -120, 0, 120, 240, 360, 480, 600, 740];
+  const tileLines = floorX.map(bx => `<line x1="${toVP(bx).toFixed(1)}" y1="200" x2="${bx}" y2="300" stroke="#6e3418" stroke-width="1" opacity=".55"/>`).join('');
+  const rows = [212, 226, 243, 265, 292].map(y => `<line x1="0" y1="${y}" x2="480" y2="${y}" stroke="#6e3418" stroke-width="${(y - 200) / 60 + .6}" opacity=".5"/>`).join('');
+  const defs = `<defs>
+    <linearGradient id="rmBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ead8a8"/><stop offset="1" stop-color="#c9ae72"/></linearGradient>
+    <linearGradient id="rmLeftW" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9c08a"/><stop offset="1" stop-color="#b59561"/></linearGradient>
+    <linearGradient id="rmRightW" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#d9c08a"/><stop offset="1" stop-color="#b59561"/></linearGradient>
+    <linearGradient id="rmCeil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2416"/><stop offset="1" stop-color="#6b4226"/></linearGradient>
+    <linearGradient id="rmTerra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b56a3e"/><stop offset="1" stop-color="#d6895a"/></linearGradient>
+    <linearGradient id="rmWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a5530"/><stop offset=".35" stop-color="#6b3d22"/><stop offset=".7" stop-color="#4a2814"/><stop offset="1" stop-color="#2e180b"/></linearGradient>
+    <linearGradient id="rmShaft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8" stop-opacity=".5"/><stop offset="1" stop-color="#fff1b8" stop-opacity="0"/></linearGradient>
+    <radialGradient id="rmSun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6cf" stop-opacity=".8"/><stop offset="1" stop-color="#fff6cf" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rmSilk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e2a22"/><stop offset=".5" stop-color="#c8392d"/><stop offset="1" stop-color="#8e2a22"/></linearGradient>
+    <linearGradient id="rmGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7d76b"/><stop offset="1" stop-color="#b9842f"/></linearGradient>
+    <pattern id="rmLat" width="10" height="10" patternUnits="userSpaceOnUse"><rect x=".5" y=".5" width="9" height="9" fill="none" stroke="#3a2214" stroke-width="1"/><path d="M0 5 H10 M5 0 V10" stroke="#3a2214" stroke-width=".4" opacity=".6"/></pattern>
+    <pattern id="rmBamb" width="22" height="12" patternUnits="userSpaceOnUse"><path d="M4 0 V12 M16 0 V12" stroke="#2f5a3e" stroke-width="2"/><path d="M4 4 H16 M16 8 H4" stroke="#2f5a3e" stroke-width="1"/></pattern>
+  </defs>`;
+  const ceiling = `<polygon points="0,0 480,0 360,60 120,60" fill="url(#rmCeil)"/>`
+    + [60, 150, 240, 330, 420].map(x => `<line x1="${x}" y1="0" x2="${240 + (x - 240) * .3}" y2="60" stroke="#2a180b" stroke-width="2" opacity=".7"/>`).join('')
+    + `<rect x="0" y="0" width="480" height="14" fill="#3e2514"/>`;
+  const back = `<rect x="120" y="60" width="240" height="140" fill="url(#rmBack)"/>`
+    + `<rect x="120" y="60" width="240" height="6" fill="#2e180b" opacity=".6"/>`;
+  const leftW = `<polygon points="0,0 120,60 120,200 0,300" fill="url(#rmLeftW)"/>`;
+  const rightW = `<polygon points="480,0 360,60 360,200 480,300" fill="url(#rmRightW)"/>`;
+  const floor = `<polygon points="0,300 120,200 360,200 480,300" fill="url(#rmTerra)"/>` + rows + tileLines;
+  const beam = `<polygon points="120,60 360,60 360,68 120,68" fill="#4a2814" stroke="#2a180b" stroke-width="1"/>`;
+  const wallLines = `<line x1="120" y1="200" x2="0" y2="300" stroke="#6b4a2a" stroke-width="2"/><line x1="360" y1="200" x2="480" y2="300" stroke="#6b4a2a" stroke-width="2"/>`;
+  // the carved pillars: the near ones at the sides, and the two at the back corners
+  const pillar = (x0, x1, top, bot) => `<rect x="${x0}" y="${top}" width="${x1 - x0}" height="${bot - top}" fill="url(#rmWood)" stroke="#2a180b" stroke-width="1.5"/>`
+    + `<line x1="${x0 + (x1 - x0) * .35}" y1="${top}" x2="${x0 + (x1 - x0) * .35}" y2="${bot}" stroke="#2a180b" stroke-width=".8" opacity=".6"/>`;
+  const pillars = pillar(14, 46, 0, 300) + pillar(118, 134, 60, 200) + pillar(346, 362, 60, 200) + pillar(434, 466, 0, 300);
+  // the ancestor altar: a panel of red and gold, the scrolls, candles and the incense burner
+  const altarPanel = `<rect x="204" y="68" width="72" height="66" fill="#7a1f1a" stroke="url(#rmGold)" stroke-width="2"/><text x="240" y="108" font-family="Ma Shan Zheng, KaiTi, serif" font-size="30" text-anchor="middle" fill="url(#rmGold)">囍</text>`;
+  const scroll = (x) => `<rect x="${x}" y="78" width="36" height="72" fill="#efe2b8" stroke="#6b4a2a" stroke-width="1.5"/><rect x="${x + 6}" y="86" width="24" height="56" fill="none" stroke="#2f6a4c" stroke-width="1.2"/><path d="M${x + 10} 100 Q${x + 18} 92 ${x + 26} 102 M${x + 12} 120 Q${x + 20} 112 ${x + 28} 124" stroke="#2f6a4c" stroke-width="1.5" fill="none"/>`;
+  const altar = `<rect x="186" y="150" width="108" height="50" fill="url(#rmWood)" stroke="#2a180b" stroke-width="2"/><rect x="186" y="150" width="108" height="6" fill="#8a5530" stroke="#2a180b" stroke-width="1"/>`
+    + `<rect x="194" y="160" width="92" height="36" fill="none" stroke="#2a180b" stroke-width="1"/><path d="M240 160 V196 M220 160 V196 M260 160 V196" stroke="#2a180b" stroke-width="1"/>`
+    + `<circle cx="206" cy="180" r="2" fill="url(#rmGold)"/><circle cx="274" cy="180" r="2" fill="url(#rmGold)"/>`
+    + `<rect x="222" y="134" width="36" height="16" fill="#3a2214" stroke="url(#rmGold)" stroke-width="1"/>`
+    + `<ellipse cx="240" cy="146" rx="18" ry="5" fill="#2a1a10" stroke="url(#rmGold)" stroke-width="1"/>`
+    + [200, 280].map(x => `<rect x="${x - 3}" y="120" width="6" height="30" fill="url(#rmGold)" stroke="#6b4a2a" stroke-width=".8"/><ellipse cx="${x}" cy="118" rx="4" ry="6" fill="#f6dc86"/>`).join('')
+    + `<path d="M236 134 V110 M244 134 V106" stroke="#c94b3a" stroke-width="2"/><circle cx="236" cy="108" r="2" fill="#f2c640"/>`;
+  const panels = altarPanel + scroll(140) + scroll(304);
+  // a window on the left wall (lattice), with the sun coming through
+  const win = `<polygon points="40,94 80,98 80,156 40,168" fill="#fff4cc" stroke="#2a180b" stroke-width="2"/><polygon points="40,94 80,98 80,156 40,168" fill="url(#rmLat)" opacity=".9"/>`;
+  const shaft = `<polygon points="40,168 80,156 230,300 60,300" fill="url(#rmShaft)"/><ellipse cx="60" cy="176" rx="40" ry="10" fill="url(#rmSun)"/>`;
+  // a window and a bamboo blind on the right wall
+  const blind = `<polygon points="402,96 470,116 470,206 402,186" fill="#c9a86a" stroke="#6b4a2a" stroke-width="1.5"/>` + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => `<line x1="402" y1="${96 + i * 11.5}" x2="470" y2="${116 + i * 11.5}" stroke="#8a6a3a" stroke-width="1" opacity=".7"/>`).join('');
+  // the low table is the banghe item; floor decor: a jar, a basket of betel leaves, a bamboo plant
+  const decor = `<ellipse cx="34" cy="262" rx="16" ry="6" fill="#000" opacity=".2"/><path d="M22 236 Q18 262 30 264 Q44 262 40 236 Z" fill="#8a4a2a" stroke="${K}" stroke-width="1.5"/><rect x="24" y="230" width="20" height="8" fill="#6b3418" stroke="${K}" stroke-width="1"/>`
+    + `<ellipse cx="420" cy="278" rx="50" ry="12" fill="#6b4a2a" opacity=".7"/><path d="M372 270 Q420 300 468 270 L462 290 Q420 306 378 290 Z" fill="#b8925a" stroke="${K}" stroke-width="1.5"/>`
+    + [0, 1, 2, 3, 4].map(i => `<ellipse cx="${386 + i * 16}" cy="${266 + (i % 2) * 6}" rx="16" ry="5" fill="#2f6a4c" stroke="${K}" stroke-width=".8" transform="rotate(${i * 18 - 30} ${386 + i * 16} ${266 + (i % 2) * 6})"/>`).join('');
+  const frame = `<rect x="1" y="1" width="478" height="298" fill="none" stroke="${K}" stroke-width="2"/>`;
+  const vignette = `<radialGradient id="rmVig" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient><rect width="480" height="300" fill="url(#rmVig)"/>`;
+  const things = items.filter(id => C4_ROOM_SLOT[id]).map(id => { const [x, y] = C4_ROOM_SLOT[id];
+    return `<ellipse cx="${x + 30}" cy="${y + 56}" rx="24" ry="4" fill="#000" opacity=".25"/><g transform="translate(${x} ${y})">${C4_ITEM_ART[id]}</g>`; }).join('');
+  return `<svg viewBox="0 0 480 300" width="100%" style="max-width:480px;display:block;margin:4px auto" role="img" aria-label="Phòng khách nhà riêng">${defs}${ceiling}${back}${leftW}${rightW}${wallLines}${floor}${beam}${pillars}${panels}${altar}${win}${blind}${shaft}${decor}${things}${vignette}${frame}</svg>`;
+}
+// the living room sheet: the picture of the room, and what is in it
+function c4HomeHtml() {
+  const items = (SAVE4.home && SAVE4.home.items) || [];
+  return `<h3>Phòng khách nhà riêng</h3>${c4RoomSvg(items)}${items.length ? '' : '<p>Chưa có gì. Bấm Sắm đồ để mua.</p>'}`;
+}
+// the shop list, dearer as you scroll down (owner): a picture and the price for each
+function c4ShopHtml() {
+  const items = (SAVE4.home && SAVE4.home.items) || [];
+  return '<h3>Sắm đồ</h3><div style="max-height:52vh;overflow:auto;padding-right:4px">' + C4_SHOP_ITEMS.map(([id, name, price]) => {
+    const has = items.includes(id);
+    return `<div class="shopRow" style="display:flex;align-items:center;gap:10px;margin:6px 0"><span style="flex:none">${c4ItemSvg(id, 56)}</span><span style="flex:1;text-align:left">${name}<br><b>${c4Money(price)}</b></span><button class="btn${has ? ' alt' : ''}" data-buy="${id}" ${has || SAVE4.money < price ? 'disabled' : ''}>${has ? 'Đã có' : 'Mua'}</button></div>`;
+  }).join('') + '</div>';
+}
+function c4BuyItem(id) {
+  const it = C4_SHOP_ITEMS.find(x => x[0] === id); if (!it || !c4HasHome() || SAVE4.money < it[2]) return;
+  if (SAVE4.home.items.includes(id)) return;
+  SAVE4.money -= it[2]; C4.today.spent += it[2]; SAVE4.home.items.push(id); AU.pluck(84); persist4(); c4Hud();
+  toast(`Đã mua ${it[1].toLowerCase()} về phòng khách.`, 2.6);
+}
+// the money a misfortune takes (owner): a share of the purse as it is now times the number of stalls, drawn between a low and a high share; at least 20 đồng for each stall, never more than the purse
+// and it grows with the stalls the family has (owner: bribing soldiers with four stalls costs four times as much)
+const c4Stalls = () => Math.max(1, c4Owned().length);
+const c4LossRange = (lo, hi, min = 20) => { const m = Math.max(0, SAVE4.money), k = c4Stalls(); return [Math.min(m, Math.max(min * k, Math.round(m * lo * k))), Math.min(m, Math.max(min * k, Math.round(m * hi * k)))]; };
+const c4Loss = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return Math.min(SAVE4.money, a + Math.round(R() * (b - a))); };
+const c4LossText = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return a === b ? c4Money(a) : `từ ${c4Money(a)} đến ${c4Money(b)}`; };
 const C4_EXTRA_EV = {
   // two households fall out; taking a side wins one and loses the other (and their kin); making peace costs a feast
   caicau(E) {
@@ -227,8 +400,9 @@ const C4_EXTRA_EV = {
   // a flood coming: shore up the stalls now, or lose goods and a level tomorrow
   lut(E) {
     if (c4Wx() !== 'mua' || SAVE4.flood) return false;
-    Object.assign(E, { title: 'Nước sông lên', text: 'Mưa mãi không ngớt, nước sông dâng gần tới chợ. Các nhà rủ nhau đắp bờ, kê hàng lên cao.', opts: [
-      ['Đắp bờ, kê hàng · 30 đồng', () => { SAVE4.money -= 30; C4.today.spent += 30; toast('Hàng quán nhà mình cao ráo, yên tâm.', 3); }, SAVE4.money >= 30],
+    const fix = c4Loss(.02, .05);
+    Object.assign(E, { title: 'Nước sông lên', text: `Mưa mãi không ngớt, nước sông dâng gần tới chợ. Các nhà rủ nhau đắp bờ, kê hàng lên cao. Nếu không đắp, có thể thiệt ${c4LossText(.05, .12)}.`, opts: [
+      [`Đắp bờ, kê hàng · ${c4Money(fix)}`, () => { SAVE4.money -= fix; C4.today.spent += fix; toast('Hàng quán nhà mình cao ráo, yên tâm.', 3); }, SAVE4.money >= fix],
       ['Chắc không sao đâu', () => { SAVE4.flood = SAVE4.day + 1; toast('Mong là trời thương…', 2.6); }]] });
   },
   // a merchant from another village buys a big lot on the spot
@@ -264,6 +438,7 @@ function c4FloodMorning(back) {
   if (SAVE4.flood !== SAVE4.day) return; SAVE4.flood = 0;
   if (R() < .6) {
     const hit = C4_SHOPS.filter(g => c4Own(g)); let msg = 'Đêm qua nước tràn vào chợ!';
+    const wet = c4Loss(.05, .12); SAVE4.money -= wet; C4.today.spent += wet; msg += ` Mất ${c4Money(wet)} đồ đạc trôi.`;
     if (hit.length) { const g = c4Pick(hit), s = SAVE4.shops[g]; if ((s.lv || 0) > 0 && (s.lv || 0) < 4) { s.lv--; msg += ` Hàng ${C4_GOODS[g].name.toLowerCase()} hư hại, phải làm lại.`; } if (g === 'xen' && s.stock) { msg += ` Ướt mất ${Math.ceil(s.stock / 2)} món hàng xén.`; s.stock = Math.floor(s.stock / 2); } }
     back.push(msg);
   } else back.push('Nước sông rút, chợ thoát lụt trong gang tấc.');

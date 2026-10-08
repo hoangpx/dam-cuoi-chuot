@@ -145,10 +145,27 @@ const C4_NEWS = {
   cuoi: [[[0, 'Nhà {X} mai cưới con, cần nhiều trầu lắm.'], [1, 'Thế cô bán trầu cổng chợ lại đắt hàng!']],
         [[0, 'Mai có đám hỏi, phải mấy chục miếng trầu.'], [1, 'Nhà gái chắc đặt trầu cánh phượng.']]],
 };
+
+/* ---------- signs of rain tomorrow (owner): small talk about the sky, the air and the animals, never said outright.
+   Each sign is a short chat. On a day before rain they come now and then; with no rain coming, a false sign now and then. ---------- */
+const C4_OMENS = {
+  oi: [[[0, 'Hôm nay oi quá nhỉ, đứng gió, ngực tôi tức tức.'], [1, 'Ừ, nóng bức thế này khó thở thật.'], [0, 'Chẳng biết còn oi đến bao giờ.']]],
+  quang: [[[0, 'Trông kìa, cái quầng sáng quanh mặt trời to thế!'], [1, 'Lạ thật, từ sáng đến giờ vẫn thấy nó.']]],
+  rang: [[[0, 'Mây vảy rồng kìa, cả trời toàn mây cụm vàng cam.'], [1, 'Mây ráng mỡ gà thế này, ông bà bảo sắp có chuyện.']]],
+  hoang: [[[0, 'Hoàng hôn hôm nay lạ quá, đỏ rực cả trời.'], [1, 'Đỏ thế này chắc mai có chuyện gì đây.']]],
+  chuon: [[[0, 'Chuồn chuồn bay sát mặt đất kìa.'], [1, 'Bay thấp thế là sắp mưa đấy.']]],
+  kien: [[[0, 'Kiến tha trứng lên cao kìa, cả đàn chuyển tổ.'], [1, 'Kiến mà lên cao thì nước sắp dâng, cẩn thận đấy.']]],
+  chim: [[[0, 'Chim chóc hôm nay nhốn nháo, bay vào bụi tre hết cả.'], [1, 'Ít hót hẳn đi, lạ thật.']]],
+  // wedding signs: very small talk, easy to miss (owner)
+  do: [[[0, 'Vải đỏ bên hàng kia bán hết rồi, lạ thật.'], [1, 'Ừ, ai may áo đỏ thế nhỉ?']]],
+  cau: [[[0, 'Cau tươi hôm nay ai mua nhiều thế?'], [1, 'Chắc có nhà lo việc đấy.']]],
+  khac: [[[0, 'Đầu làng có tiếng kèn thổi thử, nghe văng vẳng thôi.'], [1, 'Ờ, hình như tập cho ai đó.']]],
+  nau: [[[0, 'Nhà bếp bên kia khói bốc suốt từ sáng.'], [1, 'Nấu nướng gì mà nhiều thế nhỉ.']]],
+};
 // what the wife writes in her notebook when she overhears it
 const C4_NOTE = {
-  hoi: 'Nghe nói mai làng mở hội, chợ sẽ đông.', mua: 'Nghe nói mai trời mưa to, chợ vắng.', meo: 'Nghe đồn mai mèo về chợ đòi lễ.',
-  thue: 'Mai cụ Lý đi thu tiền chợ.', cuoi: 'Mai có nhà cưới con, cần nhiều trầu.',
+  hoi: 'mai làng mở hội, chợ sẽ đông.', mua: 'mai trời mưa to, chợ vắng.', meo: 'mai mèo về chợ đòi lễ.',
+  thue: 'mai cụ Lý đi thu tiền chợ.', cuoi: 'mai có nhà cưới con, cần nhiều trầu.',
 };
 
 /* ---------- more chats: proverbs, village life, a little teasing ---------- */

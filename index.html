@@ -187,7 +187,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-16t';
+const VERSION = '2026-10-18av';
 const FONT_CHARS = '守生橋鑰戶石雲開鎖飛拉走弱和不有囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [
@@ -238,6 +238,7 @@ const GAME_FILES = [
   'js/ch4/bienco.js',
   'js/ch4/muagan.js',
   'js/ch4/canhpho.js',
+  'js/ch4/nhiemvu.js',
   'js/ch6/levels.js',
   'js/ch6/ruong.js',
   'js/ch6/game.js',
@@ -256,7 +257,7 @@ const loadBar = k => { const b = document.getElementById('loadBar'); if (b) b.st
 (async () => {
   // the game plays only at its own home (owner): a copy put up anywhere else shows where the real one is
   const h = location.hostname;
-  if (!['damcuoichuot.com', 'www.damcuoichuot.com', 'localhost', '127.0.0.1', ''].includes(h) && !/(^|\.)(claude\.ai|claudeusercontent\.com|claude\.site)$/.test(h) && ![...(location.ancestorOrigins || [])].some(o => /(^|\.)claude\.ai$/.test(new URL(o).hostname))) {   // the artifact preview runs inside claude.ai
+  if (!['damcuoichuot.com', 'www.damcuoichuot.com', 'localhost', '127.0.0.1', ''].includes(h) && !/^(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(h) && !/(^|\.)(claude\.ai|claudeusercontent\.com|claude\.site)$/.test(h) && ![...(location.ancestorOrigins || [])].some(o => /(^|\.)claude\.ai$/.test(new URL(o).hostname))) {   // the artifact preview runs inside claude.ai
     const ld = document.getElementById('loading');
     ld.innerHTML = '<div class="lc"><div class="seal">囍</div><b>Đám Cưới Chuột</b><span>Bản chính thức chỉ có tại <a href="https://damcuoichuot.com" style="color:#a3332a;font-weight:700">damcuoichuot.com</a></span></div>';
     return;

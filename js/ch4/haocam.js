@@ -71,8 +71,8 @@ function c4HaoPick() {
 C4_EXTRA_EV.hao = () => {
   const i = c4HaoPick(); if (i == null) return false;
   const [g, star, say, , dop] = C4_HAO[i], W = c4HaoWho();
-  (SAVE4.hao = SAVE4.hao || []).push({ day: SAVE4.day, name: W.name, g, star, say, who: g === 'trau' || /chồng em|em cười/i.test(dop) || R() < .6 ? 'v' : 'c', reply: dop });
-  SAVE4.hao = SAVE4.hao.slice(-40); C4.noteNew = true; persist4();
+  (SAVE4.hao = SAVE4.hao || []).push({ day: SAVE4.day, name: W.name, g, star, say, who: g === 'trau' || /chồng em|em cười/i.test(dop) || R() < .6 ? 'v' : 'c', reply: dop, pid: W.p ? W.p.id : null });
+  SAVE4.hao = SAVE4.hao.slice(-80); C4.noteNew = true; persist4();
   return false;                                                             // no sheet, the market goes on
 };
 // the book's Hảo cảm tab: the answered verdicts, newest first

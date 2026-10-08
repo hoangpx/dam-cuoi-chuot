@@ -274,7 +274,7 @@ function c4FlyItems(items, g, vis) {
 }
 // a river behind the houses: water, little waves, reeds, now and then a sampan poled along
 function c4River(g, cx, vw) {
-  const y0 = C4_Y0 - 104, y1 = C4_Y0 - 50, x0 = cx - 40, x1 = cx + vw + 40;
+  const y0 = C4_Y0 - 60, y1 = C4_Y0 - 18, x0 = cx - 40, x1 = cx + vw + 40;
   g.fillStyle = 'rgba(122,168,182,.85)'; g.fillRect(x0, y0, x1 - x0, y1 - y0);
   g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y0); g.stroke();
   g.strokeStyle = 'rgba(242,236,222,.8)'; g.lineWidth = 1.6; g.beginPath();
