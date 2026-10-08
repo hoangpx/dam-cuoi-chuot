@@ -247,3 +247,9 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 /* the stock line in the HUD: a long list wraps instead of running off the screen (a phone) */
 #c4hud #c4Stock{white-space:normal;max-width:360px;text-align:right;line-height:1.5}
 @media (max-width:520px){#c4hud .right{width:100%;align-items:center}#c4hud #c4Stock{max-width:100%;text-align:center;font-size:13px}}
+
+/* the book's Việc tab */
+.tk{margin:6px 0;text-align:left}.tk.ok{color:#2f6a4c}.tk.bad{color:#a3332a;text-decoration:line-through}
+
+/* a regular's verdict about the stall (their card) */
+.haoq{text-align:left;font-size:13px;line-height:1.45}.haoq i{color:#6a5a3a}

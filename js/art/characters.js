@@ -21,6 +21,7 @@ function buildMouse(o) {
   P.head = part([-34, -58, 70, 14], a => {
     const h = smooth([[-16, -6], [-17, -24], [-5, -34], [12, -31], [28, -21], [44, -13], [51, -7], [45, -2], [26, 2], [6, 6], [-8, 4]]);
     a.fill(o.head, h);
+    if (o.powder) { a.fill('white', circ(22, -16, 9)); a.fill('red', circ(26, -12, 3.6)); }   // a powdered face with red cheeks (owner)
     a.fk('lilac', circ(-8, -30, 12), 2.2); a.fill('red', circ(-8, -30, 6));
     a.key(h, 2.6);
     a.fk('yellow', circ(14, -18, 7.5), 2); a.ink(circ(15, -18, 3.4));

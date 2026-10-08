@@ -78,8 +78,6 @@ const C4_ACH = [
     ['lang', 'Cả làng', 'Quen hết cả làng', () => c4KnownN() >= c4People().list.length],
     ['than10', 'Chân trong', '10 người thân thiết với quán', () => c4CloseN() >= 10],
     ['nha5', 'Gia phả', 'Quen hết năm nhà', () => c4HouseDoneN() >= 5],
-    ['tham', 'Thám tử', 'Rõ một chuyện trong làng', () => Object.keys(SAVE4.stories || {}).length >= 1],
-    ['hetchuyen', 'Biết hết chuyện', 'Rõ mọi chuyện trong làng', () => Object.keys(SAVE4.stories || {}).length >= C4_STORIES.length],
   ]],
   ['buon', 'Buôn bán', [
     ['mo', 'Mở hàng', 'Bán được món hàng đầu tiên', () => (SAVE4.sold || 0) >= 1],

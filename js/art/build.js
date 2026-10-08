@@ -10,6 +10,7 @@ const MICE = {
   b: buildMouse({ robe: 'lilac', trim: 'red', head: 'dark' }),
   c: buildMouse({ robe: 'green', trim: 'yellow', head: 'brown' }),
   d: buildMouse({ robe: 'red', trim: 'lilac', head: 'dark', dots: true }),
+  wife: buildMouse({ robe: 'lilac', trim: 'red', head: 'ltred', powder: true }),   // the wife of the betel stall: a red face, powdered (owner)
 };
 const PAPERS = {
   yellow: { base: '#e1b23a', hi: '#f0cb63', lo: '#c8981f', s1: '#b98a1e', s2: '#f5d57a', fib: '#a97a17', css: '#e2b43c', spark: '#fff6d8' },

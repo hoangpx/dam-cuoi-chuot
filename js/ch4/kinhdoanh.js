@@ -172,14 +172,25 @@ const C4_TASKS = [
   { k: 'visit', make: () => ({ n: 1, text: 'Tiếp chuyện một người ghé gánh (có dấu !)', prize: 6 }), done: (t, d) => (d.visit || 0) >= 1, from: () => (C4.events || []).some(e => C4_VISIT.has(e.kind)) },
   { k: 'met', make: () => ({ n: 1, text: 'Quen thêm một khách mới', prize: 10 }), done: (t, d) => (d.met || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY },
   { k: 'tea', make: () => ({ n: 2, text: 'Mời nước hai người quen', prize: 8 }), done: (t, d) => (d.tea || 0) >= 2, from: () => SAVE4.day >= C4_BOOK_DAY },
-  { k: 'ask', make: () => ({ n: 1, text: 'Hỏi chuyện nhà một người', prize: 8 }), done: (t, d) => (d.ask || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY },
   { k: 'ws', make: () => ({ n: 1, text: 'Giao một đơn hàng sỉ', prize: 15 }), done: (t, d) => (d.ws || 0) >= 1, from: () => (SAVE4.ws || []).some(o => o.day === SAVE4.day) },
   { k: 'ruot', make: () => ({ n: 1, text: 'Mời một mối ruột ghé quán', prize: 10 }), done: (t, d) => (d.invRuot || 0) >= 1, from: () => c4People().list.some(p => c4Ruot(p.id)) },
 ];
 function c4Tasks() {
   if (SAVE4.taskDay !== SAVE4.day) {
-    SAVE4.taskDay = SAVE4.day; const pool = C4_TASKS.filter(t => !t.from || t.from()), pick = [], want = c4Pick([0, 1, 1, 2, 2, 3]);
-    while (pick.length < want && pool.length) pick.push(pool.splice((R() * pool.length) | 0, 1)[0]);
+    SAVE4.taskDay = SAVE4.day;
+    // one or two tasks a day (owner), coming in gradually: each kind opens on its own day (t.d), none repeats within three days,
+    // and kinds not yet seen come up more often, so the days do not feel alike
+    const seen = SAVE4.taskSeen || (SAVE4.taskSeen = {});
+    if (SAVE4.taskHistDay === SAVE4.day && (SAVE4.taskHist || []).length) for (const k of SAVE4.taskHist.pop()) seen[k] = Math.max(0, (seen[k] || 1) - 1);
+    const recent = new Set((SAVE4.taskHist || []).slice(-3).flat());
+    let pool = C4_TASKS.filter(t => (t.d || 1) <= SAVE4.day && (!t.from || t.from()));
+    const fresh = pool.filter(t => !recent.has(t.k)); if (fresh.length) pool = fresh;
+    const pick = [], want = SAVE4.day < 5 ? 1 : c4Pick([1, 1, 2]);
+    while (pick.length < want && pool.length) {
+      const w = pool.map(t => (seen[t.k] ? 1 : 4)), tot = w.reduce((a, b) => a + b, 0); let r = R() * tot, i = 0; while (i < w.length - 1 && (r -= w[i]) > 0) i++;
+      pick.push(pool.splice(i, 1)[0]);
+    }
+    SAVE4.taskHist = [...(SAVE4.taskHist || []), pick.map(t => t.k)].slice(-6); SAVE4.taskHistDay = SAVE4.day; for (const t of pick) seen[t.k] = (seen[t.k] || 0) + 1;
     SAVE4.tasks = pick.map(t => ({ k: t.k, ...t.make(), done: false, paid: false }));
   }
   const d = C4.today || {};
@@ -194,6 +205,7 @@ function c4TasksEnd(d, lines) {
   for (const t of T) { const X = C4_TASKS.find(x => x.k === t.k); if (!X) continue; if (!t.done && X.done(t, d)) t.done = true; if (t.done && !t.paid) { t.paid = true; got += t.prize; } }
   if (got) { SAVE4.money += got; d.got += got; }
   const all = T.every(t => t.done);
+  SAVE4.taskLog = [...(SAVE4.taskLog || []), { day: SAVE4.day, n: T.length, ok: T.filter(t => t.done).length, got }].slice(-12);   // the book's Việc tab shows the last days
   SAVE4.streak = all ? (SAVE4.streak || 0) + 1 : 0;
   let bonus = '';
   if (all && SAVE4.streak === 3) { SAVE4.money += 30; d.got += 30; bonus = ' Chuỗi 3 ngày: thưởng 30 đồng!'; }

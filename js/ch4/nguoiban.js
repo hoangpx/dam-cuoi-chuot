@@ -98,6 +98,7 @@ function c4ServeUpdate(dt) {
       if (w.kind === 'mouse' && g === 'trau') w.carry = MP.ladong;
       A.splice(A.indexOf(sv), 1);
       c4Say(sv.by, c4Pick(g === 'trau' ? C4_SELL : C4_THANKS)); c4Served(w);
+      if (!w.guest && (w.wait || 0) < 5) C4.today.quick = (C4.today.quick || 0) + 1;     // served without a long wait (task 'hai')
       { const pp = w.pid !== undefined && c4People().list[w.pid]; if (pp && sv.by.wm !== undefined && R() < sv.by.wm * .5) c4Bump(pp.id, 1); }   // a warm hand wins a little liking (owner)
       c4Leave(w, true); if (!w.guest) c4SitDown(w, g); c4Hud();
     }
