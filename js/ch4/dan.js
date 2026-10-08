@@ -271,7 +271,7 @@ function c4OpenNotes(tab) {
   C4.noteNew = false; c4Hud();
   if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY) C4_TAB = 'tin';
   const P = c4People(), known = P.list.filter(p => c4Known(p.id)), open = SAVE4.day >= C4_BOOK_DAY;
-  const tabs = [['tin', 'Tin đồn'], ...(open ? [['quen', 'Khách quen'], ['web', 'Quan hệ'], ['nha', 'Gia phả'], ['chuyen', 'Chuyện'], ['thanh', 'Thành tựu'], ['hao', 'Hảo cảm']] : [])];
+  const tabs = [['tin', 'Tin đồn'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['web', 'Quan hệ'], ['nha', 'Gia phả'], ['chuyen', 'Chuyện'], ['thanh', 'Thành tựu'], ['hao', 'Hảo cảm']] : [])];
   let h = `<div class="c4tabs">${tabs.map(([k, n]) => `<button class="${k === C4_TAB ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
   const seen = P.list.filter(p => !c4Known(p.id) && SAVE4.folk[p.id] && SAVE4.folk[p.id].seen);
   if (open) h += `<p class="cnt">${known.length} người quen · ${seen.length} người biết mặt</p>`;
@@ -294,7 +294,8 @@ function c4OpenNotes(tab) {
       return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}</div>`
       : '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
     if (seen.length) h += `<h4>Biết mặt</h4><div class="folk">${seen.map(p => `<div class="fk unk2"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>`;
-  } else if (C4_TAB === 'web') h += c4WebTab();
+  } else if (C4_TAB === 'don') h += c4OrdersTab();
+  else if (C4_TAB === 'web') h += c4WebTab();
   else if (C4_TAB === 'chuyen') h += c4StoriesHtml();
   else if (C4_TAB === 'thanh') h += c4AchHtml();
   else if (C4_TAB === 'hao') h += c4HaoHtml();

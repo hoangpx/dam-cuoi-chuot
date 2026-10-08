@@ -186,7 +186,7 @@ function c4MarketStart() {
 }
 function c4Hide() { AU.ambient({}); C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
 // one sheet at a time: morning plan, stall, event, notebook, tally
-function c4Sheets(id) { for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
+function c4Sheets(id) { for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text, t: 0, life }; };
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
 const c4Flow = () => ({ dep: 1, gat: .85, mua: .55, ret: .8 }[c4Wx()]) * (SAVE4.plan.hoi ? 1.8 : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1);   // a streak's market luck
@@ -271,7 +271,7 @@ function c4Morning() {
   const go = document.createElement('button'); go.className = 'btn go'; go.textContent = 'Họp chợ'; box.appendChild(go);
   C4.orders = orders; c4LoanUI();
   go.addEventListener('click', () => {
-    for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g)); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
+    for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
     c4Sheets(null); C4.phase = 'open'; c4PlanEvents(); c4ShipOrders(); c4Hud();
     SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
   });
@@ -333,8 +333,14 @@ function c4Stepper(box, g, on, mid = false) {
   show();
 }
 // the goods arrive: paid from the purse, the rest on credit with the trader
-function c4Receive(g, q, cost) {
+// today's orders, for the book's Đơn hàng tab (owner): each is { src, g, q, cost, who? }; the list restarts each day
+function c4LogAdd(item) {
+  if (!SAVE4.log || SAVE4.log.day !== SAVE4.day) SAVE4.log = { day: SAVE4.day, items: [] };
+  SAVE4.log.items.push(item);
+}
+function c4Receive(g, q, cost, src = 'giua') {
   if (!q) return;
+  c4LogAdd({ src, g, q, cost: Math.round(q * cost) }); persist4();
   const st = c4Stock(g); C4.unit = C4.unit || {};
   C4.unit[g] = ((C4.unit[g] || cost) * st + cost * q) / (st + q);             // the blended price of what is in stock
   c4SetStock(g, st + q);
@@ -355,6 +361,7 @@ function c4PlanEvents() {
   if (!SAVE4.cauDoi) pool.push('do');
   if (own.includes('che') || own.includes('xoi') || own.includes('bun')) pool.push('do2', 'do2');
   if (own.length > 1) pool.push('om', 'bot', 'om');
+  if (SAVE4.money >= C4_RICH) { pool.push('kien'); if (own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner)
   for (let i = 0; i < 3 && pool.length; i++) ev.push({ at: at(7, 16.5), kind: pool.splice((R() * pool.length) | 0, 1)[0] });
   if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });
   if (SAVE4.day <= 5) {                                                     // a player: the first days were too quiet — a knock (thief, gale, bad areca) and often an order
@@ -367,6 +374,8 @@ function c4PlanEvents() {
 }
 // how many a buyer takes: one to three; a regular twice that, a hard-won regular three times
 const c4BuyN = P => { const n = C4_BUY0 + ((R() * 3) | 0); return P && c4Ruot(P.id) ? n * (C4_TRAITS[P.trait].ruot || 2) : n; };
+// a hired hand is let go, and his sales in progress are dropped
+const c4DropHand = (g, s) => { const H = c4Hands(g); H.splice(H.indexOf(s), 1); for (const k in C4.SV) { const A = C4.SV[k]; if (A) for (const sv of [...A]) if (sv.by === s) A.splice(A.indexOf(sv), 1); } persist4(); };
 const c4Someone = () => c4Pick([...C4.walkers.filter(w => w.kind === 'mouse' && C4_MOUSE_SORTS[w.sort].role !== 'child').map(w => w.name), 'bà Ba', 'chú Năm', 'cô Tư']);
 const c4Cap1 = s => s[0].toUpperCase() + s.slice(1);
 function c4Event(kind) {
@@ -424,7 +433,7 @@ function c4Event(kind) {
   } else if (kind === 'cau') {
     const n = Math.min(20, c4Cap('trau') - SAVE4.stock); if (n < 10) return;
     Object.assign(E, { title: 'Cau non giá hời', text: `Một lái buôn chèo đò ngang qua, chào ${n} miếng trầu cau non chỉ 2 đồng một miếng.`, opts: [
-      [`Mua · ${n * 2} đồng`, () => { c4Receive('trau', n, 2); if (R() < .35) { const bad = Math.ceil(n * .6); SAVE4.stock -= bad; setTimeout(() => toast(`Hớ rồi! Cau rẻ mà sâu, phải bỏ ${bad} miếng.`, 3.2), 400); } else toast(`Mua được ${n} miếng giá hời!`); }, SAVE4.money >= n * 2],
+      [`Mua · ${n * 2} đồng`, () => { c4Receive('trau', n, 2, 'vat'); if (R() < .35) { const bad = Math.ceil(n * .6); SAVE4.stock -= bad; setTimeout(() => toast(`Hớ rồi! Cau rẻ mà sâu, phải bỏ ${bad} miếng.`, 3.2), 400); } else toast(`Mua được ${n} miếng giá hời!`); }, SAVE4.money >= n * 2],
       ['Không mua', () => {}]] });
   } else if (kind === 'tuan') {
     E.def = 0; Object.assign(E, { title: 'Tuần đinh dẹp lối', text: 'Tuần đinh cầm gậy đi dẹp lối: "Gánh nào lấn đường thì dẹp vào một canh giờ (khoảng 2 tiếng)!"', opts: [
@@ -468,6 +477,21 @@ function c4Event(kind) {
     Object.assign(E, { title: 'Hụt tiền', text: `Đếm tiền hàng ${C4_GOODS[g].name.toLowerCase()} thấy hụt ${n} đồng. Hình như ${s.name} bớt xén.`, opts: [
       ['Đuổi việc', () => { const H = c4Hands(g); H.splice(H.indexOf(s), 1); for (const k in C4.SV) { const A = C4.SV[k]; if (A) for (const sv of [...A]) if (sv.by === s) A.splice(A.indexOf(sv), 1); } toast(`${c4Cap1(s.name)} bị đuổi. Vợ chồng lại phải tự bán, hoặc thuê người khác.`, 3); }],
       ['Bỏ qua lần này', () => {}]] });
+  } else if (kind === 'trom_ngay') {                                       // a hired hand runs off with the day's takings (only when rich)
+    if (SAVE4.money < C4_RICH || !helped.length) return;
+    const g = c4Pick(helped), s = c4Pick(c4HandsOn(g)), take = Math.min(Math.max(0, C4.today.take), SAVE4.money);
+    if (take <= 0) return;
+    Object.assign(E, { title: 'Người làm bỏ trốn!', text: `${c4Cap1(s.name)} ôm theo ${c4Money(take)} tiền bán hàng hôm nay rồi biến mất tăm. Làm sao đây?`, opts: [
+      ['Báo quan', () => { c4DropHand(g, s); sp(take); const fee = Math.min(SAVE4.money, Math.round(take * .2)); sp(fee); if (R() < .1) { SAVE4.money += take; C4.today.spent -= take; toast(`Quan sai lính lùng được ${s.name} ở bến đò, thu lại được tiền. Phí quan ${c4Money(fee)}.`, 3.8); } else toast(`Quan sai lính đi lùng mãi không thấy. Mất ${c4Money(take)}, còn trả phí quan ${c4Money(fee)}.`, 3.8); c4Hud(); }],
+      ['Thôi, bỏ của đi thay người', () => { c4DropHand(g, s); sp(take); toast(`Mất ${c4Money(take)} và ${s.name} đi luôn.`, 3); }]] });
+  } else if (kind === 'kien') {                                             // a customer ill from the food sues before cụ Lý (only when rich)
+    if (SAVE4.money < C4_RICH) return;
+    const g = c4Pick(own.filter(x => ['che', 'xoi', 'bun', 'trau'].includes(x))); if (!g) return;
+    const amt = Math.min(SAVE4.money, Math.round(SAVE4.money * .2 + 200)), plaintiff = c4Someone();
+    Object.assign(E, { title: 'Kiện ngộ độc', text: `${c4Cap1(plaintiff)} ăn ${C4_GOODS[g].name.toLowerCase()} ở gánh rồi đau bụng nằm bẹp, kiện lên cụ Lý đòi bồi thường ${c4Money(amt)}.`, opts: [
+      ['Cãi đến cùng', () => { if (R() < .4) toast('Cụ Lý xét: khách ăn no quá, chẳng phải lỗi của gánh. Kiện bị bác.', 3.4); else { const n = Math.min(SAVE4.money, Math.round(amt * 1.5)); sp(n); toast(`Cụ Lý phạt vì cãi cùn: phải đền ${c4Money(n)}.`, 3.4); } }],
+      ['Hoà giải, đền nửa', () => { const n = Math.min(SAVE4.money, Math.round(amt / 2)); sp(n); toast(`${c4Cap1(plaintiff)} nhận ${c4Money(n)} rồi bỏ kiện. Cả chợ bàn tán mãi.`, 3.4); }],
+      ['Đền đủ, xin lỗi', () => { const n = Math.min(SAVE4.money, amt); sp(n); toast(`Đền ${c4Money(n)}, ${plaintiff} nguôi giận. Từ nay nhớ giữ vệ sinh.`, 3.4); }]] });
   } else if (kind === 'rival') {                                            // a rival betel stall across the lane, cheaper
     if (SAVE4.rival > 0) return;
     Object.assign(E, { title: 'Có người tranh khách', text: `Nhà ${who} mở gánh trầu ngay đối diện, bán rẻ hơn một đồng!`, opts: [
@@ -712,7 +736,7 @@ function c4EndDay() {
     + (quits.length ? `<br><span class="bad">${quits.join(' ')}</span>` : '')
     + (extra.length ? `<br>${extra.join('<br>')}` : '')
     + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);
-  persist4(); c4LoanUI(true);
+  persist4(); c4LoanUI(true); c4HomeOffer();
   setTimeout(() => { if (S.mode === 'c4play' && C4.phase === 'night') c4Sheets('c4day'); }, 900);
 }
 const c4Talk2Due = () => SAVE4.day === C4_BOOK_DAY && !SAVE4.talk2;
@@ -769,6 +793,7 @@ function c4Hud() {
   $('#c4Debt').innerHTML = SAVE4.debt > 0.5 ? 'Nợ ' + c4Money(SAVE4.debt) : '';
   $('#c4Debt').hidden = !(SAVE4.debt > 0.5);
   $('#c4Note').classList.toggle('new', !!C4.noteNew);
+  $('#c4Home').hidden = !(C4_HOUSE_ON && c4HasHome());
   $('#c4Task').innerHTML = c4TasksHud(); $('#c4Task').hidden = !SAVE4.tasks || !SAVE4.tasks.length;   // some days have no tasks
 }
 
@@ -800,8 +825,9 @@ function c4OpenUp(g = 'trau') {
   if (g !== 'trau' && !C4_GOODS[g].buy) c4ShopUpBlock(g);                   // a bought stall has no upgrades (yet)
   if (g === 'trau') {
     const nx = C4_LV[SAVE4.lv + 1];
-    if (!nx) $('#c4upB').innerHTML = '<p>Gian hàng trầu khang trang nhất phiên chợ.</p>';
-    else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4><p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= nx.up && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(nx.up)}`; $('#c4upGo').onclick = c4DoUp; }
+    if (nx && !c4UpAllowed(nx)) { $('#c4upB').innerHTML = '<p class="hint">Mua nhà sẽ có sau.</p>'; $('#c4upGo').hidden = true; }
+    else if (!nx) $('#c4upB').innerHTML = '<p>Gian hàng trầu khang trang nhất phiên chợ.</p>';
+    else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${nx.house === 'own' ? c4HouseNote(nx.up) : ''}<p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(c4UpPrice(nx, nx.up))}`; $('#c4upGo').onclick = c4DoUp; }
   }
   c4Sheets('c4up');
 }
@@ -816,13 +842,13 @@ function c4Rent(g) {
   toast(`Đã thuê chỗ bán ${G.name.toLowerCase()}. Vợ chồng tự trông, đông thì thuê thêm người. Chạm vào để nhập hàng!`, 3.6);
 }
 function c4DoUp() {
-  const nx = C4_LV[SAVE4.lv + 1]; if (!nx || SAVE4.money < nx.up || C4.build) return;
+  const nx = C4_LV[SAVE4.lv + 1]; if (!nx || !c4UpAllowed(nx) || SAVE4.money < c4UpPrice(nx, nx.up) || C4.build) return;
   if (nx.house) { const L = c4Landlord('trau'); if (!L.known) { toast('Không biết chủ căn nhà là ai mà hỏi thuê hay mua.', 3.4); return; } SAVE4.rentKTrau = L.k; }
-  SAVE4.money -= nx.up; C4.build = { to: SAVE4.lv + 1, t: 0 };
+  const price = c4UpPrice(nx, nx.up); SAVE4.money -= price; C4.today.spent += price; C4.build = { to: SAVE4.lv + 1, t: 0 };
   for (const w of [...C4.Q.trau]) c4Leave(w, false); C4.SV.trau = [];
   c4Sheets(null); persist4(); c4Hud(); AU.stamp();
 }
-const c4CanUp = () => { const nx = C4_LV[SAVE4.lv + 1]; return nx && SAVE4.money >= nx.up && !C4.build; };
+const c4CanUp = () => { const nx = C4_LV[SAVE4.lv + 1]; return nx && c4UpAllowed(nx) && SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build; };
 
 /* ---------- drawing ---------- */
 function renderC4() {
@@ -1033,18 +1059,25 @@ function c4Key(e) {
 /* ---------- HUD, sheets, registration ---------- */
 {
   const hud = document.createElement('div'); hud.id = 'c4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
+  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'),
     sheet('c4up', '<h3 id="c4upT"></h3><div id="c4upO"></div><div id="c4upB"></div><div class="row"><button class="btn" id="c4upGo"></button><button class="btn alt" id="c4upX">Đóng</button></div>'),
     sheet('c4ev', '<h3 id="c4evT"></h3><p id="c4evB"></p><div class="row col" id="c4evO"></div>'),
     sheet('c4note', '<h3>Sổ tay</h3><div id="c4noteB"></div><div class="row"><button class="btn alt" id="c4noteX">Đóng</button></div>'),
-    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'));
+    sheet('c4home', '<div id="c4homeB"></div><div class="row"><button class="btn" id="c4homeShop">Sắm đồ</button><button class="btn alt" id="c4homeX">Đóng</button></div>'),
+    sheet('c4shop', '<div id="c4shopB"></div><div class="row"><button class="btn alt" id="c4shopX">Quay lại</button></div>'),
+    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><div id="c4homeN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'));
   $('#c4Name').addEventListener('click', () => showChapters());
   $('#c4Invite').addEventListener('click', () => { if (c4CanInvite()) { AU.tap(); C4_PICK = { deal: 'half', sel: new Set() }; C4_WHO = null; c4OpenNotes('quen'); } });
   $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
   $('#c4Ups').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); c4OpenUps(); } });
+  $('#c4Home').addEventListener('click', () => { AU.tap(); $('#c4homeB').innerHTML = c4HomeHtml(); c4Sheets('c4home'); });
+  $('#c4homeShop').addEventListener('click', () => { AU.tap(); $('#c4shopB').innerHTML = c4ShopHtml(); c4Sheets('c4shop'); });
+  $('#c4shopB').addEventListener('click', e => { const b = e.target.closest('[data-buy]'); if (!b || b.disabled) return; c4BuyItem(b.dataset.buy); $('#c4shopB').innerHTML = c4ShopHtml(); });
+  $('#c4homeX').addEventListener('click', () => c4Sheets(null));
+  $('#c4shopX').addEventListener('click', () => { $('#c4homeB').innerHTML = c4HomeHtml(); c4Sheets('c4home'); });
   $('#c4Task').addEventListener('click', () => { if (C4.phase !== 'open') return; AU.tap(); C4.ev = null; const T = c4Tasks();
     $('#c4evT').textContent = 'Việc hôm nay'; $('#c4evB').innerHTML = T.map(t => `${t.done ? '✓' : '○'} ${t.text} (+${t.prize} đồng)`).join('<br>') + `<br><br>Mốc thưởng chuỗi ngày làm đủ việc: 3 ngày +30 đồng · 5 ngày lộc chợ (khách đông cả ngày hôm sau) · cứ 7 ngày +100 đồng. Ngày không có việc thì chuỗi vẫn giữ.<br>Chuỗi: ${SAVE4.streak || 0} ngày liền làm đủ việc.`;
     const box = $('#c4evO'); box.innerHTML = ''; const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Đóng'; b.addEventListener('click', () => c4Sheets(null)); box.appendChild(b); c4Sheets('c4ev'); });

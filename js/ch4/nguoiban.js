@@ -27,7 +27,9 @@ function c4Hands(g) {
   return H[g];
 }
 const c4HandsOn = g => c4Own(g) || g === 'trau' ? c4Hands(g).filter(h => !h.sick && !h.trip) : [];   // (one out fetching goods is not at the stall)
-const c4Wage = (g, h) => Math.max(20, Math.round(C4_GOODS[g].wage * 2.5)) + (h.wageUp || 0);   // a player: a few tens of đồng a day (they also fetch goods)
+const c4WageAt = (g, i) => Math.max(20, Math.round(C4_GOODS[g].wage * 2.5)) * Math.pow(2, i);   // a player: the first hand a few tens of đồng a day; each next one costs twice the one before (owner)
+const c4Wage = (g, h) => c4WageAt(g, Math.max(0, c4Hands(g).indexOf(h))) + (h.wageUp || 0);
+const c4NextWage = g => c4WageAt(g, c4Hands(g).length);   // what the next hand would cost
 const c4AllHands = () => c4Owned().flatMap(g => c4Hands(g).map(h => ({ g, h })));
 // where the k-th seller stands behind a stall
 const c4SellX = (g, k) => (g === 'trau' ? C4_STALL - (SAVE4.lv ? 70 : 130) : C4_GOODS[g].x - 80) - k * 46;
@@ -111,9 +113,9 @@ function c4PayHands(d, quits) {
 function c4HandsBlock(g) {
   const G = C4_GOODS[g], H = c4Hands(g), el = document.createElement('div'); el.className = 'hands';
   const draw = () => {
-    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, mỗi người công ${c4Money(c4Wage(g, {}))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
+    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, người đầu công ${c4Money(c4WageAt(g, 0))} một ngày, người thứ hai gấp đôi, người thứ ba gấp đôi người thứ hai, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
       + (H.length ? H.map((h, i) => `<div class="hand"><span>${c4Cap1(h.name)}${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày</span><button class="btn alt" data-off="${i}">Cho nghỉ</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
-      + (H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4Wage(g, {}))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
+      + (H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4NextWage(g))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
       if (H.length >= C4_HANDS_MAX || Date.now() - (c4HandsBlock.last || 0) < 800) { draw(); return; }   // (a double tap could hire past the limit; a lagging tap hired twice)
       c4HandsBlock.last = Date.now();
@@ -177,7 +179,7 @@ function c4TripsUpdate(dt) {
     if (p.st === 'out') { p.x -= 150 * dt; p.z = Math.min(.3, p.z + dt * .2); p.ph += dt * 10; if (p.x <= Math.min(C4_OFF, C4.camX - 110)) { p.st = 'away'; p.t = 2.4; } }
     else if (p.st === 'away') { if ((p.t -= dt) <= 0) p.st = 'back'; }
     else if (p.st === 'back') { const hx = c4SellX(p.home, 0); p.x += 140 * dt; p.ph += dt * 10; p.z += (C4_WIFE_Z - p.z) * Math.min(1, dt * 2);
-      if (p.x >= hx) { c4Receive(p.good, p.qty, p.cost); p.h.trip = false; C4.trips.splice(C4.trips.indexOf(p), 1); c4Say(p.h, c4Pick(['Hàng về rồi đây!', 'Đủ cả, bà chủ đếm đi!', 'Nặng mà vui!'])); c4Hud(); } }
+      if (p.x >= hx) { c4Receive(p.good, p.qty, p.cost, 'giua'); p.h.trip = false; C4.trips.splice(C4.trips.indexOf(p), 1); c4Say(p.h, c4Pick(['Hàng về rồi đây!', 'Đủ cả, bà chủ đếm đi!', 'Nặng mà vui!'])); c4Hud(); } }
   }
 }
 function c4TripItems(items, head, vis) {
