@@ -1,6 +1,7 @@
 /* Web Audio: one song per chapter (SONGS), drums/kèn synth and small sound effects. */
 /* ---------- audio ---------- */
 const AU = (() => {
+  const samples = {};                                                    // recorded sounds by key (null while loading)
   let c = null, amb = null, master, music, sfx, echo, base = .75, ducked = false, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
   // Chương I: rước dâu rộn ràng (trống cái, chũm chọe, kèn); Chương II: khúc đố chậm rãi (trống con, mõ, kèn trầm, nhịp lẻ)
@@ -46,6 +47,11 @@ const AU = (() => {
       mel: seq([[67,1],[69,1],[71,2],[74,2],[71,1],[69,1],  [67,2],[64,1],[67,1],[69,4],  [71,1],[74,1],[76,2],[74,1],[71,1],[69,2],  [67,1],[69,1],[71,1],[69,1],[67,4],
                 [74,2],[76,1],[79,1],[76,2],[74,2],  [71,1],[74,1],[71,1],[69,1],[67,4],  [64,1],[67,1],[69,1],[71,1],[74,1],[76,1],[74,2],  [71,1],[69,1],[67,2],[null,2],[67,1],[67,1]]),
       drum: [1, 0, .4, .3, .8, 0, .5, .3, 1, 0, .4, .3, .8, .4, .6, .5], perc: s => (s === 0 ? 'cym' : s % 2 === 1 ? 'mo' : null) },
+    // Chương I tranh 6 · Bắc Kim Thang: a still moonlit night (owner) — only a bamboo flute far off, slow and sparse, long
+    // notes with long silences between, an echo; no drums, no drone (128 steps)
+    { bpm: 58, hold: 12, inst: 'sao', echo: true, vol: .06, oct: 0, drum: new Array(16).fill(0), perc: () => null,
+      mel: seq([[69,6],[72,2],[74,8],[null,8],[76,4],[74,2],[72,2],[69,12],[null,12],
+                [67,4],[69,4],[72,8],[null,8],[74,3],[72,1],[69,4],[67,4],[64,10],[null,14]]) },
   ];
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;
@@ -181,6 +187,26 @@ const AU = (() => {
     creak: on(() => { const t = c.currentTime; sweep('sawtooth', 180, 90, .7, 700, .2, t); const n = noise(.6), f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 400; n.connect(f); env(f, t, .05, .15, .6).connect(sfx); n.start(t); n.stop(t + .6); }),
     click: on(() => { const t = c.currentTime; drum(t, .5, sfx); sweep('triangle', 900, 600, .08, 1200, .15, t); }),
     swoosh: on(() => { const t = c.currentTime, n = noise(.5), f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = .8; f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(3200, t + .4); n.connect(f); env(f, t, .05, .3, .5).connect(sfx); n.start(t); n.stop(t + .5); }),
+    // a cricket in the grass at night (tranh 6): a few quick high trills, soft; v scales it (far crickets are fainter)
+    cricket: on((v = 1) => { const t = c.currentTime, f = 4300 + Math.random() * 600, n = 2 + ((Math.random() * 3) | 0);
+      for (let r = 0; r < n; r++) for (let i = 0; i < 4; i++) { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f; const s = t + r * .32 + i * .045; env(o, s, .005, .03 * v, .035).connect(sfx); o.start(s); o.stop(s + .04); } }),
+    // single notes on the game's own clock (tranh 6's bridge plays Bắc Kim Thang note by note so it keeps step with the run):
+    // the bamboo flute for the tune, a soft plucked low string for the bass; both on the effects bus, so they sound while the song is hushed
+    // inS = seconds from now, so a caller can schedule a little ahead and land exactly on its own clock
+    note: on((m, dur, vol = .13, inS = 0) => sao(c.currentTime + inS, m, dur, sfx, vol)),
+    bassNote: on((m, dur, inS = 0) => { const t = c.currentTime + inS, o = c.createOscillator(), lp = c.createBiquadFilter(); o.type = 'triangle'; o.frequency.value = mtof(m); lp.type = 'lowpass'; lp.frequency.value = 900; o.connect(lp); env(lp, t, .006, .09, Math.max(.4, dur)).connect(sfx); o.start(t); o.stop(t + Math.max(.4, dur) + .05); }),
+    // the beat for tranh 6's bridge, played on the game's own clock (a strong one every bar)
+    beat: on((strong = false, inS = 0) => drum(c.currentTime + inS, strong ? .3 : .16, sfx)),
+    // how late sound comes out of the speakers (Bluetooth adds a lot); a game clock schedules this much early
+    latency: () => (c ? (c.outputLatency || 0) + (c.baseLatency || 0) : 0),   // soft: the tune leads (owner)
+    // a lotus leaf brushed along (tranh 6): a short, airy rustle, no thud in it
+    // a recorded sound (a file in audio/), fetched and decoded once; played at a volume and a rate (a slight change of pitch)
+    sample: (key, url) => { if (samples[key] !== undefined || !c) return; samples[key] = null;
+      fetch(url).then(r => r.arrayBuffer()).then(b => c.decodeAudioData(b)).then(buf => { samples[key] = buf; }).catch(() => { delete samples[key]; }); },
+    play: on((key, vol = 1, rate = 1) => { const buf = samples[key]; if (!buf) return; const s = c.createBufferSource(), g = c.createGain(); s.buffer = buf; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g); g.connect(sfx); s.start(); }),
+    rustle: on((v = 1) => { const t = c.currentTime, n = noise(.3), f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = .7; f.frequency.setValueAtTime(2600 + Math.random() * 900, t); f.frequency.exponentialRampToValueAtTime(1400, t + .22); n.connect(f); env(f, t, .03, .09 * v, .25).connect(sfx); n.start(t); n.stop(t + .3); }),
+    // a frog far off in the pond, softer and lower than ribbit
+    croak: on((v = 1) => { const t = c.currentTime, f = 110 + Math.random() * 30; sweep('sawtooth', f, f * .7, .14, 420, .12 * v, t); sweep('sawtooth', f * 1.05, f * .72, .14, 420, .12 * v, t + .2); }),
     ribbit: on(() => { const t = c.currentTime; sweep('sawtooth', 140, 90, .16, 500, .3, t); sweep('sawtooth', 150, 95, .16, 500, .3, t + .22); }),
     oink: on(() => { const t = c.currentTime; sweep('sawtooth', 260, 150, .35, 800, .3, t); sweep('sawtooth', 230, 140, .3, 800, .25, t + .4); }),
     tap: on(() => sweep('triangle', 700, 520, .05, 900, .08)),
