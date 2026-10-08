@@ -61,9 +61,9 @@ function showCard() {
   const c = $('#lvCard'); c.classList.add('on'); setTimeout(() => c.classList.remove('on'), 2600);
 }
 // chương I: tranh 1–4 are finished, each opened by finishing the one before; later ones are still being carved and open only after 5 taps
-const C1_READY = 5;
+const C1_READY = 6;
 // a tranh still being made can be opened for trying: set C1_TRY to its index (it then opens without the one before)
-const C1_TRY = 5;
+const C1_TRY = -1;
 function buildAlbum() {
   const box = $('#cards'); box.textContent = '';
   LEVELS.forEach((lv, i) => {
