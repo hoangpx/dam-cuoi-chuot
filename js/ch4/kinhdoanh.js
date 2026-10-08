@@ -51,6 +51,12 @@ function c4PayRents(d, lines) {
   for (const g of C4_SHOPS) { const s = SAVE4.shops[g]; if (!s || !s.own || !c4SLv(g).daily) continue;
     pay(C4_GOODS[g].name.toLowerCase(), Math.round(C4_GOODS[g].rent * c4SLv(g).daily * (s.rentK || 1)), s.late || 0, v => { if (v === 'out') { s.lv = 2; s.late = 0; } else s.late = v; }); }
 }
+// the rented houses (owner): a landlord may ask for 10 % more on the rent now and then, at least a week after the last ask
+const c4RentPlots = () => [...C4_SHOPS.filter(g => SAVE4.shops[g] && SAVE4.shops[g].own && c4SLv(g).daily), ...(c4Lv().daily ? ['trau'] : [])];
+const c4RentOf = g => g === 'trau' ? Math.round(c4Lv().daily * (SAVE4.rentKTrau || 1)) : Math.round(C4_GOODS[g].rent * c4SLv(g).daily * (SAVE4.shops[g].rentK || 1));
+const c4AskDay = g => g === 'trau' ? SAVE4.askTrau : SAVE4.shops[g].askDay;
+const c4SetAsk = g => { if (g === 'trau') SAVE4.askTrau = SAVE4.day; else SAVE4.shops[g].askDay = SAVE4.day; };
+const c4RaiseRent = g => { if (g === 'trau') SAVE4.rentKTrau = (SAVE4.rentKTrau || 1) * 1.1; else SAVE4.shops[g].rentK = (SAVE4.shops[g].rentK || 1) * 1.1; };
 // drawn behind a stall: an awning for a sạp, a counter for a quầy, a house for the house levels
 const C4_SHOP_HOUSE = { trau: 3, che: 1, xoi: 5, xen: 4, bun: 2 };   // each stall's house its own kind
 function c4DrawShopLv(g, x, y, s, lv, ware = 'che') {
@@ -336,6 +342,12 @@ function c4BuyItem(id) {
   SAVE4.money -= it[2]; C4.today.spent += it[2]; SAVE4.home.items.push(id); AU.pluck(84); persist4(); c4Hud();
   toast(`Đã mua ${it[1].toLowerCase()} về phòng khách.`, 2.6);
 }
+// the money a misfortune takes (owner): a share of the purse as it is now times the number of stalls, drawn between a low and a high share; at least 20 đồng for each stall, never more than the purse
+// and it grows with the stalls the family has (owner: bribing soldiers with four stalls costs four times as much)
+const c4Stalls = () => Math.max(1, c4Owned().length);
+const c4LossRange = (lo, hi, min = 20) => { const m = Math.max(0, SAVE4.money), k = c4Stalls(); return [Math.min(m, Math.max(min * k, Math.round(m * lo * k))), Math.min(m, Math.max(min * k, Math.round(m * hi * k)))]; };
+const c4Loss = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return Math.min(SAVE4.money, a + Math.round(R() * (b - a))); };
+const c4LossText = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return a === b ? c4Money(a) : `từ ${c4Money(a)} đến ${c4Money(b)}`; };
 const C4_EXTRA_EV = {
   // two households fall out; taking a side wins one and loses the other (and their kin); making peace costs a feast
   caicau(E) {
@@ -376,8 +388,9 @@ const C4_EXTRA_EV = {
   // a flood coming: shore up the stalls now, or lose goods and a level tomorrow
   lut(E) {
     if (c4Wx() !== 'mua' || SAVE4.flood) return false;
-    Object.assign(E, { title: 'Nước sông lên', text: 'Mưa mãi không ngớt, nước sông dâng gần tới chợ. Các nhà rủ nhau đắp bờ, kê hàng lên cao.', opts: [
-      ['Đắp bờ, kê hàng · 30 đồng', () => { SAVE4.money -= 30; C4.today.spent += 30; toast('Hàng quán nhà mình cao ráo, yên tâm.', 3); }, SAVE4.money >= 30],
+    const fix = c4Loss(.02, .05);
+    Object.assign(E, { title: 'Nước sông lên', text: `Mưa mãi không ngớt, nước sông dâng gần tới chợ. Các nhà rủ nhau đắp bờ, kê hàng lên cao. Nếu không đắp, có thể thiệt ${c4LossText(.05, .12)}.`, opts: [
+      [`Đắp bờ, kê hàng · ${c4Money(fix)}`, () => { SAVE4.money -= fix; C4.today.spent += fix; toast('Hàng quán nhà mình cao ráo, yên tâm.', 3); }, SAVE4.money >= fix],
       ['Chắc không sao đâu', () => { SAVE4.flood = SAVE4.day + 1; toast('Mong là trời thương…', 2.6); }]] });
   },
   // a merchant from another village buys a big lot on the spot
@@ -413,6 +426,7 @@ function c4FloodMorning(back) {
   if (SAVE4.flood !== SAVE4.day) return; SAVE4.flood = 0;
   if (R() < .6) {
     const hit = C4_SHOPS.filter(g => c4Own(g)); let msg = 'Đêm qua nước tràn vào chợ!';
+    const wet = c4Loss(.05, .12); SAVE4.money -= wet; C4.today.spent += wet; msg += ` Mất ${c4Money(wet)} đồ đạc trôi.`;
     if (hit.length) { const g = c4Pick(hit), s = SAVE4.shops[g]; if ((s.lv || 0) > 0 && (s.lv || 0) < 4) { s.lv--; msg += ` Hàng ${C4_GOODS[g].name.toLowerCase()} hư hại, phải làm lại.`; } if (g === 'xen' && s.stock) { msg += ` Ướt mất ${Math.ceil(s.stock / 2)} món hàng xén.`; s.stock = Math.floor(s.stock / 2); } }
     back.push(msg);
   } else back.push('Nước sông rút, chợ thoát lụt trong gang tấc.');

@@ -15,7 +15,8 @@ const C4_VISIT_OLD = new Set(['xin', 'do', 'boi']);                           //
 const C4_HELP = { xin: 0, trong: 0, vay: 0, chiu: 0, omdau: 0, lua: 0, caicau: 2 };
 const C4_EV_TIME = 30;
 
-function c4Dispatch(kind) {
+function c4Dispatch(kind, arg) {
+  C4.evArg = arg || null;
   if (C4_VISIT.has(kind)) { if (!c4VisitorSpawn(kind)) c4EvReplace(); return; }
   C4.ev = null; c4Event(kind);
   const shown = C4.sheet === 'c4ev' && C4.ev && C4.ev.kind === kind;
