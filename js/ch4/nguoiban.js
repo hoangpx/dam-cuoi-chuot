@@ -149,7 +149,7 @@ function c4HandsBlock(g) {
       const x = apply && apply[+btn.dataset.app];
       if (!x || H.length >= C4_HANDS_MAX) { apply = null; draw(); return; }
       const { ask, ...hand } = x;
-      H.push({ ...hand, wageUp: Math.max(0, ask - c4WageAt(g, H.length)) }); apply = null;
+      H.push({ ...hand, wageUp: ask - c4WageAt(g, H.length) }); apply = null;
       AU.stamp(); toast(`${c4Cap1(hand.name)} nhận bán ${G.name.toLowerCase()}, đòi công ${c4Money(ask)}/ngày.`); persist4(); draw();
     }));
     el.querySelectorAll('[data-off]').forEach(b => b.addEventListener('click', () => {
@@ -169,7 +169,7 @@ function c4Applicants(g) {
   const lv = g === 'trau' ? (SAVE4.lv || 0) : c4SLvI(g), n = Math.min(7, 3 + lv + (R() < .5 ? 1 : 0)), next = c4NextWage(g), out = [];
   for (let i = 0; i < n; i++) {
     let hand = c4NewHand(g); for (let t = 0; t < 5 && out.some(o => o.name === hand.name); t++) hand = c4NewHand(g);
-    out.push({ ...hand, ask: Math.max(next, Math.round(next * (.9 + (hand.sp + hand.wm + hand.ho) * .1))) });
+    out.push({ ...hand, ask: Math.max(20, Math.round(next * (.6 + (hand.sp + hand.wm + hand.ho) * .33))) });
   }
   return out;
 }

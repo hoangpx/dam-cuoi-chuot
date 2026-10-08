@@ -74,7 +74,18 @@ function c4Money(d) { d = Math.round(d); const a = Math.abs(d), q = Math.floor(a
 const c4Num = d => (d < 0 ? '−' : '') + Math.abs(Math.round(d)).toLocaleString('vi-VN');
 // the weather (fine, scorching, rain, cold) and what else a day brings
 const C4_WX = { dep: 'Trời nắng đẹp.', gat: 'Nắng gắt như đổ lửa: đồ tươi mau hỏng, ít người uống chè.', mua: 'Trời mưa rả rích, chợ vắng hơn.', ret: 'Trời rét căm căm: ai cũng muốn bát chè nóng.' };
-function c4Roll(day) { const r = R(); return { wx: r < .45 ? 'dep' : r < .65 ? 'gat' : r < .85 ? 'mua' : 'ret', hoi: R() < .16, meo: R() < .3, thue: day % C4_DUES_EVERY === 0, cuoi: R() < (day <= 6 ? .4 : .2) }; }   // wedding betel orders: more often in the first days (a player)
+const c4OmenOn = k => !!(SAVE4.omens && SAVE4.omens.day === SAVE4.day && (SAVE4.omens.all || []).includes(k));
+// the signs for today's talk: rain tomorrow → 80 % of days 1 or 2 signs; no rain → 30 % of days a false one (owner)
+function c4OmensRoll() {
+  const rain = !!(SAVE4.next && SAVE4.next.wx === 'mua'), wed = !!(SAVE4.next && SAVE4.next.cuoi);
+  const RAIN = ['oi', 'quang', 'rang', 'hoang', 'chuon', 'kien', 'chim'], WED = ['do', 'cau', 'khac', 'nau'];
+  const pick = (pool, n) => { const out = []; while (out.length < Math.min(n, pool.length)) { const k = c4Pick(pool); if (!out.includes(k)) out.push(k); } return out; };
+  const nr = rain && R() < .8 ? 1 + (R() < .4 ? 1 : 0) : 0;                        // a sign is never wrong (owner): none unless rain is coming
+  const nw = wed && R() < .6 ? 1 : 0;                                       // wedding signs are hard to notice (owner), and never wrong
+  const left = [...pick(RAIN, nr), ...pick(WED, nw)];
+  SAVE4.omens = { day: SAVE4.day, left, all: left.slice() };
+}
+function c4Roll(day) { const r = R(); return { wx: r < .45 ? 'dep' : r < .65 ? 'gat' : r < .85 ? 'mua' : 'ret', hoi: R() < .16, meo: R() < .3, thue: day % C4_DUES_EVERY === 0, cuoi: R() < (day <= 6 ? .4 : .2), rk: .2 + R() * .2, hk: 1.5 + R() * .4, ck: 1.5 + R() * .4 }; }   // wedding betel orders: more often in the first days (a player)
 const c4Wx = () => (SAVE4.plan && SAVE4.plan.wx) || 'dep';
 // the view: a phone shows ~430 units across with the lane in its lower part; a wide screen the whole height of the scene
 function c4View() {
@@ -189,7 +200,7 @@ function c4Hide() { AU.ambient({}); C4.away = C4.sheet; $('#c4hud').hidden = tru
 function c4Sheets(id) { for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text, t: 0, life }; };
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
-const c4Flow = () => ({ dep: 1, gat: .85, mua: .55, ret: .8 }[c4Wx()]) * (SAVE4.plan.hoi ? 1.8 : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1);   // a streak's market luck
+const c4Flow = () => ({ dep: 1, gat: .85, ret: .8 }[c4Wx()] || (SAVE4.plan.rk || .3)) * (SAVE4.plan.hoi ? (SAVE4.plan.hk || 1.7) : 1) * (SAVE4.plan.cuoi ? (SAVE4.plan.ck || 1.7) : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1);   // a streak's market luck
 // how much a passer-by wants a ware now
 function c4Want(g) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
@@ -384,8 +395,9 @@ function c4Event(kind) {
   const helped = own.filter(g => c4HandsOn(g).length);
   if (kind === 'meo' && (!C4.cat || C4.cat.st !== 'ask')) { AU.meow(); C4.cat = { t: 0, st: 'roof' }; return; }   // first it shows itself on the roof
   if (kind === 'meo') {
+    const catFee = 20 * Math.max(1, own.length);                              // a fee for every stall (owner)
     Object.assign(E, { title: 'Mèo đến!', text: 'Con mèo khoang to sụ nhảy phốc xuống trước gánh, vểnh râu đòi lễ.', opts: [
-      ['Dâng con cá · 20 đồng', () => { sp(20); C4.cat.st = 'fed'; C4.cat.t = 0; toast('Mèo ngoạm cá, nhảy tót lên mái nhà đi mất.', 3); }, SAVE4.money >= 20],
+      [`Dâng con cá · ${c4Money(catFee)}`, () => { sp(catFee); C4.cat.st = 'fed'; C4.cat.t = 0; toast('Mèo ngoạm cá, nhảy tót lên mái nhà đi mất.', 3); }, SAVE4.money >= catFee],
       ['Không dâng', () => { C4.cat.st = 'sit'; C4.cat.t = 0; toast('Mèo ngồi chễm chệ trước gánh suốt một canh giờ (khoảng 2 tiếng). Khách sợ, chẳng ai dám ghé!', 3.4); }]] });
   } else if (kind === 'thue') {
     const d = c4Tax(), earn = c4Earned();
@@ -694,10 +706,11 @@ function c4ChatStart(a, b) {
     C4.said = C4.said || {};
     const kinds = Object.keys(C4_NEWS).filter(k => !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === k) && (C4.said[k] || 0) < 2);
     const yes = kinds.filter(truth), no = kinds.filter(k => !truth(k));
-    if (kinds.length && Object.values(C4.said).reduce((x, y) => x + y, 0) < 3) { news = (yes.length && (R() < .72 || !no.length)) ? c4Pick(yes) : c4Pick(no.length ? no : kinds); C4.said[news] = (C4.said[news] || 0) + 1; pick = C4_NEWS[news]; }
+    if (kinds.length && Object.values(C4.said).reduce((x, y) => x + y, 0) < 3) { news = (yes.length && (R() < .5 || !no.length)) ? c4Pick(yes) : c4Pick(no.length ? no : kinds); C4.said[news] = (C4.said[news] || 0) + 1; pick = C4_NEWS[news]; }
   }
+  if (!news && SAVE4.omens && SAVE4.omens.day === SAVE4.day && SAVE4.omens.left.length && R() < .35) { const k = c4Pick(SAVE4.omens.left); SAVE4.omens.left = SAVE4.omens.left.filter(x => x !== k); pick = C4_OMENS[k]; }
   const script = c4Pick(pick).map(([k, s]) => [k, fill(s).replace(/^./, ch => ch.toUpperCase())]);
-  const c = { a, b, script, i: -1, t: 0, news, heard: false };
+  const c = { a, b, script, i: -1, t: 0, news, heard: false, from: script[0][0] ? b.name : a.name };   // the one who starts the news: named in the notebook
   for (const w of [a, b]) { w.st = 'chat'; w.chat = c; }
   a.face = 1; b.face = -1; const mid = (a.x + b.x) / 2, mz = (a.z + b.z) / 2; a.x = mid - 42; b.x = mid + 42; a.z = b.z = mz;
 }
@@ -707,7 +720,7 @@ function c4ChatStep(c, dt) {
   if (++c.i >= c.script.length) {
     for (const w of [c.a, c.b]) { w.st = 'walk'; w.face = w.dir; w.chat = null; w.cd = 18 + R() * 14; }
     if (c.news && c.heard && !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === c.news)) {
-      SAVE4.notes.push({ day: SAVE4.day + 1, kind: c.news, text: C4_NOTE[c.news] }); SAVE4.notes = SAVE4.notes.filter(n => n.day >= SAVE4.day);
+      SAVE4.notes.push({ day: SAVE4.day + 1, kind: c.news, text: `${c.from} kể: ${C4_NOTE[c.news]}`, from: c.from }); SAVE4.notes = SAVE4.notes.filter(n => n.day >= SAVE4.day);
       persist4(); AU.pluck(90); C4.noteNew = true; c4Hud(); toast('Đã ghi vào sổ tay.', 2);
     }
     return;
@@ -767,6 +780,7 @@ function c4DayAdvance() { trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.da
 function c4NewDay() {
   c4DayAdvance();
   if (c4Talk2Due()) { c4Sheets(null); c4Talk2(); return; }
+  c4OmensRoll();
   C4.day = SAVE4.day; C4.mins = C4_OPEN; C4.phase = 'morning'; C4.said = {}; C4.expect = []; C4.today = { sold: 0, take: 0, cogs: 0, served: 0, lost: 0, wilt: 0, wiltLoss: 0, spent: 0, got: 0, wages: 0 }; C4.spawnT = .3; C4.wed = null; C4.parade = null; C4.cat = null;
   for (const g of C4_SHOPS) if (c4Own(g)) SAVE4.shops[g].sick = false;
   c4DayLook();
@@ -889,9 +903,10 @@ function renderC4() {
   const wx = c4Wx(), rain = wx === 'mua';
   const dayK = Math.max(0, Math.min(1, (C4.mins - C4_OPEN) / (C4_CLOSE - C4_OPEN)));
   g.save(); g.translate(cx * .85, 0);
+  if (!rain && c4OmenOn('quang')) { const sx = 80 + dayK * (vw - 160), sy = -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, C4_Y0 + oy - 170); g.strokeStyle = 'rgba(255,244,205,.35)'; g.lineWidth = 6; g.beginPath(); g.arc(sx, sy, 50, 0, 6.283); g.stroke(); g.strokeStyle = 'rgba(255,244,205,.16)'; g.lineWidth = 12; g.beginPath(); g.arc(sx, sy, 62, 0, 6.283); g.stroke(); }
   g.fillStyle = rain || wx === 'ret' ? '#9d95b9' : c4Sunset() > .3 ? '#d4471c' : wx === 'gat' ? '#c73a1e' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, C4_Y0 + oy - 170), wx === 'gat' ? 40 : 32, 0, 6.283); g.fill(); g.stroke();
   g.restore();
-  c4Sky(g, V, cx, wx);
+  c4Sky(g, V, cx, wx); c4OmenSky(g, V, cx);
   g.save(); g.translate(cx * .55, 0); g.globalAlpha = .5;
   for (const [x, k, sc, hv] of (C4.scene ? C4.scene.far : [[-80, 'house', .45, 0], [260, 'bamboo', .5], [520, 'house', .42, 2], [880, 'tree', .45], [1180, 'house', .45, 4], [1500, 'bamboo', .45], [1720, 'house', .42, 1]]))
     if (x + 150 > cx * .45 - 40 && x - 150 < cx * .45 + vw + 40) dp(g, k === 'house' ? c4HouseArt(hv) : k === 'tree' ? WP.bigTree : PROPS.bamboo, x, C4_Y0 - 70, 0, sc, sc);
@@ -1000,7 +1015,7 @@ const c4Sunset = () => Math.max(0, Math.min(1, (C4.mins - 15 * 60) / 210));
 function c4Sky(g, V, cx, wx) {
   const skyH = C4_Y0 + V.oy, rain = wx === 'mua', sun = c4Sunset();
   g.save(); g.translate(cx, -V.oy);                                        // screen space: (0,0) the top left corner
-  if (sun > 0) { const gr = g.createLinearGradient(0, 0, 0, skyH); gr.addColorStop(0, `rgba(228,96,34,${.42 * sun})`); gr.addColorStop(1, `rgba(240,150,60,${.12 * sun})`); g.fillStyle = gr; g.fillRect(-10, -10, V.vw + 20, skyH + 10); }
+  if (sun > 0) { const gr = g.createLinearGradient(0, 0, 0, skyH); gr.addColorStop(0, `rgba(228,96,34,${.42 * sun * (c4OmenOn('hoang') ? 1.5 : 1)})`); gr.addColorStop(1, `rgba(240,150,60,${.12 * sun})`); g.fillStyle = gr; g.fillRect(-10, -10, V.vw + 20, skyH + 10); }
   // clouds: puffs, long streaks, the curled clouds of the prints; they drift slowly, a little behind the camera
   const n = rain ? 8 : wx === 'gat' ? 2 : 5, W = V.vw + 360;
   for (let i = 0; i < n; i++) {
@@ -1010,14 +1025,31 @@ function c4Sky(g, V, cx, wx) {
   }
   // birds: a flock now and then crosses the sky, wings beating
   if (!rain) for (let k = 0; k < 2; k++) {
-    const per = 16 + k * 7, cyc = (C4.t + k * 9) / per, fr = cyc % 1, r = mulberry(Math.floor(cyc) * 17 + k * 3 + 1);
-    if (r() < .35) continue;
+    const per = c4OmenOn('chim') ? 8 + k * 4 : 16 + k * 7, cyc = (C4.t + k * 9) / per, fr = cyc % 1, r = mulberry(Math.floor(cyc) * 17 + k * 3 + 1);
+    if (r() < (c4OmenOn('chim') ? .05 : .35)) continue;
     const dir = r() < .5 ? 1 : -1, y0 = 30 + r() * skyH * .4, cnt = 3 + ((r() * 4) | 0), x0 = dir > 0 ? -60 + fr * (V.vw + 160) : V.vw + 60 - fr * (V.vw + 160);
     g.strokeStyle = INK; g.lineWidth = 2; g.lineCap = 'round';
     for (let j = 0; j < cnt; j++) {
       const bx = x0 - dir * (j % 2 ? 1 : .5) * 22 * Math.ceil(j / 2), by = y0 + Math.ceil(j / 2) * (j % 2 ? 9 : -9) + Math.sin(C4.t * 2 + j) * 3, fl = Math.sin(C4.t * 11 + j * 1.7) * 5, w = 9;
       g.beginPath(); g.moveTo(bx - w, by - fl); g.quadraticCurveTo(bx - w * .4, by - 3 - fl * .3, bx, by); g.quadraticCurveTo(bx + w * .4, by - 3 - fl * .3, bx + w, by - fl); g.stroke();
     }
+  }
+  g.restore();
+}
+// the signs of rain in the scene (owner): one or two dragonflies skim low over the lane, ants run about the ground; never obvious
+function c4OmenSky(g, V, cx) {
+  const skyH = C4_Y0 + V.oy;
+  g.save(); g.translate(0, -V.oy);
+  if (c4OmenOn('chuon')) for (let i = 0; i < 2; i++) {
+    const r = mulberry(i * 13 + 7), W = V.vw + 200, sp = (30 + r() * 20) * (i ? 1 : -1);
+    const x = (((r() * W + C4.t * sp) % W) + W) % W - 100, y = skyH - 8 + Math.sin(C4.t * 3 + i * 2) * 5, fl = Math.sin(C4.t * 40 + i) * 2;
+    g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 12, y); g.lineTo(x + 12, y); g.stroke();
+    g.fillStyle = 'rgba(226,240,250,.85)'; g.beginPath(); g.ellipse(x - 2, y - 4 - fl, 7, 3, .2, 0, 6.283); g.fill(); g.stroke();
+    g.beginPath(); g.ellipse(x + 3, y - 4 + fl, 7, 3, -.2, 0, 6.283); g.fill(); g.stroke();
+  }
+  if (c4OmenOn('kien')) for (let i = 0; i < 4; i++) {
+    const r = mulberry(i * 29 + 3), x = r() * V.vw + Math.sin(C4.t * (1 + r()) + i) * 40, y = skyH + 14 + r() * 40 + Math.cos(C4.t * 2 + i) * 5;
+    g.fillStyle = '#2a1a10'; g.beginPath(); g.arc(x, y, 1.6, 0, 6.283); g.fill();
   }
   g.restore();
 }
