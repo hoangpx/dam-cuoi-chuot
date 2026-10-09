@@ -354,10 +354,11 @@ function c4BuyItem(id) {
   SAVE4.money -= it[2]; C4.today.spent += it[2]; SAVE4.home.items.push(id); AU.pluck(84); persist4(); c4Hud();
   toast(`Đã mua ${it[1].toLowerCase()} về phòng khách.`, 2.6);
 }
-// the money a misfortune takes (owner): a share of the purse as it is now times the number of stalls, drawn between a low and a high share; at least 20 đồng for each stall, never more than the purse
-// and it grows with the stalls the family has (owner: bribing soldiers with four stalls costs four times as much)
+// the money a misfortune takes (owner, 2026-10-09): a base amount (lo/hi × 1000 đồng, at least `min`) times the stalls' levels, never more than the purse. The tax stays a share of the profit.
+// (a stall of level 1 counts 1, level 2 counts 2…; bought neighbour stalls count 1)
 const c4Stalls = () => Math.max(1, c4Owned().length);
-const c4LossRange = (lo, hi, min = 20) => { const m = Math.max(0, SAVE4.money), k = c4Stalls(); return [Math.min(m, Math.max(min * k, Math.round(m * lo * k))), Math.min(m, Math.max(min * k, Math.round(m * hi * k)))]; };
+const c4LossMult = () => c4Owned().reduce((n, g) => n + (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g)) + 1, 0);   // each stall counts its level (1 for the first): 2 stalls of level 1 = 2, level 1 + level 2 = 3, two of level 2 = 4
+const c4LossRange = (lo, hi, min = 20) => { const m = Math.max(0, SAVE4.money), k = c4LossMult(); return [Math.min(m, Math.max(min * k, Math.round(1000 * lo * k))), Math.min(m, Math.max(min * k, Math.round(1000 * hi * k)))]; };   // lo, hi: the base amount ÷ 1000 (a share of 1000 đồng)
 const c4Loss = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return Math.min(SAVE4.money, a + Math.round(R() * (b - a))); };
 const c4LossText = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return a === b ? c4Money(a) : `từ ${c4Money(a)} đến ${c4Money(b)}`; };
 const C4_EXTRA_EV = {

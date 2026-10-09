@@ -182,12 +182,19 @@ function c4ApplyHtml(g, L) {
 // the hands' moods for today (owner): a hand on a low wage asks for a raise more often; a refused ask lowers the relationship;
 // at 30 or less they may give notice
 function c4HandPlan(ev) {
-  for (const g of c4Owned()) for (const h of c4Hands(g)) {
-    if (h.sick || h.trip) continue;
-    const w = c4Wage(g, h), low = Math.max(0, Math.min(1, 1 - w / (c4WageAt(g, 0) * 4))), at = C4_OPEN + 60 + R() * (C4_CLOSE - C4_OPEN - 120);
-    if (h.rel <= 30 && R() < .35) ev.push({ at, kind: 'hanghi', hand: { g, h } });
-    else if (SAVE4.day - h.askDay >= 2 && R() < .08 + .3 * low) ev.push({ at, kind: 'tangluong', hand: { g, h } });
+  const hp = SAVE4.handPlan && SAVE4.handPlan.day === SAVE4.day ? SAVE4.handPlan : (SAVE4.handPlan = { day: SAVE4.day, item: undefined });
+  if (hp.item === undefined) {                                             // rolled once a day, and at most one ask a day (owner: several came at once)
+    const cands = [];
+    for (const g of c4Owned()) for (const h of c4Hands(g)) {
+      if (h.sick || h.trip) continue;
+      const w = c4Wage(g, h), low = Math.max(0, Math.min(1, 1 - w / (c4WageAt(g, 0) * 4)));
+      if (h.rel <= 30 && R() < .35) cands.push({ kind: 'hanghi', g, name: h.name });
+      else if (SAVE4.day - h.askDay >= 2 && R() < .08 + .3 * low) cands.push({ kind: 'tangluong', g, name: h.name });
+    }
+    hp.item = cands.length ? { ...c4Pick(cands), at: C4_OPEN + 60 + R() * (C4_CLOSE - C4_OPEN - 120) } : null;
   }
+  const it = hp.item; if (!it) return;
+  const h = c4Hands(it.g).find(x => x.name === it.name); if (h) ev.push({ at: it.at, kind: it.kind, hand: { g: it.g, h } });
 }
 
 /* ---------- the husband between errands (a player): he strolls about in front of the stalls calling people in,

@@ -361,6 +361,7 @@ function c4Receive(g, q, cost, src = 'giua') {
 const c4Unit = g => (C4.unit && C4.unit[g]) || c4Cost(g);
 
 /* ---------- things that happen, and what you decide ---------- */
+function c4NoteFired(kind) { const f = SAVE4.fired && SAVE4.fired.day === SAVE4.day ? SAVE4.fired : (SAVE4.fired = { day: SAVE4.day, ks: [] }); f.ks.push(kind); }
 function c4PlanEvents() {
   const p = SAVE4.plan, ev = [], at = (a, b) => (a + R() * (b - a)) * 60, own = c4Owned();
   if (p.cuoi) ev.push({ at: at(6.5, 8), kind: 'cuoi' });
@@ -381,6 +382,10 @@ function c4PlanEvents() {
   }   // Hảo cảm: one or two verdicts a day (haocam.js)
   if (p.cuoi || R() < .2) C4.parade = { at: at(9, 11), x: null };       // a wedding procession goes through the market
   c4HandPlan(ev);
+  { const done = SAVE4.fired && SAVE4.fired.day === SAVE4.day ? SAVE4.fired.ks : [];                     // what already came today is not rolled again after a reload (cụ Lý came twice)
+    for (let i = ev.length - 1; i >= 0; i--) if (ev[i].kind !== 'hao' && done.includes(ev[i].kind)) ev.splice(i, 1); }
+  C4.evGap = 0;
+
   C4.events = ev.sort((a, b) => a.at - b.at); C4.evRepl = 0;
   SAVE4.taskDay = null; c4Tasks(); c4NvInit();                                         // today's tasks, now that today's happenings are known
 }
@@ -400,6 +405,7 @@ function c4Event(kind) {
       [`Dâng con cá · ${c4Money(catFee)}`, () => { sp(catFee); C4.cat.st = 'fed'; C4.cat.t = 0; toast('Mèo ngoạm cá, nhảy tót lên mái nhà đi mất.', 3); }, SAVE4.money >= catFee],
       ['Không dâng', () => { C4.cat.st = 'sit'; C4.cat.t = 0; toast('Mèo ngồi chễm chệ trước gánh suốt một canh giờ (khoảng 2 tiếng). Khách sợ, chẳng ai dám ghé!', 3.4); }]] });
   } else if (kind === 'thue') {
+    if (SAVE4.thueDay === SAVE4.day) return; SAVE4.thueDay = SAVE4.day;                                  // cụ Lý comes once a day
     const d = c4Tax(), earn = c4Earned();
     Object.assign(E, { title: 'Cụ Lý thu thuế chợ', text: `Cụ Lý chống gậy đến, giở sổ: "Năm phiên qua nhà ${own.length > 1 ? 'có ' + own.length + ' hàng' : 'gánh trầu'} lãi ${c4Money(earn)}. Thuế luỹ tiến: ba trăm đồng đầu năm phần trăm, đến hai quan mười phần trăm, trên nữa mười lăm phần trăm, cộng tiền chỗ: ${d} đồng!"`, opts: [
       [`Nộp ${d} đồng`, () => { sp(d); toast('Cụ Lý gật gù, ghi vào sổ.'); }, SAVE4.money >= d],
@@ -604,7 +610,7 @@ function updateC4(dt) {
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
     for (const v of C4.vendors) if (!c4VendorMine(v) && (v.callT -= dt) <= 0) { v.callT = 9 + R() * 9; if (Math.abs(v.x - C4.camX - c4View().vw / 2) < 600) c4Say(v, c4Pick(v.calls)); }
-    if (C4.events.length && C4.mins >= C4.events[0].at && !Object.values(C4.SV).some(A => A && A.length)) { c4Dispatch(C4.events[0].kind, C4.events.shift()); return; }
+    if (C4.events.length && C4.mins >= C4.events[0].at && C4.mins >= (C4.evGap || 0) && !Object.values(C4.SV).some(A => A && A.length)) { const e0 = C4.events.shift(); c4NoteFired(e0.kind); C4.evGap = C4.mins + 30; c4Dispatch(e0.kind, e0); return; }   // one at a time, half an hour apart (owner: several came together)
     // noon: sticky rice goes off; scorching days wilt some betel
     if (was < 12 * 60 && C4.mins >= 12 * 60) {
       if (c4Own('xoi') && c4Stock('xoi') > 0) { const n = c4Stock('xoi'); C4.today.wilt += n; C4.today.wiltLoss += n * c4Unit('xoi'); c4SetStock('xoi', 0); toast(`Đến trưa (12:00), ${n} gói xôi thiu phải đổ bỏ.`, 3); }
@@ -897,7 +903,7 @@ function c4SignDraw(g, x, y, s, name) {
   g.fillStyle = INK; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, 0, C4_SIGN_Y + 1);
   g.restore();
 }
-const c4SignHit = (x, y, sx, sy, s) => Math.abs(x - sx) < 66 * s && y > sy + (C4_SIGN_Y - 18) * s && y < sy + (C4_SIGN_Y + 18) * s;
+const c4SignHit = (x, y, sx, sy, s) => Math.abs(x - sx) < 66 * s && y > sy + (C4_SIGN_Y - 18) * s && y < sy + (C4_SIGN_Y + 42) * s;   // (owner: a little lower than the board)
 function renderC4() {
   // a sheet is open: the market behind it is drawn once and then kept still (the book lagged phones)
   if (C4.sheet && C4.sheet !== 'c4day' && C4.drawnSheet === C4.sheet) return;
