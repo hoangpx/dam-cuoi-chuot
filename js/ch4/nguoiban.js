@@ -23,7 +23,7 @@ function c4HandName() {
 const c4TraitWord = v => v >= .66 ? 'cao' : v >= .33 ? 'vừa' : 'thấp';
 // a bar like a health bar: red when low, yellow in the middle, green when high (owner)
 const c4TraitBar = (lab, v) => { const c = v >= .66 ? '#4f9a4a' : v >= .33 ? '#e0b43a' : '#b8412e'; return `<div class="tbar"><span>${lab}</span><i><b style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%;background:${c}"></b></i></div>`; };
-const c4NewHand = (g, name) => ({ name: name || c4HandName(), sort: c4Pick(C4_HELPERS), unpaid: 0, sp: R(), wm: R(), ho: R(), rel: 60, askDay: -9 });
+const c4NewHand = (g, name) => ({ name: name || c4HandName(), sort: c4Pick(C4_HELPERS), unpaid: 0, sp: R(), wm: R(), ho: R(), rel: 60, askDay: SAVE4.day });
 const c4FixHand = h => { if (h.sp === undefined) h.sp = R(); if (h.wm === undefined) h.wm = R(); if (h.ho === undefined) h.ho = R(); if (h.rel === undefined) h.rel = 60; if (h.askDay === undefined) h.askDay = -9; return h; };
 const c4Clamp01 = v => Math.max(0, Math.min(1, v));
 const c4Drift = h => { h.sp = c4Clamp01(h.sp + .02); h.wm = c4Clamp01(h.wm + (R() - .5) * .06); h.ho = c4Clamp01(h.ho + (R() - .5) * .04); };
@@ -189,7 +189,7 @@ function c4HandPlan(ev) {
       if (h.sick || h.trip) continue;
       const w = c4Wage(g, h), low = Math.max(0, Math.min(1, 1 - w / (c4WageAt(g, 0) * 4)));
       if (h.rel <= 30 && R() < .35) cands.push({ kind: 'hanghi', g, name: h.name });
-      else if (SAVE4.day - h.askDay >= 2 && R() < .08 + .3 * low) cands.push({ kind: 'tangluong', g, name: h.name });
+      else if (SAVE4.day - h.askDay >= 5 && SAVE4.day - (SAVE4.lastHandAsk ?? -99) >= 2 && R() < .08 + .3 * low) cands.push({ kind: 'tangluong', g, name: h.name });
     }
     hp.item = cands.length ? { ...c4Pick(cands), at: C4_OPEN + 60 + R() * (C4_CLOSE - C4_OPEN - 120) } : null;
   }
