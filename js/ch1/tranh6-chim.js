@@ -8,7 +8,9 @@
    (T6B_STAGES[].cuts). Cutting every rope on the two friends costs too many cuts, so the free region has to be widened over knots,
    as long as no hawk loses its last way to a ring. 5 stages, the last one very hard. Out of cuts = start the stage over.
    T6B_REQUIRED = false makes it optional. Saved in SAVE.t6.birds. */
-const T6B_REQUIRED = true;
+// the bird puzzle is switched off for now (owner: too easy): T6B_ON = false takes the banyan out of the tranh and the gate no longer waits for it
+const T6B_ON = false;
+const T6B_REQUIRED = T6B_ON;
 const T6B = { st: 'off', k: 0, done: false, stage: 0, E: [], B: [], cuts: [], t: 0, how: 0, px: null, py: null, moved: 0, left: 0 };
 const t6bRy = () => T6B_STAGES[T6B.stage].ry;                                       // where the rings hang: below the lowest bird of the stage
 const T6B_STAGES = [

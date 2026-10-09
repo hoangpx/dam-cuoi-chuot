@@ -480,7 +480,7 @@ function t6Gate(x) {
       this.ask = at ? Math.min(1, this.ask + dt * 6) : Math.max(0, this.ask - dt * 4);
     },
     draw(g) { dp(g, PROPS.gate, x, GROUND + 4); },
-    drawFg(g) { if (this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
+    drawFg(g) { if (this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done && T6B_ON ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
   };
 }
 
@@ -498,7 +498,7 @@ LEVELS[5] = {
       t6Pond(1250, 3300, 1800),
       decor(PROPS.bamboo, 2330, GROUND + 4, .85, -1),
       t6Cau(2620),
-      t6Chim(3180),
+      ...(T6B_ON ? [t6Chim(3180)] : []),
       t6Gate(3450),
     ];
   },
