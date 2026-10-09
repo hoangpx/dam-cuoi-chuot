@@ -15,7 +15,7 @@ const LANG_LOCALE = { vi: 'vi-VN', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'e
 const tr = en => Array.isArray(en) ? en.map(tr) : LANG === 'en' || LANG === 'vi' ? en : ((LANG_TR[LANG] || {})[en] ?? en);
 const lg = (vi, en) => (IS_EN && en != null ? tr(en) : vi);
 const lgf = (vi, en, v) => lg(vi, en).replace(/\{(\w+)\}/g, (m, k) => v[k] ?? m);
-const LANG_READY = new Set([3, 6]);
+const LANG_READY = new Set([3, 6, 8]);
 function setLang(l) { try { localStorage.setItem('dcc.lang', l); } catch (e) {} location.reload(); }
 document.documentElement.lang = LANG;
 // the page's HTML in English: [selector, inner HTML, attribute (optional: set that attribute instead)]

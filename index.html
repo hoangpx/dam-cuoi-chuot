@@ -39,6 +39,7 @@
 <link rel="stylesheet" href="css/ch2.css">
 <link rel="stylesheet" href="css/ch3.css">
 <link rel="stylesheet" href="css/ch4.css">
+<link rel="stylesheet" href="css/ch8.css">
 
 <canvas id="cv" tabindex="0" aria-label="Màn chơi Đám Cưới Chuột"></canvas>
 
@@ -48,6 +49,7 @@
 </div>
 <div id="toast"><span id="toastTx"></span></div>
 <div id="lvCard"><div class="han" id="lvHan"></div><b id="lvTitle"></b></div>
+<div id="c8pad" hidden><div class="mv"><button id="bL8" aria-label="Đi sang trái">◀</button><button id="bR8" aria-label="Đi sang phải">▶</button></div><button id="bJ8" aria-label="Nhảy">▲</button></div>
 <div id="pad" hidden><button id="bL" aria-label="Đi sang trái">◀</button><button id="bR" aria-label="Đi sang phải">▶</button></div>
 <div id="abil" hidden>
   <button data-a="drum" id="bDrum"><span class="k">1</span>Trống</button>
@@ -157,6 +159,7 @@
   <h2>Chương IV · Vợ Chồng Khởi Nghiệp</h2><p>Vợ chồng chuột mới cưới ra chợ quê buôn bán, để dành đủ hai quan tiền. Quen khách, nâng cấp gánh hàng, thuê người làm.</p>
   <h2>Chương VI · Tìm Chuột</h2><p>Chuột mẹ ra đồng gọi lũ con về: mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con.</p>
   <h2>Chương VII · Ai Ăn Vụng?</h2><p>Mâm xôi, nồi cơm nếp, đĩa cá kho bỗng biến mất. Nghe lời khai của cả làng và tìm ra kẻ ăn vụng.</p>
+  <h2>Chương VIII · Gom Ba Mở Lối</h2><p>Con chuột nhỏ đi qua lối mòn trong làng. Kéo ngón tay nối từ ba món giống nhau trở lên để chúng biến mất, đồ bên trên rơi xuống thành cầu, thành bậc thang cho chuột nhảy, leo tới chiếc rương.</p>
 </section>
 <div id="loading"><div class="lc">
   <div class="seal">囍</div>
@@ -187,7 +190,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-18av';
+const VERSION = '2026-10-18ci';
 const FONT_CHARS = '守生橋鑰戶石雲開鎖飛拉走弱和不有囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [
@@ -245,6 +248,10 @@ const GAME_FILES = [
   'js/ch7/cases.js',
   'js/ch7/vu.js',
   'js/ch7/game.js',
+  'js/ch8/levels.js',
+  'js/ch8/engine.js',
+  'js/ch8/art.js',
+  'js/ch8/game.js',
   'js/core/goiy.js',
   'js/core/hub.js',
   'js/core/install.js',

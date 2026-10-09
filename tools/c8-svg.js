@@ -1,0 +1,46 @@
+// generic picture (SVG) of a level script's solution in the real engine, the mouse walking to where it stood: node tools/c8-svg.js <script> <map rows> <row offset> <k0> <k1> <fLo> <fHi> <boxK> <boxF> "<title>"
+const fs = require('fs'), vm = require('vm'), { execSync } = require('child_process');
+const [script, nRows, off, k0, k1, fLo, fHi, boxK, boxF, title = ''] = process.argv.slice(2); const K0 = +k0, K1 = +k1, F0 = +fLo, F1 = +fHi, OFF = +off;
+const out = execSync('node tools/' + script + ' 5', { env: process.env, maxBuffer: 1e8 }).toString().split('\n'), map = out.slice(0, +nRows);
+const steps = out.filter(l => /^\d stand/.test(l)).map(l => ({ from: JSON.parse(l.split('stand ')[1].split(' gather')[0]), cells: JSON.parse(l.split('gather (k, f) ')[1]) }));
+const ctx = { console, map, steps, OFF, K0, K1, F0, F1 }; vm.createContext(ctx); vm.runInContext(fs.readFileSync('js/ch8/engine.js', 'utf8'), ctx);
+const { settleMouse, parse: parseMap } = require('./c8-solve.js');
+const absBoards = () => {                                                       // boards from the checker's own model (no engine): the mouse where the solution says it stands
+  const P = parseMap({ map }), w = P.W, h = P.H, c = P.cells.slice(); require('./c8-solve.js').settle(c, w, h); const res = [];
+  const near = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1;
+  const order = cells => { for (const s0 of cells) { const used = new Set([s0.join()]), path = [s0]; const dfs = () => { if (path.length === cells.length) return true; for (const q of cells) if (!used.has(q.join()) && near(path[path.length - 1], q)) { used.add(q.join()); path.push(q); if (dfs()) return true; path.pop(); used.delete(q.join()); } return false; }; if (dfs()) return path; } return cells; };
+  const snap = (chain, m) => { const rows = []; for (let f = F1; f >= F0; f--) { let row = ''; for (let k = K0; k <= K1; k++) { const i = (OFF - f) * w + k + 7, ch = c[i]; row += ch === ' ' ? (P.water[i] ? '~' : '.') : ch; } rows.push(row); } res.push({ rows, chain, mouse: m }); };
+  let q = null;
+  steps.forEach(st => { const m = [st.from[0], st.from[1]]; const p = order(st.cells); snap(p, m); for (const [k, f] of p) c[(OFF - f) * w + k + 7] = ' '; const q2 = settleMouse(c, w, h, [m[0] + 7, OFF - m[1]]); q = q2 ? [q2[0] - 7, OFF - q2[1]] : m; });
+  snap(null, q || [0, 1]); return JSON.stringify(res); };
+const boards = process.env.ABS ? JSON.parse(absBoards()) : JSON.parse(vm.runInContext(`(() => { const G = c8New({ map }), w = G.W, res = [];
+  const near = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1;
+  const order = cells => { for (const s of cells) { const used = new Set([s.join()]), path = [s]; const dfs = () => { if (path.length === cells.length) return true; for (const c of cells) if (!used.has(c.join()) && near(path[path.length - 1], c)) { used.add(c.join()); path.push(c); if (dfs()) return true; path.pop(); used.delete(c.join()); } return false; }; if (dfs()) return path; } return cells; };
+  const tick = i => c8Tick(G, 1 / 60, i || {});
+  const walkTo = tx => { for (let k = 0; k < 600; k++) { const p = G.p, dx = tx - p.x; if (Math.abs(dx) < .12 && p.on) return; const row = Math.floor(p.y - .1), dir = dx > 0 ? 1 : -1, wall = c8Solid(G, Math.floor(p.x + dir * .4), row) || c8Solid(G, Math.floor(p.x + dir * .4), row - 1); tick({ r: dx > 0, l: dx < 0, jump: p.on && wall }); } };
+  const snap = chain => { const rows = []; for (let f = F1; f >= F0; f--) { let row = ''; for (let k = K0; k <= K1; k++) { const i = (OFF - f) * w + k + 7, ch = G.cells[i]; row += ch === ' ' ? (G.water[i] ? '~' : '.') : ch; } rows.push(row); } res.push({ rows, chain, mouse: [Math.floor(G.p.x) - 7, OFF - Math.floor(G.p.y - .1)] }); };
+  for (let t = 0; t < 60; t++) tick();
+  steps.forEach(s => { walkTo(s.from[0] + 7 + .5); for (let t = 0; t < 30; t++) tick(); const p = order(s.cells); snap(p); for (const [k, f] of p) c8Reach(G, (OFF - f) * w + k + 7); c8Let(G); for (let t = 0; t < 5; t++) tick(); let m = 0; while (c8Moving(G) && m < 900) { tick(); m++; } for (let t = 0; t < 40; t++) tick(); });
+  snap(null); return JSON.stringify(res); })()`, ctx));
+const s = 20, cols = K1 - K0 + 1, rowsN = F1 - F0 + 1, PW = cols * s, PH = rowsN * s + 8;
+const per = Math.floor(660 / (PW + 30)) || 1, names = boards.map((b, i) => i === 0 ? 'Bước 1' : i < boards.length - 1 ? 'Bước ' + (i + 1) : 'Kết quả');
+const panels = boards.map((b, i) => ({ x: 20 + (i % per) * (PW + 30), y: 44 + Math.floor(i / per) * (PH + 56) }));
+const H = panels[panels.length - 1].y + PH + 90;
+let o = `<svg width="100%" viewBox="0 0 680 ${H}" role="img"><title>${title}</title><desc>Các lần ăn và vị trí chuột.</desc><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>\n`;
+const cx = (P, k) => P.x + (k - K0) * s + s / 2, cy = (P, f) => P.y + (F1 - f) * s + s / 2;
+boards.forEach((B, i) => { const P = panels[i]; o += `<text class="th" x="${P.x}" y="${P.y - 12}">${names[i]}${B.chain ? ': ăn ' + B.chain.length + ' ô' : ''}</text>`;
+  o += `<rect class="c-gray" x="${P.x}" y="${P.y + rowsN * s}" width="${PW}" height="8"/>`;
+  B.rows.forEach((row, r) => { let c = 0; while (c < cols) { const ch = row[c]; if (ch === '#' || ch === '~') { let e = c; while (e < cols && row[e] === ch) e++; o += ch === '#' ? `<rect class="c-gray" x="${P.x + c * s}" y="${P.y + r * s}" width="${(e - c) * s}" height="${s}"/>` : `<rect x="${P.x + c * s}" y="${P.y + r * s}" width="${(e - c) * s}" height="${s}" fill="#85B7EB" opacity="0.45"/>`; c = e; continue; }
+      const x = P.x + c * s, y = P.y + r * s;
+      if (ch === 'i') o += `<rect class="c-blue" x="${x + 1}" y="${y + 1}" width="${s - 2}" height="${s - 2}" rx="3"/>`;
+      else if (ch === 'd') o += `<rect class="c-amber" x="${x + 1}" y="${y + 1}" width="${s - 2}" height="${s - 2}" rx="3"/>`;
+      else if (ch === 'a') o += `<circle class="c-red" cx="${x + s / 2}" cy="${y + s / 2}" r="6"/>`;
+      else if (ch === 'b') o += `<circle class="c-teal" cx="${x + s / 2}" cy="${y + s / 2}" r="7"/>`;
+      else if (ch === 'c') o += `<circle class="c-green" cx="${x + s / 2}" cy="${y + s / 2}" r="7"/>`;
+      else if (ch === 'o') o += `<circle cx="${x + s / 2}" cy="${y + s / 2}" r="6" fill="none" stroke="var(--border-strong)" stroke-width="1.5" stroke-dasharray="2 2"/>`; c++; } });
+  o += `<rect class="c-green" x="${P.x + (+boxK - K0) * s + 3}" y="${P.y + rowsN * s - 2}" width="${s - 6}" height="${s - 6 + 8}" rx="2" opacity="0.9"/>`;
+  if (B.chain) o += `<polyline points="${B.chain.map(([k, f]) => cx(P, k) + ',' + cy(P, f)).join(' ')}" fill="none" stroke="#1D9E75" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/><circle cx="${cx(P, B.chain[0][0])}" cy="${cy(P, B.chain[0][1])}" r="5" fill="#1D9E75"/>`;
+  o += `<circle cx="${cx(P, B.mouse[0])}" cy="${cy(P, B.mouse[1]) + 3}" r="6" class="c-purple"/>`; });
+const L = panels[panels.length - 1], ly = L.y + PH + 22;
+o += `<text class="ts" x="20" y="${ly}">Đất = ô nâu, băng = ô xanh dương (chạm là chết), lửa = chấm đỏ, xoáy vàng = chấm xanh ngọc, nước = nền xanh nhạt, hộp xám = ô xanh lục ở sàn, chuột = chấm tím, nét xanh lá = nét kéo ăn.</text></svg>`;
+fs.writeFileSync((process.env.TEMP || '.') + '/level.svg', o); console.log(o.length, boards.length + ' panels');

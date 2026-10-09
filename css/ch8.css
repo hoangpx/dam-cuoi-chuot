@@ -1,0 +1,6 @@
+/* Chương VIII · Gom Ba Mở Lối: the three buttons that walk and jump the mouse on a phone. */
+#c8pad{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:flex-end;padding-inline:16px;z-index:4;pointer-events:none}
+#c8pad .mv{display:flex;gap:12px}
+#c8pad button{pointer-events:auto;width:68px;height:68px;border-radius:50%;border:2px solid var(--ink);background:rgba(242,236,222,.88);font-size:24px;color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:3px 3px 0 rgba(29,25,21,.35)}
+#c8pad button:active{background:var(--son);color:var(--diep)}
+#c8pad[hidden]{display:none}
