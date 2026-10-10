@@ -133,9 +133,9 @@ function gkMake() {
     }
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
     const used = [];
-    for (let n = 0, guard = 0; n < 48 && guard < 700; guard++) {              // far tears of the back sheet
+    for (let n = 0, guard = 0; n < 90 && guard < 1600; guard++) {              // far tears of the back sheet
       const r = ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
-      if (used.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 3)) continue;
+      if (used.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 2)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, near)) continue;
       orInto(mAk, mr); used.push([cx, cy, r]); n++;
     }
@@ -144,9 +144,9 @@ function gkMake() {
     const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
     for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
     const usedB = [];
-    for (let n = 0, guard = 0; n < 48 && guard < 700; guard++) {              // far tears of the front sheet: nowhere the back sheet is torn when laid right
+    for (let n = 0, guard = 0; n < 90 && guard < 1600; guard++) {              // far tears of the front sheet: nowhere the back sheet is torn when laid right
       const r = ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
-      if (usedB.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 3)) continue;
+      if (usedB.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 2)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, reach)) continue;
       orInto(mBk, mr); usedB.push([cx, cy, r]); n++;
     }
