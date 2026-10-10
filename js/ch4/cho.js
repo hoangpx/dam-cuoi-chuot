@@ -385,7 +385,7 @@ function c4PlanEvents() {
   const pool = ['vay', 'chiu', 'boi', 'trom', 'ho', 'cau', 'tuan', 'xin', 'trong', 'sau', 'linh', 'gio', 'lua', 'rival', 'tangtien', ...c4ExtraPool(own)];
   if (!SAVE4.cauDoi) pool.push('do');
   if (own.includes('che') || own.includes('xoi') || own.includes('bun')) pool.push('do2', 'do2');
-  if (own.length > 1) pool.push('om', 'bot', 'om');
+  if (own.length > 1) pool.push('om', 'om');                       // ('bot', the announced skimming, is gone: a hand's skimming is silent now, the player finds it in the tally)
   if (SAVE4.money >= C4_RICH) { pool.push('kien'); if (own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner)
   for (let i = 0; i < 3 && pool.length; i++) ev.push({ at: at(7, 16.5), kind: pool.splice((R() * pool.length) | 0, 1)[0] });
   if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });
@@ -510,7 +510,9 @@ function c4Event(kind) {
     E.def = 0; Object.assign(E, { title: 'Người phụ ốm', text: `${c4Cap1(s.name)} bán ${C4_GOODS[g].name.toLowerCase()} lên cơn sốt, xin nghỉ về nhà. Hôm nay hàng ${C4_GOODS[g].name.toLowerCase()} thiếu một người bán.`, opts: [
       ['Cho nghỉ, vẫn trả công', () => { s.sick = true; }],
       ['Trừ công hôm nay', () => { s.sick = true; s.nowage = true; if (R() < .4) { s.quit = true; toast(`${c4Cap1(s.name)} giận, mai không làm nữa!`, 3); } }]] });
-  } else if (kind === 'bot') {                                              // a helper skims off the takings
+  } else if (kind === 'bot') {                                              // (retired, owner 2026-10-10: skimming is silent now, see c4PayHands)
+    return;
+  } else if (kind === 'bot_old') {                                          // a helper skims off the takings
     const g = c4Pick(helped); if (!g) return;
     const s = c4Pick(c4HandsOn(g)), n = c4Loss(.02, .06, 10); sp(n);
     Object.assign(E, { title: 'Hụt tiền', text: `Đếm tiền hàng ${C4_GOODS[g].name.toLowerCase()} thấy hụt ${n} đồng. Hình như ${s.name} bớt xén.`, opts: [
