@@ -119,7 +119,7 @@ function gkMake() {
     let cov = 0; for (let i = 0; i < M; i++) cov += mask[i];
     const dens = (cx, cy) => { let d = 0; for (let dy = -10; dy <= 10; dy += 2) for (let dx = -10; dx <= 10; dx += 2) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < S && y < S) d += mask[(y | 0) * S + (x | 0)]; } return d; };
     const put = (cx, cy) => {                                                // one small tear at (cx, cy), unless it would touch what is forbidden
-      const r = R() < .05 ? ri(8, 11) : ri(2, 6), poly = R() < .03 ? gkRip() : gkBlob(cx, cy, r), idx = gkStamp(poly);
+      const r = R() < .2 ? ri(9, 18) : ri(2, 6), poly = R() < .03 ? gkRip() : gkBlob(cx, cy, r), idx = gkStamp(poly);
       if (idx.some(i => forbid[i])) return false; for (const i of idx) if (!mask[i]) { mask[i] = 1; cov++; } return true;
     };
     for (let guard = 0; cov < target * M && guard < 9000; guard++) {
