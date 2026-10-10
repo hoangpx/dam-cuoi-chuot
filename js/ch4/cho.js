@@ -791,6 +791,7 @@ function c4EndDay() {
   $('#c4dayN').innerHTML = c4ByShopHtml(d) + `${d.served} khách mua${d.lost ? ' · ' + d.lost + ' khách bỏ đi' : ''}`
     + (lines.length || d.wiltLoss ? `<br><span class="bad">Hàng hỏng phải bỏ${lines.length ? ' (' + lines.join(', ') + ')' : ''}: mất ${c4Money(d.wiltLoss)}</span>` : '')
     + (d.wages ? `<br>Trả công người phụ: ${c4Money(d.wages)}` : '')
+    + (c4Owned().some(g => c4Hands(g).length) ? `<br>Bán được ${c4Money(Math.round(d.take))} · tiền thu về tay ${c4Money(Math.round(d.take - (d.skim || 0)))}` : '')   // (owner: the player reckons whether it adds up)
     + (d.spent ? `<br>Chi khác (củi, lễ, tiền chợ, cho vay…): ${c4Money(d.spent)}` : '')
     + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '')
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')

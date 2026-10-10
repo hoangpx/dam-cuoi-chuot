@@ -132,7 +132,12 @@ function c4PayHands(d, quits) {
       // themselves at the end of the day. The more honest the hand, the rarer and the smaller (a fully honest one never does); the
       // same goes for running off with the takings above.
       const dis = 1 - h.ho;
-      if (tk > 0 && R() < Math.min(.9, dis * dis * .6 * (h.rel < 40 ? 1.5 : 1))) { const take = Math.min(tk, Math.max(1, Math.round(tk * (.02 + dis * .07 * R())))); SAVE4.money -= take; }
+      // (owner) a hand who gets away with it takes more the next day, and more again: h.greed counts the nights; a word to them (Nhắc nhở) or letting them go ends it
+      const gr = h.greed || 0;
+      if (tk > 0 && R() < Math.min(.9, dis * dis * .6 * (h.rel < 40 ? 1.5 : 1) * (1 + .25 * gr))) {
+        const take = Math.min(tk, Math.max(1, Math.round(tk * Math.min(.35, (.02 + dis * .07 * R()) * (1 + .5 * gr)))));
+        SAVE4.money -= take; h.greed = Math.min(8, gr + 1); const b = d.by && d.by[g]; if (b) b.skim = (b.skim || 0) + take; d.skim = (d.skim || 0) + take;
+      }
     }
   }
 }
@@ -142,7 +147,7 @@ function c4HandsBlock(g) {
   let apply = null;                                                       // the applicants for the hire, while the list is open
   const draw = () => {
     el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, người đầu công ${c4Money(c4WageAt(g, 0))} một ngày, người thứ hai gấp đôi, người thứ ba gấp đôi người thứ hai, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
-      + (H.length ? H.map((h, i) => `<div class="hand"><span><b>${c4Cap1(h.name)}</b>${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}${c4TraitBar('quan hệ', h.rel / 100)}</div></span><button class="btn alt" data-off="${i}">Đuổi việc</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
+      + (H.length ? H.map((h, i) => `<div class="hand"><span><b>${c4Cap1(h.name)}</b>${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}${c4TraitBar('quan hệ', h.rel / 100)}</div></span><button class="btn alt" data-warn="${i}">Nhắc nhở</button><button class="btn alt" data-off="${i}">Đuổi việc</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
       + (apply ? c4ApplyHtml(g, apply) : H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4NextWage(g))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
       if (H.length >= C4_HANDS_MAX || Date.now() - (c4HandsBlock.last || 0) < 800) { draw(); return; }   // (a double tap could hire past the limit; a lagging tap hired twice)
@@ -159,6 +164,9 @@ function c4HandsBlock(g) {
         H.push({ ...hand, wageUp: ask - c4WageAt(g, H.length) }); apply = null;
         toast(`${c4Cap1(hand.name)} nhận bán ${G.name.toLowerCase()}, đòi công ${c4Money(ask)}/ngày.`); persist4(); draw();
       }); return;
+    }));
+    el.querySelectorAll('[data-warn]').forEach(b => b.addEventListener('click', () => {      // a word to the hand: the greed resets, they like you a little less
+      const h = H[+b.dataset.warn]; if (!h) return; h.greed = 0; c4HandRel(h, -5); AU.tap(); toast(`Nhắc ${c4Cap1(h.name)} một câu: "Làm ăn phải thật thà." ${c4Cap1(h.name)} gật đầu, hơi chạnh lòng.`, 3); persist4(); draw();
     }));
     el.querySelectorAll('[data-off]').forEach(b => b.addEventListener('click', () => {
       const h = H[+b.dataset.off]; if (!h) return;

@@ -500,10 +500,11 @@ function c4OpenUps() {
   c4Sheets('c4ev');
 }
 // the tally, stall by stall: what each brought in after its goods
+const hasHands = g => c4Hands(g).length > 0;
 function c4ByShopHtml(d) {
   const B = d.by || {}, rows = c4Owned().map(g => [g, B[g] || { take: 0, cogs: 0, n: 0 }]).map(([g, b]) => [g, b, b.take - b.cogs - (b.wage || 0)]);
   const max = Math.max(1, ...rows.map(r => Math.abs(r[2])));
-  return `<div class="byshop">${rows.sort((a, b) => b[2] - a[2]).map(([g, b, net]) => `<div class="bs"><span class="tg">${g === 'trau' ? c4Lv().name : c4SLv(g).name}</span><b>${C4_GOODS[g].name}</b><span class="${net >= 0 ? 'gain' : 'bad'}">${net >= 0 ? '+' : '−'}${c4Money(Math.abs(net))}</span><i class="bar"><i style="width:${Math.abs(net) / max * 100}%"></i></i><small>${b.n} ${C4_GOODS[g].unit}${b.wage ? ` · công ${c4Money(b.wage)}` : ''}</small></div>`).join('')}</div>`;
+  return `<div class="byshop">${rows.sort((a, b) => b[2] - a[2]).map(([g, b, net]) => `<div class="bs"><span class="tg">${g === 'trau' ? c4Lv().name : c4SLv(g).name}</span><b>${C4_GOODS[g].name}</b><span class="${net >= 0 ? 'gain' : 'bad'}">${net >= 0 ? '+' : '−'}${c4Money(Math.abs(net))}</span><i class="bar"><i style="width:${Math.abs(net) / max * 100}%"></i></i><small>${b.n} ${C4_GOODS[g].unit}${hasHands(g) ? ` · bán được ${c4Money(Math.round(b.take))}, thu về ${c4Money(Math.round(b.take - (b.skim || 0)))}` : ''}${b.wage ? ` · công ${c4Money(b.wage)}` : ''}</small></div>`).join('')}</div>`;
 }
 
 /* ---------- tables and stools (owner): who eats chè, xôi or bún sits down to it; more tables, more seats, longer patience ---------- */
