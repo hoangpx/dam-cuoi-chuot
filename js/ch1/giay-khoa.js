@@ -101,10 +101,30 @@ function gkFish() {                                                          // 
   for (let t = 6, side = R() < .5 ? 1 : -1; t < len - 4; t += 5 + R() * 5, side = -side) out.push(quad(x0 + ca * t, y0 + sa * t, a + side * (.9 + R() * .7), 8 + R() * 14, 1.6 + R() * 1.8));
   return out.every(p => p.every(([x, y]) => x > 4 && y > 4 && x < S - 4 && y < S - 4)) ? out : null;
 }
+// the pixels (in the S x S mask) a polygon covers, found on a small scratch canvas round its own box: cheap enough for hundreds of little holes
+const gkScratch = document.createElement('canvas'), gkSg = gkScratch.getContext('2d', { willReadFrequently: true });
+function gkStamp(poly) {
+  const S = GK.S; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of poly) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  x0 = Math.max(0, Math.floor(x0) - 1); y0 = Math.max(0, Math.floor(y0) - 1); x1 = Math.min(S - 1, Math.ceil(x1) + 1); y1 = Math.min(S - 1, Math.ceil(y1) + 1);
+  const w = x1 - x0 + 1, h = y1 - y0 + 1; if (w < 1 || h < 1) return [];
+  gkScratch.width = w; gkScratch.height = h; gkSg.fillStyle = '#000'; gkSg.fill(gkPath([poly], -x0, -y0));
+  const d = gkSg.getImageData(0, 0, w, h).data, out = []; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (d[(j * w + i) * 4 + 3] > 127) out.push((y0 + j) * S + x0 + i); return out;
+}
 function gkMake() {
   const S = GK.S, c = S / 2, ri = (a, b) => a + R() * (b - a), M = S * S, LO = 48, ks = LO / S, D = LO * 3;
   const touches = (m1, m2) => { for (let i = 0; i < M; i++) if (m1[i] && m2[i]) return true; return false; };
   const orInto = (dst, src) => { for (let i = 0; i < M; i++) if (src[i]) dst[i] = 1; };
+  // many small torn holes spread evenly: each new one goes where the sheet is least torn already (the best of a few tries), never where `forbid` is set
+  const fillEven = (mask, forbid, target) => {
+    let cov = 0; for (let i = 0; i < M; i++) cov += mask[i];
+    for (let guard = 0; cov < target * M && guard < 7000; guard++) {
+      let bx = 0, by = 0, bd = 1e9;
+      for (let c2 = 0; c2 < 5; c2++) { const cx = ri(6, S - 6), cy = ri(6, S - 6); let d = 0; for (let dy = -9; dy <= 9; dy += 3) for (let dx = -9; dx <= 9; dx += 3) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < S && y < S) d += mask[(y | 0) * S + (x | 0)]; } if (d < bd) { bd = d; bx = cx; by = cy; } }
+      const r = R() < .06 ? ri(8, 12) : ri(2, 6.5), poly = R() < .04 ? gkRip() : gkBlob(bx, by, r), idx = gkStamp(poly);
+      if (idx.some(i => forbid[i])) continue;
+      for (const i of idx) if (!mask[i]) { mask[i] = 1; cov++; }
+    }
+  };
   for (let tries = 0; tries < 250; tries++) {
     let KA, KB, g, phi = 0, rotKey;
     if (GK.turn) { KA = [Math.round(ri(14, 170)), Math.round(ri(14, 140))]; phi = (R() < .5 ? -1 : 1) * ri(.6, 3.1); g = [Math.round(ri(-100, 100)), Math.round(ri(-60, 100))]; rotKey = GK_KEYPOLYS; }
@@ -139,41 +159,18 @@ function gkMake() {
       (mineA ? cellsA : cellsB)[i] = 1;
     }
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
-    const used = [];
-    for (let n = 0, guard = 0; n < 90 && guard < 1600; guard++) {              // far tears of the back sheet
-      const r = R() < .2 ? ri(18, 32) : ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 && r < 17 ? gkRip() : gkBlob(cx, cy, r);
-      if (used.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 2)) continue;
-      const mr = gkRaster([poly], S); if (touches(mr, near)) continue;
-      orInto(mAk, mr); used.push([cx, cy, r]); n++;
-    }
     for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the back sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
-    { let sa = 0; for (let i = 0; i < M; i++) sa += mAk[i];                     // (owner: still more holes) the back sheet is topped up too, to about two fifths torn
-      for (let guard = 0; sa < M * .42 && guard < 2200; guard++) {
-        const r = R() < .22 ? ri(14, 28) : ri(3, 13), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = guard % 4 === 3 && r < 12 ? gkRip() : gkBlob(cx, cy, r), mr = gkRaster([poly], S);
-        if (touches(mr, near)) continue; for (let i = 0; i < M; i++) if (mr[i] && !mAk[i]) { mAk[i] = 1; sa++; }
-      } }
+    fillEven(mAk, near, .38);                                                // (owner: many small holes, spread evenly over the sheet)
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
     const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
     for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
-    const usedB = [];
-    for (let n = 0, guard = 0; n < 90 && guard < 1600; guard++) {              // far tears of the front sheet: nowhere the back sheet is torn when laid right
-      const r = R() < .2 ? ri(18, 32) : ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 && r < 17 ? gkRip() : gkBlob(cx, cy, r);
-      if (usedB.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 2)) continue;
-      const mr = gkRaster([poly], S); if (touches(mr, reach)) continue;
-      orInto(mBk, mr); usedB.push([cx, cy, r]); n++;
-    }
     for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the front sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
-    // (owner: the front sheet must be as full of holes as the back one) the front sheet is topped up with more tears until it is torn as much as the back sheet
-    { let sa = 0, sb = 0; for (let i = 0; i < M; i++) { sa += mAk[i]; sb += mBk[i]; }
-      for (let guard = 0; sb < sa * .98 && guard < 3000; guard++) {
-        const r = R() < .25 ? ri(14, 28) : ri(3, 14), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = guard % 4 === 3 && r < 12 ? gkRip() : gkBlob(cx, cy, r), mr = gkRaster([poly], S);
-        if (touches(mr, reach)) continue; for (let i = 0; i < M; i++) if (mr[i] && !mBk[i]) { mBk[i] = 1; sb++; }
-      } }
+    { let sa = 0; for (let i = 0; i < M; i++) sa += mAk[i]; fillEven(mBk, reach, sa / M * .98); }   // the front sheet as full of holes as the back one
     // laid right, how much of the lit shape is the key
     let inter = 0, lit = 0, keyN = 0;
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const k = rKeyA[y * S + x]; keyN += k; if (!mAk[y * S + x]) continue; const [u, v] = toB(x, y), ui = Math.round(u), vi = Math.round(v); if (ui >= 0 && vi >= 0 && ui < S && vi < S && mBk[vi * S + ui]) { lit++; if (k) inter++; } }
