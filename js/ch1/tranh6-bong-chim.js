@@ -316,9 +316,11 @@ function bcBuild() {
       st.t += dt;
       if (!st.done) {
         if (!st.drag && (Math.abs(st.vel[0]) > .0006 || Math.abs(st.vel[1]) > .0006)) { turn(st.vel[0], st.vel[1]); st.vel[0] *= Math.pow(.04, dt); st.vel[1] *= Math.pow(.04, dt); }     // a little momentum
+        // How close the tilt must be: 1 % of a quarter turn (about 1 degree) at first, and a little more for every 15 seconds spent on this one, up to about 12 degrees, so nobody is shut out
+        const tol = Math.min(.21, .0157 * (1 + Math.floor(st.t / 15)));
         const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.min(1, Math.abs(R[8])));     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
         if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / st.solve.dur); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(BC_Q, bcMul(bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * e), st.solve.R)); st.ver++; if (st.solve.t >= 1) { const w = st.solve.winAfter; st.solve = null; if (w) win(); } }
-        else if (ang < .21) { st.hold += dt; if (st.hold > .3) startSolve(.45, true); } else st.hold = 0;     // about 12 degrees, kept for a third of a second: then it clicks into place
+        else if (ang < tol) { st.hold += dt; if (st.hold > .3) startSolve(.45, true); } else st.hold = 0;     // kept for a third of a second: then it clicks into place
       } else { st.dt += dt; if (st.dt > 4.2) finish(); }
       const t0 = performance.now(); draw(); BC.ms = performance.now() - t0;
     }
