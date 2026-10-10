@@ -431,7 +431,8 @@ const C4_EXTRA_EV = {
   // a flood coming: shore up the stalls now, or lose goods and a level tomorrow
   lut(E) {
     if (c4Wx() !== 'mua' || SAVE4.flood) return false;
-    const fix = c4Loss(.02, .05);
+    // (a player: shoring up cost 511 and not shoring up could cost 511 too, so there was nothing to choose) both numbers were capped at the purse; now the shoring costs only a third of the least that the flood could take
+    const lossLo = c4LossRange(.05, .12)[0], fix = Math.max(5, Math.round(lossLo * .3));
     Object.assign(E, { title: 'Nước sông lên', text: `Mưa mãi không ngớt, nước sông dâng gần tới chợ. Các nhà rủ nhau đắp bờ, kê hàng lên cao. Nếu không đắp, có thể thiệt ${c4LossText(.05, .12)}.`, opts: [
       [`Đắp bờ, kê hàng · ${c4Money(fix)}`, () => { SAVE4.money -= fix; C4.today.spent += fix; toast('Hàng quán nhà mình cao ráo, yên tâm.', 3); }, SAVE4.money >= fix],
       ['Chắc không sao đâu', () => { SAVE4.flood = SAVE4.day + 1; toast('Mong là trời thương…', 2.6); }]] });
