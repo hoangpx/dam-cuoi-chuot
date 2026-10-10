@@ -302,7 +302,7 @@ function bcBuild() {
   const pt = e => { const r = cv2.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * BC_W, (e.clientY - r.top) / r.height * BC_H]; };
   cv2.addEventListener('pointerdown', e => { if (!st || st.done) return; st.drag = pt(e); st.vel = [0, 0]; try { cv2.setPointerCapture(e.pointerId); } catch (err) {} e.preventDefault(); });
   cv2.addEventListener('pointermove', e => {
-    if (!st || !st.drag || st.done) return; const [x, y] = pt(e), dx = x - st.drag[0], dy = y - st.drag[1]; st.drag = [x, y];
+    if (!st || !st.drag || st.done || st.solve) return; const [x, y] = pt(e), dx = x - st.drag[0], dy = y - st.drag[1]; st.drag = [x, y];
     turn(dx * .012, dy * .012); st.vel = [dx * .012, dy * .012];
   });
   const up = () => { if (st) st.drag = null; };
@@ -317,8 +317,8 @@ function bcBuild() {
       if (!st.done) {
         if (!st.drag && (Math.abs(st.vel[0]) > .0006 || Math.abs(st.vel[1]) > .0006)) { turn(st.vel[0], st.vel[1]); st.vel[0] *= Math.pow(.04, dt); st.vel[1] *= Math.pow(.04, dt); }     // a little momentum
         const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.max(-1, Math.min(1, R[8]))); st.theta = Math.atan2(R[3], R[0]);     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
-        if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / 2); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(st.solve.base, bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * (1 - e))); st.ver++; if (st.solve.t >= 1) st.solve = null; }
-        else if (ang < .07) { st.hold += dt; if (st.hold > .25) win(); } else st.hold = 0;     // about 4 degrees, kept for a quarter of a second
+        if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / st.solve.dur); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(st.solve.base, bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * (1 - e))); st.ver++; if (st.solve.t >= 1) { const w = st.solve.winAfter; st.solve = null; if (w) win(); } }
+        else if (ang < .21) { st.hold += dt; if (st.hold > .3) startSolve(.45, true); } else st.hold = 0;     // about 12 degrees, kept for a third of a second: then it clicks into place
       } else { st.dt += dt; if (st.dt > 4.2) finish(); }
       const t0 = performance.now(); draw(); BC.ms = performance.now() - t0;
     }
@@ -332,10 +332,13 @@ function bcBuild() {
   addEventListener('keydown', e => { if (!BC.open) return; e.stopPropagation(); e.preventDefault(); if (e.code === 'Escape') finish(); }, true);
   X.addEventListener('click', finish);
   XN.addEventListener('click', () => { const cb = st && st.cb; cancelAnimationFrame(raf); BC.open = false; st = null; el.hidden = true; bongOpen(cb); });          // (demo only) the next picture
-  XS.addEventListener('click', () => {                                          // (demo only) turn the tangle slowly to the right pose, to show what to look for
-    if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), th = Math.atan2(R[3], R[0]), Rt = bcRot(0, 0, 1, th), D = bcMul(bcT(Rt), R), an = bcAngleFromI(D); if (an < 1e-3) return;
+  function startSolve(dur, winAfter) {
+    if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), th = Math.atan2(R[3], R[0]), Rt = bcRot(0, 0, 1, th), D = bcMul(bcT(Rt), R), an = bcAngleFromI(D); st.drag = null; st.vel = [0, 0];
+    if (an < 1e-3) { if (winAfter) win(); return; }
     const sn = Math.sin(an) || 1e-3, ax = [(D[7] - D[5]) / (2 * sn), (D[2] - D[6]) / (2 * sn), (D[3] - D[1]) / (2 * sn)], l = Math.hypot(...ax) || 1;
-    st.solve = { t: 0, an, ax: ax.map(v => v / l), base: bcMul(BC_Q, Rt) }; st.drag = null; st.vel = [0, 0]; });
+    st.solve = { t: 0, an, ax: ax.map(v => v / l), base: bcMul(BC_Q, Rt), dur, winAfter };
+  }
+  XS.addEventListener('click', () => startSolve(2, false));                      // (demo only) turn the tangle slowly to the right pose, to show what to look for
   addEventListener('resize', () => BC.open && size());
   window.bongOpen = function (cb) {
     if (BC.open) return; BC.open = true; el.hidden = false;
