@@ -26,3 +26,9 @@ body.touch #pad button{width:60px;height:60px}
 @media (prefers-reduced-motion:reduce){#pad.pulse button{animation:none;outline:3px solid var(--son)}}
 #pad.split{left:16px;right:16px;justify-content:space-between;pointer-events:none}
 #pad.split button{pointer-events:auto}
+
+/* hai tờ giấy đục lỗ ghép thành cái chìa (js/ch1/giay-khoa.js) */
+#giay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(25,18,10,.8)}
+#giay[hidden]{display:none}
+#giayCv{touch-action:none;cursor:grab;display:block}
+#giayX{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;font-size:20px;border:2px solid var(--ink);background:var(--paper,#f2ecde);color:var(--ink);cursor:pointer}

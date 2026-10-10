@@ -442,8 +442,9 @@ function t5Cage(x) {
     on() { return !!T5.down; },                                      // only once she is down from the areca
     onClick(wx, wy) {
       if (!this.on() || this.st !== 'shut' || Math.abs(wx - x) > 40 || wy < CY - 10 || wy > CY + 70) return false;
-      this.taps++; this.shake = .5; AU.chirp();
-      if (this.taps >= 3) { T5.bird = true; this.st = 'open'; this.t = 0; AU.pluck(88); toast('Cửa lồng bật mở, chim vàng anh bay vút lên trời!', 3); }
+      this.shake = .5; AU.chirp();
+      // the cage has a lock: two cut papers laid one over the other must light up a key (js/ch1/giay-khoa.js)
+      giayOpen(() => { T5.bird = true; this.st = 'open'; this.t = 0; AU.pluck(88); toast('Cửa lồng bật mở, chim vàng anh bay vút lên trời!', 3); });
       return true;
     },
     update(dt) {
