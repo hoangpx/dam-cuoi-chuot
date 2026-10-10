@@ -274,6 +274,9 @@ function gkMake() {
   const toLogical = (e) => { const r = cv2.getBoundingClientRect(); return toGroup((e.clientX - r.left) / r.width * GK.W, (e.clientY - r.top) / r.height * GK.H); };
   // how like the key is what is lit, in this pose (the front sheet's holes turned and moved are painted at half size and set against the back sheet's)
   const iouAt = (ox, oy, rot) => gkLiveIou(GK.puz.pathB, GK.puz.mA, GK.puz.mK, ox, oy, rot);
+  // (owner) very close is enough: within about 3.5 pixels of the perfect pose it counts as the key and clicks in by itself, and a gentle pull draws the sheet in
+  // from about 9 pixels, so a finger does not have to be exact. (The key is thin, so a few pixels off already lights little of it.)
+  const isClose = () => { const P = GK.puz; return Math.hypot(st.ox - P.g[0], st.oy - P.g[1]) <= 3.5 && (!GK.turn || Math.abs(gkWrap(st.rot - P.phi)) < .08); };
   function win() {
     const P = GK.puz; st.done = true; st.t = 0; st.drag = null; st.tx = P.g[0]; st.ty = P.g[1]; st.trot = st.rot + gkWrap(P.phi - st.rot);          // it settles exactly into place
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => AU.pluck(91), 320); setTimeout(() => AU.stamp(), 520); setTimeout(() => close(true), 2400);
@@ -297,7 +300,7 @@ function gkMake() {
     else if (d.type === 'rot') { const [cx, cy] = centre(), a = Math.atan2(py - cy, px - cx); st.trot += gkWrap(a - d.prev); d.prev = a; }   // (turned by the change of angle, so crossing the half-turn does not spin it the long way)
     else if (d.type === 'pair' && st.ptrs.size >= 2) { const n = pairState(), p = d.prev; st.tx += n.mx - p.mx; st.ty += n.my - p.my; clampPose(); st.trot += gkWrap(n.ang - p.ang); d.prev = n; }
   });
-  const up = e => { if (!st) return; st.ptrs.delete(e.pointerId); if (st.drag && (st.drag.type !== 'pair' || st.ptrs.size < 2)) st.drag = null; if (!st.done && st.lastIou >= .75) win(); };
+  const up = e => { if (!st) return; st.ptrs.delete(e.pointerId); if (st.drag && (st.drag.type !== 'pair' || st.ptrs.size < 2)) st.drag = null; if (!st.done && isClose()) win(); };
   cv2.addEventListener('pointerup', up); cv2.addEventListener('pointercancel', up);
   cv2.addEventListener('wheel', e => { if (!st || st.done || !GK.turn) return; st.trot += (e.deltaY > 0 ? 1 : -1) * .07; e.preventDefault(); }, { passive: false });
   addEventListener('keydown', e => {                                          // while it is open, the game below hears nothing; arrows glide the front sheet, Q and E turn it
@@ -317,9 +320,10 @@ function gkMake() {
         if (kx || ky) { const ca = Math.cos(st.alpha), sa = Math.sin(st.alpha); st.tx += (ca * kx + sa * ky) * 70 * dt; st.ty += (-sa * kx + ca * ky) * 70 * dt; clampPose(); }
         if (kr && GK.turn) st.trot += kr * 1.1 * dt;
         // it glides after the finger (smooth), and holding it still on the right pose for a moment is enough too
+        const P0 = GK.puz, dd = Math.hypot(st.tx - P0.g[0], st.ty - P0.g[1]); if (dd < 9) { const m = Math.min(1, dt * 9); st.tx += (P0.g[0] - st.tx) * m; st.ty += (P0.g[1] - st.ty) * m; }     // the pull
         const f = Math.min(1, dt * 16), px0 = st.ox, py0 = st.oy, r0 = st.rot; st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f;
         if (st.lastIou == null || Math.abs(st.ox - st.cx0) > .5 || Math.abs(st.oy - st.cy0) > .5 || Math.abs(st.rot - st.cr0) > .006) { st.lastIou = iouAt(st.ox, st.oy, st.rot); st.cx0 = st.ox; st.cy0 = st.oy; st.cr0 = st.rot; }
-        if (st.lastIou >= .75) { st.hold += dt; if (st.hold > .45) win(); } else st.hold = 0;
+        if (isClose()) win();                                                     // (no need to hold still: the moment it is close, it clicks in)
       } else { const f = Math.min(1, dt * 9); st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f; }
       draw();
     }
