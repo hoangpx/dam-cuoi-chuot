@@ -118,7 +118,7 @@ const T6R = {
   init() {                                                                      // at the start of the tranh: what has been saved
     const s = SAVE.t6 || {}; this.got = [!!(s.bl || s.bong), !!(s.bb || s.bong)]; this.done = this.got[0] && this.got[1]; this.say = -1; this.stations = [];
     this.birds = [0, 1].map(i => ({ st: this.done ? 'follow' : this.got[i] ? 'orbit' : 'none', t: 9, a: i * 3.1, ph: i * 1.3, x: 0, y: 0, cx: -1, cy: 0, face: 1 }));
-    LEVELS[5].width = this.done ? 3700 : 30000;                                   // not saved the birds: the road has no end, and no gate (owner)
+    LEVELS[5].width = this.done ? 3700 : 400000;                                   // not saved the birds: the road has no end, and no gate (owner)
   },
   rel(i, x, y) { const b = this.birds[i]; Object.assign(b, { st: 'rise', t: 0, x0: x, y0: y, a: -1.2, ph: 0, cx: -1 }); AU.pluck(i ? 86 : 91); },       // the bird lifts off its cloth
   save(i) {
@@ -351,6 +351,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
     return { layer: 'hud',
       update(dt) {
         if (T6R.say >= 0) T6R.say += dt;
+        if (!T6R.done && groom.x > 3900 && groom.vx < -30) { const d = groom.x - 3700; groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); }       // far out on the endless road, the moment the party turns back it is back by the pond: the tasks are there at once (owner), however far it had walked
         T6R.birds.forEach((b, i) => {
           if (b.st === 'none') return; b.t += dt; b.ph += dt * (7.5 + i * .8);
           const sx = T6R.stations[i] ? T6R.stations[i].cx : groom.x, tx = T6R.done ? groom.x + (i ? 80 : -40) + 60 : sx, ty = GROUND - (T6R.done ? 275 : 360) - i * 26;     // over its station, then over the party
