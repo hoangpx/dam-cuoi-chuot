@@ -356,3 +356,4 @@ Dark stretch, the pounces redone (owner): 5 of them (T7_Z0 3000 + k × T7_ZONE 4
 Bell: the recording's near-silent first .72 s is cut (1.05 s left, sound starts at once); the shadow comes T7_WARN 1 s after the first jingle (owner), the party must have stopped by .5 s.
 Dark stretch, shorter and denser (owner): T6_OFF is now 6000 (was 27000, about 40 s of walking, no longer 3 minutes); 5 pounces from x 700, each 450–750 px (3–5 s) after the last (t7Zones, random gaps); the bell rings T7_WARN 2 s before the shadow (the party has T7_REACT .5 s to stop; "moving" = groom.moving, |vx| > 8: a decaying vx !== 0 wrongly counted as moving). A bot that stops at every bell passes in ~44 s with no catch.
 T7_WARN is now 3 s (owner).
+Pounce rule (owner, final): bell rings; 3 s later (T7_WARN = T7_REACT = 3) the cat's shadow comes: still moving at that moment (or while it passes) = caught, standing still = safe; the party walks on as soon as the shadow has passed.
