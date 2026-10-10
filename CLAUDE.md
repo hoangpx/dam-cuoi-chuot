@@ -350,3 +350,4 @@ The bell recording now ships as base64 in js/ch1/luc-lac-data.js (BELL_B64, load
 Bell recording is now the owner's .wav (the mp3 was not heard in the artifact): mono 24 kHz, peak-normalised, base64 in luc-lac-data.js; volumes 1.2 on hanging and .6/.9/1.2 for the warnings; AU.hasSample falls back to the synthesised pluck if it did not decode.
 Bell warning rings without a pause (t7Ring: a jingle every .45 s from the first warning through the cat's pass, louder and a little higher).
 Bell debug (demo): a toast 'Lục lạc: có | file: … | âm thanh: …' at each warning (remove for release); t7Ring retries bellLoad until the sample decodes.
+Demo buttons in the dark: 'Nghe lục lạc' (plays the bell now), 'Đã đeo cho mèo' (SAVE.catBell = true without going to tranh 1), 'Xin lục lạc', 'Bỏ lục lạc'.

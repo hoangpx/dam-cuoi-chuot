@@ -199,7 +199,7 @@ function t6Dark() {
     },
     onClick(wx, wy) {                                                            // (demo only) skip the dark stretch
       const sx = wx - camX, sy = wy + offY;
-      for (const d of this.dbt || []) if (sx >= d.x && sx <= d.x + d.w && sy >= d.y && sy <= d.y + d.h) { if (d.v) SAVE.lucLac = true; else { SAVE.lucLac = false; SAVE.catBell = false; } persist(); toast(d.v ? 'Có lục lạc của cô Tấm (về tranh 1 đeo cho mèo).' : 'Đã bỏ lục lạc.', 2.5); return true; }
+      for (const d of this.dbt || []) if (sx >= d.x && sx <= d.x + d.w && sy >= d.y && sy <= d.y + d.h) { if (d.v === 2) { bellLoad(); AU.hasSample('bell') ? AU.play('bell', 1.2) : toast('Chưa tải được tiếng lục lạc (âm thanh: ' + AU.state() + ')', 3); return true; } if (d.v === 3) { SAVE.lucLac = true; SAVE.catBell = true; persist(); toast('Lục lạc đã đeo cho mèo.', 2.5); return true; } if (d.v) SAVE.lucLac = true; else { SAVE.lucLac = false; SAVE.catBell = false; } persist(); toast(d.v ? 'Có lục lạc của cô Tấm (về tranh 1 đeo cho mèo).' : 'Đã bỏ lục lạc.', 2.5); return true; }
       const b = this.btn; if (!b) return false;
       if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) { const d = (T6_OFF - 300) - groom.x; if (d > 0) { groom.x += d; followers.forEach(f => f.x += d); camX += d; } return true; }
       return false;
@@ -236,7 +236,7 @@ function t6Dark() {
         g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(0,0,0,.6)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 16) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText('Qua dàn bí rợ', x + w / 2, y + h / 2 + 1); g.restore();
       } else this.btn = null;
       if (this.dawn < 1 && T6R.ready) {                                           // (demo only) the bell: get it from Tấm / throw it away, to try both ways
-        this.dbt = [['Xin lục lạc', 1], ['Bỏ lục lạc', 0]].map(([t, v], i) => ({ t, v, x: vw - 136 - 24, y: viewH - 104 - 40 * (i + 1), w: 136, h: 32 }));
+        this.dbt = [['Nghe lục lạc', 2], ['Đã đeo cho mèo', 3], ['Xin lục lạc', 1], ['Bỏ lục lạc', 0]].map(([t, v], i) => ({ t, v, x: vw - 136 - 24, y: viewH - 104 - 40 * (i + 1), w: 136, h: 32 }));
         for (const b of this.dbt) { g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(0,0,0,.6)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(b.x, b.y, b.w, b.h, 16) : g.rect(b.x, b.y, b.w, b.h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText(b.t, b.x + b.w / 2, b.y + b.h / 2 + 1); g.restore(); }
       } else this.dbt = null;
     },
