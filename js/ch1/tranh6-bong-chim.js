@@ -123,6 +123,68 @@ function bcBuild() {
     const hz = Math.max(0, Math.min(1, (e - .36) / .28)), hs = hz * hz * (3 - 2 * hz), env = .14 + .7 * hs * (.55 + .45 * e) + .18 * dif, sp = Math.pow(Math.max(0, rx * LT[0] + ry * LT[1] + rz * LT[2]), 18), fr = Math.pow(1 - nz, 2.5);
     o[0] = Math.min(255, 238 * env + 255 * sp + 90 * fr); o[1] = Math.min(255, 214 * env + 250 * sp + 130 * fr); o[2] = Math.min(255, 170 * env + 235 * sp + 210 * fr);
   }
+  // ---- the same drawing on the graphics card (WebGL2) when there is one: the distance grid is a 3D texture, each pixel ray-marches it, 4 sub-rays per pixel for smooth edges.
+  // The CPU code below is the fallback (and gives the same picture). ----
+  const GPU = (() => {
+    try {
+      const mkc = () => { const c = document.createElement('canvas'), gl = c.getContext('webgl2', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true }); return gl && gl.getExtension ? { c, gl } : null; };
+      const A = mkc(), B = mkc(); if (!A || !B) return { ok: false };
+      const VS = '#version 300 es\nin vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+      const COMMON = '#version 300 es\nprecision highp float;precision highp sampler3D;uniform sampler3D uF;uniform vec3 uR0,uR1,uR2;out vec4 oc;\n' +
+        'const float E=' + BC_GE.toFixed(3) + ',N=' + BC_GN.toFixed(1) + ',H=' + BC_GH.toFixed(6) + ';\n' +
+        'float samp(vec3 p){vec3 q=(p+E)/H;vec3 o=max(abs(p)-E+.06,0.);if(any(lessThan(q,vec3(0.)))||any(greaterThan(q,vec3(N-1.001))))return max(.02,length(o));return texture(uF,(q+.5)/N).r;}\n';
+      const BODY = COMMON + 'uniform vec3 uW0,uW1,uW2,uLT;uniform float uBS,uRes;\n' +
+        'vec3 shade(vec3 n){float rz=2.*n.z*n.z-1.,ry=2.*n.z*n.y,rx=2.*n.z*n.x,e=clamp(ry*.5+.5,0.,1.),dif=max(0.,dot(n,uLT));float hz=clamp((e-.36)/.28,0.,1.),hs=hz*hz*(3.-2.*hz),env=.14+.7*hs*(.55+.45*e)+.18*dif,sp=pow(max(0.,dot(vec3(rx,ry,rz),uLT)),18.),fr=pow(1.-n.z,2.5);\n' +
+        'return min(vec3(1.),vec3(238.*env+255.*sp+90.*fr,214.*env+250.*sp+130.*fr,170.*env+235.*sp+210.*fr)/255.);}\n' +
+        'vec4 tr(vec2 XY){vec3 lo=vec3(dot(uR0.xy,XY),dot(uR1.xy,XY),dot(uR2.xy,XY));vec3 dl=vec3(uR0.z,uR1.z,uR2.z);float s=0.,md=9.,T0=2.3,px=1./uBS;bool hit=false;\n' +
+        'for(int n=0;n<80;n++){float t=T0-s;float d=samp(lo+dl*t);md=min(md,d);if(d<.003){hit=true;break;}s+=max(.006,d*.85);if(s>2.*T0)break;}\n' +
+        'if(hit){float t=T0-s;vec3 q=lo+dl*t;float e=.03;vec3 g=vec3(samp(q+vec3(e,0,0))-samp(q-vec3(e,0,0)),samp(q+vec3(0,e,0))-samp(q-vec3(0,e,0)),samp(q+vec3(0,0,e))-samp(q-vec3(0,0,e)));g/=max(length(g),1e-5);vec3 nw=vec3(dot(uW0,g),dot(uW1,g),dot(uW2,g));nw.z=max(0.,nw.z);return vec4(shade(nw),1.);}\n' +
+        'if(md<px*1.2){float a=1.-md/(px*1.2);a*=a;return vec4(vec3(120.,100.,78.)/255.,1.)*a;}return vec4(0.);}\n' +
+        'void main(){vec2 c=gl_FragCoord.xy-uRes*.5;vec4 acc=vec4(0.);vec2 of[4]=vec2[4](vec2(-.125,-.375),vec2(.375,-.125),vec2(.125,.375),vec2(-.375,.125));\n' +
+        'if(dot(c,c)>2.6*uBS*uBS*1.2)discard;for(int i=0;i<4;i++){vec2 XY=(c+of[i])/uBS;if(dot(XY,XY)>2.6)continue;vec4 r=tr(XY);acc+=vec4(r.rgb*r.a,r.a);}\n' +
+        'oc=acc/4.;}';
+      const SHAD = COMMON + 'uniform vec3 uLd;uniform float uSc,uGW,uGH,uAA,uCX,uGY,uGTOP,uS,uGS,uH3;\n' +
+        'void main(){float px=gl_FragCoord.x/uSc,py=uGH-gl_FragCoord.y/uSc;vec3 P=vec3((px-uCX)/uS,-uH3,(py+uGTOP-uGY)/(uS*uGS));vec3 lp=vec3(dot(uR0,P),dot(uR1,P),dot(uR2,P));float sc=-dot(lp,uLd);vec3 cp=lp+sc*uLd;if(dot(cp,cp)>2.9){oc=vec4(0.);return;}\n' +
+        'float s=sc-2.,md=9.,en=sc+2.;for(int n=0;n<70;n++){if(s>=en)break;float d=samp(lp+uLd*s);md=min(md,d);if(d<-.004){md=-1.;break;}s+=max(.01,d*.85);}\n' +
+        'float a=clamp(.5-md/uAA,0.,1.);oc=vec4(vec3(18.,24.,42.)/255.,1.)*(a*.94);}';
+      const build = (X, fs) => {
+        const gl = X.gl, mk = (t, src) => { const sh = gl.createShader(t); gl.shaderSource(sh, src); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(sh); return sh; };
+        const pr = gl.createProgram(); gl.attachShader(pr, mk(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, mk(gl.FRAGMENT_SHADER, fs)); gl.bindAttribLocation(pr, 0, 'p'); gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw gl.getProgramInfoLog(pr);
+        const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        X.pr = pr; X.u = n => gl.getUniformLocation(pr, n); X.tex = gl.createTexture(); X.up = false;
+      };
+      build(A, BODY); build(B, SHAD);
+      const half = v => { const f = new Float32Array(1), i = new Uint32Array(f.buffer); f[0] = v; const x = i[0], sg = (x >>> 16) & 0x8000, e = ((x >>> 23) & 0xff) - 127 + 15, m = x & 0x7fffff; if (e <= 0) return sg; if (e >= 31) return sg | 0x7bff; return sg | (e << 10) | (m >> 13); };
+      const upload = (X, f) => { const gl = X.gl, h16 = new Uint16Array(f.length); for (let i = 0; i < f.length; i++) h16[i] = half(f[i]);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, X.tex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage3D(gl.TEXTURE_3D, 0, gl.R16F, BC_GN, BC_GN, BC_GN, 0, gl.RED, gl.HALF_FLOAT, h16);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); for (const w of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T, gl.TEXTURE_WRAP_R]) gl.texParameteri(gl.TEXTURE_3D, w, gl.CLAMP_TO_EDGE); X.up = true; };
+      return { ok: true, A, B, upload };
+    } catch (err) { return { ok: false }; }
+  })();
+  BC.gpu = GPU;
+  function gpuPass(X, w, h, set) {                                               // render one full-screen pass into X's canvas
+    const gl = X.gl; if (X.c.width !== w || X.c.height !== h) { X.c.width = w; X.c.height = h; }
+    gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(X.pr); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, X.tex); gl.uniform1i(X.u('uF'), 0); set(gl, X.u); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  function gpuLump(h, W) {
+    const X = GPU.A, k = st.k, n = Math.max(256, Math.min(1100, Math.round(320 * k)));
+    if (!BC.tex.gup) { GPU.upload(GPU.A, BC.tex.sdf); BC.tex.gup = true; }
+    if (st.gl1 !== st.ver || st.gn !== n) {
+      st.gl1 = st.ver; st.gn = n; const Wt = bcT(W);
+      gpuPass(X, n, n, (gl, u) => { gl.uniform3f(u('uR0'), Wt[0], Wt[1], Wt[2]); gl.uniform3f(u('uR1'), Wt[3], Wt[4], Wt[5]); gl.uniform3f(u('uR2'), Wt[6], Wt[7], Wt[8]); gl.uniform3f(u('uW0'), W[0], W[1], W[2]); gl.uniform3f(u('uW1'), W[3], W[4], W[5]); gl.uniform3f(u('uW2'), W[6], W[7], W[8]); gl.uniform3f(u('uLT'), LT[0], LT[1], LT[2]); gl.uniform1f(u('uBS'), BC_S * n / 320); gl.uniform1f(u('uRes'), n); });
+    }
+    h.imageSmoothingEnabled = true; h.imageSmoothingQuality = 'high'; h.drawImage(X.c, BC_CX - 160, BC_CY - 160, 320, 320);
+  }
+  function gpuShadow(h, W) {
+    const X = GPU.B, k = st.k, w = Math.round(GW * k), hh = Math.round(GHh * k);
+    if (!BC.tex.gupB) { GPU.upload(GPU.B, BC.tex.sdf); BC.tex.gupB = true; }
+    if (st.gl2 !== st.ver || st.gm !== w) {
+      st.gl2 = st.ver; st.gm = w; const Wt = bcT(W);
+      gpuPass(X, w, hh, (gl, u) => { gl.uniform3f(u('uR0'), Wt[0], Wt[1], Wt[2]); gl.uniform3f(u('uR1'), Wt[3], Wt[4], Wt[5]); gl.uniform3f(u('uR2'), Wt[6], Wt[7], Wt[8]); gl.uniform3f(u('uLd'), -(Wt[0] * L[0] + Wt[1] * L[1] + Wt[2] * L[2]), -(Wt[3] * L[0] + Wt[4] * L[1] + Wt[5] * L[2]), -(Wt[6] * L[0] + Wt[7] * L[1] + Wt[8] * L[2]));
+        gl.uniform1f(u('uSc'), k); gl.uniform1f(u('uGW'), GW); gl.uniform1f(u('uGH'), GHh); gl.uniform1f(u('uAA'), .022 / k); gl.uniform1f(u('uCX'), BC_CX); gl.uniform1f(u('uGY'), BC_GY); gl.uniform1f(u('uGTOP'), BC_GTOP); gl.uniform1f(u('uS'), BC_S); gl.uniform1f(u('uGS'), BC_GS); gl.uniform1f(u('uH3'), BC_H3); });
+    }
+    h.imageSmoothingEnabled = true; h.drawImage(X.c, 0, BC_GTOP, GW, GHh);
+  }
   const TR = [0, 0, 0, 0, 0];                                                   // trace(): r, g, b, alpha (0..1), depth
   function trace(f, Wt, W, BS, X, Y, dl) {                                       // one ray along the view through the grid; fills TR (colour is not premultiplied)
     const lx = Wt[0] * X + Wt[1] * Y, ly = Wt[3] * X + Wt[4] * Y, lz = Wt[6] * X + Wt[7] * Y, T0 = 2.3, px = 1 / BS; let s = 0, md = 9, hit = false;
@@ -140,6 +202,7 @@ function bcBuild() {
     TR[3] = 0; TR[4] = 99; return false;
   }
   function lump(h, W, q) {
+    if (GPU.ok) { try { gpuLump(h, W); return; } catch (err) { GPU.ok = false; } }
     const Ly = zl[q - 1], ZN = Ly.w;
     if (st.lv !== st.ver || st.lq !== q) {
       st.lv = st.ver; st.lq = q; const d = Ly.d; d.fill(0);
@@ -161,13 +224,14 @@ function bcBuild() {
     }
     h.imageSmoothingEnabled = true; h.imageSmoothingQuality = 'high'; h.drawImage(Ly.c, BC_CX - 160, BC_CY - 160, 320, 320);
   }
-  function ground(h, W, q) {                                                    // the pool of moonlight, and the tangle's shadow in it
+  function ground(h, W, q) { const useGpu = GPU.ok;                                                    // the pool of moonlight, and the tangle's shadow in it
     const o = proj([0, 0, 0]), a = dir(e1), b = dir(e2);
     h.save(); h.beginPath(); h.rect(0, BC_GTOP, BC_W, BC_H - BC_GTOP); h.clip();
     const gr = h.createLinearGradient(0, BC_GTOP, 0, BC_H); gr.addColorStop(0, '#171f38'); gr.addColorStop(1, '#222c4a'); h.fillStyle = gr; h.fillRect(0, BC_GTOP, BC_W, BC_H - BC_GTOP);
     h.setTransform(st.k * BC_S * a[0], st.k * BC_S * BC_GS * a[1], st.k * BC_S * b[0], st.k * BC_S * BC_GS * b[1], st.k * (BC_CX + BC_S * o[0]), st.k * (BC_GY + BC_S * BC_GS * o[1]));
     const pool = h.createRadialGradient(0, 0, 0, 0, 0, 2.0); pool.addColorStop(0, '#dfe6f4'); pool.addColorStop(.7, '#b9c6de'); pool.addColorStop(1, 'rgba(160,178,210,0)'); h.fillStyle = pool; h.beginPath(); h.arc(0, 0, 2.0, 0, 6.283); h.fill();
     h.restore();
+    if (useGpu) { try { gpuShadow(h, W); return; } catch (err) { GPU.ok = false; } }
     const Gy = gl[q - 1], gw = Gy.w, gh = Gy.h, gd = Gy.d;
     if (st.gv !== st.ver || st.gq !== q) {
     st.gv = st.ver; st.gq = q; gd.fill(0);
