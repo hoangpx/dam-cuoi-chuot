@@ -175,7 +175,7 @@ function t4Dyer(W) {
           : has.length === 1 ? `Cả chum toàn màu ${has[0] === 'vang' ? 'vàng' : 'xanh dương'}, đầy rồi không pha thêm được!`
           : y < .2 || b < .2 ? 'Nước lã nhiều quá, màu nhạt thếch!'
           : b / (y + b) <= .25 ? 'Vàng nhiều quá, chưa ra xanh lá!' : 'Xanh dương nhiều quá, chưa ra xanh lá!';
-        this.mud = 2.2; AU.pluck(52); toastSay(why + ' Chú thợ nhuộm đổ đi, pha lại nhé: vàng với xanh dương, mỗi thứ một nửa.', 3.8);
+        this.mud = 2.2; AU.pluck(52); toastSay(why + ' Chú thợ nhuộm đổ đi, pha lại nhé.');
       }
     },
     update(dt) {
@@ -482,9 +482,8 @@ function t4Bridge(g0, g1) {
     },
     draw(g) {
       dp(g, water, g0, GROUND);
-      // the bridge: bamboo poles bending under the cart, a prop under the middle while you hold it
+      // the bridge: bamboo poles bending under the cart (owner: no prop shown while you hold it, that gave the answer away)
       const y = x => GROUND - 4 + this.arch(x) + this.sag(x);
-      if (this.held()) { g.strokeStyle = '#7a5a2a'; g.lineWidth = 7; g.beginPath(); g.moveTo(mid, GROUND + 56); g.lineTo(mid, y(mid)); g.stroke(); g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(mid - 4, GROUND + 56); g.lineTo(mid - 4, y(mid)); g.moveTo(mid + 4, GROUND + 56); g.lineTo(mid + 4, y(mid)); g.stroke(); }
       for (const [dy, w, c] of [[0, 7, '#c9a24a'], [-30, 3, '#7a5a2a']]) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); for (let x = g0 - 20; x <= g1 + 20; x += 10) { const yy = y(x) + dy; x === g0 - 20 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); }
       g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); for (let x = g0 - 10; x <= g1 + 10; x += 26) { g.moveTo(x, y(x) - 30); g.lineTo(x, y(x)); } g.stroke();
       g.beginPath(); for (let x = g0 - 20; x <= g1 + 20; x += 10) { const yy = y(x) + 3.5; x === g0 - 20 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke();
