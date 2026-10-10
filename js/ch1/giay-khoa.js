@@ -94,6 +94,13 @@ function gkDecoy() {
 const gkWrap = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.PI; return a - Math.PI; };
 // The back sheet stays put. The front sheet is turned about its middle by `rot` and moved by (ox, oy): a point p of it lands on the back sheet at
 // (ox, oy) + c + R(rot)(p - c), c being the middle. Laid right is (g, phi); the key is torn on each sheet turned and placed to match only at that pose.
+function gkFish() {                                                          // a fishbone-looking tear: a spine with ribs alternating along it, any way round
+  const S = GK.S, len = 45 + R() * 60, a = R() * 6.283, x0 = 25 + R() * (S - 50), y0 = 25 + R() * (S - 50), ca = Math.cos(a), sa = Math.sin(a), out = [];
+  const quad = (px, py, ang, l, w) => { const c1 = Math.cos(ang), s1 = Math.sin(ang), p = [[px - s1 * w, py + c1 * w], [px + c1 * l - s1 * w, py + s1 * l + c1 * w], [px + c1 * l + s1 * w, py + s1 * l - c1 * w], [px + s1 * w, py - c1 * w]]; let ar = 0; for (let i = 0; i < 4; i++) { const q = p[(i + 1) % 4]; ar += p[i][0] * q[1] - q[0] * p[i][1]; } if (ar < 0) p.reverse(); return gkTorn(p, .9); };
+  out.push(quad(x0, y0, a, len, 2 + R() * 2.2));
+  for (let t = 6, side = R() < .5 ? 1 : -1; t < len - 4; t += 5 + R() * 5, side = -side) out.push(quad(x0 + ca * t, y0 + sa * t, a + side * (.9 + R() * .7), 8 + R() * 14, 1.6 + R() * 1.8));
+  return out.every(p => p.every(([x, y]) => x > 4 && y > 4 && x < S - 4 && y < S - 4)) ? out : null;
+}
 function gkMake() {
   const S = GK.S, c = S / 2, ri = (a, b) => a + R() * (b - a), M = S * S, LO = 48, ks = LO / S, D = LO * 3;
   const touches = (m1, m2) => { for (let i = 0; i < M; i++) if (m1[i] && m2[i]) return true; return false; };
@@ -134,10 +141,13 @@ function gkMake() {
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
     const used = [];
     for (let n = 0, guard = 0; n < 90 && guard < 1600; guard++) {              // far tears of the back sheet
-      const r = ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
+      const r = R() < .2 ? ri(18, 32) : ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 && r < 17 ? gkRip() : gkBlob(cx, cy, r);
       if (used.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 2)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, near)) continue;
       orInto(mAk, mr); used.push([cx, cy, r]); n++;
+    }
+    for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the back sheet
+      const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -3; dy <= 3; dy += 3) for (let dx = -3; dx <= 3; dx += 3) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
@@ -145,10 +155,13 @@ function gkMake() {
     for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
     const usedB = [];
     for (let n = 0, guard = 0; n < 90 && guard < 1600; guard++) {              // far tears of the front sheet: nowhere the back sheet is torn when laid right
-      const r = ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
+      const r = R() < .2 ? ri(18, 32) : ri(3, 16), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 && r < 17 ? gkRip() : gkBlob(cx, cy, r);
       if (usedB.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 2)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, reach)) continue;
       orInto(mBk, mr); usedB.push([cx, cy, r]); n++;
+    }
+    for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the front sheet
+      const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
     // laid right, how much of the lit shape is the key
     let inter = 0, lit = 0, keyN = 0;
