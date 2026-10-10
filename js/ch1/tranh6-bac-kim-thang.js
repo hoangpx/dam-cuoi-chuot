@@ -497,7 +497,7 @@ LEVELS[5] = {
       t6Resume(2350),
       t6Night(1250, 3300),
       t6Shadow(516, 0), t6Shadow(790, 1), t6Friends(),                                                            // the shadow puzzle at the start: a tangle hung in the air, its shadow on a cloth (js/ch1/tranh6-bong-chim.js)
-      decor(PROPS.bamboo, 300, GROUND + 4, .8), decor(PROPS.bamboo, 860, GROUND + 4, .95, -1),
+      decor(PROPS.bamboo, 20, GROUND + 4, .8), decor(PROPS.bamboo, 1070, GROUND + 4, .95, -1),
       t6Pond(1250, 3300, 1800),
       decor(PROPS.bamboo, 2330, GROUND + 4, .85, -1),
       t6Cau(2620),
