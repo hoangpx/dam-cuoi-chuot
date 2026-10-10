@@ -143,11 +143,13 @@ async function gkMake() {
       for (let k = 0, got = 0; k < 40 && got < 3; k++) { let n0 = 0; for (let y = by0; y < Math.min(S, by0 + 16); y += 2) for (let x = bx0; x < Math.min(S, bx0 + 16); x += 2) n0 += mask[y * S + x]; if (n0 >= 14) break; if (put(Math.round(bx0 + 1 + GR() * 14), Math.round(by0 + 1 + GR() * 14))) got++; }
     }
   };
+  const newTh = () => { let sec = (GR() * 8) | 0; if (sec === GK.lastSec) sec = (sec + 1 + ((GR() * 7) | 0)) % 8; GK.thSec = sec; return (sec + GR()) * Math.PI / 4; };   // any of eight ways up, never the same one twice running
+  let thFix = newTh();      // (the key's turn is chosen once and kept through the retries: a turn that is harder to hide would otherwise be thrown out more often, and some ways up would hardly ever be seen)
   for (let tries = 0; tries < 250; tries++) {
-    let KA, KB, g, phi = 0, rotKey;
+    let KA, KB, g, phi = 0, rotKey, th = 0;
     if (GK.turn) { KA = [Math.round(ri(14, 170)), Math.round(ri(14, 140))]; phi = (GR() < .5 ? -1 : 1) * ri(.6, 3.1); g = [Math.round(ri(-100, 100)), Math.round(ri(-60, 100))]; rotKey = GK_KEYPOLYS; }
     else {                                                                   // the key itself turned any way, then set down in each sheet where it fits
-      const th = GR() * 6.2832, ct = Math.cos(th), sn0 = Math.sin(th);
+      th = thFix; if (tries % 80 === 79) thFix = newTh(); const ct = Math.cos(th), sn0 = Math.sin(th);
       rotKey = GK_KEYPOLYS.map(p => p.map(([x, y]) => { const dx = x - 25, dy = y - 44; return [25 + ct * dx - sn0 * dy, 44 + sn0 * dx + ct * dy]; }));
       let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const p of rotKey) for (const [x, y] of p) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
       const place = () => [Math.round(ri(10 - x0, S - 10 - x1)), Math.round(ri(10 - y0, S - 10 - y1))];
@@ -218,7 +220,8 @@ async function gkMake() {
     const edge = () => gkTorn([[0, 0], [S, 0], [S, S], [0, S]], 3.6);        // each sheet's own torn edge
     const holesB = gkContours(mBk, S), pathB = gkPath(holesB);
     if (gkLiveIou(pathB, mAk, rKeyA, g[0], g[1], phi) < .8) continue;                // the check the player meets must pass at the right pose
-    return { g, phi, holesA: gkContours(mAk, S), holesB, pathB, edgeA: edge(), edgeB: edge(), mA: mAk, mB: mBk, mK: rKeyA };
+    GK.lastSec = GK.thSec;
+    return { th, g, phi, holesA: gkContours(mAk, S), holesB, pathB, edgeA: edge(), edgeB: edge(), mA: mAk, mB: mBk, mK: rKeyA };
   }
   return null;
 }
