@@ -119,6 +119,7 @@ const T7_ZONE = 2900, T7_Z0 = 2600, T7_WARN = 2.8, T7_REACT = 1, T7_CAT = .95;
 const t7Zones = () => { const a = []; for (let x = T7_Z0; x < T6_OFF - 1800; x += T7_ZONE) a.push(x); return a; };
 // the recorded bell rings without a pause (owner): a new jingle every .45 s over the last one, louder and a little higher as the cat comes
 function t7Ring(e, dt) {
+  if (!AU.hasSample('bell')) bellLoad();                                       // (the audio device may open only after the first touch: try again until it decodes)
   if ((e.jt -= dt) > 0) return; const n = e.n = (e.n || 0) + 1; e.jt = .45; const v = Math.min(1.2, .45 + n * .1), r = 1 + ((n % 4) - 1.5) * .025 + Math.min(.12, n * .01);
   if (AU.hasSample('bell')) AU.play('bell', v, r); else AU.pluck(96 + (n % 4) * 3);
 }
@@ -139,7 +140,8 @@ function t6Dark() {
       if (S.mode === 'play' && this.dawn < .8) {
         if (!T7.ev) {
           while (T7.zi < T7.zs.length && T7.zs[T7.zi] < groom.x - 300) T7.zi++;                // zones already behind the party are not run again
-          if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { T7.ev = { t: 0, ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
+          if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { if (SAVE.catBell) toast('Lục lạc: có | file: ' + (AU.hasSample('bell') ? 'đã tải' : 'chưa tải') + ' | âm thanh: ' + AU.state(), 3);       // (demo: to find why the bell is silent)
+          T7.ev = { t: 0, ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
         } else {
           const e = T7.ev; e.t += dt;
           if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
