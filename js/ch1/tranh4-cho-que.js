@@ -13,10 +13,8 @@
       breaks under it unless you hold the bridge up while the cart is in the middle.
    Each thanks the party, then a moment later gives the coin. */
 
-const T4_INK = { vang: '#e8b83a', xanh: '#2f6a4c', do: '#a3332a', den: '#2a221d', trang: '#f6f1e4', hong: '#d98aa0', cam: '#e07a2f', tim: '#6a4a8a', lam: '#2f5f8f', nau: '#8a5a2a' };
-const T4_BASE = ['vang', 'xanh', 'do', 'den', 'trang'];                 // the five the pictures are drawn with
-const T4_NEW = ['hong', 'cam', 'tim', 'lam', 'nau'];                   // five more (owner): each only adds a mark to the print
-const T4_INKS = [...T4_BASE, ...T4_NEW];
+const T4_INK = { vang: '#e8b83a', xanh: '#2f6a4c', do: '#a3332a', den: '#2a221d', trang: '#f6f1e4' };
+const T4_INKS = ['vang', 'xanh', 'do', 'den', 'trang'];
 const T4_PAPER = '#eadcbc';                                              // giấy dó, so the white (điệp) shows on it
 
 /* ---------- small things drawn straight on the canvas ---------- */
@@ -268,20 +266,12 @@ const T4_SUBJ = [
       for (const x of [-5, 5]) { g.beginPath(); g.arc(x, -19, 2, 0, 6.283); g.fill(); } g.beginPath(); g.moveTo(16, 30); g.quadraticCurveTo(40, 34, 36, 50); g.stroke(); }
   },
 ];
-// what each new ink prints, whatever the picture: a border band, a sun, a row of diamonds, blush spots, the ground
-function t4Extra(g, k) {
-  if (k === 'lam') g.fillRect(-46, -56, 92, 7);
-  if (k === 'cam') { g.beginPath(); g.arc(-34, -40, 9, 0, 6.283); g.fill(); }
-  if (k === 'tim') for (let x = -36; x <= 36; x += 18) { g.beginPath(); g.moveTo(x, 44); g.lineTo(x + 6, 50); g.lineTo(x, 56); g.lineTo(x - 6, 50); g.closePath(); g.fill(); }
-  if (k === 'hong') for (const [x, y] of [[34, -34], [40, -20], [28, -22]]) { g.beginPath(); g.arc(x, y, 5, 0, 6.283); g.fill(); }
-  if (k === 'nau') g.fillRect(-46, 38, 92, 5);
-}
 // a sheet of giấy dó with the inks printed so far, in the order they were printed
 function t4Print(g, subj, layers, x, y, s, wet = 0) {
   g.save(); g.translate(x, y); g.scale(s, s);
   g.fillStyle = T4_PAPER; g.fillRect(-50, -60, 100, 120);
   g.save(); g.beginPath(); g.rect(-50, -60, 100, 120); g.clip();
-  for (const k of layers) { g.globalAlpha = .9; g.fillStyle = g.strokeStyle = T4_INK[k]; g.lineCap = g.lineJoin = 'round'; if (T4_BASE.includes(k)) T4_SUBJ[subj](g, k); else t4Extra(g, k); }
+  for (const k of new Set(layers)) { g.globalAlpha = .9; g.fillStyle = g.strokeStyle = T4_INK[k]; g.lineCap = g.lineJoin = 'round'; T4_SUBJ[subj](g, k); }   // (an ink asked twice prints once)
   g.globalAlpha = 1; if (wet > 0) { g.fillStyle = `rgba(40,50,70,${.32 * wet})`; g.fillRect(-50, -60, 100, 120); }
   g.restore(); g.strokeStyle = INK; g.lineWidth = 2.2; g.strokeRect(-50, -60, 100, 120); g.restore();
 }
@@ -295,22 +285,21 @@ function t4Block(g, ink, x, y, lit, press) {           // a carved pear-wood blo
   g.restore();
 }
 function t4Printer(W) {
-  const BX = k => W + 70 + k * 48, BY = GROUND - 272, PX = W + 180, PY = GROUND - 376, KX = W + 380;   // the table up high, out of the party's way; ten blocks in a row (the new five to the right)
+  const BX = k => W + 70 + k * 55, BY = GROUND - 272, PX = W + 180, PY = GROUND - 376, KX = W + 380;   // the table up high, out of the party's way
   const shuffle = a => { const o = a.slice(); for (let i = o.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [o[i], o[j]] = [o[j], o[i]]; } return o; };
   // random every game (owner: so a solution cannot be shared): where each ink stands on the table, which new ink comes in which round, and the order asked each round
-  const slots = shuffle(T4_INKS), unlock = [...T4_BASE, ...shuffle(T4_NEW)];
-  const nInks = () => 6 + Math.min(4, e.round);                          // 6 inks in the first picture, one more each, ten in the last
-  const active = () => unlock.slice(0, nInks());
-  const newOrder = () => shuffle(active());
+  // (owner) the same five inks side by side as ever, but the sequence repeats them: 6 steps in the first picture, one more each time, 10 in the last
+  // (e.g. xanh đỏ vàng trắng đen vàng); random every game, so there is nothing to share; the same ink never twice running
+  const newOrder = () => { const n = 6 + Math.min(4, e.round), o = []; while (o.length < n) { const k = T4_INKS[(R() * 5) | 0]; if (k !== o[o.length - 1]) o.push(k); } return o; };
   const e = {
-    layer: 'bg', ax: W, st: 'idle', t: 0, round: 0, order: [], slots, unlock, step: 0, layers: [], press: {}, k: { bounce: 0 }, toldWrong: false,
+    layer: 'bg', ax: W, st: 'idle', t: 0, round: 0, order: [], step: 0, layers: [], press: {}, k: { bounce: 0 }, toldWrong: false,
     show() { if (!this.order.length) this.order = newOrder(); this.st = 'show'; this.t = -.4; },
     onClick(wx, wy) {
       if (this.st === 'done') return false;
-      if (t4Asked(wx, wy, KX)) { if (this.st === 'idle') { this.k.bounce = .8; toastSay('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé! Mỗi bức lại thêm một màu mới.'); } if (this.st === 'input' || this.st === 'idle') { AU.pluck(76); this.show(); } return true; }
-      const i = slots.findIndex((_, k) => Math.abs(wx - BX(k)) < 23 && wy > BY - 50 && wy < BY + 16); if (i < 0) return false;
+      if (t4Asked(wx, wy, KX)) { if (this.st === 'idle') { this.k.bounce = .8; toastSay('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé! Mỗi bức lại dài thêm một bước.'); } if (this.st === 'input' || this.st === 'idle') { AU.pluck(76); this.show(); } return true; }
+      const i = T4_INKS.findIndex((_, k) => Math.abs(wx - BX(k)) < 26 && wy > BY - 50 && wy < BY + 16); if (i < 0) return false;
       if (this.st !== 'input') return true;
-      const ink = slots[i]; if (!this.order.includes(ink)) return true; this.press[ink] = .25;     // a block not yet in play does nothing
+      const ink = T4_INKS[i]; this.press[ink] = .25;
       if (ink !== this.order[this.step]) {
         this.st = 'smear'; this.t = 0; AU.pluck(50); AU.thump();
         if (!this.toldWrong) { this.toldWrong = true; toastSay('In sai thứ tự, tranh nhoè mất rồi! Chạm vào bác thợ in để xem lại.', 3.4); }
@@ -344,10 +333,10 @@ function t4Printer(W) {
       for (let k = 0; k < 5; k++) { const x = PX - 94, y = PY - 64 + k * 32; if (k < this.round) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
       if (done) t4Print(g, 4, T4_INKS, PX, PY, 1.1);
       // the table and the blocks; while showing, the one to print next is raised
-      g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(BX(0) - 30, BY + 8, BX(9) - BX(0) + 60, 10); g.strokeRect(BX(0) - 30, BY + 8, BX(9) - BX(0) + 60, 10);
-      for (const x of [BX(0) - 22, BX(9) + 22]) { g.beginPath(); g.moveTo(x, BY + 18); g.lineTo(x, GROUND); g.stroke(); }
-      const lit = this.st === 'show' && this.t > 0 && (this.t % .8) < .62 ? this.order[Math.floor(this.t / .8)] : null, act = this.order.length ? this.order : active();
-      slots.forEach((ink, k) => { const on = act.includes(ink); g.globalAlpha = on ? 1 : .3; t4Block(g, ink, BX(k), BY, ink === lit, this.press[ink] || 0); g.globalAlpha = 1; });
+      g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10); g.strokeRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10);
+      for (const x of [BX(0) - 26, BX(4) + 26]) { g.beginPath(); g.moveTo(x, BY + 18); g.lineTo(x, GROUND); g.stroke(); }
+      const lit = this.st === 'show' && this.t > 0 && (this.t % .8) < .62 ? this.order[Math.floor(this.t / .8)] : null;
+      T4_INKS.forEach((ink, k) => t4Block(g, ink, BX(k), BY, ink === lit, this.press[ink] || 0));
     },
     drawMid(g) {
       t4Folk(g, 6, KX, this.k);
