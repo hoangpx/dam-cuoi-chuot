@@ -1,8 +1,13 @@
-/* Tranh 6 · Bắc Kim Thang, the first stretch: Dàn Bí Rợ (owner's idea): pitch dark. The party walks through the night for about three minutes (T6_OFF px) before the rescue of the two birds under a trellis of giant gourds, pumpkins, aubergines and tomatoes
-   ("cà lang bí rợ", from the song) that hides the moon. The mouse who carried the parasol now carries an oil lamp: it lights a small flickering round about itself and nothing else.
-   A finger (or the mouse) held on the picture is a torch: it lights what it is over, the rest stays black. Now and then the shadow of a cat streaks past, very fast.
-   Everything is drawn as usual and then a black sheet is laid over the view with holes punched out for the lights (an offscreen canvas, destination-out). Where the trellis ends the dark thins to the moonlight and the old road of the tranh (the stations, the pond, the bridge, the gate) begins, T6_OFF further on. ITEM.lantern is the lamp, drawn in drawMouse (game.js) when a follower's item is 'lantern'. */
-const T7 = { px: 0, py: 0, in: false, down: false, a: 0, cat: null, catT: 7, cricT: 1, dk: null, dkx: null };
+/* Tranh 6 · Bắc Kim Thang, the first stretch: Dàn Bí Rợ (owner's idea): pitch dark. The party walks through the night for about three minutes (T6_OFF px) before the rescue of the two birds
+   under a trellis of giant gourds, pumpkins, aubergines and tomatoes ("cà lang bí rợ", from the song) that hides the moon, hung in THREE layers: a far one (dim), a middle one (lit by
+   the lamp and by the torch) and a near one that is never lit: it stays pitch black and only shows as black shapes against what is lit behind it.
+   The mouse who carried the parasol carries an oil lamp: a wide, soft, flickering round, and the party casts long black shadows backwards from it. A finger (or the mouse) held on the picture
+   is a torch. Now and then the shadow of a huge cat, as big as the screen (only its four legs and belly), streaks past in front of the lights.
+   Everything is drawn as usual and then a black sheet is laid over the view with holes punched out for the lights (an offscreen canvas, destination-out); the near layer and the cat are drawn
+   over the sheet, as pure black. Where the trellis ends the dark thins to the moonlight and the old road of the tranch (the stations, the pond, the bridge, the gate) begins, T6_OFF further on.
+   ITEM.lantern is the lamp, drawn in drawMouse (game.js) when a follower's item is 'lantern'. */
+PL.nero = ['#050406', [0, 0]];                                                      // the near layer's black
+const T7 = { px: 0, py: 0, in: false, down: false, a: 0, cat: null, catT: 7, cricT: 1, dk: null, dkx: null, sh: null, shx: null };
 ITEM.lantern = part([-20, -12, 20, 56], a => {                                    // an oil lamp hung from the hand: a ring, a dark cap, a paper body glowing from inside
   a.key(lines([[0, -10, 0, 2]]), 2.4);
   a.fk('dark', smooth([[-9, 2], [9, 2], [11, 8], [-11, 8]]), 2);
@@ -12,43 +17,65 @@ ITEM.lantern = part([-20, -12, 20, 56], a => {                                  
   a.key(lines([[-12, 8, -10, 38], [12, 8, 10, 38], [-15, 24, 15, 24]]), 1.3);
   a.fk('dark', smooth([[-10, 38], [10, 38], [8, 44], [-8, 44]]), 2);
 });
-// the gourds, hung by their stems (origin = the point they hang from)
+// the gourds, hung by their stems (origin = the point they hang from); made twice: in colour, and all black (for the near layer, which is never lit)
 let T7_ART = null;
 function t7Art() {
   if (T7_ART) return T7_ART;
-  const stem = a => { a.fk('green', smooth([[-3, 0], [3, 0], [4, 9], [-4, 9]]), 1.8); };
-  const pump = part([-46, -4, 46, 70], a => {                                       // bí rợ: a ribbed pumpkin
-    stem(a); a.fk('orange', ell(0, 38, 40, 30, 0), 2.4); a.fill('red', ell(0, 44, 26, 22, 0));
-    a.key(lines([[0, 10, 0, 66], [-18, 12, -24, 60], [18, 12, 24, 60], [-32, 20, -38, 52], [32, 20, 38, 52]]), 1.4); a.fk('green', smooth([[-8, 8], [0, 0], [8, 8], [0, 12]]), 1.4);
-  });
-  const egg = part([-24, -4, 24, 96], a => {                                         // cà: an aubergine, long and glossy
-    a.fk('lilac', smooth([[-12, 14], [12, 14], [22, 48], [18, 82], [0, 94], [-18, 82], [-22, 48]]), 2.4); a.fill('grey', smooth([[-6, 24], [4, 24], [10, 52], [4, 80], [-6, 60]]));
-    a.fk('green', smooth([[-14, 14], [-6, 4], [0, 14], [6, 4], [14, 14], [0, 20]]), 1.8); stem(a);
-  });
-  const bau = part([-34, -4, 34, 100], a => {                                         // bầu: a bottle gourd, a small lobe over a big one
-    stem(a); a.fk('teal', circ(0, 26, 16), 2.2); a.fk('teal', circ(0, 64, 30), 2.4); a.fill('cream', ell(-10, 66, 9, 16, .25));
-    a.key(lines([[-8, 36, -10, 40], [8, 36, 10, 40]]), 1.6);
-  });
-  const ca = part([-30, -4, 30, 54], a => {                                           // cà lang: a round red tomato
-    stem(a); a.fk('red', circ(0, 30, 24), 2.4); a.fill('pink', ell(-8, 24, 8, 6, -.4)); a.fk('green', smooth([[-14, 8], [-6, 12], [0, 6], [6, 12], [14, 8], [6, 18], [-6, 18]]), 1.6);
-  });
-  const leaf = part([-30, -16, 30, 16], a => { a.fk('green', smooth([[-28, 0], [-10, -14], [14, -12], [28, 0], [10, 12], [-12, 12]]), 2); a.key(lines([[-24, 0, 22, 0]]), 1.2); });
-  return (T7_ART = { gourds: [pump, egg, bau, ca], leaf });
+  const make = pl => {
+    const stem = a => { a.fk(pl('green'), smooth([[-3, 0], [3, 0], [4, 9], [-4, 9]]), 1.8); };
+    const pump = part([-46, -4, 46, 70], a => {                                       // bí rợ: a ribbed pumpkin
+      stem(a); a.fk(pl('orange'), ell(0, 38, 40, 30, 0), 2.4); a.fill(pl('red'), ell(0, 44, 26, 22, 0));
+      a.key(lines([[0, 10, 0, 66], [-18, 12, -24, 60], [18, 12, 24, 60], [-32, 20, -38, 52], [32, 20, 38, 52]]), 1.4); a.fk(pl('green'), smooth([[-8, 8], [0, 0], [8, 8], [0, 12]]), 1.4);
+    });
+    const egg = part([-24, -4, 24, 96], a => {                                         // cà: an aubergine, long and glossy
+      a.fk(pl('lilac'), smooth([[-12, 14], [12, 14], [22, 48], [18, 82], [0, 94], [-18, 82], [-22, 48]]), 2.4); a.fill(pl('grey'), smooth([[-6, 24], [4, 24], [10, 52], [4, 80], [-6, 60]]));
+      a.fk(pl('green'), smooth([[-14, 14], [-6, 4], [0, 14], [6, 4], [14, 14], [0, 20]]), 1.8); stem(a);
+    });
+    const bau = part([-34, -4, 34, 100], a => {                                         // bầu: a bottle gourd, a small lobe over a big one
+      stem(a); a.fk(pl('teal'), circ(0, 26, 16), 2.2); a.fk(pl('teal'), circ(0, 64, 30), 2.4); a.fill(pl('cream'), ell(-10, 66, 9, 16, .25));
+      a.key(lines([[-8, 36, -10, 40], [8, 36, 10, 40]]), 1.6);
+    });
+    const ca = part([-30, -4, 30, 54], a => {                                           // cà lang: a round red tomato
+      stem(a); a.fk(pl('red'), circ(0, 30, 24), 2.4); a.fill(pl('pink'), ell(-8, 24, 8, 6, -.4)); a.fk(pl('green'), smooth([[-14, 8], [-6, 12], [0, 6], [6, 12], [14, 8], [6, 18], [-6, 18]]), 1.6);
+    });
+    const leaf = part([-30, -16, 30, 16], a => { a.fk(pl('green'), smooth([[-28, 0], [-10, -14], [14, -12], [28, 0], [10, 12], [-12, 12]]), 2); a.key(lines([[-24, 0, 22, 0]]), 1.2); });
+    return { gourds: [pump, egg, bau, ca], leaf };
+  };
+  const o = make(c => c); o.sil = make(() => 'nero');
+  return (T7_ART = o);
 }
 const t7h = (n, s) => { const x = Math.sin(n * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };      // a steady pseudo-random number for cell n, stream s
 const T7_TOP = () => GROUND - 440;                                              // the trellis
+// the three layers of gourds: far (dim, small, high), middle (lit), near (black, big, low). cell width, density, scale range, hang length, a stream seed
+const T7_LAYERS = [
+  { cell: 70, dens: .62, s0: .62, s1: .5, len0: 6, len1: 34, seed: 40, top: -34, alpha: .55 },
+  { cell: 80, dens: .72, s0: 1.05, s1: .95, len0: 18, len1: 58, seed: 0, top: 48, alpha: 1 },
+  { cell: 130, dens: .5, s0: 1.5, s1: 1.0, len0: 40, len1: 80, seed: 80, top: 78, alpha: 1 },
+];
+function t7Layer(g, L, A, x0, x1, top) {                                         // one layer of gourds with their vines, between x0 and x1
+  for (let i = Math.floor(x0 / L.cell); i <= Math.floor(x1 / L.cell); i++) {
+    if (t7h(i, L.seed + 1) > L.dens) continue;
+    const n = t7h(i, L.seed + 5) < .55 ? 1 : 2;
+    for (let j = 0; j < n; j++) {
+      const gx = i * L.cell + t7h(i, L.seed + 6 + j) * L.cell, kind = Math.floor(t7h(i, L.seed + 8 + j) * 4), sc = L.s0 + t7h(i, L.seed + 10 + j) * L.s1, len = L.len0 + t7h(i, L.seed + 12 + j) * (L.len1 - L.len0), sw = Math.sin(S.t * .8 + i * 1.7 + j) * .04;
+      g.strokeStyle = A === null ? '#000' : '#150f0a'; g.lineWidth = 3.2; g.beginPath(); g.moveTo(gx, top + L.top); g.quadraticCurveTo(gx + 8, top + L.top + len * .5, gx, top + L.top + len); g.stroke();      // the vine
+      g.save(); g.translate(gx, top + L.top + len); g.rotate(sw); dp(g, (A || T7_ART.sil).gourds[kind], 0, 0, 0, sc, sc); g.restore();
+    }
+  }
+}
 
-// the shadow of a cat: a dim shape with two glowing eyes
-function t7CatDraw(g, x, y, dir, t, s) {
-  const run = Math.sin(t * 34);
-  g.save(); g.translate(x, y); g.scale(dir * s, s);
-  g.fillStyle = 'rgba(46,54,86,.9)'; g.strokeStyle = 'rgba(46,54,86,.9)'; g.lineCap = 'round';
-  g.beginPath(); g.ellipse(0, 0, 27, 11 + run * 1.2, run * .05, 0, 6.283); g.fill();                                  // the body, stretched out in the run
-  g.beginPath(); g.arc(30, -6 + run * 1.5, 10, 0, 6.283); g.fill();                                                    // the head
-  g.beginPath(); g.moveTo(24, -13); g.lineTo(27, -25); g.lineTo(33, -14); g.closePath(); g.moveTo(32, -13); g.lineTo(38, -23); g.lineTo(40, -10); g.closePath(); g.fill();   // the ears
-  g.lineWidth = 6; g.beginPath(); g.moveTo(-24, -2); g.quadraticCurveTo(-52, -26 + run * 6, -58, -4 + run * 8); g.stroke();                                // the tail
-  g.lineWidth = 5; g.beginPath(); g.moveTo(16, 8); g.lineTo(26 + run * 12, 22); g.moveTo(8, 9); g.lineTo(2 - run * 12, 23); g.moveTo(-14, 8); g.lineTo(-24 + run * 14, 22); g.moveTo(-20, 7); g.lineTo(-8 - run * 14, 21); g.stroke();   // legs
-  for (const ex of [34, 41]) { const gr = g.createRadialGradient(ex, -8 + run * 1.5, 0, ex, -8 + run * 1.5, 9); gr.addColorStop(0, 'rgba(230,255,120,.95)'); gr.addColorStop(1, 'rgba(230,255,120,0)'); g.fillStyle = gr; g.beginPath(); g.arc(ex, -8 + run * 1.5, 9, 0, 6.283); g.fill(); }   // the eyes
+// the shadow of a huge cat: only its belly and its four long legs, black, as big as the screen, running past in front of the lights
+function t7CatDraw(g, vw, q, dir) {
+  const H = viewH, x = dir > 0 ? -vw * .55 + (vw * 2.1) * q : vw * 1.55 - (vw * 2.1) * q, ph = q * 22, sw = i => Math.sin(ph + i * 1.7) * 38;
+  g.save(); g.translate(x, 0); g.scale(dir, 1); g.fillStyle = 'rgba(0,0,0,.97)'; g.strokeStyle = 'rgba(0,0,0,.97)'; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.ellipse(0, -H * .05, vw * .62, H * .26 + Math.sin(ph) * 6, 0, 0, 6.283); g.fill();                    // the belly, over the top of the screen
+  g.lineWidth = 46; g.beginPath(); g.moveTo(-vw * .62, -H * .05); g.quadraticCurveTo(-vw * .8, H * .1 + Math.sin(ph) * 20, -vw * .74, H * .3); g.stroke();                // the tail
+  for (const [lx, i] of [[-vw * .42, 0], [-vw * .2, 1], [vw * .26, 2], [vw * .5, 3]]) {                                       // four legs: down from the belly, knee forward, paw on the ground
+    const s = sw(i), kx = lx + 26 + s * .5, ky = H * .42, px = lx + s, py = H * 1.02;
+    g.lineWidth = 56; g.beginPath(); g.moveTo(lx, H * .1); g.quadraticCurveTo(kx, ky, px, py - 30); g.stroke();
+    g.lineWidth = 34; g.beginPath(); g.moveTo(px, py - 70); g.lineTo(px + 6, py - 10); g.stroke();
+    g.beginPath(); g.ellipse(px + 14, py - 6, 46, 20, 0, 0, 6.283); g.fill();                                                  // the paw
+  }
   g.restore();
 }
 
@@ -71,8 +98,8 @@ function t6Dark() {
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
       const want = (isTouch ? T7.down : T7.in) ? 1 : 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
       if ((T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }
-      if (!T7.cat && this.dawn < .8 && (T7.catT -= dt) < 0) { T7.catT = 7 + Math.random() * 12; T7.cat = { t: 0, dir: Math.random() < .5 ? -1 : 1, hi: Math.random() < .35, s: .9 + Math.random() * .5 }; AU.rustle && AU.rustle(.55); }
-      if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > .85) T7.cat = null; }
+      if (!T7.cat && this.dawn < .8 && (T7.catT -= dt) < 0) { T7.catT = 8 + Math.random() * 13; T7.cat = { t: 0, dir: Math.random() < .5 ? -1 : 1 }; AU.rustle && AU.rustle(.7); }
+      if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > .95) T7.cat = null; }
     },
     draw(g) {                                                                    // the posts that hold the trellis up (behind the party)
       const vw = cv.width / DPR / scale, x0 = Math.floor((camX - 100) / 700) * 700;
@@ -83,22 +110,28 @@ function t6Dark() {
         g.strokeStyle = '#150f0a'; g.lineWidth = 2; for (let y = GROUND - 40; y > T7_TOP(); y -= 70) { g.beginPath(); g.moveTo(px - 5.5, y); g.lineTo(px + 5.5, y); g.stroke(); }
       }
     },
-    drawFg(g) {                                                                  // the trellis and the giant gourds hanging from it, over the party's heads
+    drawMid(g) {                                                                 // the long black shadows the party casts backwards from the lamp (behind the mice, over the road)
+      if (this.dawn >= .99) return;
+      const [lx] = lamp(), L = [{ m: MICE.groom, x: groom.x, face: groom.face, ph: groom.ph, mv: groom.moving, it: null }, ...followers.map(f => ({ m: f.m, x: f.x, face: f.face, ph: f.ph, mv: f.moving, it: f.item }))];
+      if (!T7.sh) { T7.sh = document.createElement('canvas'); T7.sh.width = 260; T7.sh.height = 340; T7.shx = T7.sh.getContext('2d'); }
+      const o = T7.shx;
+      L.forEach((q, i) => {
+        o.setTransform(1, 0, 0, 1, 0, 0); o.globalCompositeOperation = 'source-over'; o.clearRect(0, 0, 260, 340);
+        o.setTransform(1, 0, 0, 1, 130, 310 - GROUND); drawMouse(o, q.m, 0, q.face, q.ph, q.mv, q.it, i * 1.7 + 1);
+        o.setTransform(1, 0, 0, 1, 0, 0); o.globalCompositeOperation = 'source-in'; o.fillStyle = '#000'; o.fillRect(0, 0, 260, 340);
+        const r = q.x - lx, sg = r >= 0 ? 1 : -1, lean = Math.max(-1.1, Math.min(1.1, r / 220 + sg * .3));
+        g.save(); g.globalAlpha = .8 * (1 - this.dawn); g.translate(q.x + r * .5 + sg * 40, GROUND + 4); g.transform(1.3, 0, -lean, .95, 0, 0); g.drawImage(T7.sh, -130, -310); g.restore();
+      });
+    },
+    drawFg(g) {                                                                  // the trellis and the far and middle layers of gourds, over the party's heads
       const A = t7Art(), vw = cv.width / DPR / scale, x0 = camX - 150, x1 = Math.min(camX + vw + 150, T6_OFF - 100), top = T7_TOP();
       if (x1 <= x0) return;
       g.lineCap = 'round';
+      g.save(); g.globalAlpha = T7_LAYERS[0].alpha; t7Layer(g, T7_LAYERS[0], A, x0, x1, top); g.restore();                  // the far layer, dim, behind the trellis
       for (const [dy, w] of [[0, 9], [46, 7]]) { g.strokeStyle = '#150f0a'; g.lineWidth = w + 3; g.beginPath(); g.moveTo(x0, top + dy); g.lineTo(x1, top + dy); g.stroke(); g.strokeStyle = '#8a7a3a'; g.lineWidth = w - 1; g.stroke(); }
       g.strokeStyle = '#150f0a'; g.lineWidth = 4; for (let x = Math.floor(x0 / 74) * 74; x < x1; x += 74) { g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x + 14, top + 50); g.stroke(); }
-      for (let i = Math.floor(x0 / 80); i <= Math.floor(x1 / 80); i++) {
-        if (t7h(i, 1) < .28) continue;
-        const lx = i * 80 + t7h(i, 2) * 80; dp(g, A.leaf, lx, top + 6, t7h(i, 3) * 1.2 - .6, .9 + t7h(i, 4) * .7, .9 + t7h(i, 4) * .7);   // leaves along it
-        const n = t7h(i, 5) < .55 ? 1 : 2;
-        for (let j = 0; j < n; j++) {
-          const gx = i * 80 + t7h(i, 6 + j) * 80, kind = Math.floor(t7h(i, 8 + j) * 4), sc = 1.05 + t7h(i, 10 + j) * .95, len = 18 + t7h(i, 12 + j) * 58, sw = Math.sin(S.t * .8 + i * 1.7 + j) * .04;     // giant ones
-          g.strokeStyle = '#150f0a'; g.lineWidth = 3.2; g.beginPath(); g.moveTo(gx, top + 48); g.quadraticCurveTo(gx + 8, top + 48 + len * .5, gx, top + 48 + len); g.stroke();      // the vine
-          g.save(); g.translate(gx, top + 48 + len); g.rotate(sw); dp(g, A.gourds[kind], 0, 0, 0, sc, sc); g.restore();
-        }
-      }
+      for (let i = Math.floor(x0 / 80); i <= Math.floor(x1 / 80); i++) { if (t7h(i, 1) < .28) continue; const lx = i * 80 + t7h(i, 2) * 80; dp(g, A.leaf, lx, top + 6, t7h(i, 3) * 1.2 - .6, .9 + t7h(i, 4) * .7, .9 + t7h(i, 4) * .7); }   // leaves along it
+      t7Layer(g, T7_LAYERS[1], A, x0, x1, top);                                                                               // the middle layer: this is the one the lights show
     },
     onClick(wx, wy) {                                                            // (demo only) skip the dark stretch
       const b = this.btn; if (!b) return false; const sx = wx - camX, sy = wy + offY;
@@ -113,23 +146,24 @@ function t6Dark() {
       if (base > .003) {
         d.fillStyle = 'rgba(2,3,9,' + base + ')'; d.fillRect(0, 0, T7.dk.width, T7.dk.height);
         d.setTransform(k, 0, 0, k, 0, 0); d.globalCompositeOperation = 'destination-out';
-        const light = (x, y, R, s) => { const gr = d.createRadialGradient(x, y, R * .08, x, y, R); gr.addColorStop(0, 'rgba(0,0,0,' + s + ')'); gr.addColorStop(.45, 'rgba(0,0,0,' + s * .82 + ')'); gr.addColorStop(.78, 'rgba(0,0,0,' + s * .3 + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = gr; d.beginPath(); d.arc(x, y, R, 0, 6.283); d.fill(); };
-        const [lx, ly] = lamp(), fl = 1 + Math.sin(this.flick * 11) * .035 + Math.sin(this.flick * 23.7) * .03 + (Math.sin(this.flick * 3.1) > .96 ? -.1 : 0);        // the lamp: a small guttering round
-        light(lx - camX, ly + offY, 118 * fl, 1);
-        if (T7.a > .02) light(T7.px, T7.py, 150, T7.a);                            // the finger's torch
+        const light = (x, y, R, s) => { const gr = d.createRadialGradient(x, y, R * .06, x, y, R); gr.addColorStop(0, 'rgba(0,0,0,' + s + ')'); gr.addColorStop(.3, 'rgba(0,0,0,' + s * .78 + ')'); gr.addColorStop(.62, 'rgba(0,0,0,' + s * .36 + ')'); gr.addColorStop(.86, 'rgba(0,0,0,' + s * .1 + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = gr; d.beginPath(); d.arc(x, y, R, 0, 6.283); d.fill(); };
+        const [lx, ly] = lamp(), fl = 1 + Math.sin(this.flick * 11) * .035 + Math.sin(this.flick * 23.7) * .03 + (Math.sin(this.flick * 3.1) > .96 ? -.1 : 0);        // the lamp: a wide, soft, guttering round, a little dimmer than before
+        light(lx - camX, ly + offY, 205 * fl, .86);
+        if (T7.a > .02) light(T7.px, T7.py, 215, .88 * T7.a);                      // the finger's torch
         d.globalCompositeOperation = 'source-over';
       }
       g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(T7.dk, 0, 0); g.restore();
-      const [lx, ly] = lamp(); g.save(); g.globalCompositeOperation = 'lighter'; const wg = g.createRadialGradient(lx - camX, ly + offY, 2, lx - camX, ly + offY, 130); wg.addColorStop(0, 'rgba(255,170,70,' + .34 * (1 - this.dawn) + ')'); wg.addColorStop(1, 'rgba(255,170,70,0)'); g.fillStyle = wg; g.fillRect(lx - camX - 130, ly + offY - 130, 260, 260); g.restore();     // warm glow
+      const [lx, ly] = lamp(); g.save(); g.globalCompositeOperation = 'lighter'; const wg = g.createRadialGradient(lx - camX, ly + offY, 2, lx - camX, ly + offY, 160); wg.addColorStop(0, 'rgba(255,170,70,' + .26 * (1 - this.dawn) + ')'); wg.addColorStop(1, 'rgba(255,170,70,0)'); g.fillStyle = wg; g.fillRect(lx - camX - 160, ly + offY - 160, 320, 320); g.restore();     // warm glow
+      if (base > .003) {                                                         // the near layer of gourds: never lit, pure black shapes over the sheet
+        const A = t7Art(), x0 = camX - 150, x1 = Math.min(camX + vw + 150, T6_OFF - 100);
+        if (x1 > x0) { g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, base * 1.3); g.lineCap = 'round'; t7Layer(g, T7_LAYERS[2], null, x0 + camX * 0, x1, T7_TOP()); g.restore(); }
+      }
+      const c = T7.cat;
+      if (c && base > .003) t7CatDraw(g, vw, c.t / .95, c.dir);                   // the cat's shadow streaks past, very fast
       if (this.dawn < 1 && T6R.ready) {                                           // (demo only) a button to skip the dark stretch
         const w = 136, h = 32, x = vw - w - 24, y = viewH - 104; this.btn = { x, y, w, h };
         g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(0,0,0,.6)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 16) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText('Qua dàn bí rợ', x + w / 2, y + h / 2 + 1); g.restore();
       } else this.btn = null;
-      const c = T7.cat;
-      if (c) {                                                                   // the cat's shadow streaks across, very fast
-        const q = c.t / .85, x = c.dir > 0 ? -90 + (vw + 180) * q : vw + 90 - (vw + 180) * q, y = (c.hi ? T7_TOP() + 4 : GROUND - 20) + offY;
-        t7CatDraw(g, x, y, c.dir, c.t, c.s);
-      }
     },
   };
 }
