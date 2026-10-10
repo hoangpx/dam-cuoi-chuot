@@ -6,25 +6,25 @@
    And the rival betel seller (event rival) stands as a real stall across the lane, calling out cheap betel and pulling
    buyers away while you keep your price; you can buy them out too. ---------- */
 const C4_BUY_WARES = {
-  hangThit: { g: 'thit', name: 'Thịt lợn', unit: 'lạng', price: 12, cost: 8, keep: 'day', cap: 40, serve: 1.4, wage: 10, buy: 700,
+  hangThit: { g: 'thit', name: 'Thịt lợn', unit: 'lạng', price: 12, cost: 8, keep: 'day', cap: 40, serve: 1.4, wage: 10, buy: 1120,
     hours: { 'Mão': 1.6, 'Thìn': 1.4, 'Tỵ': 1, 'Ngọ': .5, 'Mùi': .4, 'Thân': .5, 'Dậu': .4 }, wx: { gat: .7, mua: .9, ret: 1.1, dep: 1 } },
-  hangGao: { g: 'gao', name: 'Gạo', unit: 'đấu', price: 10, cost: 7, keep: 'ever', cap: 60, serve: 1.2, wage: 8, buy: 600,
+  hangGao: { g: 'gao', name: 'Gạo', unit: 'đấu', price: 10, cost: 7, keep: 'ever', cap: 60, serve: 1.2, wage: 8, buy: 960,
     hours: { 'Mão': 1, 'Thìn': 1.1, 'Tỵ': .9, 'Ngọ': .6, 'Mùi': .6, 'Thân': .8, 'Dậu': .7 }, wx: { gat: 1, mua: .8, ret: 1, dep: 1 } },
-  hangRau: { g: 'rau', name: 'Rau', unit: 'bó', price: 3, cost: 1, keep: 'day', cap: 80, serve: .8, wage: 6, buy: 300,
+  hangRau: { g: 'rau', name: 'Rau', unit: 'bó', price: 3, cost: 1, keep: 'day', cap: 80, serve: .8, wage: 6, buy: 480,
     hours: { 'Mão': 1.6, 'Thìn': 1.3, 'Tỵ': .9, 'Ngọ': .5, 'Mùi': .5, 'Thân': .8, 'Dậu': .9 }, wx: { gat: .7, mua: .9, ret: 1, dep: 1 } },
-  hangTrung: { g: 'trung', name: 'Trứng', unit: 'chục', price: 15, cost: 10, keep: 'ever', cap: 30, serve: 1, wage: 8, buy: 500,
+  hangTrung: { g: 'trung', name: 'Trứng', unit: 'chục', price: 15, cost: 10, keep: 'ever', cap: 30, serve: 1, wage: 8, buy: 800,
     hours: { 'Mão': 1.2, 'Thìn': 1.1, 'Tỵ': .9, 'Ngọ': .6, 'Mùi': .6, 'Thân': .8, 'Dậu': .7 }, wx: { gat: .9, mua: .9, ret: 1, dep: 1 } },
-  hangGa: { g: 'ga', name: 'Gà', unit: 'con', price: 30, cost: 22, keep: 'ever', cap: 16, serve: 2, wage: 10, buy: 800,
+  hangGa: { g: 'ga', name: 'Gà', unit: 'con', price: 30, cost: 22, keep: 'ever', cap: 16, serve: 2, wage: 10, buy: 1280,
     hours: { 'Mão': 1.2, 'Thìn': 1.1, 'Tỵ': .8, 'Ngọ': .4, 'Mùi': .4, 'Thân': .6, 'Dậu': .5 }, wx: { gat: .8, mua: .8, ret: 1.1, dep: 1 } },
-  hangQua: { g: 'qua', name: 'Hoa quả', unit: 'nải', price: 8, cost: 5, keep: 'ever', cap: 50, serve: 1, wage: 8, buy: 500,
+  hangQua: { g: 'qua', name: 'Hoa quả', unit: 'nải', price: 8, cost: 5, keep: 'ever', cap: 50, serve: 1, wage: 8, buy: 800,
     hours: { 'Mão': .8, 'Thìn': 1, 'Tỵ': 1.1, 'Ngọ': .9, 'Mùi': .9, 'Thân': 1, 'Dậu': .8 }, wx: { gat: 1.2, mua: .8, ret: .8, dep: 1 } },
-  hangNon: { g: 'non', name: 'Nón lá', unit: 'chiếc', price: 20, cost: 14, keep: 'ever', cap: 30, serve: 1.6, wage: 8, buy: 600,
+  hangNon: { g: 'non', name: 'Nón lá', unit: 'chiếc', price: 20, cost: 14, keep: 'ever', cap: 30, serve: 1.6, wage: 8, buy: 960,
     hours: { 'Mão': .6, 'Thìn': .9, 'Tỵ': 1.1, 'Ngọ': 1.2, 'Mùi': 1, 'Thân': .8, 'Dậu': .6 }, wx: { gat: 1.6, mua: 1.4, ret: .7, dep: 1 } },
-  hangCa: { g: 'ca', name: 'Cá', unit: 'con', price: 10, cost: 6, keep: 'day', cap: 50, serve: 1.2, wage: 8, buy: 600,
+  hangCa: { g: 'ca', name: 'Cá', unit: 'con', price: 10, cost: 6, keep: 'day', cap: 50, serve: 1.2, wage: 8, buy: 960,
     hours: { 'Mão': 1.6, 'Thìn': 1.3, 'Tỵ': .9, 'Ngọ': .5, 'Mùi': .4, 'Thân': .6, 'Dậu': .5 }, wx: { gat: .7, mua: 1, ret: 1, dep: 1 } },
-  hangVai: { g: 'vai', name: 'Vải', unit: 'thước', price: 15, cost: 11, keep: 'ever', cap: 40, serve: 1.8, wage: 8, buy: 700,
+  hangVai: { g: 'vai', name: 'Vải', unit: 'thước', price: 15, cost: 11, keep: 'ever', cap: 40, serve: 1.8, wage: 8, buy: 1120,
     hours: { 'Mão': .5, 'Thìn': .9, 'Tỵ': 1.1, 'Ngọ': 1, 'Mùi': 1, 'Thân': .9, 'Dậu': .6 }, wx: { gat: .9, mua: .7, ret: 1.2, dep: 1 } },
-  hangBanh: { g: 'banh', name: 'Bánh đa', unit: 'chiếc', price: 4, cost: 2, keep: 'day', cap: 60, serve: .8, wage: 6, buy: 400,
+  hangBanh: { g: 'banh', name: 'Bánh đa', unit: 'chiếc', price: 4, cost: 2, keep: 'day', cap: 60, serve: .8, wage: 6, buy: 640,
     hours: { 'Mão': .8, 'Thìn': 1, 'Tỵ': 1, 'Ngọ': .9, 'Mùi': 1, 'Thân': 1.2, 'Dậu': 1 }, wx: { gat: .9, mua: 1, ret: 1.1, dep: 1 } },
 };
 const C4_BUYS = [], C4_VENDOR_G = {};
@@ -50,7 +50,8 @@ function c4BuyOpen(v) {
     box.innerHTML = `<p>Chủ gánh: <b>${O.p.name}</b>. ${c4Cap1(O.p.name)} bằng lòng nhượng lại gánh ${G.name.toLowerCase()} giá <b>${c4Money(O.price)}</b>${O.word}.</p>`
       + `<p class="hint">Bán ${G.name.toLowerCase()}: nhập ${c4Money(G.cost)} một ${G.unit}, bán ${c4Money(G.price)}${G.keep === 'ever' ? ', để lâu không hỏng' : ', tan chợ còn thừa phải bỏ'}. Vợ tự bán hoặc thuê người, mỗi người công ${c4Money(c4Wage(g, {}))} một ngày.</p>`;
     $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < O.price; $('#c4upGo').innerHTML = `Mua lại · ${c4Money(O.price)}`;
-    $('#c4upGo').onclick = () => {
+    $('#c4upGo').onclick = () => { if (SAVE4.money < O.price) return; c4Khe({ title: 'Nhượng lại gánh ' + G.name.toLowerCase(), a: ['Bên bán', c4Cap1(O.p.name)], what: 'Nhượng đứt gánh ' + G.name.toLowerCase() + ' cùng chỗ bán', money: O.price }, buyDo); };
+    const buyDo = () => {
       if (SAVE4.money < O.price) return;
       SAVE4.money -= O.price; if (C4.today) C4.today.spent += O.price;
       SAVE4.shops[g] = { own: true, stock: 0, buy: true }; C4.Q[g] = []; C4.SV[g] = [];

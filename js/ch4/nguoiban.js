@@ -150,8 +150,11 @@ function c4HandsBlock(g) {
       const x = apply && apply[+btn.dataset.app];
       if (!x || H.length >= C4_HANDS_MAX) { apply = null; draw(); return; }
       const { ask, ...hand } = x;
-      H.push({ ...hand, wageUp: ask - c4WageAt(g, H.length) }); apply = null;
-      AU.stamp(); toast(`${c4Cap1(hand.name)} nhận bán ${G.name.toLowerCase()}, đòi công ${c4Money(ask)}/ngày.`); persist4(); draw();
+      c4Khe({ title: 'Thuê người làm', a: ['Người làm', c4Cap1(hand.name)], what: 'Bán ' + G.name.toLowerCase() + ' thuê, công trả mỗi tối', money: ask, per: 'mỗi ngày', k: .6 }, () => {
+        if (H.length >= C4_HANDS_MAX) { apply = null; draw(); return; }
+        H.push({ ...hand, wageUp: ask - c4WageAt(g, H.length) }); apply = null;
+        toast(`${c4Cap1(hand.name)} nhận bán ${G.name.toLowerCase()}, đòi công ${c4Money(ask)}/ngày.`); persist4(); draw();
+      }); return;
     }));
     el.querySelectorAll('[data-off]').forEach(b => b.addEventListener('click', () => {
       const h = H[+b.dataset.off]; if (!h) return;

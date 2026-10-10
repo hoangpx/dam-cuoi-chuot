@@ -253,7 +253,7 @@ function c4Spawn(atX, guest = null) {
 function c4Morning() {
   const p = SAVE4.plan, heard = SAVE4.notes.filter(n => n.day === SAVE4.day);
   const back = [];
-  SAVE4.owed = SAVE4.owed.filter(o => { if (o.due > SAVE4.day) return true; if (o.ok) { SAVE4.money += o.back; back.push(`${o.name} trả ${c4Money(o.back)}.`); } else { back.push(`${o.name} khất mãi không trả.`); SAVE4.badLoan = { name: o.name, amt: o.back }; } return false; });
+  SAVE4.owed = SAVE4.owed.filter(o => { if (o.due > SAVE4.day) return true; if (o.ok) { SAVE4.money += o.back; back.push(`${o.name} trả ${c4Money(o.back)}.`); } else if (o.khe) { const h = Math.round(o.back / 2); SAVE4.money += h; back.push(`${o.name} không chịu trả, nhưng có khế ước điểm chỉ nên cụ Lý ép trả được ${c4Money(h)}.`); } else { back.push(`${o.name} khất mãi không trả, còn nghênh mặt: "Khế ước đâu? Khế ước đâu?"`); SAVE4.badLoan = { name: o.name, amt: o.back }; } return false; });
   c4FloodMorning(back);
   if (c4Guild() && SAVE4.day % 5 === 0 && SAVE4.duesDay !== SAVE4.day) { SAVE4.duesDay = SAVE4.day; SAVE4.money -= C4_GUILD.dues; back.push(`Góp quỹ phường ${C4_GUILD.dues} đồng.`); }
   SAVE4.debtDays = SAVE4.debt >= C4_BROKE ? (SAVE4.debtDays || 0) + 1 : 0;
@@ -430,11 +430,13 @@ function c4Event(kind) {
     const amt = 30 + ((R() * 4) | 0) * 10;
     Object.assign(E, { title: 'Hàng xóm hỏi vay', text: `${c4Cap1(who)} ghé gánh, khẽ hỏi vay ${amt} đồng, hẹn ba hôm trả thêm chút lãi.`, opts: [
       ['Cho vay', () => { sp(amt); SAVE4.owed.push({ name: who, back: amt + 10, due: SAVE4.day + 3, ok: R() < .65 }); toast(`${c4Cap1(who)} cảm ơn rối rít.`); }, SAVE4.money >= amt],
+      [`Cho vay, ký khế ước · ${amt + 1} đồng`, () => c4Khe({ title: 'Khế ước vay tiền', a: ['Bên vay', c4Cap1(who)], what: 'Vay ' + amt + ' đồng, ba hôm trả cả gốc lẫn lãi', money: amt + 10, k: .8 }, () => { sp(amt + 1); SAVE4.owed.push({ name: who, back: amt + 10, due: SAVE4.day + 3, ok: R() < .9, khe: true }); toast(`${c4Cap1(who)} điểm chỉ, cảm ơn rối rít. Có giấy trắng mực đen, ít lo bị quịt.`); }), SAVE4.money >= amt + 1],
       ['Nhà cũng túng', () => toast(`${c4Cap1(who)} lủi thủi đi.`)]] });
   } else if (kind === 'chiu') {
-    const n = 3 + ((R() * 3) | 0);
-    Object.assign(E, { title: 'Mua chịu', text: `${c4Cap1(who)} xin mua chịu ${n} miếng trầu, mai trả.`, opts: [
-      ['Cho chịu', () => { SAVE4.stock -= n; SAVE4.owed.push({ name: who, back: n * 6, due: SAVE4.day + 1, ok: R() < .65 }); c4Hud(); }, SAVE4.stock >= n],
+    const cg = c4Pick(c4Stocked().length ? c4Stocked() : ['trau']), n = Math.min(Math.max(1, c4Stock(cg)), 3 + ((R() * 3) | 0)), val = Math.round(n * c4Price(cg)), nm = `${n} ${c4Un(cg)} ${c4Wn(cg)}`;
+    Object.assign(E, { title: 'Mua chịu', text: `${c4Cap1(who)} xin mua chịu ${nm}, mai trả ${c4Money(val)}.`, opts: [
+      ['Cho chịu, không giấy tờ', () => { c4SetStock(cg, c4Stock(cg) - n); SAVE4.owed.push({ name: who, back: val, due: SAVE4.day + 1, ok: R() < .65 }); c4Hud(); }, c4Stock(cg) >= n],
+      [`Cho chịu, ký khế ước · ${c4Money(1)}`, () => c4Khe({ title: 'Khế ước mua chịu', a: ['Bên mua chịu', c4Cap1(who)], what: 'Nhận ' + nm + ', mai trả đủ', money: val, k: .8 }, () => { sp(1); c4SetStock(cg, c4Stock(cg) - n); SAVE4.owed.push({ name: who, back: val, due: SAVE4.day + 1, ok: R() < .9, khe: true }); c4Hud(); toast(`${c4Cap1(who)} điểm chỉ. Có khế ước, lo gì bị quịt.`); }), c4Stock(cg) >= n && SAVE4.money >= 1],
       ['Không bán chịu', () => toast(`${c4Cap1(who)} bĩu môi bỏ đi.`)]] });
   } else if (kind === 'cuoi') {
     const n = 30 + ((R() * 3) | 0) * 10;
@@ -452,10 +454,10 @@ function c4Event(kind) {
       ['Bói vui · 1 đồng', () => { sp(1); toast(`Thầy bói phán: "${c4Pick(C4_BOI)}"`, 4.6); }, SAVE4.money >= 1],
       ['Không tin bói', () => toast('Thầy bói lắc đầu: "Có kiêng có lành đấy!"', 2.6)]] });
   } else if (kind === 'trom') {
-    const n = Math.min(SAVE4.stock, 4 + ((R() * 5) | 0)); if (n < 2) return;
-    SAVE4.stock -= n; AU.snort();
-    Object.assign(E, { title: 'Kẻ cắp!', text: `Một tên kẻ cắp chộp vội ${n} miếng trầu rồi co cẳng chạy!`, opts: [
-      ['Sai chồng đuổi theo', () => { if (R() < .5) { SAVE4.stock += n; toast('Chồng đuổi kịp, giằng lại được cả gói trầu!', 3); } else toast('Kẻ cắp chạy mất hút vào ngõ.', 2.8); }],
+    const tg = c4StockedOf(), n = tg ? Math.min(c4Stock(tg), 4 + ((R() * 5) | 0)) : 0; if (n < 2) return;
+    c4SetStock(tg, c4Stock(tg) - n); c4Hud(); AU.snort();
+    Object.assign(E, { title: 'Kẻ cắp!', text: `Một tên kẻ cắp chộp vội ${n} ${c4Un(tg)} ${c4Wn(tg)} rồi co cẳng chạy!`, opts: [
+      ['Sai chồng đuổi theo', () => { if (R() < .5) { c4SetStock(tg, c4Stock(tg) + n); c4Hud(); toast(`Chồng đuổi kịp, giằng lại được cả gói ${c4Wn(tg)}!`, 3); } else toast('Kẻ cắp chạy mất hút vào ngõ.', 2.8); }],
       ['Thôi, của đi thay người', () => {}]] });
   } else if (kind === 'ho') {
     Object.assign(E, { title: 'Góp họ', text: `${c4Cap1(who)} rủ góp họ: góp 30 đồng hôm nay, năm hôm nữa hốt về 45 đồng.`, opts: [
@@ -470,6 +472,11 @@ function c4Event(kind) {
     E.def = 0; Object.assign(E, { title: 'Tuần đinh dẹp lối', text: 'Tuần đinh cầm gậy đi dẹp lối: "Gánh nào lấn đường thì dẹp vào một canh giờ (khoảng 2 tiếng)!"', opts: [
       ['Dẹp vào', () => { C4.shut = 30; for (const g of own) for (const w of [...C4.Q[g]]) c4Leave(w, false); toast('Phải dẹp gánh vào một canh giờ (khoảng 2 tiếng).', 2.6); }],
       ['Biếu tuần đinh · 10 đồng', () => { sp(10); toast('Tuần đinh làm ngơ đi chỗ khác.'); }, SAVE4.money >= 10]] });
+  } else if (kind === 'xin' && c4StockedOf(C4_FOOD) && R() < .7) {         // a hungry beggar asks for a bowl (owner)
+    const fg = c4StockedOf(C4_FOOD), bowl = { che: 'bát chè', xoi: 'đĩa xôi', bun: 'bát bún' }[fg];
+    Object.assign(E, { title: 'Người ăn xin', text: `Một người ăn xin gầy rộc đứng trước hàng ${c4Wn(fg)}, run run: "Cho tôi xin ${bowl}, đói quá, hai ngày chưa có gì vào bụng…"`, opts: [
+      [`Cho ${bowl}`, () => { c4SetStock(fg, c4Stock(fg) - 1); c4Hud(); SAVE4.phuc = 1; AU.pluck(88); toast('Họ ăn ngấu nghiến, chắp tay: "Cầu cho cô buôn may bán đắt!"', 3.2); }],
+      ['Hết rồi, xin lỗi', () => toast('Họ lặng lẽ đi, ánh mắt buồn.', 2.6)]] });
   } else if (kind === 'xin') {
     Object.assign(E, { title: 'Người ăn xin', text: 'Bà cụ ăn xin lưng còng, chìa cái bát mẻ trước gánh.', opts: [
       ['Cho 3 đồng', () => { sp(3); SAVE4.phuc = 1; toast('Bà cụ chắp tay: "Cầu cho cô buôn may bán đắt!"', 3); }, SAVE4.money >= 3],
@@ -528,8 +535,8 @@ function c4Event(kind) {
     if (!ok.length) return;
     const g = c4Pick(ok), now = c4RentOf(g), next = Math.round(now * 1.1), name = g === 'trau' ? 'trầu' : C4_GOODS[g].name.toLowerCase(), who = c4Landlord(g).p.name;
     Object.assign(E, { title: 'Chủ nhà đòi tăng tiền', text: `${c4Cap1(who)}, chủ căn nhà bán ${name}, đòi tăng tiền thuê: từ ${c4Money(now)} lên ${c4Money(next)} mỗi tối.`, opts: [
-      ['Mặc cả', () => { c4SetAsk(g); if (R() < .5) { c4RaiseRent(g); toast(`${who} chỉ bớt đôi chút, tiền thuê vẫn lên ${c4Money(c4RentOf(g))} mỗi tối.`, 3.6); } else toast(`${who} nghĩ lại, giữ nguyên giá thuê.`, 3); }],
-      ['Đồng ý tăng', () => { c4SetAsk(g); c4RaiseRent(g); toast(`Từ nay tiền thuê nhà bán ${name} là ${c4Money(c4RentOf(g))} mỗi tối.`, 3.4); }]] });
+      ['Mặc cả', () => { c4SetAsk(g); if (R() < .5) { c4KheRaise(g, who, name); c4RaiseRent(g); toast(`${who} chỉ bớt đôi chút, tiền thuê vẫn lên ${c4Money(c4RentOf(g))} mỗi tối.`, 3.6); } else toast(`${who} nghĩ lại, giữ nguyên giá thuê.`, 3); }],
+      ['Đồng ý tăng', () => { c4SetAsk(g); c4KheRaise(g, who, name); c4RaiseRent(g); toast(`Từ nay tiền thuê nhà bán ${name} là ${c4Money(c4RentOf(g))} mỗi tối.`, 3.4); }]] });
   } else if (kind === 'tangluong' || kind === 'hanghi') {                  // a hand asks for a raise, or gives notice (owner)
     const { g, h } = C4.evArg?.hand || {}; if (!h || !c4Hands(g).includes(h)) return;
     const w = c4Wage(g, h), inc = Math.max(10, Math.round(w * .2)), nm = c4Cap1(h.name), job = C4_GOODS[g].name.toLowerCase();
@@ -552,15 +559,15 @@ function c4Event(kind) {
   } else if (kind === 'gio') {                                              // a gale
     const fix = c4Loss(.03, .08);
     Object.assign(E, { title: 'Gió to!', text: SAVE4.lv ? 'Cơn gió lốc thổi tốc cả mái lều, hàng hoá bay tứ tung!' : 'Cơn gió lốc thổi lật cả gánh, trầu cau văng tứ tung!', opts: [
-      [`Gọi thợ sửa ngay · ${c4Money(fix)}`, () => { sp(fix); const n = Math.floor(SAVE4.stock * .15); SAVE4.stock -= n; toast(`Sửa xong, nhặt lại được hàng, chỉ mất ${n} miếng.`, 3); }, SAVE4.money >= fix],
-      ['Tự nhặt nhạnh', () => { const n = Math.floor(SAVE4.stock * .4); SAVE4.stock -= n; C4.shut = Math.max(C4.shut, 20); toast(`Mất cả buổi nhặt nhạnh, ${n} miếng dập nát phải bỏ.`, 3); }]] });
+      [`Gọi thợ sửa ngay · ${c4Money(fix)}`, () => { sp(fix); const l = c4Dmg(.15, 4); toast(l ? `Sửa xong, nhặt lại được hàng, chỉ mất ${l}.` : 'Sửa xong, may chưa hỏng gì.', 3.4); }, SAVE4.money >= fix],
+      ['Tự nhặt nhạnh', () => { const l = c4Dmg(.4, 4); C4.shut = Math.max(C4.shut, 20); toast(l ? `Mất cả buổi nhặt nhạnh, dập nát phải bỏ ${l}.` : 'Mất cả buổi nhặt nhạnh.', 3.6); }]] });
   } else if (kind === 'lua') {                                              // a fire behind the market
     if (R() < .6) return;                                                   // (rare)
     AU.drumHit();
     const known = c4People().list.filter(p => c4Known(p.id));
     Object.assign(E, { title: 'Cháy!', text: 'Đống rơm sau chợ bốc cháy! Cả chợ nháo nhác chạy đi xách nước, một lúc lâu không ai mua bán gì.<br><br><b>Đi dập lửa:</b> cả làng nhớ ơn (người quen quý nhà mình hơn, khách ghé đông hơn đến hết ngày), nhưng gánh bỏ trống, có thể mất ít hàng.<br><b>Ở lại trông hàng:</b> hàng còn nguyên, nhưng mang tiếng chỉ biết giữ của (người quen bớt quý).', opts: [
-      ['Cùng mọi người đi dập lửa', () => { const dap = c4Loss(.01, .03); sp(dap); C4.fire = 25; SAVE4.phuc = 1; for (const p of known) c4Bump(p.id, 5); const n = R() < .35 ? Math.min(SAVE4.stock, 3 + ((R() * 5) | 0)) : 0; SAVE4.stock -= n;
-        toast(`Lửa tắt nhờ cả làng xúm vào. Ai cũng khen nhà mình xông xáo: người quen quý hơn, khách ghé đông hơn đến hết ngày.${n ? ` Về đến gánh mới thấy mất ${n} miếng trầu.` : ''}`, 4.6); }],
+      ['Cùng mọi người đi dập lửa', () => { const dap = c4Loss(.01, .03); sp(dap); C4.fire = 25; SAVE4.phuc = 1; for (const p of known) c4Bump(p.id, 5); const l = R() < .35 ? c4Dmg(.25, 3) : '';
+        toast(`Lửa tắt nhờ cả làng xúm vào. Ai cũng khen nhà mình xông xáo: người quen quý hơn, khách ghé đông hơn đến hết ngày.${l ? ` Về đến gánh mới thấy mất ${l}.` : ''}`, 4.6); }],
       ['Ở lại trông hàng', () => { const ct = c4Loss(.04, .10); sp(ct); C4.fire = 25; for (const p of known) c4Bump(p.id, -3); toast('Hàng còn nguyên, nhưng có người bĩu môi: "Cháy cả chợ mà nhà ấy chỉ lo giữ của!" Người quen bớt quý nhà mình.', 4.4); }]] });
     for (const w of C4.walkers) if (w.st !== 'leave') { if (w.chat) w.chat = null; w.st = 'leave'; w.talk = false; w.sp = 160; }
     for (const g of own) C4.Q[g] = [];
@@ -614,7 +621,7 @@ function c4GoalReached() {
 function updateC4(dt) {
   C4.t += dt;
   if (C4.phase === 'story') { c4StoryUpdate(dt); return; }
-  if (C4.paused) { c4EvTick(dt); AU.ambient({}); return; }                            // a sheet is open: the market waits, the rain bed goes quiet
+  if (C4.paused || C4.kheOn) { c4EvTick(dt); AU.ambient({}); return; }                            // a sheet is open: the market waits, the rain bed goes quiet
   for (const f of C4.fx) f.t += dt; C4.fx = C4.fx.filter(f => f.t < 1.2);
   for (const e of [...C4.walkers, C4.wife, ...C4.vendors, C4.porter, ...C4_SHOPS.map(g => SAVE4.shops[g]).filter(Boolean), ...c4AllHands().map(o => o.h)]) if (e.say && (e.say.t += dt) > e.say.life) e.say = null;
   if (C4.phase === 'open') {
@@ -862,7 +869,7 @@ function c4OpenUp(g = 'trau') {
     const L = c4Landlord(g), ok = L.known;                                    // a plot needs no acquaintance (owner); a house does
     box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom})${ok ? '' : ', nhà mình chưa quen'}.</p>`
       + `<p>Giá thuê chỗ: <b>${c4Money(L.price)}</b>${ok ? L.word : ' (giá thường; quen thân với chủ đất thì được bớt)'}. Vợ tự trông được; đông khách thì thuê thêm người phụ.</p><p class="hint">${c4Ware(g)}</p><p class="hint">Riêng nhà mặt chợ (thuê hay mua cả căn về sau) thì chưa quen sẽ không biết chủ nhà là ai mà hỏi.</p>`;
-    { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => c4Rent(g); }
+    { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => { if (SAVE4.money < L.price) return; c4Khe({ title: 'Thuê chỗ bán ' + G.name.toLowerCase(), a: ['Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ chỗ'], what: 'Thuê chỗ bán ' + G.name.toLowerCase() + ' ở chợ làng', money: L.price }, () => c4Rent(g)); }; }
     c4Sheets('c4up'); return;
   }
   $('#c4upT').textContent = g === 'trau' ? c4Lv().name : G.name;
@@ -883,12 +890,14 @@ function c4OpenUp(g = 'trau') {
     const nx = C4_LV[SAVE4.lv + 1];
     if (nx && !c4UpAllowed(nx)) { $('#c4upB').innerHTML = '<p class="hint">Mua nhà sẽ có sau.</p>'; $('#c4upGo').hidden = true; }
     else if (!nx) $('#c4upB').innerHTML = '<p>Gian hàng trầu khang trang nhất phiên chợ.</p>';
-    else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${nx.house === 'own' ? c4HouseNote(nx.up) : ''}<p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(c4UpPrice(nx, nx.up))}`; $('#c4upGo').onclick = c4DoUp; }
+    else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${nx.house === 'own' ? c4HouseNote(nx.up) : ''}<p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(c4UpPrice(nx, nx.up))}`; $('#c4upGo').onclick = () => { const price = c4UpPrice(nx, nx.up); if (SAVE4.money < price || C4.build) return; if (!nx.house) { c4DoUp(); return; } const L = c4Landlord('trau'); c4Khe({ title: nx.house === 'own' ? 'Mua nhà mặt chợ' : 'Thuê nhà mặt chợ', a: [nx.house === 'own' ? 'Bên bán' : 'Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ nhà'], what: (nx.house === 'own' ? 'Bán đứt ' : 'Cho thuê ') + nx.name.toLowerCase() + ' bán trầu', money: price }, c4DoUp); }; }
   }
   c4Sheets('c4up');
 }
 // what each ware is like, for the plot sheet
 const c4Ware = g => ({ che: 'Bán chạy buổi sáng, trời rét hay mưa; nắng gắt thì ế. Mỗi ngày tốn củi đun. Tan chợ chè thừa phải đổ.', xoi: 'Chỉ bán buổi sáng. Đến 12:00 (giờ Ngọ) xôi thiu, thừa bao nhiêu đổ bấy nhiêu.', xen: 'Kim chỉ, lược, gương… để lâu không hỏng, nhưng lãi mỏng, bán chậm.', bun: 'Bán chạy quanh trưa. Vốn đắt, công người phụ cao; tan chợ bún thừa phải đổ.' }[g]);
+// the new rent is written down and sealed (owner); the rise itself is applied at once, the paper only shows it
+function c4KheRaise(g, who, name) { const now = c4RentOf(g); c4Khe({ title: 'Tăng tiền thuê', a: ['Chủ nhà', c4Cap1(who)], what: 'Tiền thuê nhà bán ' + name + ' tăng lên', money: Math.round(now * 1.1), per: 'mỗi tối', k: .8 }, null); }
 function c4Rent(g) {
   const G = C4_GOODS[g], L = c4Landlord(g); if (SAVE4.money < L.price) return;
   SAVE4.money -= L.price; C4.today.spent += L.price;

@@ -8,9 +8,9 @@
 const C4_SHOP_LV = [
   { name: 'Mẹt hàng', cap: 1, serve: 1, want: 1, up: 0 },
   { name: 'Sạp tre', cap: 1.5, serve: .85, want: 1.2, up: 1 },
-  { name: 'Quầy gỗ', cap: 2.2, serve: .72, want: 1.45, up: 2.5 },
-  { name: 'Thuê nhà mặt chợ', cap: 3.2, serve: .6, want: 1.8, up: 3, daily: .1, house: 'rent' },
-  { name: 'Nhà của mình', cap: 3.6, serve: .55, want: 2.1, up: 14, house: 'own' },
+  { name: 'Quầy gỗ', cap: 2.2, serve: .72, want: 1.45, up: 3 },
+  { name: 'Thuê nhà mặt chợ', cap: 3.2, serve: .6, want: 1.8, up: 6, daily: .16, house: 'rent' },
+  { name: 'Nhà của mình', cap: 3.6, serve: .55, want: 2.1, up: 28, house: 'own' },
 ];
 // the price of a house to buy (owner): 90 % of the purse you have now, but never below the market's floor for the day; the
 // market lifts that floor a little every day, and the price can change later, so the sheet says to buy now
@@ -24,8 +24,8 @@ function c4HouseNote(base) {
 const c4SLvI = g => (SAVE4.shops[g] && SAVE4.shops[g].lv) || 0;
 const c4SLv = g => C4_SHOP_LV[c4SLvI(g)];
 // the betel stall goes on past its tiled stall too (C4_LV in cho.js gets the two house levels)
-C4_LV.push({ name: 'Thuê nhà mặt chợ', cap: 420, cost: 2, serve: .85, flow: 2.3, buy: .74, wait: 7, up: 700, daily: 30, house: 'rent' },
-  { name: 'Nhà trầu của mình', cap: 520, cost: 2, serve: .8, flow: 2.6, buy: .78, wait: 6, up: 4200, house: 'own' });
+C4_LV.push({ name: 'Thuê nhà mặt chợ', cap: 420, cost: 2, serve: .85, flow: 2.3, buy: .74, wait: 7, up: 1500, daily: 48, house: 'rent' },
+  { name: 'Nhà trầu của mình', cap: 520, cost: 2, serve: .8, flow: 2.6, buy: .78, wait: 6, up: 9000, house: 'own' });
 const C4_BUY_TOP = 2;   // the highest level (index in C4_SHOP_LV) of a stall bought from a neighbour: Quầy gỗ
 // the upgrade block on a stall's sheet (other wares; the betel one keeps its own, extended)
 function c4ShopUpBlock(g) {
@@ -39,8 +39,9 @@ function c4ShopUpBlock(g) {
   $('#c4upB').insertAdjacentHTML('beforeend', c4TablesBlock(g)); c4TablesWire(g);
   const b = $('#c4upGo'); b.hidden = false; b.disabled = SAVE4.money < cost; b.innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(cost)}`;
   if (nx.house === 'own') $('#c4upB').insertAdjacentHTML('beforeend', c4HouseNote(base));
-  b.onclick = () => { if (SAVE4.money < cost) return; SAVE4.money -= cost; C4.today.spent += cost; SAVE4.shops[g].lv = i + 1; SAVE4.shops[g].late = 0; if (nx.house) SAVE4.shops[g].rentK = L.k; AU.stamp(); AU.pluck(88); persist4(); c4Hud(); c4Sheets(null);
+  const upDo = () => { if (SAVE4.money < cost) return; SAVE4.money -= cost; C4.today.spent += cost; SAVE4.shops[g].lv = i + 1; SAVE4.shops[g].late = 0; if (nx.house) SAVE4.shops[g].rentK = L.k; AU.stamp(); AU.pluck(88); persist4(); c4Hud(); c4Sheets(null);
     toast(nx.house === 'own' ? `Đã mua đứt căn nhà bán ${G.name.toLowerCase()}! Từ nay là cơ ngơi của mình.` : `Hàng ${G.name.toLowerCase()} lên ${nx.name.toLowerCase()}.`, 3.4); };
+  b.onclick = () => { if (SAVE4.money < cost) return; if (!nx.house || G.buy) { upDo(); return; } c4Khe({ title: nx.house === 'own' ? 'Mua nhà mặt chợ' : 'Thuê nhà mặt chợ', a: [nx.house === 'own' ? 'Bên bán' : 'Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ nhà'], what: (nx.house === 'own' ? 'Bán đứt ' : 'Cho thuê ') + nx.name.toLowerCase() + ' bán ' + G.name.toLowerCase(), money: cost }, upDo); };
 }
 // in the evening: rent for the houses rented; two evenings unpaid and the owner takes the house back
 function c4PayRents(d, lines) {
@@ -90,7 +91,7 @@ function c4RollOffers() {
   SAVE4.offerDay = SAVE4.day; SAVE4.offers = [];
   const own = c4Owned(), k = 1 + (R() < .5 ? 1 : 0);
   for (let i = 0; i < k; i++) {
-    const g = c4Pick(own), G = C4_GOODS[g], n = Math.round((g === 'trau' ? 30 : 12) * (1 + R() * 2)), unit = Math.round(c4Cost(g) * (1.7 + R() * .5) * 10) / 10;
+    const g = c4Pick(own), G = C4_GOODS[g], n = Math.round((g === 'trau' ? 30 : 12) * (1 + R() * 2)), unit = Math.round(c4Cost(g) * (1.4 + R() * .3) * 10) / 10;
     SAVE4.offers.push({ id: SAVE4.day * 10 + i, vil: c4Pick(C4_VILLAGES), g, n, unit, pay: Math.round(n * unit), day: SAVE4.day + 1 + ((R() * 2) | 0), dep: Math.round(n * unit * .2), slot: (R() * C4_SLOTS.length) | 0 });
   }
 }
@@ -448,7 +449,7 @@ const C4_EXTRA_EV = {
       ['Thôi, coi như của đi thay người', () => { SAVE4.phuc = 1; toast('Cả chợ khen nhà mình rộng lượng.', 2.8); }]] });
   },
 };
-const c4ExtraPool = own => ['caicau', 'omdau', 'cotiec', 'lut', 'khachla', 'bototron', 'mung', 'tang', ...(own.length > 1 ? ['duthue'] : [])];
+const c4ExtraPool = own => ['caicau', 'omdau', 'cotiec', 'lut', 'khachla', 'bototron', 'mung', 'tang', ...(own.length > 1 ? ['duthue'] : []), ...c4TaiHoaPool(own)];
 // the feast is collected at giờ Thân; a flood the morning after a gamble
 function c4ExtraUpdate() {
   const F = SAVE4.feast;
@@ -481,9 +482,9 @@ function c4Landlord(g) {
 /* ---------- cụ Lý's tax (owner): by what the stalls earned ---------- */
 const c4Earned = () => (SAVE4.earn || []).reduce((a, x) => a + Math.max(0, x), 0);
 // progressive (owner): 5% of the first 300 đồng earned in the last five days, 10% up to 1 200, 15% above; plus 5 a stall
-const C4_TAX_BANDS = [[300, .05], [1200, .1], [Infinity, .15]];
+const C4_TAX_BANDS = [[300, .05], [1200, .1], [3000, .2], [8000, .3], [Infinity, .4]];
 const c4TaxOn = e => { let t = 0, lo = 0; for (const [hi, r] of C4_TAX_BANDS) { if (e > lo) t += (Math.min(e, hi) - lo) * r; lo = hi; } return t; };
-const c4Tax = () => Math.max(10, Math.round(c4TaxOn(c4Earned())) + 5 * c4Owned().length);
+const c4Tax = () => Math.max(10, Math.round(c4TaxOn(c4Earned())) + 5 * c4LossMult());
 /* ---------- every stall at a glance (owner's reference): a card each, tap to open it ---------- */
 function c4OpenUps() {
   $('#c4evT').textContent = 'Các hàng của nhà mình';
