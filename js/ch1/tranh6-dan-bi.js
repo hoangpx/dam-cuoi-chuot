@@ -41,14 +41,16 @@ function t7Art() {
     const leaf = part([-30, -16, 30, 16], a => { a.fk(pl('green'), smooth([[-28, 0], [-10, -14], [14, -12], [28, 0], [10, 12], [-12, 12]]), 2); a.key(lines([[-24, 0, 22, 0]]), 1.2); });
     return { gourds: [pump, egg, bau, ca], leaf };
   };
-  const o = make(c => c); o.sil = make(() => 'nero');
+  const o = make(c => c);
+  const sil = p => { const c = document.createElement('canvas'); c.width = p.c.width; c.height = p.c.height; const g = c.getContext('2d'); for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1], [2, 0], [-2, 0], [0, 2], [0, -2]]) g.drawImage(p.c, dx, dy); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height); return Object.assign({}, p, { c }); };
+  o.sil = { gourds: o.gourds.map(sil), leaf: sil(o.leaf) };
   return (T7_ART = o);
 }
 const t7h = (n, s) => { const x = Math.sin(n * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };      // a steady pseudo-random number for cell n, stream s
 const T7_TOP = () => GROUND - 440;                                              // the trellis
 // the three layers of gourds: far (dim, small, high), middle (lit), near (black, big, low). cell width, density, scale range, hang length, a stream seed
 const T7_LAYERS = [
-  { cell: 70, dens: .62, s0: .62, s1: .5, len0: 6, len1: 34, seed: 40, top: -34, alpha: .55 },
+  { cell: 70, dens: .62, s0: .62, s1: .5, len0: 6, len1: 34, seed: 40, top: -34, alpha: .3 },
   { cell: 80, dens: .72, s0: 1.05, s1: .95, len0: 18, len1: 58, seed: 0, top: 48, alpha: 1 },
   { cell: 130, dens: .5, s0: 1.5, s1: 1.0, len0: 40, len1: 80, seed: 80, top: 78, alpha: 1 },
 ];
@@ -57,13 +59,37 @@ function t7Layer(g, L, A, x0, x1, top) {                                        
     if (t7h(i, L.seed + 1) > L.dens) continue;
     const n = t7h(i, L.seed + 5) < .55 ? 1 : 2;
     for (let j = 0; j < n; j++) {
-      const gx = i * L.cell + t7h(i, L.seed + 6 + j) * L.cell, kind = Math.floor(t7h(i, L.seed + 8 + j) * 4), sc = L.s0 + t7h(i, L.seed + 10 + j) * L.s1, len = L.len0 + t7h(i, L.seed + 12 + j) * (L.len1 - L.len0), sw = Math.sin(S.t * .8 + i * 1.7 + j) * .04;
+      const gx = i * L.cell + t7h(i, L.seed + 6 + j) * L.cell, kind = Math.floor(t7h(i, L.seed + 8 + j) * 4), sc = L.s0 + t7h(i, L.seed + 10 + j) * L.s1, len = L.len0 + t7h(i, L.seed + 12 + j) * (L.len1 - L.len0), sw = Math.sin(S.t * .9 + i * 1.7 + j) * .07;
       g.strokeStyle = A === null ? '#000' : '#150f0a'; g.lineWidth = 3.2; g.beginPath(); g.moveTo(gx, top + L.top); g.quadraticCurveTo(gx + 8, top + L.top + len * .5, gx, top + L.top + len); g.stroke();      // the vine
       g.save(); g.translate(gx, top + L.top + len); g.rotate(sw); dp(g, (A || T7_ART.sil).gourds[kind], 0, 0, 0, sc, sc); g.restore();
     }
   }
 }
 
+// creepers hung from the trellis, thick with leaves, swaying: per layer (far / middle / near). black = true draws them as solid black shapes (the near layer)
+const T7_FOL = [
+  { cell: 44, dens: .85, top: -34, len0: 30, len1: 120, ls: .7, amp: .05, seed: 200 },
+  { cell: 52, dens: .9, top: 46, len0: 40, len1: 175, ls: 1.0, amp: .07, seed: 230 },
+  { cell: 105, dens: .55, top: 70, len0: 50, len1: 160, ls: 1.2, amp: .06, seed: 260 },
+];
+function t7Fol(g, F, A, x0, x1, top, black) {
+  for (let i = Math.floor(x0 / F.cell); i <= Math.floor(x1 / F.cell); i++) {
+    for (let j = 0; j < 2; j++) {
+      if (t7h(i, F.seed + j * 7) > F.dens) continue;
+      const vx = i * F.cell + t7h(i, F.seed + 1 + j * 7) * F.cell, len = F.len0 + t7h(i, F.seed + 2 + j * 7) * (F.len1 - F.len0), ph = t7h(i, F.seed + 3 + j * 7) * 6.283, wob = 6 + t7h(i, F.seed + 4 + j * 7) * 14;
+      const ang = Math.sin(S.t * (.7 + t7h(i, F.seed + 5 + j * 7) * .5) + ph) * F.amp;                       // the whole creeper sways from where it is tied
+      g.save(); g.translate(vx, top + F.top); g.rotate(ang);
+      g.strokeStyle = black ? '#000' : '#1c2a17'; g.lineWidth = black ? 4.4 : 3; g.beginPath(); g.moveTo(0, 0);
+      const N = 10; for (let k = 1; k <= N; k++) { const u = k / N; g.lineTo(Math.sin(u * 3.2 + ph) * wob * u, len * u); } g.stroke();
+      const nl = Math.max(3, Math.round(len / 20 / (F.ls > 1.1 ? 1.4 : 1)));
+      for (let k = 1; k <= nl; k++) {                                                                      // leaves along the creeper, each swaying a little by itself
+        const u = k / (nl + 1), lx = Math.sin(u * 3.2 + ph) * wob * u, ly = len * u, side = k % 2 ? 1 : -1, r = side * (.9 + Math.sin(S.t * 1.3 + k + ph) * .16);
+        g.save(); g.translate(lx, ly); g.rotate(r); dp(g, (black ? A.sil : A).leaf, side * 18 * F.ls, 0, 0, F.ls * (.8 + t7h(i, F.seed + 9 + k) * .5), F.ls * (.8 + t7h(i, F.seed + 9 + k) * .5)); g.restore();
+      }
+      g.restore();
+    }
+  }
+}
 // the shadow of a huge cat: only its belly and its four long legs, black, as big as the screen, running past in front of the lights
 function t7CatDraw(g, vw, q, dir) {
   const H = viewH, x = dir > 0 ? -vw * .55 + (vw * 2.1) * q : vw * 1.55 - (vw * 2.1) * q, ph = q * 22, sw = i => Math.sin(ph + i * 1.7) * 38;
@@ -80,7 +106,7 @@ function t7CatDraw(g, vw, q, dir) {
 }
 
 (function () {                                                                   // where the finger or the mouse is (in the units of the HUD)
-  const upd = e => { const r = cv.getBoundingClientRect(); T7.px = (e.clientX - r.left) / scale; T7.py = (e.clientY - r.top) / scale; T7.in = true; };
+  const upd = e => { if (!(S.lv === 5 && S.mode === 'play')) cv.style.cursor = ''; const r = cv.getBoundingClientRect(); T7.px = (e.clientX - r.left) / scale; T7.py = (e.clientY - r.top) / scale; T7.in = true; };
   cv.addEventListener('pointermove', upd); cv.addEventListener('pointerdown', e => { upd(e); T7.down = true; });
   addEventListener('pointerup', () => { T7.down = false; }); addEventListener('pointercancel', () => { T7.down = false; });
   cv.addEventListener('pointerleave', () => { T7.in = false; });
@@ -97,6 +123,7 @@ function t6Dark() {
       followers[0].item = this.dawn < .98 ? 'lantern' : 'parasol';
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
       const want = (isTouch ? T7.down : T7.in) ? 1 : 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
+      cv.style.cursor = !isTouch && T7.in && this.dawn < 1 ? 'none' : '';                      // the mouse pointer is replaced by a lamp while it is dark
       if ((T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }
       if (!T7.cat && this.dawn < .8 && (T7.catT -= dt) < 0) { T7.catT = 8 + Math.random() * 13; T7.cat = { t: 0, dir: Math.random() < .5 ? -1 : 1 }; AU.rustle && AU.rustle(.7); }
       if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > .95) T7.cat = null; }
@@ -127,11 +154,11 @@ function t6Dark() {
       const A = t7Art(), vw = cv.width / DPR / scale, x0 = camX - 150, x1 = Math.min(camX + vw + 150, T6_OFF - 100), top = T7_TOP();
       if (x1 <= x0) return;
       g.lineCap = 'round';
-      g.save(); g.globalAlpha = T7_LAYERS[0].alpha; t7Layer(g, T7_LAYERS[0], A, x0, x1, top); g.restore();                  // the far layer, dim, behind the trellis
+      g.save(); g.globalAlpha = T7_LAYERS[0].alpha; t7Layer(g, T7_LAYERS[0], A, x0, x1, top); t7Fol(g, T7_FOL[0], A, x0, x1, top, false); g.restore();                  // the far layer, dim, behind the trellis
       for (const [dy, w] of [[0, 9], [46, 7]]) { g.strokeStyle = '#150f0a'; g.lineWidth = w + 3; g.beginPath(); g.moveTo(x0, top + dy); g.lineTo(x1, top + dy); g.stroke(); g.strokeStyle = '#8a7a3a'; g.lineWidth = w - 1; g.stroke(); }
       g.strokeStyle = '#150f0a'; g.lineWidth = 4; for (let x = Math.floor(x0 / 74) * 74; x < x1; x += 74) { g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x + 14, top + 50); g.stroke(); }
       for (let i = Math.floor(x0 / 80); i <= Math.floor(x1 / 80); i++) { if (t7h(i, 1) < .28) continue; const lx = i * 80 + t7h(i, 2) * 80; dp(g, A.leaf, lx, top + 6, t7h(i, 3) * 1.2 - .6, .9 + t7h(i, 4) * .7, .9 + t7h(i, 4) * .7); }   // leaves along it
-      t7Layer(g, T7_LAYERS[1], A, x0, x1, top);                                                                               // the middle layer: this is the one the lights show
+      t7Layer(g, T7_LAYERS[1], A, x0, x1, top); t7Fol(g, T7_FOL[1], A, x0, x1, top, false);                                                                               // the middle layer: this is the one the lights show
     },
     onClick(wx, wy) {                                                            // (demo only) skip the dark stretch
       const b = this.btn; if (!b) return false; const sx = wx - camX, sy = wy + offY;
@@ -156,7 +183,11 @@ function t6Dark() {
       const [lx, ly] = lamp(); g.save(); g.globalCompositeOperation = 'lighter'; const wg = g.createRadialGradient(lx - camX, ly + offY, 2, lx - camX, ly + offY, 160); wg.addColorStop(0, 'rgba(255,170,70,' + .26 * (1 - this.dawn) + ')'); wg.addColorStop(1, 'rgba(255,170,70,0)'); g.fillStyle = wg; g.fillRect(lx - camX - 160, ly + offY - 160, 320, 320); g.restore();     // warm glow
       if (base > .003) {                                                         // the near layer of gourds: never lit, pure black shapes over the sheet
         const A = t7Art(), x0 = camX - 150, x1 = Math.min(camX + vw + 150, T6_OFF - 100);
-        if (x1 > x0) { g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, base * 1.3); g.lineCap = 'round'; t7Layer(g, T7_LAYERS[2], null, x0 + camX * 0, x1, T7_TOP()); g.restore(); }
+        if (x1 > x0) { g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, base * 1.3); g.lineCap = 'round'; t7Layer(g, T7_LAYERS[2], null, x0, x1, T7_TOP()); t7Fol(g, T7_FOL[2], A, x0, x1, T7_TOP(), true); g.restore(); }
+      }
+      if (T7.a > .05 && base > .003) {                                          // the lamp in the finger's place (above it on a touch screen, so the finger does not hide it)
+        const px = T7.px, py = T7.py + (isTouch ? -78 : -10), gl = g.createRadialGradient(px, py + 30, 2, px, py + 30, 60); gl.addColorStop(0, 'rgba(255,200,110,.55)'); gl.addColorStop(1, 'rgba(255,200,110,0)');
+        g.save(); g.globalAlpha = Math.min(1, T7.a * 1.4); g.fillStyle = gl; g.fillRect(px - 60, py - 30, 120, 120); dp(g, ITEM.lantern, px, py, Math.sin(this.flick * 2.1) * .07, 1.5, 1.5); g.restore();
       }
       const c = T7.cat;
       if (c && base > .003) t7CatDraw(g, vw, c.t / .95, c.dir);                   // the cat's shadow streaks past, very fast
