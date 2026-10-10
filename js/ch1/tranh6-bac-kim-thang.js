@@ -470,18 +470,18 @@ function t6Gate(x) {
   return {
     layer: 'bg', gateX: x, ax: x, opened: false, ask: 0,
     get spent() { return this.opened; },
-    wall() { return this.opened || !T6R.done ? null : x - 120; },
+    wall() { return this.opened || !t6Open() ? null : x - 120; },
     get offer() { return T6C.done && t6bOk() ? { wants: ['ech'], label: 'Dâng giỏ ếch', near: () => groom.x > x - 220, missing: '' } : null; },   // only once day has come
     give() { this.opened = true; delete SAVE.t6; persist(); AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Trời sáng, bác giữ cổng làng nhận giỏ ếch, mở cổng cho đoàn qua!', 3.2); },
     update(dt) {
-      if (this.opened || !T6R.done) return;                                     // no gate to be seen until both friends are saved (owner)
+      if (this.opened || !t6Open()) return;                                      // no gate to be seen until both friends are saved and chú bán dầu is across (owner)
       const at = groom.x > x - 220;
       if (at && has('ech') && T6C.done && t6bOk()) { takeItems(['ech']); this.give(); return; }   // the basket, and day come (the bridge crossed)
       if (at && !this.ask) AU.pluck(62);
       this.ask = at ? Math.min(1, this.ask + dt * 6) : Math.max(0, this.ask - dt * 4);
     },
-    draw(g) { if (T6R.done) dp(g, PROPS.gate, x, GROUND + 4); },
-    drawFg(g) { if (T6R.done && this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done && T6B_ON ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
+    draw(g) { if (t6Open()) dp(g, PROPS.gate, x, GROUND + 4); },
+    drawFg(g) { if (t6Open() && this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done && T6B_ON ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
   };
 }
 
