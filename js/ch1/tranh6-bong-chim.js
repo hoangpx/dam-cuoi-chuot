@@ -79,10 +79,10 @@ function bcBuild() {
   const trim = new Float32Array(G * G); for (let k = 0; k < G * G; k++) trim[k] = (inside[k] ? -dist[k] : outd[k]) * cs;
   // circles filling the bird: the widest uncovered place first
   const covered = new Uint8Array(G * G), balls = [];
-  for (let n = 0; n < 240; n++) {
+  for (let n = 0; n < 420; n++) {
     let best = -1, bd = 0; for (let k = 0; k < G * G; k++) if (inside[k] && !covered[k] && dist[k] > bd) { bd = dist[k]; best = k; }
     const r = (bd - .5) * cs;                                                  // as large as fits inside (a half cell of slack for the pixels' edge)
-    if (best < 0 || r < .02) break;
+    if (best < 0 || r < .006) break;
     const x = px(best), y = py(best), rr = Math.min(r + .05, .15); balls.push({ x, y, r: rr });
     const cI = Math.floor((x + R0) / cs), cJ = Math.floor((y + R0) / cs), rc = Math.ceil(rr / cs) + 1;
     for (let j = Math.max(0, cJ - rc); j <= Math.min(G - 1, cJ + rc); j++) for (let i = Math.max(0, cI - rc); i <= Math.min(G - 1, cI + rc); i++) { const k = j * G + i; if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= rr) covered[k] = 1; }
@@ -314,8 +314,8 @@ function bcBuild() {
       st.t += dt;
       if (!st.done) {
         if (!st.drag && (Math.abs(st.vel[0]) > .0006 || Math.abs(st.vel[1]) > .0006)) { turn(st.vel[0], st.vel[1]); st.vel[0] *= Math.pow(.04, dt); st.vel[1] *= Math.pow(.04, dt); }     // a little momentum
-        const R = bcMul(bcT(BC_Q), st.W), a1 = bcAngleFromI(R), a2 = 9, ang = Math.min(a1, a2); st.flip = a2 < a1;
-        if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / 2); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(BC_Q, bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * (1 - e))); st.ver++; if (st.solve.t >= 1) st.solve = null; }
+        const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.max(-1, Math.min(1, R[8]))); st.theta = Math.atan2(R[3], R[0]);     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
+        if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / 2); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(st.solve.base, bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * (1 - e))); st.ver++; if (st.solve.t >= 1) st.solve = null; }
         else if (ang < .07) { st.hold += dt; if (st.hold > .25) win(); } else st.hold = 0;     // about 4 degrees, kept for a quarter of a second
       } else { st.dt += dt; if (st.dt > 4.2) finish(); }
       const t0 = performance.now(); draw(); BC.ms = performance.now() - t0;
@@ -323,15 +323,16 @@ function bcBuild() {
     raf = requestAnimationFrame(loop);
   }
   function win() {
-    st.done = true; st.dt = 0; st.drag = null; st.W = st.flip ? bcMul(BC_Q, BC_DY) : BC_Q.slice(); st.ver++;         // it settles exactly on the target
+    st.done = true; st.dt = 0; st.drag = null; st.W = bcMul(BC_Q, bcRot(0, 0, 1, st.theta || 0)); st.ver++;         // it settles exactly (keeping the turn the player gave it)
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => { AU.chirp && AU.chirp(); }, 700); setTimeout(() => AU.pluck(91), 1400);
   }
   function finish() { const cb = st && st.cb; BC.open = false; el.hidden = true; cancelAnimationFrame(raf); st = null; if (cb) cb(); }
   addEventListener('keydown', e => { if (!BC.open) return; e.stopPropagation(); e.preventDefault(); if (e.code === 'Escape') finish(); }, true);
   X.addEventListener('click', finish);
   XS.addEventListener('click', () => {                                          // (demo only) turn the tangle slowly to the right pose, to show what to look for
-    if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), an = bcAngleFromI(R); if (an < 1e-3) return; const sn = Math.sin(an) || 1e-3, ax = [(R[7] - R[5]) / (2 * sn), (R[2] - R[6]) / (2 * sn), (R[3] - R[1]) / (2 * sn)], l = Math.hypot(...ax) || 1;
-    st.solve = { t: 0, an, ax: ax.map(v => v / l) }; st.drag = null; st.vel = [0, 0]; });
+    if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), th = Math.atan2(R[3], R[0]), Rt = bcRot(0, 0, 1, th), D = bcMul(bcT(Rt), R), an = bcAngleFromI(D); if (an < 1e-3) return;
+    const sn = Math.sin(an) || 1e-3, ax = [(D[7] - D[5]) / (2 * sn), (D[2] - D[6]) / (2 * sn), (D[3] - D[1]) / (2 * sn)], l = Math.hypot(...ax) || 1;
+    st.solve = { t: 0, an, ax: ax.map(v => v / l), base: bcMul(BC_Q, Rt) }; st.drag = null; st.vel = [0, 0]; });
   addEventListener('resize', () => BC.open && size());
   window.bongOpen = function (cb) {
     if (BC.open) return; BC.open = true; el.hidden = false;
