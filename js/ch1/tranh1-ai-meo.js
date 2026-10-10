@@ -78,9 +78,11 @@ const hungryLabel = () => slipLabel(['ĐÓI', 'QUÁ']);
 // the bell from Tấm (tranh 5) is hung on the fed cat's neck: SAVE.catBell, which the dark stretch of tranh 6 asks for
 function catBell(cx) {
   return {
-    layer: 'hud', x: cx - 130, get spent() { return !!SAVE.catBell || !this.cat.fed; }, cat: null,
-    offer: { wants: ['lucLac'], label: 'Đeo lục lạc', near: () => groom.x > cx - 420 && groom.x < cx + 200, missing: 'Cần lục lạc của cô Tấm.' },
-    give() { SAVE.catBell = true; persist(); [88, 93, 100, 93].forEach((m, i) => setTimeout(() => AU.pluck(m), i * 130)); toast('Mèo đeo lục lạc, leng keng!', 3); },
+    layer: 'hud', x: cx - 130, get spent() { return !!SAVE.catBell; }, cat: null,
+    offer: { wants: ['lucLac'], label: 'Đeo lục lạc', near: () => false, missing: '' },                // only by dragging, like the fish
+    give() {
+      if (!this.cat.fed) { S.inv.push('lucLac'); caught(this.cat); return; }                      // hung on a cat that was not fed first: it pounces (the bell stays in hand)
+      SAVE.catBell = true; persist(); [88, 93, 100, 93].forEach((m, i) => setTimeout(() => AU.pluck(m), i * 130)); toast('Mèo đeo lục lạc, leng keng!', 3); },
     update() { if (!this.got0) { this.got0 = 1; if (SAVE.lucLac && !SAVE.catBell && !S.inv.includes('lucLac')) { S.inv.push('lucLac'); updateHud(); } } },
   };
 }
@@ -108,7 +110,11 @@ function groundCat(cx, from) {
       this.hungry = 0;
       if (groom.x < from) { this.st = 'sleep'; this.t = 2 + R() * 1.5; return; }
       if (this.st === 'block') { this.st = 'sleep'; this.t = 1.5; }
-      tickWatcher(this, dt);
+      const was = this.st; tickWatcher(this, dt);
+      if (bellMode() && this.st !== was) {                                                      // the bell in hand: the cat is quicker and wakes more often
+        if (this.st === 'warn') { this.feint = false; this.t = .5; }                              // half-open for only .5 s, then wide open
+        else if (this.st === 'sleep') this.t = Math.min(this.t, .8 + R() * .8);
+      }
     },
     draw(g) {
       let x = cx, lift = 0;
@@ -124,7 +130,7 @@ function groundCat(cx, from) {
     // holding the fish in front of the cat: a finger drags a ghost of it from the groom's hand to the cat's mouth (owner)
     drawFg(g) {
       if (this.fed || !has('fish') || S.drag || groom.x < wallX - 260 || S.caught) return;
-      const [hx, hy] = handPos(groom), mx = cx - 128, my = GROUND - 162, ph = (S.t % 1.8) / 1.8;
+      const [hx, hy] = handPos(fishCarried() ? followers[0] : groom), mx = cx - 128, my = GROUND - 162, ph = (S.t % 1.8) / 1.8;
       const u = Math.min(1, Math.max(0, (ph - .15) / .6)), e = u * u * (3 - 2 * u), x = hx + (mx - hx) * e, y = hy + 14 + (my - hy - 14) * e - Math.sin(e * Math.PI) * 30;
       const a = ph < .08 ? ph / .08 : ph > .85 ? Math.max(0, 1 - (ph - .85) / .15) : 1;
       g.globalAlpha = a * .55; dp(g, ITEM.fish, x, y, Math.sin(S.t * 12) * .3, 1.1, 1.1);

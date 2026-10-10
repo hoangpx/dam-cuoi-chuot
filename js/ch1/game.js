@@ -151,18 +151,23 @@ function useAbility(k) {
   }
 }
 // every gift rides in the groom's hand; the newest one is on top and is the one you drag
-const leadItem = () => S.inv.length ? S.inv[S.inv.length - 1] : null;
+// tranh 1 with the bell in hand (owner): the groom carries the bell, the parasol mouse carries the fish; both are dragged to the cat, the fish first
+const bellMode = () => S.lv === 0 && S.inv.includes('lucLac');
+const fishCarried = () => bellMode() && S.inv.includes('fish');
+const leadItem = () => bellMode() ? 'lucLac' : S.inv.length ? S.inv[S.inv.length - 1] : null;
 function handPos(f = groom) { return [f.x + 16 * f.face, GROUND - 50]; }
 function dropOn(wx, wy, item) {
+  let miss = false;
   for (const e of S.ents) {
     if (!e.offer || e.spent || e.opened || e.fed) continue;
     const ex = e.ax ?? e.x ?? e.gateX; if (ex == null || Math.abs(wx - ex) > 150 || wy < GROUND - 300 || wy > GROUND + 20) continue;
-    if (!e.offer.wants.includes(item)) { AU.pluck(60); return false; }
+    if (!e.offer.wants.includes(item)) { miss = true; continue; }
     e.got = e.got || [];
     if (!e.got.includes(item)) { e.got.push(item); takeItems([item]); AU.pluck(84); }
     if (e.offer.wants.every(w => e.got.includes(w))) e.give();
     updateHud(); return true;
   }
+  if (miss) AU.pluck(60);
   return false;
 }
 function tryOffer() {
@@ -317,6 +322,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04 + (item === 'ken' ? -.1 - (S.kenT > 0 ? .12 : 0) : 0));
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (item === 'parasol' && !bigPara) dp(g, ITEM.parasol, hx, hyy + 26, Math.sin(S.pose * 1.5 + seed) * .05);
+  if (item === 'parasol' && fishCarried() && !(S.drag && S.drag.item === 'fish')) drawItem(g, 'fish', hx + 8, hyy + 14 - Math.abs(Math.sin(S.t * 9)) * 9, 1.1, 1.3 + Math.sin(S.t * 17) * .5);
   if (item === 'lantern') dp(g, ITEM.lantern, hx, hyy + 4, Math.sin(S.pose * 1.6 + seed) * .06);
   if (item === 'ken') dp(g, ITEM.ken, hx - 4, hyy, -.25 - (S.kenT > 0 ? Math.sin(S.t * 10) * .05 : 0));
   if (item === 'drum') dp(g, ITEM.stick, hx - 2, hyy, .5 + armN);
@@ -437,6 +443,7 @@ function ch1PointerHit(e) {
   const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / scale + camX, wy = (e.clientY - r.top) / scale - offY;
   for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return true; } }
   { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return true; } }
+  if (fishCarried()) { const f = followers[0]; if (Math.hypot(wx - (f.x + 16 * f.face), wy - (GROUND - 50)) < 48) { S.drag = { item: 'fish', x: wx, y: wy }; capturePointer(e); return true; } }
   for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;
   { const f = followers[0]; if (L.abil.includes('parasol') && f.item === 'parasol' && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return true; } }
   for (const [i, k] of [[1, 'drum'], [2, 'ken']]) { const f = followers[i]; if (L.abil.includes(k) && Math.abs(wx - f.x) < 40 && wy > GROUND - 150 && wy < GROUND + 8) { useAbility(k); return true; } }
