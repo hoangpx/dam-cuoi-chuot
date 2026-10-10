@@ -138,7 +138,7 @@ function t6Dark() {
         } else {
           const e = T7.ev; e.t += dt;
           if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
-            if ((e.jt -= dt) < 0) { const n = e.n = (e.n || 0) + 1; e.jt = n === 1 ? 1 : .9; AU.play('bell', [.9, 1.4, 1.8][Math.min(2, n - 1)], 1 + .07 * (n - 1)); }       // the recorded bell, louder and a little higher each time
+            if ((e.jt -= dt) < 0) { const n = e.n = (e.n || 0) + 1; e.jt = n === 1 ? 1 : .9; if (AU.hasSample('bell')) AU.play('bell', [.6, .9, 1.2][Math.min(2, n - 1)], 1 + .07 * (n - 1)); else AU.pluck(96 + n * 3); }       // the recorded bell, louder and a little higher each time
             if (e.t > T7_REACT && (groom.moving || groom.vx !== 0)) this.caught();            // the bell was heard: stand still
             else if (e.t > T7_WARN) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
           } else if (e.ph === 'sneak') {                                                      // no bell: no warning at all
