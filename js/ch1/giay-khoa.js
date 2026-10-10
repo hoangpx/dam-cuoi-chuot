@@ -120,15 +120,15 @@ function gkMake() {
     const dil = r => { const o = new Uint8Array(M); for (const [x, y] of edgePts) for (let dy = -r; dy <= r; dy += 2) for (let dx = -r; dx <= r; dx += 2) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < S && yy < S && dx * dx + dy * dy <= r * r) o[yy * S + xx] = 1; } for (let i = 0; i < M; i++) if (rKeyA[i]) o[i] = 1; return o; };
     const bury = dil(18), near = dil(28);
     for (let i = 0; i < M; i++) if (bury[i] && !rKeyA[i]) zone.push(i);
-    // the zone round the key is shared out between the sheets in many small uneven pieces, so neither sheet shows a clean key
-    const seeds = []; for (let n = 0; n < 70; n++) { const i = zone[(R() * zone.length) | 0]; seeds.push([i % S, (i / S) | 0, true, ri(.7, 1.4)]); }
-    { const cx = KA[0] + 25, cy = KA[1] + 44; seeds.sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx)); seeds.forEach((q, n) => { q[2] = (n % 2 === 0) !== (R() < .22); }); }
-    const nz = Array.from({ length: 19 * 19 }, () => R() * 9), noise = (x, y) => { const fx = x / 14, fy = y / 14, ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; const a = nz[iy * 19 + ix], b = nz[iy * 19 + ix + 1], c2 = nz[(iy + 1) * 19 + ix], d = nz[(iy + 1) * 19 + ix + 1]; return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c2 * (1 - tx) * ty + d * tx * ty; };
-    const fz = Array.from({ length: 52 * 52 }, () => R() * 3.4), fine = (x, y) => { const fx = x / 5, fy = y / 5, ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; return fz[iy * 52 + ix] * (1 - tx) * (1 - ty) + fz[iy * 52 + ix + 1] * tx * (1 - ty) + fz[(iy + 1) * 52 + ix] * (1 - tx) * ty + fz[(iy + 1) * 52 + ix + 1] * tx * ty; };
+    // The key's edge: wherever one sheet's tear has to follow it, the other sheet's tear bulges out past it. So the edge is walked all round (the outer
+    // outline and the eye) in short runs, each run handed to one sheet or the other, and the zone outside takes the owner of its nearest bit of edge.
+    // Each sheet then shows only broken fragments of the key's edge, between lumps, and neither shows a clean key.
+    const nz = Array.from({ length: 19 * 19 }, () => R() * 9), noise = (x, y) => { const fx = Math.max(0, Math.min(17.9, x / 14)), fy = Math.max(0, Math.min(17.9, y / 14)), ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; const a0 = nz[iy * 19 + ix], b0 = nz[iy * 19 + ix + 1], c2 = nz[(iy + 1) * 19 + ix], d0 = nz[(iy + 1) * 19 + ix + 1]; return a0 * (1 - tx) * (1 - ty) + b0 * tx * (1 - ty) + c2 * (1 - tx) * ty + d0 * tx * ty; };
+    const bp = []; for (const loop of gkContours(rKeyA, S)) { let owner = R() < .5, left = 4 + R() * 8; for (const [x, y] of loop) { if ((left -= 1) <= 0) { owner = !owner; left = 4 + R() * 8; } bp.push([x, y, owner, .85 + R() * .4]); } }
     const cellsA = new Uint8Array(M), cellsB = new Uint8Array(M);           // (both in the back sheet's frame)
     for (const i of zone) {
-      const x = i % S, y = (i / S) | 0; let best = 1e9, mineA = true;
-      for (const [sx, sy, a, w] of seeds) { const d = Math.hypot(x - sx, y - sy) * w + noise(x, y) + fine(x, y); if (d < best) { best = d; mineA = a; } }
+      const x = i % S, y = (i / S) | 0, wx = x + (noise(x, y) - 4.5) * .9, wy = y + (noise(y + 3, x + 5) - 4.5) * .9; let best = 1e9, mineA = true;
+      for (const [bx, by, a1, w] of bp) { const d = ((wx - bx) * (wx - bx) + (wy - by) * (wy - by)) * w; if (d < best) { best = d; mineA = a1; } }
       (mineA ? cellsA : cellsB)[i] = 1;
     }
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
