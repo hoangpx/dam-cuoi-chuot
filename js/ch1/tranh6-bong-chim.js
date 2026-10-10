@@ -109,6 +109,75 @@ function bcBuild() {
 }
 
 
+/* ===== The two friends of tranh 6: the lesser whistling duck (chim le le) and the greater coucal (chim bìm bịp). Each is saved by turning a shadow puzzle (a station: a tangle on a cord and a cloth
+   between two bamboo poles, below) to the bird's own shadow: the first station's shadow is the le le, the second's the bìm bịp. The road is open all along (owner): the party may walk past
+   without doing anything, but then chú bán dầu (the bridge, and so the gate) does not appear, and the road goes on and on with no gate; going back a little shows the stations again.
+   Both saved: the two birds circle over the party, thank the mice and promise to fly along to warn them of danger. Saved in SAVE.t6: bl (le le), bb (bìm bịp), bong (both). ===== */
+const T6R = {
+  got: [false, false], done: false, birds: [{ st: 'none' }, { st: 'none' }], say: -1, stations: [],
+  init() {                                                                      // at the start of the tranh: what has been saved
+    const s = SAVE.t6 || {}; this.got = [!!(s.bl || s.bong), !!(s.bb || s.bong)]; this.done = this.got[0] && this.got[1]; this.say = -1; this.stations = [];
+    this.birds = [0, 1].map(i => ({ st: this.done ? 'follow' : this.got[i] ? 'orbit' : 'none', t: 9, a: i * 3.1, ph: i * 1.3, x: 0, y: 0, cx: -1, cy: 0, face: 1 }));
+    LEVELS[5].width = this.done ? 3700 : 30000;                                   // not saved the birds: the road has no end, and no gate (owner)
+  },
+  rel(i, x, y) { const b = this.birds[i]; Object.assign(b, { st: 'rise', t: 0, x0: x, y0: y, a: -1.2, ph: 0, cx: -1 }); AU.pluck(i ? 86 : 91); },       // the bird lifts off its cloth
+  save(i) {
+    this.got[i] = true; SAVE.t6 = SAVE.t6 || {}; SAVE.t6[i ? 'bb' : 'bl'] = true;
+    if (this.got[0] && this.got[1]) { this.done = true; this.say = 0; SAVE.t6.bong = true; LEVELS[5].width = 3700; for (const b of this.birds) b.st = 'follow'; }
+    persist();
+  },
+};
+// the two birds, flying (woodblock parts, three wing poses each, facing right): le le = a small duck, brown, a long neck out in front, a round dark bill, chestnut shoulders; bìm bịp = black, long tail, rufous wings, a heavy bill, red eye
+let T6R_ART = null;
+function t6rArt() {
+  if (T6R_ART) return T6R_ART;
+  const WING = {                                                                // near wing outline and its tip feathers, per pose
+    up: { w: [[4, -5], [-2, -26], [-9, -46], [-21, -52], [-27, -38], [-24, -18], [-16, -3]], t: [[-9, -46], [-21, -52], [-27, -38], [-24, -30], [-14, -34]] },
+    mid: { w: [[4, -5], [-12, -16], [-36, -20], [-60, -12], [-54, -2], [-32, 3], [-12, 3]], t: [[-36, -20], [-60, -12], [-54, -2], [-44, -6], [-40, -14]] },
+    down: { w: [[4, -3], [-2, 14], [-8, 33], [-20, 42], [-27, 30], [-23, 12], [-14, 0]], t: [[-8, 33], [-20, 42], [-27, 30], [-20, 26], [-12, 28]] },
+  };
+  const far = { up: [[2, -6], [8, -28], [4, -48], [-6, -50], [-12, -34], [-8, -14]], mid: [[2, -6], [-6, -22], [-20, -34], [-38, -34], [-40, -22], [-22, -8]], down: [[2, -3], [6, 14], [2, 34], [-8, 38], [-14, 22], [-8, 4]] };
+  const sw = p => p.map(([x, y]) => [x * 1.3, y * 1.3]);                           // the wings are broad: scaled out from the shoulder
+  const mk = (kind, pose) => part([-100, -78, 72, 62], a => {
+    const W = { w: sw(WING[pose].w), t: sw(WING[pose].t) }, F = sw(far[pose]);
+    if (kind === 'lele') {
+      a.fk('brown', smooth(F), 1.8);                                      // the far wing, behind
+      a.fk('straw', smooth([[-20, 0], [-36, -3], [-35, 6], [-19, 8]]), 1.6);           // the short tail
+      a.fk('tan', ell(0, 1, 25, 12.5, -.08), 2.2);                                // the body
+      a.fill('cream', ell(4, 7, 17, 6, -.05));                                    // the buff belly
+      a.fk('tan', smooth([[14, -4], [28, -12], [38, -17], [43, -13], [36, -6], [22, 3]]), 1.8);       // the neck, stretched out in front
+      a.fk('ash', circ(42, -17, 8), 2);                                           // the head
+      a.fill('brown', smooth([[35, -22], [43, -26], [51, -20], [43, -19]]));      // the dark crown
+      a.fk('dark', smooth([[49, -18], [63, -16], [62, -9], [49, -12]]), 1.8);     // the round, dark bill
+      a.fill('white', circ(44, -19, 3.4)); a.ink(circ(44.6, -19, 1.6));           // the eye
+      a.key(lines([[-17, 8, -40, 13], [-13, 9, -37, 17]]), 2); a.fk('dark', ell(-41, 14, 5, 2.4, .3), 1.2); a.fk('dark', ell(-38, 18, 5, 2.4, .3), 1.2);   // the legs and feet trail behind
+      a.fk('straw', smooth(W.w), 2.2);                                            // the near wing: chestnut shoulder…
+      a.fk('brown', smooth(W.t), 1.8);                                            // …and dark flight feathers
+      a.key(lines([[W.w[1][0], W.w[1][1], (W.w[3][0] + W.w[4][0]) / 2, (W.w[3][1] + W.w[4][1]) / 2]]), 1.2);
+    } else {
+      a.fk('dark', smooth(F), 1.8);
+      a.fk('dark', smooth([[-18, 0], [-50, 4], [-86, 13], [-90, 19], [-80, 22], [-48, 15], [-18, 9]]), 2);              // the long, broad tail
+      a.key(lines([[-30, 6, -78, 17], [-24, 9, -70, 20]]), 1.2);
+      a.fk('dark', ell(0, 1, 24, 12.5, -.1), 2.2);                                // the glossy black body
+      a.fk('dark', circ(27, -9, 9.5), 2.2);                                       // the head
+      a.fk('dark', smooth([[34, -12], [50, -9], [51, -3], [35, -3]]), 1.8);       // the heavy bill
+      a.fill('grey', smooth([[37, -9], [48, -8], [38, -6]]));
+      a.fill('red', circ(28, -11, 3.6)); a.ink(circ(28.6, -11, 1.5));             // the red eye
+      a.key(lines([[-12, 9, -34, 15], [-8, 10, -30, 19]]), 2);                    // the legs
+      a.fk('tan', smooth(W.w), 2.2);                                              // the near wing: rufous…
+      a.fk('brown', smooth(W.t), 1.8);                                            // …with dark tips
+      a.key(lines([[W.w[1][0], W.w[1][1], (W.w[3][0] + W.w[4][0]) / 2, (W.w[3][1] + W.w[4][1]) / 2]]), 1.2);
+    }
+  });
+  const o = {}; for (const kind of ['lele', 'bim']) o[kind] = { up: mk(kind, 'up'), mid: mk(kind, 'mid'), down: mk(kind, 'down') };
+  return (T6R_ART = o);
+}
+const T6R_FLAP = ['mid', 'up', 'mid', 'down'];
+function t6rBird(g, i, x, y, face, ph, s) {                                      // a bird in flight at x, y (i: 0 le le, 1 bìm bịp), face = ±1, ph = flap phase
+  const A = t6rArt()[i ? 'bim' : 'lele'], pose = T6R_FLAP[Math.floor(ph) & 3];
+  g.save(); g.translate(x, y); g.scale(face * s, s); dp(g, A[pose], 0, 0); g.restore();
+}
+
 /* ===== In the tranh itself (owner: no separate screen). The tangle hangs in the scene on a cord; behind it, a little to the left and lower, a white cloth is stretched between two bamboo poles,
    and the moon's light puts the tangle's shadow on that cloth. Drag the tangle to turn it; the shadow on the cloth changes. When it is the bird (the owner's two photos), the shadow clicks into
    place and the bird lifts off the cloth and flies away; the road opens. The party is stopped short of the cloth until then. All drawn by the graphics card (WebGL2): if there is none, the
@@ -157,8 +226,7 @@ function bcBuild() {
     } catch (err) { return { ok: false }; }
   };
 
-  let GPU = null; const gpu = () => GPU || (GPU = makeGPU());
-  function gpuPass(X, w, h, set) {                                               // render one full-screen pass into X's canvas
+    function gpuPass(X, w, h, set) {                                               // render one full-screen pass into X's canvas
     const gl = X.gl; if (X.c.width !== w || X.c.height !== h) { X.c.width = w; X.c.height = h; }
     gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(X.pr); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, X.tex); gl.uniform1i(X.u('uF'), 0); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, X.tex2); gl.uniform1i(X.u('uT'), 1); gl.activeTexture(gl.TEXTURE0); set(gl, X.u); gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
@@ -172,14 +240,12 @@ function bcBuild() {
     h.fillStyle = '#c9a24a'; h.beginPath(); h.moveTo(-18, 6); h.lineTo(-40, 14); h.lineTo(-38, 2); h.closePath(); h.fill(); h.stroke();   // tail
     h.restore();
   }
-  window.t6Shadow = function (cx0) {
+  window.t6Shadow = function (cx0, idx) {
     const cy0 = GROUND - 255, k0 = DW / -L[2], ccx = cx0 + L[0] * k0 * SC, ccy = cy0 - L[1] * k0 * SC, rx0 = ccx - CW * SC / 2, ry0 = ccy - CH * SC / 2, cw = CW * SC, ch = CH * SC;   // the body's centre, the cloth's centre and corner
-    let st = null, started = false;
-    const skip = () => SAVE.t6 && (SAVE.t6.bong || SAVE.t6.frogs);
+    let st = null, started = false, tex = null, G = null;                  // the puzzle state, this station's own distance grid, and its own graphics-card canvases
+    const skip = () => T6R.got[idx];
     function make() {                                                            // the tangle is made (the picture: the two photos in turn), a pose well away from the right one
-      const all = BC_MASKS(); let last = BC.mi; if (last === undefined) { try { last = +localStorage.getItem('dcc.bongmi'); } catch (err) { last = 0; } } if (!(last >= 0)) last = 0;
-      const i = (last + 1) % all.length; BC.mi = i; BC.mask = all[i]; try { localStorage.setItem('dcc.bongmi', i); } catch (err) {}
-      BC.tex = bcBuild();
+      BC.mask = BC_MASKS()[idx]; tex = bcBuild();                                  // the first station: the le le (the goose photo); the second: the bìm bịp (the crow photo)
       const ax = Math.random() * 2 - 1, ay = Math.random() * 2 - 1, az = Math.random() * 2 - 1, n = Math.hypot(ax, ay, az) || 1;
       st = { ver: 1, W: bcMul(bcRot(ax / n, ay / n, az / n, 1.3 + Math.random() * 1.4), BC_Q), t: 0, vel: [0, 0], hold: 0, done: false, dt: 0, solve: null, touched: false, lx: 0, ly: 0 };
       E.st = st; AU.pluck(72);
@@ -200,9 +266,9 @@ function bcBuild() {
       AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => { AU.chirp && AU.chirp(); }, 700); setTimeout(() => AU.pluck(91), 1400);
     }
     function render() {                                                          // the two passes on the graphics card, only when the pose or the size changed
-      const G = gpu(), k = scale * DPR, n = Math.max(160, Math.min(900, Math.round(SPAN * SC * k))), W = st.W, Wt = bcT(W);
-      if (!BC.tex.gup) { G.upload(G.A, BC.tex.sdf); G.upload2(G.A, BC.tex.trim, BC.tex.tg); BC.tex.gup = true; }
-      if (!BC.tex.gupB) { G.upload(G.B, BC.tex.sdf); G.upload2(G.B, BC.tex.trim, BC.tex.tg); BC.tex.gupB = true; }
+      const k = scale * DPR, n = Math.max(160, Math.min(900, Math.round(SPAN * SC * k))), W = st.W, Wt = bcT(W);
+      if (!tex.gup) { G.upload(G.A, tex.sdf); G.upload2(G.A, tex.trim, tex.tg); tex.gup = true; }
+      if (!tex.gupB) { G.upload(G.B, tex.sdf); G.upload2(G.B, tex.trim, tex.tg); tex.gupB = true; }
       if (st.gl1 !== st.ver || st.gn !== n) {
         st.gl1 = st.ver; st.gn = n;
         gpuPass(G.A, n, n, (gl, u) => { gl.uniform3f(u('uR0'), Wt[0], Wt[1], Wt[2]); gl.uniform3f(u('uR1'), Wt[3], Wt[4], Wt[5]); gl.uniform3f(u('uR2'), Wt[6], Wt[7], Wt[8]); gl.uniform3f(u('uW0'), W[0], W[1], W[2]); gl.uniform3f(u('uW1'), W[3], W[4], W[5]); gl.uniform3f(u('uW2'), W[6], W[7], W[8]); gl.uniform3f(u('uLT'), LT[0], LT[1], LT[2]); gl.uniform1f(u('uBS'), n / SPAN); gl.uniform1f(u('uRes'), n); });
@@ -216,10 +282,9 @@ function bcBuild() {
     }
     const E = {
       layer: 'bg', cx: cx0, solved: !!skip(), st: null, btn: [],
-      wall() { return this.solved ? null : rx0 - 40; },                          // the party stops short of the cloth until the bird has flown
       update(dt) {
         if (this.solved) return;
-        if (!started) { started = true; if (!gpu().ok) { this.solved = true; return; } setTimeout(() => { if (!this.solved && !st) make(); }, 250); return; }
+        if (!started) { started = true; G = makeGPU(); if (!G.ok) { this.solved = true; T6R.save(idx); return; } setTimeout(() => { if (!this.solved && !st) make(); }, 250 + idx * 1100); return; }
         if (!st) return;
         st.t += dt; const d = S.drag, mine = d && d.ent === this;
         if (mine) { const dx = d.x - st.lx, dy = d.y - st.ly; st.lx = d.x; st.ly = d.y; if (!st.done && !st.solve) { const kk = .012 * scale; turn(dx * kk, dy * kk); st.vel = [dx * kk, dy * kk]; } }
@@ -231,7 +296,7 @@ function bcBuild() {
           const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.min(1, Math.abs(R[8])));     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
           if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / st.solve.dur); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), an = st.solve.an; st.W = bcMul(BC_Q, bcMul(bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * e), st.solve.R)); st.ver++; if (st.solve.t >= 1) { const w = st.solve.winAfter; st.solve = null; if (w) win(); } }
           else if (ang < tol) { st.hold += dt; if (st.hold > .3) startSolve(.45, true); } else st.hold = 0;     // kept for a third of a second: then it clicks into place
-        } else { st.dt += dt; if (st.dt > 4.3) { this.solved = true; SAVE.t6 = SAVE.t6 || {}; SAVE.t6.bong = true; persist(); return; } }
+        } else { st.dt += dt; if (!st.rel && st.dt > .6) { st.rel = true; T6R.rel(idx, ccx, ccy); } if (st.dt > 3.4) { this.solved = true; T6R.save(idx); return; } }       // the bird lifts off its cloth and flies up over the road
         render();
       },
       grab(wx, wy) {                                                             // a finger or the mouse on the tangle: turn it
@@ -248,7 +313,7 @@ function bcBuild() {
       },
       draw(g) {                                                                  // the cloth between its two poles, with the shadow on it (behind the party)
         if (this.solved || !st) return;
-        const fade = st.done ? Math.max(0, 1 - Math.max(0, st.dt - 3.4) / .9) : 1; g.save(); g.globalAlpha = fade;
+        const fade = st.done ? Math.max(0, 1 - Math.max(0, st.dt - 2.5) / .8) : 1; g.save(); g.globalAlpha = fade;
         for (const sx of [-1, 1]) {                                              // two bamboo poles
           const px = ccx + sx * (cw / 2 + 7);
           g.lineCap = 'round'; g.strokeStyle = '#1d1915'; g.lineWidth = 9; g.beginPath(); g.moveTo(px, GROUND + 4); g.lineTo(px, ry0 - 30); g.stroke();
@@ -258,28 +323,51 @@ function bcBuild() {
         g.strokeStyle = '#1d1915'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(rx0, ry0); g.lineTo(ccx - cw / 2 - 7, ry0 - 18); g.moveTo(rx0 + cw, ry0); g.lineTo(ccx + cw / 2 + 7, ry0 - 18); g.stroke();     // its ropes
         const gr = g.createLinearGradient(rx0, 0, rx0 + cw, 0); gr.addColorStop(0, '#cfd3d6'); gr.addColorStop(1, '#f3efdc');                                  // the cloth: moonlit, brighter on the moon's side (right)
         g.fillStyle = gr; g.beginPath(); g.moveTo(rx0, ry0); g.lineTo(rx0 + cw, ry0); g.lineTo(rx0 + cw, ry0 + ch); g.quadraticCurveTo(rx0 + cw / 2, ry0 + ch + 9, rx0, ry0 + ch); g.closePath(); g.fill();
-        g.save(); g.clip(); g.imageSmoothingEnabled = true; g.drawImage(gpu().B.c, rx0, ry0, cw, ch + 10); g.restore();                                        // the shadow (the cloth is the clip)
+        g.save(); g.clip(); g.imageSmoothingEnabled = true; g.drawImage(G.B.c, rx0, ry0, cw, ch + 10); g.restore();                                        // the shadow (the cloth is the clip)
         g.strokeStyle = '#1d1915'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(rx0, ry0); g.lineTo(rx0 + cw, ry0); g.lineTo(rx0 + cw, ry0 + ch); g.quadraticCurveTo(rx0 + cw / 2, ry0 + ch + 9, rx0, ry0 + ch); g.closePath(); g.stroke();
         g.restore();
       },
       drawFg(g) {                                                                // the tangle on its cord, and the bird once the shadow is right
         if (this.solved || !st) return;
         g.save(); g.strokeStyle = 'rgba(232,236,255,.6)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(cx0, -offY - 20); g.lineTo(cx0, cy0 - 1.2 * SC); g.stroke();
-        g.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 2.2) : 1; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(gpu().A.c, cx0 - SPAN * SC / 2, cy0 - SPAN * SC / 2, SPAN * SC, SPAN * SC); g.restore();
-        if (st.done) {                                                           // the bird lifts out of its shadow on the cloth and flies off
-          const T = st.dt, p = Math.min(1, T / 3.4), e = p * p * (3 - 2 * p), bx = ccx + 420 * e + Math.sin(T * 3) * 5, by = ccy - 330 * e - Math.sin(p * Math.PI) * 24, sc = .55 + 1.1 * Math.min(1, T / 1.6);
-          g.save(); g.globalAlpha = Math.min(1, T / .3); wing(g, bx, by, sc, .4 + .6 * Math.sin(T * 14), '#f2c640'); g.restore();
-        }
+        g.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 2.2) : 1; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(G.A.c, cx0 - SPAN * SC / 2, cy0 - SPAN * SC / 2, SPAN * SC, SPAN * SC); g.restore();
+        const dxg = Math.abs(groom.x - cx0);                                     // "Cứu tôi với!" when the party comes near
+        if (!st.done && dxg < 560) { g.save(); g.globalAlpha = Math.min(1, (560 - dxg) / 160); t5Say(g, cx0 - 64, cy0 - 14 + Math.sin(S.t * 3 + idx * 1.7) * 3, 'Cứu tôi với!'); g.restore(); }
       },
-      drawHud(g, vw) {                                                           // (demo only) two buttons: show the answer, and the other picture
+      drawHud(g, vw) {                                                           // (demo only) a button that shows the answer, on the nearest station still to do
         this.btn = []; if (this.solved || !st || st.done) return;
-        const bs = [['Xem đáp án', () => startSolve(2, false, true)], ['Hình khác', () => { st = null; E.st = null; make(); }]];
+        const me = T6R.stations.filter(q => q && !q.solved && q.st && !q.st.done).sort((p, q) => Math.abs(groom.x - p.cx) - Math.abs(groom.x - q.cx))[0]; if (me !== this || Math.abs(groom.x - cx0) > 520) return;
         g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        bs.forEach(([t, act], i) => { const w = 112, h = 30, x = vw / 2 - 12 + i * (w + 8), y = viewH - 62; this.btn.push({ x, y, w, h, act }); g.fillStyle = 'rgba(0,0,0,.45)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 17) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText(t, x + w / 2, y + h / 2 + 1); });
+        const w = 122, h = 30, x = vw - w - 24, y = viewH - 62; this.btn.push({ x, y, w, h, act: () => startSolve(2, false, true) });
+        g.fillStyle = 'rgba(0,0,0,.45)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 15) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText('Xem đáp án', x + w / 2, y + h / 2 + 1);
         g.restore();
       },
     };
-    window.__t6s = E;
+    T6R.stations[idx] = E; window.__t6s = T6R.stations;
     return E;
+  };
+
+  window.t6Friends = function () {
+    return { layer: 'hud',
+      update(dt) {
+        if (T6R.say >= 0) T6R.say += dt;
+        T6R.birds.forEach((b, i) => {
+          if (b.st === 'none') return; b.t += dt; b.ph += dt * (7.5 + i * .8);
+          const sx = T6R.stations[i] ? T6R.stations[i].cx : groom.x, tx = T6R.done ? groom.x + (i ? 80 : -40) + 60 : sx, ty = GROUND - (T6R.done ? 275 : 360) - i * 26;     // over its station, then over the party
+          if (b.cx < 0) { b.cx = tx; b.cy = ty; }
+          b.cx += (tx - b.cx) * Math.min(1, dt * (T6R.done ? 1.6 : 2)); b.cy += (ty - b.cy) * Math.min(1, dt * 2);
+          b.a += dt * (.9 + i * .15);
+          const Rx = 105 + i * 26, Ry = 24 + i * 5; let px = b.cx + Math.cos(b.a) * Rx, py = b.cy + Math.sin(b.a) * Ry;
+          if (b.st === 'rise') { const q = Math.min(1, b.t / 2.4), e = q * q * (3 - 2 * q); px = b.x0 + (px - b.x0) * e; py = b.y0 + (py - b.y0) * e; if (q >= 1) b.st = 'orbit'; }
+          b.face = -Math.sin(b.a) >= 0 ? 1 : -1; b.x = px; b.y = py;
+        });
+      },
+      drawFg(g) {
+        T6R.birds.forEach((b, i) => { if (b.st === 'none') return; t6rBird(g, i, b.x, b.y, b.face, b.ph, 1.05); });
+        const t = T6R.say; if (t < 0) return;                                  // the thanks, once both are free
+        const say = [[.6, 5, 0, 'Cảm ơn đàn chuột!'], [5.4, 12, 1, 'Chúng tôi sẽ bay theo để báo cho các bạn khi có nguy hiểm!']];
+        for (const [a, z, i, text] of say) if (t > a && t < z) { const b = T6R.birds[i]; g.save(); g.globalAlpha = Math.min(1, (t - a) / .3, (z - t) / .4); t5Say(g, b.x, b.y - 34, text); g.restore(); }
+      },
+    };
   };
 })();

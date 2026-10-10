@@ -372,7 +372,7 @@ function t6Cau(cx) {
       else t6cUpdate(dt);
     },
     onClick(wx, wy) {
-      if (T6C.st !== 'off' || (T6C.done && !T6C_REPLAY) || !T6.done) return false;          // he dozes until the frogs are caught
+      if (T6C.st !== 'off' || (T6C.done && !T6C_REPLAY) || !T6.done || !T6R.done) return false;          // he dozes until the frogs are caught; and he is not here at all until the two birds are saved (owner)
       if (Math.abs(wx - (cx - T6C_STAND)) > 70 || wy < GROUND - 190 || wy > GROUND + 20) return false;
       if (!T6C.segs) Object.assign(T6C, t6cPath());
       const s0 = T6C.segs[0]; Object.assign(T6C, { x: s0.x0, y: s0.y0, dir: s0.dir, camX: s0.x0, camY: s0.y0, t: 0, st: 'off' });
@@ -392,7 +392,7 @@ function t6Cau(cx) {
     drop() {},
     draw(g) {
       // the bridge from the road: the run's pole projected from behind him at road level, fading into the far mist
-      if (!T6C.segs) return;
+      if (!T6C.segs || !T6R.done) return;
       g.save(); g.beginPath(); g.rect(camX - 50, -2000, 1e4, GROUND - 24 + 2000); g.clip();   // only over the water: its near end goes under the road
       const D = T6C_SIDE_D, s0 = T6C.segs[0], e = T6C_POLE, th = Math.PI / 4 * s0.dir, c = Math.cos(th), sn = Math.sin(th),
         W = (x, y) => { const l = x - s0.x0, f = s0.y0 - y, l2 = l * c - f * sn, f2 = l * sn + f * c, z = Math.max(D * .45, f2 + D), s = D / z; return [cx + l2 * s * T6C_SIDE, GROUND - T6C_DEEP + T6C_DEEP * s, s]; };
@@ -410,7 +410,7 @@ function t6Cau(cx) {
     },
     drawMid(g) {
       // chú bán dầu: a mouse in a nón lá with a pole and two cans; asleep (z z) until the frogs are caught; across, he walks off
-      if (T6C.st !== 'off') return;                                      // while the camera rises he is the 2.5D one, stepping onto the foot
+      if (T6C.st !== 'off' || !T6R.done) return;                         // while the camera rises he is the 2.5D one, stepping onto the foot
       if (T6C.done && !T6C_REPLAY) return;                              // across the pond: he is gone from this road (owner)
       const across = false, x = cx - T6C_STAND, awake = T6.done;
       const ph = S.t * 9, moving = across, sit = !awake;

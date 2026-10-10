@@ -459,6 +459,7 @@ function t6Resume(x) {
       T6.done = true; T6.found = T6_FROGS; if (!has('ech')) S.inv.push('ech');
       if (SAVE.t6.birds) T6B.done = true;
       if (SAVE.t6.bridge) { T6C.done = true; x = 3000; }                       // across the bridge already: start on the far bank, at dawn
+      if (!T6R.done) x = 340;                                                 // the friends not saved yet: back at the start, where the stations are
       S.cp = x; placeParty(x); camX = Math.max(0, x - 320); updateHud();
     },
   };
@@ -469,18 +470,18 @@ function t6Gate(x) {
   return {
     layer: 'bg', gateX: x, ax: x, opened: false, ask: 0,
     get spent() { return this.opened; },
-    wall() { return this.opened ? null : x - 120; },
+    wall() { return this.opened || !T6R.done ? null : x - 120; },
     get offer() { return T6C.done && t6bOk() ? { wants: ['ech'], label: 'Dâng giỏ ếch', near: () => groom.x > x - 220, missing: '' } : null; },   // only once day has come
     give() { this.opened = true; delete SAVE.t6; persist(); AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Trời sáng, bác giữ cổng làng nhận giỏ ếch, mở cổng cho đoàn qua!', 3.2); },
     update(dt) {
-      if (this.opened) return;
+      if (this.opened || !T6R.done) return;                                     // no gate to be seen until both friends are saved (owner)
       const at = groom.x > x - 220;
       if (at && has('ech') && T6C.done && t6bOk()) { takeItems(['ech']); this.give(); return; }   // the basket, and day come (the bridge crossed)
       if (at && !this.ask) AU.pluck(62);
       this.ask = at ? Math.min(1, this.ask + dt * 6) : Math.max(0, this.ask - dt * 4);
     },
-    draw(g) { dp(g, PROPS.gate, x, GROUND + 4); },
-    drawFg(g) { if (this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done && T6B_ON ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
+    draw(g) { if (T6R.done) dp(g, PROPS.gate, x, GROUND + 4); },
+    drawFg(g) { if (T6R.done && this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done && T6B_ON ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
   };
 }
 
@@ -491,10 +492,11 @@ LEVELS[5] = {
   intro: '', endTitle: 'Bắt ếch đêm trăng', endText: 'Bắc kim thang cà lang bí rợ… Giỏ ếch đầy, đoàn chuột vừa đi vừa hát dưới trăng.',
   build: () => {
     T6.st = 'side'; T6.k = 0; T6.found = 0; T6.pond = null; T6.done = false; Object.assign(T6C, { st: 'off', k: 0, done: false, cp: 0 }); Object.assign(T6B, { st: 'off', k: 0, done: false, stage: 0 });
+    T6R.init();                                                                // what of the two friends is saved; the road is endless until both are
     return [
       t6Resume(2350),
       t6Night(1250, 3300),
-      t6Shadow(516),                                                            // the shadow puzzle at the start: a tangle hung in the air, its shadow on a cloth (js/ch1/tranh6-bong-chim.js)
+      t6Shadow(516, 0), t6Shadow(790, 1), t6Friends(),                                                            // the shadow puzzle at the start: a tangle hung in the air, its shadow on a cloth (js/ch1/tranh6-bong-chim.js)
       decor(PROPS.bamboo, 300, GROUND + 4, .8), decor(PROPS.bamboo, 860, GROUND + 4, .95, -1),
       t6Pond(1250, 3300, 1800),
       decor(PROPS.bamboo, 2330, GROUND + 4, .85, -1),
