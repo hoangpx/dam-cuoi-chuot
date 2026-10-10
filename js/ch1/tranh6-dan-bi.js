@@ -123,7 +123,7 @@ function t6Dark() {
   return {
     layer: 'bg', flick: 0, dawn: 0, btn: null,
     update(dt) {
-      this.flick += dt;
+      this.flick += dt; if (!T7.bl) { T7.bl = 1; bellLoad(); }
       this.dawn = Math.max(0, Math.min(1, (groom.x - (T6_OFF - 1700)) / 1500));                  // the dark thins as the trellis ends, and the moon comes out
       followers[0].item = this.dawn < .98 ? 'lantern' : 'parasol';
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
@@ -138,7 +138,7 @@ function t6Dark() {
         } else {
           const e = T7.ev; e.t += dt;
           if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
-            if ((e.jt -= dt) < 0) { e.jt = .55 - .3 * e.t / T7_WARN; AU.pluck(96 + ((Math.random() * 4) | 0)); setTimeout(() => AU.pluck(103), 70); }
+            if ((e.jt -= dt) < 0) { const n = e.n = (e.n || 0) + 1; e.jt = n === 1 ? 1 : .9; AU.play('bell', [.5, .8, 1][Math.min(2, n - 1)], 1 + .07 * (n - 1)); }       // the recorded bell, louder and a little higher each time
             if (e.t > T7_REACT && (groom.moving || groom.vx !== 0)) this.caught();            // the bell was heard: stand still
             else if (e.t > T7_WARN) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
           } else if (e.ph === 'sneak') {                                                      // no bell: no warning at all
