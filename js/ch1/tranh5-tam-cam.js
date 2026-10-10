@@ -444,11 +444,16 @@ function t5Cage(x) {
       if (!this.on() || this.st !== 'shut' || Math.abs(wx - x) > 40 || wy < CY - 10 || wy > CY + 70) return false;
       this.shake = .5; AU.chirp();
       // the cage has a lock: two cut papers laid one over the other must light up a key (js/ch1/giay-khoa.js)
-      giayOpen(() => { T5.bird = true; this.st = 'open'; this.t = 0; AU.pluck(88); toast('Cửa lồng bật mở, chim vàng anh bay vút lên trời!', 3); });
+      giayOpen(() => { const vw0 = cv.width / DPR / scale; this.st = 'key'; this.kt = 0; this.kfrom = [camX + vw0 / 2, -offY + viewH * .45]; this.kclick = false; AU.pluck(88); });
       return true;
     },
     update(dt) {
       this.shake = Math.max(0, this.shake - dt); this.t += dt;
+      if (this.st === 'key') {                                                 // the key flies to the lock (1.3 s), is pushed in and turned (.7 s), then the door gives
+        this.kt += dt;
+        if (!this.kclick && this.kt > 1.3) { this.kclick = true; AU.click(); AU.thump(); }
+        if (this.kt > 2) { T5.bird = true; this.st = 'open'; this.t = 0; AU.pluck(88); AU.stamp(); toast('Cửa lồng bật mở, chim vàng anh bay vút lên trời!', 3); }
+      }
       if (this.st === 'open' && this.t > .5) { this.bx += 160 * dt; this.by -= 120 * dt + Math.sin(this.t * 14) * 2; }
     },
     draw(g) {
@@ -460,12 +465,17 @@ function t5Cage(x) {
       const sh = Math.sin(S.t * 40) * this.shake * 5;
       g.save(); g.translate(x + sh, CY);
       g.strokeStyle = INK; g.lineWidth = 1.4; g.beginPath(); g.moveTo(-sh, -106); g.lineTo(0, -8); g.stroke();   // the cord, up to the branch
-      if (this.st === 'shut') this.drawBird(g, 0, 40, 1);
+      if (this.st === 'shut' || this.st === 'key') this.drawBird(g, 0, 40, 1);
       g.strokeStyle = '#8a5a2a'; g.lineWidth = 2.2; g.beginPath(); g.ellipse(0, 0, 26, 8, 0, Math.PI, 0); g.stroke();
       g.beginPath(); for (let k = -24; k <= 24; k += 8) { g.moveTo(k, 0 + (Math.abs(k) > 20 ? 4 : 0)); g.lineTo(k * 1.1, 56); } g.stroke();
       t5Shape(g, '#8a5a2a', () => g.ellipse(0, 58, 30, 7, 0, 0, 6.283));
       if (this.st === 'open') { g.save(); g.translate(26, 44); g.rotate(-1.2); g.strokeStyle = '#8a5a2a'; g.lineWidth = 2.4; g.strokeRect(-12, -24, 24, 24); g.restore(); }
       g.restore();
+      if (this.st === 'key') {
+        const lock = [x + 30, CY + 44], p = Math.min(1, this.kt / 1.3), e = p * p * (3 - 2 * p), push = this.kt > 1.3 ? Math.min(1, (this.kt - 1.3) / .25) : 0, turn = this.kt > 1.55 ? Math.min(1, (this.kt - 1.55) / .45) : 0;
+        const kx = this.kfrom[0] + (lock[0] + 26 - this.kfrom[0]) * e - 26 * push, ky = this.kfrom[1] + (lock[1] - this.kfrom[1]) * e - Math.sin(p * Math.PI) * 70;
+        t5Key(g, kx, ky, 3 - 2 * e, Math.PI + (1 - e) * 5.5 + turn * 1.2, 1 - Math.max(0, push - .6));
+      }
       if (this.st === 'open' && this.by > -offY - 40) this.drawBird(g, this.bx, this.by, Math.sin(this.t * 20) > 0 ? 1 : -1);
       if (this.st === 'shut' && groom.x > x - 600) sparkle(g, x + 34, CY - 4, 6, .3 + .3 * Math.sin(S.t * 3));
     },
@@ -479,6 +489,14 @@ function t5Cage(x) {
   return e;
 }
 
+// the key made from the two papers: gold, a lozenge head and a shank with two teeth; its head at the left, the shank to the right when rot is 0
+function t5Key(g, x, y, sc, rot, alpha = 1) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(sc, sc); g.globalAlpha = alpha; g.fillStyle = '#f2c640'; g.strokeStyle = INK; g.lineWidth = 2; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(-34, 0); g.lineTo(-22, -12); g.lineTo(-10, 0); g.lineTo(-22, 12); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#6a4a1a'; g.beginPath(); g.moveTo(-27, 0); g.lineTo(-22, -5); g.lineTo(-17, 0); g.lineTo(-22, 5); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#f2c640'; g.beginPath(); g.rect(-10, -3, 38, 6); g.fill(); g.stroke(); g.beginPath(); g.rect(14, 3, 5, 9); g.rect(22, 3, 5, 6); g.fill(); g.stroke();
+  g.restore(); g.globalAlpha = 1;
+}
 // the cat's bell drawn crisp at any size: a gold ball with its slit, on a red ribbon
 function t5Bell(g, x, y, s, rot = 0) {
   g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);

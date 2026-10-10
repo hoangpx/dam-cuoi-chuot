@@ -111,6 +111,13 @@ function gkStamp(poly) {
   gkScratch.width = w; gkScratch.height = h; gkSg.fillStyle = '#000'; gkSg.fill(gkPath([poly], -x0, -y0));
   const d = gkSg.getImageData(0, 0, w, h).data, out = []; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (d[(j * w + i) * 4 + 3] > 127) out.push((y0 + j) * S + x0 + i); return out;
 }
+const gkLive = document.createElement('canvas'); gkLive.width = gkLive.height = 240; const gkLg = gkLive.getContext('2d', { willReadFrequently: true });
+function gkLiveIou(pathB, mA, mK, ox, oy, rot) {
+  const C = GK.S / 2; gkLg.setTransform(1, 0, 0, 1, 0, 0); gkLg.clearRect(0, 0, 240, 240); gkLg.translate(ox + C, oy + C); gkLg.rotate(rot); gkLg.translate(-C, -C); gkLg.fillStyle = '#000'; gkLg.fill(pathB);
+  const d = gkLg.getImageData(0, 0, 240, 240).data; let it = 0, li = 0, kn = 0;
+  for (let i = 0; i < 57600; i++) { const k = mK[i]; kn += k; if (mA[i] && d[i * 4 + 3] > 127) { li++; if (k) it++; } }
+  return it / (li + kn - it || 1);
+}
 function gkMake() {
   const S = GK.S, c = S / 2, ri = (a, b) => a + R() * (b - a), M = S * S, LO = 48, ks = LO / S, D = LO * 3;
   const touches = (m1, m2) => { for (let i = 0; i < M; i++) if (m1[i] && m2[i]) return true; return false; };
@@ -200,8 +207,9 @@ function gkMake() {
     }
     if (!sure) continue;
     const edge = () => gkTorn([[0, 0], [S, 0], [S, S], [0, S]], 3.6);        // each sheet's own torn edge
-    const holesB = gkContours(mBk, S);
-    return { g, phi, holesA: gkContours(mAk, S), holesB, pathB: gkPath(holesB), edgeA: edge(), edgeB: edge(), mA: mAk, mB: mBk, mK: rKeyA };
+    const holesB = gkContours(mBk, S), pathB = gkPath(holesB);
+    if (gkLiveIou(pathB, mAk, rKeyA, g[0], g[1], phi) < .8) continue;                // the check the player meets must pass at the right pose
+    return { g, phi, holesA: gkContours(mAk, S), holesB, pathB, edgeA: edge(), edgeB: edge(), mA: mAk, mB: mBk, mK: rKeyA };
   }
   return null;
 }
@@ -214,7 +222,7 @@ function gkMake() {
   let st = null;                                                             // { ox, oy, rot, tx, ty, trot, drag, ptrs, t, done, cb, k, keys, hold, lastIou }
   const INKC = '#1d1915', PAPA = '#e9dcb4', PAPB = '#dba28e', GOLD = '#f2c640';
   const sheets = {};                                                         // the two sheets drawn once, holes cut out
-  const live = document.createElement('canvas'); live.width = live.height = 120; const lg = live.getContext('2d', { willReadFrequently: true });
+  const live = document.createElement('canvas'); live.width = live.height = 240; const lg = live.getContext('2d', { willReadFrequently: true });
   function size() {
     const k = Math.min(innerWidth * .94 / GK.W, innerHeight * .9 / GK.H), d = Math.min(2, devicePixelRatio || 1);
     cv2.style.width = GK.W * k + 'px'; cv2.style.height = GK.H * k + 'px'; cv2.width = Math.round(GK.W * k * d); cv2.height = Math.round(GK.H * k * d); if (st) st.k = k * d;
@@ -265,13 +273,7 @@ function gkMake() {
   }
   const toLogical = (e) => { const r = cv2.getBoundingClientRect(); return toGroup((e.clientX - r.left) / r.width * GK.W, (e.clientY - r.top) / r.height * GK.H); };
   // how like the key is what is lit, in this pose (the front sheet's holes turned and moved are painted at half size and set against the back sheet's)
-  function iouAt(ox, oy, rot) {
-    const P = GK.puz; if (!P.m120) { P.m120 = [gkDown(P.mA, S, 120), gkDown(P.mK, S, 120)]; }
-    lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, 120, 120); lg.setTransform(.5, 0, 0, .5, 0, 0); lg.translate(ox + C, oy + C); lg.rotate(rot); lg.translate(-C, -C); lg.fillStyle = '#000'; lg.fill(P.pathB);
-    const d = lg.getImageData(0, 0, 120, 120).data, mA = P.m120[0], mK = P.m120[1]; let it = 0, li = 0, kn = 0;
-    for (let i = 0; i < 14400; i++) { const k = mK[i]; kn += k; if (mA[i] && d[i * 4 + 3] > 127) { li++; if (k) it++; } }
-    return it / (li + kn - it || 1);
-  }
+  const iouAt = (ox, oy, rot) => gkLiveIou(GK.puz.pathB, GK.puz.mA, GK.puz.mK, ox, oy, rot);
   function win() {
     const P = GK.puz; st.done = true; st.t = 0; st.drag = null; st.tx = P.g[0]; st.ty = P.g[1]; st.trot = st.rot + gkWrap(P.phi - st.rot);          // it settles exactly into place
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => AU.pluck(91), 320); setTimeout(() => AU.stamp(), 520); setTimeout(() => close(true), 2400);
