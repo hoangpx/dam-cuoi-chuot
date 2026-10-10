@@ -358,3 +358,4 @@ Dark stretch, shorter and denser (owner): T6_OFF is now 6000 (was 27000, about 4
 T7_WARN is now 3 s (owner).
 Pounce rule (owner, final): bell rings; 3 s later (T7_WARN = T7_REACT = 3) the cat's shadow comes: still moving at that moment (or while it passes) = caught, standing still = safe; the party walks on as soon as the shadow has passed.
 T7_WARN = T7_REACT = 2 s now (owner).
+T7_WARN = T7_REACT = 1 s now (owner).
