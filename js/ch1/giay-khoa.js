@@ -117,12 +117,19 @@ function gkMake() {
   // many small torn holes spread evenly: each new one goes where the sheet is least torn already (the best of a few tries), never where `forbid` is set
   const fillEven = (mask, forbid, target) => {
     let cov = 0; for (let i = 0; i < M; i++) cov += mask[i];
-    for (let guard = 0; cov < target * M && guard < 7000; guard++) {
-      let bx = 0, by = 0, bd = 1e9;
-      for (let c2 = 0; c2 < 5; c2++) { const cx = ri(6, S - 6), cy = ri(6, S - 6); let d = 0; for (let dy = -9; dy <= 9; dy += 3) for (let dx = -9; dx <= 9; dx += 3) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < S && y < S) d += mask[(y | 0) * S + (x | 0)]; } if (d < bd) { bd = d; bx = cx; by = cy; } }
-      const r = R() < .06 ? ri(8, 12) : ri(2, 6.5), poly = R() < .04 ? gkRip() : gkBlob(bx, by, r), idx = gkStamp(poly);
-      if (idx.some(i => forbid[i])) continue;
-      for (const i of idx) if (!mask[i]) { mask[i] = 1; cov++; }
+    const dens = (cx, cy) => { let d = 0; for (let dy = -10; dy <= 10; dy += 2) for (let dx = -10; dx <= 10; dx += 2) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < S && y < S) d += mask[(y | 0) * S + (x | 0)]; } return d; };
+    const put = (cx, cy) => {                                                // one small tear at (cx, cy), unless it would touch what is forbidden
+      const r = R() < .05 ? ri(8, 11) : ri(2, 6), poly = R() < .03 ? gkRip() : gkBlob(cx, cy, r), idx = gkStamp(poly);
+      if (idx.some(i => forbid[i])) return false; for (const i of idx) if (!mask[i]) { mask[i] = 1; cov++; } return true;
+    };
+    for (let guard = 0; cov < target * M && guard < 9000; guard++) {
+      let bx = -1, by = 0, bd = 1e9;                                          // the least-torn of several places that are free to tear
+      for (let c2 = 0; c2 < 14; c2++) { const cx = Math.round(ri(5, S - 5)), cy = Math.round(ri(5, S - 5)); if (forbid[cy * S + cx]) continue; const d = dens(cx, cy); if (d < bd) { bd = d; bx = cx; by = cy; } }
+      if (bx >= 0) put(bx, by);
+    }
+    // and no stretch of paper left whole: every 16-pixel square gets at least a few holes if there is any room
+    for (let by0 = 0; by0 < S; by0 += 16) for (let bx0 = 0; bx0 < S; bx0 += 16) {
+      for (let k = 0, got = 0; k < 40 && got < 3; k++) { let n0 = 0; for (let y = by0; y < Math.min(S, by0 + 16); y += 2) for (let x = bx0; x < Math.min(S, bx0 + 16); x += 2) n0 += mask[y * S + x]; if (n0 >= 14) break; if (put(Math.round(bx0 + 1 + R() * 14), Math.round(by0 + 1 + R() * 14))) got++; }
     }
   };
   for (let tries = 0; tries < 250; tries++) {
