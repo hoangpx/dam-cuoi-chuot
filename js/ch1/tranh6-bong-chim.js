@@ -131,53 +131,56 @@ const T6R = {
 };
 // the two birds, flying (woodblock parts, three wing poses each, facing right): le le = a small duck, brown, a long neck out in front, a round dark bill, chestnut shoulders; bìm bịp = black, long tail, rufous wings, a heavy bill, red eye
 let T6R_ART = null;
+// A wing, as a bird has it (owner: the first ones looked like a dragonfly's): an arm from the shoulder to the wrist, covert feathers along it, and a fan of long separate primary feathers from the wrist.
+// p is the stroke: 0 = raised, .5 = level, 1 = down. The wrist and the way the feathers point follow it.
+function t6rWing(a, p, pl, tipPl, far) {
+  const lerp = (x, y, t) => x + (y - x) * t, k = p < .5 ? p * 2 : (p - .5) * 2;
+  const W = p < .5 ? [lerp(-4, -28, k), lerp(-36, -15, k)] : [lerp(-28, -10, k), lerp(-15, 24, k)];                  // the wrist
+  const ang = (p < .5 ? lerp(-108, -172, k) : lerp(-172, -262, k)) * Math.PI / 180;                              // the way the primaries point
+  const S0 = far ? [8, -8] : [4, -5], ox = far ? 5 : 0, oy = far ? -4 : 0, w = [W[0] + ox, W[1] + oy], av = [w[0] - S0[0], w[1] - S0[1]], al = Math.hypot(av[0], av[1]) || 1;
+  let n = [-av[1] / al, av[0] / al]; if (n[0] * 1 + n[1] * -.4 < 0) n = [-n[0], -n[1]];                              // the normal on the leading (front) side
+  const at = (t, d) => [S0[0] + av[0] * t + n[0] * d, S0[1] + av[1] * t + n[1] * d], u = [av[0] / al, av[1] / al];
+  a.fk(pl, smooth([at(0, -4), at(0, 6), at(.5, 10), at(1, 9), [w[0] - n[0] * 7 + u[0] * 8, w[1] - n[1] * 7 + u[1] * 8], at(.55, -10), at(.1, -11), [S0[0] - u[0] * 6 - n[0] * 5, S0[1] - u[1] * 6 - n[1] * 5]]), 2);                // the coverts
+  const lens = [27, 33, 37, 38, 34, 28];
+  lens.forEach((L, i) => {                                                                                    // the primaries, fanned
+    const th = ang + (i - 2.5) * .15, cx = w[0] + Math.cos(th) * L * .5, cy = w[1] + Math.sin(th) * L * .5;
+    a.fk(i < 3 ? pl : tipPl, ell(cx, cy, L * .5 + 1, 5.2, th), 1.5);
+  });
+}
 function t6rArt() {
   if (T6R_ART) return T6R_ART;
-  const WING = {                                                                // near wing outline and its tip feathers, per pose
-    up: { w: [[4, -5], [-2, -26], [-9, -46], [-21, -52], [-27, -38], [-24, -18], [-16, -3]], t: [[-9, -46], [-21, -52], [-27, -38], [-24, -30], [-14, -34]] },
-    mid: { w: [[4, -5], [-12, -16], [-36, -20], [-60, -12], [-54, -2], [-32, 3], [-12, 3]], t: [[-36, -20], [-60, -12], [-54, -2], [-44, -6], [-40, -14]] },
-    down: { w: [[4, -3], [-2, 14], [-8, 33], [-20, 42], [-27, 30], [-23, 12], [-14, 0]], t: [[-8, 33], [-20, 42], [-27, 30], [-20, 26], [-12, 28]] },
-  };
-  const far = { up: [[2, -6], [8, -28], [4, -48], [-6, -50], [-12, -34], [-8, -14]], mid: [[2, -6], [-6, -22], [-20, -34], [-38, -34], [-40, -22], [-22, -8]], down: [[2, -3], [6, 14], [2, 34], [-8, 38], [-14, 22], [-8, 4]] };
-  const sw = p => p.map(([x, y]) => [x * 1.3, y * 1.3]);                           // the wings are broad: scaled out from the shoulder
-  const mk = (kind, pose) => part([-100, -78, 72, 62], a => {
-    const W = { w: sw(WING[pose].w), t: sw(WING[pose].t) }, F = sw(far[pose]);
-    if (kind === 'lele') {
-      a.fk('brown', smooth(F), 1.8);                                      // the far wing, behind
-      a.fk('straw', smooth([[-20, 0], [-36, -3], [-35, 6], [-19, 8]]), 1.6);           // the short tail
-      a.fk('tan', ell(0, 1, 25, 12.5, -.08), 2.2);                                // the body
-      a.fill('cream', ell(4, 7, 17, 6, -.05));                                    // the buff belly
-      a.fk('tan', smooth([[14, -4], [28, -12], [38, -17], [43, -13], [36, -6], [22, 3]]), 1.8);       // the neck, stretched out in front
-      a.fk('ash', circ(42, -17, 8), 2);                                           // the head
-      a.fill('brown', smooth([[35, -22], [43, -26], [51, -20], [43, -19]]));      // the dark crown
-      a.fk('dark', smooth([[49, -18], [63, -16], [62, -9], [49, -12]]), 1.8);     // the round, dark bill
-      a.fill('white', circ(44, -19, 3.4)); a.ink(circ(44.6, -19, 1.6));           // the eye
+  const mk = (kind, p) => part([-120, -96, 78, 70], a => {
+    const lele = kind === 'lele', cov = lele ? 'straw' : 'tan', tip = lele ? 'brown' : 'straw', farC = lele ? 'brown' : 'dark';
+    t6rWing(a, p, farC, farC, true);                                                                          // the far wing, behind the body
+    if (lele) {
+      a.fk('straw', smooth([[-20, 0], [-36, -3], [-35, 6], [-19, 8]]), 1.6);                                  // the short tail
+      a.fk('tan', ell(0, 1, 25, 12.5, -.08), 2.2);                                                           // the body
+      a.fill('cream', ell(4, 7, 17, 6, -.05));                                                               // the buff belly
+      a.fk('tan', smooth([[14, -4], [28, -12], [38, -17], [43, -13], [36, -6], [22, 3]]), 1.8);              // the neck, stretched out in front
+      a.fk('ash', circ(42, -17, 8), 2);                                                                      // the head
+      a.fill('brown', smooth([[35, -22], [43, -26], [51, -20], [43, -19]]));                                 // the dark crown
+      a.fk('dark', smooth([[49, -18], [63, -16], [62, -9], [49, -12]]), 1.8);                                // the round, dark bill
+      a.fill('white', circ(44, -19, 3.4)); a.ink(circ(44.6, -19, 1.6));                                      // the eye
       a.key(lines([[-17, 8, -40, 13], [-13, 9, -37, 17]]), 2); a.fk('dark', ell(-41, 14, 5, 2.4, .3), 1.2); a.fk('dark', ell(-38, 18, 5, 2.4, .3), 1.2);   // the legs and feet trail behind
-      a.fk('straw', smooth(W.w), 2.2);                                            // the near wing: chestnut shoulder…
-      a.fk('brown', smooth(W.t), 1.8);                                            // …and dark flight feathers
-      a.key(lines([[W.w[1][0], W.w[1][1], (W.w[3][0] + W.w[4][0]) / 2, (W.w[3][1] + W.w[4][1]) / 2]]), 1.2);
     } else {
-      a.fk('dark', smooth(F), 1.8);
-      a.fk('dark', smooth([[-18, 0], [-50, 4], [-86, 13], [-90, 19], [-80, 22], [-48, 15], [-18, 9]]), 2);              // the long, broad tail
+      a.fk('dark', smooth([[-18, 0], [-50, 4], [-86, 13], [-90, 19], [-80, 22], [-48, 15], [-18, 9]]), 2);   // the long, broad tail
       a.key(lines([[-30, 6, -78, 17], [-24, 9, -70, 20]]), 1.2);
-      a.fk('dark', ell(0, 1, 24, 12.5, -.1), 2.2);                                // the glossy black body
-      a.fk('dark', circ(27, -9, 9.5), 2.2);                                       // the head
-      a.fk('dark', smooth([[34, -12], [50, -9], [51, -3], [35, -3]]), 1.8);       // the heavy bill
+      a.fk('dark', ell(0, 1, 24, 12.5, -.1), 2.2);                                                           // the glossy black body
+      a.fk('dark', circ(27, -9, 9.5), 2.2);                                                                  // the head
+      a.fk('dark', smooth([[34, -12], [50, -9], [51, -3], [35, -3]]), 1.8);                                  // the heavy bill
       a.fill('grey', smooth([[37, -9], [48, -8], [38, -6]]));
-      a.fill('red', circ(28, -11, 3.6)); a.ink(circ(28.6, -11, 1.5));             // the red eye
-      a.key(lines([[-12, 9, -34, 15], [-8, 10, -30, 19]]), 2);                    // the legs
-      a.fk('tan', smooth(W.w), 2.2);                                              // the near wing: rufous…
-      a.fk('brown', smooth(W.t), 1.8);                                            // …with dark tips
-      a.key(lines([[W.w[1][0], W.w[1][1], (W.w[3][0] + W.w[4][0]) / 2, (W.w[3][1] + W.w[4][1]) / 2]]), 1.2);
+      a.fill('red', circ(28, -11, 3.6)); a.ink(circ(28.6, -11, 1.5));                                        // the red eye
+      a.key(lines([[-12, 9, -34, 15], [-8, 10, -30, 19]]), 2);                                               // the legs
     }
+    t6rWing(a, p, cov, tip, false);                                                                          // the near wing, over the body
   });
-  const o = {}; for (const kind of ['lele', 'bim']) o[kind] = { up: mk(kind, 'up'), mid: mk(kind, 'mid'), down: mk(kind, 'down') };
+  const o = {}; for (const kind of ['lele', 'bim']) o[kind] = [0, .25, .5, .75, 1].map(p => mk(kind, p));
   return (T6R_ART = o);
 }
-const T6R_FLAP = ['mid', 'up', 'mid', 'down'];
-function t6rBird(g, i, x, y, face, ph, s) {                                      // a bird in flight at x, y (i: 0 le le, 1 bìm bịp), face = ±1, ph = flap phase
-  const A = t6rArt()[i ? 'bim' : 'lele'], pose = T6R_FLAP[Math.floor(ph) & 3];
-  g.save(); g.translate(x, y); g.scale(face * s, s); dp(g, A[pose], 0, 0); g.restore();
+const T6R_FLAP = [0, 1, 2, 3, 4, 3, 2, 1];                                                                  // the wing stroke, frame by frame: up, down and up again
+function t6rBird(g, i, x, y, face, ph, s) {                                                                  // a bird in flight at x, y (i: 0 le le, 1 bìm bịp), face = ±1, ph = flap phase
+  const A = t6rArt()[i ? 'bim' : 'lele'], f = Math.floor(ph) & 7;
+  g.save(); g.translate(x, y - Math.cos(f * Math.PI / 4) * 3); g.scale(face * s, s); dp(g, A[T6R_FLAP[f]], 0, 0); g.restore();                          // the body bobs a little with the stroke
 }
 
 /* ===== In the tranh itself (owner: no separate screen). The tangle hangs in the scene on a cord; behind it, a little to the left and lower, a white cloth is stretched between two bamboo poles,
@@ -350,13 +353,17 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
   };
 
   window.t6Friends = function () {
-    return { layer: 'hud',
+    return { layer: 'hud', tp: null,
       update(dt) {
         if (T6R.say >= 0) T6R.say += dt;
         LEVELS[5].width = t6Open() ? 3700 : 400000;
-        if (!t6Open() && groom.x > 3900 && groom.vx < -30) { const d = groom.x - 3700; groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); }       // far out on the endless road, the moment the party turns back it is back by the pond: the tasks are there at once (owner), however far it had walked
+        if (this.tp) {                                                          // far out on the endless road, the moment the party turns back it is back by the pond (owner): a short fade to dark, the jump in the dark, then the light again
+          this.tp.t += dt;
+          if (!this.tp.done && this.tp.t >= .25) { this.tp.done = true; const d = Math.max(0, groom.x - 3700); groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); T6R.birds.forEach(b => { b.cx -= d; b.x -= d; b.x0 -= d; }); }
+          if (this.tp.t > .8) this.tp = null;
+        } else if (!t6Open() && groom.x > 3900 && groom.vx < -30) this.tp = { t: 0, done: false };       // far out on the endless road, the moment the party turns back it is back by the pond: the tasks are there at once (owner), however far it had walked
         T6R.birds.forEach((b, i) => {
-          if (b.st === 'none') return; b.t += dt; b.ph += dt * (7.5 + i * .8);
+          if (b.st === 'none') return; b.t += dt; b.ph += dt * (11 + i * 1.3);
           const sx = T6R.stations[i] ? T6R.stations[i].cx : groom.x, tx = T6R.done ? groom.x + (i ? 80 : -40) + 60 : sx, ty = GROUND - (T6R.done ? 275 : 360) - i * 26;     // over its station, then over the party
           if (b.cx < 0) { b.cx = tx; b.cy = ty; }
           b.cx += (tx - b.cx) * Math.min(1, dt * (T6R.done ? 1.6 : 2)); b.cy += (ty - b.cy) * Math.min(1, dt * 2);
@@ -365,6 +372,10 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
           if (b.st === 'rise') { const q = Math.min(1, b.t / 2.4), e = q * q * (3 - 2 * q); px = b.x0 + (px - b.x0) * e; py = b.y0 + (py - b.y0) * e; if (q >= 1) b.st = 'orbit'; }
           b.face = -Math.sin(b.a) >= 0 ? 1 : -1; b.x = px; b.y = py;
         });
+      },
+      drawHud(g, vw) {                                                          // the fade to dark of the turn back
+        if (!this.tp) return; const t = this.tp.t, a = t < .25 ? t / .25 : Math.max(0, 1 - (t - .25) / .5);
+        g.fillStyle = `rgba(10,14,30,${a})`; g.fillRect(0, 0, vw, viewH);
       },
       drawFg(g) {
         T6R.birds.forEach((b, i) => { if (b.st === 'none') return; t6rBird(g, i, b.x, b.y, b.face, b.ph, 1.05); });
