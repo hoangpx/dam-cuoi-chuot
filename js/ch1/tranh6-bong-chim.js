@@ -109,8 +109,7 @@ function bcBuild() {
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'), img = x.createImageData(w, h); return { c, x, img, d: img.data, w, h }; };
   const ZR = .85, ZN0 = Math.round(320 * ZR), GW = BC_W, GHh = BC_H - BC_GTOP;
   const ZH = Math.round(320 * 1.8), zl = [mk(ZH, ZH), mk(ZN0, ZN0)], gl = [mk(GW * 2, GHh * 2), mk(Math.round(GW * .75), Math.round(GHh * .75))];       // [sharp, rough]: rough while the tangle is being turned, sharp once it rests
-  let zd = zl[0].d;
-  const LT = [-L[0], -L[1], -L[2]];                                              // towards the moon
+    const LT = [-L[0], -L[1], -L[2]];                                              // towards the moon
   const NN = BC_GN, EE = BC_GE, HH = BC_GH;
   function samp(f, x, y, z) {                                                    // the distance at a point (trilinear); outside the grid: the distance to the box
     const fx = (x + EE) / HH, fy = (y + EE) / HH, fz = (z + EE) / HH;
@@ -121,30 +120,44 @@ function bcBuild() {
   }
   function shade(nx, ny, nz, o) {                                                // polished gold-silver metal: a bright sky over a dark ground in the mirror, the moon's glint, a cool edge light
     const rz = 2 * nz * nz - 1, ry = 2 * nz * ny, rx = 2 * nz * nx, e = Math.max(0, Math.min(1, ry * .5 + .5)), dif = Math.max(0, nx * LT[0] + ny * LT[1] + nz * LT[2]);
-    const hz = Math.max(0, Math.min(1, (e - .4) / .2)), hs = hz * hz * (3 - 2 * hz), env = .13 + .72 * hs * (.55 + .45 * e) + .18 * dif, sp = Math.pow(Math.max(0, rx * LT[0] + ry * LT[1] + rz * LT[2]), 18), fr = Math.pow(1 - nz, 2.5);
-    zd[o] = Math.min(255, 238 * env + 255 * sp + 90 * fr); zd[o + 1] = Math.min(255, 214 * env + 250 * sp + 130 * fr); zd[o + 2] = Math.min(255, 170 * env + 235 * sp + 210 * fr); zd[o + 3] = 255;
+    const hz = Math.max(0, Math.min(1, (e - .36) / .28)), hs = hz * hz * (3 - 2 * hz), env = .14 + .7 * hs * (.55 + .45 * e) + .18 * dif, sp = Math.pow(Math.max(0, rx * LT[0] + ry * LT[1] + rz * LT[2]), 18), fr = Math.pow(1 - nz, 2.5);
+    o[0] = Math.min(255, 238 * env + 255 * sp + 90 * fr); o[1] = Math.min(255, 214 * env + 250 * sp + 130 * fr); o[2] = Math.min(255, 170 * env + 235 * sp + 210 * fr);
+  }
+  const TR = [0, 0, 0, 0, 0];                                                   // trace(): r, g, b, alpha (0..1), depth
+  function trace(f, Wt, W, BS, X, Y, dl) {                                       // one ray along the view through the grid; fills TR (colour is not premultiplied)
+    const lx = Wt[0] * X + Wt[1] * Y, ly = Wt[3] * X + Wt[4] * Y, lz = Wt[6] * X + Wt[7] * Y, T0 = 2.3, px = 1 / BS; let s = 0, md = 9, hit = false;
+    for (let n = 0; n < 80; n++) {
+      const t = T0 - s, d = samp(f, lx + dl[0] * t, ly + dl[1] * t, lz + dl[2] * t);
+      if (d < md) md = d; if (d < .003) { hit = true; break; } s += Math.max(.006, d * .85); if (s > 2 * T0) break;
+    }
+    if (hit) {
+      const t = T0 - s, qx = lx + dl[0] * t, qy = ly + dl[1] * t, qz = lz + dl[2] * t, e = .03;
+      const gx = samp(f, qx + e, qy, qz) - samp(f, qx - e, qy, qz), gy = samp(f, qx, qy + e, qz) - samp(f, qx, qy - e, qz), gz = samp(f, qx, qy, qz + e) - samp(f, qx, qy, qz - e), gl = Math.hypot(gx, gy, gz) || 1;
+      const nx = (W[0] * gx + W[1] * gy + W[2] * gz) / gl, ny = (W[3] * gx + W[4] * gy + W[5] * gz) / gl, nz = Math.max(0, (W[6] * gx + W[7] * gy + W[8] * gz) / gl);
+      shade(nx, ny, nz, TR); TR[3] = 1; TR[4] = s; return true;
+    }
+    if (md < px * 1.2) { const a = 1 - md / (px * 1.2); TR[0] = 120; TR[1] = 100; TR[2] = 78; TR[3] = a * a; TR[4] = 99; return false; }     // a ray that only grazes it: a soft edge
+    TR[3] = 0; TR[4] = 99; return false;
   }
   function lump(h, W, q) {
     const Ly = zl[q - 1], ZN = Ly.w;
     if (st.lv !== st.ver || st.lq !== q) {
-    st.lv = st.ver; st.lq = q; zd = Ly.d; zd.fill(0);
-    const f = BC.tex.sdf, Wt = bcT(W), BS = BC_S * ZN / 320, c = ZN / 2, px = 1 / BS, dl = [Wt[2], Wt[5], Wt[8]];
-    for (let y = 0; y < ZN; y++) for (let x = 0; x < ZN; x++) {
-      const X = (x + .5 - c) / BS, Y = -(y + .5 - c) / BS; if (X * X + Y * Y > 2.6) continue;
-      const lx = Wt[0] * X + Wt[1] * Y, ly = Wt[3] * X + Wt[4] * Y, lz = Wt[6] * X + Wt[7] * Y;       // the ray's point at depth 0, in the tangle's space; it runs along +dl as the depth grows
-      let s = 0, md = 9, hit = false; const T0 = 2.3;
-      for (let n = 0; n < 70; n++) {
-        const t = T0 - s, d = samp(f, lx + dl[0] * t, ly + dl[1] * t, lz + dl[2] * t);
-        if (d < md) md = d; if (d < .004) { hit = true; break; } s += Math.max(.008, d * .85); if (s > 2 * T0) break;
+      st.lv = st.ver; st.lq = q; const d = Ly.d; d.fill(0);
+      const f = BC.tex.sdf, Wt = bcT(W), BS = BC_S * ZN / 320, c = ZN / 2, dl = [Wt[2], Wt[5], Wt[8]], dep = new Float32Array(ZN * ZN), ok = new Uint8Array(ZN * ZN);
+      for (let y = 0; y < ZN; y++) for (let x = 0; x < ZN; x++) {
+        const X = (x + .5 - c) / BS, Y = -(y + .5 - c) / BS, k = y * ZN + x; dep[k] = 99; if (X * X + Y * Y > 2.6) continue;
+        trace(f, Wt, W, BS, X, Y, dl); const o = k * 4; d[o] = TR[0]; d[o + 1] = TR[1]; d[o + 2] = TR[2]; d[o + 3] = Math.round(255 * TR[3]); dep[k] = TR[4]; ok[k] = TR[3] >= 1 ? 1 : 0;
       }
-      const o = (y * ZN + x) * 4;
-      if (hit) {
-        const t = T0 - s, qx = lx + dl[0] * t, qy = ly + dl[1] * t, qz = lz + dl[2] * t, e = .03;
-        const gx = samp(f, qx + e, qy, qz) - samp(f, qx - e, qy, qz), gy = samp(f, qx, qy + e, qz) - samp(f, qx, qy - e, qz), gz = samp(f, qx, qy, qz + e) - samp(f, qx, qy, qz - e), gl = Math.hypot(gx, gy, gz) || 1;
-        const nx = (W[0] * gx + W[1] * gy + W[2] * gz) / gl, ny = (W[3] * gx + W[4] * gy + W[5] * gz) / gl, nz = (W[6] * gx + W[7] * gy + W[8] * gz) / gl; shade(nx, ny, Math.max(0, nz), o);
-      } else if (md < px * 1.1) { const a = 1 - md / (px * 1.1); zd[o] = 120; zd[o + 1] = 100; zd[o + 2] = 78; zd[o + 3] = Math.round(255 * a * a); }     // a soft edge
-    }
-    Ly.x.putImageData(Ly.img, 0, 0);
+      // the pixels on an edge (a neighbour that is hit and this not, or a jump in depth between them) are traced again at 4 points inside the pixel and averaged: smooth edges, not steps
+      const edge = k => { const e = dep[k]; for (const m of [k - 1, k + 1, k - ZN, k + ZN]) { if (m < 0 || m >= ZN * ZN) continue; if (ok[m] !== ok[k] || Math.abs(dep[m] - e) > .06 && ok[m] && ok[k]) return true; } return false; };
+      for (let y = 1; y < ZN - 1; y++) for (let x = 1; x < ZN - 1; x++) {
+        const k = y * ZN + x; if (!edge(k)) continue; let r = 0, g = 0, b = 0, a = 0;
+        for (let sy = 0; sy < 3; sy++) for (let sx = 0; sx < 3; sx++) {
+          const X = (x + (sx + .5) / 3 - c) / BS, Y = -(y + (sy + .5) / 3 - c) / BS; trace(f, Wt, W, BS, X, Y, dl); const w = TR[3]; r += TR[0] * w; g += TR[1] * w; b += TR[2] * w; a += w;
+        }
+        const o = k * 4; if (a > 0) { d[o] = r / a; d[o + 1] = g / a; d[o + 2] = b / a; } d[o + 3] = Math.round(255 * a / 9);
+      }
+      Ly.x.putImageData(Ly.img, 0, 0);
     }
     h.imageSmoothingEnabled = true; h.imageSmoothingQuality = 'high'; h.drawImage(Ly.c, BC_CX - 160, BC_CY - 160, 320, 320);
   }
