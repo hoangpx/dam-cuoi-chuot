@@ -117,6 +117,11 @@ function t7CatDraw(g, vw, q, dir) {
 // with it the bell jingles T7_WARN s before, the party must stand still from the first jingle (after T7_REACT s to react) until the shadow has passed and 1–3 s more, then walks on
 const T7_ZONE = 2900, T7_Z0 = 2600, T7_WARN = 2.8, T7_REACT = 1, T7_CAT = .95;
 const t7Zones = () => { const a = []; for (let x = T7_Z0; x < T6_OFF - 1800; x += T7_ZONE) a.push(x); return a; };
+// the recorded bell rings without a pause (owner): a new jingle every .45 s over the last one, louder and a little higher as the cat comes
+function t7Ring(e, dt) {
+  if ((e.jt -= dt) > 0) return; const n = e.n = (e.n || 0) + 1; e.jt = .45; const v = Math.min(1.2, .45 + n * .1), r = 1 + ((n % 4) - 1.5) * .025 + Math.min(.12, n * .01);
+  if (AU.hasSample('bell')) AU.play('bell', v, r); else AU.pluck(96 + (n % 4) * 3);
+}
 function t6Dark() {
   T7.cat = null; T7.catT = 6; T7.a = 0; T7.ev = null; T7.zi = 0; T7.black = 0; T7.zs = t7Zones();
   const lamp = () => { const f = followers[0]; return [f.x + f.face * 44, GROUND - 78]; };                // the lamp in the hand of the third mouse
@@ -138,12 +143,13 @@ function t6Dark() {
         } else {
           const e = T7.ev; e.t += dt;
           if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
-            if ((e.jt -= dt) < 0) { const n = e.n = (e.n || 0) + 1; e.jt = n === 1 ? 1 : .9; if (AU.hasSample('bell')) AU.play('bell', [.6, .9, 1.2][Math.min(2, n - 1)], 1 + .07 * (n - 1)); else AU.pluck(96 + n * 3); }       // the recorded bell, louder and a little higher each time
+            t7Ring(e, dt);
             if (e.t > T7_REACT && (groom.moving || groom.vx !== 0)) this.caught();            // the bell was heard: stand still
             else if (e.t > T7_WARN) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
           } else if (e.ph === 'sneak') {                                                      // no bell: no warning at all
             if (e.t > 1.1) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
           } else {
+            if (e.ph === 'cat' && SAVE.catBell) t7Ring(e, dt);                                  // the bell keeps jingling while the shadow passes
             if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > T7_CAT) T7.cat = null; }
             const moved = groom.moving || groom.vx !== 0;
             if (!SAVE.catBell ? e.t > T7_CAT * .55 : (moved && e.t > .05)) this.caught();       // no bell: always caught; bell: caught only if it moves
