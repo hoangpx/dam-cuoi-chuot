@@ -265,6 +265,13 @@ const T4_SUBJ = [
     if (k === 'den') { g.lineWidth = 2.4; g.beginPath(); g.ellipse(0, 12, 19, 26, 0, 0, 6.283); g.stroke(); g.beginPath(); g.ellipse(0, -18, 12, 10, 0, 0, 6.283); g.stroke(); g.beginPath(); g.moveTo(-22, -30); g.lineTo(0, -50); g.lineTo(22, -30); g.closePath(); g.stroke();
       for (const x of [-5, 5]) { g.beginPath(); g.arc(x, -19, 2, 0, 6.283); g.fill(); } g.beginPath(); g.moveTo(16, 30); g.quadraticCurveTo(40, 34, 36, 50); g.stroke(); }
   },
+  (g, k) => {                                                          // trăng rằm trên bụi tre
+    if (k === 'vang') { g.beginPath(); g.arc(-8, -16, 24, 0, 6.283); g.fill(); }
+    if (k === 'xanh') { g.lineWidth = 5; for (const x of [18, 32, 44]) { g.beginPath(); g.moveTo(x, 56); g.lineTo(x - 2, -8); g.stroke(); for (const y of [30, 8]) { g.beginPath(); g.moveTo(x - 1, y); g.quadraticCurveTo(x - 16, y - 10, x - 22, y - 4); g.stroke(); } } }
+    if (k === 'do') { g.fillRect(-40, 36, 22, 22); }
+    if (k === 'den') { g.lineWidth = 2.6; g.beginPath(); g.arc(-8, -16, 24, 0, 6.283); g.stroke(); g.beginPath(); g.moveTo(-46, 56); g.lineTo(46, 56); g.stroke(); }
+    if (k === 'trang') { for (const [x, y] of [[-36, -48], [10, -50], [-40, 8], [-14, 18], [30, -40]]) { g.beginPath(); g.arc(x, y, 2.6, 0, 6.283); g.fill(); } }
+  },
 ];
 // a sheet of giấy dó with the inks printed so far, in the order they were printed
 function t4Print(g, subj, layers, x, y, s, wet = 0) {
@@ -288,16 +295,16 @@ function t4Printer(W) {
   const BX = k => W + 70 + k * 55, BY = GROUND - 272, PX = W + 180, PY = GROUND - 376, KX = W + 380;   // the table up high, out of the party's way
   const shuffle = a => { const o = a.slice(); for (let i = o.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [o[i], o[j]] = [o[j], o[i]]; } return o; };
   // random every game (owner: so a solution cannot be shared): where each ink stands on the table, which new ink comes in which round, and the order asked each round
-  // (owner) the same five inks side by side as ever, but the sequence repeats them: 6 steps in the first picture, one more each time, 10 in the last
+  // (owner) the same five inks side by side as ever, but the sequence repeats them: 5 steps in the first picture, one more each time, 10 in the last (six pictures)
   // (e.g. xanh đỏ vàng trắng đen vàng); random every game, so there is nothing to share; the same ink never twice running
-  const newOrder = () => { const n = 6 + Math.min(4, e.round), o = []; while (o.length < n) { const k = T4_INKS[(R() * 5) | 0]; if (k !== o[o.length - 1]) o.push(k); } return o; };
+  const newOrder = () => { const n = 5 + Math.min(5, e.round), o = []; while (o.length < n) { const k = T4_INKS[(R() * 5) | 0]; if (k !== o[o.length - 1]) o.push(k); } return o; };
   const e = {
     layer: 'bg', ax: W, st: 'idle', t: 0, round: 0, order: [], step: 0, layers: [], press: {}, k: { bounce: 0 }, toldWrong: false,
     show() { if (!this.order.length) this.order = newOrder(); this.st = 'show'; this.t = -.4; },
     onClick(wx, wy) {
       if (this.st === 'done') return false;
       if (t4Asked(wx, wy, KX)) {
-        if (this.st === 'idle') { this.k.bounce = .8; AU.pluck(76); this.st = 'talk'; toastSay('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé! Mỗi bức lại dài thêm một bước.', () => { if (this.st === 'talk') this.show(); }); }   // (owner: he says it all, then the blocks are shown)
+        if (this.st === 'idle') { this.k.bounce = .8; AU.pluck(76); this.st = 'talk'; toastSay('Bác thợ in nhờ in sáu bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé! Mỗi bức lại dài thêm một bước.', () => { if (this.st === 'talk') this.show(); }); }   // (owner: he says it all, then the blocks are shown)
         else if (this.st === 'input') { AU.pluck(76); this.show(); }
         return true;
       }
@@ -320,7 +327,7 @@ function t4Printer(W) {
       if (this.st === 'smear' && this.t > 1.1) { this.st = 'input'; this.layers = []; this.step = 0; }
       if (this.st === 'printed' && this.t > 1) {
         this.round++; S.prints = this.round;
-        if (this.round >= 5) { this.st = 'done'; t4Thanks(this, KX, 'Đủ năm bức tranh đẹp! Bác thợ in cảm tạ, biếu một đồng.'); }
+        if (this.round >= 6) { this.st = 'done'; t4Thanks(this, KX, 'Đủ sáu bức tranh đẹp! Bác thợ in cảm tạ, biếu một đồng.'); }
         else { this.layers = []; this.step = 0; this.order = []; this.show(); }
       }
     },
@@ -329,13 +336,13 @@ function t4Printer(W) {
       // the board with the sheet, the finished ones pinned beside it
       g.fillStyle = '#6a4a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(PX - 72, PY - 82, 144, 164); g.strokeRect(PX - 72, PY - 82, 144, 164);
       
-      const subj = Math.min(4, this.round), done = this.st === 'done';
+      const subj = Math.min(5, this.round), done = this.st === 'done';
       if (!done) {
         t4Print(g, subj, this.layers, PX, PY, 1.1);
         if (this.st === 'smear') { const a = Math.min(1, this.t * 4); g.fillStyle = `rgba(42,34,29,${.55 * a})`; for (const [dx, dy, r] of [[-10, 0, 34], [14, -20, 22], [8, 26, 26], [-22, -30, 16]]) { g.beginPath(); g.ellipse(PX + dx, PY + dy, r, r * .7, dx, 0, 6.283); g.fill(); } }
       }
-      for (let k = 0; k < 5; k++) { const x = PX - 94, y = PY - 64 + k * 32; if (k < this.round + (this.st === 'printed' ? 1 : 0)) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
-      if (done) t4Print(g, 4, T4_INKS, PX, PY, 1.1);
+      for (let k = 0; k < 6; k++) { const x = PX - 94, y = PY - 70 + k * 28; if (k < this.round + (this.st === 'printed' ? 1 : 0)) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
+      if (done) t4Print(g, 5, T4_INKS, PX, PY, 1.1);
       // the table and the blocks; while showing, the one to print next is raised
       g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10); g.strokeRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10);
       for (const x of [BX(0) - 26, BX(4) + 26]) { g.beginPath(); g.moveTo(x, BY + 18); g.lineTo(x, GROUND); g.stroke(); }
@@ -409,11 +416,11 @@ function t4Drying(W) {
       }
       far.forEach((c, i) => { if (c.x > camX - 140 && c.x < camX + vw + 140) c4Cloud(g, c.x, top() + c.y, c.s, i % 3, sun ? '#ece6dc' : '#5e5866'); });
       clouds.forEach((c, i) => c4Cloud(g, c.x, top() + c.y, c.s, i % 3, sun ? '#ece6dc' : '#5e5866'));   // chương IV's clouds, dark with rain
-      // the drying lines and the five prints from the print house, wet and dark until the sun dries them
+      // the drying lines and the six prints from the print house, wet and dark until the sun dries them
       g.strokeStyle = '#7a5a2a'; g.lineWidth = 5; g.beginPath(); for (const x of [W + 40, W + 330]) { g.moveTo(x, GROUND); g.lineTo(x, GROUND - 312); } g.stroke();
       g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(W + 40, GROUND - 302); g.quadraticCurveTo(W + 185, GROUND - 288, W + 330, GROUND - 302); g.stroke();
-      for (let k = 0; k < 5; k++) {
-        const x = W + 85 + k * 50, y = GROUND - 260 + Math.abs(k - 2) * -3, sway = Math.sin(S.t * (this.st === 'rain' ? 2.4 : 1.2) + k) * .04;
+      for (let k = 0; k < 6; k++) {
+        const x = W + 66 + k * 44, y = GROUND - 260 + Math.abs(k - 2.5) * -3, sway = Math.sin(S.t * (this.st === 'rain' ? 2.4 : 1.2) + k) * .04;
         g.save(); g.translate(x, y - 36); g.rotate(sway); t4Print(g, k, T4_INKS, 0, 36, .38, 1 - this.dry); g.restore();
         g.fillStyle = '#a3332a'; g.fillRect(x - 3, y - 46, 6, 9);
         if (this.st === 'rain') { const ph = (S.t * 1.3 + k * .37) % 1; g.fillStyle = 'rgba(80,110,150,.7)'; g.beginPath(); g.ellipse(x - 10 + k % 3 * 9, y + 26 + ph * 40, 2, 3, 0, 0, 6.283); g.fill(); }
