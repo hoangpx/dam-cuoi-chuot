@@ -150,7 +150,7 @@ function gkMake() {
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
-    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -3; dy <= 3; dy += 3) for (let dx = -3; dx <= 3; dx += 3) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
     const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
     for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
     const usedB = [];
@@ -163,6 +163,12 @@ function gkMake() {
     for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the front sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
+    // (owner: the front sheet must be as full of holes as the back one) the front sheet is topped up with more tears until it is torn as much as the back sheet
+    { let sa = 0, sb = 0; for (let i = 0; i < M; i++) { sa += mAk[i]; sb += mBk[i]; }
+      for (let guard = 0; sb < sa * .98 && guard < 900; guard++) {
+        const r = R() < .25 ? ri(14, 28) : ri(3, 14), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = guard % 4 === 3 && r < 12 ? gkRip() : gkBlob(cx, cy, r), mr = gkRaster([poly], S);
+        if (touches(mr, reach)) continue; for (let i = 0; i < M; i++) if (mr[i] && !mBk[i]) { mBk[i] = 1; sb++; }
+      } }
     // laid right, how much of the lit shape is the key
     let inter = 0, lit = 0, keyN = 0;
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const k = rKeyA[y * S + x]; keyN += k; if (!mAk[y * S + x]) continue; const [u, v] = toB(x, y), ui = Math.round(u), vi = Math.round(v); if (ui >= 0 && vi >= 0 && ui < S && vi < S && mBk[vi * S + ui]) { lit++; if (k) inter++; } }
