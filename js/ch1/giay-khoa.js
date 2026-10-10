@@ -293,7 +293,8 @@ window.giayPrep = () => { gkEnsure(); };
   // (The key is thin, so a few pixels off already lights little of it.)
   // (owner) it only counts when the player LETS GO (finger up, mouse up, arrow key up): passing through the right place while still moving does nothing.
   // The place where it was let go (the target pose, not the gliding sheet) must be within 1.5 pixels of the perfect pose.
-  const isClose = () => { const P = GK.puz; return Math.hypot(st.tx - P.g[0], st.ty - P.g[1]) <= 1.5 && (!GK.turn || Math.abs(gkWrap(st.trot - P.phi)) < .08); };
+  // The test is 1.5 pixels at first; for every half minute spent on this pair (over all the times the cage is opened) it allows 1.5 pixels more, up to 15, so a hard pair never shuts anyone out of the story.
+  const isClose = () => { const P = GK.puz, tol = Math.min(15, 1.5 + 1.5 * Math.floor(((GK.spent || 0) + st.t) / 30)); return Math.hypot(st.tx - P.g[0], st.ty - P.g[1]) <= tol && (!GK.turn || Math.abs(gkWrap(st.trot - P.phi)) < .08); };
   function win() {
     const P = GK.puz; st.done = true; st.t = 0; st.drag = null; st.tx = P.g[0]; st.ty = P.g[1]; st.trot = st.rot + gkWrap(P.phi - st.rot);          // it settles exactly into place
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => AU.pluck(91), 320); setTimeout(() => AU.stamp(), 520); setTimeout(() => close(true), 2400);
@@ -345,9 +346,10 @@ window.giayPrep = () => { gkEnsure(); };
     raf = requestAnimationFrame(loop);
   }
   function close(solved) {
-    if (!GK.open) return; GK.open = false; el.hidden = true; cancelAnimationFrame(raf); const cb = st && st.cb; st = null;
-    if (solved) GK.puz = null;                                               // a pair is used up once the key is made
-    if (solved && cb) cb();
+    if (!GK.open) return; GK.open = false; el.hidden = true; cancelAnimationFrame(raf); const cb = st && st.cb, spentNow = st ? st.t : 0; st = null;
+    const info = { th: GK.puz ? GK.puz.th : 0 };
+    if (solved) { GK.puz = null; GK.spent = 0; } else GK.spent = (GK.spent || 0) + (spentNow || 0);   // a pair is used up once the key is made; time spent on a pair that is not solved is remembered
+    if (solved && cb) cb(info);
     if (window.__giayTest) setTimeout(() => { GK.puz = null; GK.making = null; giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)); }, 1400);   // (the test copy: a fresh pair of sheets again and again)
   }
   addEventListener('resize', () => GK.open && size());
@@ -363,5 +365,5 @@ window.giayPrep = () => { gkEnsure(); };
     });
   };
   window.giayReset = () => { GK.puz = null; GK.making = null; };                                // a fresh pair of sheets (tests)
-  if (window.__giayTest || /[?&]thu=giay/.test(location.search)) setTimeout(() => giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)), 1800);
+  if (window.__giayTest) setTimeout(() => giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)), 1800);
 })();

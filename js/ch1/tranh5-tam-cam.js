@@ -444,7 +444,8 @@ function t5Cage(x) {
       if (!this.on() || this.st !== 'shut' || Math.abs(wx - x) > 40 || wy < CY - 10 || wy > CY + 70) return false;
       this.shake = .5; AU.chirp();
       // the cage has a lock: two cut papers laid one over the other must light up a key (js/ch1/giay-khoa.js)
-      giayOpen(() => { const vw0 = cv.width / DPR / scale; this.st = 'key'; this.kt = 0; this.kfrom = [camX + vw0 / 2, -offY + viewH * .45]; this.kclick = false; AU.pluck(88); });
+      giayOpen(info => { const vw0 = cv.width / DPR / scale; this.st = 'key'; this.kt = 0; this.kfrom = [camX + vw0 / 2, -offY + viewH * .45]; this.kclick = false; AU.pluck(88);
+        this.kA0 = Math.PI / 2 + (info ? info.th : 0); this.kA1 = this.kA0 + gkWrap(Math.PI - this.kA0); });             // the key starts lying just as it was made, then swings round to go into the lock
       return true;
     },
     update(dt) {
@@ -475,7 +476,7 @@ function t5Cage(x) {
       if (this.st === 'key') {
         const lock = [x + 30, CY + 44], p = Math.min(1, this.kt / 1.3), e = p * p * (3 - 2 * p), push = this.kt > 1.3 ? Math.min(1, (this.kt - 1.3) / .25) : 0, turn = this.kt > 1.55 ? Math.min(1, (this.kt - 1.55) / .45) : 0;
         const kx = this.kfrom[0] + (lock[0] + 26 - this.kfrom[0]) * e - 26 * push, ky = this.kfrom[1] + (lock[1] - this.kfrom[1]) * e - Math.sin(p * Math.PI) * 70;
-        t5Key(g, kx, ky, 3 - 2 * e, Math.PI + (1 - e) * 5.5 + turn * 1.2, 1 - Math.max(0, push - .6));
+        t5Key(g, kx, ky, 3 - 2 * e, this.kA0 + (this.kA1 - this.kA0) * e + turn * 1.2, 1 - Math.max(0, push - .6));
       }
       if (this.st === 'open' && this.by > -offY - 40) this.drawBird(g, this.bx, this.by, Math.sin(this.t * 20) > 0 ? 1 : -1);
       if (this.st === 'shut' && groom.x > x - 600) sparkle(g, x + 34, CY - 4, 6, .3 + .3 * Math.sin(S.t * 3));
