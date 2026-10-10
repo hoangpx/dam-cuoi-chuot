@@ -46,20 +46,21 @@ function t7Art() {
   o.sil = { gourds: o.gourds.map(sil), leaf: sil(o.leaf) };
   return (T7_ART = o);
 }
+const t7wind = x => (Math.sin(S.t * .7 - x * .0032) * .6 + Math.sin(S.t * 1.9 - x * .0065) * .25) * (.75 + .25 * Math.sin(S.t * .23));      // the wind: waves running along the trellis, with slow gusts (about -1 … 1)
 const t7h = (n, s) => { const x = Math.sin(n * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };      // a steady pseudo-random number for cell n, stream s
 const T7_TOP = () => GROUND - 440;                                              // the trellis
 // the three layers of gourds: far (dim, small, high), middle (lit), near (black, big, low). cell width, density, scale range, hang length, a stream seed
 const T7_LAYERS = [
   { cell: 70, dens: .62, s0: .62, s1: .5, len0: 6, len1: 34, seed: 40, top: -34, alpha: .3 },
   { cell: 80, dens: .72, s0: 1.05, s1: .95, len0: 18, len1: 58, seed: 0, top: 48, alpha: 1 },
-  { cell: 130, dens: .5, s0: 1.5, s1: 1.0, len0: 40, len1: 80, seed: 80, top: 78, alpha: 1 },
+  { cell: 130, dens: .5, s0: 1.1, s1: .7, len0: 24, len1: 56, seed: 80, top: 14, alpha: 1 },
 ];
 function t7Layer(g, L, A, x0, x1, top) {                                         // one layer of gourds with their vines, between x0 and x1
   for (let i = Math.floor(x0 / L.cell); i <= Math.floor(x1 / L.cell); i++) {
     if (t7h(i, L.seed + 1) > L.dens) continue;
     const n = t7h(i, L.seed + 5) < .55 ? 1 : 2;
     for (let j = 0; j < n; j++) {
-      const gx = i * L.cell + t7h(i, L.seed + 6 + j) * L.cell, kind = Math.floor(t7h(i, L.seed + 8 + j) * 4), sc = L.s0 + t7h(i, L.seed + 10 + j) * L.s1, len = L.len0 + t7h(i, L.seed + 12 + j) * (L.len1 - L.len0), sw = Math.sin(S.t * .9 + i * 1.7 + j) * .07;
+      const gx = i * L.cell + t7h(i, L.seed + 6 + j) * L.cell, kind = Math.floor(t7h(i, L.seed + 8 + j) * 4), sc = L.s0 + t7h(i, L.seed + 10 + j) * L.s1, len = L.len0 + t7h(i, L.seed + 12 + j) * (L.len1 - L.len0), sw = t7wind(gx) * .14 + Math.sin(S.t * .9 + i * 1.7 + j) * .02;
       g.strokeStyle = A === null ? '#000' : '#150f0a'; g.lineWidth = 3.2; g.beginPath(); g.moveTo(gx, top + L.top); g.quadraticCurveTo(gx + 8, top + L.top + len * .5, gx, top + L.top + len); g.stroke();      // the vine
       g.save(); g.translate(gx, top + L.top + len); g.rotate(sw); dp(g, (A || T7_ART.sil).gourds[kind], 0, 0, 0, sc, sc); g.restore();
     }
@@ -70,20 +71,20 @@ function t7Layer(g, L, A, x0, x1, top) {                                        
 const T7_FOL = [
   { cell: 44, dens: .85, top: -34, len0: 30, len1: 120, ls: .7, amp: .05, seed: 200 },
   { cell: 52, dens: .9, top: 46, len0: 40, len1: 175, ls: 1.0, amp: .07, seed: 230 },
-  { cell: 105, dens: .55, top: 70, len0: 50, len1: 160, ls: 1.2, amp: .06, seed: 260 },
+  { cell: 105, dens: .55, top: 14, len0: 40, len1: 120, ls: .95, amp: .06, seed: 260 },
 ];
 function t7Fol(g, F, A, x0, x1, top, black) {
   for (let i = Math.floor(x0 / F.cell); i <= Math.floor(x1 / F.cell); i++) {
     for (let j = 0; j < 2; j++) {
       if (t7h(i, F.seed + j * 7) > F.dens) continue;
       const vx = i * F.cell + t7h(i, F.seed + 1 + j * 7) * F.cell, len = F.len0 + t7h(i, F.seed + 2 + j * 7) * (F.len1 - F.len0), ph = t7h(i, F.seed + 3 + j * 7) * 6.283, wob = 6 + t7h(i, F.seed + 4 + j * 7) * 14;
-      const ang = Math.sin(S.t * (.7 + t7h(i, F.seed + 5 + j * 7) * .5) + ph) * F.amp;                       // the whole creeper sways from where it is tied
+      const ang = t7wind(vx) * F.amp * 2.6 + Math.sin(S.t * (.7 + t7h(i, F.seed + 5 + j * 7) * .5) + ph) * F.amp * .4;                       // the whole creeper sways from where it is tied
       g.save(); g.translate(vx, top + F.top); g.rotate(ang);
       g.strokeStyle = black ? '#000' : '#1c2a17'; g.lineWidth = black ? 4.4 : 3; g.beginPath(); g.moveTo(0, 0);
-      const N = 10; for (let k = 1; k <= N; k++) { const u = k / N; g.lineTo(Math.sin(u * 3.2 + ph) * wob * u, len * u); } g.stroke();
+      const N = 10; for (let k = 1; k <= N; k++) { const u = k / N; g.lineTo(Math.sin(u * 3.2 + ph) * wob * u + t7wind(vx) * len * .1 * u * u, len * u); } g.stroke();
       const nl = Math.max(3, Math.round(len / 20 / (F.ls > 1.1 ? 1.4 : 1)));
       for (let k = 1; k <= nl; k++) {                                                                      // leaves along the creeper, each swaying a little by itself
-        const u = k / (nl + 1), lx = Math.sin(u * 3.2 + ph) * wob * u, ly = len * u, side = k % 2 ? 1 : -1, r = side * (.9 + Math.sin(S.t * 1.3 + k + ph) * .16);
+        const u = k / (nl + 1), lx = Math.sin(u * 3.2 + ph) * wob * u + t7wind(vx) * len * .1 * u * u, ly = len * u, side = k % 2 ? 1 : -1, r = side * (.9 + Math.sin(S.t * 1.3 + k + ph) * .12) + t7wind(vx + k * 9) * .4;
         g.save(); g.translate(lx, ly); g.rotate(r); dp(g, (black ? A.sil : A).leaf, side * 18 * F.ls, 0, 0, F.ls * (.8 + t7h(i, F.seed + 9 + k) * .5), F.ls * (.8 + t7h(i, F.seed + 9 + k) * .5)); g.restore();
       }
       g.restore();
