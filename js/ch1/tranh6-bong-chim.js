@@ -110,9 +110,9 @@ function bcBuild() {
 
 (function () {
   const el = document.createElement('div'); el.id = 'bongchim'; el.hidden = true;
-  el.innerHTML = '<canvas id="bongCv"></canvas><button id="bongX" aria-label="Đóng">✕</button><button id="bongS">Xem đáp án</button>';
+  el.innerHTML = '<canvas id="bongCv"></canvas><button id="bongX" aria-label="Đóng">✕</button><button id="bongS">Xem đáp án</button><button id="bongN">Hình khác</button>';
   document.body.appendChild(el);
-  const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#bongX'), XS = el.querySelector('#bongS');
+  const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#bongX'), XS = el.querySelector('#bongS'), XN = el.querySelector('#bongN');
   const L = BC_LW, kx = L[0] / L[1], kz = L[2] / L[1], e1 = [BC_Q[0], BC_Q[3], BC_Q[6]], e2 = [BC_Q[1], BC_Q[4], BC_Q[7]];
   let st = null, raf = 0, last = 0;
   const size = () => { const k = Math.min(innerWidth * .96 / BC_W, innerHeight * .94 / BC_H), d = Math.min(2, devicePixelRatio || 1); cv2.style.width = BC_W * k + 'px'; cv2.style.height = BC_H * k + 'px'; cv2.width = Math.round(BC_W * k * d); cv2.height = Math.round(BC_H * k * d); st && (st.k = k * d); };
@@ -331,6 +331,7 @@ function bcBuild() {
   function finish() { const cb = st && st.cb; BC.open = false; el.hidden = true; cancelAnimationFrame(raf); st = null; if (cb) cb(); }
   addEventListener('keydown', e => { if (!BC.open) return; e.stopPropagation(); e.preventDefault(); if (e.code === 'Escape') finish(); }, true);
   X.addEventListener('click', finish);
+  XN.addEventListener('click', () => { const cb = st && st.cb; cancelAnimationFrame(raf); BC.open = false; st = null; el.hidden = true; bongOpen(cb); });          // (demo only) the next picture
   XS.addEventListener('click', () => {                                          // (demo only) turn the tangle slowly to the right pose, to show what to look for
     if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), th = Math.atan2(R[3], R[0]), Rt = bcRot(0, 0, 1, th), D = bcMul(bcT(Rt), R), an = bcAngleFromI(D); if (an < 1e-3) return;
     const sn = Math.sin(an) || 1e-3, ax = [(D[7] - D[5]) / (2 * sn), (D[2] - D[6]) / (2 * sn), (D[3] - D[1]) / (2 * sn)], l = Math.hypot(...ax) || 1;
@@ -339,7 +340,7 @@ function bcBuild() {
   window.bongOpen = function (cb) {
     if (BC.open) return; BC.open = true; el.hidden = false;
     setTimeout(() => {                                                       // the tangle takes a moment to make: the panel is up first
-      if (!BC.open) return; { const all = BC_MASKS(); let i = Math.floor(Math.random() * all.length); if (all.length > 1 && i === BC.mi) i = (i + 1) % all.length; BC.mi = i; BC.mask = all[i]; } BC.tex = bcBuild();
+      if (!BC.open) return; { const all = BC_MASKS(); let last = BC.mi; if (last === undefined) { try { last = +localStorage.getItem('dcc.bongmi'); } catch (err) { last = 0; } } if (!(last >= 0)) last = 0; const i = (last + 1) % all.length; BC.mi = i; BC.mask = all[i]; try { localStorage.setItem('dcc.bongmi', i); } catch (err) {} } BC.tex = bcBuild();
       // a pose well away from the target: turned by 1.3..2.7 radians about a random axis
       const ax = Math.random() * 2 - 1, ay = Math.random() * 2 - 1, az = Math.random() * 2 - 1, n = Math.hypot(ax, ay, az) || 1, W0 = bcMul(bcRot(ax / n, ay / n, az / n, 1.3 + Math.random() * 1.4), BC_Q);
       st = { ver: 1, W: W0, k: 1, t: 0, drag: null, vel: [0, 0], hold: 0, done: false, dt: 0, cb }; BC.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
