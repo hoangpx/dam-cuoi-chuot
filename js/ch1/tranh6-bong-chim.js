@@ -364,17 +364,17 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
         }
         if (this.cover > 0) this.cover = Math.max(0, this.cover - dt / .6);
         if (T6R.say >= 0) T6R.say += dt;
-        LEVELS[5].width = t6Open() ? 3700 : 400000;
+        LEVELS[5].width = t6Open() ? T6_OFF + 3700 : 400000;
         if (T6R.done) {                                                         // the friends talk as the party comes to the pond, and to the bridge (owner)
-          if (!T6R.said.pond && groom.x > 1600) { T6R.said.pond = true; if (groom.x < 2200) T6R.talk.push({ i: 0, text: 'Ao này nhiều ếch lắm!', t: 0 }); }
-          if (!T6R.said.bridge && groom.x > 2300) { T6R.said.bridge = true; T6R.talk.push({ i: 1, text: 'Hãy giúp chú bán dầu đi qua cầu tre!', t: 0 }); }
+          if (!T6R.said.pond && groom.x > T6_OFF + 1600) { T6R.said.pond = true; if (groom.x < T6_OFF + 2200) T6R.talk.push({ i: 0, text: 'Ao này nhiều ếch lắm!', t: 0 }); }
+          if (!T6R.said.bridge && groom.x > T6_OFF + 2300) { T6R.said.bridge = true; T6R.talk.push({ i: 1, text: 'Hãy giúp chú bán dầu đi qua cầu tre!', t: 0 }); }
           const q = T6R.talk[0]; if (q && !(T6R.say >= 0 && T6R.say < 12.5)) { q.t += dt; if (q.t > 6) T6R.talk.shift(); }
         }
         if (this.tp) {                                                          // far out on the endless road, the moment the party turns back it is back by the pond (owner): a short fade to dark, the jump in the dark, then the light again
           this.tp.t += dt;
-          if (!this.tp.done && this.tp.t >= .25) { this.tp.done = true; const d = Math.max(0, groom.x - 3700); groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); T6R.birds.forEach(b => { b.cx -= d; b.x -= d; b.x0 -= d; }); }
+          if (!this.tp.done && this.tp.t >= .25) { this.tp.done = true; const d = Math.max(0, groom.x - (T6_OFF + 3700)); groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); T6R.birds.forEach(b => { b.cx -= d; b.x -= d; b.x0 -= d; }); }
           if (this.tp.t > .8) this.tp = null;
-        } else if (!t6Open() && groom.x > 3900 && groom.vx < -30) this.tp = { t: 0, done: false };       // far out on the endless road, the moment the party turns back it is back by the pond: the tasks are there at once (owner), however far it had walked
+        } else if (!t6Open() && groom.x > T6_OFF + 3900 && groom.vx < -30) this.tp = { t: 0, done: false };       // far out on the endless road, the moment the party turns back it is back by the pond: the tasks are there at once (owner), however far it had walked
         T6R.birds.forEach((b, i) => {
           if (b.st === 'none') return; b.t += dt; b.ph += dt * (11 + i * 1.3);
           const sx = T6R.stations[i] ? T6R.stations[i].cx : groom.x, tx = T6R.done ? groom.x + (i ? 80 : -40) + 60 : sx, ty = GROUND - (T6R.done ? 275 : 360) - i * 26;     // over its station, then over the party

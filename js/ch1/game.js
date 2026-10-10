@@ -305,6 +305,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   let armN = sw * .4;
   const bigPara = item === 'parasol' && S.parasol;
   if (item === 'parasol') armN = bigPara ? -2.2 : -1.35 + Math.sin(S.pose * 2 + seed) * .04;
+  if (item === 'lantern') armN = -1.35 + Math.sin(S.pose * 2 + seed) * .04;      // tranh 7: the lamp is held up like the parasol
   if (item === 'ken') armN = -1.05;
   if (item === 'drum') armN = S.drumT > 0 ? -.4 - Math.abs(Math.sin(S.t * 22)) * .9 : S.manualDrum || S.eyeWatch ? -.4 : -.4 + Math.abs(Math.sin(S.pose * 7)) * -.6;
   if (item === 'lead') armN = -.25;
@@ -316,6 +317,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04 + (item === 'ken' ? -.1 - (S.kenT > 0 ? .12 : 0) : 0));
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (item === 'parasol' && !bigPara) dp(g, ITEM.parasol, hx, hyy + 26, Math.sin(S.pose * 1.5 + seed) * .05);
+  if (item === 'lantern') dp(g, ITEM.lantern, hx, hyy + 4, Math.sin(S.pose * 1.6 + seed) * .06);
   if (item === 'ken') dp(g, ITEM.ken, hx - 4, hyy, -.25 - (S.kenT > 0 ? Math.sin(S.t * 10) * .05 : 0));
   if (item === 'drum') dp(g, ITEM.stick, hx - 2, hyy, .5 + armN);
   const carry = item === 'lead' ? leadItem() : null;

@@ -10,6 +10,7 @@ Object.assign(PL, {
   lotus: ['#3d6a49', [-1.4, 1.2]], lotusD: ['#2b4f38', [-1.4, 1.2]], lotusL: ['#5d8a5c', [-1, 1]],
   frog: ['#416d4a', [-1.2, 1]], frogD: ['#2c4d37', [-1.2, 1]], frogL: ['#6f9762', [-.8, .8]], bud: ['#d9909f', [1.2, -1]],
 });
+const T6_OFF = 27000;                                                            // owner: the dark gourd trellis (js/ch1/tranh6-dan-bi.js) comes first, about 3 minutes' walk at 150 px/s; the whole old road lies T6_OFF further on
 const T6_FROGS = 7, T6_UNIT = 520, T6_BUD_GIVE = 30;   // T6_BUD_GIVE: how far a flower can be pushed from its place           // pond view: the short side of the screen is T6_UNIT units
 
 /* ---------- art (made on first use) ---------- */
@@ -182,6 +183,7 @@ function t6Night(p0, p1) {
     // the sky goes first in the back layer, so the moon and the stars sit behind everything (owner); they move with
     // the view, slipping back only a little, as far things do
     draw(g) {
+      if (groom.x < T6_OFF - 1500) return;                                       // the gourds hide the moon and the stars
       const vw = cv.width / DPR / scale, top = -offY, sky = Math.max(60, offY + GROUND - 260), drift = -camX * .03;
       for (const st of stars) { const a = .3 + .35 * Math.sin(S.t * 1.3 + st.ph); if (a <= 0) continue; g.globalAlpha = a; g.fillStyle = '#f4ecc8'; g.fillRect(camX + ((st.x * vw + drift) % vw + vw) % vw, top + 20 + st.y * sky, 1.6 * st.s, 1.6 * st.s); }
       g.globalAlpha = 1;
@@ -455,12 +457,12 @@ function t6Resume(x) {
   return { layer: 'hud', did: false,
     update() {
       if (this.did) return; this.did = true;
-      const sv = SAVE.t6 || {}; if (!sv.frogs && !sv.bridge) return;             // the frogs and the bridge may be done in either order: each is remembered by itself
+      const sv = SAVE.t6 || {}; if (!sv.frogs && !sv.bridge && !sv.dark && !sv.bl && !sv.bb) return;             // the frogs and the bridge may be done in either order: each is remembered by itself; the dark stretch is not walked twice
       if (sv.frogs) { T6.done = true; T6.found = T6_FROGS; if (!has('ech')) S.inv.push('ech'); }
       if (sv.birds) T6B.done = true;
       if (sv.bridge) T6C.done = true;
-      x = sv.bridge ? 3000 : 2350;                                             // across the bridge already: start on the far bank, at dawn; else by the bridge
-      if (!T6R.done) x = 340;                                                 // the friends not saved yet: back at the start, where the stations are
+      x = T6_OFF + (sv.bridge ? 3000 : 2350);                                  // across the bridge already: start on the far bank, at dawn; else by the bridge
+      if (!T6R.done || (!sv.frogs && !sv.bridge)) x = T6_OFF + 340;            // the friends not saved yet: back at the stations (the dark stretch is behind)
       S.cp = x; placeParty(x); camX = Math.max(0, x - 320); updateHud();
     },
   };
@@ -488,22 +490,23 @@ function t6Gate(x) {
 
 /* ---------- tranh 6 ---------- */
 LEVELS[5] = {
-  han: '捕蛙', name: 'Bắc Kim Thang', paper: 'blue', width: 3700, key: -2, abil: [], cps: [160, 1300, 2350], song: 11, noSecret: true,   // a still night (owner): no drum, no trumpet, no water sounds; a far flute, crickets and frogs croaking
+  han: '捕蛙', name: 'Bắc Kim Thang', paper: 'blue', width: T6_OFF + 3700, key: -2, abil: [], cps: [160, T6_OFF + 340, T6_OFF + 1300, T6_OFF + 2350], song: 11, noSecret: true,   // a still night (owner): no drum, no trumpet, no water sounds; a far flute, crickets and frogs croaking
   zoom: 1.35,
   intro: '', endTitle: 'Bắt ếch đêm trăng', endText: 'Bắc kim thang cà lang bí rợ… Giỏ ếch đầy, đoàn chuột vừa đi vừa hát dưới trăng.',
   build: () => {
     T6.st = 'side'; T6.k = 0; T6.found = 0; T6.pond = null; T6.done = false; Object.assign(T6C, { st: 'off', k: 0, done: false, cp: 0 }); Object.assign(T6B, { st: 'off', k: 0, done: false, stage: 0 });
     T6R.init();                                                                // what of the two friends is saved; the road is endless until both are
     return [
-      t6Resume(2350),
-      t6Night(1250, 3300),
-      t6Shadow(516, 0), t6Shadow(790, 1), t6Friends(),                                                            // the shadow puzzle at the start: a tangle hung in the air, its shadow on a cloth (js/ch1/tranh6-bong-chim.js)
-      decor(PROPS.bamboo, 20, GROUND + 4, .8), decor(PROPS.bamboo, 1070, GROUND + 4, .95, -1),
-      t6Pond(1250, 3300, 1800),
-      decor(PROPS.bamboo, 2330, GROUND + 4, .85, -1),
-      t6Cau(2620),
-      ...(T6B_ON ? [t6Chim(3180)] : []),
-      t6Gate(3450),
+      t6Resume(T6_OFF + 2350),
+      t6Night(T6_OFF + 1250, T6_OFF + 3300),
+      t6Dark(),                                                                  // the pitch dark and the giant gourds over the first stretch
+      t6Shadow(T6_OFF + 516, 0), t6Shadow(T6_OFF + 790, 1), t6Friends(),                                                            // the shadow puzzle at the start: a tangle hung in the air, its shadow on a cloth (js/ch1/tranh6-bong-chim.js)
+      decor(PROPS.bamboo, T6_OFF + 20, GROUND + 4, .8), decor(PROPS.bamboo, T6_OFF + 1070, GROUND + 4, .95, -1),
+      t6Pond(T6_OFF + 1250, T6_OFF + 3300, T6_OFF + 1800),
+      decor(PROPS.bamboo, T6_OFF + 2330, GROUND + 4, .85, -1),
+      t6Cau(T6_OFF + 2620),
+      ...(T6B_ON ? [t6Chim(T6_OFF + 3180)] : []),
+      t6Gate(T6_OFF + 3450),
     ];
   },
 };
