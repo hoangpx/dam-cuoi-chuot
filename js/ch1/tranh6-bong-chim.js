@@ -316,8 +316,8 @@ function bcBuild() {
       st.t += dt;
       if (!st.done) {
         if (!st.drag && (Math.abs(st.vel[0]) > .0006 || Math.abs(st.vel[1]) > .0006)) { turn(st.vel[0], st.vel[1]); st.vel[0] *= Math.pow(.04, dt); st.vel[1] *= Math.pow(.04, dt); }     // a little momentum
-        const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.max(-1, Math.min(1, R[8]))); st.theta = Math.atan2(R[3], R[0]);     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
-        if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / st.solve.dur); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(st.solve.base, bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * (1 - e))); st.ver++; if (st.solve.t >= 1) { const w = st.solve.winAfter; st.solve = null; if (w) win(); } }
+        const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.min(1, Math.abs(R[8])));     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
+        if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / st.solve.dur); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(BC_Q, bcMul(bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * e), st.solve.R)); st.ver++; if (st.solve.t >= 1) { const w = st.solve.winAfter; st.solve = null; if (w) win(); } }
         else if (ang < .21) { st.hold += dt; if (st.hold > .3) startSolve(.45, true); } else st.hold = 0;     // about 12 degrees, kept for a third of a second: then it clicks into place
       } else { st.dt += dt; if (st.dt > 4.2) finish(); }
       const t0 = performance.now(); draw(); BC.ms = performance.now() - t0;
@@ -325,20 +325,22 @@ function bcBuild() {
     raf = requestAnimationFrame(loop);
   }
   function win() {
-    st.done = true; st.dt = 0; st.drag = null; st.W = bcMul(BC_Q, bcRot(0, 0, 1, st.theta || 0)); st.ver++;         // it settles exactly (keeping the turn the player gave it)
+    st.done = true; st.dt = 0; st.drag = null; st.ver++;         // it has settled exactly (the turn and the way up the player gave it are kept)
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => { AU.chirp && AU.chirp(); }, 700); setTimeout(() => AU.pluck(91), 1400);
   }
   function finish() { const cb = st && st.cb; BC.open = false; el.hidden = true; cancelAnimationFrame(raf); st = null; if (cb) cb(); }
   addEventListener('keydown', e => { if (!BC.open) return; e.stopPropagation(); e.preventDefault(); if (e.code === 'Escape') finish(); }, true);
   X.addEventListener('click', finish);
   XN.addEventListener('click', () => { const cb = st && st.cb; cancelAnimationFrame(raf); BC.open = false; st = null; el.hidden = true; bongOpen(cb); });          // (demo only) the next picture
-  function startSolve(dur, winAfter) {
-    if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), th = Math.atan2(R[3], R[0]), Rt = bcRot(0, 0, 1, th), D = bcMul(bcT(Rt), R), an = bcAngleFromI(D); st.drag = null; st.vel = [0, 0];
+  function startSolve(dur, winAfter, upright) {                                   // turn the tangle the shortest way to the right tilt (the way up it has, or the right way up when upright)
+    if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), sg = upright || R[8] >= 0 ? 1 : -1, u = [R[2], R[5], R[8]], t = [0, 0, sg];
+    st.drag = null; st.vel = [0, 0];
+    let ax = [u[1] * t[2] - u[2] * t[1], u[2] * t[0] - u[0] * t[2], u[0] * t[1] - u[1] * t[0]], l = Math.hypot(...ax), an = Math.atan2(l, u[0] * t[0] + u[1] * t[1] + u[2] * t[2]);
     if (an < 1e-3) { if (winAfter) win(); return; }
-    const sn = Math.sin(an) || 1e-3, ax = [(D[7] - D[5]) / (2 * sn), (D[2] - D[6]) / (2 * sn), (D[3] - D[1]) / (2 * sn)], l = Math.hypot(...ax) || 1;
-    st.solve = { t: 0, an, ax: ax.map(v => v / l), base: bcMul(BC_Q, Rt), dur, winAfter };
+    if (l < 1e-6) ax = [1, 0, 0], l = 1;
+    st.solve = { t: 0, an, ax: ax.map(v => v / l), R, dur, winAfter };
   }
-  XS.addEventListener('click', () => startSolve(2, false));                      // (demo only) turn the tangle slowly to the right pose, to show what to look for
+  XS.addEventListener('click', () => startSolve(2, false, true));                      // (demo only) turn the tangle slowly to the right pose, to show what to look for
   addEventListener('resize', () => BC.open && size());
   window.bongOpen = function (cb) {
     if (BC.open) return; BC.open = true; el.hidden = false;
