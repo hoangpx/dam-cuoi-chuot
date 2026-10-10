@@ -359,3 +359,4 @@ T7_WARN is now 3 s (owner).
 Pounce rule (owner, final): bell rings; 3 s later (T7_WARN = T7_REACT = 3) the cat's shadow comes: still moving at that moment (or while it passes) = caught, standing still = safe; the party walks on as soon as the shadow has passed.
 T7_WARN = T7_REACT = 2 s now (owner).
 T7_WARN = T7_REACT = 1 s now (owner).
+Pounce rule, owner's last word: the cat's shadow passing is the ALL-CLEAR, not the attack. It passes a random T7_MIN 1 – T7_MAX 5 s after the bell starts (shadow starts .95 s before that); the party must be still within T7_REACT 1 s of the bell and stay still until it has passed (moving = caught); then it walks on at once. No bell on the cat = always caught, no warning.
