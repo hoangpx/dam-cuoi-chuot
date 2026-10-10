@@ -129,6 +129,20 @@ const T6R = {
     persist();
   },
 };
+// a small speech bubble for the birds (owner: the old one ran off the top of the screen, was too big and its outline too thick): small text, thin outline, kept inside the view
+function t6Say(g, x, y, text) {
+  g.save(); g.font = '600 11.5px "Be Vietnam Pro", sans-serif'; const words = text.split(' '), lines = []; let ln = '';
+  for (const w of words) { const t = ln ? ln + ' ' + w : w; if (g.measureText(t).width > 128 && ln) { lines.push(ln); ln = w; } else ln = t; } lines.push(ln);
+  const vw = cv.width / DPR / scale, w = Math.max(...lines.map(l => g.measureText(l).width)) + 18, h = lines.length * 14 + 12;
+  const bx = Math.max(camX + 8 + w / 2, Math.min(camX + vw - 8 - w / 2, x)), by = Math.max(-offY + 8 + h, y - 16);                          // the bubble's bottom edge, kept on the screen
+  g.translate(bx, by); g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 1.1; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(-w / 2 + 6, -h); g.lineTo(w / 2 - 6, -h); g.quadraticCurveTo(w / 2, -h, w / 2, -h + 6); g.lineTo(w / 2, -6); g.quadraticCurveTo(w / 2, 0, w / 2 - 6, 0);
+  const tx = Math.max(-w / 2 + 12, Math.min(w / 2 - 12, x - bx)); g.lineTo(tx + 5, 0); g.lineTo(tx, Math.min(10, y - by + 12 > 4 ? 10 : 6)); g.lineTo(tx - 5, 0);
+  g.lineTo(-w / 2 + 6, 0); g.quadraticCurveTo(-w / 2, 0, -w / 2, -6); g.lineTo(-w / 2, -h + 6); g.quadraticCurveTo(-w / 2, -h, -w / 2 + 6, -h); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; lines.forEach((l, k) => g.fillText(l, 0, -h + 6 + 7 + k * 14)); g.restore();
+}
+// a bird lands on the road to say something (owner): it flies down ahead of the party, stands there with its wings folded and talks, and lifts off again when its task is done (done() is true)
+T6R.land = function (i, x, text, done) { const b = this.birds[i]; if (b.st === 'none' || b.st === 'perch') return; Object.assign(b, { st: 'perch', pt: 0, sx: b.x, sy: b.y, px: x, py: GROUND - 30, text, done, sayT: 0 }); };
 // the two birds, flying (woodblock parts, three wing poses each, facing right): le le = a small duck, brown, a long neck out in front, a round dark bill, chestnut shoulders; bìm bịp = black, long tail, rufous wings, a heavy bill, red eye
 let T6R_ART = null;
 // A wing, as a bird has it (owner: the first ones looked like a dragonfly's): an arm from the shoulder to the wrist, covert feathers along it, and a fan of long separate primary feathers from the wrist.
@@ -366,17 +380,23 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
         if (T6R.say >= 0) T6R.say += dt;
         LEVELS[5].width = t6Open() ? T6_OFF + 3700 : 400000;
         if (T6R.done) {                                                         // the friends talk as the party comes to the pond, and to the bridge (owner)
-          if (!T6R.said.pond && groom.x > T6_OFF + 1600) { T6R.said.pond = true; if (groom.x < T6_OFF + 2200) T6R.talk.push({ i: 0, text: 'Ao này nhiều ếch lắm!', t: 0 }); }
-          if (!T6R.said.bridge && groom.x > T6_OFF + 2300) { T6R.said.bridge = true; T6R.talk.push({ i: 1, text: 'Hãy giúp chú bán dầu đi qua cầu tre!', t: 0 }); }
-          const q = T6R.talk[0]; if (q && !(T6R.say >= 0 && T6R.say < 12.5)) { q.t += dt; if (q.t > 6) T6R.talk.shift(); }
+          if (!T6R.said.pond && groom.x > T6_OFF + 1600) { T6R.said.pond = true; if (!(SAVE.t6 && SAVE.t6.frogs) && groom.x < T6_OFF + 2200) T6R.land(0, groom.x + 250, 'Ao này nhiều ếch lắm!', () => !!(SAVE.t6 && SAVE.t6.frogs)); }       // the le le lands by the pond until the frogs are caught
+          if (!T6R.said.bridge && groom.x > T6_OFF + 2300) { T6R.said.bridge = true; if (!T6C.done && !(SAVE.t6 && SAVE.t6.bridge)) T6R.land(1, T6_OFF + 2440, 'Hãy giúp chú bán dầu đi qua cầu tre!', () => T6C.done || !!(SAVE.t6 && SAVE.t6.bridge)); }       // the bìm bịp lands by chú bán dầu until the bridge is crossed
         }
         if (this.tp) {                                                          // far out on the endless road, the moment the party turns back it is back by the pond (owner): a short fade to dark, the jump in the dark, then the light again
           this.tp.t += dt;
-          if (!this.tp.done && this.tp.t >= .25) { this.tp.done = true; const d = Math.max(0, groom.x - (T6_OFF + 3700)); groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); T6R.birds.forEach(b => { b.cx -= d; b.x -= d; b.x0 -= d; }); }
+          if (!this.tp.done && this.tp.t >= .25) { this.tp.done = true; const d = Math.max(0, groom.x - (T6_OFF + 3700)); groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); T6R.birds.forEach(b => { b.cx -= d; b.x -= d; b.x0 -= d; if (b.px !== undefined) { b.px -= d; b.sx -= d; } }); }
           if (this.tp.t > .8) this.tp = null;
         } else if (!t6Open() && groom.x > T6_OFF + 3900 && groom.vx < -30) this.tp = { t: 0, done: false };       // far out on the endless road, the moment the party turns back it is back by the pond: the tasks are there at once (owner), however far it had walked
         T6R.birds.forEach((b, i) => {
           if (b.st === 'none') return; b.t += dt; b.ph += dt * (11 + i * 1.3);
+          if (b.st === 'perch') {
+            b.pt += dt; const k = Math.min(1, b.pt / 1.4), e = k * k * (3 - 2 * k);
+            b.x = b.sx + (b.px - b.sx) * e; b.y = b.sy + (b.py - b.sy) * e - Math.sin(k * Math.PI) * 36; b.face = k < 1 ? (b.px >= b.sx ? 1 : -1) : (groom.x < b.px ? -1 : 1); b.landed = k >= 1;
+            if (k >= 1) b.sayT += dt;
+            if (b.done && b.done()) { Object.assign(b, { st: 'rise', t: 0, x0: b.x, y0: b.y, a: -1.2, cx: -1, landed: false }); AU.pluck(i ? 86 : 91); }
+            return;
+          }
           const sx = T6R.stations[i] ? T6R.stations[i].cx : groom.x, tx = T6R.done ? groom.x + (i ? 80 : -40) + 60 : sx, ty = GROUND - (T6R.done ? 275 : 360) - i * 26;     // over its station, then over the party
           if (b.cx < 0) { b.cx = tx; b.cy = ty; }
           b.cx += (tx - b.cx) * Math.min(1, dt * (T6R.done ? 1.6 : 2)); b.cy += (ty - b.cy) * Math.min(1, dt * 2);
@@ -400,11 +420,11 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
         g.fillStyle = `rgba(10,14,30,${a})`; g.fillRect(0, 0, vw, viewH);
       },
       drawFg(g) {
-        T6R.birds.forEach((b, i) => { if (b.st === 'none') return; t6rBird(g, i, b.x, b.y, b.face, b.ph, 1.05); });
-        { const q = T6R.talk[0]; if (q && q.t > .1 && q.t < 6) { const b = T6R.birds[q.i]; g.save(); g.globalAlpha = Math.min(1, q.t / .3, (6 - q.t) / .4); t5Say(g, b.x, b.y - 34, q.text); g.restore(); } }
+        T6R.birds.forEach((b, i) => { if (b.st === 'none') return; t6rBird(g, i, b.x, b.y, b.face, b.landed ? 4 : b.ph, 1.05); });                // landed: wings folded down
+        T6R.birds.forEach(b => { if (b.st === 'perch' && b.landed && b.sayT > .2 && b.sayT < 9) { g.save(); g.globalAlpha = Math.min(1, (b.sayT - .2) / .3, (9 - b.sayT) / .4); t6Say(g, b.x, b.y - 22, b.text); g.restore(); } });
         const t = T6R.say; if (t < 0) return;                                  // the thanks, once both are free
-        const say = [[.6, 5, 0, 'Cảm ơn đàn chuột!'], [5.4, 12, 1, 'Chúng tôi sẽ bay theo để báo cho các bạn khi có nguy hiểm!']];
-        for (const [a, z, i, text] of say) if (t > a && t < z) { const b = T6R.birds[i]; g.save(); g.globalAlpha = Math.min(1, (t - a) / .3, (z - t) / .4); t5Say(g, b.x, b.y - 34, text); g.restore(); }
+        const say = [[.6, 5, 0, 'Cảm ơn đàn chuột!']];                         // only the thanks (owner)
+        for (const [a, z, i, text] of say) if (t > a && t < z) { const b = T6R.birds[i]; g.save(); g.globalAlpha = Math.min(1, (t - a) / .3, (z - t) / .4); t6Say(g, b.x, b.y - 22, text); g.restore(); }
       },
     };
   };
