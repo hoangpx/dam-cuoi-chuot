@@ -115,7 +115,7 @@ function t7CatDraw(g, vw, q, dir) {
 
 // the cat pounces every T7_ZONE px of the dark; without the bell on the tranh-1 cat (SAVE.catBell) the party is always caught and sent back to the start;
 // with it the bell jingles as the cat comes: the party must stop at once (T7_REACT .5 s to react, else it is caught) and wait 1–3 s until the shadow has passed, then walks on
-const T7_Z0 = 700, T7_GAP0 = 450, T7_GAP1 = 750, T7_REACT = .5, T7_WARN = 2, T7_CAT = .95;       // 5 pounces; from the first jingle the party has T7_REACT s to stop, and the bell rings T7_WARN 2 s before the shadow comes
+const T7_Z0 = 700, T7_GAP0 = 450, T7_GAP1 = 750, T7_REACT = .5, T7_WARN = 3, T7_CAT = .95;       // 5 pounces; from the first jingle the party has T7_REACT s to stop, and the bell rings T7_WARN 3 s before the shadow comes
 const t7Zones = () => { const a = []; for (let x = T7_Z0, k = 0; k < 5; k++, x += T7_GAP0 + Math.random() * (T7_GAP1 - T7_GAP0)) a.push(x); return a; };       // 5 pounces, 3–5 s of walking apart (450–750 px)
 // the recorded bell rings without a pause (owner): a new jingle every .45 s over the last one, louder and a little higher as the cat comes
 function t7Ring(e, dt) {
