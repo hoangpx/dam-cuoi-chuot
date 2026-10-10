@@ -39,7 +39,7 @@ function bcBirdPath(p, k) {
 }
 // The tangle's surface: a smooth union of its balls and bent rods (each rod is a bent line, its distance the nearest of its pieces), stored as a signed-distance grid in the
 // tangle's own space. Where parts meet they flow into one another (log-sum-exp blend), so it is one continuous body, not balls and sticks.
-const BC_GE = 1.8, BC_GN = 72, BC_GH = 2 * BC_GE / (BC_GN - 1), BC_KS = .04;
+const BC_GE = 1.8, BC_GN = 100, BC_GH = 2 * BC_GE / (BC_GN - 1), BC_KS = .04;
 function bcField(balls, rods) {
   const N = BC_GN, E = BC_GE, H = BC_GH, KS = BC_KS, M = .3, acc = new Float32Array(N * N * N);
   const lo = v => Math.max(0, Math.floor((v + E) / H)), hi = v => Math.min(N - 1, Math.ceil((v + E) / H));
@@ -108,7 +108,7 @@ function bcBuild() {
   // surface and what is nearer always hides what is behind. The shadow is the same grid marched along the moon's rays from each ground pixel; the closest approach gives soft edges.
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'), img = x.createImageData(w, h); return { c, x, img, d: img.data, w, h }; };
   const ZR = .85, ZN0 = Math.round(320 * ZR), GW = BC_W, GHh = BC_H - BC_GTOP;
-  const zl = [mk(ZN0, ZN0), mk(Math.round(ZN0 / 2), Math.round(ZN0 / 2))], gl = [mk(GW, GHh), mk(Math.round(GW / 2), Math.round(GHh / 2))];       // [full, half] quality: half while the tangle is being turned
+  const ZH = Math.round(320 * 1.8), zl = [mk(ZH, ZH), mk(ZN0, ZN0)], gl = [mk(GW * 2, GHh * 2), mk(Math.round(GW * .75), Math.round(GHh * .75))];       // [sharp, rough]: rough while the tangle is being turned, sharp once it rests
   let zd = zl[0].d;
   const LT = [-L[0], -L[1], -L[2]];                                              // towards the moon
   const NN = BC_GN, EE = BC_GE, HH = BC_GH;
@@ -128,7 +128,7 @@ function bcBuild() {
     const Ly = zl[q - 1], ZN = Ly.w;
     if (st.lv !== st.ver || st.lq !== q) {
     st.lv = st.ver; st.lq = q; zd = Ly.d; zd.fill(0);
-    const f = BC.tex.sdf, Wt = bcT(W), BS = BC_S * ZR * ZN / ZN0, c = ZN / 2, px = 1 / BS, dl = [Wt[2], Wt[5], Wt[8]];
+    const f = BC.tex.sdf, Wt = bcT(W), BS = BC_S * ZN / 320, c = ZN / 2, px = 1 / BS, dl = [Wt[2], Wt[5], Wt[8]];
     for (let y = 0; y < ZN; y++) for (let x = 0; x < ZN; x++) {
       const X = (x + .5 - c) / BS, Y = -(y + .5 - c) / BS; if (X * X + Y * Y > 2.6) continue;
       const lx = Wt[0] * X + Wt[1] * Y, ly = Wt[3] * X + Wt[4] * Y, lz = Wt[6] * X + Wt[7] * Y;       // the ray's point at depth 0, in the tangle's space; it runs along +dl as the depth grows
@@ -158,7 +158,7 @@ function bcBuild() {
     const Gy = gl[q - 1], gw = Gy.w, gh = Gy.h, gd = Gy.d;
     if (st.gv !== st.ver || st.gq !== q) {
     st.gv = st.ver; st.gq = q; gd.fill(0);
-    const f = BC.tex.sdf, Wt = bcT(W), ld = [-(Wt[0] * L[0] + Wt[1] * L[1] + Wt[2] * L[2]), -(Wt[3] * L[0] + Wt[4] * L[1] + Wt[5] * L[2]), -(Wt[6] * L[0] + Wt[7] * L[1] + Wt[8] * L[2])], aa = .022 * q;
+    const f = BC.tex.sdf, Wt = bcT(W), ld = [-(Wt[0] * L[0] + Wt[1] * L[1] + Wt[2] * L[2]), -(Wt[3] * L[0] + Wt[4] * L[1] + Wt[5] * L[2]), -(Wt[6] * L[0] + Wt[7] * L[1] + Wt[8] * L[2])], aa = .022 * GW / gw;
     for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
       const gx = ((x + .5) * GW / gw - BC_CX) / BC_S, gz = ((y + .5) * GHh / gh + BC_GTOP - BC_GY) / (BC_S * BC_GS), gy = -BC_H3;       // a ground point (relative to the tangle's centre) and the moon's ray from it
       const lx = Wt[0] * gx + Wt[1] * gy + Wt[2] * gz, ly = Wt[3] * gx + Wt[4] * gy + Wt[5] * gz, lz = Wt[6] * gx + Wt[7] * gy + Wt[8] * gz, sc = -(lx * ld[0] + ly * ld[1] + lz * ld[2]);
