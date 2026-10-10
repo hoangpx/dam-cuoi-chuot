@@ -1,4 +1,4 @@
-/* Tranh 1 · Ải Mèo 貓關 — the fish pond and the hungry cat. */
+/* Tranh 1 · Ải Mèo 貓𦓅化𤞺 — the fish pond and the hungry cat. */
 /* Màn 1: ao cá có cầu ván, chạm vào con cá để bắt */
 function fishPond(g0, g1) {
   const water = WP.pondFor(g1 - g0);
@@ -125,12 +125,12 @@ function groundCat(cx, from) {
 
 /* ---------- tranh 1 ---------- */
 LEVELS[0] = {
-  han: '貓關', name: 'Ải Mèo', paper: 'yellow', width: 3800, catchToStart: true, key: 0, abil: [], cps: [160, 1100, 1680, 2080, 2440],
+  han: '貓𦓅化𤞺', name: 'Ải Mèo', paper: 'yellow', width: 3800, catchToStart: true, key: 0, abil: [], cps: [160, 1100, 1680, 2080, 2440],
   intro: 'Mèo mở mắt thì đứng im, hoặc nấp sau rơm, sau chum!',
   endTitle: 'Qua ải Mèo', endText: 'Mèo đã nhận lễ, đoàn rước đi tiếp. Phía trước là ngõ tre dẫn vào làng.',
   build: () => [
     decor(PROPS.bamboo, 430, GROUND + 4), decor(PROPS.bamboo, 1250, GROUND + 4, .9, -1), decor(PROPS.bamboo, 1900, GROUND + 4, .85), decor(PROPS.bamboo, 3280, GROUND + 4, 1.05),
-    decor(PROPS.txt1, 70, 150, .75), decor(PROPS.txt2, 2710, 120, .8),
+    decor(PROPS.txt1, 70, 150, .75), decor(PROPS.txt2, 2710, 150, .75),
     fishPond(760, 980), groundCat(2960, 420),
     cover(1680, 'hay', 70), cover(2080, 'chum', 40), cover(2440, 'chum', 40), gate(3600),
   ],

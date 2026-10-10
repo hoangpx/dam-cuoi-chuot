@@ -34,6 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Playfair+Display:wght@700;900&family=Be+Vietnam+Pro:wght@400;600&display=swap">
+<link rel="preload" href="fonts/nomnatong-subset.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/ch1.css">
 <link rel="stylesheet" href="css/ch2.css">
@@ -62,7 +63,7 @@
 
 <div id="title" class="ov" hidden><!-- no longer shown: new players go straight into chương I, returning ones to the chapter picker -->
   <div class="sheet">
-    <div class="han">老鼠娶親</div>
+    <div class="han">𡌽𡠣𤝞</div>
     <h1>Đám Cưới Chuột</h1>
     <p>Chú rể chuột dẫn đoàn rước dâu băng qua làng. Không có lời chỉ dẫn: hãy nhìn tranh, chạm vào mọi thứ, kéo đồ vật tới đúng chỗ mà tự tìm đường. Mỗi chương là một lối chơi khác: chương I rước dâu qua làng, chương II đẩy chữ khắc gỗ để đổi luật chơi.</p>
     <p class="how" id="howTx">← → để đi · bấm chuột để chạm, giữ chuột để kéo</p>
@@ -73,7 +74,7 @@
 <div id="chapters" class="ov" hidden>
   <div class="sheet wide">
     <h2>Đám Cưới Chuột</h2>
-    <div class="han">老鼠娶親</div>
+    <div class="han">𡌽𡠣𤝞</div>
     <p>Mỗi chương là một lối chơi khác, cùng chung phong cách tranh khắc gỗ Đông Hồ.</p>
     <div class="grid" id="chapCards"></div>
     <div class="row"><button class="btn alt" id="bCloud"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3.5 3.5h13.2l3.8 3.8v13.2h-17z" fill="#2f5f8f" stroke="#1d1915" stroke-width="1.8" stroke-linejoin="round"/><rect x="7" y="3.5" width="8.5" height="5.5" fill="#f2ecde" stroke="#1d1915" stroke-width="1.4"/><rect x="12.2" y="4.6" width="2" height="3.2" fill="#1d1915"/><rect x="6.5" y="12.5" width="11" height="8" fill="#f2ecde" stroke="#1d1915" stroke-width="1.4"/><path d="M8.5 15.2h7M8.5 17.8h7" stroke="#a3332a" stroke-width="1.3"/></svg><span>Lưu tiến trình</span></button><button class="btn alt" id="bInstall" hidden><img src="img/icon-180.png?v=2" alt="" width="26" height="26"><span>Thêm vào màn hình chính</span></button></div>
@@ -187,8 +188,8 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-19d';
-const FONT_CHARS = '守生橋鑰戶石雲開鎖飛拉走弱和不有囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎？老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠';
+const VERSION = '2026-10-19e';
+const FONT_CHARS = '守生橋鑰戶石雲開鎖飛拉走弱和不有囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠𡌽𡠣𤝞輩遞智兒取謀𦓅化𤞺𡉦𥯌坡坳𠬠𠄩𠀧𦊚𠄼廊幀糁𥽇𢫣金簜𢄂節𡑝婚𡨸羅墻渃焒𩵜𨶛稴𡑓匙𨷯坧𩄲𠫾𢩽振沈燶𢲫𢒎捁𧼋夭吧空固扱些鞦韆蜜？';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢ';
 const GAME_FILES = [
   'js/core/i18n-tr.js',
@@ -264,7 +265,7 @@ const loadBar = k => { const b = document.getElementById('loadBar'); if (b) b.st
   }
   try {
     await Promise.race([
-      Promise.all([document.fonts.load('60px "Ma Shan Zheng"', FONT_CHARS), document.fonts.load('900 28px "Playfair Display"', VIET_CHARS), document.fonts.load('700 28px "Playfair Display"', VIET_CHARS)]),
+      Promise.all([document.fonts.load('60px "Nom Na Tong"', FONT_CHARS), document.fonts.load('60px "Ma Shan Zheng"', FONT_CHARS), document.fonts.load('900 28px "Playfair Display"', VIET_CHARS), document.fonts.load('700 28px "Playfair Display"', VIET_CHARS)]),
       new Promise(r => setTimeout(r, 3000)),
     ]);
   } catch (e) {}

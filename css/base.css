@@ -1,3 +1,4 @@
+@font-face{font-family:'Nom Na Tong';src:url(../fonts/nomnatong-subset.woff2) format('woff2');font-display:block}   /* MIT, cut to the characters in index.html FONT_CHARS (fonts/README.txt) */
 /* Shared look: paper, sheets, buttons, album cards, toast, level card. */
 /* Layout: one full-screen woodblock "print" (canvas) per level; each level prints on its own paper colour; ink-on-paper overlays */
 :root{
@@ -10,7 +11,7 @@
   --diep:#f2ecde;
   --display:'Playfair Display','Times New Roman',serif;
   --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --han:'Ma Shan Zheng','KaiTi','STKaiti',serif;
+  --han:'Nom Na Tong','Ma Shan Zheng','KaiTi','STKaiti',serif;   /* Nôm Na Tong first: it has the Nôm characters (owner's feedback) */
 }
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:var(--body);transition:background-color .6s}

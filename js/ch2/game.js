@@ -204,7 +204,7 @@ function c2PointerUp(e) {
 /* ---------- registration ---------- */
 registerChapter({
   id: 2, modes: ['c2play'],
-  card: { num: lg('Chương II', 'Chapter II'), han: '字即法', name: lg('Chữ Là Luật', 'Words Are the Law'), desc: lg('Chữ khắc gỗ chính là luật chơi. Đẩy chữ để ghép, phá hay đổi luật rồi đưa chuột tới cổng. Có phần Nhập môn và phần Cao thủ.', 'The carved words are the rules. Push them to make, break or change a rule, then get the mouse to the gate. For beginners and masters.'), bg: '#ebe3cd' },
+  card: { num: lg('Chương II', 'Chapter II'), han: '𡨸羅律', name: lg('Chữ Là Luật', 'Words Are the Law'), desc: lg('Chữ khắc gỗ chính là luật chơi. Đẩy chữ để ghép, phá hay đổi luật rồi đưa chuột tới cổng. Có phần Nhập môn và phần Cao thủ.', 'The carved words are the rules. Push them to make, break or change a rule, then get the mouse to the gate. For beginners and masters.'), bg: '#ebe3cd' },
   progress: () => `${SAVE2.done.filter(Boolean).length}/${C2LEVELS.length} ${lg('tranh', 'prints')}`,
   hasProgress: () => SAVE2.done.some(Boolean),
   album() { buildAlbum2(); $('#albumTitle').textContent = 'Chương II · Chữ Là Luật'; $('#albumDesc').textContent = 'Chữ khắc gỗ là luật chơi. Đẩy chữ để ghép, phá hay đổi luật, rồi đưa chuột tới cổng. Qua tranh này mới mở tranh sau.'; },

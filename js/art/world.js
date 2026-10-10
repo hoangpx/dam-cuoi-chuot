@@ -163,6 +163,6 @@ function buildWorldParts() {
   P.bufStand = buffalo(false); P.bufLie = buffalo(true);
   P.note = part([-9, -24, 14, 7], a => { a.ink(ell(0, 0, 6, 4.5, -.4)); a.key(lines([[5, -2, 5, -21]]), 2); a.key(smooth([[5, -21], [11, -16], [11, -9]], false), 2); });
   P.tung = part([-60, -26, 60, 26], a => { a.text('Tùng!', 3, 3, 36, 'yellow', '"Playfair Display", serif', 'color', 900); a.text('Tùng!', 0, 0, 36, 'dark', '"Playfair Display", serif', 'ink', 900); });
-  P.hanFor = str => part([-34, -str.length * 42, 34, str.length * 42], a => str.split('').forEach((ch, i) => a.text(ch, 0, -str.length * 42 + 42 + i * 84, 70, 'dark', undefined, 'ink')));
+  P.hanFor = str0 => { const str = Array.from(str0); return part([-34, -str.length * 42, 34, str.length * 42], a => str.forEach((ch, i) => a.text(ch, 0, -str.length * 42 + 42 + i * 84, 70, 'dark', undefined, 'ink'))); };
   return P;
 }

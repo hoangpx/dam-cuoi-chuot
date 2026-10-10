@@ -52,7 +52,7 @@ function c6Key(e) { if (e.code === 'Escape') showAlbum(6); }
 
 registerChapter({
   id: 6, modes: ['c6play'],
-  card: { num: lg('Chương VI', 'Chapter VI'), han: '鼠', name: lg('Tìm Chuột', 'Find the Mice'), desc: lg('Chiều rồi, chuột mẹ ra đồng gọi lũ con mải chơi về. Mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con, không chú nào đứng sát chú nào. Càng lên càng khó.', 'Evening: mother mouse calls her playful children home from the fields. One little mouse in every row, every column and every plot, and no two side by side. It gets harder as you go.'), bg: '#c8d8dc' },
+  card: { num: lg('Chương VI', 'Chapter VI'), han: '尋𤝞', name: lg('Tìm Chuột', 'Find the Mice'), desc: lg('Chiều rồi, chuột mẹ ra đồng gọi lũ con mải chơi về. Mỗi hàng, mỗi cột, mỗi thửa ruộng có đúng một chú chuột con, không chú nào đứng sát chú nào. Càng lên càng khó.', 'Evening: mother mouse calls her playful children home from the fields. One little mouse in every row, every column and every plot, and no two side by side. It gets harder as you go.'), bg: '#c8d8dc' },
   progress: () => `${SAVE6.done.filter(Boolean).length}/${C6_COUNT()} ${lg('màn', 'levels')}`,
   hasProgress: () => SAVE6.done.some(Boolean),
   album() { buildAlbum6(); $('#albumTitle').textContent = lg('Chương VI · Tìm Chuột', 'Chapter VI · Find the Mice'); $('#albumDesc').textContent = lg('Lũ chuột con mải chơi trốn khắp ruộng. Giúp chuột mẹ tìm đủ từng đứa; xong ruộng này mới sang ruộng sau, ruộng càng rộng càng khó.', 'The little mice are hiding all over the fields. Help their mother find every one; finish a field to open the next, and the bigger the field the harder.'); },

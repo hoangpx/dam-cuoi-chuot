@@ -551,7 +551,7 @@ function t5Thi(x) {
 
 /* ---------- tranh 5 ---------- */
 LEVELS[4] = {
-  han: '米糠', name: 'Tấm Cám', paper: 'sage', width: 9600, key: 0, abil: ['drum', 'ken'], cps: [160, 1950, 3350, 4800, 6200, 7300, 8300],
+  han: '糁𥽇', name: 'Tấm Cám', paper: 'sage', width: 9600, key: 0, abil: ['drum', 'ken'], cps: [160, 1950, 3350, 4800, 6200, 7300, 8300],
   zoom: 1.3, zoomWide: .7, kenFront: true, song: 0, gapK: .85,
   intro: '', endTitle: 'Qua chuyện Tấm Cám', endText: 'Đoàn rước đi hết con đường làng chiều hôm ấy, rồi lại rộn ràng lên đường.',
   build: () => {

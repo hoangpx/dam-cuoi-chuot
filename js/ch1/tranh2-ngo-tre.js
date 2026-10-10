@@ -1,4 +1,4 @@
-/* Tranh 2 · Ngõ Tre 竹巷 — the silent rooster (ò ó o), the roof cat, the pomelo ditch. */
+/* Tranh 2 · Ngõ Tre 𡉦𥯌 — the silent rooster (ò ó o), the roof cat, the pomelo ditch. */
 // Gà trống chắn ngõ, cứ vươn cổ gáy mà không ra tiếng. Ba chữ ò, ó, o lơ lửng trong bụi tre (to, vừa, nhỏ);
 // kéo từng chữ thả vào con gà theo đúng thứ tự ò → ó → o (sai thì cả hàng bay về bụi tre). Đủ ba chữ thì gà
 // nhảy lên ngọn tre gáy vang "ò ó o" và nhường đường.
@@ -133,11 +133,11 @@ function pomeloDitch(treeX, g0, g1) {
 
 /* ---------- tranh 2 ---------- */
 LEVELS[1] = {
-  han: '竹巷', name: 'Ngõ Tre', paper: 'pink', width: 2800, key: 2, abil: ['drum', 'parasol'], cps: [160, 720, 1640, 2160],
+  han: '𡉦𥯌', name: 'Ngõ Tre', paper: 'pink', width: 2800, key: 2, abil: ['drum', 'parasol'], cps: [160, 720, 1640, 2160],
   intro: 'Mở khoá Trống (phím 1) và Lọng (phím 3). Tiếng trống làm muông thú giật mình. Lọng che khỏi con mắt trên cao, nhưng chỉ giương được 3 giây.',
   endTitle: 'Qua Ngõ Tre', endText: 'Gà trống, mèo trên mái, rãnh sâu đều đã qua. Ra khỏi ngõ là tới bờ ao.',
   build: () => [
-    decor(WP.hanFor('竹巷'), 70, 120, .7), decor(PROPS.bamboo, 360, GROUND + 4, .95), decor(WP.fence, 700, GROUND + 4),
+    decor(WP.hanFor('𡉦𥯌'), 70, 120, .7), decor(PROPS.bamboo, 360, GROUND + 4, .95), decor(WP.fence, 700, GROUND + 4),
     secretSpot(360, 'drum', 'Tùng! Từ bụi tre rơi xuống một mảnh triện đỏ!'),
     rooster(600, 392, [[348, 228, 1.35, 'ó'], [408, 282, 1.08, 'o'], [470, 258, .85, 'ò']], 190), roofCat(980, 1540), decor(PROPS.bamboo, 1680, GROUND + 4, 1, -1),
     pomeloDitch(1880, 2010, 2110), decor(PROPS.bamboo, 2380, GROUND + 4, .9), gate(2640),

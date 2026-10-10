@@ -86,8 +86,8 @@ function buildProps() {
     a.fill('red', smooth([[-30, -29], [30, -31], [31, 30], [-29, 30]]));
     a.text('東', 0, -12, 26, 'paper'); a.text('湖', 0, 14, 26, 'paper');
   });
-  P.txt1 = part([-30, -130, 30, 130], a => { '鼠娶親'.split('').forEach((ch, i) => a.text(ch, 0, -84 + i * 84, 70, 'dark', undefined, 'ink')); });
-  P.txt2 = part([-30, -100, 30, 100], a => { '貓受禮'.split('').forEach((ch, i) => a.text(ch, 0, -64 + i * 64, 56, 'dark', undefined, 'ink')); });
+  P.txt1 = part([-30, -168, 30, 168], a => { Array.from('鼠輩遞魚智智智').forEach((ch, i) => a.text(ch, 0, -138 + i * 46, 42, 'dark', undefined, 'ink')); });   // the couplet from the Chuột vinh quy print: seven characters (owner's friend)
+  P.txt2 = part([-30, -168, 30, 168], a => { Array.from('貓兒取禮謀謀謀').forEach((ch, i) => a.text(ch, 0, -138 + i * 46, 42, 'dark', undefined, 'ink')); });
   P.zz = part([-10, -14, 10, 14], a => a.text('z', 0, 0, 26, 'dark', 'Playfair Display, serif', 'ink'));
   return P;
 }

@@ -1,14 +1,14 @@
 /* Chương II · Chữ Là Luật 字即法 — vocabulary and the 14 maps (8 Nhập môn + 6 Cao thủ). */
 /* ================= Chương II: Chữ Là Luật (rules-as-words puzzle) ================= */
 const C2K = {
-  mouse: { han: '鼠', vi: 'CHUỘT' }, cat: { han: '貓', vi: 'MÈO' }, wall: { han: '牆', vi: 'TƯỜNG' }, water: { han: '水', vi: 'NƯỚC' },
-  fire: { han: '火', vi: 'LỬA' }, fish: { han: '魚', vi: 'CÁ' }, gate: { han: '門', vi: 'CỔNG' }, hay: { han: '草', vi: 'RƠM' }, jar: { han: '缸', vi: 'CHUM' },
-  key: { han: '鑰', vi: 'CHÌA' }, door: { han: '戶', vi: 'CỬA' }, rock: { han: '石', vi: 'ĐÁ' }, cloud: { han: '雲', vi: 'MÂY' }, text: { han: '字', vi: 'CHỮ' },
+  mouse: { han: '𤝞', vi: 'CHUỘT' }, cat: { han: '貓', vi: 'MÈO' }, wall: { han: '墻', vi: 'TƯỜNG' }, water: { han: '渃', vi: 'NƯỚC' },
+  fire: { han: '焒', vi: 'LỬA' }, fish: { han: '𩵜', vi: 'CÁ' }, gate: { han: '𨶛', vi: 'CỔNG' }, hay: { han: '稴', vi: 'RƠM' }, jar: { han: '𡑓', vi: 'CHUM' },
+  key: { han: '匙', vi: 'CHÌA' }, door: { han: '𨷯', vi: 'CỬA' }, rock: { han: '坧', vi: 'ĐÁ' }, cloud: { han: '𩄲', vi: 'MÂY' }, text: { han: '𡨸', vi: 'CHỮ' },
 };
-const C2P = { you: { han: '行', vi: 'ĐI' }, push: { han: '推', vi: 'ĐẨY' }, stop: { han: '止', vi: 'CHẶN' }, sink: { han: '沉', vi: 'CHÌM' }, hot: { han: '熱', vi: 'NÓNG' }, win: { han: '勝', vi: 'THẮNG' },
-  open: { han: '開', vi: 'MỞ' }, shut: { han: '鎖', vi: 'KHOÁ' }, float: { han: '飛', vi: 'BAY' }, pull: { han: '拉', vi: 'KÉO' }, move: { han: '走', vi: 'CHẠY' }, weak: { han: '弱', vi: 'YẾU' } };
+const C2P = { you: { han: '𠫾', vi: 'ĐI' }, push: { han: '𢩽', vi: 'ĐẨY' }, stop: { han: '振', vi: 'CHẶN' }, sink: { han: '沈', vi: 'CHÌM' }, hot: { han: '燶', vi: 'NÓNG' }, win: { han: '勝', vi: 'THẮNG' },
+  open: { han: '𢲫', vi: 'MỞ' }, shut: { han: '鎖', vi: 'KHOÁ' }, float: { han: '𢒎', vi: 'BAY' }, pull: { han: '捁', vi: 'KÉO' }, move: { han: '𧼋', vi: 'CHẠY' }, weak: { han: '夭', vi: 'YẾU' } };
 // the little words between: LÀ, VÀ, KHÔNG, CÓ
-const C2OPS = { is: { han: '是', vi: 'LÀ' }, and: { han: '和', vi: 'VÀ' }, not: { han: '不', vi: 'KHÔNG' }, has: { han: '有', vi: 'CÓ' } };
+const C2OPS = { is: { han: '羅', vi: 'LÀ' }, and: { han: '吧', vi: 'VÀ' }, not: { han: '空', vi: 'KHÔNG' }, has: { han: '固', vi: 'CÓ' } };
 const C2THING = { m: 'mouse', c: 'cat', w: 'wall', '~': 'water', f: 'fire', s: 'fish', g: 'gate', h: 'hay', j: 'jar', k: 'key', d: 'door', r: 'rock', o: 'cloud' };
 const C2NOUN = { M: 'mouse', C: 'cat', W: 'wall', N: 'water', F: 'fire', S: 'fish', G: 'gate', H: 'hay', J: 'jar', K: 'key', D: 'door', R: 'rock', O: 'cloud', T: 'text' };
 const C2PROP = { 1: 'you', 2: 'push', 3: 'stop', 4: 'sink', 5: 'hot', 6: 'win', 7: 'open', 8: 'shut', 9: 'float', '<': 'pull', '^': 'move', '!': 'weak' };
@@ -18,13 +18,13 @@ const C2OP = { '=': 'is', '&': 'and', '-': 'not', '+': 'has' };
    1..9 = ĐI ĐẨY CHẶN CHÌM NÓNG THẮNG MỞ KHOÁ BAY, < KÉO, ^ CHẠY, ! YẾU. dirs: [[x, y, 'L']] faces a thing (CHẠY). */
 const C2LEVELS = [
   {
-    han: '尋門', name: 'Tìm cổng', paper: 'yellow', key: 0,
+    han: '尋𨶛', name: 'Tìm cổng', paper: 'yellow', key: 0,
     hint: "CHUỘT LÀ ĐI nên chuột đi được, nhưng cổng chưa phải đích vì ba chữ CỔNG, LÀ, THẮNG còn nằm rải rác. Đẩy chúng thành một hàng để ghép CỔNG LÀ THẮNG, rồi đưa chuột tới cổng.",
     map: ["..........",".W=3ww..w.",".w..w..w..","..wM=1.w..",".w..w...w.",".m.wG.6=g.",".........."],
     fixed: [],
   },
   {
-    han: '拼字', name: 'Ghép chữ', paper: 'pink', key: 2,
+    han: '扱𡨸', name: 'Ghép chữ', paper: 'pink', key: 2,
     hint: "Lần này TƯỜNG LÀ CHẶN chắn lối tới các chữ. Phá câu đó trước rồi mới ghép được CỔNG LÀ THẮNG. Tính trước đường đẩy: đẩy nhầm một chữ vào góc là phải hoàn tác (Z).",
     map: ["..........",".W=3G...g.","..w.wwww..",".w.wM=1.w.",".w.w.ww.m.","...ww.w6=.",".........."],
     fixed: [],
@@ -36,7 +36,7 @@ const C2LEVELS = [
     fixed: [],
   },
   {
-    han: '我勝', name: 'Ta là thắng', paper: 'white', key: 0,
+    han: '些羅勝', name: 'Ta là thắng', paper: 'white', key: 0,
     hint: "Cổng bị vây bởi tường không phá được (chữ có đinh ghim ở góc). Đổi đích: nếu ghép được CHUỘT LÀ THẮNG thì chính con chuột là đích.",
     map: ["..........","....m.www.",".6....wgw.",".w.M.wwww.","..M=1..w..",".=G.....=.","W=3......."],
     fixed: [[0,6],[1,6],[2,6]],
@@ -48,7 +48,7 @@ const C2LEVELS = [
     fixed: [[0,6],[1,6],[2,6],[6,6],[7,6],[8,6]],
   },
   {
-    han: '沉水', name: 'Chìm', paper: 'lilac', key: -1,
+    han: '沈', name: 'Chìm', paper: 'lilac', key: -1,
     hint: "Nước là CHÌM: thứ gì rơi xuống nước thì cả hai cùng biến mất. Chum chỉ đẩy được khi có luật CHUM LÀ ĐẨY.",
     map: ["w=ww6~....","wwJMm~....","ww2==~..g.","w..1.~....","w..wG~....","jw.w.~....",".....~N=4."],
     fixed: [[6,6],[7,6],[8,6]],
@@ -175,7 +175,7 @@ const C2LEVELS = [
     fixed: [[0, 8], [1, 8], [2, 8]],
   },
   {
-    han: "守身", name: "Chuột là chuột", paper: "lilac", key: -1, bh: true,
+    han: "𤝞羅𤝞", name: "Chuột là chuột", paper: "lilac", key: -1, bh: true,
     hint: "Đẩy chữ CHUỘT qua ngõ hẹp là tự ghép thành CHUỘT LÀ MÈO. Ghép trước CHUỘT LÀ CHUỘT: chuột giữ nguyên là chuột, không hoá thành gì khác.",
     map: ["W=3.G=6....", "M=1...=....", "..M.m...M..", "wwwwww.wwww", ".....wMw...", ".....w.w...", "..g.......w", ".......=C.w"],
     fixed: [[0, 0], [1, 0], [2, 0], [4, 0], [5, 0], [6, 0], [0, 1], [1, 1], [2, 1], [7, 7], [8, 7]],

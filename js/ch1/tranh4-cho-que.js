@@ -529,7 +529,7 @@ function t4Gate(x, need) {
 
 /* ---------- tranh 4 ---------- */
 LEVELS[3] = {
-  han: '東湖', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, zoomWide: .68, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
+  han: '廊幀', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, zoomWide: .68, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
   intro: '', endTitle: 'Qua Làng Tranh', endText: 'Pha màu, in tranh, gọi nắng, giữ cầu: làng tranh Đông Hồ cảm tạ bốn đồng tiền. Lính cụ Lý mở cổng, đoàn rước vào chợ.',
   build: () => {
     S.coins = 0; S.coinShown = 0; S.coinFx = []; S.prints = 0;
