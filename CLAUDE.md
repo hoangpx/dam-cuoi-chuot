@@ -351,3 +351,4 @@ Bell recording is now the owner's .wav (the mp3 was not heard in the artifact): 
 Bell warning rings without a pause (t7Ring: a jingle every .45 s from the first warning through the cat's pass, louder and a little higher).
 Bell debug (demo): a toast 'Lục lạc: có | file: … | âm thanh: …' at each warning (remove for release); t7Ring retries bellLoad until the sample decodes.
 Demo buttons in the dark: 'Nghe lục lạc' (plays the bell now), 'Đã đeo cho mèo' (SAVE.catBell = true without going to tranh 1), 'Xin lục lạc', 'Bỏ lục lạc'.
+Demo button 'Nghe lục lạc' now toggles a non-stop ringing (T7.loop → t7Ring), label 'Tắt lục lạc' while on.
