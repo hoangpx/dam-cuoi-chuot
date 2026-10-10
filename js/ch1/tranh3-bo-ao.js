@@ -137,7 +137,7 @@ function hawk(z0, z1) {
     onWarn() { AU.screech(); },
     update(dt) {
       if (!S.told.hawk && groom.x > z0 - 240) { S.told.hawk = true;  }
-      if (!S.caught) { if (groom.x < z0 - 250 || groom.x > z1 + 120) { this.st = 'sleep'; this.t = 2 + R(); } else tickWatcher(this, dt); }
+      if (!S.caught) { if (groom.x < z0 - 12 || groom.x > z1 + 120) { this.st = 'sleep'; this.t = 2 + R(); } else tickWatcher(this, dt); }
       let tx, ty;
       if (S.catcher === this) { tx = groom.x; ty = GROUND - 90; }
       else if (this.st === 'watch') { tx = groom.x + 30 + Math.sin(S.t * 1.3) * 60; ty = 120; }

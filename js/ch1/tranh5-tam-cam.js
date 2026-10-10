@@ -95,8 +95,8 @@ const t5Dots = (g, x, y) => t4Bubble(g, x, y, 56, g => { g.fillStyle = INK; for 
 function t5Meet(x, lines) {
   const m = { x, n: 0, gone: false, runT: -1, said: 0,
     hit(wx, wy, top = 200) { return Math.abs(wx - this.x) < 46 && wy > GROUND - top && wy < GROUND + 6; },   // her body, from the ground up
-    talk() { toast(lines[this.n % lines.length], 3.6); this.n++; AU.pluck(76); },
-    run(msg) { toast(msg, 3.8); AU.pluck(84); setTimeout(() => AU.pluck(91), 140); this.runT = 0; },
+    talk() { toastSay(lines[this.n % lines.length]); this.n++; AU.pluck(76); },
+    run(msg) { toastSay(msg); AU.pluck(84); setTimeout(() => AU.pluck(91), 140); this.runT = 0; },
     step(dt) { if (this.runT >= 0 && !this.gone) { this.runT += dt; if (this.runT > 2.4) this.x += 320 * dt; if (this.runT > 5) this.gone = true; } },   // thanks for a while, then off at a run
     alpha() { return this.runT > 4.2 ? Math.max(0, 1 - (this.runT - 4.2) / .8) : 1; },
   };
@@ -512,7 +512,7 @@ function t5Thi(x) {
         this.st = 'tam'; this.t = 0; m.x = FX;
         followers[0].item = 'parasol'; updateHud();                     // the parasol comes back
         T5.bell = 0; SAVE.lucLac = true; persist();                     // the bell shows itself big in the middle first (drawHud)
-        toast('Tấm trả lại chiếc lọng, và tặng đoàn chuột một chiếc lục lạc của mèo: "Thế nào cũng có lúc cần đến!"', 4.6);
+        toastSay('Tấm trả lại chiếc lọng, và tặng đoàn chuột một chiếc lục lạc của mèo: "Thế nào cũng có lúc cần đến!"', 4.6);
         AU.pluck(84); setTimeout(() => AU.pluck(88), 150); setTimeout(() => AU.pluck(93), 300);
       }
     },

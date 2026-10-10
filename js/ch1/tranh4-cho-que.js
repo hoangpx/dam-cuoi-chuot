@@ -41,7 +41,7 @@ function t4Earn(wx, wy) {
   S.coins++; S.coinFx.push({ x: wx - camX, y: wy + offY, t: 0, slot: S.coins - 1 });
   AU.pluck(88); setTimeout(() => AU.pluck(95), 130);
 }
-function t4Thanks(ent, x, msg) { ent.k.bounce = 2.4; AU.pluck(84); toast(msg, 3.8); setTimeout(() => t4Earn(x, GROUND - 120), 1500); }
+function t4Thanks(ent, x, msg) { ent.k.bounce = 2.4; AU.pluck(84); toastSay(msg); setTimeout(() => t4Earn(x, GROUND - 120), 1500); }
 // the purse: four places for coins in the top corner
 function t4Purse(need) {
   return {
@@ -136,7 +136,7 @@ function t4Dyer(W) {
     layer: 'bg', ax: W + 300, st: 'idle', mix: {}, pour: null, k: { bounce: 0 }, mud: 0,
     onClick(wx, wy) {
       if (this.st !== 'idle' || !t4Asked(wx, wy, KX)) return false;
-      this.st = 'make'; this.k.bounce = .8; AU.pluck(70); toast('Chum màu xanh lá vỡ mất rồi! Không có màu xanh lá thì in tranh làm sao được…', 3.8); return true;
+      this.st = 'make'; this.k.bounce = .8; AU.pluck(70); toastSay('Chum màu xanh lá vỡ mất rồi! Không có màu xanh lá thì in tranh làm sao được…', 3.8); return true;
     },
     grab(wx, wy) {
       if (this.st !== 'make' || this.mud > 0) return null;
@@ -162,7 +162,7 @@ function t4Dyer(W) {
       if (has.some(p => p !== 'vang' && p !== 'xanhb')) {
         const orange = has.length === 2 && has.includes('vang') && has.includes('do'), purple = has.length === 2 && has.includes('xanhb') && has.includes('do');
         this.mud = 2.2; AU.pluck(52);
-        toast(orange ? 'Màu da cam đẹp đấy, nhưng chú cần màu xanh lá cơ! Chú đổ đi nhé.' : purple ? 'Ra màu tím rồi, chưa phải xanh lá! Chú đổ đi nhé.' : 'Màu lem nhem thế này thì in làm sao! Chú thợ nhuộm đổ đi.', 3.2); return;
+        toastSay(orange ? 'Màu da cam đẹp đấy, nhưng chú cần màu xanh lá cơ! Chú đổ đi nhé.' : purple ? 'Ra màu tím rồi, chưa phải xanh lá! Chú đổ đi nhé.' : 'Màu lem nhem thế này thì in làm sao! Chú thợ nhuộm đổ đi.', 3.2); return;
       }
       if (y >= .2 && b >= .2 && b / (y + b) > .25 && b / (y + b) < .75) {
         this.st = 'done'; AU.swoosh(); t4Thanks(this, KX, 'Ra màu xanh lá rồi! Chú thợ nhuộm mừng quá, cảm tạ đoàn rước một đồng.');
@@ -175,7 +175,7 @@ function t4Dyer(W) {
           : has.length === 1 ? `Cả chum toàn màu ${has[0] === 'vang' ? 'vàng' : 'xanh dương'}, đầy rồi không pha thêm được!`
           : y < .2 || b < .2 ? 'Nước lã nhiều quá, màu nhạt thếch!'
           : b / (y + b) <= .25 ? 'Vàng nhiều quá, chưa ra xanh lá!' : 'Xanh dương nhiều quá, chưa ra xanh lá!';
-        this.mud = 2.2; AU.pluck(52); toast(why + ' Chú thợ nhuộm đổ đi, pha lại nhé: vàng với xanh dương, mỗi thứ một nửa.', 3.8);
+        this.mud = 2.2; AU.pluck(52); toastSay(why + ' Chú thợ nhuộm đổ đi, pha lại nhé: vàng với xanh dương, mỗi thứ một nửa.', 3.8);
       }
     },
     update(dt) {
@@ -190,7 +190,7 @@ function t4Dyer(W) {
       if (j && j.tilt > .85 && this.st === 'make') {
         const total = Object.values(this.mix).reduce((a, b) => a + b, 0), a = Math.min(.2 * dt, j.l);
         if (total < 1.2) { j.l -= a; const k = j.pig || 'nuoc'; this.mix[k] = (this.mix[k] || 0) + a; }
-        if (j.l <= .001) { j.l = 0; j.empty = 3.2; this.pour = null; S.drag = null; AU.pluck(52); toast(j.base ? 'Hết cả chum màu rồi! Để chú đi múc thêm…' : 'Hết sạch cả chum rồi! Thế bây giờ lấy màu đâu mà làm?', 3); this.settle(); }
+        if (j.l <= .001) { j.l = 0; j.empty = 3.2; this.pour = null; S.drag = null; AU.pluck(52); toastSay(j.base ? 'Hết cả chum màu rồi! Để chú đi múc thêm…' : 'Hết sạch cả chum rồi! Thế bây giờ lấy màu đâu mà làm?', 3); this.settle(); }
       }
     },
     draw(g) {
@@ -292,13 +292,13 @@ function t4Printer(W) {
     show() { this.st = 'show'; this.t = -.4; },
     onClick(wx, wy) {
       if (this.st === 'done') return false;
-      if (t4Asked(wx, wy, KX)) { if (this.st === 'idle') { this.k.bounce = .8; toast('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé!', 3.8); } if (this.st === 'input' || this.st === 'idle') { AU.pluck(76); this.show(); } return true; }
+      if (t4Asked(wx, wy, KX)) { if (this.st === 'idle') { this.k.bounce = .8; toastSay('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé!', 3.8); } if (this.st === 'input' || this.st === 'idle') { AU.pluck(76); this.show(); } return true; }
       const i = T4_INKS.findIndex((_, k) => Math.abs(wx - BX(k)) < 26 && wy > BY - 50 && wy < BY + 16); if (i < 0) return false;
       if (this.st !== 'input') return true;
       const ink = T4_INKS[i]; this.press[ink] = .25;
       if (ink !== this.order[this.step]) {
         this.st = 'smear'; this.t = 0; AU.pluck(50); AU.thump();
-        if (!this.toldWrong) { this.toldWrong = true; toast('In sai thứ tự, tranh nhoè mất rồi! Chạm vào bác thợ in để xem lại.', 3.4); }
+        if (!this.toldWrong) { this.toldWrong = true; toastSay('In sai thứ tự, tranh nhoè mất rồi! Chạm vào bác thợ in để xem lại.', 3.4); }
         return true;
       }
       this.layers.push(ink); this.step++; AU.stamp();
@@ -364,7 +364,7 @@ function t4Drying(W) {
     layer: 'bg', ax: W, st: 'idle', dry: 0, k: { bounce: 0 }, rainK: 1,
     onClick(wx, wy) {
       if (this.st !== 'idle' || !t4Asked(wx, wy, KX)) return false;
-      this.st = 'rain'; this.k.bounce = .8; AU.pluck(70); toast('Mưa mãi không tạnh, mây đen kín trời, tranh phơi ướt sũng chẳng khô được…', 3.8); return true;
+      this.st = 'rain'; this.k.bounce = .8; AU.pluck(70); toastSay('Mưa mãi không tạnh, mây đen kín trời, tranh phơi ướt sũng chẳng khô được…', 3.8); return true;
     },
     grab(wx, wy) {
       if (this.st !== 'rain') return null;
@@ -509,7 +509,7 @@ function t4Gate(x, need) {
         this.paid = true; this.k.bounce = 1.2;
         for (let k = 0; k < need; k++) setTimeout(() => { S.coinFx.push({ x: x - 70 - camX, y: GROUND - 90 + offY, t: 0, slot: need - 1 - k, rev: true }); AU.pluck(84 + k * 2); }, k * 180);
         setTimeout(() => { this.opened = true; AU.creak(); toast('Lính cụ Lý nhận đủ bốn đồng, mở cổng cho đoàn vào chợ!', 3.4); }, need * 180 + 900);
-      } else if (!this.told) { this.told = true; toast('Lính cụ Lý chống giáo: "Nộp đủ bốn đồng mới được vào chợ!"', 3.6); }
+      } else if (!this.told) { this.told = true; toastSay('Lính cụ Lý chống giáo: "Nộp đủ bốn đồng mới được vào chợ!"', 3.6); }
     },
     draw(g) {
       for (const sx of [x + 130, x + 230]) dp(g, MP.stall, sx, GROUND + 4, 0, .85, .85);

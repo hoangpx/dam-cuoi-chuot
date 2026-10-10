@@ -85,7 +85,7 @@ function roofCat(x0, x1) {
     update(dt) {
       if (S.caught) return;
       if (!S.told.roof && groom.x > x0 - 260) { S.told.roof = true;  }
-      if (groom.x < x0 - 250 || groom.x > x1 + 150) { this.st = 'sleep'; this.t = 1.5 + R(); return; }
+      if (groom.x < this.z0 - 12 || groom.x > x1 + 150) { this.st = 'sleep'; this.t = 1.5 + R(); return; }
       tickWatcher(this, dt);
     },
     draw(g) {

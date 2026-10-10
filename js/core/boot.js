@@ -25,7 +25,12 @@ function resize() {
 addEventListener('resize', resize); resize();
 function setZoom(z, zw = 1) { if (z !== ZOOM || zw !== ZOOMW) { ZOOM = z; ZOOMW = zw; resize(); } }
 
-let toastTimer;
+let toastTimer, toastSticky = false, toastStickT = 0;
+// what a character says (owner: chương I tranh 1–5): the words stay until the player taps, clicks, or presses Enter / Space
+function toastSay(s) { toast(s, 1e6); toastSticky = true; toastStickT = performance.now(); $('#toast').classList.add('say'); }
+function toastDismiss() { if (!toastSticky || performance.now() - toastStickT < 400) return; toastSticky = false; clearTimeout(toastTimer); $('#toast').classList.remove('on', 'say'); }
+addEventListener('pointerdown', toastDismiss, true);
+addEventListener('keydown', e => { if (e.code === 'Enter' || e.code === 'Space') toastDismiss(); }, true);
 // a toast may carry chương IV's coin icon (our own markup)
-function toast(s, d = 2.8) { toast.n = (toast.n || 0) + 1; if (/<(i|br|b)[ >]/.test(String(s))) $('#toastTx').innerHTML = s; else $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
+function toast(s, d = 2.8) { toast.n = (toast.n || 0) + 1; if (d < 1e5) { toastSticky = false; $('#toast').classList.remove('say'); } if (/<(i|br|b)[ >]/.test(String(s))) $('#toastTx').innerHTML = s; else $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
 function capturePointer(e, el = cv) { try { el.setPointerCapture(e.pointerId); } catch (err) {} }
