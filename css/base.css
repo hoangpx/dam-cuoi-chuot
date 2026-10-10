@@ -127,3 +127,4 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #bongchim[hidden]{display:none}
 #bongchim canvas{touch-action:none;display:block;cursor:grab}
 #bongX{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:38px;height:38px;border-radius:50%;border:2px solid #e8ecff;background:rgba(0,0,0,.35);color:#e8ecff;font-size:18px}
+#bongS{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);padding:8px 16px;border-radius:18px;border:2px solid #e8ecff;background:rgba(0,0,0,.4);color:#e8ecff;font-size:14px}

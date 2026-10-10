@@ -24,6 +24,8 @@ const bcMul = (A, B) => { const o = new Array(9); for (let i = 0; i < 3; i++) fo
 const bcT = A => [A[0], A[3], A[6], A[1], A[4], A[7], A[2], A[5], A[8]];
 const bcApp = (A, v) => [A[0] * v[0] + A[1] * v[1] + A[2] * v[2], A[3] * v[0] + A[4] * v[1] + A[5] * v[2], A[6] * v[0] + A[7] * v[1] + A[8] * v[2]];
 const bcRot = (ax, ay, az, a) => { const c = Math.cos(a), s = Math.sin(a), t = 1 - c; return [t * ax * ax + c, t * ax * ay - s * az, t * ax * az + s * ay, t * ax * ay + s * az, t * ay * ay + c, t * ay * az - s * ax, t * ax * az - s * ay, t * ay * az + s * ax, t * az * az + c]; };
+// the bird is the same left and right, so turning the tangle half a way round the bird's upright axis (x → -x, z → -z) gives the very same shadow: that pose wins too
+const BC_DY = [-1, 0, 0, 0, 1, 0, 0, 0, -1];
 const bcAngleFromI = R => Math.abs(Math.acos(Math.max(-1, Math.min(1, (R[0] + R[4] + R[8] - 1) / 2))));
 function bcNoise(seed) {                                                    // smooth value noise on a wrapping grid, 0..1
   const G = 64, v = new Float32Array(G * G); let a = seed >>> 0; for (let i = 0; i < v.length; i++) { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; v[i] = a / 4294967296; }
@@ -94,9 +96,9 @@ function bcBuild() {
 
 (function () {
   const el = document.createElement('div'); el.id = 'bongchim'; el.hidden = true;
-  el.innerHTML = '<canvas id="bongCv"></canvas><button id="bongX" aria-label="Đóng">✕</button>';
+  el.innerHTML = '<canvas id="bongCv"></canvas><button id="bongX" aria-label="Đóng">✕</button><button id="bongS">Xem đáp án</button>';
   document.body.appendChild(el);
-  const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#bongX');
+  const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#bongX'), XS = el.querySelector('#bongS');
   const L = BC_LW, kx = L[0] / L[1], kz = L[2] / L[1], e1 = [BC_Q[0], BC_Q[3], BC_Q[6]], e2 = [BC_Q[1], BC_Q[4], BC_Q[7]];
   let st = null, raf = 0, last = 0;
   const size = () => { const k = Math.min(innerWidth * .96 / BC_W, innerHeight * .94 / BC_H), d = Math.min(2, devicePixelRatio || 1); cv2.style.width = BC_W * k + 'px'; cv2.style.height = BC_H * k + 'px'; cv2.width = Math.round(BC_W * k * d); cv2.height = Math.round(BC_H * k * d); st && (st.k = k * d); };
@@ -290,20 +292,24 @@ function bcBuild() {
       st.t += dt;
       if (!st.done) {
         if (!st.drag && (Math.abs(st.vel[0]) > .0006 || Math.abs(st.vel[1]) > .0006)) { turn(st.vel[0], st.vel[1]); st.vel[0] *= Math.pow(.04, dt); st.vel[1] *= Math.pow(.04, dt); }     // a little momentum
-        const R = bcMul(bcT(BC_Q), st.W), ang = bcAngleFromI(R);
-        if (ang < .07) { st.hold += dt; if (st.hold > .25) win(); } else st.hold = 0;     // about 4 degrees, kept for a quarter of a second
+        const R = bcMul(bcT(BC_Q), st.W), a1 = bcAngleFromI(R), a2 = bcAngleFromI(bcMul(R, BC_DY)), ang = Math.min(a1, a2); st.flip = a2 < a1;
+        if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / 2); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(BC_Q, bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * (1 - e))); st.ver++; if (st.solve.t >= 1) st.solve = null; }
+        else if (ang < .07) { st.hold += dt; if (st.hold > .25) win(); } else st.hold = 0;     // about 4 degrees, kept for a quarter of a second
       } else { st.dt += dt; if (st.dt > 4.2) finish(); }
       const t0 = performance.now(); draw(); BC.ms = performance.now() - t0;
     }
     raf = requestAnimationFrame(loop);
   }
   function win() {
-    st.done = true; st.dt = 0; st.drag = null; st.W = BC_Q.slice(); st.ver++;         // it settles exactly on the target
+    st.done = true; st.dt = 0; st.drag = null; st.W = st.flip ? bcMul(BC_Q, BC_DY) : BC_Q.slice(); st.ver++;         // it settles exactly on the target
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => { AU.chirp && AU.chirp(); }, 700); setTimeout(() => AU.pluck(91), 1400);
   }
   function finish() { const cb = st && st.cb; BC.open = false; el.hidden = true; cancelAnimationFrame(raf); st = null; if (cb) cb(); }
   addEventListener('keydown', e => { if (!BC.open) return; e.stopPropagation(); e.preventDefault(); if (e.code === 'Escape') finish(); }, true);
   X.addEventListener('click', finish);
+  XS.addEventListener('click', () => {                                          // (demo only) turn the tangle slowly to the right pose, to show what to look for
+    if (!st || st.done || st.solve) return; const R = bcMul(bcT(BC_Q), st.W), an = bcAngleFromI(R); if (an < 1e-3) return; const sn = Math.sin(an) || 1e-3, ax = [(R[7] - R[5]) / (2 * sn), (R[2] - R[6]) / (2 * sn), (R[3] - R[1]) / (2 * sn)], l = Math.hypot(...ax) || 1;
+    st.solve = { t: 0, an, ax: ax.map(v => v / l) }; st.drag = null; st.vel = [0, 0]; });
   addEventListener('resize', () => BC.open && size());
   window.bongOpen = function (cb) {
     if (BC.open) return; BC.open = true; el.hidden = false;
