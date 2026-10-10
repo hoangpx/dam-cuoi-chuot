@@ -288,7 +288,9 @@ window.giayPrep = () => { gkEnsure(); };
   const iouAt = (ox, oy, rot) => gkLiveIou(GK.puz.pathB, GK.puz.mA, GK.puz.mK, ox, oy, rot);
   // (owner) very close is enough: within about 1 pixel of the perfect pose (about 99 % matched) it counts as the key and clicks in by itself; there is no pull any more.
   // (The key is thin, so a few pixels off already lights little of it.)
-  const isClose = () => { const P = GK.puz; return Math.hypot(st.ox - P.g[0], st.oy - P.g[1]) <= 1 && (!GK.turn || Math.abs(gkWrap(st.rot - P.phi)) < .08); };
+  // (owner) it only counts when the player LETS GO (finger up, mouse up, arrow key up): passing through the right place while still moving does nothing.
+  // The place where it was let go (the target pose, not the gliding sheet) must be within 1.5 pixels of the perfect pose.
+  const isClose = () => { const P = GK.puz; return Math.hypot(st.tx - P.g[0], st.ty - P.g[1]) <= 1.5 && (!GK.turn || Math.abs(gkWrap(st.trot - P.phi)) < .08); };
   function win() {
     const P = GK.puz; st.done = true; st.t = 0; st.drag = null; st.tx = P.g[0]; st.ty = P.g[1]; st.trot = st.rot + gkWrap(P.phi - st.rot);          // it settles exactly into place
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => AU.pluck(91), 320); setTimeout(() => AU.stamp(), 520); setTimeout(() => close(true), 2400);
@@ -320,7 +322,7 @@ window.giayPrep = () => { gkEnsure(); };
     if (e.code === 'Escape') { close(false); return; }
     st && st.keys.add(e.code);
   }, true);
-  addEventListener('keyup', e => { st && st.keys.delete(e.code); }, true);
+  addEventListener('keyup', e => { if (!st) return; st.keys.delete(e.code); if (GK.open && !st.done && !st.drag && !st.keys.size && isClose()) win(); }, true);
   X.addEventListener('click', () => close(false));
   let raf = 0, last = 0;
   function loop(ts) {
@@ -334,7 +336,6 @@ window.giayPrep = () => { gkEnsure(); };
         // it glides after the finger (smooth), and holding it still on the right pose for a moment is enough too
         const f = Math.min(1, dt * 16), px0 = st.ox, py0 = st.oy, r0 = st.rot; st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f;
         if (st.lastIou == null || Math.abs(st.ox - st.cx0) > .5 || Math.abs(st.oy - st.cy0) > .5 || Math.abs(st.rot - st.cr0) > .006) { st.lastIou = iouAt(st.ox, st.oy, st.rot); st.cx0 = st.ox; st.cy0 = st.oy; st.cr0 = st.rot; }
-        if (isClose()) win();                                                     // (no need to hold still: the moment it is close, it clicks in)
       } else { const f = Math.min(1, dt * 9); st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f; }
       draw();
     }
