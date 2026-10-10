@@ -115,7 +115,7 @@ function t7CatDraw(g, vw, q, dir) {
 
 // the cat pounces every T7_ZONE px of the dark; without the bell on the tranh-1 cat (SAVE.catBell) the party is always caught and sent back to the start;
 // with it the bell jingles as the cat comes: the party must stop at once (T7_REACT .5 s to react, else it is caught) and wait 1–3 s until the shadow has passed, then walks on
-const T7_ZONE = 4800, T7_Z0 = 3000, T7_REACT = .5, T7_CAT = .95;       // 5 pounces; from the first jingle the party has T7_REACT s to stop, and the bell-to-shadow-passed wait is 1.55–3 s (e.warn)
+const T7_ZONE = 4800, T7_Z0 = 3000, T7_REACT = .5, T7_WARN = 1, T7_CAT = .95;       // 5 pounces; from the first jingle the party has T7_REACT s to stop, and the bell rings T7_WARN 1 s before the shadow comes
 const t7Zones = () => { const a = []; for (let x = T7_Z0; x < T6_OFF - 1800; x += T7_ZONE) a.push(x); return a; };
 // the recorded bell rings without a pause (owner): a new jingle every .45 s over the last one, louder and a little higher as the cat comes
 function t7Ring(e, dt) {
@@ -142,7 +142,7 @@ function t6Dark() {
         if (!T7.ev) {
           while (T7.zi < T7.zs.length && T7.zs[T7.zi] < groom.x - 300) T7.zi++;                // zones already behind the party are not run again
           if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { if (SAVE.catBell) toast('Lục lạc: có | file: ' + (AU.hasSample('bell') ? 'đã tải' : 'chưa tải') + ' | âm thanh: ' + AU.state(), 3);       // (demo: to find why the bell is silent)
-          T7.ev = { t: 0, warn: Math.max(.6, 1.55 + Math.random() * 1.45 - T7_CAT), ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
+          T7.ev = { t: 0, warn: T7_WARN, ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
         } else {
           const e = T7.ev; e.t += dt;
           if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
