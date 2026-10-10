@@ -172,9 +172,9 @@ function t4Dyer(W) {
       const tot = Object.values(m).reduce((p, c) => p + c, 0);
       if (tot >= 1.15) {
         const why = !has.length ? 'Cả chum toàn nước lã, chẳng có màu gì!'
-          : has.length === 1 ? `Cả chum toàn màu ${has[0] === 'vang' ? 'vàng' : 'xanh dương'}, đầy rồi không pha thêm được!`
+          : has.length === 1 ? 'Cả chum toàn một màu, đầy rồi không pha thêm được!'
           : y < .2 || b < .2 ? 'Nước lã nhiều quá, màu nhạt thếch!'
-          : b / (y + b) <= .25 ? 'Vàng nhiều quá, chưa ra xanh lá!' : 'Xanh dương nhiều quá, chưa ra xanh lá!';
+          : 'Pha chưa đúng, chưa ra xanh lá!';
         this.mud = 2.2; AU.pluck(52); toastSay(why + ' Chú thợ nhuộm đổ đi, pha lại nhé.');
       }
     },
@@ -471,7 +471,7 @@ function t4Bridge(g0, g1) {
         const u = (this.cx - g0) / span, middle = u > .2 && u < .8;
         if (middle && !this.held()) {
           const was = this.strain; this.strain += dt / 1.1;
-          if (was < .3 && this.strain >= .3) { AU.creak(); if (!this.warned) { this.warned = true; toast('Cầu tre kêu răng rắc… giữ lấy cầu!', 2.6); } }
+          if (was < .3 && this.strain >= .3) { AU.creak(); if (!this.warned) { this.warned = true; toast('Cầu tre kêu răng rắc…', 2.6); } }
           if (this.strain >= 1) { this.st = 'back'; this.crack = 1.6; AU.thump(); AU.creak(); toast('Rắc! Cầu oằn xuống, xe tranh lăn ngược về đầu cầu.', 3); }
         } else this.strain = Math.max(0, this.strain - dt * 1.4);
         if (this.cx > END) { this.st = 'done'; this.strain = 0; S.lockMove = false; t4Thanks(this, END + 60, 'Xe tranh qua cầu rồi! Ông cụ cảm tạ cả đoàn, biếu một đồng.'); }
@@ -547,7 +547,7 @@ function t4Gate(x, need) {
 /* ---------- tranh 4 ---------- */
 LEVELS[3] = {
   han: '廊幀', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, zoomWide: .68, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
-  intro: '', endTitle: 'Qua Làng Tranh', endText: 'Pha màu, in tranh, gọi nắng, giữ cầu: làng tranh Đông Hồ cảm tạ bốn đồng tiền. Lính cụ Lý mở cổng, đoàn rước vào chợ.',
+  intro: '', endTitle: 'Qua Làng Tranh', endText: 'Pha màu, in tranh, gọi nắng, đẩy xe qua cầu: làng tranh Đông Hồ cảm tạ bốn đồng tiền. Lính cụ Lý mở cổng, đoàn rước vào chợ.',
   build: () => {
     S.coins = 0; S.coinShown = 0; S.coinFx = []; S.prints = 0;
     return [
