@@ -252,7 +252,7 @@ function gkMake() {
     if (!st || !sheets.A) return; const P = GK.puz, h = g, k = st.k, ax = GK.AX, ay = GK.AY, [cx, cy] = centre();
     h.setTransform(k, 0, 0, k, 0, 0); h.clearRect(0, 0, GK.W, GK.H);
     h.fillStyle = '#3a2d1e'; h.strokeStyle = INKC; h.lineWidth = 3; h.fillRect(0, 0, GK.W, GK.H); h.strokeRect(1.5, 1.5, GK.W - 3, GK.H - 3);
-    keyIcon(h, GK.W / 2, 28, 1.6, st.done ? GOLD : '#7a6a4a');
+    if (st.done) keyIcon(h, GK.W / 2, 28, 1.6, GOLD);                       // (owner: no model key to look at while playing; it only shows once the key is made)
     h.save(); h.translate(AC[0], AC[1]); h.rotate(st.alpha); h.translate(-AC[0], -AC[1]);
     h.drawImage(sheets.A.c, ax - sheets.A.pad, ay - sheets.A.pad, sheets.A.c.width / k, sheets.A.c.height / k);
     h.save(); h.translate(cx, cy); h.rotate(st.rot); h.shadowColor = 'rgba(0,0,0,.4)'; h.shadowBlur = 9; h.shadowOffsetY = 3; h.drawImage(sheets.B.c, -C - sheets.B.pad, -C - sheets.B.pad, sheets.B.c.width / k, sheets.B.c.height / k); h.restore();
@@ -274,9 +274,9 @@ function gkMake() {
   const toLogical = (e) => { const r = cv2.getBoundingClientRect(); return toGroup((e.clientX - r.left) / r.width * GK.W, (e.clientY - r.top) / r.height * GK.H); };
   // how like the key is what is lit, in this pose (the front sheet's holes turned and moved are painted at half size and set against the back sheet's)
   const iouAt = (ox, oy, rot) => gkLiveIou(GK.puz.pathB, GK.puz.mA, GK.puz.mK, ox, oy, rot);
-  // (owner) very close is enough: within about 2.5 pixels of the perfect pose it counts as the key and clicks in by itself, and a gentle pull draws the sheet in
-  // from about 6 pixels, so a finger does not have to be exact. (The key is thin, so a few pixels off already lights little of it.)
-  const isClose = () => { const P = GK.puz; return Math.hypot(st.ox - P.g[0], st.oy - P.g[1]) <= 2.5 && (!GK.turn || Math.abs(gkWrap(st.rot - P.phi)) < .08); };
+  // (owner) very close is enough: within about 1.8 pixels of the perfect pose it counts as the key and clicks in by itself, and a gentle pull draws the sheet in
+  // from about 4 pixels, so a finger does not have to be exact. (The key is thin, so a few pixels off already lights little of it.)
+  const isClose = () => { const P = GK.puz; return Math.hypot(st.ox - P.g[0], st.oy - P.g[1]) <= 1.8 && (!GK.turn || Math.abs(gkWrap(st.rot - P.phi)) < .08); };
   function win() {
     const P = GK.puz; st.done = true; st.t = 0; st.drag = null; st.tx = P.g[0]; st.ty = P.g[1]; st.trot = st.rot + gkWrap(P.phi - st.rot);          // it settles exactly into place
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => AU.pluck(91), 320); setTimeout(() => AU.stamp(), 520); setTimeout(() => close(true), 2400);
@@ -320,7 +320,7 @@ function gkMake() {
         if (kx || ky) { const ca = Math.cos(st.alpha), sa = Math.sin(st.alpha); st.tx += (ca * kx + sa * ky) * 70 * dt; st.ty += (-sa * kx + ca * ky) * 70 * dt; clampPose(); }
         if (kr && GK.turn) st.trot += kr * 1.1 * dt;
         // it glides after the finger (smooth), and holding it still on the right pose for a moment is enough too
-        const P0 = GK.puz, dd = Math.hypot(st.tx - P0.g[0], st.ty - P0.g[1]); if (dd < 6) { const m = Math.min(1, dt * 7); st.tx += (P0.g[0] - st.tx) * m; st.ty += (P0.g[1] - st.ty) * m; }     // the pull
+        const P0 = GK.puz, dd = Math.hypot(st.tx - P0.g[0], st.ty - P0.g[1]); if (dd < 4) { const m = Math.min(1, dt * 6); st.tx += (P0.g[0] - st.tx) * m; st.ty += (P0.g[1] - st.ty) * m; }     // the pull
         const f = Math.min(1, dt * 16), px0 = st.ox, py0 = st.oy, r0 = st.rot; st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f;
         if (st.lastIou == null || Math.abs(st.ox - st.cx0) > .5 || Math.abs(st.oy - st.cy0) > .5 || Math.abs(st.rot - st.cr0) > .006) { st.lastIou = iouAt(st.ox, st.oy, st.rot); st.cx0 = st.ox; st.cy0 = st.oy; st.cr0 = st.rot; }
         if (isClose()) win();                                                     // (no need to hold still: the moment it is close, it clicks in)
