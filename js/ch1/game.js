@@ -97,7 +97,7 @@ function finishLevel() {
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   $('#endHan').textContent = L.han; $('#endTitle').textContent = L.endTitle; $('#endText').textContent = L.endText;
   const last = S.lv === LEVELS.length - 1, n = SAVE.done.filter(Boolean).length;
-  const stats = `Bị bắt ${S.catches} lần${S.catches === 0 ? ' · Triện vàng ★' : ''}${S.lv > 0 ? (SAVE.secret[S.lv] ? ' · Có mảnh triện ✦' : ' · Chưa tìm ra mảnh triện ẩn') : ''}`;
+  const stats = `Bị bắt ${S.catches} lần${S.catches === 0 ? ' · Triện vàng ★' : ''}`;
   const tot = S.lv < C1_READY ? C1_READY : LEVELS.length;
   $('#endNote').textContent = `${S.lv + 1 === tot ? `Đã đóng triện ${SAVE.done.slice(0, tot).filter(Boolean).length}/${tot} tranh. ` : `Tranh ${S.lv + 1}/${tot} đã vào album. `}${stats}`;
   $('#bNext').hidden = last || (S.lv + 1 >= C1_READY && S.lv + 1 !== C1_TRY);

@@ -218,7 +218,7 @@ function gate(x, need) {
     wall() { return this.opened ? null : x - 120; },
     hint: () => need ? (has(need) ? 'Nhà gái đứng chờ ở cổng. Dâng trầu cau đi!' : 'Nhà gái đòi lễ trầu cau mới cho rước dâu. Quay lại lấy giỏ trầu trên cây đa.') : null,
     offer: need ? { wants: [need], label: 'Dâng trầu cau', near: () => groom.x > x - 220, missing: 'Nhà gái đòi lễ trầu cau mới cho rước dâu.' } : null,
-    give() { this.opened = true; AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Nhà gái nhận trầu cau, mở cổng đón chú rể!', 3); },
+    give() { this.opened = true; AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Chủ nhà nhận trầu cau, mở cổng cho đoàn đi tiếp!', 3); },
     update(dt) {                              // at the gate: offer the gift by itself, or the bride's family asks for it
       if (this.opened || !need) return;
       const at = groom.x > x - 220;
@@ -237,13 +237,13 @@ function gate(x, need) {
 
 /* ---------- tranh 3 ---------- */
 LEVELS[2] = {
-  han: '坡坳', name: 'Bờ Ao', paper: 'blue', width: 3350, key: -3, abil: ['drum', 'ken', 'parasol'], cps: [160, 700, 1580, 2280],
+  han: '坡坳', name: 'Bờ Ao', paper: 'blue', width: 3830, key: -3, abil: ['drum', 'ken', 'parasol'], cps: [160, 700, 1580, 2760],
   intro: 'Bờ ao nhiều việc phải khéo tay: chạm đúng con chim, xếp đàn vịt thành cầu, và chơi nhạc đánh thức trâu. Chạm vào chú chuột đánh trống hay thổi kèn để chơi.',
-  endTitle: 'Tới nhà gái', endText: 'Nhà gái nhận trầu cau, mở cổng. Nhưng đường tới sân đình còn xa, còn cả chợ Tết đang họp.',
+  endTitle: 'Qua Bờ Ao', endText: 'Cầu vịt, diều hâu, trâu đều đã qua, cổng đã mở. Đường tới sân đình còn xa, còn cả chợ Tết đang họp.',
   build: () => [
     decor(WP.hanFor('坡坳'), 70, 120, .7), basketTree(400),
-    pond(1160, 1520), hawk(1640, 2120), decor(PROPS.bamboo, 2310, GROUND + 4, .9, -1),
-    secretSpot(2020, 'ken', 'Tò te… từ đám lau rơi xuống một mảnh triện đỏ!'),
-    buffalo(2620), gate(3140, 'cau'),
+    pond(1160, 1520), hawk(1640, 2600), decor(PROPS.bamboo, 2790, GROUND + 4, .9, -1),
+    secretSpot(2020, 'ken', ''),
+    buffalo(3100), gate(3620, 'cau'),
   ],
 };
