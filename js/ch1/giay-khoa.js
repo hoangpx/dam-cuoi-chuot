@@ -119,12 +119,13 @@ function gkLiveIou(pathB, mA, mK, ox, oy, rot) {
   for (let i = 0; i < 57600; i++) { const k = mK[i]; kn += k; if (mA[i] && d[i * 4 + 3] > 127) { li++; if (k) it++; } }
   return it / (li + kn - it || 1);
 }
-function gkMake() {
+const gkYield = () => new Promise(r => setTimeout(r, 0));
+async function gkMake() {
   const S = GK.S, c = S / 2, ri = (a, b) => a + GR() * (b - a), M = S * S, LO = 48, ks = LO / S, D = LO * 3;
   const touches = (m1, m2) => { for (let i = 0; i < M; i++) if (m1[i] && m2[i]) return true; return false; };
   const orInto = (dst, src) => { for (let i = 0; i < M; i++) if (src[i]) dst[i] = 1; };
   // many small torn holes spread evenly: each new one goes where the sheet is least torn already (the best of a few tries), never where `forbid` is set
-  const fillEven = (mask, forbid, target) => {
+  const fillEven = async (mask, forbid, target) => {
     let cov = 0; for (let i = 0; i < M; i++) cov += mask[i];
     const dens = (cx, cy) => { let d = 0; for (let dy = -10; dy <= 10; dy += 2) for (let dx = -10; dx <= 10; dx += 2) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < S && y < S) d += mask[(y | 0) * S + (x | 0)]; } return d; };
     const put = (cx, cy) => {                                                // one small tear at (cx, cy), unless it would touch what is forbidden
@@ -135,6 +136,7 @@ function gkMake() {
       let bx = -1, by = 0, bd = 1e9;                                          // the least-torn of several places that are free to tear
       for (let c2 = 0; c2 < 14; c2++) { const cx = Math.round(ri(0, S - 1)), cy = Math.round(ri(0, S - 1)); if (forbid[cy * S + cx]) continue; const d = dens(cx, cy); if (d < bd) { bd = d; bx = cx; by = cy; } }
       if (bx >= 0) put(bx, by);
+      if (guard % 160 === 159) await gkYield();
     }
     // and no stretch of paper left whole: every 16-pixel square gets at least a few holes if there is any room
     for (let by0 = 0; by0 < S; by0 += 16) for (let bx0 = 0; bx0 < S; bx0 += 16) {
@@ -161,6 +163,7 @@ function gkMake() {
     const rKeyA = gkRaster(keyA, S), edgePts = [], zone = [];
     for (let y = 1; y < S - 1; y++) for (let x = 1; x < S - 1; x++) if (rKeyA[y * S + x] && (!rKeyA[y * S + x - 1] || !rKeyA[y * S + x + 1] || !rKeyA[(y - 1) * S + x] || !rKeyA[(y + 1) * S + x])) edgePts.push([x, y]);
     const dil = r => { const o = new Uint8Array(M); for (const [x, y] of edgePts) for (let dy = -r; dy <= r; dy += 2) for (let dx = -r; dx <= r; dx += 2) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < S && yy < S && dx * dx + dy * dy <= r * r) o[yy * S + xx] = 1; } for (let i = 0; i < M; i++) if (rKeyA[i]) o[i] = 1; return o; };
+    await gkYield();
     const bury = dil(18), near = dil(28);
     for (let i = 0; i < M; i++) if (bury[i] && !rKeyA[i]) zone.push(i);
     // The key's edge: wherever one sheet's tear has to follow it, the other sheet's tear bulges out past it. So the edge is walked all round (the outer
@@ -174,24 +177,29 @@ function gkMake() {
       for (const [bx, by, a1, w] of bp) { const d = ((wx - bx) * (wx - bx) + (wy - by) * (wy - by)) * w; if (d < best) { best = d; mineA = a1; } }
       (mineA ? cellsA : cellsB)[i] = 1;
     }
+    await gkYield();
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
     for (let n = 0, guard = 0; n < 6 && guard < 160; guard++) {                // fishbone tears on the back sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
     { const hold = dil(21), keepB = new Uint8Array(hold); for (let i = 0; i < M; i++) if (near[i] && !hold[i] && noise(i % S, (i / S) | 0) > 4.5) keepB[i] = 1;   // in the ring just outside the key's own zone, half the patches are left to the front sheet
-      fillEven(mAk, keepB, .3); }                                                // (owner: many small holes, spread evenly over the sheet)
+      await fillEven(mAk, keepB, .3); }                                                // (owner: many small holes, spread evenly over the sheet)
+    await gkYield();
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
+    await gkYield();
     const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
     for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
     for (let n = 0, guard = 0; n < 6 && guard < 160; guard++) {                // fishbone tears on the front sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
-    { let sa = 0; for (let i = 0; i < M; i++) sa += mAk[i]; fillEven(mBk, reach, sa / M * .98); }   // the front sheet as full of holes as the back one
+    { let sa = 0; for (let i = 0; i < M; i++) sa += mAk[i]; await fillEven(mBk, reach, sa / M * .98); }   // the front sheet as full of holes as the back one
+    await gkYield();
     // laid right, how much of the lit shape is the key
     let inter = 0, lit = 0, keyN = 0;
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const k = rKeyA[y * S + x]; keyN += k; if (!mAk[y * S + x]) continue; const [u, v] = toB(x, y), ui = Math.round(u), vi = Math.round(v); if (ui >= 0 && vi >= 0 && ui < S && vi < S && mBk[vi * S + ui]) { lit++; if (k) inter++; } }
     if (inter / (lit + keyN - inter) < .8) continue;
+    await gkYield();
     // and no other pose lights anything like a key: every 15 degrees, every few pixels, at a coarse scale
     const mA = gkDown(mAk, S, LO), mB = gkDown(mBk, S, LO), mK = gkDown(rKeyA, S, LO), aIdx = []; let kn = 0;
     for (let i = 0; i < LO * LO; i++) { if (mA[i]) aIdx.push(i); kn += mK[i]; }
@@ -215,11 +223,14 @@ function gkMake() {
   return null;
 }
 
+// the pair of sheets: made once, in the background (giayPrep), handed out by giayOpen
+function gkEnsure() { if (GK.puz) return Promise.resolve(GK.puz); if (!GK.making) GK.making = gkMake().then(p => { GK.puz = p; GK.making = null; return p; }, () => { GK.making = null; return null; }); return GK.making; }
+window.giayPrep = () => { gkEnsure(); };
 (function () {
   const el = document.createElement('div'); el.id = 'giay'; el.hidden = true;
-  el.innerHTML = '<canvas id="giayCv"></canvas><button id="giayX" aria-label="Đóng">✕</button>';
+  el.innerHTML = '<canvas id="giayCv"></canvas><div id="giayWait" hidden><i></i></div><button id="giayX" aria-label="Đóng">✕</button>';
   document.body.appendChild(el);
-  const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#giayX'), S = GK.S, C = S / 2;
+  const wait = el.querySelector('#giayWait'), cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#giayX'), S = GK.S, C = S / 2;
   let st = null;                                                             // { ox, oy, rot, tx, ty, trot, drag, ptrs, t, done, cb, k, keys, hold, lastIou }
   const INKC = '#1d1915', PAPA = '#e9dcb4', PAPB = '#dba28e', GOLD = '#f2c640';
   const sheets = {};                                                         // the two sheets drawn once, holes cut out
@@ -332,19 +343,22 @@ function gkMake() {
   }
   function close(solved) {
     if (!GK.open) return; GK.open = false; el.hidden = true; cancelAnimationFrame(raf); const cb = st && st.cb; st = null;
-    if (solved) { GK.puz = null; setTimeout(() => { if (!GK.puz && !GK.open) GK.puz = gkMake(); }, 6000); }
+    if (solved) GK.puz = null;                                               // a pair is used up once the key is made
     if (solved && cb) cb();
-    if (window.__giayTest) setTimeout(() => { GK.puz = null; giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)); }, 1400);   // (the test copy: a fresh pair of sheets again and again)
+    if (window.__giayTest) setTimeout(() => { GK.puz = null; GK.making = null; giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)); }, 1400);   // (the test copy: a fresh pair of sheets again and again)
   }
   addEventListener('resize', () => GK.open && size());
   window.giayOpen = function (cb) {
     if (GK.open) return;
-    if (!GK.puz) GK.puz = gkMake();
-    if (!GK.puz) { if (cb) cb(); return; }                                    // (the maker nearly always finds one)
-    const r0 = GK.turn ? GK.puz.phi + (GR() < .5 ? -1 : 1) * (1.2 + GR() * 1.4) : 0;          // the front sheet starts turned well away from the right way up
-    GK.open = true; el.hidden = false; st = { alpha: GK.turn ? GR() * 6.2832 : 0, ox: 0, oy: 250, rot: r0, tx: 0, ty: 250, trot: r0, drag: null, ptrs: new Map(), t: 0, done: false, cb, k: 1, keys: new Set(), hold: 0, lastIou: null, cx0: 0, cy0: 0, cr0: 0 }; GK.st = st; { const [gx, gy] = toGroup(GK.W / 2, 440); st.ox = st.tx = gx - GK.AX - C; st.oy = st.ty = gy - GK.AY - C; } size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
+    GK.open = true; el.hidden = false; cv2.style.visibility = 'hidden'; wait.hidden = !!GK.puz;                // (a little turning sheet while the pair is still being torn)
+    gkEnsure().then(P => {
+      if (!GK.open) return;                                                  // closed while waiting
+      if (!P) { close(false); if (cb) cb(); return; }                        // (the maker nearly always finds one)
+      wait.hidden = true; cv2.style.visibility = 'visible';
+      const r0 = GK.turn ? P.phi + (GR() < .5 ? -1 : 1) * (1.2 + GR() * 1.4) : 0;          // the front sheet starts turned well away from the right way up
+      st = { alpha: GK.turn ? GR() * 6.2832 : 0, ox: 0, oy: 250, rot: r0, tx: 0, ty: 250, trot: r0, drag: null, ptrs: new Map(), t: 0, done: false, cb, k: 1, keys: new Set(), hold: 0, lastIou: null, cx0: 0, cy0: 0, cr0: 0 }; GK.st = st; { const [gx, gy] = toGroup(GK.W / 2, 440); st.ox = st.tx = gx - GK.AX - C; st.oy = st.ty = gy - GK.AY - C; } size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
+    });
   };
-  setTimeout(() => { if (!GK.puz && !GK.open) GK.puz = gkMake(); }, 9000);                    // the pair of sheets takes a moment to tear: do it while nobody is looking
-  window.giayReset = () => { GK.puz = null; };                                // a fresh pair of sheets (tests)
+  window.giayReset = () => { GK.puz = null; GK.making = null; };                                // a fresh pair of sheets (tests)
   if (window.__giayTest || /[?&]thu=giay/.test(location.search)) setTimeout(() => giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)), 1800);
 })();

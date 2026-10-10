@@ -32,3 +32,7 @@ body.touch #pad button{width:60px;height:60px}
 #giay[hidden]{display:none}
 #giayCv{touch-action:none;cursor:grab;display:block}
 #giayX{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;font-size:20px;border:2px solid var(--ink);background:var(--paper,#f2ecde);color:var(--ink);cursor:pointer}
+#giayWait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#giayWait[hidden]{display:none}
+#giayWait i{display:block;width:46px;height:46px;background:#e9dcb4;border:3px solid #1d1915;box-shadow:3px 3px 0 rgba(0,0,0,.35);animation:giaySpin 1.2s linear infinite}
+@keyframes giaySpin{to{transform:rotate(360deg)}}

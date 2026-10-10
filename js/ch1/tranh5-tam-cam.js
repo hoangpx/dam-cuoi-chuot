@@ -449,6 +449,7 @@ function t5Cage(x) {
     },
     update(dt) {
       this.shake = Math.max(0, this.shake - dt); this.t += dt;
+      if (this.on() && !this.prepped) { this.prepped = true; giayPrep(); }          // the two papers are torn in the background from the moment Tấm is down
       if (this.st === 'key') {                                                 // the key flies to the lock (1.3 s), is pushed in and turned (.7 s), then the door gives
         this.kt += dt;
         if (!this.kclick && this.kt > 1.3) { this.kclick = true; AU.click(); AU.thump(); }
