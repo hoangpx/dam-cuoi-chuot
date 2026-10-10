@@ -394,8 +394,16 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
           b.face = -Math.sin(b.a) >= 0 ? 1 : -1; b.x = px; b.y = py;
         });
       },
+      onClick(wx, wy) {                                                          // (demo only) the button that starts the tranh again
+        if (!this.rb || !T6R.ready || this.cover > 0) return false; const sx = wx - camX, sy = wy + offY, b = this.rb;
+        if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) { delete SAVE.t6; persist(); loadLevel(5); startPlay(); return true; } return false;
+      },
       drawHud(g, vw) {                                                          // the dark cover while the tranh is made, then the fade to dark of the turn back
         if (this.cover > 0) { g.fillStyle = `rgba(10,14,30,${Math.min(1, this.cover)})`; g.fillRect(0, 0, vw, viewH); if (!T6R.ready) for (let i = 0; i < 3; i++) { g.fillStyle = `rgba(232,236,255,${.35 + .5 * Math.max(0, Math.sin(S.t * 5 - i * .9))})`; g.beginPath(); g.arc(vw / 2 + (i - 1) * 22, viewH / 2, 5, 0, 6.283); g.fill(); } }
+        if (T6R.ready && this.cover <= 0) {                                       // (demo only) start the whole tranh again: forget what was saved (the birds, the frogs, the bridge)
+          const w = 150, h = 30, x = vw - w - 24, y = 30; this.rb = { x, y, w, h };
+          g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(0,0,0,.45)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 15) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText('Chơi lại từ đầu', x + w / 2, y + h / 2 + 1); g.restore();
+        }
         if (!this.tp) return; const t = this.tp.t, a = t < .25 ? t / .25 : Math.max(0, 1 - (t - .25) / .5);
         g.fillStyle = `rgba(10,14,30,${a})`; g.fillRect(0, 0, vw, viewH);
       },
