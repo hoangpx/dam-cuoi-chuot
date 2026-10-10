@@ -302,7 +302,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
           const tol = Math.min(.21, .0157 * (1 + Math.floor(st.t / 15)));
           const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.min(1, Math.abs(R[8])));     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
           if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / st.solve.dur); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), an = st.solve.an; st.W = bcMul(BC_Q, bcMul(bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * e), st.solve.R)); st.ver++; if (st.solve.t >= 1) { const w = st.solve.winAfter; st.solve = null; if (w) win(); } }
-          else if (ang < tol) { st.hold += dt; if (st.hold > .1) startSolve(.25, true); } else st.hold = 0;     // kept for a third of a second: then it clicks into place
+          else if (st.touched && ang < tol) { st.hold += dt; if (st.hold > .1) startSolve(.25, true); } else st.hold = 0;     // only once the player has touched it (the slow turn by itself never wins), held a moment: then it clicks into place
         } else { st.dt += dt; if (!st.rel && st.dt > .08) { st.rel = true; T6R.rel(idx, ccx, ccy); } if (st.dt > 2.6) { this.solved = true; T6R.save(idx); return; } }       // the bird lifts off its cloth and flies up over the road
         render();
       },
@@ -340,7 +340,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
       },
       drawFg(g) {                                                                // the tangle on its cord, and the bird once the shadow is right
         if (this.solved || !st) return;
-        g.save(); g.strokeStyle = 'rgba(232,236,255,.6)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(cx0, -offY - 20); g.lineTo(cx0, cy0 - 1.2 * SC); g.stroke();
+        g.save();                                                                  // (no cord: it floats)
         g.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 1.1) : 1; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(G.A.c, cx0 - SPAN * SC / 2, cy0 - SPAN * SC / 2, SPAN * SC, SPAN * SC); g.restore();
         const dxg = Math.abs(groom.x - cx0);                                     // "Cứu tôi với!" when the party comes near
         if (!st.done && dxg < 560) { g.save(); g.globalAlpha = Math.min(1, (560 - dxg) / 160); t5Say(g, cx0 - 64, cy0 - 14 + Math.sin(S.t * 3 + idx * 1.7) * 3, 'Cứu tôi với!'); g.restore(); }
