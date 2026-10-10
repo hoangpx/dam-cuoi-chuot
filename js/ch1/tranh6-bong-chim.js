@@ -13,7 +13,7 @@
    - the target is reached when W is within 4° of the target for a quarter of a second: the bird is drawn, rises out of the shadow and flies off; then the cb.
    Random every time: the pose it starts in and the depths, rods and needles are new each time. */
 const BC = { open: false, tex: null, st: null };
-const BC_W = 340, BC_H = 560, BC_CX = 170, BC_CY = 190, BC_S = 100, BC_GY = 452, BC_GS = 0.42, BC_H3 = 1.5, BC_GTOP = BC_GY - 60;   // canvas; the tangle's centre; px per unit; ground line, its squash, the tangle's height over it (units)
+const BC_W = 340, BC_H = 560, BC_CX = 170, BC_CY = 190, BC_S = 100, BC_GY = 415, BC_GS = 0.8, BC_H3 = 1.5, BC_GTOP = 320;   // canvas; the tangle's centre; px per unit; ground line, its squash, the tangle's height over it (units)
 const BC_LW = (() => { const v = [.25, -.88, .4], n = Math.hypot(...v); return v.map(x => x / n); })();      // the way the moon's light travels (towards the viewer, down, right)
 const BC_Q = (() => {                                                       // the moon's frame: e3 = the light's way, e1 ≈ screen right, e2 = e3 × e1  (columns, light frame → world)
   const L = BC_LW, d = L[0], e1 = [1 - d * L[0], -d * L[1], -d * L[2]], n = Math.hypot(...e1); e1[0] /= n; e1[1] /= n; e1[2] /= n;
@@ -34,15 +34,17 @@ function bcNoise(seed) {                                                    // s
 }
 // the bird seen from above, in the moon's x, y (head up the picture, wings spread, a fanned tail); k scales it
 function bcBirdPath(p, k) {
-  const tri = pts => { pts.forEach(([x, z], i) => { i ? p.lineTo(x * k, z * k) : p.moveTo(x * k, z * k); }); p.closePath(); };
-  tri([[0, -.62], [.1, -.5], [.13, -.3], [.1, 0], [.12, .3], [.2, .62], [.06, .52], [0, .66], [-.06, .52], [-.2, .62], [-.12, .3], [-.1, 0], [-.13, -.3], [-.1, -.5]]);
-  for (const s of [-1, 1]) tri([[s * .1, -.3], [s * .4, -.42], [s * .95, -.34], [s * 1.04, -.2], [s * .8, -.14], [s * .86, -.02], [s * .55, .06], [s * .1, .16]]);
-  tri([[-.03, -.74], [.03, -.74], [0, -.62]]);
+  // the right half as cubic curves from the beak round to the tail's notch (P0, then [c1, c2, end] for each), mirrored for the left: a swallow with swept wings and a forked tail
+  const P0 = [0, -.8], seg = [[.05, -.8, .1, -.7, .1, -.58], [.1, -.5, .12, -.42, .13, -.34], [.35, -.52, .75, -.5, 1.05, -.2], [.9, -.08, .7, .0, .5, .02], [.35, .03, .22, .1, .14, .12], [.12, .25, .12, .4, .16, .55], [.18, .65, .2, .75, .22, .83], [.14, .7, .06, .6, 0, .54]];
+  const pts = [P0]; for (const c of seg) pts.push([c[4], c[5]]);
+  p.moveTo(P0[0] * k, P0[1] * k); for (const c of seg) p.bezierCurveTo(c[0] * k, c[1] * k, c[2] * k, c[3] * k, c[4] * k, c[5] * k);
+  for (let n = seg.length - 1; n >= 0; n--) { const c = seg[n], e = pts[n]; p.bezierCurveTo(-c[2] * k, c[3] * k, -c[0] * k, c[1] * k, -e[0] * k, e[1] * k); }
+  p.closePath();
 }
 // The tangle's surface: a smooth union of its balls and bent rods (each rod is a bent line, its distance the nearest of its pieces), stored as a signed-distance grid in the
 // tangle's own space. Where parts meet they flow into one another (log-sum-exp blend), so it is one continuous body, not balls and sticks.
-const BC_GE = 1.8, BC_GN = 100, BC_GH = 2 * BC_GE / (BC_GN - 1), BC_KS = .04;
-function bcField(balls, rods) {
+const BC_GE = 1.8, BC_GN = 128, BC_GH = 2 * BC_GE / (BC_GN - 1), BC_KS = .025;
+function bcField(balls, rods, trim) {
   const N = BC_GN, E = BC_GE, H = BC_GH, KS = BC_KS, M = .3, acc = new Float32Array(N * N * N);
   const lo = v => Math.max(0, Math.floor((v + E) / H)), hi = v => Math.min(N - 1, Math.ceil((v + E) / H));
   const each = (min, max, fn) => { for (let k = lo(min[2] - M); k <= hi(max[2] + M); k++) for (let j = lo(min[1] - M); j <= hi(max[1] + M); j++) for (let i = lo(min[0] - M); i <= hi(max[0] + M); i++) { const x = -E + i * H, y = -E + j * H, z = -E + k * H, d = fn(x, y, z); acc[(k * N + j) * N + i] += Math.exp(-d / KS); } };
@@ -51,29 +53,33 @@ function bcField(balls, rods) {
     const P = r.pts, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const p of P) for (let c = 0; c < 3; c++) { mn[c] = Math.min(mn[c], p[c] - r.r); mx[c] = Math.max(mx[c], p[c] + r.r); }
     each(mn, mx, (x, y, z) => { let d = 1e9; for (let n = 0; n < P.length - 1; n++) { const a = P[n], b = P[n + 1], bx = b[0] - a[0], by = b[1] - a[1], bz = b[2] - a[2], t = Math.max(0, Math.min(1, ((x - a[0]) * bx + (y - a[1]) * by + (z - a[2]) * bz) / (bx * bx + by * by + bz * bz + 1e-9))); d = Math.min(d, Math.hypot(x - a[0] - bx * t, y - a[1] - by * t, z - a[2] - bz * t)); } return d - r.r; });
   }
-  const f = new Float32Array(N * N * N); for (let i = 0; i < f.length; i++) f[i] = acc[i] > 1e-12 ? Math.min(M, -KS * Math.log(acc[i])) : M;       // far from everything: at least the margin
+  const f = new Float32Array(N * N * N); for (let i = 0; i < f.length; i++) { const v = acc[i] > 1e-12 ? Math.min(M, -KS * Math.log(acc[i])) : M, k = i % N, j = ((i / N) | 0) % N, p = trim(-E + k * H, -E + j * H), h = Math.max(.05 - Math.abs(v - p), 0) / .05; f[i] = Math.max(v, p) + h * h * .0125; }       // far from everything: at least the margin
   return f;
 }
 function bcBuild() {
   const seed = (Math.random() * 4294967295) >>> 0, rnd = (() => { let a = seed ^ 0x5bd1e995; return () => { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; return a / 4294967296; }; })();
-  const G = 150, R0 = 1.3, cs = 2 * R0 / G, K = 1.0;                           // a grid over x, y in -1.1…1.1
+  const G = 200, R0 = 1.3, cs = 2 * R0 / G, K = 1.0;                           // a grid over x, y in -1.1…1.1
   const cv = document.createElement('canvas'); cv.width = cv.height = G; const cx = cv.getContext('2d', { willReadFrequently: true });
   cx.setTransform(G / (2 * R0), 0, 0, G / (2 * R0), G / 2, G / 2); cx.fillStyle = '#000'; const bp = new Path2D(); bcBirdPath(bp, K); cx.fill(bp);
   const da = cx.getImageData(0, 0, G, G).data, inside = new Uint8Array(G * G); for (let i = 0; i < G * G; i++) inside[i] = da[i * 4 + 3] > 140 ? 1 : 0;
   const px = i => -R0 + (i % G + .5) * cs, py = i => -R0 + (Math.floor(i / G) + .5) * cs;
   const isIn = (x, y) => { const i = Math.floor((x + R0) / cs), j = Math.floor((y + R0) / cs); return i >= 0 && j >= 0 && i < G && j < G && inside[j * G + i] === 1; };
   // distance of each inside cell to the edge of the bird (two-pass chamfer), in units
-  const dist = new Float32Array(G * G); for (let i = 0; i < G * G; i++) dist[i] = inside[i] ? 1e9 : 0;
-  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const k = j * G + i; let d = dist[k]; if (i > 0) d = Math.min(d, dist[k - 1] + 1); if (j > 0) { d = Math.min(d, dist[k - G] + 1); if (i > 0) d = Math.min(d, dist[k - G - 1] + 1.41); if (i < G - 1) d = Math.min(d, dist[k - G + 1] + 1.41); } dist[k] = d; }
-  for (let j = G - 1; j >= 0; j--) for (let i = G - 1; i >= 0; i--) { const k = j * G + i; let d = dist[k]; if (i < G - 1) d = Math.min(d, dist[k + 1] + 1); if (j < G - 1) { d = Math.min(d, dist[k + G] + 1); if (i < G - 1) d = Math.min(d, dist[k + G + 1] + 1.41); if (i > 0) d = Math.min(d, dist[k + G - 1] + 1.41); } dist[k] = d; }
+  const chamfer = init => { const d = new Float32Array(G * G); for (let i = 0; i < G * G; i++) d[i] = init[i];
+    for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const k = j * G + i; let v = d[k]; if (i > 0) v = Math.min(v, d[k - 1] + 1); if (j > 0) { v = Math.min(v, d[k - G] + 1); if (i > 0) v = Math.min(v, d[k - G - 1] + 1.41); if (i < G - 1) v = Math.min(v, d[k - G + 1] + 1.41); } d[k] = v; }
+    for (let j = G - 1; j >= 0; j--) for (let i = G - 1; i >= 0; i--) { const k = j * G + i; let v = d[k]; if (i < G - 1) v = Math.min(v, d[k + 1] + 1); if (j < G - 1) { v = Math.min(v, d[k + G] + 1); if (i < G - 1) v = Math.min(v, d[k + G + 1] + 1.41); if (i > 0) v = Math.min(v, d[k + G - 1] + 1.41); } d[k] = v; } return d; };
+  const dist = chamfer(Array.from(inside, v => v ? 1e9 : 0)), outd = chamfer(Array.from(inside, v => v ? 0 : 1e9));        // distance to the edge: inside cells / outside cells, in cells
+  // the bird's signed distance (< 0 inside, in units), the same all the way along the light: the tangle is trimmed to this, so its shadow is the bird's outline exactly, smooth
+  const sd = (x, y) => { const fx = (x + R0) / cs - .5, fy = (y + R0) / cs - .5, i = Math.max(0, Math.min(G - 2, Math.floor(fx))), j = Math.max(0, Math.min(G - 2, Math.floor(fy))), tx = Math.max(0, Math.min(1, fx - i)), ty = Math.max(0, Math.min(1, fy - j)), v = (k) => (inside[k] ? -dist[k] : outd[k]) * cs;
+    return (v(j * G + i) * (1 - tx) + v(j * G + i + 1) * tx) * (1 - ty) + (v((j + 1) * G + i) * (1 - tx) + v((j + 1) * G + i + 1) * tx) * ty; };
   // circles filling the bird: the widest uncovered place first
   const covered = new Uint8Array(G * G), balls = [];
-  for (let n = 0; n < 140; n++) {
+  for (let n = 0; n < 240; n++) {
     let best = -1, bd = 0; for (let k = 0; k < G * G; k++) if (inside[k] && !covered[k] && dist[k] > bd) { bd = dist[k]; best = k; }
     const r = (bd - .5) * cs;                                                  // as large as fits inside (a half cell of slack for the pixels' edge)
-    if (best < 0 || r < .028) break;
-    const x = px(best), y = py(best); balls.push({ x, y, r: Math.min(r, .12) });
-    for (let k = 0; k < G * G; k++) if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= Math.min(r, .12)) covered[k] = 1;
+    if (best < 0 || r < .02) break;
+    const x = px(best), y = py(best), rr = Math.min(r + .05, .15); balls.push({ x, y, r: rr });
+    for (let k = 0; k < G * G; k++) if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= rr) covered[k] = 1;
   }
   // depth: a wavy field plus a jitter, so the parts stand out and sink in
   const zn = bcNoise(seed ^ 0x27d4eb2f), zm = bcNoise(seed ^ 0x165667b1);
@@ -91,7 +97,7 @@ function bcBuild() {
   // long thin horns through some balls, along the light: their shadow is only a dot
   const pins = []; for (let n = 0; n < 7; n++) { const b = balls[Math.floor(rnd() * balls.length)], a = b.z - .25 - rnd() * .3, c = b.z + .25 + rnd() * .3; pins.push({ pts: [[b.x, b.y, a], [b.x, b.y, b.z], [b.x, b.y, c]], r: .028 + rnd() * .012 }); }
   const all = rods.concat(pins);
-  return { balls, rods: all, sdf: bcField(balls, all) };
+  return { balls, rods: all, sdf: bcField(balls, all, sd) };
 }
 
 (function () {
