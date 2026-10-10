@@ -113,8 +113,12 @@ function t7CatDraw(g, vw, q, dir) {
   cv.addEventListener('pointerleave', () => { T7.in = false; });
 })();
 
+// the cat pounces every T7_ZONE px of the dark; without the bell on the tranh-1 cat (SAVE.catBell) the party is always caught and sent back to the start;
+// with it the bell jingles T7_WARN s before, the party must stand still from the first jingle (after T7_REACT s to react) until the shadow has passed and 1–3 s more, then walks on
+const T7_ZONE = 2900, T7_Z0 = 2600, T7_WARN = 2.8, T7_REACT = 1, T7_CAT = .95;
+const t7Zones = () => { const a = []; for (let x = T7_Z0; x < T6_OFF - 1800; x += T7_ZONE) a.push(x); return a; };
 function t6Dark() {
-  T7.cat = null; T7.catT = 6; T7.a = 0;
+  T7.cat = null; T7.catT = 6; T7.a = 0; T7.ev = null; T7.zi = 0; T7.black = 0; T7.zs = t7Zones();
   const lamp = () => { const f = followers[0]; return [f.x + f.face * 44, GROUND - 78]; };                // the lamp in the hand of the third mouse
   return {
     layer: 'bg', flick: 0, dawn: 0, btn: null,
@@ -126,8 +130,32 @@ function t6Dark() {
       const want = (isTouch ? T7.down : T7.in) ? 1 : 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
       cv.style.cursor = !isTouch && T7.in && this.dawn < 1 ? 'none' : '';                      // the mouse pointer is replaced by a lamp while it is dark
       if ((T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }
-      if (!T7.cat && this.dawn < .8 && (T7.catT -= dt) < 0) { T7.catT = 8 + Math.random() * 13; T7.cat = { t: 0, dir: Math.random() < .5 ? -1 : 1 }; AU.rustle && AU.rustle(.7); }
-      if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > .95) T7.cat = null; }
+      T7.black = Math.max(0, T7.black - dt * 1.4);
+      if (S.mode === 'play' && this.dawn < .8) {
+        if (!T7.ev) {
+          while (T7.zi < T7.zs.length && T7.zs[T7.zi] < groom.x - 300) T7.zi++;                // zones already behind the party are not run again
+          if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { T7.ev = { t: 0, ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
+        } else {
+          const e = T7.ev; e.t += dt;
+          if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
+            if ((e.jt -= dt) < 0) { e.jt = .55 - .3 * e.t / T7_WARN; AU.pluck(96 + ((Math.random() * 4) | 0)); setTimeout(() => AU.pluck(103), 70); }
+            if (e.t > T7_REACT && (groom.moving || groom.vx !== 0)) this.caught();            // the bell was heard: stand still
+            else if (e.t > T7_WARN) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
+          } else if (e.ph === 'sneak') {                                                      // no bell: no warning at all
+            if (e.t > 1.1) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
+          } else {
+            if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > T7_CAT) T7.cat = null; }
+            const moved = groom.moving || groom.vx !== 0;
+            if (!SAVE.catBell ? e.t > T7_CAT * .55 : (moved && e.t > .05)) this.caught();       // no bell: always caught; bell: caught only if it moves
+            else if (e.ph === 'cat' && e.t > T7_CAT) { e.ph = 'after'; e.t = 0; e.wait = 1 + Math.random() * 2; }
+            else if (e.ph === 'after' && e.t > e.wait) T7.ev = null;                         // 1–3 s after the shadow has passed the party may go on
+          }
+        }
+      }
+    },
+    caught() {                                                                   // the cat has the party: a black moment, the growl, and back to the start of the dark road
+      T7.ev = null; T7.cat = null; T7.black = 1; S.catches = (S.catches || 0) + 1; AU.snort && AU.snort(); AU.thump && AU.thump(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);
+      const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0;
     },
     draw(g) {                                                                    // the posts that hold the trellis up (behind the party)
       const vw = cv.width / DPR / scale, x0 = Math.floor((camX - 100) / 700) * 700;
@@ -162,7 +190,9 @@ function t6Dark() {
       t7Layer(g, T7_LAYERS[1], A, x0, x1, top); t7Fol(g, T7_FOL[1], A, x0, x1, top, false);                                                                               // the middle layer: this is the one the lights show
     },
     onClick(wx, wy) {                                                            // (demo only) skip the dark stretch
-      const b = this.btn; if (!b) return false; const sx = wx - camX, sy = wy + offY;
+      const sx = wx - camX, sy = wy + offY;
+      for (const d of this.dbt || []) if (sx >= d.x && sx <= d.x + d.w && sy >= d.y && sy <= d.y + d.h) { if (d.v) SAVE.lucLac = true; else { SAVE.lucLac = false; SAVE.catBell = false; } persist(); toast(d.v ? 'Có lục lạc của cô Tấm (về tranh 1 đeo cho mèo).' : 'Đã bỏ lục lạc.', 2.5); return true; }
+      const b = this.btn; if (!b) return false;
       if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) { const d = (T6_OFF - 300) - groom.x; if (d > 0) { groom.x += d; followers.forEach(f => f.x += d); camX += d; } return true; }
       return false;
     },
@@ -191,11 +221,16 @@ function t6Dark() {
         g.save(); g.globalAlpha = Math.min(1, T7.a * 1.4); g.fillStyle = gl; g.fillRect(px - 60, py - 30, 120, 120); dp(g, ITEM.lantern, px, py, Math.sin(this.flick * 2.1) * .07, 1.5, 1.5); g.restore();
       }
       const c = T7.cat;
-      if (c && base > .003) t7CatDraw(g, vw, c.t / .95, c.dir);                   // the cat's shadow streaks past, very fast
+      if (c && base > .003) t7CatDraw(g, vw, c.t / T7_CAT, c.dir);
+      if (T7.black > .01) { g.save(); g.fillStyle = 'rgba(0,0,0,' + Math.min(1, T7.black * 1.6) + ')'; g.fillRect(0, -offY, vw, viewH + offY + 40); g.restore(); }                   // the cat's shadow streaks past, very fast
       if (this.dawn < 1 && T6R.ready) {                                           // (demo only) a button to skip the dark stretch
         const w = 136, h = 32, x = vw - w - 24, y = viewH - 104; this.btn = { x, y, w, h };
         g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(0,0,0,.6)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 16) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText('Qua dàn bí rợ', x + w / 2, y + h / 2 + 1); g.restore();
       } else this.btn = null;
+      if (this.dawn < 1 && T6R.ready) {                                           // (demo only) the bell: get it from Tấm / throw it away, to try both ways
+        this.dbt = [['Xin lục lạc', 1], ['Bỏ lục lạc', 0]].map(([t, v], i) => ({ t, v, x: vw - 136 - 24, y: viewH - 104 - 40 * (i + 1), w: 136, h: 32 }));
+        for (const b of this.dbt) { g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(0,0,0,.6)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(b.x, b.y, b.w, b.h, 16) : g.rect(b.x, b.y, b.w, b.h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText(b.t, b.x + b.w / 2, b.y + b.h / 2 + 1); g.restore(); }
+      } else this.dbt = null;
     },
   };
 }

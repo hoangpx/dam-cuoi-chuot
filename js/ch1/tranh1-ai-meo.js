@@ -75,6 +75,15 @@ function slipLabel(lines, w = 34) {
   });
 }
 const hungryLabel = () => slipLabel(['ĐÓI', 'QUÁ']);
+// the bell from Tấm (tranh 5) is hung on the fed cat's neck: SAVE.catBell, which the dark stretch of tranh 6 asks for
+function catBell(cx) {
+  return {
+    layer: 'hud', x: cx - 130, get spent() { return !!SAVE.catBell || !this.cat.fed; }, cat: null,
+    offer: { wants: ['lucLac'], label: 'Đeo lục lạc', near: () => groom.x > cx - 420 && groom.x < cx + 200, missing: 'Cần lục lạc của cô Tấm.' },
+    give() { SAVE.catBell = true; persist(); [88, 93, 100, 93].forEach((m, i) => setTimeout(() => AU.pluck(m), i * 130)); toast('Mèo đeo lục lạc, leng keng!', 3); },
+    update() { if (!this.got0) { this.got0 = 1; if (SAVE.lucLac && !SAVE.catBell && !S.inv.includes('lucLac')) { S.inv.push('lucLac'); updateHud(); } } },
+  };
+}
 function groundCat(cx, from) {
   const wallX = cx - 190;
   return {
@@ -105,6 +114,7 @@ function groundCat(cx, from) {
       let x = cx, lift = 0;
       if (S.catcher === this) { const p = S.caught, k = Math.min(1, p / .45), back = p > .45 ? Math.max(0, 1 - (p - .45) / .6) : 1; x += (this.from0 + 60 - cx) * Math.sin(k * Math.PI / 2) * back; lift = -Math.sin(k * Math.PI) * 60 * back; }
       drawCatAt(g, x, GROUND + lift, 1.55, this.fed ? 'fed' : S.catcher === this ? 'watch' : this.st);
+      if (SAVE.catBell) dp(g, ITEMS.lucLac.part, x - 56, GROUND + lift - 138 + Math.sin(S.t * 5) * 1.5, Math.sin(S.t * 5) * .15, 1.5, 1.5);       // the bell round its neck
       if (this.hungry > 0 || (S.catcher === this && S.caught < .45)) {
         HUNGRY = HUNGRY || hungryLabel();
         const k = this.hungry > 0 ? Math.min(1, (2 - this.hungry) / .15) : 1, pop = .6 + .4 * k + Math.sin(k * Math.PI) * .12;
@@ -131,7 +141,7 @@ LEVELS[0] = {
   build: () => [
     decor(PROPS.bamboo, 430, GROUND + 4), decor(PROPS.bamboo, 1250, GROUND + 4, .9, -1), decor(PROPS.bamboo, 1900, GROUND + 4, .85), decor(PROPS.bamboo, 3280, GROUND + 4, 1.05),
     decor(PROPS.txt1, 70, 150, .75), decor(PROPS.txt2, 2710, 120, .8),
-    fishPond(760, 980), groundCat(2960, 420),
+    fishPond(760, 980), ...(() => { const c = groundCat(2960, 420), b = catBell(2960); b.cat = c; return [b, c]; })(),
     cover(1680, 'hay', 70), cover(2080, 'chum', 40), cover(2440, 'chum', 40), gate(3600),
   ],
 };
