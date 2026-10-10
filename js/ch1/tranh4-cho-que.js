@@ -296,7 +296,11 @@ function t4Printer(W) {
     show() { if (!this.order.length) this.order = newOrder(); this.st = 'show'; this.t = -.4; },
     onClick(wx, wy) {
       if (this.st === 'done') return false;
-      if (t4Asked(wx, wy, KX)) { if (this.st === 'idle') { this.k.bounce = .8; toastSay('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé! Mỗi bức lại dài thêm một bước.'); } if (this.st === 'input' || this.st === 'idle') { AU.pluck(76); this.show(); } return true; }
+      if (t4Asked(wx, wy, KX)) {
+        if (this.st === 'idle') { this.k.bounce = .8; AU.pluck(76); this.st = 'talk'; toastSay('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé! Mỗi bức lại dài thêm một bước.', () => { if (this.st === 'talk') this.show(); }); }   // (owner: he says it all, then the blocks are shown)
+        else if (this.st === 'input') { AU.pluck(76); this.show(); }
+        return true;
+      }
       const i = T4_INKS.findIndex((_, k) => Math.abs(wx - BX(k)) < 26 && wy > BY - 50 && wy < BY + 16); if (i < 0) return false;
       if (this.st !== 'input') return true;
       const ink = T4_INKS[i]; this.press[ink] = .25;
@@ -314,7 +318,7 @@ function t4Printer(W) {
       for (const k in this.press) this.press[k] -= dt;
       if (this.st === 'show') { const k = Math.floor(this.t / .8); if (this.t > 0 && k < this.order.length && this.lastLit !== k) { this.lastLit = k; AU.pluck(72 + k * 2); } if (this.t > .8 * this.order.length + .2) { this.st = 'input'; this.lastLit = -1; } }
       if (this.st === 'smear' && this.t > 1.1) { this.st = 'input'; this.layers = []; this.step = 0; }
-      if (this.st === 'printed' && this.t > 2.2) {
+      if (this.st === 'printed' && this.t > 1) {
         this.round++; S.prints = this.round;
         if (this.round >= 5) { this.st = 'done'; t4Thanks(this, KX, 'Đủ năm bức tranh đẹp! Bác thợ in cảm tạ, biếu một đồng.'); }
         else { this.layers = []; this.step = 0; this.order = []; this.show(); }
@@ -330,7 +334,7 @@ function t4Printer(W) {
         t4Print(g, subj, this.layers, PX, PY, 1.1);
         if (this.st === 'smear') { const a = Math.min(1, this.t * 4); g.fillStyle = `rgba(42,34,29,${.55 * a})`; for (const [dx, dy, r] of [[-10, 0, 34], [14, -20, 22], [8, 26, 26], [-22, -30, 16]]) { g.beginPath(); g.ellipse(PX + dx, PY + dy, r, r * .7, dx, 0, 6.283); g.fill(); } }
       }
-      for (let k = 0; k < 5; k++) { const x = PX - 94, y = PY - 64 + k * 32; if (k < this.round) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
+      for (let k = 0; k < 5; k++) { const x = PX - 94, y = PY - 64 + k * 32; if (k < this.round + (this.st === 'printed' ? 1 : 0)) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
       if (done) t4Print(g, 4, T4_INKS, PX, PY, 1.1);
       // the table and the blocks; while showing, the one to print next is raised
       g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10); g.strokeRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10);
