@@ -124,7 +124,7 @@ function gkMake() {
     };
     for (let guard = 0; cov < target * M && guard < 9000; guard++) {
       let bx = -1, by = 0, bd = 1e9;                                          // the least-torn of several places that are free to tear
-      for (let c2 = 0; c2 < 14; c2++) { const cx = Math.round(ri(5, S - 5)), cy = Math.round(ri(5, S - 5)); if (forbid[cy * S + cx]) continue; const d = dens(cx, cy); if (d < bd) { bd = d; bx = cx; by = cy; } }
+      for (let c2 = 0; c2 < 14; c2++) { const cx = Math.round(ri(0, S - 1)), cy = Math.round(ri(0, S - 1)); if (forbid[cy * S + cx]) continue; const d = dens(cx, cy); if (d < bd) { bd = d; bx = cx; by = cy; } }
       if (bx >= 0) put(bx, by);
     }
     // and no stretch of paper left whole: every 16-pixel square gets at least a few holes if there is any room
@@ -169,7 +169,8 @@ function gkMake() {
     for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the back sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
-    fillEven(mAk, near, .38);                                                // (owner: many small holes, spread evenly over the sheet)
+    { const hold = dil(21), keepB = new Uint8Array(hold); for (let i = 0; i < M; i++) if (near[i] && !hold[i] && noise(i % S, (i / S) | 0) > 4.5) keepB[i] = 1;   // in the ring just outside the key's own zone, half the patches are left to the front sheet
+      fillEven(mAk, keepB, .38); }                                                // (owner: many small holes, spread evenly over the sheet)
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
     const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
