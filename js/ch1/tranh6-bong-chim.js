@@ -120,8 +120,8 @@ function bcBuild() {
   }
   function shade(nx, ny, nz, o) {                                                // polished gold-silver metal: a bright sky over a dark ground in the mirror, the moon's glint, a cool edge light
     const rz = 2 * nz * nz - 1, ry = 2 * nz * ny, rx = 2 * nz * nx, e = Math.max(0, Math.min(1, ry * .5 + .5)), dif = Math.max(0, nx * LT[0] + ny * LT[1] + nz * LT[2]);
-    const hz = Math.max(0, Math.min(1, (e - .36) / .28)), hs = hz * hz * (3 - 2 * hz), env = .14 + .7 * hs * (.55 + .45 * e) + .18 * dif, sp = Math.pow(Math.max(0, rx * LT[0] + ry * LT[1] + rz * LT[2]), 18), fr = Math.pow(1 - nz, 2.5);
-    o[0] = Math.min(255, 238 * env + 255 * sp + 90 * fr); o[1] = Math.min(255, 214 * env + 250 * sp + 130 * fr); o[2] = Math.min(255, 170 * env + 235 * sp + 210 * fr);
+    const hz = Math.max(0, Math.min(1, (e - .36) / .28)), hs = hz * hz * (3 - 2 * hz), env = .02 + .28 * hs * (.5 + .5 * e) + .07 * dif, sp = Math.pow(Math.max(0, rx * LT[0] + ry * LT[1] + rz * LT[2]), 40), fr = Math.pow(1 - nz, 2.2);
+    o[0] = Math.min(255, 150 * env + 255 * sp + 70 * fr); o[1] = Math.min(255, 165 * env + 255 * sp + 120 * fr); o[2] = Math.min(255, 200 * env + 255 * sp + 220 * fr);
   }
   // ---- the same drawing on the graphics card (WebGL2) when there is one: the distance grid is a 3D texture, each pixel ray-marches it, 4 sub-rays per pixel for smooth edges.
   // The CPU code below is the fallback (and gives the same picture). ----
@@ -134,12 +134,12 @@ function bcBuild() {
         'const float E=' + BC_GE.toFixed(3) + ',N=' + BC_GN.toFixed(1) + ',H=' + BC_GH.toFixed(6) + ';\n' +
         'float samp(vec3 p){vec3 q=(p+E)/H;vec3 o=max(abs(p)-E+.06,0.);if(any(lessThan(q,vec3(0.)))||any(greaterThan(q,vec3(N-1.001))))return max(.02,length(o));return texture(uF,(q+.5)/N).r;}\n';
       const BODY = COMMON + 'uniform vec3 uW0,uW1,uW2,uLT;uniform float uBS,uRes;\n' +
-        'vec3 shade(vec3 n){float rz=2.*n.z*n.z-1.,ry=2.*n.z*n.y,rx=2.*n.z*n.x,e=clamp(ry*.5+.5,0.,1.),dif=max(0.,dot(n,uLT));float hz=clamp((e-.36)/.28,0.,1.),hs=hz*hz*(3.-2.*hz),env=.14+.7*hs*(.55+.45*e)+.18*dif,sp=pow(max(0.,dot(vec3(rx,ry,rz),uLT)),18.),fr=pow(1.-n.z,2.5);\n' +
-        'return min(vec3(1.),vec3(238.*env+255.*sp+90.*fr,214.*env+250.*sp+130.*fr,170.*env+235.*sp+210.*fr)/255.);}\n' +
+        'vec3 shade(vec3 n){float rz=2.*n.z*n.z-1.,ry=2.*n.z*n.y,rx=2.*n.z*n.x,e=clamp(ry*.5+.5,0.,1.),dif=max(0.,dot(n,uLT));float hz=clamp((e-.36)/.28,0.,1.),hs=hz*hz*(3.-2.*hz),env=.02+.28*hs*(.5+.5*e)+.07*dif,sp=pow(max(0.,dot(vec3(rx,ry,rz),uLT)),40.),fr=pow(1.-n.z,2.2);\n' +
+        'return min(vec3(1.),vec3(150.*env+255.*sp+70.*fr,165.*env+255.*sp+120.*fr,200.*env+255.*sp+220.*fr)/255.);}\n' +
         'vec4 tr(vec2 XY){vec3 lo=vec3(dot(uR0.xy,XY),dot(uR1.xy,XY),dot(uR2.xy,XY));vec3 dl=vec3(uR0.z,uR1.z,uR2.z);float s=0.,md=9.,T0=2.3,px=1./uBS;bool hit=false;\n' +
         'for(int n=0;n<80;n++){float t=T0-s;float d=samp(lo+dl*t);md=min(md,d);if(d<.003){hit=true;break;}s+=max(.006,d*.85);if(s>2.*T0)break;}\n' +
         'if(hit){float t=T0-s;vec3 q=lo+dl*t;float e=.03;vec3 g=vec3(samp(q+vec3(e,0,0))-samp(q-vec3(e,0,0)),samp(q+vec3(0,e,0))-samp(q-vec3(0,e,0)),samp(q+vec3(0,0,e))-samp(q-vec3(0,0,e)));g/=max(length(g),1e-5);vec3 nw=vec3(dot(uW0,g),dot(uW1,g),dot(uW2,g));nw.z=max(0.,nw.z);return vec4(shade(nw),1.);}\n' +
-        'if(md<px*1.2){float a=1.-md/(px*1.2);a*=a;return vec4(vec3(120.,100.,78.)/255.,1.)*a;}return vec4(0.);}\n' +
+        'if(md<px*1.2){float a=1.-md/(px*1.2);a*=a;return vec4(vec3(40.,48.,70.)/255.,1.)*a;}return vec4(0.);}\n' +
         'void main(){vec2 c=gl_FragCoord.xy-uRes*.5;vec4 acc=vec4(0.);vec2 of[4]=vec2[4](vec2(-.125,-.375),vec2(.375,-.125),vec2(.125,.375),vec2(-.375,.125));\n' +
         'if(dot(c,c)>2.6*uBS*uBS*1.2)discard;for(int i=0;i<4;i++){vec2 XY=(c+of[i])/uBS;if(dot(XY,XY)>2.6)continue;vec4 r=tr(XY);acc+=vec4(r.rgb*r.a,r.a);}\n' +
         'oc=acc/4.;}';
@@ -198,7 +198,7 @@ function bcBuild() {
       const nx = (W[0] * gx + W[1] * gy + W[2] * gz) / gl, ny = (W[3] * gx + W[4] * gy + W[5] * gz) / gl, nz = Math.max(0, (W[6] * gx + W[7] * gy + W[8] * gz) / gl);
       shade(nx, ny, nz, TR); TR[3] = 1; TR[4] = s; return true;
     }
-    if (md < px * 1.2) { const a = 1 - md / (px * 1.2); TR[0] = 120; TR[1] = 100; TR[2] = 78; TR[3] = a * a; TR[4] = 99; return false; }     // a ray that only grazes it: a soft edge
+    if (md < px * 1.2) { const a = 1 - md / (px * 1.2); TR[0] = 40; TR[1] = 48; TR[2] = 70; TR[3] = a * a; TR[4] = 99; return false; }     // a ray that only grazes it: a soft edge
     TR[3] = 0; TR[4] = 99; return false;
   }
   function lump(h, W, q) {
