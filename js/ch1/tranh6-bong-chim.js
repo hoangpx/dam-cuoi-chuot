@@ -302,8 +302,8 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
           const tol = Math.min(.21, .0157 * (1 + Math.floor(st.t / 15)));
           const R = bcMul(bcT(BC_Q), st.W), ang = Math.acos(Math.min(1, Math.abs(R[8])));     // R[8]: how far the light axis is from the one it must lie along; the turn about it is free
           if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / st.solve.dur); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), an = st.solve.an; st.W = bcMul(BC_Q, bcMul(bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * e), st.solve.R)); st.ver++; if (st.solve.t >= 1) { const w = st.solve.winAfter; st.solve = null; if (w) win(); } }
-          else if (ang < tol) { st.hold += dt; if (st.hold > .3) startSolve(.45, true); } else st.hold = 0;     // kept for a third of a second: then it clicks into place
-        } else { st.dt += dt; if (!st.rel && st.dt > .6) { st.rel = true; T6R.rel(idx, ccx, ccy); } if (st.dt > 3.4) { this.solved = true; T6R.save(idx); return; } }       // the bird lifts off its cloth and flies up over the road
+          else if (ang < tol) { st.hold += dt; if (st.hold > .1) startSolve(.25, true); } else st.hold = 0;     // kept for a third of a second: then it clicks into place
+        } else { st.dt += dt; if (!st.rel && st.dt > .08) { st.rel = true; T6R.rel(idx, ccx, ccy); } if (st.dt > 2.6) { this.solved = true; T6R.save(idx); return; } }       // the bird lifts off its cloth and flies up over the road
         render();
       },
       prep(n) {                                                                  // at the start of the tranh, one step at a time (so that nothing is made while the party walks up to it): the graphics card, the tangle, the first picture
@@ -324,7 +324,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
       },
       draw(g) {                                                                  // the cloth between its two poles, with the shadow on it (behind the party)
         if (this.solved || !st) return;
-        const fade = st.done ? Math.max(0, 1 - Math.max(0, st.dt - 2.5) / .8) : 1; g.save(); g.globalAlpha = fade;
+        const fade = st.done ? Math.max(0, 1 - Math.max(0, st.dt - 1.7) / .8) : 1; g.save(); g.globalAlpha = fade;
         for (const sx of [-1, 1]) {                                              // two bamboo poles
           const px = ccx + sx * (cw / 2 + 7);
           g.lineCap = 'round'; g.strokeStyle = '#1d1915'; g.lineWidth = 9; g.beginPath(); g.moveTo(px, GROUND + 4); g.lineTo(px, ry0 - 30); g.stroke();
@@ -341,7 +341,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
       drawFg(g) {                                                                // the tangle on its cord, and the bird once the shadow is right
         if (this.solved || !st) return;
         g.save(); g.strokeStyle = 'rgba(232,236,255,.6)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(cx0, -offY - 20); g.lineTo(cx0, cy0 - 1.2 * SC); g.stroke();
-        g.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 2.2) : 1; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(G.A.c, cx0 - SPAN * SC / 2, cy0 - SPAN * SC / 2, SPAN * SC, SPAN * SC); g.restore();
+        g.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 1.1) : 1; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(G.A.c, cx0 - SPAN * SC / 2, cy0 - SPAN * SC / 2, SPAN * SC, SPAN * SC); g.restore();
         const dxg = Math.abs(groom.x - cx0);                                     // "Cứu tôi với!" when the party comes near
         if (!st.done && dxg < 560) { g.save(); g.globalAlpha = Math.min(1, (560 - dxg) / 160); t5Say(g, cx0 - 64, cy0 - 14 + Math.sin(S.t * 3 + idx * 1.7) * 3, 'Cứu tôi với!'); g.restore(); }
       },
@@ -375,7 +375,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
         LEVELS[5].width = t6Open() ? 3700 : 400000;
         if (T6R.done) {                                                         // the friends talk as the party comes to the pond, and to the bridge (owner)
           if (!T6R.said.pond && groom.x > 1600) { T6R.said.pond = true; if (groom.x < 2200) T6R.talk.push({ i: 0, text: 'Ao này nhiều ếch lắm!', t: 0 }); }
-          if (!T6R.said.bridge && groom.x > 2300) { T6R.said.bridge = true; T6R.talk.push({ i: 1, text: 'Cầu tre này trơn lắm, phải đi cẩn thận kẻo ngã!', t: 0 }); }
+          if (!T6R.said.bridge && groom.x > 2300) { T6R.said.bridge = true; T6R.talk.push({ i: 1, text: 'Hãy giúp chú bán dầu đi qua cầu tre!', t: 0 }); }
           const q = T6R.talk[0]; if (q && !(T6R.say >= 0 && T6R.say < 12.5)) { q.t += dt; if (q.t > 6) T6R.talk.shift(); }
         }
         if (this.tp) {                                                          // far out on the endless road, the moment the party turns back it is back by the pond (owner): a short fade to dark, the jump in the dark, then the light again
@@ -390,7 +390,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
           b.cx += (tx - b.cx) * Math.min(1, dt * (T6R.done ? 1.6 : 2)); b.cy += (ty - b.cy) * Math.min(1, dt * 2);
           b.a += dt * (.9 + i * .15);
           const Rx = 105 + i * 26, Ry = 24 + i * 5; let px = b.cx + Math.cos(b.a) * Rx, py = b.cy + Math.sin(b.a) * Ry;
-          if (b.st === 'rise') { const q = Math.min(1, b.t / 2.4), e = q * q * (3 - 2 * q); px = b.x0 + (px - b.x0) * e; py = b.y0 + (py - b.y0) * e; if (q >= 1) b.st = 'orbit'; }
+          if (b.st === 'rise') { const q = Math.min(1, b.t / 1.6), e = q * q * (3 - 2 * q); px = b.x0 + (px - b.x0) * e; py = b.y0 + (py - b.y0) * e; if (q >= 1) b.st = 'orbit'; }
           b.face = -Math.sin(b.a) >= 0 ? 1 : -1; b.x = px; b.y = py;
         });
       },
