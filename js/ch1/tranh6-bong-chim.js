@@ -41,9 +41,11 @@ function bcBirdPath(p, k) {
   for (let n = seg.length - 1; n >= 0; n--) { const c = seg[n], e = pts[n]; p.bezierCurveTo(-c[2] * k, c[3] * k, -c[0] * k, c[1] * k, -e[0] * k, e[1] * k); }
   p.closePath();
 }
+// the pictures the shadow can be (the owner's two photos of a bird's shadow): the goose in flight and the crow with its wings spread; one is picked each time
+const BC_MASKS = () => [BC_MASK, BC_MASK2];
 const BC_TR = 1.3;                                                       // the shadow's picture covers x, y in -BC_TR…BC_TR
-function bcMaskCanvas() {                                                        // the goose's silhouette (BC_MASK, 1 bit a pixel) as a canvas: black where the bird is
-  const w = BC_MASK.w, h = BC_MASK.h, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'), img = x.createImageData(w, h), bin = atob(BC_MASK.b), rb = (w + 7) >> 3;
+function bcMaskCanvas(M) {                                                        // the goose's silhouette (BC_MASK, 1 bit a pixel) as a canvas: black where the bird is
+  const w = M.w, h = M.h, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'), img = x.createImageData(w, h), bin = atob(M.b), rb = (w + 7) >> 3;
   for (let y = 0; y < h; y++) for (let xx = 0; xx < w; xx++) if ((bin.charCodeAt(y * rb + (xx >> 3)) >> (7 - (xx & 7))) & 1) img.data[(y * w + xx) * 4 + 3] = 255;
   x.putImageData(img, 0, 0); return c;
 }
@@ -66,7 +68,7 @@ function bcBuild() {
   const seed = (Math.random() * 4294967295) >>> 0, rnd = (() => { let a = seed ^ 0x5bd1e995; return () => { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; return a / 4294967296; }; })();
   const G = 320, R0 = BC_TR, cs = 2 * R0 / G;                           // a grid over x, y in -1.1…1.1
   const cv = document.createElement('canvas'); cv.width = cv.height = G; const cx = cv.getContext('2d', { willReadFrequently: true });
-  cx.setTransform(G / (2 * R0), 0, 0, G / (2 * R0), G / 2, G / 2); cx.imageSmoothingQuality = 'high'; { const mk = bcMaskCanvas(), sc = 2.1 / Math.max(mk.width, mk.height); cx.drawImage(mk, -mk.width * sc / 2, -mk.height * sc / 2, mk.width * sc, mk.height * sc); }       // the goose, 2.1 units tall, in the middle
+  cx.setTransform(G / (2 * R0), 0, 0, G / (2 * R0), G / 2, G / 2); cx.imageSmoothingQuality = 'high'; { const mk = bcMaskCanvas(BC.mask), sc = 2.1 / Math.max(mk.width, mk.height); cx.drawImage(mk, -mk.width * sc / 2, -mk.height * sc / 2, mk.width * sc, mk.height * sc); }       // the goose, 2.1 units tall, in the middle
   const da = cx.getImageData(0, 0, G, G).data, inside = new Uint8Array(G * G); for (let i = 0; i < G * G; i++) inside[i] = da[i * 4 + 3] > 140 ? 1 : 0;
   const px = i => -R0 + (i % G + .5) * cs, py = i => -R0 + (Math.floor(i / G) + .5) * cs;
   const isIn = (x, y) => { const i = Math.floor((x + R0) / cs), j = Math.floor((y + R0) / cs); return i >= 0 && j >= 0 && i < G && j < G && inside[j * G + i] === 1; };
@@ -337,7 +339,7 @@ function bcBuild() {
   window.bongOpen = function (cb) {
     if (BC.open) return; BC.open = true; el.hidden = false;
     setTimeout(() => {                                                       // the tangle takes a moment to make: the panel is up first
-      if (!BC.open) return; BC.tex = bcBuild();
+      if (!BC.open) return; { const all = BC_MASKS(); let i = Math.floor(Math.random() * all.length); if (all.length > 1 && i === BC.mi) i = (i + 1) % all.length; BC.mi = i; BC.mask = all[i]; } BC.tex = bcBuild();
       // a pose well away from the target: turned by 1.3..2.7 radians about a random axis
       const ax = Math.random() * 2 - 1, ay = Math.random() * 2 - 1, az = Math.random() * 2 - 1, n = Math.hypot(ax, ay, az) || 1, W0 = bcMul(bcRot(ax / n, ay / n, az / n, 1.3 + Math.random() * 1.4), BC_Q);
       st = { ver: 1, W: W0, k: 1, t: 0, drag: null, vel: [0, 0], hold: 0, done: false, dt: 0, cb }; BC.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
