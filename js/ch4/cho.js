@@ -99,6 +99,18 @@ const c4Stock = g => g === 'trau' ? SAVE4.stock : (SAVE4.shops[g] ? SAVE4.shops[
 const c4SetStock = (g, v) => { v = Math.max(0, v); if (g === 'trau') SAVE4.stock = v; else SAVE4.shops[g].stock = v; };
 const c4Cap = g => g === 'trau' ? c4Lv().cap : Math.round(C4_GOODS[g].cap * c4SLv(g).cap);
 const c4Cost = g => (g === 'trau' ? c4Lv().cost : C4_GOODS[g].cost) * (c4Guild() ? C4_GUILD.off : 1);   // the guild buys cheaper
+// the soldiers take goods worth `value` (at the selling price) from the stalls, a bit from each in turn; returns what to say
+function c4Confiscate(value) {
+  const taken = {}; let left = value, total = 0;
+  for (let guard = 0; left > 0 && guard < 2000; guard++) {
+    const all = c4Owned().filter(g => c4Stock(g) > 0), gs = all.filter(g => c4Price(g) <= left + 2); if (!gs.length) break;   // (no unit dearer than what is still owed, so the take stays close to the sum)
+    const g = c4Pick(gs); c4SetStock(g, c4Stock(g) - 1); taken[g] = (taken[g] || 0) + 1; left -= c4Price(g); total += c4Price(g);
+  }
+  c4Hud(); persist4();
+  const list = Object.entries(taken).map(([g, n]) => `${n} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ');
+  if (!list) return 'Lính huyện lục gánh chẳng còn gì đáng giá, chửi đổng rồi đi.';
+  return `Lính huyện tịch thu ${list} (trị giá khoảng ${c4Money(Math.round(total))})${left > 0 ? ', lục hết gánh mà vẫn chưa đủ, chửi đổng bỏ đi' : ' thay tiền'}.`;
+}
 const c4Price = g => g === 'trau' ? (SAVE4.cheap > 0 ? 5 : 6) : C4_GOODS[g].price;
 const c4Owned = () => ['trau', ...C4_SHOPS.filter(c4Own), ...C4_BUYS.filter(c4Own)];   // (C4_BUYS: neighbours' stalls bought out, muagan.js)
 const c4QX = g => g === 'trau' ? [175, 200, 225, 225, 225][SAVE4.lv] : 140;          // where the queue starts, right of a stall
@@ -554,9 +566,10 @@ function c4Event(kind) {
     for (const g of own) C4.Q[g] = [];
   } else if (kind === 'linh') {                                             // the district's soldiers levy money for labour
     const d = c4Loss(.01, .02, 10);
-    Object.assign(E, { title: 'Lính huyện', text: `Lính huyện đi qua, đòi tiền phu cho ${own.length} gánh: có thể phải nộp ${c4LossText(.01, .02, 10)}.`, opts: [
+    // owner: pleading poverty means they take goods worth what they asked, from whatever is on the stalls
+    Object.assign(E, { title: 'Lính huyện', text: `Lính huyện đi qua, đòi tiền phu cho ${own.length} gánh: có thể phải nộp ${c4LossText(.01, .02, 10)}. Kêu nghèo thì họ lấy hàng trị giá tương đương.`, opts: [
       [`Nộp ${d} đồng`, () => sp(d), SAVE4.money >= d],
-      ['Kêu nghèo', () => { if (R() < .5) toast('Lính huyện thấy gánh nhỏ, tha cho.', 2.8); else { const n = Math.min(SAVE4.stock, 10); SAVE4.stock -= n; toast(n ? `Lính huyện tịch thu ${n} miếng trầu thay tiền!` : 'Lính huyện lục gánh chẳng thấy gì đáng giá, chửi đổng rồi đi.', 3); } }]] });
+      ['Kêu nghèo, nộp hàng thay tiền', () => toast(c4Confiscate(d), 3.6)]] });
   } else if (C4_EXTRA_EV[kind]) { if (C4_EXTRA_EV[kind](E) === false) return; }   // kinhdoanh.js
   else return;
   C4.ev = E;
