@@ -1,19 +1,19 @@
-/* Tranh 6 · Bắc Kim Thang, the opening (owner's idea, demo): a strange lump hung under the moon, many layers of torn paper stacked inside one another, full of holes
-   and with no shape that means anything. The player turns it any way with a finger or the mouse. The moon shines through the holes and the shadow of the lump falls
-   on the ground; the light gets through only where the holes of ALL the layers line up. Turn it just right, for one moment, and those spots of light make the shape of
-   a bird on the ground: the bird lifts out of its own shadow and flies up. Then the tranh begins.
+/* Tranh 6 · Bắc Kim Thang, the opening (owner's idea, demo; the model is a Shadowmatic-like sculpture): a tangle of metal balls, rods and needles hung under the moon,
+   with no shape that means anything. The player turns it any way with a finger or the mouse. The moon shines on it and its shadow falls in a pool of light on the ground.
+   Turn it just right, for one moment, and the shadow of the whole tangle is a bird: the bird lifts out of its own shadow and flies up. Then the tranh begins.
    How it is built (a small 3D of its own, drawn with the canvas, no library):
-   - the lump is BC_N sheets of paper (plates), each with its own wobbly outline, size, a small tilt and a place along the light's way. Each plate has a texture:
-     paper with holes. In the moon's own frame (x, y across the light, z along it) a ray goes through the point (x, y) of every plate, so at the TARGET pose the
-     light gets through exactly where every plate has a hole: the bird is a hole in every plate, and everywhere else one plate is chosen at random (a patch of the
-     ground belongs to one plate, cell()) to be solid there, the other plates get random holes. So the bird is in no single plate but in all of them together.
-   - W = the pose (3×3, lump → world); the player's drag turns it about the screen's axes. Looking from the front, the plates are drawn far to near, each as a
-     flat sheet (an orthographic view of a flat thing is an affine map, so setTransform + drawImage, smooth), with a dark copy under it for the thickness.
-   - the shadow is the same plates projected along the moon's light on to the ground (also an affine map), drawn dark, so the lit spots are the holes common to all.
+   - in the moon's own frame (x, y across the light, z along it) the shadow of a thing is its (x, y). So the bird is cut into balls that fill it (circles packed into the
+     bird, bcBuild: biggest first, each as large as fits), every ball is given its own depth z (a wavy field plus a jitter: the lumps stand out and sink in), and rods join
+     neighbouring balls (a rod between two balls whose circles touch stays inside the union, others only if the whole rod stays inside the bird) and needles stand through
+     some balls along z (their shadow is a dot). Everything lies inside the bird as seen along the light, so at the TARGET pose the shadow is the bird, and at any other pose
+     the depths push the parts apart and it is a jumble.
+   - W = the pose (3×3, tangle → world); a drag turns it about the screen's axes (with a little momentum). The view is straight from the front: parts are sorted far to near
+     and drawn as shaded metal (ball = radial gradient, rod = three strokes).
+   - the shadow is drawn as vectors (circles and thick lines with round caps) in the plane across the light, under the affine map that puts that plane on the ground: smooth.
    - the target is reached when W is within 4° of the target for a quarter of a second: the bird is drawn, rises out of the shadow and flies off; then the cb.
-   Random every time: the pose it starts in, the plates and their holes are new each time. */
+   Random every time: the pose it starts in and the depths, rods and needles are new each time. */
 const BC = { open: false, tex: null, st: null };
-const BC_W = 340, BC_H = 560, BC_CX = 170, BC_CY = 190, BC_S = 88, BC_GY = 452, BC_GS = 0.42, BC_H3 = 1.5, BC_N = 6, BC_T = 320, BC_GTOP = BC_GY - 44;   // canvas; ball centre; px per unit; ground line, its squash, the lump's height over it (units); plates and texture size
+const BC_W = 340, BC_H = 560, BC_CX = 170, BC_CY = 190, BC_S = 100, BC_GY = 452, BC_GS = 0.42, BC_H3 = 1.5, BC_GTOP = BC_GY - 60;   // canvas; the tangle's centre; px per unit; ground line, its squash, the tangle's height over it (units)
 const BC_LW = (() => { const v = [.25, -.88, .4], n = Math.hypot(...v); return v.map(x => x / n); })();      // the way the moon's light travels (towards the viewer, down, right)
 const BC_Q = (() => {                                                       // the moon's frame: e3 = the light's way, e1 ≈ screen right, e2 = e3 × e1  (columns, light frame → world)
   const L = BC_LW, d = L[0], e1 = [1 - d * L[0], -d * L[1], -d * L[2]], n = Math.hypot(...e1); e1[0] /= n; e1[1] /= n; e1[2] /= n;
@@ -24,13 +24,12 @@ const bcMul = (A, B) => { const o = new Array(9); for (let i = 0; i < 3; i++) fo
 const bcT = A => [A[0], A[3], A[6], A[1], A[4], A[7], A[2], A[5], A[8]];
 const bcApp = (A, v) => [A[0] * v[0] + A[1] * v[1] + A[2] * v[2], A[3] * v[0] + A[4] * v[1] + A[5] * v[2], A[6] * v[0] + A[7] * v[1] + A[8] * v[2]];
 const bcRot = (ax, ay, az, a) => { const c = Math.cos(a), s = Math.sin(a), t = 1 - c; return [t * ax * ax + c, t * ax * ay - s * az, t * ax * az + s * ay, t * ax * ay + s * az, t * ay * ay + c, t * ay * az - s * ax, t * ax * az - s * ay, t * ay * az + s * ax, t * az * az + c]; };
-const bcAngleFromI = R => Math.acos(Math.max(-1, Math.min(1, (R[0] + R[4] + R[8] - 1) / 2)));
+const bcAngleFromI = R => Math.abs(Math.acos(Math.max(-1, Math.min(1, (R[0] + R[4] + R[8] - 1) / 2))));
 function bcNoise(seed) {                                                    // smooth value noise on a wrapping grid, 0..1
   const G = 64, v = new Float32Array(G * G); let a = seed >>> 0; for (let i = 0; i < v.length; i++) { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; v[i] = a / 4294967296; }
   return (x, y) => { x = ((x % G) + G) % G; y = ((y % G) + G) % G; const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy), x1 = (x0 + 1) % G, y1 = (y0 + 1) % G;
     return (v[y0 * G + x0] * (1 - sx) + v[y0 * G + x1] * sx) * (1 - sy) + (v[y1 * G + x0] * (1 - sx) + v[y1 * G + x1] * sx) * sy; };
 }
-const bcStep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 // the bird seen from above, in the moon's x, y (head up the picture, wings spread, a fanned tail); k scales it
 function bcBirdPath(p, k) {
   const tri = pts => { pts.forEach(([x, z], i) => { i ? p.lineTo(x * k, z * k) : p.moveTo(x * k, z * k); }); p.closePath(); };
@@ -40,37 +39,40 @@ function bcBirdPath(p, k) {
 }
 function bcBuild() {
   const seed = (Math.random() * 4294967295) >>> 0, rnd = (() => { let a = seed ^ 0x5bd1e995; return () => { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; return a / 4294967296; }; })();
-  const T = BC_T, N = BC_N;
-  // the bird as a smooth alpha picture over x, y in -1.1…1.1
-  const BG = 384, bc = document.createElement('canvas'); bc.width = bc.height = BG; const bx = bc.getContext('2d', { willReadFrequently: true });
-  bx.setTransform(BG / 2.2, 0, 0, BG / 2.2, BG / 2, BG / 2); bx.fillStyle = '#000'; const bp = new Path2D(); bcBirdPath(bp, .78); bx.fill(bp);
-  const bd = bx.getImageData(0, 0, BG, BG).data, birdA = (x, y) => { const i = Math.round((x + 1.1) / 2.2 * BG - .5), j = Math.round((y + 1.1) / 2.2 * BG - .5); return i < 0 || j < 0 || i >= BG || j >= BG ? 0 : bd[(j * BG + i) * 4 + 3] / 255; };
-  // which plate is solid over each patch of ground: uneven cells, each given to one plate (small ones, so no plate shows the whole outline of the bird)
-  const wx = bcNoise(seed ^ 0x27d4eb2f), wy = bcNoise(seed ^ 0x165667b1), cell = (x, y) => {
-    const u = x * 4.2 + (wx(x * 2.1 + 5, y * 2.1) - .5) * 2.2, v = y * 4.2 + (wy(x * 2.1, y * 2.1 + 9) - .5) * 2.2, i = Math.floor(u), j = Math.floor(v);
-    let h = Math.imul(i * 73856093 ^ j * 19349663 ^ seed, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return h % N; };
-  const plates = [];
-  for (let n = 0; n < N; n++) {
-    const rad = 1.18 + rnd() * .22, tx = (rnd() - .5) * .24, ty = (rnd() - .5) * .24, U = [1, 0, tx], V = [0, 1, ty], c = [(rnd() - .5) * .16, (rnd() - .5) * .16, -1 + n * (2 / (N - 1)) + (rnd() - .5) * .08];
-    const hn1 = bcNoise(seed + n * 7919 + 1), hn2 = bcNoise(seed + n * 104729 + 2), on = bcNoise(seed + n * 31 + 3), pn = bcNoise(seed + n * 977 + 4), thr = .5 + rnd() * .08;
-    const cv = document.createElement('canvas'); cv.width = cv.height = T; const cx = cv.getContext('2d'), img = cx.createImageData(T, T), d = img.data;
-    for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) {
-      const u = (i + .5) / T * 2 - 1, v = (j + .5) / T * 2 - 1, r = Math.hypot(u, v), th = Math.atan2(v, u), rr = .84 + .16 * on(Math.cos(th) * 2.2 + 8, Math.sin(th) * 2.2 + 8);
-      const x = c[0] + u * rad, y = c[1] + v * rad, q = (i + j * T) * 4;
-      let o = bcStep(rr, rr - .02, r);                                         // inside the wobbly outline
-      if (o > 0) {
-        const mine = cell(x, y) === n || cell(x + .05, y) === n || cell(x - .05, y) === n || cell(x, y + .05) === n || cell(x, y - .05) === n;      // solid here (a little over the seam into the next cell)
-        const hn = .62 * hn1(x * 3.1 + 11, y * 3.1 + 4) + .38 * hn2(x * 7.3 + 3, y * 7.3 + 21), hole = bcStep(thr - .035, thr + .035, hn);
-        o *= mine ? 1 : 1 - hole; o *= 1 - birdA(x, y);                        // the bird is a hole in every plate
-      }
-      const m = pn(x * 9 + 2, y * 9 + 7), tone = .9 + .12 * m - .06 * (n % 2);
-      d[q] = Math.min(255, 214 * tone); d[q + 1] = Math.min(255, 208 * tone); d[q + 2] = Math.min(255, 186 * tone); d[q + 3] = Math.round(o * 255);
-    }
-    cx.putImageData(img, 0, 0);
-    const sh = document.createElement('canvas'); sh.width = sh.height = T; const sx = sh.getContext('2d'); sx.drawImage(cv, 0, 0); sx.globalCompositeOperation = 'source-in'; sx.fillStyle = '#161c2e'; sx.fillRect(0, 0, T, T);   // the same sheet, dark: its shadow
-    plates.push({ c, U, V, rad, cv, sh });
+  const G = 150, R0 = 1.3, cs = 2 * R0 / G, K = 1.0;                           // a grid over x, y in -1.1…1.1
+  const cv = document.createElement('canvas'); cv.width = cv.height = G; const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.setTransform(G / (2 * R0), 0, 0, G / (2 * R0), G / 2, G / 2); cx.fillStyle = '#000'; const bp = new Path2D(); bcBirdPath(bp, K); cx.fill(bp);
+  const da = cx.getImageData(0, 0, G, G).data, inside = new Uint8Array(G * G); for (let i = 0; i < G * G; i++) inside[i] = da[i * 4 + 3] > 140 ? 1 : 0;
+  const px = i => -R0 + (i % G + .5) * cs, py = i => -R0 + (Math.floor(i / G) + .5) * cs;
+  const isIn = (x, y) => { const i = Math.floor((x + R0) / cs), j = Math.floor((y + R0) / cs); return i >= 0 && j >= 0 && i < G && j < G && inside[j * G + i] === 1; };
+  // distance of each inside cell to the edge of the bird (two-pass chamfer), in units
+  const dist = new Float32Array(G * G); for (let i = 0; i < G * G; i++) dist[i] = inside[i] ? 1e9 : 0;
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const k = j * G + i; let d = dist[k]; if (i > 0) d = Math.min(d, dist[k - 1] + 1); if (j > 0) { d = Math.min(d, dist[k - G] + 1); if (i > 0) d = Math.min(d, dist[k - G - 1] + 1.41); if (i < G - 1) d = Math.min(d, dist[k - G + 1] + 1.41); } dist[k] = d; }
+  for (let j = G - 1; j >= 0; j--) for (let i = G - 1; i >= 0; i--) { const k = j * G + i; let d = dist[k]; if (i < G - 1) d = Math.min(d, dist[k + 1] + 1); if (j < G - 1) { d = Math.min(d, dist[k + G] + 1); if (i < G - 1) d = Math.min(d, dist[k + G + 1] + 1.41); if (i > 0) d = Math.min(d, dist[k + G - 1] + 1.41); } dist[k] = d; }
+  // circles filling the bird: the widest uncovered place first
+  const covered = new Uint8Array(G * G), balls = [];
+  for (let n = 0; n < 140; n++) {
+    let best = -1, bd = 0; for (let k = 0; k < G * G; k++) if (inside[k] && !covered[k] && dist[k] > bd) { bd = dist[k]; best = k; }
+    const r = (bd - .5) * cs;                                                  // as large as fits inside (a half cell of slack for the pixels' edge)
+    if (best < 0 || r < .022) break;
+    const x = px(best), y = py(best); balls.push({ x, y, r: Math.min(r, .3) });
+    for (let k = 0; k < G * G; k++) if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= Math.min(r, .3)) covered[k] = 1;
   }
-  return { plates };
+  // depth: a wavy field plus a jitter, so the parts stand out and sink in
+  const zn = bcNoise(seed ^ 0x27d4eb2f), zm = bcNoise(seed ^ 0x165667b1);
+  for (const b of balls) b.z = 2.6 * (.65 * zn(b.x * 1.1 + 6, b.y * 1.1 + 3) + .35 * zm(b.x * 2.3 + 2, b.y * 2.3 + 8) - .5) + (rnd() - .5) * .5;
+  // rods between neighbours, as long as the rod's shadow stays in the bird
+  const rods = [], key = new Set(), add = (a, b, r) => { const k = a < b ? a + '_' + b : b + '_' + a; if (key.has(k)) return false; key.add(k); rods.push({ a: [balls[a].x, balls[a].y, balls[a].z], b: [balls[b].x, balls[b].y, balls[b].z], r }); return true; };
+  balls.forEach((A, i) => {
+    const near = balls.map((B, j) => ({ j, d: Math.hypot(A.x - B.x, A.y - B.y) })).filter(o => o.j !== i && o.d < A.r + balls[o.j].r + .3).sort((p, q) => p.d - q.d);
+    let made = 0; for (const o of near) { if (made >= 3) break; const B = balls[o.j], rr = Math.max(.028, Math.min(.065, .5 * Math.min(A.r, B.r)));
+      let ok = o.d <= A.r + B.r; for (let t = 1; t < 12 && !ok; t++) { }
+      if (!ok) { ok = true; for (let t = 0; t <= 12; t++) { const u = t / 12, x = A.x + (B.x - A.x) * u, y = A.y + (B.y - A.y) * u; if (!isIn(x + rr, y) || !isIn(x - rr, y) || !isIn(x, y + rr) || !isIn(x, y - rr)) { ok = false; break; } } }
+      if (ok && add(i, o.j, rr)) made++; }
+  });
+  // needles through some balls, along the light: their shadow is only a dot
+  const pins = []; for (let n = 0; n < 12; n++) { const b = balls[Math.floor(rnd() * balls.length)]; pins.push({ a: [b.x, b.y, b.z - .25 - rnd() * .35], b: [b.x, b.y, b.z + .25 + rnd() * .35], r: .016 + rnd() * .008 }); }
+  return { balls, rods: rods.concat(pins) };
 }
 
 (function () {
@@ -78,44 +80,44 @@ function bcBuild() {
   el.innerHTML = '<canvas id="bongCv"></canvas><button id="bongX" aria-label="Đóng">✕</button>';
   document.body.appendChild(el);
   const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#bongX');
-  const SC = 2, BW = 300, ballC = document.createElement('canvas'), bgx = ballC.getContext('2d'), tmp = document.createElement('canvas'), tg = tmp.getContext('2d');
-  ballC.width = ballC.height = tmp.width = tmp.height = BW * SC;
-  const GH = BC_H - BC_GTOP, gC = document.createElement('canvas'), ggx = gC.getContext('2d'); gC.width = BC_W * SC; gC.height = GH * SC;
-  const L = BC_LW, kx = L[0] / L[1], kz = L[2] / L[1];
+  const L = BC_LW, kx = L[0] / L[1], kz = L[2] / L[1], e1 = [BC_Q[0], BC_Q[3], BC_Q[6]], e2 = [BC_Q[1], BC_Q[4], BC_Q[7]];
   let st = null, raf = 0, last = 0;
   const size = () => { const k = Math.min(innerWidth * .96 / BC_W, innerHeight * .94 / BC_H), d = Math.min(2, devicePixelRatio || 1); cv2.style.width = BC_W * k + 'px'; cv2.style.height = BC_H * k + 'px'; cv2.width = Math.round(BC_W * k * d); cv2.height = Math.round(BC_H * k * d); st && (st.k = k * d); };
   const stars = Array.from({ length: 46 }, (_, i) => [(i * 97 % 340) + .5, (i * 53 % 300) + .5, .6 + (i % 4) * .3]);
-  const proj = w => [w[0] - kx * (w[1] + BC_H3), w[2] - kz * (w[1] + BC_H3)];       // a point of the lump (relative to its centre) → where the moon's light puts it on the ground
+  const proj = w => [w[0] - kx * (w[1] + BC_H3), w[2] - kz * (w[1] + BC_H3)];       // a point of the tangle (relative to its centre) → where the moon's light puts it on the ground
   const gpos = p => [BC_CX + p[0] * BC_S, BC_GY + p[1] * BC_S * BC_GS];
-  // each plate's texture-to-world frame under the pose W: the world place of texel (0, 0), the steps along the texture's x and y, and the plate's normal
-  function frame(P, W) {
-    const k = 2 * P.rad / BC_T, o = bcApp(W, [P.c[0] - P.rad * (P.U[0] + P.V[0]), P.c[1] - P.rad * (P.U[1] + P.V[1]), P.c[2] - P.rad * (P.U[2] + P.V[2])]);
-    return { o, ex: bcApp(W, [P.U[0] * k, P.U[1] * k, P.U[2] * k]), ey: bcApp(W, [P.V[0] * k, P.V[1] * k, P.V[2] * k]), n: bcApp(W, [-P.U[2], -P.V[2], 1]) };
+  const dir = v => [v[0] - kx * v[1], v[2] - kz * v[1]];                              // the same for a direction
+  const hl = (() => { const n = Math.hypot(.35, .5); return [-.35 / n, -.5 / n]; })();   // towards the moon on the screen: up and left
+  function ball(h, sx, sy, rs) {
+    const gr = h.createRadialGradient(sx + hl[0] * rs * .45, sy + hl[1] * rs * .45, rs * .04, sx, sy, rs);
+    gr.addColorStop(0, '#f6f8fc'); gr.addColorStop(.22, '#c1c8d4'); gr.addColorStop(.62, '#5f677a'); gr.addColorStop(1, '#171a25');
+    h.fillStyle = gr; h.beginPath(); h.arc(sx, sy, rs, 0, 6.283); h.fill(); h.strokeStyle = 'rgba(10,12,20,.7)'; h.lineWidth = 1; h.stroke();
+    h.fillStyle = 'rgba(255,255,255,.85)'; h.beginPath(); h.arc(sx + hl[0] * rs * .5, sy + hl[1] * rs * .5, Math.max(1, rs * .13), 0, 6.283); h.fill();      // the bright spot
   }
-  function renderBall(W) {
-    const h = bgx; h.setTransform(1, 0, 0, 1, 0, 0); h.clearRect(0, 0, ballC.width, ballC.height);
-    const list = BC.tex.plates.map(P => ({ P, f: frame(P, W), z: bcApp(W, P.c)[2] })).sort((a, b) => a.z - b.z);
-    for (const { P, f } of list) {
-      const nrm = f.n, nl = Math.hypot(...nrm) || 1, lit = Math.abs((nrm[0] * L[0] + nrm[1] * L[1] + nrm[2] * L[2]) / nl), back = nrm[2] < 0;
-      const put = (dz, shade, col) => {                                        // the sheet drawn once, shifted along its normal by dz, with a coat of shade
-        const sx = BC_S * SC, ox = BW * SC / 2 + sx * (f.o[0] + nrm[0] / nl * dz), oy = BW * SC / 2 - sx * (f.o[1] + nrm[1] / nl * dz), t = tg;
-        t.globalCompositeOperation = 'source-over'; t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, tmp.width, tmp.height);
-        t.setTransform(sx * f.ex[0], -sx * f.ex[1], sx * f.ey[0], -sx * f.ey[1], ox, oy); t.imageSmoothingQuality = 'high'; t.drawImage(P.cv, 0, 0);
-        t.setTransform(1, 0, 0, 1, 0, 0); t.globalCompositeOperation = 'source-atop'; t.fillStyle = col || 'rgba(10,12,32,' + shade + ')'; t.fillRect(0, 0, tmp.width, tmp.height); t.globalCompositeOperation = 'source-over';
-        h.drawImage(tmp, 0, 0);
-      };
-      put(back ? .09 : -.09, 0, '#1d1915');                                    // its thickness: the dark edge under it
-      put(0, .78 * (1 - (.3 + .7 * lit)) + (back ? .18 : 0));                  // the face, darker when turned from the moon
-    }
+  function rod(h, ax, ay, bx, by, rs) {
+    h.lineCap = 'round'; h.strokeStyle = '#161923'; h.lineWidth = rs * 2 + 1.2; h.beginPath(); h.moveTo(ax, ay); h.lineTo(bx, by); h.stroke();
+    h.strokeStyle = '#6a7285'; h.lineWidth = rs * 1.7; h.stroke();
+    h.strokeStyle = '#d3d9e4'; h.lineWidth = Math.max(.8, rs * .55); h.beginPath(); h.moveTo(ax + hl[0] * rs * .5, ay + hl[1] * rs * .5); h.lineTo(bx + hl[0] * rs * .5, by + hl[1] * rs * .5); h.stroke();
   }
-  function renderGround(W) {
-    const h = ggx; h.setTransform(SC, 0, 0, SC, 0, -BC_GTOP * SC); h.clearRect(0, BC_GTOP, BC_W, GH);
-    const gr = h.createLinearGradient(0, BC_GTOP, 0, BC_H); gr.addColorStop(0, '#9aa8c4'); gr.addColorStop(1, '#c4d0e2'); h.fillStyle = gr; h.fillRect(0, BC_GTOP, BC_W, GH);
-    h.imageSmoothingQuality = 'high';
-    for (const P of BC.tex.plates) {                                           // every sheet's shadow, dark: what is left lit is where all of them have holes
-      const f = frame(P, W), o = gpos(proj(f.o)), ax = f.ex[0] - kx * f.ex[1], az = f.ex[2] - kz * f.ex[1], bx = f.ey[0] - kx * f.ey[1], bz = f.ey[2] - kz * f.ey[1];
-      h.setTransform(SC * BC_S * ax, SC * BC_S * BC_GS * az, SC * BC_S * bx, SC * BC_S * BC_GS * bz, SC * o[0], SC * (o[1] - BC_GTOP)); h.drawImage(P.sh, 0, 0);
+  function lump(h, W) {
+    const T = BC.tex, items = [];
+    for (const b of T.balls) { const w = bcApp(W, [b.x, b.y, b.z]); items.push({ z: w[2], f: () => ball(h, BC_CX + w[0] * BC_S, BC_CY - w[1] * BC_S, b.r * BC_S) }); }
+    for (const r of T.rods) { const a = bcApp(W, r.a), b = bcApp(W, r.b); items.push({ z: (a[2] + b[2]) / 2, f: () => rod(h, BC_CX + a[0] * BC_S, BC_CY - a[1] * BC_S, BC_CX + b[0] * BC_S, BC_CY - b[1] * BC_S, r.r * BC_S) }); }
+    items.sort((p, q) => p.z - q.z); for (const it of items) it.f();
+  }
+  function ground(h, W) {                                                    // the pool of moonlight and the tangle's shadow in it, drawn in the plane across the light
+    const o = proj([0, 0, 0]), a = dir(e1), b = dir(e2);
+    h.save(); h.beginPath(); h.rect(0, BC_GTOP, BC_W, BC_H - BC_GTOP); h.clip();
+    const gr = h.createLinearGradient(0, BC_GTOP, 0, BC_H); gr.addColorStop(0, '#171f38'); gr.addColorStop(1, '#222c4a'); h.fillStyle = gr; h.fillRect(0, BC_GTOP, BC_W, BC_H - BC_GTOP);
+    h.setTransform(st.k * BC_S * a[0], st.k * BC_S * BC_GS * a[1], st.k * BC_S * b[0], st.k * BC_S * BC_GS * b[1], st.k * (BC_CX + BC_S * o[0]), st.k * (BC_GY + BC_S * BC_GS * o[1]));
+    const pool = h.createRadialGradient(0, 0, 0, 0, 0, 2.0); pool.addColorStop(0, '#dfe6f4'); pool.addColorStop(.7, '#b9c6de'); pool.addColorStop(1, 'rgba(160,178,210,0)'); h.fillStyle = pool; h.beginPath(); h.arc(0, 0, 2.0, 0, 6.283); h.fill();
+    h.fillStyle = h.strokeStyle = '#141a2c'; h.lineCap = 'round';
+    for (const p of BC.tex.balls) { const w = bcApp(W, [p.x, p.y, p.z]); h.beginPath(); h.arc(w[0] * e1[0] + w[1] * e1[1] + w[2] * e1[2], w[0] * e2[0] + w[1] * e2[1] + w[2] * e2[2], p.r, 0, 6.283); h.fill(); }
+    for (const r of BC.tex.rods) {
+      const wa = bcApp(W, r.a), wb = bcApp(W, r.b); h.lineWidth = r.r * 2;
+      h.beginPath(); h.moveTo(wa[0] * e1[0] + wa[1] * e1[1] + wa[2] * e1[2], wa[0] * e2[0] + wa[1] * e2[1] + wa[2] * e2[2]); h.lineTo(wb[0] * e1[0] + wb[1] * e1[1] + wb[2] * e1[2], wb[0] * e2[0] + wb[1] * e2[1] + wb[2] * e2[2]); h.stroke();
     }
+    h.restore();
   }
   function wing(h, x, y, s, flap, col) {                                      // a woodblock-ish bird seen from the side, wings flapping
     h.save(); h.translate(x, y); h.scale(s, s); h.lineJoin = 'round'; h.strokeStyle = '#1d1915'; h.lineWidth = 2.2;
@@ -133,10 +135,9 @@ function bcBuild() {
     for (const [sx, sy, r] of stars) { h.globalAlpha = .5 + .5 * Math.sin(st.t * 1.5 + sx); h.fillStyle = '#e8ecff'; h.beginPath(); h.arc(sx, sy, r * .8, 0, 6.283); h.fill(); } h.globalAlpha = 1;
     const mx = 58, my = 58; const gm = h.createRadialGradient(mx, my, 4, mx, my, 70); gm.addColorStop(0, 'rgba(255,248,214,.55)'); gm.addColorStop(1, 'rgba(255,248,214,0)'); h.fillStyle = gm; h.fillRect(0, 0, 160, 160);
     h.fillStyle = '#fff3c4'; h.beginPath(); h.arc(mx, my, 24, 0, 6.283); h.fill(); h.strokeStyle = 'rgba(29,25,21,.5)'; h.lineWidth = 1.5; h.stroke();
-    if (st.dirty) { renderBall(st.W); renderGround(st.W); st.dirty = false; }
-    h.imageSmoothingEnabled = true; h.imageSmoothingQuality = 'high'; h.drawImage(gC, 0, BC_GTOP, BC_W, GH);
-    h.strokeStyle = 'rgba(232,236,255,.5)'; h.lineWidth = 1.2; h.beginPath(); h.moveTo(BC_CX, 0); h.lineTo(BC_CX, BC_CY - 100); h.stroke();      // the cord
-    h.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 2.2) : 1; h.drawImage(ballC, BC_CX - BW / 2, BC_CY - BW / 2, BW, BW); h.globalAlpha = 1;
+    ground(h, st.W); h.setTransform(k, 0, 0, k, 0, 0);
+    h.strokeStyle = 'rgba(232,236,255,.5)'; h.lineWidth = 1.2; h.beginPath(); h.moveTo(BC_CX, 0); h.lineTo(BC_CX, BC_CY - 110); h.stroke();      // the cord
+    h.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 2.2) : 1; lump(h, st.W); h.globalAlpha = 1;
     if (st.done) {                                                             // the bird: out of its shadow and away
       const T = st.dt, p = Math.min(1, T / 3.2), e = p * p * (3 - 2 * p), s0 = gpos(proj([0, 0, 0])), sx0 = s0[0], sy0 = s0[1];
       const bx = sx0 + (BC_W + 40 - sx0) * e * .95 + Math.sin(T * 3) * 6, by = sy0 - (sy0 + 40) * e - Math.sin(p * Math.PI) * 30, sc = .45 + 1.2 * Math.min(1, T / 1.6);
@@ -151,8 +152,8 @@ function bcBuild() {
   });
   const up = () => { if (st) st.drag = null; };
   cv2.addEventListener('pointerup', up); cv2.addEventListener('pointercancel', up);
-  function turn(ay, ax) {                                                    // a drag right turns the lump about the up axis, a drag down about the right axis
-    const m = Math.hypot(ay, ax); if (m < 1e-6) return; st.W = bcMul(bcRot(ax / m, ay / m, 0, m), st.W); st.dirty = true;
+  function turn(ay, ax) {                                                    // a drag right turns the tangle about the up axis, a drag down about the right axis
+    const m = Math.hypot(ay, ax); if (m < 1e-6) return; st.W = bcMul(bcRot(ax / m, ay / m, 0, m), st.W);
   }
   function loop(ts) {
     if (!BC.open) return; const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts;
@@ -168,7 +169,7 @@ function bcBuild() {
     raf = requestAnimationFrame(loop);
   }
   function win() {
-    st.done = true; st.dt = 0; st.drag = null; st.W = BC_Q.slice(); st.dirty = true;       // it settles exactly on the target
+    st.done = true; st.dt = 0; st.drag = null; st.W = BC_Q.slice();         // it settles exactly on the target
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => { AU.chirp && AU.chirp(); }, 700); setTimeout(() => AU.pluck(91), 1400);
   }
   function finish() { const cb = st && st.cb; BC.open = false; el.hidden = true; cancelAnimationFrame(raf); st = null; if (cb) cb(); }
@@ -177,11 +178,11 @@ function bcBuild() {
   addEventListener('resize', () => BC.open && size());
   window.bongOpen = function (cb) {
     if (BC.open) return; BC.open = true; el.hidden = false;
-    setTimeout(() => {                                                       // the plates take a moment to make: the panel is up first
+    setTimeout(() => {                                                       // the tangle takes a moment to make: the panel is up first
       if (!BC.open) return; BC.tex = bcBuild();
       // a pose well away from the target: turned by 1.3..2.7 radians about a random axis
       const ax = Math.random() * 2 - 1, ay = Math.random() * 2 - 1, az = Math.random() * 2 - 1, n = Math.hypot(ax, ay, az) || 1, W0 = bcMul(bcRot(ax / n, ay / n, az / n, 1.3 + Math.random() * 1.4), BC_Q);
-      st = { W: W0, dirty: true, k: 1, t: 0, drag: null, vel: [0, 0], hold: 0, done: false, dt: 0, cb }; BC.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
+      st = { W: W0, k: 1, t: 0, drag: null, vel: [0, 0], hold: 0, done: false, dt: 0, cb }; BC.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
     }, 60);
   };
   if (window.__bongTest || /[?&]thu=cau/.test(location.search)) setTimeout(() => bongOpen(() => toast('Chim bay đi rồi! (thử)', 3)), 1800);
