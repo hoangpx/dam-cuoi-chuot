@@ -179,7 +179,7 @@ function t6Night(p0, p1) {
   return { layer: 'bg', crT: 1,
     update(dt) {
       this.dawn = Math.min(1, (this.dawn || 0) + (T6C.done ? dt / 4 : 0));   // after the bridge the night lifts
-      if ((this.crT -= dt) < 0) { this.crT = 1.2 + R() * 2.8; AU.cricket(.5 + R() * .5); } },   // crickets in the grass all night (owner)
+      if (groom.x > T6_OFF - 1500 && (this.crT -= dt) < 0) { this.crT = 1.2 + R() * 2.8; AU.cricket(.5 + R() * .5); } },   // crickets in the grass all night (owner)
     // the sky goes first in the back layer, so the moon and the stars sit behind everything (owner); they move with
     // the view, slipping back only a little, as far things do
     draw(g) {

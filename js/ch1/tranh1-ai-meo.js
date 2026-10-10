@@ -76,7 +76,7 @@ function slipLabel(lines, w = 34) {
 }
 const hungryLabel = () => slipLabel(['ĐÓI', 'QUÁ']);
 // the owner's recording of a sleigh bell (audio/luc-lac.mp3, 1.77 s, stereo): AU.play('bell', volume, rate)
-const bellLoad = () => AU.sample('bell', 'audio/luc-lac.mp3' + (typeof VERSION !== 'undefined' ? '?v=' + VERSION : ''));
+const bellLoad = () => AU.sampleB64('bell', BELL_B64);
 // the bell from Tấm (tranh 5) is hung on the fed cat's neck: SAVE.catBell, which the dark stretch of tranh 6 asks for
 function catBell(cx) {
   return {
@@ -84,7 +84,7 @@ function catBell(cx) {
     offer: { wants: ['lucLac'], label: 'Đeo lục lạc', near: () => false, missing: '' },                // only by dragging, like the fish
     give() {
       if (!this.cat.fed) { S.inv.push('lucLac'); caught(this.cat); return; }                      // hung on a cat that was not fed first: it pounces (the bell stays in hand)
-      SAVE.catBell = true; persist(); AU.play('bell', .9); toast('Mèo đeo lục lạc, leng keng!', 3); },
+      SAVE.catBell = true; persist(); AU.play('bell', 1.8); toast('Mèo đeo lục lạc, leng keng!', 3); },
     update() { if (!this.got0) { this.got0 = 1; bellLoad(); if (SAVE.lucLac && !SAVE.catBell && !S.inv.includes('lucLac')) { S.inv.push('lucLac'); updateHud(); } } },
   };
 }

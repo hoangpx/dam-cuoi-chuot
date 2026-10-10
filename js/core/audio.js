@@ -203,6 +203,7 @@ const AU = (() => {
     // a recorded sound (a file in audio/), fetched and decoded once; played at a volume and a rate (a slight change of pitch)
     sample: (key, url) => { if (samples[key] !== undefined || !c) return; samples[key] = null;
       fetch(url).then(r => r.arrayBuffer()).then(b => c.decodeAudioData(b)).then(buf => { samples[key] = buf; }).catch(() => { delete samples[key]; }); },
+    sampleB64: (key, b64) => { if (samples[key] !== undefined || !c) return; samples[key] = null; try { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); c.decodeAudioData(u.buffer).then(buf => { samples[key] = buf; }).catch(() => { delete samples[key]; }); } catch (e) { delete samples[key]; } },
     play: on((key, vol = 1, rate = 1) => { const buf = samples[key]; if (!buf) return; const s = c.createBufferSource(), g = c.createGain(); s.buffer = buf; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g); g.connect(sfx); s.start(); }),
     rustle: on((v = 1) => { const t = c.currentTime, n = noise(.3), f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = .7; f.frequency.setValueAtTime(2600 + Math.random() * 900, t); f.frequency.exponentialRampToValueAtTime(1400, t + .22); n.connect(f); env(f, t, .03, .09 * v, .25).connect(sfx); n.start(t); n.stop(t + .3); }),
     // a frog far off in the pond, softer and lower than ribbit

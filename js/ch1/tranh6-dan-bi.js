@@ -129,7 +129,7 @@ function t6Dark() {
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
       const want = (isTouch ? T7.down : T7.in) ? 1 : 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
       cv.style.cursor = !isTouch && T7.in && this.dawn < 1 ? 'none' : '';                      // the mouse pointer is replaced by a lamp while it is dark
-      if ((T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }
+      if (false && (T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }       // (owner: crickets off for now, to hear the bell)
       T7.black = Math.max(0, T7.black - dt * 1.4);
       if (S.mode === 'play' && this.dawn < .8) {
         if (!T7.ev) {
@@ -138,7 +138,7 @@ function t6Dark() {
         } else {
           const e = T7.ev; e.t += dt;
           if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
-            if ((e.jt -= dt) < 0) { const n = e.n = (e.n || 0) + 1; e.jt = n === 1 ? 1 : .9; AU.play('bell', [.5, .8, 1][Math.min(2, n - 1)], 1 + .07 * (n - 1)); }       // the recorded bell, louder and a little higher each time
+            if ((e.jt -= dt) < 0) { const n = e.n = (e.n || 0) + 1; e.jt = n === 1 ? 1 : .9; AU.play('bell', [.9, 1.4, 1.8][Math.min(2, n - 1)], 1 + .07 * (n - 1)); }       // the recorded bell, louder and a little higher each time
             if (e.t > T7_REACT && (groom.moving || groom.vx !== 0)) this.caught();            // the bell was heard: stand still
             else if (e.t > T7_WARN) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
           } else if (e.ph === 'sneak') {                                                      // no bell: no warning at all
