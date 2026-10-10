@@ -1,10 +1,10 @@
 /* Hai tờ giấy rách, một cái chìa (owner's idea, on the branch giay-chia-khoa): two sheets of paper torn with holes of every odd
-   shape. The back sheet stays put; the front one is dragged over it, smoothly (it glides after the finger). Light only passes
+   shape. The back sheet stays put; the front one is dragged over it and turned (by a knob, two fingers, the wheel or Q and E), smoothly (it glides after the finger). Light only passes
    where BOTH sheets are torn through, and only one way of laying them makes that light the shape of a key. Laid right, the key
    glows and the cage opens. No words on the screen (owner: no hints), only a small key picture to say what is wanted.
    Random every time (gkMake): where the key sits in each sheet and every other tear, so a solution cannot be shared; the maker
    checks that no other way of laying the sheets lights anything like the key. giayOpen(done): done() runs when the key is made. */
-const GK = { S: 240, W: 340, H: 560, AX: 50, AY: 58, open: false, puz: null };
+const GK = { S: 240, W: 340, H: 560, AX: 50, AY: 68, open: false, puz: null };
 // the key in its own units (about 100 wide, 165 tall): a ring (outer polygon turned one way, inner the other) and the shank with two teeth
 const GK_KEYPOLYS = (() => {
   const half = poly => poly.map(([x, y]) => [(x - 50) * .5 + 25, y * .5]);   // (about 55 wide and 88 tall)
@@ -91,24 +91,30 @@ function gkDecoy() {
   const out = polys.map(p => gkTorn(p.map(([x, y]) => [(x - cx) * ca - (y - cy) * sa + x0, (x - cx) * sa + (y - cy) * ca + y0]), 1.3));
   return out.every(p => p.every(([x, y]) => x > 4 && y > 4 && x < S - 4 && y < S - 4)) ? out : null;
 }
+const gkWrap = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.PI; return a - Math.PI; };
+// The back sheet stays put. The front sheet is turned about its middle by `rot` and moved by (ox, oy): a point p of it lands on the back sheet at
+// (ox, oy) + c + R(rot)(p - c), c being the middle. Laid right is (g, phi); the key is torn on each sheet turned and placed to match only at that pose.
 function gkMake() {
-  const S = GK.S, ri = (a, b) => a + R() * (b - a), LO = 60, ks = LO / S, M = S * S;
+  const S = GK.S, c = S / 2, ri = (a, b) => a + R() * (b - a), M = S * S, LO = 48, ks = LO / S, D = LO * 3;
   const touches = (m1, m2) => { for (let i = 0; i < M; i++) if (m1[i] && m2[i]) return true; return false; };
   const orInto = (dst, src) => { for (let i = 0; i < M; i++) if (src[i]) dst[i] = 1; };
-  for (let tries = 0; tries < 200; tries++) {
-    const KA = [Math.round(ri(14, 170)), Math.round(ri(14, 140))], KB = [Math.round(ri(14, 170)), Math.round(ri(14, 140))], g = [KA[0] - KB[0], KA[1] - KB[1]];   // laid right when the front sheet's corner is g from the back sheet's
-    if (Math.hypot(g[0], g[1]) < 45) continue;                               // never already laid right
-    const keyOf = K => GK_KEYPOLYS.map(p => gkTorn(p, 1.1).map(([x, y]) => [x + K[0], y + K[1]]));
-    const rKeyA = gkRaster(keyOf(KA), S), rKeyB = gkRaster(keyOf(KB), S), edgePts = [], zone = [];
+  for (let tries = 0; tries < 250; tries++) {
+    const KA = [Math.round(ri(14, 170)), Math.round(ri(14, 140))], phi = (R() < .5 ? -1 : 1) * ri(.6, 3.1), g = [Math.round(ri(-100, 100)), Math.round(ri(-60, 100))];
+    const cs = Math.cos(phi), sn = Math.sin(phi);
+    const toA = (u, v) => [g[0] + c + cs * (u - c) - sn * (v - c), g[1] + c + sn * (u - c) + cs * (v - c)];                  // a point of the front sheet, where it lands on the back sheet
+    const toB = (x, y) => { const dx = x - g[0] - c, dy = y - g[1] - c; return [c + cs * dx + sn * dy, c - sn * dx + cs * dy]; };   // and back again
+    const base = GK_KEYPOLYS.map(p => p.map(([x, y]) => [x + KA[0], y + KA[1]]));
+    const keyA = base.map(p => gkTorn(p, 1.1)), keyB = base.map(p => gkTorn(p.map(([x, y]) => toB(x, y)), 1.1));
+    if (!keyB.every(p => p.every(([x, y]) => x > 4 && y > 4 && x < S - 4 && y < S - 4))) continue;             // the key must lie wholly on the front sheet too
+    const rKeyA = gkRaster(keyA, S), edgePts = [], zone = [];
     for (let y = 1; y < S - 1; y++) for (let x = 1; x < S - 1; x++) if (rKeyA[y * S + x] && (!rKeyA[y * S + x - 1] || !rKeyA[y * S + x + 1] || !rKeyA[(y - 1) * S + x] || !rKeyA[(y + 1) * S + x])) edgePts.push([x, y]);
     const dil = r => { const o = new Uint8Array(M); for (const [x, y] of edgePts) for (let dy = -r; dy <= r; dy += 2) for (let dx = -r; dx <= r; dx += 2) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < S && yy < S && dx * dx + dy * dy <= r * r) o[yy * S + xx] = 1; } for (let i = 0; i < M; i++) if (rKeyA[i]) o[i] = 1; return o; };
-    const bury = dil(18), near = dil(28);                                    // the key's surroundings: torn through one sheet or the other, never both
+    const bury = dil(18), near = dil(28);
     for (let i = 0; i < M; i++) if (bury[i] && !rKeyA[i]) zone.push(i);
-    // the zone round the key is split between the sheets by uneven scraps (nearest of many seeds, the distance shaken): neither sheet shows a clean key,
-    // each shows a lumpy hole with the key buried in it; laid right, only the key itself is torn through both
+    // the zone round the key is shared out between the sheets in many small uneven pieces, so neither sheet shows a clean key
     const seeds = []; for (let n = 0; n < 70; n++) { const i = zone[(R() * zone.length) | 0]; seeds.push([i % S, (i / S) | 0, true, ri(.7, 1.4)]); }
-    { const cx = KA[0] + 27, cy = KA[1] + 44; seeds.sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx)); seeds.forEach((q, n) => { q[2] = (n % 2 === 0) !== (R() < .22); }); }   // taken in turn round the key, so both sheets get a share all the way round
-    const nz = Array.from({ length: 19 * 19 }, () => R() * 9), noise = (x, y) => { const fx = x / 14, fy = y / 14, ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; const a = nz[iy * 19 + ix], b = nz[iy * 19 + ix + 1], c = nz[(iy + 1) * 19 + ix], d = nz[(iy + 1) * 19 + ix + 1]; return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c * (1 - tx) * ty + d * tx * ty; };
+    { const cx = KA[0] + 27, cy = KA[1] + 44; seeds.sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx)); seeds.forEach((q, n) => { q[2] = (n % 2 === 0) !== (R() < .22); }); }
+    const nz = Array.from({ length: 19 * 19 }, () => R() * 9), noise = (x, y) => { const fx = x / 14, fy = y / 14, ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; const a = nz[iy * 19 + ix], b = nz[iy * 19 + ix + 1], c2 = nz[(iy + 1) * 19 + ix], d = nz[(iy + 1) * 19 + ix + 1]; return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c2 * (1 - tx) * ty + d * tx * ty; };
     const fz = Array.from({ length: 52 * 52 }, () => R() * 3.4), fine = (x, y) => { const fx = x / 5, fy = y / 5, ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; return fz[iy * 52 + ix] * (1 - tx) * (1 - ty) + fz[iy * 52 + ix + 1] * tx * (1 - ty) + fz[(iy + 1) * 52 + ix] * (1 - tx) * ty + fz[(iy + 1) * 52 + ix + 1] * tx * ty; };
     const cellsA = new Uint8Array(M), cellsB = new Uint8Array(M);           // (both in the back sheet's frame)
     for (const i of zone) {
@@ -118,7 +124,7 @@ function gkMake() {
     }
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
     const used = [];
-    for (let n = 0, guard = 0; n < 17 && guard < 220; guard++) {               // far tears of the back sheet
+    for (let n = 0, guard = 0; n < 17 && guard < 220; guard++) {              // far tears of the back sheet
       const r = ri(4, 19), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
       if (used.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 3)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, near)) continue;
@@ -127,30 +133,42 @@ function gkMake() {
     for (let n = 0, guard = 0; n < 3 && guard < 40; guard++) {                // decoy keys on the back sheet
       const d = gkDecoy(); if (!d) continue; const mr = gkRaster(d, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
-    const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (shifted by g, grown a little)
-    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) for (let dy = -3; dy <= 3; dy += 3) for (let dx = -3; dx <= 3; dx += 3) { const u = x - g[0] + dx, v = y - g[1] + dy; if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; }
-    const mBk = new Uint8Array(rKeyB);                                       // the front sheet in its own frame: its key, and its share of the zone moved over
-    for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const x = u + g[0], y = v + g[1]; if (x >= 0 && y >= 0 && x < S && y < S && cellsB[y * S + x]) mBk[v * S + u] = 1; }
+    const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -3; dy <= 3; dy += 3) for (let dx = -3; dx <= 3; dx += 3) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
+    const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
+    for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
     const usedB = [];
-    for (let n = 0, guard = 0; n < 17 && guard < 220; guard++) {               // far tears of the front sheet: nowhere the back sheet is torn when laid right
+    for (let n = 0, guard = 0; n < 17 && guard < 220; guard++) {              // far tears of the front sheet: nowhere the back sheet is torn when laid right
       const r = ri(4, 19), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
       if (usedB.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 3)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, reach)) continue;
       orInto(mBk, mr); usedB.push([cx, cy, r]); n++;
     }
-    for (let n = 0, guard = 0; n < 3 && guard < 40; guard++) {                // decoy keys on the front sheet: nowhere the back sheet is torn when laid right
+    for (let n = 0, guard = 0; n < 3 && guard < 40; guard++) {                // decoy keys on the front sheet
       const d = gkDecoy(); if (!d) continue; const mr = gkRaster(d, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
-    const mA = gkDown(mAk, S, LO), mB = gkDown(mBk, S, LO), mK = gkDown(rKeyA, S, LO);
-    let sure = true;                                                          // no other way of laying them lights much of a key
-    for (let ox = -LO + 4; ox < LO && sure; ox++) for (let oy = -LO + 4; oy < LO; oy++) {
-      const dd = Math.hypot(ox - g[0] * ks, oy - g[1] * ks); if (dd < 3) continue;     // (close to the right place it is legitimately key-like, so only a far offset must look nothing like it)
-      if (gkIou(mA, mB, mK, LO, ox, oy) > (dd < 12 ? .55 : .42)) { sure = false; break; }
+    // laid right, how much of the lit shape is the key
+    let inter = 0, lit = 0, keyN = 0;
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const k = rKeyA[y * S + x]; keyN += k; if (!mAk[y * S + x]) continue; const [u, v] = toB(x, y), ui = Math.round(u), vi = Math.round(v); if (ui >= 0 && vi >= 0 && ui < S && vi < S && mBk[vi * S + ui]) { lit++; if (k) inter++; } }
+    if (inter / (lit + keyN - inter) < .8) continue;
+    // and no other pose lights anything like a key: every 15 degrees, every few pixels, at a coarse scale
+    const mA = gkDown(mAk, S, LO), mB = gkDown(mBk, S, LO), mK = gkDown(rKeyA, S, LO), aIdx = []; let kn = 0;
+    for (let i = 0; i < LO * LO; i++) { if (mA[i]) aIdx.push(i); kn += mK[i]; }
+    let sure = true; const ch = LO / 2;
+    for (let ai = 0; ai < 24 && sure; ai++) {
+      const ang = ai * Math.PI / 12, ca = Math.cos(ang), sa = Math.sin(ang), rot0 = new Uint8Array(D * D);
+      for (let qy = -LO; qy < 2 * LO; qy++) for (let qx = -LO; qx < 2 * LO; qx++) { const dx = qx - ch, dy = qy - ch, px = Math.round(ch + ca * dx + sa * dy), py = Math.round(ch - sa * dx + ca * dy); if (px >= 0 && py >= 0 && px < LO && py < LO) rot0[(qy + LO) * D + qx + LO] = mB[py * LO + px]; }
+      const near0 = Math.abs(gkWrap(ang - phi)) < .39;
+      for (let ox = -LO + 6; ox < LO - 5 && sure; ox += 2) for (let oy = -LO + 6; oy < LO - 5; oy += 2) {
+        if (near0 && Math.hypot(ox - g[0] * ks, oy - g[1] * ks) < 10) continue;               // close to the right pose it is legitimately key-like
+        let li = 0, it = 0; for (const i of aIdx) { const x = i % LO, y = (i / LO) | 0; if (rot0[(y - oy + LO) * D + x - ox + LO]) { li++; if (mK[i]) it++; } }
+        if (it / (li + kn - it || 1) > .42) { sure = false; break; }
+      }
     }
     if (!sure) continue;
-    if (gkIou(mA, mB, mK, LO, Math.round(g[0] * ks), Math.round(g[1] * ks)) < .8) continue;
     const edge = () => gkTorn([[0, 0], [S, 0], [S, S], [0, S]], 3.6);        // each sheet's own torn edge
-    return { g, holesA: gkContours(mAk, S), holesB: gkContours(mBk, S), edgeA: edge(), edgeB: edge(), mA: mAk, mB: mBk, mK: rKeyA };
+    const holesB = gkContours(mBk, S);
+    return { g, phi, holesA: gkContours(mAk, S), holesB, pathB: gkPath(holesB), edgeA: edge(), edgeB: edge(), mA: mAk, mB: mBk, mK: rKeyA };
   }
   return null;
 }
@@ -159,10 +177,11 @@ function gkMake() {
   const el = document.createElement('div'); el.id = 'giay'; el.hidden = true;
   el.innerHTML = '<canvas id="giayCv"></canvas><button id="giayX" aria-label="Đóng">✕</button>';
   document.body.appendChild(el);
-  const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#giayX'), S = GK.S;
-  let st = null;                                                             // { ox, oy, tx, ty, drag, t, done, cb, k, keys, hold, lastIou }
+  const cv2 = el.querySelector('canvas'), g = cv2.getContext('2d'), X = el.querySelector('#giayX'), S = GK.S, C = S / 2;
+  let st = null;                                                             // { ox, oy, rot, tx, ty, trot, drag, ptrs, t, done, cb, k, keys, hold, lastIou }
   const INKC = '#1d1915', PAPA = '#e9dcb4', PAPB = '#dba28e', GOLD = '#f2c640';
   const sheets = {};                                                         // the two sheets drawn once, holes cut out
+  const live = document.createElement('canvas'); live.width = live.height = 120; const lg = live.getContext('2d', { willReadFrequently: true });
   function size() {
     const k = Math.min(innerWidth * .94 / GK.W, innerHeight * .9 / GK.H), d = Math.min(2, devicePixelRatio || 1);
     cv2.style.width = GK.W * k + 'px'; cv2.style.height = GK.H * k + 'px'; cv2.width = Math.round(GK.W * k * d); cv2.height = Math.round(GK.H * k * d); if (st) st.k = k * d;
@@ -182,38 +201,71 @@ function gkMake() {
     h.beginPath(); h.moveTo(-20, 0); h.lineTo(-12, -8); h.lineTo(-4, 0); h.lineTo(-12, 8); h.closePath(); h.fill(); h.stroke(); h.fillStyle = '#3a2d1e'; h.beginPath(); h.moveTo(-15, 0); h.lineTo(-12, -3); h.lineTo(-9, 0); h.lineTo(-12, 3); h.closePath(); h.fill(); h.stroke();
     h.fillStyle = col; h.beginPath(); h.rect(-5, -2.4, 24, 4.8); h.fill(); h.stroke(); h.beginPath(); h.rect(11, 2.4, 3.6, 6); h.rect(16, 2.4, 3.6, 4); h.fill(); h.stroke(); h.restore();
   }
+  const AC = [GK.AX + C, GK.AY + C];
+  const toGroup = (px, py) => { const dx = px - AC[0], dy = py - AC[1], ca = Math.cos(st.alpha), sa = Math.sin(st.alpha); return [AC[0] + ca * dx + sa * dy, AC[1] - sa * dx + ca * dy]; };   // a screen point, in the back sheet's frame
+  const toScreen = (gx, gy) => { const dx = gx - AC[0], dy = gy - AC[1], ca = Math.cos(st.alpha), sa = Math.sin(st.alpha); return [AC[0] + ca * dx - sa * dy, AC[1] + sa * dx + ca * dy]; };
+  const clampPose = () => { const [sx, sy] = toScreen(GK.AX + st.tx + C, GK.AY + st.ty + C), cx = Math.max(24, Math.min(GK.W - 24, sx)), cy = Math.max(24, Math.min(GK.H - 24, sy)); if (cx !== sx || cy !== sy) { const [gx, gy] = toGroup(cx, cy); st.tx = gx - GK.AX - C; st.ty = gy - GK.AY - C; } };   // the front sheet's middle stays on the screen
+  const centre = () => [GK.AX + st.ox + C, GK.AY + st.oy + C];                // where the front sheet's middle is on the screen
+  const handle = () => { const [cx, cy] = centre(), d = C + 22; return [cx + Math.sin(st.rot) * d, cy - Math.cos(st.rot) * d]; };   // the turning knob, out beyond the sheet's top edge
   function draw() {
-    if (!st || !sheets.A) return; const P = GK.puz, h = g, k = st.k, ax = GK.AX, ay = GK.AY, bx = ax + st.ox, by = ay + st.oy;
+    if (!st || !sheets.A) return; const P = GK.puz, h = g, k = st.k, ax = GK.AX, ay = GK.AY, [cx, cy] = centre();
     h.setTransform(k, 0, 0, k, 0, 0); h.clearRect(0, 0, GK.W, GK.H);
     h.fillStyle = '#3a2d1e'; h.strokeStyle = INKC; h.lineWidth = 3; h.fillRect(0, 0, GK.W, GK.H); h.strokeRect(1.5, 1.5, GK.W - 3, GK.H - 3);
     keyIcon(h, GK.W / 2, 28, 1.6, st.done ? GOLD : '#7a6a4a');
+    h.save(); h.translate(AC[0], AC[1]); h.rotate(st.alpha); h.translate(-AC[0], -AC[1]);
     h.drawImage(sheets.A.c, ax - sheets.A.pad, ay - sheets.A.pad, sheets.A.c.width / k, sheets.A.c.height / k);
-    h.save(); h.shadowColor = 'rgba(0,0,0,.4)'; h.shadowBlur = 9; h.shadowOffsetY = 3; h.drawImage(sheets.B.c, bx - sheets.B.pad, by - sheets.B.pad, sheets.B.c.width / k, sheets.B.c.height / k); h.restore();
-    if (!st.done) return;
+    h.save(); h.translate(cx, cy); h.rotate(st.rot); h.shadowColor = 'rgba(0,0,0,.4)'; h.shadowBlur = 9; h.shadowOffsetY = 3; h.drawImage(sheets.B.c, -C - sheets.B.pad, -C - sheets.B.pad, sheets.B.c.width / k, sheets.B.c.height / k); h.restore();
+    if (!st.done) {                                                          // the knob for turning the front sheet (a circle with a turning arrow)
+      const [hx, hy] = handle(); h.save(); h.translate(hx, hy); h.fillStyle = '#e9dcb4'; h.strokeStyle = INKC; h.lineWidth = 2; h.beginPath(); h.arc(0, 0, 13, 0, 6.283); h.fill(); h.stroke();
+      h.beginPath(); h.arc(0, 0, 6.5, -2.4, 1.9); h.stroke(); h.fillStyle = INKC; h.beginPath(); h.moveTo(6.6, 3); h.lineTo(8.6, -2.6); h.lineTo(2.4, -1.4); h.closePath(); h.fill(); h.restore(); h.restore(); return;
+    }
+    h.restore();
     // once the key is made: it glows (gold, kept only inside the back sheet's holes, then only inside the front sheet's)
     const L = sheets.lit, l = L.getContext('2d'); l.setTransform(1, 0, 0, 1, 0, 0); l.globalCompositeOperation = 'source-over'; l.clearRect(0, 0, L.width, L.height); l.setTransform(k, 0, 0, k, 0, 0);
-    const pulse = st.done ? .8 + .2 * Math.sin(st.t * 9) : 1;
+    const pulse = .8 + .2 * Math.sin(st.t * 9);
     l.fillStyle = `rgba(242,198,64,${pulse})`; l.fillRect(0, 0, GK.W, GK.H);
-    l.globalCompositeOperation = 'destination-in'; l.fill(gkPath(P.holesA, ax, ay)); l.fill(gkPath(P.holesB, bx, by)); l.globalCompositeOperation = 'source-over';
+    l.globalCompositeOperation = 'destination-in'; l.save(); l.translate(AC[0], AC[1]); l.rotate(st.alpha); l.translate(-AC[0], -AC[1]); l.fill(gkPath(P.holesA, ax, ay)); l.restore();
+    l.save(); l.translate(AC[0], AC[1]); l.rotate(st.alpha); l.translate(-AC[0], -AC[1]);
+    l.save(); l.translate(cx, cy); l.rotate(st.rot); l.translate(-C, -C); l.fill(P.pathB); l.restore(); l.restore(); l.globalCompositeOperation = 'source-over';
     h.setTransform(1, 0, 0, 1, 0, 0); h.drawImage(L, 0, 0); h.setTransform(k, 0, 0, k, 0, 0);
-    if (st.done) { const a = Math.min(1, st.t * 2); h.fillStyle = `rgba(242,198,64,${.16 * a})`; h.fillRect(0, 0, GK.W, GK.H); }
+    const a = Math.min(1, st.t * 2); h.fillStyle = `rgba(242,198,64,${.16 * a})`; h.fillRect(0, 0, GK.W, GK.H);
   }
-  const toLogical = e => { const r = cv2.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * GK.W, (e.clientY - r.top) / r.height * GK.H]; };
-  const iou = (ox, oy) => gkIou(GK.puz.mA, GK.puz.mB, GK.puz.mK, S, Math.round(ox), Math.round(oy));
+  const toLogical = (e) => { const r = cv2.getBoundingClientRect(); return toGroup((e.clientX - r.left) / r.width * GK.W, (e.clientY - r.top) / r.height * GK.H); };
+  // how like the key is what is lit, in this pose (the front sheet's holes turned and moved are painted at half size and set against the back sheet's)
+  function iouAt(ox, oy, rot) {
+    const P = GK.puz; if (!P.m120) { P.m120 = [gkDown(P.mA, S, 120), gkDown(P.mK, S, 120)]; }
+    lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, 120, 120); lg.setTransform(.5, 0, 0, .5, 0, 0); lg.translate(ox + C, oy + C); lg.rotate(rot); lg.translate(-C, -C); lg.fillStyle = '#000'; lg.fill(P.pathB);
+    const d = lg.getImageData(0, 0, 120, 120).data, mA = P.m120[0], mK = P.m120[1]; let it = 0, li = 0, kn = 0;
+    for (let i = 0; i < 14400; i++) { const k = mK[i]; kn += k; if (mA[i] && d[i * 4 + 3] > 127) { li++; if (k) it++; } }
+    return it / (li + kn - it || 1);
+  }
   function win() {
-    st.done = true; st.t = 0; st.drag = null; st.tx = GK.puz.g[0]; st.ty = GK.puz.g[1];                // it settles exactly into place
+    const P = GK.puz; st.done = true; st.t = 0; st.drag = null; st.tx = P.g[0]; st.ty = P.g[1]; st.trot = st.rot + gkWrap(P.phi - st.rot);          // it settles exactly into place
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => AU.pluck(91), 320); setTimeout(() => AU.stamp(), 520); setTimeout(() => close(true), 2400);
   }
-  const clampX = v => Math.max(-170, Math.min(170, v)), clampY = v => Math.max(-175, Math.min(300, v));
+  const clampX = v => Math.max(-160, Math.min(160, v)), clampY = v => Math.max(-168, Math.min(372, v));
+  const inSheet = (px, py) => { const [cx, cy] = centre(), dx = px - cx, dy = py - cy, ca = Math.cos(st.rot), sa = Math.sin(st.rot), u = ca * dx + sa * dy, v = -sa * dx + ca * dy; return Math.abs(u) < C + 4 && Math.abs(v) < C + 4; };
   cv2.addEventListener('pointerdown', e => {
-    if (!st || st.done) return; const [px, py] = toLogical(e), bx = GK.AX + st.ox, by = GK.AY + st.oy;
-    if (px < bx - 4 || px > bx + S + 4 || py < by - 4 || py > by + S + 4) return;
-    st.drag = { px, py, ox: st.tx, oy: st.ty }; try { cv2.setPointerCapture(e.pointerId); } catch (err) {} AU.click(); e.preventDefault();
+    if (!st || st.done) return; const [px, py] = toLogical(e); st.ptrs.set(e.pointerId, [px, py]);
+    if (st.ptrs.size === 2) { st.drag = { type: 'pair', prev: pairState() }; return; }                      // two fingers: move and twist together
+    const [hx, hy] = handle(), [cx, cy] = centre();
+    if (Math.hypot(px - hx, py - hy) < 22) st.drag = { type: 'rot', prev: Math.atan2(py - cy, px - cx) };
+    else if (inSheet(px, py)) st.drag = { type: 'move', px, py, ox: st.tx, oy: st.ty };
+    else return;
+    try { cv2.setPointerCapture(e.pointerId); } catch (err) {} AU.click(); e.preventDefault();
   });
-  cv2.addEventListener('pointermove', e => { if (!st || !st.drag) return; const [px, py] = toLogical(e), d = st.drag; st.tx = clampX(d.ox + px - d.px); st.ty = clampY(d.oy + py - d.py); });
-  const up = () => { if (!st || !st.drag) return; st.drag = null; if (iou(st.ox, st.oy) >= .75) win(); };
+  const pairState = () => { const [a, b] = [...st.ptrs.values()]; return { mx: (a[0] + b[0]) / 2, my: (a[1] + b[1]) / 2, ang: Math.atan2(b[1] - a[1], b[0] - a[0]) }; };
+  cv2.addEventListener('pointermove', e => {
+    if (!st) return; const [px, py] = toLogical(e); if (st.ptrs.has(e.pointerId)) st.ptrs.set(e.pointerId, [px, py]);
+    const d = st.drag; if (!d) return;
+    if (d.type === 'move') { st.tx = d.ox + px - d.px; st.ty = d.oy + py - d.py; clampPose(); }
+    else if (d.type === 'rot') { const [cx, cy] = centre(), a = Math.atan2(py - cy, px - cx); st.trot += gkWrap(a - d.prev); d.prev = a; }   // (turned by the change of angle, so crossing the half-turn does not spin it the long way)
+    else if (d.type === 'pair' && st.ptrs.size >= 2) { const n = pairState(), p = d.prev; st.tx += n.mx - p.mx; st.ty += n.my - p.my; clampPose(); st.trot += gkWrap(n.ang - p.ang); d.prev = n; }
+  });
+  const up = e => { if (!st) return; st.ptrs.delete(e.pointerId); if (st.drag && (st.drag.type !== 'pair' || st.ptrs.size < 2)) st.drag = null; if (!st.done && st.lastIou >= .75) win(); };
   cv2.addEventListener('pointerup', up); cv2.addEventListener('pointercancel', up);
-  addEventListener('keydown', e => {                                          // while it is open, the game below hears nothing; arrows glide the front sheet
+  cv2.addEventListener('wheel', e => { if (!st || st.done) return; st.trot += (e.deltaY > 0 ? 1 : -1) * .07; e.preventDefault(); }, { passive: false });
+  addEventListener('keydown', e => {                                          // while it is open, the game below hears nothing; arrows glide the front sheet, Q and E turn it
     if (!GK.open) return; e.stopPropagation(); e.preventDefault();
     if (e.code === 'Escape') { close(false); return; }
     st && st.keys.add(e.code);
@@ -226,13 +278,14 @@ function gkMake() {
     if (st) {
       st.t += dt;
       if (!st.done) {
-        const kx = (st.keys.has('ArrowRight') || st.keys.has('KeyD') ? 1 : 0) - (st.keys.has('ArrowLeft') || st.keys.has('KeyA') ? 1 : 0), ky = (st.keys.has('ArrowDown') || st.keys.has('KeyS') ? 1 : 0) - (st.keys.has('ArrowUp') || st.keys.has('KeyW') ? 1 : 0);
-        if (kx || ky) { st.tx = clampX(st.tx + kx * 70 * dt); st.ty = clampY(st.ty + ky * 70 * dt); }
-        // it glides after the finger (smooth), and holding it still on the right place for a moment is enough too
-        const f = Math.min(1, dt * 16), rx = Math.round(st.ox), ry = Math.round(st.oy); st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f;
-        if (Math.round(st.ox) !== rx || Math.round(st.oy) !== ry || st.lastIou == null) st.lastIou = iou(st.ox, st.oy);
+        const K = c => st.keys.has(c), kx = (K('ArrowRight') || K('KeyD') ? 1 : 0) - (K('ArrowLeft') || K('KeyA') ? 1 : 0), ky = (K('ArrowDown') || K('KeyS') ? 1 : 0) - (K('ArrowUp') || K('KeyW') ? 1 : 0), kr = (K('KeyE') ? 1 : 0) - (K('KeyQ') ? 1 : 0);
+        if (kx || ky) { const ca = Math.cos(st.alpha), sa = Math.sin(st.alpha); st.tx += (ca * kx + sa * ky) * 70 * dt; st.ty += (-sa * kx + ca * ky) * 70 * dt; clampPose(); }
+        if (kr) st.trot += kr * 1.1 * dt;
+        // it glides after the finger (smooth), and holding it still on the right pose for a moment is enough too
+        const f = Math.min(1, dt * 16), px0 = st.ox, py0 = st.oy, r0 = st.rot; st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f;
+        if (st.lastIou == null || Math.abs(st.ox - st.cx0) > .5 || Math.abs(st.oy - st.cy0) > .5 || Math.abs(st.rot - st.cr0) > .006) { st.lastIou = iouAt(st.ox, st.oy, st.rot); st.cx0 = st.ox; st.cy0 = st.oy; st.cr0 = st.rot; }
         if (st.lastIou >= .75) { st.hold += dt; if (st.hold > .45) win(); } else st.hold = 0;
-      } else { const f = Math.min(1, dt * 9); st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; }
+      } else { const f = Math.min(1, dt * 9); st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f; }
       draw();
     }
     raf = requestAnimationFrame(loop);
@@ -247,9 +300,10 @@ function gkMake() {
     if (GK.open) return;
     if (!GK.puz) GK.puz = gkMake();
     if (!GK.puz) { if (cb) cb(); return; }                                    // (the maker nearly always finds one)
-    GK.open = true; el.hidden = false; st = { ox: 0, oy: 250, tx: 0, ty: 250, drag: null, t: 0, done: false, cb, k: 1, keys: new Set(), hold: 0, lastIou: null }; GK.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
+    const r0 = GK.puz.phi + (R() < .5 ? -1 : 1) * (1.2 + R() * 1.4);          // the front sheet starts turned well away from the right way up
+    GK.open = true; el.hidden = false; st = { alpha: R() * 6.2832, ox: 0, oy: 250, rot: r0, tx: 0, ty: 250, trot: r0, drag: null, ptrs: new Map(), t: 0, done: false, cb, k: 1, keys: new Set(), hold: 0, lastIou: null, cx0: 0, cy0: 0, cr0: 0 }; GK.st = st; { const [gx, gy] = toGroup(GK.W / 2, 440); st.ox = st.tx = gx - GK.AX - C; st.oy = st.ty = gy - GK.AY - C; } size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
   };
-  setTimeout(() => { if (!GK.puz && !GK.open) GK.puz = gkMake(); }, 9000);                    // the pair of sheets takes about a second to tear: do it while nobody is looking
+  setTimeout(() => { if (!GK.puz && !GK.open) GK.puz = gkMake(); }, 9000);                    // the pair of sheets takes a moment to tear: do it while nobody is looking
   window.giayReset = () => { GK.puz = null; };                                // a fresh pair of sheets (tests)
   if (window.__giayTest || /[?&]thu=giay/.test(location.search)) setTimeout(() => giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)), 1800);
 })();
