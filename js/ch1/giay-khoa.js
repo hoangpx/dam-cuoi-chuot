@@ -286,9 +286,9 @@ window.giayPrep = () => { gkEnsure(); };
   const toLogical = (e) => { const r = cv2.getBoundingClientRect(); return toGroup((e.clientX - r.left) / r.width * GK.W, (e.clientY - r.top) / r.height * GK.H); };
   // how like the key is what is lit, in this pose (the front sheet's holes turned and moved are painted at half size and set against the back sheet's)
   const iouAt = (ox, oy, rot) => gkLiveIou(GK.puz.pathB, GK.puz.mA, GK.puz.mK, ox, oy, rot);
-  // (owner) very close is enough: within about 1.4 pixels of the perfect pose it counts as the key and clicks in by itself, and a gentle pull draws the sheet in
-  // from about 3 pixels, so a finger does not have to be exact. (The key is thin, so a few pixels off already lights little of it.)
-  const isClose = () => { const P = GK.puz; return Math.hypot(st.ox - P.g[0], st.oy - P.g[1]) <= 1.4 && (!GK.turn || Math.abs(gkWrap(st.rot - P.phi)) < .08); };
+  // (owner) very close is enough: within about 1 pixel of the perfect pose (about 99 % matched) it counts as the key and clicks in by itself; there is no pull any more.
+  // (The key is thin, so a few pixels off already lights little of it.)
+  const isClose = () => { const P = GK.puz; return Math.hypot(st.ox - P.g[0], st.oy - P.g[1]) <= 1 && (!GK.turn || Math.abs(gkWrap(st.rot - P.phi)) < .08); };
   function win() {
     const P = GK.puz; st.done = true; st.t = 0; st.drag = null; st.tx = P.g[0]; st.ty = P.g[1]; st.trot = st.rot + gkWrap(P.phi - st.rot);          // it settles exactly into place
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => AU.pluck(91), 320); setTimeout(() => AU.stamp(), 520); setTimeout(() => close(true), 2400);
@@ -332,7 +332,6 @@ window.giayPrep = () => { gkEnsure(); };
         if (kx || ky) { const ca = Math.cos(st.alpha), sa = Math.sin(st.alpha); st.tx += (ca * kx + sa * ky) * 70 * dt; st.ty += (-sa * kx + ca * ky) * 70 * dt; clampPose(); }
         if (kr && GK.turn) st.trot += kr * 1.1 * dt;
         // it glides after the finger (smooth), and holding it still on the right pose for a moment is enough too
-        const P0 = GK.puz, dd = Math.hypot(st.tx - P0.g[0], st.ty - P0.g[1]); if (dd < 3) { const m = Math.min(1, dt * 5); st.tx += (P0.g[0] - st.tx) * m; st.ty += (P0.g[1] - st.ty) * m; }     // the pull
         const f = Math.min(1, dt * 16), px0 = st.ox, py0 = st.oy, r0 = st.rot; st.ox += (st.tx - st.ox) * f; st.oy += (st.ty - st.oy) * f; st.rot += (st.trot - st.rot) * f;
         if (st.lastIou == null || Math.abs(st.ox - st.cx0) > .5 || Math.abs(st.oy - st.cy0) > .5 || Math.abs(st.rot - st.cr0) > .006) { st.lastIou = iouAt(st.ox, st.oy, st.rot); st.cx0 = st.ox; st.cy0 = st.oy; st.cr0 = st.rot; }
         if (isClose()) win();                                                     // (no need to hold still: the moment it is close, it clicks in)
