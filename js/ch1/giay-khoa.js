@@ -84,23 +84,30 @@ function gkRip() {                                                          // a
   for (let i = 0; i <= 12; i++) { const tt = i / 12, ww = w * (1 - tt * .8) + (R() - .5) * 1.2; a += (R() - .5) * .7; x += Math.cos(a) * len / 12; y += Math.sin(a) * len / 12; left.push([x - Math.sin(a) * ww, y + Math.cos(a) * ww]); right.push([x + Math.sin(a) * ww, y - Math.cos(a) * ww]); }
   return gkTorn([...left, ...right.reverse()], 1.1);
 }
+// a decoy: the key (or only its head, or only its shank) turned any way and resized, torn out somewhere else
+function gkDecoy() {
+  const S = GK.S, part = R(), polys = part < .34 ? GK_KEYPOLYS.slice(0, 2) : part < .67 ? GK_KEYPOLYS.slice(2) : GK_KEYPOLYS, a = R() * 6.283, sc = .65 + R() * .55, cx = 25 + 0, cy = 44;
+  const x0 = 24 + R() * (S - 48), y0 = 24 + R() * (S - 48), ca = Math.cos(a) * sc, sa = Math.sin(a) * sc;
+  const out = polys.map(p => gkTorn(p.map(([x, y]) => [(x - cx) * ca - (y - cy) * sa + x0, (x - cx) * sa + (y - cy) * ca + y0]), 1.3));
+  return out.every(p => p.every(([x, y]) => x > 4 && y > 4 && x < S - 4 && y < S - 4)) ? out : null;
+}
 function gkMake() {
   const S = GK.S, ri = (a, b) => a + R() * (b - a), LO = 60, ks = LO / S, M = S * S;
   const touches = (m1, m2) => { for (let i = 0; i < M; i++) if (m1[i] && m2[i]) return true; return false; };
   const orInto = (dst, src) => { for (let i = 0; i < M; i++) if (src[i]) dst[i] = 1; };
-  for (let tries = 0; tries < 120; tries++) {
+  for (let tries = 0; tries < 200; tries++) {
     const KA = [Math.round(ri(14, 170)), Math.round(ri(14, 140))], KB = [Math.round(ri(14, 170)), Math.round(ri(14, 140))], g = [KA[0] - KB[0], KA[1] - KB[1]];   // laid right when the front sheet's corner is g from the back sheet's
     if (Math.hypot(g[0], g[1]) < 45) continue;                               // never already laid right
     const keyOf = K => GK_KEYPOLYS.map(p => gkTorn(p, 1.1).map(([x, y]) => [x + K[0], y + K[1]]));
     const rKeyA = gkRaster(keyOf(KA), S), rKeyB = gkRaster(keyOf(KB), S), edgePts = [], zone = [];
     for (let y = 1; y < S - 1; y++) for (let x = 1; x < S - 1; x++) if (rKeyA[y * S + x] && (!rKeyA[y * S + x - 1] || !rKeyA[y * S + x + 1] || !rKeyA[(y - 1) * S + x] || !rKeyA[(y + 1) * S + x])) edgePts.push([x, y]);
     const dil = r => { const o = new Uint8Array(M); for (const [x, y] of edgePts) for (let dy = -r; dy <= r; dy += 2) for (let dx = -r; dx <= r; dx += 2) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < S && yy < S && dx * dx + dy * dy <= r * r) o[yy * S + xx] = 1; } for (let i = 0; i < M; i++) if (rKeyA[i]) o[i] = 1; return o; };
-    const bury = dil(20), near = dil(30);                                    // the key's surroundings: torn through one sheet or the other, never both
+    const bury = dil(18), near = dil(28);                                    // the key's surroundings: torn through one sheet or the other, never both
     for (let i = 0; i < M; i++) if (bury[i] && !rKeyA[i]) zone.push(i);
     // the zone round the key is split between the sheets by uneven scraps (nearest of many seeds, the distance shaken): neither sheet shows a clean key,
     // each shows a lumpy hole with the key buried in it; laid right, only the key itself is torn through both
-    const seeds = []; for (let n = 0; n < 24; n++) { const i = zone[(R() * zone.length) | 0]; seeds.push([i % S, (i / S) | 0, true, ri(.7, 1.4)]); }
-    { const cx = KA[0] + 27, cy = KA[1] + 44; seeds.sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx)); seeds.forEach((q, n) => { q[2] = n % 2 === 0; }); }   // taken in turn round the key, so both sheets get a share all the way round
+    const seeds = []; for (let n = 0; n < 70; n++) { const i = zone[(R() * zone.length) | 0]; seeds.push([i % S, (i / S) | 0, true, ri(.7, 1.4)]); }
+    { const cx = KA[0] + 27, cy = KA[1] + 44; seeds.sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx)); seeds.forEach((q, n) => { q[2] = (n % 2 === 0) !== (R() < .22); }); }   // taken in turn round the key, so both sheets get a share all the way round
     const nz = Array.from({ length: 19 * 19 }, () => R() * 9), noise = (x, y) => { const fx = x / 14, fy = y / 14, ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; const a = nz[iy * 19 + ix], b = nz[iy * 19 + ix + 1], c = nz[(iy + 1) * 19 + ix], d = nz[(iy + 1) * 19 + ix + 1]; return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c * (1 - tx) * ty + d * tx * ty; };
     const fz = Array.from({ length: 52 * 52 }, () => R() * 3.4), fine = (x, y) => { const fx = x / 5, fy = y / 5, ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy; return fz[iy * 52 + ix] * (1 - tx) * (1 - ty) + fz[iy * 52 + ix + 1] * tx * (1 - ty) + fz[(iy + 1) * 52 + ix] * (1 - tx) * ty + fz[(iy + 1) * 52 + ix + 1] * tx * ty; };
     const cellsA = new Uint8Array(M), cellsB = new Uint8Array(M);           // (both in the back sheet's frame)
@@ -117,6 +124,9 @@ function gkMake() {
       const mr = gkRaster([poly], S); if (touches(mr, near)) continue;
       orInto(mAk, mr); used.push([cx, cy, r]); n++;
     }
+    for (let n = 0, guard = 0; n < 3 && guard < 40; guard++) {                // decoy keys on the back sheet
+      const d = gkDecoy(); if (!d) continue; const mr = gkRaster(d, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
+    }
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (shifted by g, grown a little)
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) for (let dy = -3; dy <= 3; dy += 3) for (let dx = -3; dx <= 3; dx += 3) { const u = x - g[0] + dx, v = y - g[1] + dy; if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; }
     const mBk = new Uint8Array(rKeyB);                                       // the front sheet in its own frame: its key, and its share of the zone moved over
@@ -127,6 +137,9 @@ function gkMake() {
       if (usedB.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 3)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, reach)) continue;
       orInto(mBk, mr); usedB.push([cx, cy, r]); n++;
+    }
+    for (let n = 0, guard = 0; n < 3 && guard < 40; guard++) {                // decoy keys on the front sheet: nowhere the back sheet is torn when laid right
+      const d = gkDecoy(); if (!d) continue; const mr = gkRaster(d, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
     const mA = gkDown(mAk, S, LO), mB = gkDown(mBk, S, LO), mK = gkDown(rKeyA, S, LO);
     let sure = true;                                                          // no other way of laying them lights much of a key
@@ -236,6 +249,7 @@ function gkMake() {
     if (!GK.puz) { if (cb) cb(); return; }                                    // (the maker nearly always finds one)
     GK.open = true; el.hidden = false; st = { ox: 0, oy: 250, tx: 0, ty: 250, drag: null, t: 0, done: false, cb, k: 1, keys: new Set(), hold: 0, lastIou: null }; GK.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
   };
+  setTimeout(() => { if (!GK.puz && !GK.open) GK.puz = gkMake(); }, 9000);                    // the pair of sheets takes about a second to tear: do it while nobody is looking
   window.giayReset = () => { GK.puz = null; };                                // a fresh pair of sheets (tests)
   if (window.__giayTest || /[?&]thu=giay/.test(location.search)) setTimeout(() => giayOpen(() => toast('Lồng chim mở! Thử cặp giấy mới nhé.', 3)), 1800);
 })();
