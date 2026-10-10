@@ -133,28 +133,22 @@ function gkMake() {
     }
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
     const used = [];
-    for (let n = 0, guard = 0; n < 17 && guard < 220; guard++) {              // far tears of the back sheet
+    for (let n = 0, guard = 0; n < 24 && guard < 300; guard++) {              // far tears of the back sheet
       const r = ri(4, 19), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
       if (used.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 3)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, near)) continue;
       orInto(mAk, mr); used.push([cx, cy, r]); n++;
-    }
-    for (let n = 0, guard = 0; n < 3 && guard < 40; guard++) {                // decoy keys on the back sheet
-      const d = gkDecoy(); if (!d) continue; const mr = gkRaster(d, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -3; dy <= 3; dy += 3) for (let dx = -3; dx <= 3; dx += 3) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
     const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
     for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
     const usedB = [];
-    for (let n = 0, guard = 0; n < 17 && guard < 220; guard++) {              // far tears of the front sheet: nowhere the back sheet is torn when laid right
+    for (let n = 0, guard = 0; n < 24 && guard < 300; guard++) {              // far tears of the front sheet: nowhere the back sheet is torn when laid right
       const r = ri(4, 19), cx = ri(r + 8, S - r - 8), cy = ri(r + 8, S - r - 8), poly = n % 3 === 2 ? gkRip() : gkBlob(cx, cy, r);
       if (usedB.some(([x, y, rr]) => Math.hypot(x - cx, y - cy) < rr + r + 3)) continue;
       const mr = gkRaster([poly], S); if (touches(mr, reach)) continue;
       orInto(mBk, mr); usedB.push([cx, cy, r]); n++;
-    }
-    for (let n = 0, guard = 0; n < 3 && guard < 40; guard++) {                // decoy keys on the front sheet
-      const d = gkDecoy(); if (!d) continue; const mr = gkRaster(d, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
     // laid right, how much of the lit shape is the key
     let inter = 0, lit = 0, keyN = 0;
