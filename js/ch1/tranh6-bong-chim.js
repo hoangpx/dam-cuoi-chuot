@@ -135,16 +135,18 @@ let T6R_ART = null;
 // p is the stroke: 0 = raised, .5 = level, 1 = down. The wrist and the way the feathers point follow it.
 function t6rWing(a, p, pl, tipPl, far) {
   const lerp = (x, y, t) => x + (y - x) * t, k = p < .5 ? p * 2 : (p - .5) * 2;
-  const W = p < .5 ? [lerp(-4, -28, k), lerp(-36, -15, k)] : [lerp(-28, -10, k), lerp(-15, 24, k)];                  // the wrist
-  const ang = (p < .5 ? lerp(-108, -172, k) : lerp(-172, -262, k)) * Math.PI / 180;                              // the way the primaries point
+  const W0 = p < .5 ? [lerp(-4, -28, k), lerp(-36, -15, k)] : [lerp(-28, -10, k), lerp(-15, 24, k)], W = [W0[0] * .8, W0[1] * .8];     // the wrist (a short arm: the feathers start close to the body, no bare stretch)
+  const ang = (p < .5 ? lerp(-108, -172, k) : lerp(-172, -262, k)) * Math.PI / 180;                              // the way the feathers point
   const S0 = far ? [8, -8] : [4, -5], ox = far ? 5 : 0, oy = far ? -4 : 0, w = [W[0] + ox, W[1] + oy], av = [w[0] - S0[0], w[1] - S0[1]], al = Math.hypot(av[0], av[1]) || 1;
   let n = [-av[1] / al, av[0] / al]; if (n[0] * 1 + n[1] * -.4 < 0) n = [-n[0], -n[1]];                              // the normal on the leading (front) side
-  const at = (t, d) => [S0[0] + av[0] * t + n[0] * d, S0[1] + av[1] * t + n[1] * d], u = [av[0] / al, av[1] / al];
-  a.fk(pl, smooth([at(0, -4), at(0, 6), at(.5, 10), at(1, 9), [w[0] - n[0] * 7 + u[0] * 8, w[1] - n[1] * 7 + u[1] * 8], at(.55, -10), at(.1, -11), [S0[0] - u[0] * 6 - n[0] * 5, S0[1] - u[1] * 6 - n[1] * 5]]), 2);                // the coverts
-  const lens = [27, 33, 37, 38, 34, 28];
-  lens.forEach((L, i) => {                                                                                    // the primaries, fanned
+  const at = (t, d) => [S0[0] + av[0] * t + n[0] * d, S0[1] + av[1] * t + n[1] * d];
+  const sec = [.12, .3, .48, .66, .84];                                                                          // the secondaries: feathers all along the arm, behind its leading edge
+  sec.forEach((t, j) => { const th = ang + (j - 2) * .05, L = 22 + (j === 2 ? 3 : 0), q = at(t, -2); a.fk(pl, ell(q[0] + Math.cos(th) * L * .5, q[1] + Math.sin(th) * L * .5, L * .5 + 1, 5.6, th), 1.5); });
+  a.fk(pl, smooth([at(0, -3), at(0, 5), at(.5, 8), at(1, 7), at(.95, -3), at(.5, -4)]), 2);                       // the coverts: a narrow band along the leading edge
+  const lens = [29, 35, 40, 41, 37, 30];
+  lens.forEach((L, i) => {                                                                                    // the primaries, fanned from the wrist
     const th = ang + (i - 2.5) * .15, cx = w[0] + Math.cos(th) * L * .5, cy = w[1] + Math.sin(th) * L * .5;
-    a.fk(i < 3 ? pl : tipPl, ell(cx, cy, L * .5 + 1, 5.2, th), 1.5);
+    a.fk(i < 3 ? pl : tipPl, ell(cx, cy, L * .5 + 1, 5.4, th), 1.5);
   });
 }
 function t6rArt() {
