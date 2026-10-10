@@ -10,7 +10,7 @@ Object.assign(PL, {
   lotus: ['#3d6a49', [-1.4, 1.2]], lotusD: ['#2b4f38', [-1.4, 1.2]], lotusL: ['#5d8a5c', [-1, 1]],
   frog: ['#416d4a', [-1.2, 1]], frogD: ['#2c4d37', [-1.2, 1]], frogL: ['#6f9762', [-.8, .8]], bud: ['#d9909f', [1.2, -1]],
 });
-const T6_OFF = 27000;                                                            // owner: the dark gourd trellis (js/ch1/tranh6-dan-bi.js) comes first, about 3 minutes' walk at 150 px/s; the whole old road lies T6_OFF further on
+const T6_OFF = 6000;                                                            // owner: the dark gourd trellis (js/ch1/tranh6-dan-bi.js) comes first, about 3 minutes' walk at 150 px/s; the whole old road lies T6_OFF further on
 const T6_FROGS = 7, T6_UNIT = 520, T6_BUD_GIVE = 30;   // T6_BUD_GIVE: how far a flower can be pushed from its place           // pond view: the short side of the screen is T6_UNIT units
 
 /* ---------- art (made on first use) ---------- */
