@@ -127,8 +127,12 @@ function c4PayHands(d, quits) {
       // owner: a hand only takes from the day's sales of the stall they work at (C4.today.by[g].take), never the whole purse.
       // at 20% relationship they often run off with that day's takings; otherwise a little theft, more from the dishonest and the aggrieved
       const tk = Math.min(SAVE4.money, (C4.today.by && C4.today.by[g] && C4.today.by[g].take) || 0);
-      if (tk > 0 && h.rel <= 20 && R() < .5) { SAVE4.money -= tk; d.theft = (d.theft || 0) + tk; quits.push(`${c4Cap1(h.name)} ôm theo ${c4Money(tk)} tiền bán hàng hôm nay ở ${C4_GOODS[g].name.toLowerCase()} rồi biến mất.`); H.splice(H.indexOf(h), 1); continue; }
-      if (tk > 0 && R() < .03 + (1 - h.ho) * .1 * (h.rel < 40 ? 2 : 1)) { const take = Math.min(tk, Math.max(10, Math.round(tk * (.2 + R() * .3)))); SAVE4.money -= take; d.theft = (d.theft || 0) + take; quits.push(`${c4Cap1(h.name)} lén lấy ${c4Money(take)} tiền bán hàng, bị đuổi.`); H.splice(H.indexOf(h), 1); }
+      if (tk > 0 && h.rel <= 20 && R() < .6 * (1 - h.ho)) { SAVE4.money -= tk; d.theft = (d.theft || 0) + tk; quits.push(`${c4Cap1(h.name)} ôm theo ${c4Money(tk)} tiền bán hàng hôm nay ở ${C4_GOODS[g].name.toLowerCase()} rồi biến mất.`); H.splice(H.indexOf(h), 1); continue; }
+      // owner: skimming is silent and small, under a tenth of the stall's takings; nothing is said, the player must notice the sums
+      // themselves at the end of the day. The more honest the hand, the rarer and the smaller (a fully honest one never does); the
+      // same goes for running off with the takings above.
+      const dis = 1 - h.ho;
+      if (tk > 0 && R() < Math.min(.9, dis * dis * .6 * (h.rel < 40 ? 1.5 : 1))) { const take = Math.min(tk, Math.max(1, Math.round(tk * (.02 + dis * .07 * R())))); SAVE4.money -= take; }
     }
   }
 }

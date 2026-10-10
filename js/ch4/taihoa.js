@@ -6,6 +6,8 @@ const c4Lvl = g => g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g);
 const c4Wn = g => g === 'trau' ? 'trầu' : C4_GOODS[g].name.toLowerCase();
 const c4Un = g => C4_GOODS[g].unit;
 const c4Stocked = pool => (pool || c4Owned()).filter(g => c4Stock(g) > 0);
+// a hand picked by dishonesty: the more honest, the less likely to be the one who runs
+const c4PickHonest = hs => { const w = hs.map(h => Math.pow(1.05 - (h.ho ?? .5), 2)), t = w.reduce((a, b) => a + b, 0); let k = R() * t; for (let i = 0; i < hs.length; i++) if ((k -= w[i]) <= 0) return hs[i]; return hs[hs.length - 1]; };
 const c4Shuf = a => a.map(x => [R(), x]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
 // a share of the stock goes from up to `n` wares (sturdier stalls lose less); returns what to say, e.g. "3 miếng trầu, 2 bát chè"
 function c4Dmg(frac, n = 3, pool) {

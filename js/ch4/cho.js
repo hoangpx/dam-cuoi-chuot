@@ -517,7 +517,7 @@ function c4Event(kind) {
       ['Bỏ qua lần này', () => {}]] });
   } else if (kind === 'trom_ngay') {                                       // a hired hand runs off with the day's takings (only when rich)
     if (SAVE4.money < C4_RICH || !helped.length) return;
-    const g = c4Pick(helped), s = c4Pick(c4HandsOn(g)), take = Math.min(Math.max(0, C4.today.take), SAVE4.money);
+    const g = c4Pick(helped), s = c4PickHonest(c4HandsOn(g)), take = Math.min(Math.max(0, C4.today.take), SAVE4.money);
     if (take <= 0) return;
     Object.assign(E, { title: 'Người làm bỏ trốn!', text: `${c4Cap1(s.name)} ôm theo ${c4Money(take)} tiền bán hàng hôm nay rồi biến mất tăm. Làm sao đây?`, opts: [
       ['Báo quan', () => { c4DropHand(g, s); sp(take); const fee = Math.min(SAVE4.money, Math.round(take * .2)); sp(fee); if (R() < .1) { SAVE4.money += take; C4.today.spent -= take; toast(`Quan sai lính lùng được ${s.name} ở bến đò, thu lại được tiền. Phí quan ${c4Money(fee)}.`, 3.8); } else toast(`Quan sai lính đi lùng mãi không thấy. Mất ${c4Money(take)}, còn trả phí quan ${c4Money(fee)}.`, 3.8); c4Hud(); }],
