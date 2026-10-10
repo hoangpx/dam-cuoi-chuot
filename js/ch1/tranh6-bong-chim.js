@@ -13,7 +13,7 @@
    - the target is reached when W is within 4° of the target for a quarter of a second: the bird is drawn, rises out of the shadow and flies off; then the cb.
    Random every time: the pose it starts in and the depths, rods and needles are new each time. */
 const BC = { open: false, tex: null, st: null };
-const BC_W = 340, BC_H = 560, BC_CX = 170, BC_CY = 190, BC_S = 100, BC_GY = 415, BC_GS = 0.8, BC_H3 = 1.5, BC_GTOP = 320;   // canvas; the tangle's centre; px per unit; ground line, its squash, the tangle's height over it (units)
+const BC_W = 340, BC_H = 560, BC_CX = 170, BC_CY = 190, BC_S = 100, BC_GY = 400, BC_GS = 0.72, BC_H3 = 1.5, BC_GTOP = 305;   // canvas; the tangle's centre; px per unit; ground line, its squash, the tangle's height over it (units)
 const BC_LW = (() => { const v = [.25, -.88, .4], n = Math.hypot(...v); return v.map(x => x / n); })();      // the way the moon's light travels (towards the viewer, down, right)
 const BC_Q = (() => {                                                       // the moon's frame: e3 = the light's way, e1 ≈ screen right, e2 = e3 × e1  (columns, light frame → world)
   const L = BC_LW, d = L[0], e1 = [1 - d * L[0], -d * L[1], -d * L[2]], n = Math.hypot(...e1); e1[0] /= n; e1[1] /= n; e1[2] /= n;
@@ -41,10 +41,16 @@ function bcBirdPath(p, k) {
   for (let n = seg.length - 1; n >= 0; n--) { const c = seg[n], e = pts[n]; p.bezierCurveTo(-c[2] * k, c[3] * k, -c[0] * k, c[1] * k, -e[0] * k, e[1] * k); }
   p.closePath();
 }
+const BC_TR = 1.3;                                                       // the shadow's picture covers x, y in -BC_TR…BC_TR
+function bcMaskCanvas() {                                                        // the goose's silhouette (BC_MASK, 1 bit a pixel) as a canvas: black where the bird is
+  const w = BC_MASK.w, h = BC_MASK.h, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'), img = x.createImageData(w, h), bin = atob(BC_MASK.b), rb = (w + 7) >> 3;
+  for (let y = 0; y < h; y++) for (let xx = 0; xx < w; xx++) if ((bin.charCodeAt(y * rb + (xx >> 3)) >> (7 - (xx & 7))) & 1) img.data[(y * w + xx) * 4 + 3] = 255;
+  x.putImageData(img, 0, 0); return c;
+}
 // The tangle's surface: a smooth union of its balls and bent rods (each rod is a bent line, its distance the nearest of its pieces), stored as a signed-distance grid in the
 // tangle's own space. Where parts meet they flow into one another (log-sum-exp blend), so it is one continuous body, not balls and sticks.
 const BC_GE = 1.8, BC_GN = 128, BC_GH = 2 * BC_GE / (BC_GN - 1), BC_KS = .025;
-function bcField(balls, rods, trim) {
+function bcField(balls, rods) {
   const N = BC_GN, E = BC_GE, H = BC_GH, KS = BC_KS, M = .3, acc = new Float32Array(N * N * N);
   const lo = v => Math.max(0, Math.floor((v + E) / H)), hi = v => Math.min(N - 1, Math.ceil((v + E) / H));
   const each = (min, max, fn) => { for (let k = lo(min[2] - M); k <= hi(max[2] + M); k++) for (let j = lo(min[1] - M); j <= hi(max[1] + M); j++) for (let i = lo(min[0] - M); i <= hi(max[0] + M); i++) { const x = -E + i * H, y = -E + j * H, z = -E + k * H, d = fn(x, y, z); acc[(k * N + j) * N + i] += Math.exp(-d / KS); } };
@@ -53,14 +59,14 @@ function bcField(balls, rods, trim) {
     const P = r.pts, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const p of P) for (let c = 0; c < 3; c++) { mn[c] = Math.min(mn[c], p[c] - r.r); mx[c] = Math.max(mx[c], p[c] + r.r); }
     each(mn, mx, (x, y, z) => { let d = 1e9; for (let n = 0; n < P.length - 1; n++) { const a = P[n], b = P[n + 1], bx = b[0] - a[0], by = b[1] - a[1], bz = b[2] - a[2], t = Math.max(0, Math.min(1, ((x - a[0]) * bx + (y - a[1]) * by + (z - a[2]) * bz) / (bx * bx + by * by + bz * bz + 1e-9))); d = Math.min(d, Math.hypot(x - a[0] - bx * t, y - a[1] - by * t, z - a[2] - bz * t)); } return d - r.r; });
   }
-  const f = new Float32Array(N * N * N); for (let i = 0; i < f.length; i++) { const v = acc[i] > 1e-12 ? Math.min(M, -KS * Math.log(acc[i])) : M, k = i % N, j = ((i / N) | 0) % N, p = trim(-E + k * H, -E + j * H), h = Math.max(.05 - Math.abs(v - p), 0) / .05; f[i] = Math.max(v, p) + h * h * .0125; }       // far from everything: at least the margin
+  const f = new Float32Array(N * N * N); for (let i = 0; i < f.length; i++) f[i] = acc[i] > 1e-12 ? Math.min(M, -KS * Math.log(acc[i])) : M;       // far from everything: at least the margin
   return f;
 }
 function bcBuild() {
   const seed = (Math.random() * 4294967295) >>> 0, rnd = (() => { let a = seed ^ 0x5bd1e995; return () => { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; return a / 4294967296; }; })();
-  const G = 200, R0 = 1.3, cs = 2 * R0 / G, K = 1.0;                           // a grid over x, y in -1.1…1.1
+  const G = 320, R0 = BC_TR, cs = 2 * R0 / G;                           // a grid over x, y in -1.1…1.1
   const cv = document.createElement('canvas'); cv.width = cv.height = G; const cx = cv.getContext('2d', { willReadFrequently: true });
-  cx.setTransform(G / (2 * R0), 0, 0, G / (2 * R0), G / 2, G / 2); cx.fillStyle = '#000'; const bp = new Path2D(); bcBirdPath(bp, K); cx.fill(bp);
+  cx.setTransform(G / (2 * R0), 0, 0, G / (2 * R0), G / 2, G / 2); cx.imageSmoothingQuality = 'high'; { const mk = bcMaskCanvas(), sc = 2.1 / Math.max(mk.width, mk.height); cx.drawImage(mk, -mk.width * sc / 2, -mk.height * sc / 2, mk.width * sc, mk.height * sc); }       // the goose, 2.1 units tall, in the middle
   const da = cx.getImageData(0, 0, G, G).data, inside = new Uint8Array(G * G); for (let i = 0; i < G * G; i++) inside[i] = da[i * 4 + 3] > 140 ? 1 : 0;
   const px = i => -R0 + (i % G + .5) * cs, py = i => -R0 + (Math.floor(i / G) + .5) * cs;
   const isIn = (x, y) => { const i = Math.floor((x + R0) / cs), j = Math.floor((y + R0) / cs); return i >= 0 && j >= 0 && i < G && j < G && inside[j * G + i] === 1; };
@@ -70,8 +76,7 @@ function bcBuild() {
     for (let j = G - 1; j >= 0; j--) for (let i = G - 1; i >= 0; i--) { const k = j * G + i; let v = d[k]; if (i < G - 1) v = Math.min(v, d[k + 1] + 1); if (j < G - 1) { v = Math.min(v, d[k + G] + 1); if (i < G - 1) v = Math.min(v, d[k + G + 1] + 1.41); if (i > 0) v = Math.min(v, d[k + G - 1] + 1.41); } d[k] = v; } return d; };
   const dist = chamfer(Array.from(inside, v => v ? 1e9 : 0)), outd = chamfer(Array.from(inside, v => v ? 0 : 1e9));        // distance to the edge: inside cells / outside cells, in cells
   // the bird's signed distance (< 0 inside, in units), the same all the way along the light: the tangle is trimmed to this, so its shadow is the bird's outline exactly, smooth
-  const sd = (x, y) => { const fx = (x + R0) / cs - .5, fy = (y + R0) / cs - .5, i = Math.max(0, Math.min(G - 2, Math.floor(fx))), j = Math.max(0, Math.min(G - 2, Math.floor(fy))), tx = Math.max(0, Math.min(1, fx - i)), ty = Math.max(0, Math.min(1, fy - j)), v = (k) => (inside[k] ? -dist[k] : outd[k]) * cs;
-    return (v(j * G + i) * (1 - tx) + v(j * G + i + 1) * tx) * (1 - ty) + (v((j + 1) * G + i) * (1 - tx) + v((j + 1) * G + i + 1) * tx) * ty; };
+  const trim = new Float32Array(G * G); for (let k = 0; k < G * G; k++) trim[k] = (inside[k] ? -dist[k] : outd[k]) * cs;
   // circles filling the bird: the widest uncovered place first
   const covered = new Uint8Array(G * G), balls = [];
   for (let n = 0; n < 240; n++) {
@@ -79,7 +84,8 @@ function bcBuild() {
     const r = (bd - .5) * cs;                                                  // as large as fits inside (a half cell of slack for the pixels' edge)
     if (best < 0 || r < .02) break;
     const x = px(best), y = py(best), rr = Math.min(r + .05, .15); balls.push({ x, y, r: rr });
-    for (let k = 0; k < G * G; k++) if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= rr) covered[k] = 1;
+    const cI = Math.floor((x + R0) / cs), cJ = Math.floor((y + R0) / cs), rc = Math.ceil(rr / cs) + 1;
+    for (let j = Math.max(0, cJ - rc); j <= Math.min(G - 1, cJ + rc); j++) for (let i = Math.max(0, cI - rc); i <= Math.min(G - 1, cI + rc); i++) { const k = j * G + i; if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= rr) covered[k] = 1; }
   }
   // depth: a wavy field plus a jitter, so the parts stand out and sink in
   const zn = bcNoise(seed ^ 0x27d4eb2f), zm = bcNoise(seed ^ 0x165667b1);
@@ -97,7 +103,7 @@ function bcBuild() {
   // long thin horns through some balls, along the light: their shadow is only a dot
   const pins = []; for (let n = 0; n < 7; n++) { const b = balls[Math.floor(rnd() * balls.length)], a = b.z - .25 - rnd() * .3, c = b.z + .25 + rnd() * .3; pins.push({ pts: [[b.x, b.y, a], [b.x, b.y, b.z], [b.x, b.y, c]], r: .028 + rnd() * .012 }); }
   const all = rods.concat(pins);
-  return { balls, rods: all, sdf: bcField(balls, all, sd) };
+  return { balls, rods: all, sdf: bcField(balls, all), trim, tg: G };
 }
 
 (function () {
@@ -119,7 +125,13 @@ function bcBuild() {
   const ZH = Math.round(320 * 1.8), zl = [mk(ZH, ZH), mk(ZN0, ZN0)], gl = [mk(GW * 2, GHh * 2), mk(Math.round(GW * .75), Math.round(GHh * .75))];       // [sharp, rough]: rough while the tangle is being turned, sharp once it rests
     const LT = [-L[0], -L[1], -L[2]];                                              // towards the moon
   const NN = BC_GN, EE = BC_GE, HH = BC_GH;
-  function samp(f, x, y, z) {                                                    // the distance at a point (trilinear); outside the grid: the distance to the box
+  function samp(f, x, y, z) {                                                    // the body's distance, trimmed to the bird's outline (a smooth max, the bird's picture is the same along the light)
+    const d = samp3(f, x, y, z), T = BC.tex, G = T.tg, R = BC_TR, fx = (x + R) / (2 * R) * G - .5, fy = (y + R) / (2 * R) * G - .5; let t;
+    if (fx < 0 || fy < 0 || fx > G - 1.001 || fy > G - 1.001) { const ox = Math.max(0, Math.abs(x) - R), oy = Math.max(0, Math.abs(y) - R); t = Math.hypot(ox, oy) + .05; }
+    else { const i = fx | 0, j = fy | 0, tx = fx - i, ty = fy - j, o = j * G + i, q = T.trim; t = (q[o] * (1 - tx) + q[o + 1] * tx) * (1 - ty) + (q[o + G] * (1 - tx) + q[o + G + 1] * tx) * ty; }
+    const h = Math.max(.05 - Math.abs(d - t), 0) / .05; return Math.max(d, t) + h * h * .0125;
+  }
+  function samp3(f, x, y, z) {                                                    // the distance at a point (trilinear); outside the grid: the distance to the box
     const fx = (x + EE) / HH, fy = (y + EE) / HH, fz = (z + EE) / HH;
     if (fx < 0 || fy < 0 || fz < 0 || fx > NN - 1.001 || fy > NN - 1.001 || fz > NN - 1.001) { const ox = Math.max(0, Math.abs(x) - EE + .06), oy = Math.max(0, Math.abs(y) - EE + .06), oz = Math.max(0, Math.abs(z) - EE + .06); return Math.max(.02, Math.hypot(ox, oy, oz)); }
     const i = fx | 0, j = fy | 0, k = fz | 0, tx = fx - i, ty = fy - j, tz = fz - k, o = (k * NN + j) * NN + i, a = NN, b = NN * NN;
@@ -138,9 +150,10 @@ function bcBuild() {
       const mkc = () => { const c = document.createElement('canvas'), gl = c.getContext('webgl2', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true }); return gl && gl.getExtension ? { c, gl } : null; };
       const A = mkc(), B = mkc(); if (!A || !B) return { ok: false };
       const VS = '#version 300 es\nin vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
-      const COMMON = '#version 300 es\nprecision highp float;precision highp sampler3D;uniform sampler3D uF;uniform vec3 uR0,uR1,uR2;out vec4 oc;\n' +
-        'const float E=' + BC_GE.toFixed(3) + ',N=' + BC_GN.toFixed(1) + ',H=' + BC_GH.toFixed(6) + ';\n' +
-        'float samp(vec3 p){vec3 q=(p+E)/H;vec3 o=max(abs(p)-E+.06,0.);if(any(lessThan(q,vec3(0.)))||any(greaterThan(q,vec3(N-1.001))))return max(.02,length(o));return texture(uF,(q+.5)/N).r;}\n';
+      const COMMON = '#version 300 es\nprecision highp float;precision highp sampler3D;uniform sampler3D uF;uniform sampler2D uT;uniform vec3 uR0,uR1,uR2;out vec4 oc;\n' +
+        'const float E=' + BC_GE.toFixed(3) + ',N=' + BC_GN.toFixed(1) + ',H=' + BC_GH.toFixed(6) + ',TR=' + BC_TR.toFixed(3) + ';\n' +
+        'float samp3(vec3 p){vec3 q=(p+E)/H;vec3 o=max(abs(p)-E+.06,0.);if(any(lessThan(q,vec3(0.)))||any(greaterThan(q,vec3(N-1.001))))return max(.02,length(o));return texture(uF,(q+.5)/N).r;}\n' +
+        'float samp(vec3 p){float d=samp3(p);vec2 uv=(p.xy+TR)/(2.*TR);vec2 o=max(abs(p.xy)-TR,0.);float t=texture(uT,clamp(uv,0.,1.)).r+length(o)+step(.0001,length(o))*.05;float h=max(.05-abs(d-t),0.)/.05;return max(d,t)+h*h*.0125;}\n';
       const BODY = COMMON + 'uniform vec3 uW0,uW1,uW2,uLT;uniform float uBS,uRes;\n' +
         'vec3 shade(vec3 n){float rz=2.*n.z*n.z-1.,ry=2.*n.z*n.y,rx=2.*n.z*n.x,e=clamp(ry*.5+.5,0.,1.),dif=max(0.,dot(n,uLT));float hz=clamp((e-.36)/.28,0.,1.),hs=hz*hz*(3.-2.*hz),env=.02+.28*hs*(.5+.5*e)+.07*dif,sp=pow(max(0.,dot(vec3(rx,ry,rz),uLT)),40.),fr=pow(1.-n.z,2.2);\n' +
         'return min(vec3(1.),vec3(150.*env+255.*sp+70.*fr,165.*env+255.*sp+120.*fr,200.*env+255.*sp+220.*fr)/255.);}\n' +
@@ -159,24 +172,27 @@ function bcBuild() {
         const gl = X.gl, mk = (t, src) => { const sh = gl.createShader(t); gl.shaderSource(sh, src); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(sh); return sh; };
         const pr = gl.createProgram(); gl.attachShader(pr, mk(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, mk(gl.FRAGMENT_SHADER, fs)); gl.bindAttribLocation(pr, 0, 'p'); gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw gl.getProgramInfoLog(pr);
         const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-        X.pr = pr; X.u = n => gl.getUniformLocation(pr, n); X.tex = gl.createTexture(); X.up = false;
+        X.pr = pr; X.u = n => gl.getUniformLocation(pr, n); X.tex = gl.createTexture(); X.tex2 = gl.createTexture(); X.up = false;
       };
       build(A, BODY); build(B, SHAD);
       const half = v => { const f = new Float32Array(1), i = new Uint32Array(f.buffer); f[0] = v; const x = i[0], sg = (x >>> 16) & 0x8000, e = ((x >>> 23) & 0xff) - 127 + 15, m = x & 0x7fffff; if (e <= 0) return sg; if (e >= 31) return sg | 0x7bff; return sg | (e << 10) | (m >> 13); };
       const upload = (X, f) => { const gl = X.gl, h16 = new Uint16Array(f.length); for (let i = 0; i < f.length; i++) h16[i] = half(f[i]);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, X.tex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage3D(gl.TEXTURE_3D, 0, gl.R16F, BC_GN, BC_GN, BC_GN, 0, gl.RED, gl.HALF_FLOAT, h16);
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); for (const w of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T, gl.TEXTURE_WRAP_R]) gl.texParameteri(gl.TEXTURE_3D, w, gl.CLAMP_TO_EDGE); X.up = true; };
-      return { ok: true, A, B, upload };
+      const upload2 = (X, f, n) => { const gl = X.gl, h16 = new Uint16Array(f.length); for (let i = 0; i < f.length; i++) h16[i] = half(f[i]);
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, X.tex2); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, n, n, 0, gl.RED, gl.HALF_FLOAT, h16);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.activeTexture(gl.TEXTURE0); };
+      return { ok: true, A, B, upload, upload2 };
     } catch (err) { return { ok: false }; }
   })();
   BC.gpu = GPU;
   function gpuPass(X, w, h, set) {                                               // render one full-screen pass into X's canvas
     const gl = X.gl; if (X.c.width !== w || X.c.height !== h) { X.c.width = w; X.c.height = h; }
-    gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(X.pr); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, X.tex); gl.uniform1i(X.u('uF'), 0); set(gl, X.u); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(X.pr); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, X.tex); gl.uniform1i(X.u('uF'), 0); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, X.tex2); gl.uniform1i(X.u('uT'), 1); gl.activeTexture(gl.TEXTURE0); set(gl, X.u); gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   function gpuLump(h, W) {
     const X = GPU.A, k = st.k, n = Math.max(256, Math.min(1100, Math.round(320 * k)));
-    if (!BC.tex.gup) { GPU.upload(GPU.A, BC.tex.sdf); BC.tex.gup = true; }
+    if (!BC.tex.gup) { GPU.upload(GPU.A, BC.tex.sdf); GPU.upload2(GPU.A, BC.tex.trim, BC.tex.tg); BC.tex.gup = true; }
     if (st.gl1 !== st.ver || st.gn !== n) {
       st.gl1 = st.ver; st.gn = n; const Wt = bcT(W);
       gpuPass(X, n, n, (gl, u) => { gl.uniform3f(u('uR0'), Wt[0], Wt[1], Wt[2]); gl.uniform3f(u('uR1'), Wt[3], Wt[4], Wt[5]); gl.uniform3f(u('uR2'), Wt[6], Wt[7], Wt[8]); gl.uniform3f(u('uW0'), W[0], W[1], W[2]); gl.uniform3f(u('uW1'), W[3], W[4], W[5]); gl.uniform3f(u('uW2'), W[6], W[7], W[8]); gl.uniform3f(u('uLT'), LT[0], LT[1], LT[2]); gl.uniform1f(u('uBS'), BC_S * n / 320); gl.uniform1f(u('uRes'), n); });
@@ -185,7 +201,7 @@ function bcBuild() {
   }
   function gpuShadow(h, W) {
     const X = GPU.B, k = st.k, w = Math.round(GW * k), hh = Math.round(GHh * k);
-    if (!BC.tex.gupB) { GPU.upload(GPU.B, BC.tex.sdf); BC.tex.gupB = true; }
+    if (!BC.tex.gupB) { GPU.upload(GPU.B, BC.tex.sdf); GPU.upload2(GPU.B, BC.tex.trim, BC.tex.tg); BC.tex.gupB = true; }
     if (st.gl2 !== st.ver || st.gm !== w) {
       st.gl2 = st.ver; st.gm = w; const Wt = bcT(W);
       gpuPass(X, w, hh, (gl, u) => { gl.uniform3f(u('uR0'), Wt[0], Wt[1], Wt[2]); gl.uniform3f(u('uR1'), Wt[3], Wt[4], Wt[5]); gl.uniform3f(u('uR2'), Wt[6], Wt[7], Wt[8]); gl.uniform3f(u('uLd'), -(Wt[0] * L[0] + Wt[1] * L[1] + Wt[2] * L[2]), -(Wt[3] * L[0] + Wt[4] * L[1] + Wt[5] * L[2]), -(Wt[6] * L[0] + Wt[7] * L[1] + Wt[8] * L[2]));
@@ -298,7 +314,7 @@ function bcBuild() {
       st.t += dt;
       if (!st.done) {
         if (!st.drag && (Math.abs(st.vel[0]) > .0006 || Math.abs(st.vel[1]) > .0006)) { turn(st.vel[0], st.vel[1]); st.vel[0] *= Math.pow(.04, dt); st.vel[1] *= Math.pow(.04, dt); }     // a little momentum
-        const R = bcMul(bcT(BC_Q), st.W), a1 = bcAngleFromI(R), a2 = bcAngleFromI(bcMul(R, BC_DY)), ang = Math.min(a1, a2); st.flip = a2 < a1;
+        const R = bcMul(bcT(BC_Q), st.W), a1 = bcAngleFromI(R), a2 = 9, ang = Math.min(a1, a2); st.flip = a2 < a1;
         if (st.solve) { st.solve.t = Math.min(1, st.solve.t + dt / 2); const e = st.solve.t * st.solve.t * (3 - 2 * st.solve.t), R0 = st.solve.R, an = st.solve.an; st.W = bcMul(BC_Q, bcRot(st.solve.ax[0], st.solve.ax[1], st.solve.ax[2], an * (1 - e))); st.ver++; if (st.solve.t >= 1) st.solve = null; }
         else if (ang < .07) { st.hold += dt; if (st.hold > .25) win(); } else st.hold = 0;     // about 4 degrees, kept for a quarter of a second
       } else { st.dt += dt; if (st.dt > 4.2) finish(); }
