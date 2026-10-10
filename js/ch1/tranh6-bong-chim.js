@@ -345,14 +345,6 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
         const dxg = Math.abs(groom.x - cx0);                                     // "Cứu tôi với!" when the party comes near
         if (!st.done && dxg < 560) { g.save(); g.globalAlpha = Math.min(1, (560 - dxg) / 160); t5Say(g, cx0 - 64, cy0 - 14 + Math.sin(S.t * 3 + idx * 1.7) * 3, 'Cứu tôi với!'); g.restore(); }
       },
-      drawHud(g, vw) {                                                           // (demo only) a button that shows the answer, on the nearest station still to do
-        this.btn = []; if (this.solved || !st || st.done) return;
-        const me = T6R.stations.filter(q => q && !q.solved && q.st && !q.st.done).sort((p, q) => Math.abs(groom.x - p.cx) - Math.abs(groom.x - q.cx))[0]; if (me !== this || Math.abs(groom.x - cx0) > 520) return;
-        g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        const w = 122, h = 30, x = vw - w - 24, y = viewH - 62; this.btn.push({ x, y, w, h, act: () => startSolve(2, false, true) });
-        g.fillStyle = 'rgba(0,0,0,.45)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 15) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText('Xem đáp án', x + w / 2, y + h / 2 + 1);
-        g.restore();
-      },
     };
     T6R.stations[idx] = E; window.__t6s = T6R.stations;
     return E;
