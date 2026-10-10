@@ -193,12 +193,14 @@ function c4DelivPay(D) {
 
 /* ---------- đợt 4: "Việc hôm nay" ---------- */
 // owner: only things the player does by tapping, never the luck of the crowd (no "serve N customers"); some days none, some days three
+// how many of the village are still strangers (nobody left to meet once it is 0)
+const c4Strangers = () => c4People().list.filter(p => !c4Known(p.id)).length;
 const C4_TASKS = [
   { k: 'news', make: () => { const n = R() < .4 ? 2 : 1; return { n, text: n > 1 ? 'Hóng được hai tin đồn' : 'Hóng được một tin đồn', prize: n > 1 ? 12 : 8 }; }, done: (t, d) => (d.news || 0) >= t.n },
   { k: 'help', make: () => ({ n: 1, text: 'Giúp một người (cho bà cụ ăn xin, trông con hộ, cho vay, đi dập lửa…)', prize: 10 }), done: (t, d) => (d.help || 0) >= 1, from: () => (C4.events || []).some(e => ['xin', 'trong', 'vay', 'chiu', 'lua', 'omdau', 'caicau'].includes(e.kind)) },
   { k: 'visit', make: () => ({ n: 1, text: 'Tiếp chuyện một người ghé gánh (có dấu !)', prize: 6 }), done: (t, d) => (d.visit || 0) >= 1, from: () => (C4.events || []).some(e => C4_VISIT.has(e.kind)) },
-  { k: 'met', make: () => ({ n: 1, text: 'Quen thêm một khách mới', prize: 10 }), done: (t, d) => (d.met || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY },
-  { k: 'tea', make: () => ({ n: 2, text: 'Mời nước hai người quen', prize: 8 }), done: (t, d) => (d.tea || 0) >= 2, from: () => SAVE4.day >= C4_BOOK_DAY },
+  { k: 'met', make: () => ({ n: 1, text: 'Quen thêm một khách mới', prize: 10 }), done: (t, d) => (d.met || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY && c4Strangers() > 0 },   // (a player knew the whole village and still had it)
+  { k: 'tea', make: () => ({ n: 2, text: 'Mời nước hai người quen', prize: 8 }), done: (t, d) => (d.tea || 0) >= 2, from: () => SAVE4.day >= C4_BOOK_DAY && c4People().list.filter(p => c4Known(p.id)).length >= 2 },
   { k: 'ws', make: () => ({ n: 1, text: 'Giao một đơn hàng sỉ', prize: 15 }), done: (t, d) => (d.ws || 0) >= 1, from: () => (SAVE4.ws || []).some(o => o.day === SAVE4.day) },
   { k: 'ruot', make: () => ({ n: 1, text: 'Mời một mối ruột ghé quán', prize: 10 }), done: (t, d) => (d.invRuot || 0) >= 1, from: () => c4People().list.some(p => c4Ruot(p.id)) },
 ];
@@ -220,6 +222,7 @@ function c4Tasks() {
     SAVE4.taskHist = [...(SAVE4.taskHist || []), pick.map(t => t.k)].slice(-6); SAVE4.taskHistDay = SAVE4.day; for (const t of pick) seen[t.k] = (seen[t.k] || 0) + 1;
     SAVE4.tasks = pick.map(t => ({ k: t.k, ...t.make(), done: false, paid: false }));
   }
+  if (!c4Strangers()) SAVE4.tasks = SAVE4.tasks.filter(t => t.k !== 'met' || t.done);   // nobody left to meet: that task goes
   const d = C4.today || {};
   for (const t of SAVE4.tasks) { const T = C4_TASKS.find(x => x.k === t.k); if (!T) continue; if (!t.done && !T.end && C4.phase === 'open' && T.done(t, d)) { t.done = true; toast(`Xong việc: ${t.text}!`, 2.4); AU.pluck(90); } }
   return SAVE4.tasks;
