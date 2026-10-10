@@ -37,6 +37,21 @@ function bcBirdPath(p, k) {
   for (const s of [-1, 1]) tri([[s * .1, -.3], [s * .4, -.42], [s * .95, -.34], [s * 1.04, -.2], [s * .8, -.14], [s * .86, -.02], [s * .55, .06], [s * .1, .16]]);
   tri([[-.03, -.74], [.03, -.74], [0, -.62]]);
 }
+// The tangle's surface: a smooth union of its balls and bent rods (each rod is a bent line, its distance the nearest of its pieces), stored as a signed-distance grid in the
+// tangle's own space. Where parts meet they flow into one another (log-sum-exp blend), so it is one continuous body, not balls and sticks.
+const BC_GE = 1.8, BC_GN = 72, BC_GH = 2 * BC_GE / (BC_GN - 1), BC_KS = .04;
+function bcField(balls, rods) {
+  const N = BC_GN, E = BC_GE, H = BC_GH, KS = BC_KS, M = .3, acc = new Float32Array(N * N * N);
+  const lo = v => Math.max(0, Math.floor((v + E) / H)), hi = v => Math.min(N - 1, Math.ceil((v + E) / H));
+  const each = (min, max, fn) => { for (let k = lo(min[2] - M); k <= hi(max[2] + M); k++) for (let j = lo(min[1] - M); j <= hi(max[1] + M); j++) for (let i = lo(min[0] - M); i <= hi(max[0] + M); i++) { const x = -E + i * H, y = -E + j * H, z = -E + k * H, d = fn(x, y, z); acc[(k * N + j) * N + i] += Math.exp(-d / KS); } };
+  for (const b of balls) each([b.x - b.r, b.y - b.r, b.z - b.r], [b.x + b.r, b.y + b.r, b.z + b.r], (x, y, z) => Math.hypot(x - b.x, y - b.y, z - b.z) - b.r);
+  for (const r of rods) {
+    const P = r.pts, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const p of P) for (let c = 0; c < 3; c++) { mn[c] = Math.min(mn[c], p[c] - r.r); mx[c] = Math.max(mx[c], p[c] + r.r); }
+    each(mn, mx, (x, y, z) => { let d = 1e9; for (let n = 0; n < P.length - 1; n++) { const a = P[n], b = P[n + 1], bx = b[0] - a[0], by = b[1] - a[1], bz = b[2] - a[2], t = Math.max(0, Math.min(1, ((x - a[0]) * bx + (y - a[1]) * by + (z - a[2]) * bz) / (bx * bx + by * by + bz * bz + 1e-9))); d = Math.min(d, Math.hypot(x - a[0] - bx * t, y - a[1] - by * t, z - a[2] - bz * t)); } return d - r.r; });
+  }
+  const f = new Float32Array(N * N * N); for (let i = 0; i < f.length; i++) f[i] = acc[i] > 1e-12 ? Math.min(M, -KS * Math.log(acc[i])) : M;       // far from everything: at least the margin
+  return f;
+}
 function bcBuild() {
   const seed = (Math.random() * 4294967295) >>> 0, rnd = (() => { let a = seed ^ 0x5bd1e995; return () => { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; return a / 4294967296; }; })();
   const G = 150, R0 = 1.3, cs = 2 * R0 / G, K = 1.0;                           // a grid over x, y in -1.1…1.1
@@ -55,24 +70,26 @@ function bcBuild() {
     let best = -1, bd = 0; for (let k = 0; k < G * G; k++) if (inside[k] && !covered[k] && dist[k] > bd) { bd = dist[k]; best = k; }
     const r = (bd - .5) * cs;                                                  // as large as fits inside (a half cell of slack for the pixels' edge)
     if (best < 0 || r < .028) break;
-    const x = px(best), y = py(best); balls.push({ x, y, r: Math.min(r, .17) });
-    for (let k = 0; k < G * G; k++) if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= Math.min(r, .17)) covered[k] = 1;
+    const x = px(best), y = py(best); balls.push({ x, y, r: Math.min(r, .12) });
+    for (let k = 0; k < G * G; k++) if (inside[k] && Math.hypot(px(k) - x, py(k) - y) <= Math.min(r, .12)) covered[k] = 1;
   }
   // depth: a wavy field plus a jitter, so the parts stand out and sink in
   const zn = bcNoise(seed ^ 0x27d4eb2f), zm = bcNoise(seed ^ 0x165667b1);
-  for (const b of balls) b.z = 2.6 * (.65 * zn(b.x * 1.1 + 6, b.y * 1.1 + 3) + .35 * zm(b.x * 2.3 + 2, b.y * 2.3 + 8) - .5) + (rnd() - .5) * .5;
+  for (const b of balls) { b.z = 2.0 * (.65 * zn(b.x * 1.1 + 6, b.y * 1.1 + 3) + .35 * zm(b.x * 2.3 + 2, b.y * 2.3 + 8) - .5) + (rnd() - .5) * .4; b.r -= .008; }
   // rods between neighbours, as long as the rod's shadow stays in the bird
-  const rods = [], key = new Set(), add = (a, b, r) => { const k = a < b ? a + '_' + b : b + '_' + a; if (key.has(k)) return false; key.add(k); rods.push({ a: [balls[a].x, balls[a].y, balls[a].z], b: [balls[b].x, balls[b].y, balls[b].z], r }); return true; };
+  const rods = [], key = new Set(), bend = (A, B) => { const bump = (rnd() - .5) * .7, P = []; for (let n = 0; n <= 7; n++) { const u = n / 7; P.push([A.x + (B.x - A.x) * u, A.y + (B.y - A.y) * u, A.z + (B.z - A.z) * u + bump * Math.sin(Math.PI * u)]); } return P; };
+  const add = (a, b, r) => { const k = a < b ? a + '_' + b : b + '_' + a; if (key.has(k)) return false; key.add(k); rods.push({ pts: bend(balls[a], balls[b]), r }); return true; };
   balls.forEach((A, i) => {
     const near = balls.map((B, j) => ({ j, d: Math.hypot(A.x - B.x, A.y - B.y) })).filter(o => o.j !== i && o.d < A.r + balls[o.j].r + .3).sort((p, q) => p.d - q.d);
-    let made = 0; for (const o of near) { if (made >= 4) break; const B = balls[o.j], rr = Math.max(.035, Math.min(.085, .6 * Math.min(A.r, B.r)));
-      let ok = o.d <= A.r + B.r; for (let t = 1; t < 12 && !ok; t++) { }
+    let made = 0; for (const o of near) { if (made >= 4) break; const B = balls[o.j], rr = Math.max(.045, Math.min(.095, .7 * Math.min(A.r, B.r)));
+      let ok = o.d <= A.r + B.r;
       if (!ok) { ok = true; for (let t = 0; t <= 12; t++) { const u = t / 12, x = A.x + (B.x - A.x) * u, y = A.y + (B.y - A.y) * u; if (!isIn(x + rr, y) || !isIn(x - rr, y) || !isIn(x, y + rr) || !isIn(x, y - rr)) { ok = false; break; } } }
       if (ok && add(i, o.j, rr)) made++; }
   });
-  // needles through some balls, along the light: their shadow is only a dot
-  const pins = []; for (let n = 0; n < 8; n++) { const b = balls[Math.floor(rnd() * balls.length)]; pins.push({ a: [b.x, b.y, b.z - .25 - rnd() * .35], b: [b.x, b.y, b.z + .25 + rnd() * .35], r: .02 + rnd() * .01, pin: true }); }
-  return { balls, rods: rods.concat(pins) };
+  // long thin horns through some balls, along the light: their shadow is only a dot
+  const pins = []; for (let n = 0; n < 7; n++) { const b = balls[Math.floor(rnd() * balls.length)], a = b.z - .25 - rnd() * .3, c = b.z + .25 + rnd() * .3; pins.push({ pts: [[b.x, b.y, a], [b.x, b.y, b.z], [b.x, b.y, c]], r: .028 + rnd() * .012 }); }
+  const all = rods.concat(pins);
+  return { balls, rods: all, sdf: bcField(balls, all) };
 }
 
 (function () {
@@ -87,55 +104,72 @@ function bcBuild() {
   const proj = w => [w[0] - kx * (w[1] + BC_H3), w[2] - kz * (w[1] + BC_H3)];       // a point of the tangle (relative to its centre) → where the moon's light puts it on the ground
   const gpos = p => [BC_CX + p[0] * BC_S, BC_GY + p[1] * BC_S * BC_GS];
   const dir = v => [v[0] - kx * v[1], v[2] - kz * v[1]];                              // the same for a direction
-  // The tangle is drawn by a small z-buffer renderer of its own (balls and rods are exact shapes, so every pixel shows the nearest one: nothing pops in and out as it turns).
-  const ZR = 1.5, ZN = Math.round(300 * ZR), zc = document.createElement('canvas'); zc.width = zc.height = ZN; const zx = zc.getContext('2d'), zimg = zx.createImageData(ZN, ZN), zb = new Float32Array(ZN * ZN), zd = zimg.data;
+  // The body is ray-marched through the signed-distance grid: straight along the view for each pixel (the pose turns the rays into the tangle's own space), so it is one smooth
+  // surface and what is nearer always hides what is behind. The shadow is the same grid marched along the moon's rays from each ground pixel; the closest approach gives soft edges.
+  const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'), img = x.createImageData(w, h); return { c, x, img, d: img.data, w, h }; };
+  const ZR = .85, ZN0 = Math.round(320 * ZR), GW = BC_W, GHh = BC_H - BC_GTOP;
+  const zl = [mk(ZN0, ZN0), mk(Math.round(ZN0 / 2), Math.round(ZN0 / 2))], gl = [mk(GW, GHh), mk(Math.round(GW / 2), Math.round(GHh / 2))];       // [full, half] quality: half while the tangle is being turned
+  let zd = zl[0].d;
   const LT = [-L[0], -L[1], -L[2]];                                              // towards the moon
+  const NN = BC_GN, EE = BC_GE, HH = BC_GH;
+  function samp(f, x, y, z) {                                                    // the distance at a point (trilinear); outside the grid: the distance to the box
+    const fx = (x + EE) / HH, fy = (y + EE) / HH, fz = (z + EE) / HH;
+    if (fx < 0 || fy < 0 || fz < 0 || fx > NN - 1.001 || fy > NN - 1.001 || fz > NN - 1.001) { const ox = Math.max(0, Math.abs(x) - EE + .06), oy = Math.max(0, Math.abs(y) - EE + .06), oz = Math.max(0, Math.abs(z) - EE + .06); return Math.max(.02, Math.hypot(ox, oy, oz)); }
+    const i = fx | 0, j = fy | 0, k = fz | 0, tx = fx - i, ty = fy - j, tz = fz - k, o = (k * NN + j) * NN + i, a = NN, b = NN * NN;
+    const c00 = f[o] * (1 - tx) + f[o + 1] * tx, c10 = f[o + a] * (1 - tx) + f[o + a + 1] * tx, c01 = f[o + b] * (1 - tx) + f[o + b + 1] * tx, c11 = f[o + a + b] * (1 - tx) + f[o + a + b + 1] * tx;
+    return (c00 * (1 - ty) + c10 * ty) * (1 - tz) + (c01 * (1 - ty) + c11 * ty) * tz;
+  }
   function shade(nx, ny, nz, o) {                                                // polished gold-silver metal: a bright sky over a dark ground in the mirror, the moon's glint, a cool edge light
     const rz = 2 * nz * nz - 1, ry = 2 * nz * ny, rx = 2 * nz * nx, e = Math.max(0, Math.min(1, ry * .5 + .5)), dif = Math.max(0, nx * LT[0] + ny * LT[1] + nz * LT[2]);
-    const hz = Math.max(0, Math.min(1, (e - .44) / .12)), hs = hz * hz * (3 - 2 * hz), env = .1 + .78 * hs * (.6 + .4 * e) + .22 * dif, sp = Math.pow(Math.max(0, rx * LT[0] + ry * LT[1] + rz * LT[2]), 30), fr = Math.pow(1 - nz, 2.5);
+    const hz = Math.max(0, Math.min(1, (e - .4) / .2)), hs = hz * hz * (3 - 2 * hz), env = .13 + .72 * hs * (.55 + .45 * e) + .18 * dif, sp = Math.pow(Math.max(0, rx * LT[0] + ry * LT[1] + rz * LT[2]), 18), fr = Math.pow(1 - nz, 2.5);
     zd[o] = Math.min(255, 238 * env + 255 * sp + 90 * fr); zd[o + 1] = Math.min(255, 214 * env + 250 * sp + 130 * fr); zd[o + 2] = Math.min(255, 170 * env + 235 * sp + 210 * fr); zd[o + 3] = 255;
   }
-  function zSphere(cx, cy, cz, r) {                                              // centre in buffer pixels, depth in units, radius in pixels (and units: rz)
-    const rp = r * BC_S * ZR, x0 = Math.max(0, Math.floor(cx - rp)), x1 = Math.min(ZN - 1, Math.ceil(cx + rp)), y0 = Math.max(0, Math.floor(cy - rp)), y1 = Math.min(ZN - 1, Math.ceil(cy + rp));
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const dx = (x + .5 - cx) / rp, dy = -(y + .5 - cy) / rp, d2 = dx * dx + dy * dy; if (d2 > 1) continue;
-      const nz = Math.sqrt(1 - d2), z = cz + nz * r, k = y * ZN + x; if (z <= zb[k]) continue; zb[k] = z; shade(dx, dy, nz, k * 4);
+  function lump(h, W, q) {
+    const Ly = zl[q - 1], ZN = Ly.w;
+    if (st.lv !== st.ver || st.lq !== q) {
+    st.lv = st.ver; st.lq = q; zd = Ly.d; zd.fill(0);
+    const f = BC.tex.sdf, Wt = bcT(W), BS = BC_S * ZR * ZN / ZN0, c = ZN / 2, px = 1 / BS, dl = [Wt[2], Wt[5], Wt[8]];
+    for (let y = 0; y < ZN; y++) for (let x = 0; x < ZN; x++) {
+      const X = (x + .5 - c) / BS, Y = -(y + .5 - c) / BS; if (X * X + Y * Y > 2.6) continue;
+      const lx = Wt[0] * X + Wt[1] * Y, ly = Wt[3] * X + Wt[4] * Y, lz = Wt[6] * X + Wt[7] * Y;       // the ray's point at depth 0, in the tangle's space; it runs along +dl as the depth grows
+      let s = 0, md = 9, hit = false; const T0 = 2.3;
+      for (let n = 0; n < 70; n++) {
+        const t = T0 - s, d = samp(f, lx + dl[0] * t, ly + dl[1] * t, lz + dl[2] * t);
+        if (d < md) md = d; if (d < .004) { hit = true; break; } s += Math.max(.008, d * .85); if (s > 2 * T0) break;
+      }
+      const o = (y * ZN + x) * 4;
+      if (hit) {
+        const t = T0 - s, qx = lx + dl[0] * t, qy = ly + dl[1] * t, qz = lz + dl[2] * t, e = .03;
+        const gx = samp(f, qx + e, qy, qz) - samp(f, qx - e, qy, qz), gy = samp(f, qx, qy + e, qz) - samp(f, qx, qy - e, qz), gz = samp(f, qx, qy, qz + e) - samp(f, qx, qy, qz - e), gl = Math.hypot(gx, gy, gz) || 1;
+        const nx = (W[0] * gx + W[1] * gy + W[2] * gz) / gl, ny = (W[3] * gx + W[4] * gy + W[5] * gz) / gl, nz = (W[6] * gx + W[7] * gy + W[8] * gz) / gl; shade(nx, ny, Math.max(0, nz), o);
+      } else if (md < px * 1.1) { const a = 1 - md / (px * 1.1); zd[o] = 120; zd[o + 1] = 100; zd[o + 2] = 78; zd[o + 3] = Math.round(255 * a * a); }     // a soft edge
     }
-  }
-  function zRod(a, b, r) {                                                       // a, b: the ends in world units (relative to the centre); a cylinder (the caps are balls)
-    const BS = BC_S * ZR, c = ZN / 2, dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], len = Math.hypot(dx, dy, dz); if (len < 1e-6) return;
-    const ux = dx / len, uy = dy / len, uz = dz / len, uu = 1 - uz * uz; if (uu < 1e-4) return;           // an axis along the view shows only its end balls
-    const vx = -uz * ux, vy = -uz * uy, vz = 1 - uz * uz, rp = r * BS;
-    const x0 = Math.max(0, Math.floor(c + Math.min(a[0], b[0]) * BS - rp)), x1 = Math.min(ZN - 1, Math.ceil(c + Math.max(a[0], b[0]) * BS + rp)), y0 = Math.max(0, Math.floor(c - Math.max(a[1], b[1]) * BS - rp)), y1 = Math.min(ZN - 1, Math.ceil(c - Math.min(a[1], b[1]) * BS + rp));
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const w0x = (x + .5 - c) / BS - a[0], w0y = -(y + .5 - c) / BS - a[1], w0z = -a[2], d = w0x * ux + w0y * uy + w0z * uz, qx = w0x - d * ux, qy = w0y - d * uy, qz = w0z - d * uz;
-      const bb = qx * vx + qy * vy + qz * vz, cc = qx * qx + qy * qy + qz * qz - r * r, disc = bb * bb - uu * cc; if (disc < 0) continue;
-      const t = (-bb + Math.sqrt(disc)) / uu, px = w0x, py = w0y, pz = w0z + t, s = px * ux + py * uy + pz * uz; if (s < 0 || s > len) continue;
-      const k = y * ZN + x; if (t <= zb[k]) continue; zb[k] = t; shade((px - s * ux) / r, (py - s * uy) / r, (pz - s * uz) / r, k * 4);
+    Ly.x.putImageData(Ly.img, 0, 0);
     }
+    h.imageSmoothingEnabled = true; h.imageSmoothingQuality = 'high'; h.drawImage(Ly.c, BC_CX - 160, BC_CY - 160, 320, 320);
   }
-  function lump(h, W) {
-    const T = BC.tex; zb.fill(-1e9); zd.fill(0); const c = ZN / 2;
-    for (const b of T.balls) { const w = bcApp(W, [b.x, b.y, b.z]); zSphere(c + w[0] * BC_S * ZR, c - w[1] * BC_S * ZR, w[2], b.r); }
-    for (const r of T.rods) {
-      const a = bcApp(W, r.a), b = bcApp(W, r.b), A = [c + a[0] * BC_S * ZR, c - a[1] * BC_S * ZR, a[2]], B = [c + b[0] * BC_S * ZR, c - b[1] * BC_S * ZR, b[2]];
-      zRod(a, b, r.r); if (r.pin) { zSphere(A[0], A[1], A[2], r.r); zSphere(B[0], B[1], B[2], r.r); }
-    }
-    zx.putImageData(zimg, 0, 0); h.imageSmoothingEnabled = true; h.imageSmoothingQuality = 'high'; h.drawImage(zc, BC_CX - 150, BC_CY - 150, 300, 300);
-  }
-  function ground(h, W) {                                                    // the pool of moonlight and the tangle's shadow in it, drawn in the plane across the light
+  function ground(h, W, q) {                                                    // the pool of moonlight, and the tangle's shadow in it
     const o = proj([0, 0, 0]), a = dir(e1), b = dir(e2);
     h.save(); h.beginPath(); h.rect(0, BC_GTOP, BC_W, BC_H - BC_GTOP); h.clip();
     const gr = h.createLinearGradient(0, BC_GTOP, 0, BC_H); gr.addColorStop(0, '#171f38'); gr.addColorStop(1, '#222c4a'); h.fillStyle = gr; h.fillRect(0, BC_GTOP, BC_W, BC_H - BC_GTOP);
     h.setTransform(st.k * BC_S * a[0], st.k * BC_S * BC_GS * a[1], st.k * BC_S * b[0], st.k * BC_S * BC_GS * b[1], st.k * (BC_CX + BC_S * o[0]), st.k * (BC_GY + BC_S * BC_GS * o[1]));
     const pool = h.createRadialGradient(0, 0, 0, 0, 0, 2.0); pool.addColorStop(0, '#dfe6f4'); pool.addColorStop(.7, '#b9c6de'); pool.addColorStop(1, 'rgba(160,178,210,0)'); h.fillStyle = pool; h.beginPath(); h.arc(0, 0, 2.0, 0, 6.283); h.fill();
-    h.fillStyle = h.strokeStyle = '#141a2c'; h.lineCap = 'round';
-    for (const p of BC.tex.balls) { const w = bcApp(W, [p.x, p.y, p.z]); h.beginPath(); h.arc(w[0] * e1[0] + w[1] * e1[1] + w[2] * e1[2], w[0] * e2[0] + w[1] * e2[1] + w[2] * e2[2], p.r, 0, 6.283); h.fill(); }
-    for (const r of BC.tex.rods) {
-      const wa = bcApp(W, r.a), wb = bcApp(W, r.b); h.lineWidth = r.r * 2;
-      h.beginPath(); h.moveTo(wa[0] * e1[0] + wa[1] * e1[1] + wa[2] * e1[2], wa[0] * e2[0] + wa[1] * e2[1] + wa[2] * e2[2]); h.lineTo(wb[0] * e1[0] + wb[1] * e1[1] + wb[2] * e1[2], wb[0] * e2[0] + wb[1] * e2[1] + wb[2] * e2[2]); h.stroke();
-    }
     h.restore();
+    const Gy = gl[q - 1], gw = Gy.w, gh = Gy.h, gd = Gy.d;
+    if (st.gv !== st.ver || st.gq !== q) {
+    st.gv = st.ver; st.gq = q; gd.fill(0);
+    const f = BC.tex.sdf, Wt = bcT(W), ld = [-(Wt[0] * L[0] + Wt[1] * L[1] + Wt[2] * L[2]), -(Wt[3] * L[0] + Wt[4] * L[1] + Wt[5] * L[2]), -(Wt[6] * L[0] + Wt[7] * L[1] + Wt[8] * L[2])], aa = .022 * q;
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+      const gx = ((x + .5) * GW / gw - BC_CX) / BC_S, gz = ((y + .5) * GHh / gh + BC_GTOP - BC_GY) / (BC_S * BC_GS), gy = -BC_H3;       // a ground point (relative to the tangle's centre) and the moon's ray from it
+      const lx = Wt[0] * gx + Wt[1] * gy + Wt[2] * gz, ly = Wt[3] * gx + Wt[4] * gy + Wt[5] * gz, lz = Wt[6] * gx + Wt[7] * gy + Wt[8] * gz, sc = -(lx * ld[0] + ly * ld[1] + lz * ld[2]);
+      const cx = lx + sc * ld[0], cy = ly + sc * ld[1], cz = lz + sc * ld[2]; if (cx * cx + cy * cy + cz * cz > 2.9) continue;      // the ray never gets near the tangle
+      let s = sc - 2.0, md = 9; const end = sc + 2.0;
+      for (let n = 0; n < 60 && s < end; n++) { const d = samp(f, lx + ld[0] * s, ly + ld[1] * s, lz + ld[2] * s); if (d < md) md = d; if (d < -.004) { md = -1; break; } s += Math.max(.01, d * .85); }
+      const al = Math.max(0, Math.min(1, .5 - md / aa)); if (al <= 0) continue; const o = (y * gw + x) * 4; gd[o] = 18; gd[o + 1] = 24; gd[o + 2] = 42; gd[o + 3] = Math.round(240 * al);
+    }
+    Gy.x.putImageData(Gy.img, 0, 0);
+    }
+    h.imageSmoothingEnabled = true; h.drawImage(Gy.c, 0, BC_GTOP, GW, GHh);
   }
   function wing(h, x, y, s, flap, col) {                                      // a woodblock-ish bird seen from the side, wings flapping
     h.save(); h.translate(x, y); h.scale(s, s); h.lineJoin = 'round'; h.strokeStyle = '#1d1915'; h.lineWidth = 2.2;
@@ -153,9 +187,9 @@ function bcBuild() {
     for (const [sx, sy, r] of stars) { h.globalAlpha = .5 + .5 * Math.sin(st.t * 1.5 + sx); h.fillStyle = '#e8ecff'; h.beginPath(); h.arc(sx, sy, r * .8, 0, 6.283); h.fill(); } h.globalAlpha = 1;
     const mx = 58, my = 58; const gm = h.createRadialGradient(mx, my, 4, mx, my, 70); gm.addColorStop(0, 'rgba(255,248,214,.55)'); gm.addColorStop(1, 'rgba(255,248,214,0)'); h.fillStyle = gm; h.fillRect(0, 0, 160, 160);
     h.fillStyle = '#fff3c4'; h.beginPath(); h.arc(mx, my, 24, 0, 6.283); h.fill(); h.strokeStyle = 'rgba(29,25,21,.5)'; h.lineWidth = 1.5; h.stroke();
-    ground(h, st.W); h.setTransform(k, 0, 0, k, 0, 0);
+    const q = st.drag || Math.abs(st.vel[0]) > .0006 || Math.abs(st.vel[1]) > .0006 ? 2 : 1; ground(h, st.W, q); h.setTransform(k, 0, 0, k, 0, 0);
     h.strokeStyle = 'rgba(232,236,255,.5)'; h.lineWidth = 1.2; h.beginPath(); h.moveTo(BC_CX, 0); h.lineTo(BC_CX, BC_CY - 110); h.stroke();      // the cord
-    h.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 2.2) : 1; lump(h, st.W); h.globalAlpha = 1;
+    h.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 2.2) : 1; lump(h, st.W, q); h.globalAlpha = 1;
     if (st.done) {                                                             // the bird: out of its shadow and away
       const T = st.dt, p = Math.min(1, T / 3.2), e = p * p * (3 - 2 * p), s0 = gpos(proj([0, 0, 0])), sx0 = s0[0], sy0 = s0[1];
       const bx = sx0 + (BC_W + 40 - sx0) * e * .95 + Math.sin(T * 3) * 6, by = sy0 - (sy0 + 40) * e - Math.sin(p * Math.PI) * 30, sc = .45 + 1.2 * Math.min(1, T / 1.6);
@@ -171,7 +205,7 @@ function bcBuild() {
   const up = () => { if (st) st.drag = null; };
   cv2.addEventListener('pointerup', up); cv2.addEventListener('pointercancel', up);
   function turn(ay, ax) {                                                    // a drag right turns the tangle about the up axis, a drag down about the right axis
-    const m = Math.hypot(ay, ax); if (m < 1e-6) return; st.W = bcMul(bcRot(ax / m, ay / m, 0, m), st.W);
+    const m = Math.hypot(ay, ax); if (m < 1e-6) return; st.W = bcMul(bcRot(ax / m, ay / m, 0, m), st.W); st.ver++;
   }
   function loop(ts) {
     if (!BC.open) return; const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts;
@@ -182,12 +216,12 @@ function bcBuild() {
         const R = bcMul(bcT(BC_Q), st.W), ang = bcAngleFromI(R);
         if (ang < .07) { st.hold += dt; if (st.hold > .25) win(); } else st.hold = 0;     // about 4 degrees, kept for a quarter of a second
       } else { st.dt += dt; if (st.dt > 4.2) finish(); }
-      draw();
+      const t0 = performance.now(); draw(); BC.ms = performance.now() - t0;
     }
     raf = requestAnimationFrame(loop);
   }
   function win() {
-    st.done = true; st.dt = 0; st.drag = null; st.W = BC_Q.slice();         // it settles exactly on the target
+    st.done = true; st.dt = 0; st.drag = null; st.W = BC_Q.slice(); st.ver++;         // it settles exactly on the target
     AU.pluck(79); setTimeout(() => AU.pluck(86), 160); setTimeout(() => { AU.chirp && AU.chirp(); }, 700); setTimeout(() => AU.pluck(91), 1400);
   }
   function finish() { const cb = st && st.cb; BC.open = false; el.hidden = true; cancelAnimationFrame(raf); st = null; if (cb) cb(); }
@@ -200,7 +234,7 @@ function bcBuild() {
       if (!BC.open) return; BC.tex = bcBuild();
       // a pose well away from the target: turned by 1.3..2.7 radians about a random axis
       const ax = Math.random() * 2 - 1, ay = Math.random() * 2 - 1, az = Math.random() * 2 - 1, n = Math.hypot(ax, ay, az) || 1, W0 = bcMul(bcRot(ax / n, ay / n, az / n, 1.3 + Math.random() * 1.4), BC_Q);
-      st = { W: W0, k: 1, t: 0, drag: null, vel: [0, 0], hold: 0, done: false, dt: 0, cb }; BC.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
+      st = { ver: 1, W: W0, k: 1, t: 0, drag: null, vel: [0, 0], hold: 0, done: false, dt: 0, cb }; BC.st = st; size(); last = performance.now(); raf = requestAnimationFrame(loop); AU.pluck(72);
     }, 60);
   };
   if (window.__bongTest || /[?&]thu=cau/.test(location.search)) setTimeout(() => bongOpen(() => toast('Chim bay đi rồi! (thử)', 3)), 1800);
