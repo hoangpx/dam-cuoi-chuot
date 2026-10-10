@@ -97,8 +97,9 @@ const gkWrap = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Mat
 function gkFish() {                                                          // a fishbone-looking tear: a spine with ribs alternating along it, any way round
   const S = GK.S, len = 45 + R() * 60, a = R() * 6.283, x0 = 25 + R() * (S - 50), y0 = 25 + R() * (S - 50), ca = Math.cos(a), sa = Math.sin(a), out = [];
   const quad = (px, py, ang, l, w) => { const c1 = Math.cos(ang), s1 = Math.sin(ang), p = [[px - s1 * w, py + c1 * w], [px + c1 * l - s1 * w, py + s1 * l + c1 * w], [px + c1 * l + s1 * w, py + s1 * l - c1 * w], [px + s1 * w, py - c1 * w]]; let ar = 0; for (let i = 0; i < 4; i++) { const q = p[(i + 1) % 4]; ar += p[i][0] * q[1] - q[0] * p[i][1]; } if (ar < 0) p.reverse(); return gkTorn(p, .9); };
-  out.push(quad(x0, y0, a, len, 2 + R() * 2.2));
-  for (let t = 6, side = R() < .5 ? 1 : -1; t < len - 4; t += 5 + R() * 5, side = -side) out.push(quad(x0 + ca * t, y0 + sa * t, a + side * (.9 + R() * .7), 8 + R() * 14, 1.6 + R() * 1.8));
+  out.push(quad(x0, y0, a, len, 3 + R() * 4));                                 // (a thick spine, as thick as the key's own hiding place)
+  if (R() < .5) out.push(gkBlob(x0, y0, 10 + R() * 6));
+  for (let t = 6, side = R() < .5 ? 1 : -1; t < len - 4; t += 5 + R() * 5, side = -side) out.push(quad(x0 + ca * t, y0 + sa * t, a + side * (.9 + R() * .7), 10 + R() * 14, 2 + R() * 2.5));
   return out.every(p => p.every(([x, y]) => x > 4 && y > 4 && x < S - 4 && y < S - 4)) ? out : null;
 }
 // the pixels (in the S x S mask) a polygon covers, found on a small scratch canvas round its own box: cheap enough for hundreds of little holes
@@ -119,7 +120,7 @@ function gkMake() {
     let cov = 0; for (let i = 0; i < M; i++) cov += mask[i];
     const dens = (cx, cy) => { let d = 0; for (let dy = -10; dy <= 10; dy += 2) for (let dx = -10; dx <= 10; dx += 2) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < S && y < S) d += mask[(y | 0) * S + (x | 0)]; } return d; };
     const put = (cx, cy) => {                                                // one small tear at (cx, cy), unless it would touch what is forbidden
-      const r = R() < .2 ? ri(9, 18) : ri(2, 6), poly = R() < .03 ? gkRip() : gkBlob(cx, cy, r), idx = gkStamp(poly);
+      const r = R() < .14 ? ri(9, 17) : ri(2, 6), poly = R() < .03 ? gkRip() : gkBlob(cx, cy, r), idx = gkStamp(poly);
       if (idx.some(i => forbid[i])) return false; for (const i of idx) if (!mask[i]) { mask[i] = 1; cov++; } return true;
     };
     for (let guard = 0; cov < target * M && guard < 9000; guard++) {
@@ -166,16 +167,16 @@ function gkMake() {
       (mineA ? cellsA : cellsB)[i] = 1;
     }
     const mAk = new Uint8Array(rKeyA); orInto(mAk, cellsA);
-    for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the back sheet
+    for (let n = 0, guard = 0; n < 4 && guard < 120; guard++) {                // fishbone tears on the back sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, near)) continue; orInto(mAk, mr); n++;
     }
     { const hold = dil(21), keepB = new Uint8Array(hold); for (let i = 0; i < M; i++) if (near[i] && !hold[i] && noise(i % S, (i / S) | 0) > 4.5) keepB[i] = 1;   // in the ring just outside the key's own zone, half the patches are left to the front sheet
-      fillEven(mAk, keepB, .38); }                                                // (owner: many small holes, spread evenly over the sheet)
+      fillEven(mAk, keepB, .3); }                                                // (owner: many small holes, spread evenly over the sheet)
     const reach = new Uint8Array(M);                                         // where the back sheet is torn, as the front sheet sees it (turned and shifted back, grown a little)
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (mAk[y * S + x]) { const [u0, v0] = toB(x, y); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = Math.round(u0 + dx), v = Math.round(v0 + dy); if (u >= 0 && v >= 0 && u < S && v < S) reach[v * S + u] = 1; } }
     const mBk = new Uint8Array(gkRaster(keyB, S));                           // the front sheet in its own frame: its key, and its share of the zone carried over
     for (let v = 0; v < S; v++) for (let u = 0; u < S; u++) { const [x, y] = toA(u, v), xi = Math.round(x), yi = Math.round(y); if (xi >= 0 && yi >= 0 && xi < S && yi < S && cellsB[yi * S + xi]) mBk[v * S + u] = 1; }
-    for (let n = 0, guard = 0; n < 4 && guard < 60; guard++) {                // fishbone tears on the front sheet
+    for (let n = 0, guard = 0; n < 4 && guard < 120; guard++) {                // fishbone tears on the front sheet
       const f = gkFish(); if (!f) continue; const mr = gkRaster(f, S); if (touches(mr, reach)) continue; orInto(mBk, mr); n++;
     }
     { let sa = 0; for (let i = 0; i < M; i++) sa += mAk[i]; fillEven(mBk, reach, sa / M * .98); }   // the front sheet as full of holes as the back one
@@ -224,7 +225,7 @@ function gkMake() {
     h.fillStyle = col; h.fill(gkPath([edge])); h.strokeStyle = 'rgba(29,25,21,.7)'; h.lineWidth = 1.6; h.stroke(gkPath([edge]));
     h.strokeStyle = 'rgba(120,90,50,.13)'; h.lineWidth = 1; for (let i = 0; i < 26; i++) { const x = R() * S, y = R() * S; h.beginPath(); h.moveTo(x, y); h.lineTo(x + (R() - .5) * 30, y + (R() - .5) * 8); h.stroke(); }   // fibres
     const hp = gkPath(holes); h.globalCompositeOperation = 'destination-out'; h.fillStyle = '#000'; h.fill(hp);
-    h.globalCompositeOperation = 'source-over'; h.strokeStyle = 'rgba(250,243,214,.85)'; h.lineWidth = 2.6; h.stroke(hp); h.strokeStyle = 'rgba(29,25,21,.65)'; h.lineWidth = 1.1; h.stroke(hp);   // the pale fibre of a tear and its dark edge
+    h.globalCompositeOperation = 'source-atop'; h.strokeStyle = 'rgba(250,243,214,.85)'; h.lineWidth = 5.2; h.stroke(hp); h.strokeStyle = 'rgba(29,25,21,.65)'; h.lineWidth = 2.2; h.stroke(hp); h.globalCompositeOperation = 'source-over';   // (only onto paper that is there: no line outside the torn edge)   // the pale fibre of a tear and its dark edge
     return { c, pad };
   }
   function baking() { if (!GK.puz || !st) return; const P = GK.puz, k = st.k; sheets.A = bake(P.edgeA, P.holesA, PAPA, k); sheets.B = bake(P.edgeB, P.holesB, PAPB, k); sheets.lit = document.createElement('canvas'); sheets.lit.width = cv2.width; sheets.lit.height = cv2.height; }
