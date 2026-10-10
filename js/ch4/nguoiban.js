@@ -259,7 +259,7 @@ function c4TripItems(items, head, vis) {
    when to send someone (stock down to 0/5/…/50), how much to bring (5…50) and until what hour (6:00 … 18:00, or till
    closing). SAVE4.auto[g] = { at, q, until } (at null = off; an old number = at, fill up, till closing). ---------- */
 const C4_AUTO_AT = [0, 5, 10, 20, 30, 40, 50], C4_AUTO_Q = [5, 10, 20, 30, 40, 50], C4_AUTO_UNTIL = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-const c4AutoOk = g => (g === 'trau' ? SAVE4.lv : C4_GOODS[g].buy ? 0 : c4SLvI(g)) >= 1;   // from the second level (owner: lvl 2)
+const c4AutoOk = g => (g === 'trau' ? SAVE4.lv : c4SLvI(g)) >= 1;   // from the second level (owner: lvl 2), bought stalls too
 const c4Fetching = g => (['out', 'away', 'back'].includes(C4.porter.st) && C4.porter.good === g) || (C4.trips || []).some(t => t.good === g);
 function c4AutoGet(g) {
   const v = (SAVE4.auto || {})[g];

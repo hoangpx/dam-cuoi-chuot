@@ -26,13 +26,14 @@ const c4SLv = g => C4_SHOP_LV[c4SLvI(g)];
 // the betel stall goes on past its tiled stall too (C4_LV in cho.js gets the two house levels)
 C4_LV.push({ name: 'Thuê nhà mặt chợ', cap: 420, cost: 2, serve: .85, flow: 2.3, buy: .74, wait: 7, up: 700, daily: 30, house: 'rent' },
   { name: 'Nhà trầu của mình', cap: 520, cost: 2, serve: .8, flow: 2.6, buy: .78, wait: 6, up: 4200, house: 'own' });
+const C4_BUY_TOP = 2;   // the highest level (index in C4_SHOP_LV) of a stall bought from a neighbour: Quầy gỗ
 // the upgrade block on a stall's sheet (other wares; the betel one keeps its own, extended)
 function c4ShopUpBlock(g) {
-  const G = C4_GOODS[g], i = c4SLvI(g), nx = C4_SHOP_LV[i + 1], cur = C4_SHOP_LV[i];
+  const G = C4_GOODS[g], i = c4SLvI(g), nx = G.buy && i >= C4_BUY_TOP ? null : C4_SHOP_LV[i + 1], cur = C4_SHOP_LV[i];   // a stall bought from a neighbour goes up to the Quầy gỗ only (no house to rent or buy)
   const now = `<p class="nx">Đang là <b>${cur.name}</b>: chứa ${Math.round(G.cap * cur.cap)} ${G.unit}${cur.daily ? ` · tiền nhà ${Math.round(G.rent * cur.daily)} đồng/ngày` : ''}</p>`;
-  if (!nx) { $('#c4upB').innerHTML = `<h4>Cơ ngơi</h4>${now}<p>Nhà của mình, không phải trả tiền thuê. Khách quen tìm đến tận nơi.</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
+  if (!nx) { $('#c4upB').innerHTML = `<h4>Cơ ngơi</h4>${now}<p>${G.buy ? 'Gánh này đã lên quầy gỗ khang trang nhất.' : 'Nhà của mình, không phải trả tiền thuê. Khách quen tìm đến tận nơi.'}</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
   if (!c4UpAllowed(nx)) { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="hint">Mua nhà sẽ có sau.</p>` + c4TablesBlock(g); c4TablesWire(g); $('#c4upGo').hidden = true; return; }
-  const L = c4Landlord(g), base = Math.round(G.rent * nx.up * (nx.house ? L.k : 1)), cost = c4UpPrice(nx, base);
+  const L = G.buy ? { k: 1, known: true } : c4Landlord(g), base = Math.round(G.rent * nx.up * (nx.house ? L.k : 1)), cost = c4UpPrice(nx, base);   // (a bought stall has no landlord)
   if (nx.house && !L.known) { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="bad">Muốn ${nx.house === 'own' ? 'mua' : 'thuê'} nhà mặt chợ: không biết chủ căn nhà là ai mà hỏi. Quen thêm người trong làng thì sẽ biết; càng thân giá càng rẻ.</p>` + c4TablesBlock(g); c4TablesWire(g); return; }
   $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${now}<p class="nx">Lên <b>${nx.name}</b>: chứa ${Math.round(G.cap * nx.cap)} ${G.unit} · bán nhanh hơn · khách ghé đông hơn${nx.daily ? ` · <b>tiền nhà ${Math.round(G.rent * nx.daily)} đồng mỗi tối</b> (hai tối không trả là bị đuổi về quầy)` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`;
   $('#c4upB').insertAdjacentHTML('beforeend', c4TablesBlock(g)); c4TablesWire(g);
@@ -104,8 +105,8 @@ function c4BizHtml() {
     c4RollOffers();
     const mine = (SAVE4.ws || []), offers = (SAVE4.offers || []).filter(o => !mine.some(m => m.id === o.id));
     h += `<div class="biz"><h4>Đơn hàng sỉ · phường buôn</h4>`
-      + (mine.length ? mine.map(o => `<p class="${o.day === day ? 'due' : ''}">• ${o.day === day ? `<b>Hôm nay giao, ${c4Slot(o).w}</b>` : `Ngày ${o.day} giao, ${c4Slot(o).w}`}: ${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()} cho ${o.vil}, được ${c4Money(o.pay)} (tiền hàng ${c4Money(Math.round(o.n * c4Cost(o.g)))})</p>`).join('') : '')
-      + (offers.length && mine.length < 2 ? offers.map(o => `<div class="offer"><p>${c4Cap1(o.vil)} đặt <b>${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()}</b>, giao ngày ${o.day}, ${c4Slot(o).w}, trả ${c4Money(o.pay)}. Nhận đơn phải đặt cọc ${o.dep} đồng; trễ hẹn mất cọc, mất tiếng.</p><button class="btn alt" data-take="${o.id}" ${SAVE4.money < o.dep ? 'disabled' : ''}>Nhận đơn · cọc ${o.dep} đồng</button></div>`).join('') : '')
+      + (mine.length ? mine.map(o => `<p class="${o.day === day ? 'due' : ''}">• ${o.day === day ? `<b>Hôm nay giao, ${c4Slot(o).w}</b>` : `Ngày ${o.day} giao, ${c4Slot(o).w}`}: ${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()} cho ${o.vil}, được ${c4Money(o.pay)}. Lấy từ kho đang bán: kho đang có ${c4Stock(o.g)} ${C4_GOODS[o.g].unit}${c4Stock(o.g) < o.n ? ` <span class="bad">(thiếu ${o.n - c4Stock(o.g)}, nhập thêm kẻo trễ hẹn)</span>` : ''}.</p>`).join('') : '')
+      + (offers.length && mine.length < 2 ? offers.map(o => `<div class="offer"><p>${c4Cap1(o.vil)} đặt <b>${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()}</b>, giao ngày ${o.day}, ${c4Slot(o).w}, trả ${c4Money(o.pay)}. Hàng giao lấy thẳng từ kho đang bán lúc chồng lên đường, kho phải còn đủ. Nhận đơn phải đặt cọc ${o.dep} đồng; trễ hẹn mất cọc, mất tiếng.</p><button class="btn alt" data-take="${o.id}" ${SAVE4.money < o.dep ? 'disabled' : ''}>Nhận đơn · cọc ${o.dep} đồng</button></div>`).join('') : '')
       + (!mine.length && !offers.length ? '<p class="hint">Hôm nay chưa có làng nào đặt hàng.</p>' : '') + '</div>';
   }
   // today's tasks
@@ -124,43 +125,68 @@ function c4BizWire(box) {
   }));
 }
 function c4BizRefresh() { const box = $('#c4biz'); if (!box) return; box.innerHTML = c4BizHtml(); c4BizWire(box); }
-// the market opens: an order due today goes out with the husband (goods bought now at the guild price), he is back at noon
-function c4ShipOrders() {
+// the market opens: an order due today is waiting for its hour; when the husband sets off he takes the goods from the stock
+// that is on sale (owner: a player saw the husband go and the betel not go down). If the stock is short he waits until the end of
+// the slot; still short then, the order fails and the deposit is lost. Orders stay in SAVE4.ws until settled, so a reload
+// mid-day does not lose them (c4ShipOrders(true) rebuilds the queue).
+function c4ShipOrders(resume) {
+  SAVE4.ws = (SAVE4.ws || []).filter(o => o.day >= SAVE4.day);               // (an order of an earlier day that never ran is dropped)
   const due = (SAVE4.ws || []).filter(o => o.day === SAVE4.day).sort((a, b) => (a.slot || 0) - (b.slot || 0)), lines = [];
-  C4.delivQ = [];
+  C4.deliv = null; C4.delivQ = [];
   for (const o of due) {
-    const cost = Math.round(o.n * c4Cost(o.g));
-    if (SAVE4.money < cost) { o.fail = true; lines.push(`Không đủ ${c4Money(cost)} lấy hàng giao cho ${o.vil} (trong túi có ${c4Money(SAVE4.money)}): mất cọc, ${o.vil} chê nhà mình thất hứa.`); SAVE4.wsBad = (SAVE4.wsBad || 0) + 1; continue; }
-    const S = c4Slot(o), D = { o, go: S.a + R() * (S.b - S.a), out: false };   // goods bought at the open; he sets off at some moment in the slot
-    SAVE4.money -= cost; C4.today.spent += cost;
-    c4LogAdd({ src: 'si', g: o.g, q: o.n, cost, who: o.vil });
-    if (C4.deliv) C4.delivQ.push(D); else C4.deliv = D;                     // (a player: two orders the same day, the second was dropped) — one after the other
+    const S = c4Slot(o), D = { o, go: S.a + R() * (S.b - S.a), out: false, taken: !!o.taken };
+    if (o.taken) { D.out = true; D.until = C4.mins; D.resumed = true; }                       // (resumed after a reload: the goods had gone, he is back now)
+    else if (!resume && c4Stock(o.g) < o.n) lines.push(`Đơn ${o.n} ${C4_GOODS[o.g].unit} ${C4_GOODS[o.g].name.toLowerCase()} của ${o.vil} lấy từ kho, mà kho mới có ${c4Stock(o.g)}. Lấy thêm hàng trước hẹn kẻo mất cọc!`);
+    if (C4.deliv) C4.delivQ.push(D); else C4.deliv = D;
   }
-  SAVE4.ws = (SAVE4.ws || []).filter(o => o.day > SAVE4.day);
-  if (lines.length) setTimeout(() => toast(lines.join(' '), 4.4), 600);
+  if (lines.length) setTimeout(() => toast(lines.join(' '), 5), 600);
+}
+// next order of the day, or none
+function c4DelivNext() {
+  const N = C4.delivQ && C4.delivQ.shift(); if (N) { N.go = Math.max(N.go, C4.mins + 10); C4.deliv = N; } else C4.deliv = null;
+}
+// the order cannot go (no goods in time): the deposit is lost
+function c4DelivFail(D, why) {
+  const o = D.o; SAVE4.wsBad = (SAVE4.wsBad || 0) + 1; SAVE4.ws = (SAVE4.ws || []).filter(x => x !== o && x.id !== o.id); persist4();
+  setTimeout(() => toast(why || `Không đủ hàng giao cho ${o.vil}: mất cọc, ${o.vil} chê nhà mình thất hứa.`, 4.4), 600);
+  c4DelivNext();
 }
 // the husband stays away while delivering; back at noon with the money (and a story)
 function c4DelivUpdate() {
   const D = C4.deliv, P = C4.porter; if (!D) return;
   if (!D.out) {                                                             // his moment comes (if he is out fetching, as soon as he is back)
-    if (C4.mins < D.go || !c4HusbFree()) return;
+    const o = D.o, G = C4_GOODS[o.g], have = c4Stock(o.g);
+    if (C4.mins < D.go) return;
+    if (have < o.n) {                                                       // not enough in the stock: wait for goods until the end of the slot
+      if (C4.mins >= c4Slot(o).b) { c4DelivFail(D, `Kho ${G.name.toLowerCase()} chỉ có ${have}, không đủ ${o.n} ${G.unit} giao cho ${o.vil}: mất cọc, ${o.vil} chê nhà mình thất hứa.`); return; }
+      if (!D.warned) { D.warned = true; toast(`Kho ${G.name.toLowerCase()} mới có ${have}, đơn của ${o.vil} cần ${o.n}. Chồng chờ hàng về, lấy thêm đi!`, 3.6); }
+      return;
+    }
+    if (!c4HusbFree()) return;
+    c4SetStock(o.g, have - o.n); o.taken = true; persist4();                // the goods come out of the stock on sale
+    c4LogAdd({ src: 'si', g: o.g, q: o.n, cost: Math.round(o.n * c4Unit(o.g)), who: o.vil });
+    C4.fx.push({ x: G.x - 40, y: c4Y(.04) - 200, t: 0, s: '−' + o.n + ' ' + G.unit }); c4Hud();
     D.out = true; D.until = C4.mins + 140 + R() * 40; Object.assign(P, { st: 'out', good: null, qty: 0, cost: 0, deliv: true, strollX: null });
-    toast(`Chồng gánh hàng đi giao cho ${D.o.vil}.`, 2.8); return;
+    toast(`Chồng gánh ${o.n} ${G.unit} ${G.name.toLowerCase()} lấy từ kho đi giao cho ${o.vil}.`, 3.2); return;
   }
+  if (D.resumed) { c4DelivPay(D); return; }                                 // back from a reload: the trip is over, pay now
   if (P.st === 'away') P.t = 1;                                             // keep him away a good while
   if (C4.mins >= D.until && P.st === 'away') c4DelivPay(D);
 }
 // the money for a delivery (also settled at closing if he was still on the road)
 function c4DelivPay(D) {
   {
-    C4.porter.t = 0; C4.deliv = null; const o = D.o; let pay = o.pay + o.dep, note;
+    C4.porter.t = 0; const o = D.o;
+    if (!D.out) { c4DelivFail(D); return; }                                 // closing time and the goods never went: the order fails
+    SAVE4.ws = (SAVE4.ws || []).filter(x => x !== o && x.id !== o.id);
+    let pay = o.pay + o.dep, note;
     const r = R();
     if (r < .1) { pay = Math.round(pay * .5); note = `Đường về gặp kẻ cướp, chồng chạy thoát nhưng mất nửa tiền: chỉ còn ${c4Money(pay)}.`; }
     else if (r < .25) { pay += 30; note = `${c4Cap1(o.vil)} khen hàng tốt, thưởng thêm 30 đồng, hẹn lần sau đặt tiếp!`; SAVE4.wsGood = (SAVE4.wsGood || 0) + 1; }
     else note = `Chồng giao xong hàng cho ${o.vil}, mang về ${c4Money(pay)}.`;
     SAVE4.money += pay; C4.today.got += pay; C4.today.ws = (C4.today.ws || 0) + 1; persist4(); c4Hud();
     setTimeout(() => toast(note, 4), 1500);
-    if (C4.delivQ && C4.delivQ.length) { const N = C4.delivQ.shift(); N.go = Math.max(N.go, C4.mins + 10); C4.deliv = N; }   // the next order of the day
+    c4DelivNext();                                                          // the next order of the day
   }
 }
 
@@ -462,7 +488,7 @@ const c4Tax = () => Math.max(10, Math.round(c4TaxOn(c4Earned())) + 5 * c4Owned()
 function c4OpenUps() {
   $('#c4evT').textContent = 'Các hàng của nhà mình';
   const all = ['trau', ...C4_SHOPS, ...C4_BUYS.filter(c4Own)], card = g => {
-    const G = C4_GOODS[g], own = c4Own(g), lvI = g === 'trau' ? SAVE4.lv : c4SLvI(g), lvN = g === 'trau' ? C4_LV.length : C4_SHOP_LV.length;
+    const G = C4_GOODS[g], own = c4Own(g), lvI = g === 'trau' ? SAVE4.lv : c4SLvI(g), lvN = g === 'trau' ? C4_LV.length : G.buy ? C4_BUY_TOP + 1 : C4_SHOP_LV.length;
     const name = g === 'trau' ? c4Lv().name : own ? c4SLv(g).name : 'Đất trống', L = !own && c4Landlord(g);
     return `<button class="upc ${own ? '' : 'empty'}" data-up="${g}"><b>${G.name}</b><span class="lv">${name}</span>`
       + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>thuê ${c4Money(L.price)}</span>`) + '</button>';
