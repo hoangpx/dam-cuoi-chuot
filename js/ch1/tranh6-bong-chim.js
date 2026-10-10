@@ -116,9 +116,9 @@ function bcBuild() {
 // the gate is there only once both friends are saved AND chú bán dầu has crossed the bridge (owner); until then the road goes on without an end
 const t6Open = () => T6R.done && T6C.done;
 const T6R = {
-  got: [false, false], done: false, birds: [{ st: 'none' }, { st: 'none' }], say: -1, stations: [],
+  got: [false, false], done: false, birds: [{ st: 'none' }, { st: 'none' }], say: -1, stations: [], said: {}, talk: [],
   init() {                                                                      // at the start of the tranh: what has been saved
-    const s = SAVE.t6 || {}; this.got = [!!(s.bl || s.bong), !!(s.bb || s.bong)]; this.done = this.got[0] && this.got[1]; this.say = -1; this.stations = [];
+    const s = SAVE.t6 || {}; this.got = [!!(s.bl || s.bong), !!(s.bb || s.bong)]; this.done = this.got[0] && this.got[1]; this.say = -1; this.stations = []; this.said = {}; this.talk = []; this.ready = false;
     this.birds = [0, 1].map(i => ({ st: this.done ? 'follow' : this.got[i] ? 'orbit' : 'none', t: 9, a: i * 3.1, ph: i * 1.3, x: 0, y: 0, cx: -1, cy: 0, face: 1 }));
     LEVELS[5].width = 400000;                                                      // the road has no end, and no gate, until t6Open() (kept up to date in t6Friends.update)
   },
@@ -291,7 +291,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
       layer: 'bg', cx: cx0, solved: !!skip(), st: null, btn: [],
       update(dt) {
         if (this.solved) return;
-        if (!started) { started = true; G = makeGPU(); if (!G.ok) { this.solved = true; T6R.save(idx); return; } setTimeout(() => { if (!this.solved && !st) make(); }, 250 + idx * 1100); return; }
+        if (!st || Math.abs(groom.x - cx0) > 900) return;                       // not made yet, or far away: nothing to turn or draw
         if (!st) return;
         st.t += dt; const d = S.drag, mine = d && d.ent === this;
         if (mine) { const dx = d.x - st.lx, dy = d.y - st.ly; st.lx = d.x; st.ly = d.y; if (!st.done && !st.solve) { const kk = .012 * scale; turn(dx * kk, dy * kk); st.vel = [dx * kk, dy * kk]; } }
@@ -305,6 +305,10 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
           else if (ang < tol) { st.hold += dt; if (st.hold > .3) startSolve(.45, true); } else st.hold = 0;     // kept for a third of a second: then it clicks into place
         } else { st.dt += dt; if (!st.rel && st.dt > .6) { st.rel = true; T6R.rel(idx, ccx, ccy); } if (st.dt > 3.4) { this.solved = true; T6R.save(idx); return; } }       // the bird lifts off its cloth and flies up over the road
         render();
+      },
+      prep(n) {                                                                  // at the start of the tranh, one step at a time (so that nothing is made while the party walks up to it): the graphics card, the tangle, the first picture
+        if (this.solved) return;
+        if (n === 0) { G = makeGPU(); if (!G.ok) { this.solved = true; T6R.save(idx); } } else if (n === 1) make(); else if (st) render();
       },
       grab(wx, wy) {                                                             // a finger or the mouse on the tangle: turn it
         if (this.solved || !st || st.done || st.solve) return null;
@@ -355,10 +359,25 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
   };
 
   window.t6Friends = function () {
-    return { layer: 'hud', tp: null,
+    return { layer: 'hud', tp: null, cover: 1,
       update(dt) {
+        if (!T6R.ready) {                                                       // everything of this tranh is made first, behind a dark cover (owner: nothing may be made while walking up to the birds)
+          S.waitMove = true;
+          if (!this.prep) {
+            this.prep = [() => t6rArt(), () => { try { t6SplashLoad(); } catch (e) {} }, () => { try { t6Art(); } catch (e) {} }, () => { try { if (!T6C.segs) Object.assign(T6C, t6cPath()); } catch (e) {} }];
+            T6R.stations.forEach(q => { if (q && !q.solved) this.prep.push(() => q.prep(0), () => q.prep(1), () => q.prep(2)); }); this.pn = 0;
+          }
+          if (this.pn < this.prep.length) { this.prep[this.pn++](); return; }       // one step a frame: the picture stays up and the cover shows it is working
+          T6R.ready = true; S.waitMove = false;
+        }
+        if (this.cover > 0) this.cover = Math.max(0, this.cover - dt / .6);
         if (T6R.say >= 0) T6R.say += dt;
         LEVELS[5].width = t6Open() ? 3700 : 400000;
+        if (T6R.done) {                                                         // the friends talk as the party comes to the pond, and to the bridge (owner)
+          if (!T6R.said.pond && groom.x > 1600) { T6R.said.pond = true; if (groom.x < 2200) T6R.talk.push({ i: 0, text: 'Ao này nhiều ếch lắm!', t: 0 }); }
+          if (!T6R.said.bridge && groom.x > 2300) { T6R.said.bridge = true; T6R.talk.push({ i: 1, text: 'Cầu tre này trơn lắm, phải đi cẩn thận kẻo ngã!', t: 0 }); }
+          const q = T6R.talk[0]; if (q && !(T6R.say >= 0 && T6R.say < 12.5)) { q.t += dt; if (q.t > 6) T6R.talk.shift(); }
+        }
         if (this.tp) {                                                          // far out on the endless road, the moment the party turns back it is back by the pond (owner): a short fade to dark, the jump in the dark, then the light again
           this.tp.t += dt;
           if (!this.tp.done && this.tp.t >= .25) { this.tp.done = true; const d = Math.max(0, groom.x - 3700); groom.x -= d; followers.forEach(f => f.x -= d); camX = Math.max(0, camX - d); T6R.birds.forEach(b => { b.cx -= d; b.x -= d; b.x0 -= d; }); }
@@ -375,12 +394,14 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
           b.face = -Math.sin(b.a) >= 0 ? 1 : -1; b.x = px; b.y = py;
         });
       },
-      drawHud(g, vw) {                                                          // the fade to dark of the turn back
+      drawHud(g, vw) {                                                          // the dark cover while the tranh is made, then the fade to dark of the turn back
+        if (this.cover > 0) { g.fillStyle = `rgba(10,14,30,${Math.min(1, this.cover)})`; g.fillRect(0, 0, vw, viewH); if (!T6R.ready) for (let i = 0; i < 3; i++) { g.fillStyle = `rgba(232,236,255,${.35 + .5 * Math.max(0, Math.sin(S.t * 5 - i * .9))})`; g.beginPath(); g.arc(vw / 2 + (i - 1) * 22, viewH / 2, 5, 0, 6.283); g.fill(); } }
         if (!this.tp) return; const t = this.tp.t, a = t < .25 ? t / .25 : Math.max(0, 1 - (t - .25) / .5);
         g.fillStyle = `rgba(10,14,30,${a})`; g.fillRect(0, 0, vw, viewH);
       },
       drawFg(g) {
         T6R.birds.forEach((b, i) => { if (b.st === 'none') return; t6rBird(g, i, b.x, b.y, b.face, b.ph, 1.05); });
+        { const q = T6R.talk[0]; if (q && q.t > .1 && q.t < 6) { const b = T6R.birds[q.i]; g.save(); g.globalAlpha = Math.min(1, q.t / .3, (6 - q.t) / .4); t5Say(g, b.x, b.y - 34, q.text); g.restore(); } }
         const t = T6R.say; if (t < 0) return;                                  // the thanks, once both are free
         const say = [[.6, 5, 0, 'Cảm ơn đàn chuột!'], [5.4, 12, 1, 'Chúng tôi sẽ bay theo để báo cho các bạn khi có nguy hiểm!']];
         for (const [a, z, i, text] of say) if (t > a && t < z) { const b = T6R.birds[i]; g.save(); g.globalAlpha = Math.min(1, (t - a) / .3, (z - t) / .4); t5Say(g, b.x, b.y - 34, text); g.restore(); }

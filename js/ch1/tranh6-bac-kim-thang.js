@@ -314,7 +314,7 @@ function t6Catch(P, f) {
   if (!f.under && f.leaf) f.leaf.twitch = .5;
   P.ripples.push({ x: p.x, y: p.y, t: 0 });
   AU.pluck(76 + f.slot * 2);
-  if (T6.found >= T6_FROGS) { T6.done = true; P.endT = 1.8; SAVE.t6 = { frogs: true }; persist(); }   // remembered: leaving and coming back starts at the bridge
+  if (T6.found >= T6_FROGS) { T6.done = true; P.endT = 1.8; SAVE.t6 = Object.assign(SAVE.t6 || {}, { frogs: true }); persist(); }   // remembered: leaving and coming back starts at the bridge
 }
 function t6Wake(P, d, x, y, r) {
   if (d.wx == null) { d.wx = x; d.wy = y; d.acc = 0; d.snd = 0; return; }
@@ -455,10 +455,11 @@ function t6Resume(x) {
   return { layer: 'hud', did: false,
     update() {
       if (this.did) return; this.did = true;
-      if (!(SAVE.t6 && SAVE.t6.frogs)) return;
-      T6.done = true; T6.found = T6_FROGS; if (!has('ech')) S.inv.push('ech');
-      if (SAVE.t6.birds) T6B.done = true;
-      if (SAVE.t6.bridge) { T6C.done = true; x = 3000; }                       // across the bridge already: start on the far bank, at dawn
+      const sv = SAVE.t6 || {}; if (!sv.frogs && !sv.bridge) return;             // the frogs and the bridge may be done in either order: each is remembered by itself
+      if (sv.frogs) { T6.done = true; T6.found = T6_FROGS; if (!has('ech')) S.inv.push('ech'); }
+      if (sv.birds) T6B.done = true;
+      if (sv.bridge) T6C.done = true;
+      x = sv.bridge ? 3000 : 2350;                                             // across the bridge already: start on the far bank, at dawn; else by the bridge
       if (!T6R.done) x = 340;                                                 // the friends not saved yet: back at the start, where the stations are
       S.cp = x; placeParty(x); camX = Math.max(0, x - 320); updateHud();
     },
