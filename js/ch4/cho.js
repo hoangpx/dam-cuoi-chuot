@@ -85,7 +85,8 @@ function c4OmensRoll() {
   const left = [...pick(RAIN, nr), ...pick(WED, nw)];
   SAVE4.omens = { day: SAVE4.day, left, all: left.slice() };
 }
-function c4Roll(day) { const r = R(); return { wx: r < .45 ? 'dep' : r < .65 ? 'gat' : r < .85 ? 'mua' : 'ret', hoi: R() < .16, meo: R() < .3, thue: day % C4_DUES_EVERY === 0, cuoi: R() < (day <= 6 ? .4 : .2), rk: .2 + R() * .2, hk: 1.5 + R() * .4, ck: 1.5 + R() * .4 }; }   // wedding betel orders: more often in the first days (a player)
+// the cat comes to the market once every five days (owner, 2026-10-10): days 2, 7, 12 … (not the day of the dues, which is every fifth day too)
+function c4Roll(day) { const r = R(); return { wx: r < .45 ? 'dep' : r < .65 ? 'gat' : r < .85 ? 'mua' : 'ret', hoi: R() < .16, meo: day % 5 === 2, thue: day % C4_DUES_EVERY === 0, cuoi: R() < (day <= 6 ? .4 : .2), rk: .2 + R() * .2, hk: 1.5 + R() * .4, ck: 1.5 + R() * .4 }; }   // wedding betel orders: more often in the first days (a player)
 const c4Wx = () => (SAVE4.plan && SAVE4.plan.wx) || 'dep';
 // the view: a phone shows ~430 units across with the lane in its lower part; a wide screen the whole height of the scene
 function c4View() {
