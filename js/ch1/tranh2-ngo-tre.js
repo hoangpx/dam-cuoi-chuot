@@ -79,13 +79,13 @@ function rooster(x, hayX, pegs, perchH = 106) {
 function roofCat(x0, x1) {
   const cx = (x0 + x1) / 2, catX = cx + 50;
   return {
-    layer: 'bg', watcher: true, mode: 'above', kind: 'roof', x: catX, z0: cx - 270, z1: cx + 270, st: 'sleep', t: 3, ax: catX, range: 520,
+    layer: 'bg', watcher: true, mode: 'above', kind: 'roof', x: catX, z0: cx - 540, z1: cx + 540, st: 'sleep', t: 3, ax: catX, range: 1100,
     catchMsg: () => 'Mèo trên mái vồ xuống!',
     onDrum() { if (this.st === 'sleep') { this.st = 'watch'; this.t = 2.4; AU.meow(); toast('Tiếng trống làm mèo trên mái thức giấc!'); return true; } return false; },
     update(dt) {
       if (S.caught) return;
       if (!S.told.roof && groom.x > x0 - 260) { S.told.roof = true;  }
-      if (groom.x < this.z0 - 12 || groom.x > x1 + 150) { this.st = 'sleep'; this.t = 1.5 + R(); return; }
+      if (groom.x < this.z0 - 12 || groom.x > this.z1 + 120) { this.st = 'sleep'; this.t = 1.5 + R(); return; }
       tickWatcher(this, dt);
     },
     draw(g) {
@@ -133,13 +133,13 @@ function pomeloDitch(treeX, g0, g1) {
 
 /* ---------- tranh 2 ---------- */
 LEVELS[1] = {
-  han: '𡉦𥯌', name: 'Ngõ Tre', paper: 'pink', width: 2800, key: 2, abil: ['drum', 'parasol'], cps: [160, 720, 1640, 2160],
+  han: '𡉦𥯌', name: 'Ngõ Tre', paper: 'pink', width: 3240, key: 2, abil: ['drum', 'parasol'], cps: [160, 720, 2100, 2600],
   intro: 'Mở khoá Trống (phím 1) và Lọng (phím 3). Tiếng trống làm muông thú giật mình. Lọng che khỏi con mắt trên cao, nhưng chỉ giương được 3 giây.',
   endTitle: 'Qua Ngõ Tre', endText: 'Gà trống, mèo trên mái, rãnh sâu đều đã qua. Ra khỏi ngõ là tới bờ ao.',
   build: () => [
     decor(WP.hanFor('𡉦𥯌'), 70, 120, .7), decor(PROPS.bamboo, 360, GROUND + 4, .95), decor(WP.fence, 700, GROUND + 4),
     secretSpot(360, 'drum', 'Tùng! Từ bụi tre rơi xuống một mảnh triện đỏ!'),
-    rooster(600, 392, [[348, 228, 1.35, 'ó'], [408, 282, 1.08, 'o'], [470, 258, .85, 'ò']], 190), roofCat(980, 1540), decor(PROPS.bamboo, 1680, GROUND + 4, 1, -1),
-    pomeloDitch(1880, 2010, 2110), decor(PROPS.bamboo, 2380, GROUND + 4, .9), gate(2640),
+    rooster(600, 392, [[348, 228, 1.35, 'ó'], [408, 282, 1.08, 'o'], [470, 258, .85, 'ò']], 190), roofCat(1170, 1710), decor(PROPS.bamboo, 1680, GROUND + 4, 1, -1),
+    pomeloDitch(2320, 2450, 2550), decor(PROPS.bamboo, 2820, GROUND + 4, .9), gate(3080),
   ],
 };

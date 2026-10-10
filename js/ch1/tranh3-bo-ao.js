@@ -242,7 +242,7 @@ LEVELS[2] = {
   endTitle: 'Tới nhà gái', endText: 'Nhà gái nhận trầu cau, mở cổng. Nhưng đường tới sân đình còn xa, còn cả chợ Tết đang họp.',
   build: () => [
     decor(WP.hanFor('坡坳'), 70, 120, .7), basketTree(400),
-    pond(1160, 1520), hawk(1640, 1880), decor(PROPS.bamboo, 2310, GROUND + 4, .9, -1),
+    pond(1160, 1520), hawk(1640, 2120), decor(PROPS.bamboo, 2310, GROUND + 4, .9, -1),
     secretSpot(2020, 'ken', 'Tò te… từ đám lau rơi xuống một mảnh triện đỏ!'),
     buffalo(2620), gate(3140, 'cau'),
   ],
