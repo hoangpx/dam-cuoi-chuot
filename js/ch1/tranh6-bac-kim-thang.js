@@ -484,6 +484,11 @@ function t6Gate(x) {
   };
 }
 
+/* ---------- the opening: the holey ball under the moon (js/ch1/tranh6-bong-chim.js); once per start, not when coming back mid-way ---------- */
+function t6Bong() {
+  return { layer: 'hud', did: false, update() { if (this.did) return; this.did = true; if (SAVE.t6 && SAVE.t6.frogs) return; if (typeof bongOpen === 'function') bongOpen(() => {}); } };
+}
+
 /* ---------- tranh 6 ---------- */
 LEVELS[5] = {
   han: '捕蛙', name: 'Bắc Kim Thang', paper: 'blue', width: 3700, key: -2, abil: [], cps: [160, 1300, 2350], song: 11, noSecret: true,   // a still night (owner): no drum, no trumpet, no water sounds; a far flute, crickets and frogs croaking
@@ -493,6 +498,7 @@ LEVELS[5] = {
     T6.st = 'side'; T6.k = 0; T6.found = 0; T6.pond = null; T6.done = false; Object.assign(T6C, { st: 'off', k: 0, done: false, cp: 0 }); Object.assign(T6B, { st: 'off', k: 0, done: false, stage: 0 });
     return [
       t6Resume(2350),
+      t6Bong(),
       t6Night(1250, 3300),
       decor(PROPS.bamboo, 300, GROUND + 4, .8), decor(PROPS.bamboo, 620, GROUND + 4, .95, -1),
       t6Pond(1250, 3300, 1800),
