@@ -114,8 +114,8 @@ function t7CatDraw(g, vw, q, dir) {
 })();
 
 // the cat pounces every T7_ZONE px of the dark; without the bell on the tranh-1 cat (SAVE.catBell) the party is always caught and sent back to the start;
-// with it the bell jingles T7_WARN s before, the party must stand still from the first jingle (after T7_REACT s to react) until the shadow has passed and 1–3 s more, then walks on
-const T7_ZONE = 2900, T7_Z0 = 2600, T7_WARN = 2.8, T7_REACT = 1, T7_CAT = .95;
+// with it the bell jingles as the cat comes: the party must stop at once (T7_REACT .5 s to react, else it is caught) and wait 1–3 s until the shadow has passed, then walks on
+const T7_ZONE = 4800, T7_Z0 = 3000, T7_REACT = .5, T7_CAT = .95;       // 5 pounces; from the first jingle the party has T7_REACT s to stop, and the bell-to-shadow-passed wait is 1.55–3 s (e.warn)
 const t7Zones = () => { const a = []; for (let x = T7_Z0; x < T6_OFF - 1800; x += T7_ZONE) a.push(x); return a; };
 // the recorded bell rings without a pause (owner): a new jingle every .45 s over the last one, louder and a little higher as the cat comes
 function t7Ring(e, dt) {
@@ -131,10 +131,10 @@ function t6Dark() {
     update(dt) {
       this.flick += dt; if (!T7.bl) { T7.bl = 1; bellLoad(); }
       this.dawn = Math.max(0, Math.min(1, (groom.x - (T6_OFF - 1700)) / 1500));                  // the dark thins as the trellis ends, and the moon comes out
-      followers[0].item = this.dawn < .98 ? 'lantern' : 'parasol';
+      followers[0].item = 'lantern';
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
-      const want = (isTouch ? T7.down : T7.in) ? 1 : 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
-      cv.style.cursor = !isTouch && T7.in && this.dawn < 1 ? 'none' : '';                      // the mouse pointer is replaced by a lamp while it is dark
+      const want = 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
+      cv.style.cursor = '';                      // the mouse pointer is replaced by a lamp while it is dark
       if (false && (T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }       // (owner: crickets off for now, to hear the bell)
       T7.black = Math.max(0, T7.black - dt * 1.4);
       if (T7.loop) t7Ring(T7.loop, dt);                                           // (demo) the bell button: rings without stopping until pressed again
@@ -142,13 +142,13 @@ function t6Dark() {
         if (!T7.ev) {
           while (T7.zi < T7.zs.length && T7.zs[T7.zi] < groom.x - 300) T7.zi++;                // zones already behind the party are not run again
           if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { if (SAVE.catBell) toast('Lục lạc: có | file: ' + (AU.hasSample('bell') ? 'đã tải' : 'chưa tải') + ' | âm thanh: ' + AU.state(), 3);       // (demo: to find why the bell is silent)
-          T7.ev = { t: 0, ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
+          T7.ev = { t: 0, warn: Math.max(.6, 1.55 + Math.random() * 1.45 - T7_CAT), ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
         } else {
           const e = T7.ev; e.t += dt;
           if (e.ph === 'warn') {                                                              // the bell: a jingle that rings quicker and quicker
             t7Ring(e, dt);
             if (e.t > T7_REACT && (groom.moving || groom.vx !== 0)) this.caught();            // the bell was heard: stand still
-            else if (e.t > T7_WARN) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
+            else if (e.t > e.warn) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
           } else if (e.ph === 'sneak') {                                                      // no bell: no warning at all
             if (e.t > 1.1) { e.ph = 'cat'; e.t = 0; T7.cat = { t: 0, dir: e.dir }; AU.rustle && AU.rustle(.7); }
           } else {
@@ -156,7 +156,7 @@ function t6Dark() {
             if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > T7_CAT) T7.cat = null; }
             const moved = groom.moving || groom.vx !== 0;
             if (!SAVE.catBell ? e.t > T7_CAT * .55 : (moved && e.t > .05)) this.caught();       // no bell: always caught; bell: caught only if it moves
-            else if (e.ph === 'cat' && e.t > T7_CAT) { e.ph = 'after'; e.t = 0; e.wait = 1 + Math.random() * 2; }
+            else if (e.ph === 'cat' && e.t > T7_CAT) { e.ph = 'after'; e.t = 0; e.wait = .05; }
             else if (e.ph === 'after' && e.t > e.wait) T7.ev = null;                         // 1–3 s after the shadow has passed the party may go on
           }
         }
