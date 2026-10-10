@@ -268,6 +268,7 @@ window.giayPrep = () => { gkEnsure(); };
     h.setTransform(k, 0, 0, k, 0, 0); h.clearRect(0, 0, GK.W, GK.H);
     h.fillStyle = '#3a2d1e'; h.strokeStyle = INKC; h.lineWidth = 3; h.fillRect(0, 0, GK.W, GK.H); h.strokeRect(1.5, 1.5, GK.W - 3, GK.H - 3);
     if (st.done) keyIcon(h, GK.W / 2, 28, 1.6, GOLD);                       // (owner: no model key to look at while playing; it only shows once the key is made)
+    if (!st.done) { h.fillStyle = '#e9dcb4'; h.font = '700 17px "Be Vietnam Pro", sans-serif'; h.textAlign = 'center'; h.textBaseline = 'middle'; h.fillText(typeof lg === 'function' ? lg('Tìm chìa khoá ẩn trong tranh', 'Find the key hidden in the pictures') : 'Tìm chìa khoá ẩn trong tranh', GK.W / 2, 32); h.textAlign = 'start'; h.textBaseline = 'alphabetic'; }   // (owner: words only to say what to look for)
     h.save(); h.translate(AC[0], AC[1]); h.rotate(st.alpha); h.translate(-AC[0], -AC[1]);
     h.drawImage(sheets.A.c, ax - sheets.A.pad, ay - sheets.A.pad, sheets.A.c.width / k, sheets.A.c.height / k);
     h.save(); h.translate(cx, cy); h.rotate(st.rot); h.shadowColor = 'rgba(0,0,0,.4)'; h.shadowBlur = 9; h.shadowOffsetY = 3; h.drawImage(sheets.B.c, -C - sheets.B.pad, -C - sheets.B.pad, sheets.B.c.width / k, sheets.B.c.height / k); h.restore();
