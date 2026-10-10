@@ -29,7 +29,7 @@ let toastTimer, toastSticky = false, toastStickT = 0;
 // what a character says (owner: chương I tranh 1–5): the words stay until the player taps, clicks, or presses Enter / Space
 let toastSayCb = null;
 // done (optional) runs once the words are gone: tapped away, or replaced by another message
-function toastSay(s, done) { toast(s, 1e6); toastSticky = true; toastSayCb = done || null; toastStickT = performance.now(); $('#toast').classList.add('say'); }
+function toastSay(s, done) { toast(s, 1e6); toastSticky = true; toastSayCb = typeof done === 'function' ? done : null; toastStickT = performance.now(); $('#toast').classList.add('say'); }
 function toastSayEnd() { const cb = toastSayCb; toastSayCb = null; if (cb) cb(); }
 function toastDismiss() { if (!toastSticky || performance.now() - toastStickT < 400) return; toastSticky = false; clearTimeout(toastTimer); $('#toast').classList.remove('on', 'say'); toastSayEnd(); }
 addEventListener('pointerdown', toastDismiss, true);
