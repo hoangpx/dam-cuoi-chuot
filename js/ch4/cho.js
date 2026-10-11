@@ -528,7 +528,7 @@ function c4Event(kind) {
   } else if (kind === 'kien') {                                             // a customer ill from the food sues before cụ Lý (only when rich)
     if (SAVE4.money < C4_RICH) return;
     const g = c4Pick(own.filter(x => ['che', 'xoi', 'bun', 'trau'].includes(x))); if (!g) return;
-    const amt = Math.min(SAVE4.money, Math.round(SAVE4.money * .2 + 200)), plaintiff = c4Someone();
+    const amt = Math.min(SAVE4.money, Math.round(SAVE4.money * .1 + 200)), plaintiff = c4Someone();   // 10 % of the purse + 200 (owner: 20 % took 44 quan from a player)
     Object.assign(E, { title: 'Kiện ngộ độc', text: `${c4Cap1(plaintiff)} ăn ${C4_GOODS[g].name.toLowerCase()} ở gánh rồi đau bụng nằm bẹp, kiện lên cụ Lý đòi bồi thường ${c4Money(amt)}.`, opts: [
       ['Cãi đến cùng', () => { if (R() < .4) toast('Cụ Lý xét: khách ăn no quá, chẳng phải lỗi của gánh. Kiện bị bác.', 3.4); else { const n = Math.min(SAVE4.money, Math.round(amt * 1.5)); sp(n); toast(`Cụ Lý phạt vì cãi cùn: phải đền ${c4Money(n)}.`, 3.4); } }],
       ['Hoà giải, đền nửa', () => { const n = Math.min(SAVE4.money, Math.round(amt / 2)); sp(n); toast(`${c4Cap1(plaintiff)} nhận ${c4Money(n)} rồi bỏ kiện. Cả chợ bàn tán mãi.`, 3.4); }],
