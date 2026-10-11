@@ -180,7 +180,7 @@ const C2LEVELS = [
     map: ["W=3.G=6....", "M=1...=....", "..M.m...M..", "wwwwww.wwww", ".....wMw...", ".....w.w...", "..g.......w", ".......=C.w"],
     fixed: [[0, 0], [1, 0], [2, 0], [4, 0], [5, 0], [6, 0], [0, 1], [1, 1], [2, 1], [7, 7], [8, 7]],
   },
-  /* ---- Siêu khó (30 maps, open after the last Biến hoá map); every map checked by tools/c2-solve.js and tools/c2-chain.js ---- */
+  /* ---- Hơi khó (30 maps, open after the last Biến hoá map); every map checked by tools/c2-solve.js and tools/c2-chain.js ---- */
   {
     han: "授權", name: "Trao quyền", paper: "sage", key: -2, sk: true,
     riddle: "Con cá đi được mà chẳng tới được cổng; con chuột ở cạnh cổng mà chẳng nhúc nhích được.",
@@ -453,4 +453,4 @@ const C2_CHAIN = [
 ];
 const C2_FIRST_HARD = C2LEVELS.findIndex(l => l.hard);
 const C2_FIRST_BH = C2LEVELS.findIndex(l => l.bh);   // Biến hoá: the Baba-style words (owner)
-const C2_FIRST_SK = C2LEVELS.findIndex(l => l.sk);   // Siêu khó: 30 hard maps, open after the last Biến hoá map
+const C2_FIRST_SK = C2LEVELS.findIndex(l => l.sk);   // Hơi khó: 30 hard maps, open after the last Biến hoá map
