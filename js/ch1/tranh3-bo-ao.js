@@ -1,4 +1,4 @@
-/* Tranh 3 · Bờ Ao 塘邊 — birds and the trầu cau basket, the duck bridge, the hawk, the sleeping buffalo, the bride's gate. */
+/* Tranh 3 · Bờ Ao 坡坳 — birds and the trầu cau basket, the duck bridge, the hawk, the sleeping buffalo, the bride's gate. */
 /* Màn 3 · Bờ Ao: tap puzzles */
 const BIRD_KINDS = [['green', 'red', true], ['green', 'yellow'], ['green', 'dark'], ['brown', 'red'], ['yellow', 'red'], ['grey', 'red'], ['red', 'green'], ['brown', 'dark'], ['yellow', 'green'], ['grey', 'yellow']];
 let BIRD_PARTS = null, FEATHER = null, DUCK_SIGN = null;
@@ -19,7 +19,7 @@ function birdArt() {
   DUCK_SIGN = part([-40, -120, 40, 6], a => {
     a.fk('brown', rect(-4, -60, 8, 64), 1.8);
     a.fk('straw', rect(-38, -116, 76, 58), 2.2);
-    a.text('一二三', 0, -98, 20, 'dark', undefined, 'ink'); a.text('四五', 0, -74, 20, 'dark', undefined, 'ink');
+    a.text('𠬠𠄩𠀧', 0, -98, 20, 'dark', undefined, 'ink'); a.text('𦊚𠄼', 0, -74, 20, 'dark', undefined, 'ink');
   });
 }
 function basketTree(treeX) {
@@ -87,7 +87,7 @@ function pond(g0, g1) {
   const e = {
     layer: 'bg', st: 'empty', t: 0, ax: g0, range: 480, gap: [g0, g1], placed: 0, ducks,
     wall() { return this.st !== 'bridge' ? g0 - 10 : null; },
-    hint: () => 'Ao rộng, phải bắc cầu vịt. Mỗi con vịt có mấy chấm đỏ trên cánh, tấm biển bên ao ghi 一 二 三 四 五. Chạm từng con đúng thứ tự.',
+    hint: () => 'Ao rộng, phải bắc cầu vịt. Mỗi con vịt có mấy chấm đỏ trên cánh, tấm biển bên ao ghi 𠬠 𠄩 𠀧 𦊚 𠄼. Chạm từng con đúng thứ tự.',
     onKen() { if (this.st === 'empty') toast('Vịt chẳng thèm nghe kèn.', 1.6); return true; },
     onDrum() { if (this.st === 'empty') toast('Tùng tùng… vịt càng hoảng, chạy loạn hơn.', 2.2); return false; },
     onClick(wx, wy) {
@@ -137,7 +137,7 @@ function hawk(z0, z1) {
     onWarn() { AU.screech(); },
     update(dt) {
       if (!S.told.hawk && groom.x > z0 - 240) { S.told.hawk = true;  }
-      if (!S.caught) { if (groom.x < z0 - 250 || groom.x > z1 + 120) { this.st = 'sleep'; this.t = 2 + R(); } else tickWatcher(this, dt); }
+      if (!S.caught) { if (groom.x < z0 - 12 || groom.x > z1 + 120) { this.st = 'sleep'; this.t = 2 + R(); } else tickWatcher(this, dt); }
       let tx, ty;
       if (S.catcher === this) { tx = groom.x; ty = GROUND - 90; }
       else if (this.st === 'watch') { tx = groom.x + 30 + Math.sin(S.t * 1.3) * 60; ty = 120; }
@@ -218,7 +218,7 @@ function gate(x, need) {
     wall() { return this.opened ? null : x - 120; },
     hint: () => need ? (has(need) ? 'Nhà gái đứng chờ ở cổng. Dâng trầu cau đi!' : 'Nhà gái đòi lễ trầu cau mới cho rước dâu. Quay lại lấy giỏ trầu trên cây đa.') : null,
     offer: need ? { wants: [need], label: 'Dâng trầu cau', near: () => groom.x > x - 220, missing: 'Nhà gái đòi lễ trầu cau mới cho rước dâu.' } : null,
-    give() { this.opened = true; AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Nhà gái nhận trầu cau, mở cổng đón chú rể!', 3); },
+    give() { this.opened = true; AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Chủ nhà nhận trầu cau, mở cổng cho đoàn đi tiếp!', 3); },
     update(dt) {                              // at the gate: offer the gift by itself, or the bride's family asks for it
       if (this.opened || !need) return;
       const at = groom.x > x - 220;
@@ -237,13 +237,13 @@ function gate(x, need) {
 
 /* ---------- tranh 3 ---------- */
 LEVELS[2] = {
-  han: '塘邊', name: 'Bờ Ao', paper: 'blue', width: 3350, key: -3, abil: ['drum', 'ken', 'parasol'], cps: [160, 700, 1580, 2280],
+  han: '坡坳', name: 'Bờ Ao', paper: 'blue', width: 3830, key: -3, abil: ['drum', 'ken', 'parasol'], cps: [160, 700, 1580, 2760],
   intro: 'Bờ ao nhiều việc phải khéo tay: chạm đúng con chim, xếp đàn vịt thành cầu, và chơi nhạc đánh thức trâu. Chạm vào chú chuột đánh trống hay thổi kèn để chơi.',
-  endTitle: 'Tới nhà gái', endText: 'Nhà gái nhận trầu cau, mở cổng. Nhưng đường tới sân đình còn xa, còn cả chợ Tết đang họp.',
+  endTitle: 'Qua Bờ Ao', endText: 'Cầu vịt, diều hâu, trâu đều đã qua, cổng đã mở. Đường tới sân đình còn xa, còn cả chợ Tết đang họp.',
   build: () => [
-    decor(WP.hanFor('塘邊'), 70, 120, .7), basketTree(400),
-    pond(1160, 1520), hawk(1640, 1880), decor(PROPS.bamboo, 2310, GROUND + 4, .9, -1),
-    secretSpot(2020, 'ken', 'Tò te… từ đám lau rơi xuống một mảnh triện đỏ!'),
-    buffalo(2620), gate(3140, 'cau'),
+    decor(WP.hanFor('坡坳'), 70, 120, .7), basketTree(400),
+    pond(1160, 1520), hawk(1640, 2600), decor(PROPS.bamboo, 2790, GROUND + 4, .9, -1),
+    secretSpot(2020, 'ken', ''),
+    buffalo(3100), gate(3620, 'cau'),
   ],
 };

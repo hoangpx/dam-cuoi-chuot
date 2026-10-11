@@ -3,7 +3,7 @@
    a wage every evening: profit and loss are the player's to weigh. ----------
    SAVE4.hands[g] = [{ name, sort, unpaid, wageUp, sick, nowage, quit }]. C4.SV[g] = the sales going on at a stall,
    [{ who, t, by }] with by = C4.wife, C4.porter or a helper. */
-const C4_HANDS_MAX = 3, C4_COUPLE_SP = 120;
+const C4_HANDS_MAX = 1, C4_COUPLE_SP = 120;
 C4_GOODS.trau.wage = 6;
 // a hired hand's name (a player hit an error): the old list had 11 names (one of them cụ Lý, the headman) for up to
 // 3 helpers a stall, so the 12th hire got no name and the stall sheet broke. Young folk's names, never a villager's or
@@ -23,7 +23,7 @@ function c4HandName() {
 const c4TraitWord = v => v >= .66 ? 'cao' : v >= .33 ? 'vừa' : 'thấp';
 // a bar like a health bar: red when low, yellow in the middle, green when high (owner)
 const c4TraitBar = (lab, v) => { const c = v >= .66 ? '#4f9a4a' : v >= .33 ? '#e0b43a' : '#b8412e'; return `<div class="tbar"><span>${lab}</span><i><b style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%;background:${c}"></b></i></div>`; };
-const c4NewHand = (g, name) => ({ name: name || c4HandName(), sort: c4Pick(C4_HELPERS), unpaid: 0, sp: R(), wm: R(), ho: R(), rel: 60, askDay: -9 });
+const c4NewHand = (g, name) => ({ name: name || c4HandName(), sort: c4Pick(C4_HELPERS), unpaid: 0, sp: R(), wm: R(), ho: R(), rel: 60, askDay: SAVE4.day });
 const c4FixHand = h => { if (h.sp === undefined) h.sp = R(); if (h.wm === undefined) h.wm = R(); if (h.ho === undefined) h.ho = R(); if (h.rel === undefined) h.rel = 60; if (h.askDay === undefined) h.askDay = -9; return h; };
 const c4Clamp01 = v => Math.max(0, Math.min(1, v));
 const c4Drift = h => { h.sp = c4Clamp01(h.sp + .02); h.wm = c4Clamp01(h.wm + (R() - .5) * .06); h.ho = c4Clamp01(h.ho + (R() - .5) * .04); };
@@ -127,8 +127,17 @@ function c4PayHands(d, quits) {
       // owner: a hand only takes from the day's sales of the stall they work at (C4.today.by[g].take), never the whole purse.
       // at 20% relationship they often run off with that day's takings; otherwise a little theft, more from the dishonest and the aggrieved
       const tk = Math.min(SAVE4.money, (C4.today.by && C4.today.by[g] && C4.today.by[g].take) || 0);
-      if (tk > 0 && h.rel <= 20 && R() < .5) { SAVE4.money -= tk; d.theft = (d.theft || 0) + tk; quits.push(`${c4Cap1(h.name)} ôm theo ${c4Money(tk)} tiền bán hàng hôm nay ở ${C4_GOODS[g].name.toLowerCase()} rồi biến mất.`); H.splice(H.indexOf(h), 1); continue; }
-      if (tk > 0 && R() < .03 + (1 - h.ho) * .1 * (h.rel < 40 ? 2 : 1)) { const take = Math.min(tk, Math.max(10, Math.round(tk * (.2 + R() * .3)))); SAVE4.money -= take; d.theft = (d.theft || 0) + take; quits.push(`${c4Cap1(h.name)} lén lấy ${c4Money(take)} tiền bán hàng, bị đuổi.`); H.splice(H.indexOf(h), 1); }
+      if (tk > 0 && h.rel <= 20 && R() < .6 * (1 - h.ho)) { SAVE4.money -= tk; d.theft = (d.theft || 0) + tk; quits.push(`${c4Cap1(h.name)} ôm theo ${c4Money(tk)} tiền bán hàng hôm nay ở ${C4_GOODS[g].name.toLowerCase()} rồi biến mất.`); H.splice(H.indexOf(h), 1); continue; }
+      // owner: skimming is silent and small, under a tenth of the stall's takings; nothing is said, the player must notice the sums
+      // themselves at the end of the day. The more honest the hand, the rarer and the smaller (a fully honest one never does); the
+      // same goes for running off with the takings above.
+      const dis = 1 - h.ho;
+      // (owner) a hand who gets away with it takes more the next day, and more again: h.greed counts the nights; a word to them (Nhắc nhở) or letting them go ends it
+      const gr = h.greed || 0;
+      if (tk > 0 && R() < Math.min(.9, dis * dis * .6 * (h.rel < 40 ? 1.5 : 1) * (1 + .25 * gr))) {
+        const take = Math.min(tk, Math.max(1, Math.round(tk * Math.min(.35, (.02 + dis * .07 * R()) * (1 + .5 * gr)))));
+        SAVE4.money -= take; h.greed = Math.min(8, gr + 1); const b = d.by && d.by[g]; if (b) b.skim = (b.skim || 0) + take; d.skim = (d.skim || 0) + take;
+      }
     }
   }
 }
@@ -137,8 +146,8 @@ function c4HandsBlock(g) {
   const G = C4_GOODS[g], H = c4Hands(g), el = document.createElement('div'); el.className = 'hands';
   let apply = null;                                                       // the applicants for the hire, while the list is open
   const draw = () => {
-    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, người đầu công ${c4Money(c4WageAt(g, 0))} một ngày, người thứ hai gấp đôi, người thứ ba gấp đôi người thứ hai, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
-      + (H.length ? H.map((h, i) => `<div class="hand"><span><b>${c4Cap1(h.name)}</b>${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}${c4TraitBar('quan hệ', h.rel / 100)}</div></span><button class="btn alt" data-off="${i}">Đuổi việc</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
+    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, mỗi hàng chỉ thuê được một người, công ${c4Money(c4WageAt(g, 0))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
+      + (H.length ? H.map((h, i) => `<div class="hand"><span><b>${c4Cap1(h.name)}</b>${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}${c4TraitBar('quan hệ', h.rel / 100)}</div></span><button class="btn alt" data-warn="${i}">Nhắc nhở</button><button class="btn alt" data-off="${i}">Đuổi việc</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
       + (apply ? c4ApplyHtml(g, apply) : H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4NextWage(g))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
       if (H.length >= C4_HANDS_MAX || Date.now() - (c4HandsBlock.last || 0) < 800) { draw(); return; }   // (a double tap could hire past the limit; a lagging tap hired twice)
@@ -150,8 +159,14 @@ function c4HandsBlock(g) {
       const x = apply && apply[+btn.dataset.app];
       if (!x || H.length >= C4_HANDS_MAX) { apply = null; draw(); return; }
       const { ask, ...hand } = x;
-      H.push({ ...hand, wageUp: ask - c4WageAt(g, H.length) }); apply = null;
-      AU.stamp(); toast(`${c4Cap1(hand.name)} nhận bán ${G.name.toLowerCase()}, đòi công ${c4Money(ask)}/ngày.`); persist4(); draw();
+      c4Khe({ title: 'Thuê người làm', a: ['Người làm', c4Cap1(hand.name)], what: 'Bán ' + G.name.toLowerCase() + ' thuê, công trả mỗi tối', money: ask, per: 'mỗi ngày', k: .6 }, () => {
+        if (H.length >= C4_HANDS_MAX) { apply = null; draw(); return; }
+        H.push({ ...hand, wageUp: ask - c4WageAt(g, H.length) }); apply = null;
+        toast(`${c4Cap1(hand.name)} nhận bán ${G.name.toLowerCase()}, đòi công ${c4Money(ask)}/ngày.`); persist4(); draw();
+      }); return;
+    }));
+    el.querySelectorAll('[data-warn]').forEach(b => b.addEventListener('click', () => {      // a word to the hand: the greed resets, they like you a little less
+      const h = H[+b.dataset.warn]; if (!h) return; h.greed = 0; c4HandRel(h, -5); AU.tap(); toast(`Nhắc ${c4Cap1(h.name)} một câu: "Làm ăn phải thật thà." ${c4Cap1(h.name)} gật đầu, hơi chạnh lòng.`, 3); persist4(); draw();
     }));
     el.querySelectorAll('[data-off]').forEach(b => b.addEventListener('click', () => {
       const h = H[+b.dataset.off]; if (!h) return;
@@ -182,12 +197,19 @@ function c4ApplyHtml(g, L) {
 // the hands' moods for today (owner): a hand on a low wage asks for a raise more often; a refused ask lowers the relationship;
 // at 30 or less they may give notice
 function c4HandPlan(ev) {
-  for (const g of c4Owned()) for (const h of c4Hands(g)) {
-    if (h.sick || h.trip) continue;
-    const w = c4Wage(g, h), low = Math.max(0, Math.min(1, 1 - w / (c4WageAt(g, 0) * 4))), at = C4_OPEN + 60 + R() * (C4_CLOSE - C4_OPEN - 120);
-    if (h.rel <= 30 && R() < .35) ev.push({ at, kind: 'hanghi', hand: { g, h } });
-    else if (SAVE4.day - h.askDay >= 2 && R() < .08 + .3 * low) ev.push({ at, kind: 'tangluong', hand: { g, h } });
+  const hp = SAVE4.handPlan && SAVE4.handPlan.day === SAVE4.day ? SAVE4.handPlan : (SAVE4.handPlan = { day: SAVE4.day, item: undefined });
+  if (hp.item === undefined) {                                             // rolled once a day, and at most one ask a day (owner: several came at once)
+    const cands = [];
+    for (const g of c4Owned()) for (const h of c4Hands(g)) {
+      if (h.sick || h.trip) continue;
+      const w = c4Wage(g, h), low = Math.max(0, Math.min(1, 1 - w / (c4WageAt(g, 0) * 4)));
+      if (h.rel <= 30 && R() < .35) cands.push({ kind: 'hanghi', g, name: h.name });
+      else if (SAVE4.day - h.askDay >= 5 && SAVE4.day - (SAVE4.lastHandAsk ?? -99) >= 2 && R() < .08 + .3 * low) cands.push({ kind: 'tangluong', g, name: h.name });
+    }
+    hp.item = cands.length ? { ...c4Pick(cands), at: C4_OPEN + 60 + R() * (C4_CLOSE - C4_OPEN - 120) } : null;
   }
+  const it = hp.item; if (!it) return;
+  const h = c4Hands(it.g).find(x => x.name === it.name); if (h) ev.push({ at: it.at, kind: it.kind, hand: { g: it.g, h } });
 }
 
 /* ---------- the husband between errands (a player): he strolls about in front of the stalls calling people in,
@@ -252,7 +274,7 @@ function c4TripItems(items, head, vis) {
    when to send someone (stock down to 0/5/…/50), how much to bring (5…50) and until what hour (6:00 … 18:00, or till
    closing). SAVE4.auto[g] = { at, q, until } (at null = off; an old number = at, fill up, till closing). ---------- */
 const C4_AUTO_AT = [0, 5, 10, 20, 30, 40, 50], C4_AUTO_Q = [5, 10, 20, 30, 40, 50], C4_AUTO_UNTIL = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-const c4AutoOk = g => (g === 'trau' ? SAVE4.lv : C4_GOODS[g].buy ? 0 : c4SLvI(g)) >= 1;   // from the second level (owner: lvl 2)
+const c4AutoOk = g => (g === 'trau' ? SAVE4.lv : c4SLvI(g)) >= 1;   // from the second level (owner: lvl 2), bought stalls too
 const c4Fetching = g => (['out', 'away', 'back'].includes(C4.porter.st) && C4.porter.good === g) || (C4.trips || []).some(t => t.good === g);
 function c4AutoGet(g) {
   const v = (SAVE4.auto || {})[g];

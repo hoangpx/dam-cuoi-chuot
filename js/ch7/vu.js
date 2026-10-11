@@ -55,9 +55,11 @@ const c7Who = (G, cell) => G.placed.indexOf(cell);
 /* ---------- layout (CSS px) ---------- */
 function c7Geo(G, W, H) {
   const colW = Math.min(W - 24, 470), x0 = (W - colW) / 2, top = 84;
-  const size = Math.max(200, Math.min(colW, H - top - 300)), cs = size / G.N, ox = (W - size) / 2, by = top + size;
-  const toolY = by + 12, stripY = toolY + 64, clueY = stripY + 80, subY = Math.min(H - 56, clueY + 92);
-  return { colW, x0, top, size, cs, ox, toolY, stripY, clueY, subY, back: [x0 + 24, 38], help: [x0 + 74, 38], undoB: [x0 + colW - 24, 38], legB: [x0 + colW - 74, 38] };
+  // (a player: on another phone only two lines of the statements showed) the statement panel is as tall as the longest set of statements needs, wrapped at THIS screen's width
+  let clueH = 84; { const m = typeof ctx !== 'undefined' ? ctx : null; if (m) { m.save(); m.font = '500 14px "Be Vietnam Pro", sans-serif'; for (const list of G.K.clues) { let n = 0; for (const c of list) { const t = Object.keys(C7_THING).find(k => c.includes(C7_THING[k].toLowerCase())); n += c7Wrap(m, c, colW - 28 - (t ? 26 : 0)).length; } clueH = Math.max(clueH, 32 + n * 18 + 12); } m.restore(); } }
+  const size = Math.max(200, Math.min(colW, H - top - 300 - (clueH - 84))), cs = size / G.N, ox = (W - size) / 2, by = top + size;
+  const toolY = by + 12, stripY = toolY + 64, clueY = stripY + 80, subY = Math.min(H - 56, clueY + clueH + 8);
+  return { colW, x0, top, size, cs, ox, toolY, stripY, clueY, clueH, subY, back: [x0 + 24, 38], help: [x0 + 74, 38], undoB: [x0 + colW - 24, 38], legB: [x0 + colW - 74, 38] };
 }
 function c7CellAt(G, Gm, x, y) { const c = Math.floor((x - Gm.ox) / Gm.cs), r = Math.floor((y - Gm.top) / Gm.cs); return r >= 0 && c >= 0 && r < G.N && c < G.N ? r * G.N + c : -1; }
 
@@ -320,14 +322,14 @@ function c7Draw(en, g, W, H) {
     g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm, x, Gm.stripY + pr * 2 + 14);
   });
   // what the picked one says
-  c7Round(g, Gm.x0, Gm.clueY, Gm.colW, 84, 12); g.fillStyle = '#f6f0e2'; g.fill(); g.strokeStyle = INK; g.lineWidth = 1.6; g.stroke();
+  c7Round(g, Gm.x0, Gm.clueY, Gm.colW, Gm.clueH, 12); g.fillStyle = '#f6f0e2'; g.fill(); g.strokeStyle = INK; g.lineWidth = 1.6; g.stroke();
   const e = G.ents[G.sel]; g.textAlign = 'left'; g.textBaseline = 'top';
   g.fillStyle = C7_TOK[G.sel % C7_TOK.length]; g.font = '800 15px "Be Vietnam Pro", sans-serif'; g.fillText(c7Cap(e.name), Gm.x0 + 14, Gm.clueY + 10);
   g.fillStyle = INK; g.font = '500 14px "Be Vietnam Pro", sans-serif';
   let ly = Gm.clueY + 32; for (const c of G.K.clues[G.sel]) {   // a statement naming a thing shows that thing beside it
     const t = Object.keys(C7_THING).find(k => c.includes(C7_THING[k].toLowerCase())), ind = t ? 26 : 0;
-    if (t && ly < Gm.clueY + 80) c7Thing(g, t, Gm.x0 + 24, ly + 8, 22);
-    for (const l of c7Wrap(g, c, Gm.colW - 28 - ind)) { if (ly < Gm.clueY + 80) g.fillText(l, Gm.x0 + 14 + ind, ly); ly += 18; } }
+    if (t && ly < Gm.clueY + Gm.clueH - 4) c7Thing(g, t, Gm.x0 + 24, ly + 8, 22);
+    for (const l of c7Wrap(g, c, Gm.colW - 28 - ind)) { if (ly < Gm.clueY + Gm.clueH - 4) g.fillText(l, Gm.x0 + 14 + ind, ly); ly += 18; } }
   g.textBaseline = 'alphabetic';
   // submit
   const ready = G.placed.every(p => p >= 0);

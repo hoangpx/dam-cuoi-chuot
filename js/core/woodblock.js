@@ -65,7 +65,7 @@ function part(b, draw, keepKey) {
     key(path, w = 2.4) { kg.lineWidth = w; kg.stroke(path); kg.save(); kg.translate(.5, .35); kg.lineWidth = w * .5; kg.stroke(path); kg.restore(); },
     ink(path) { kg.fill(path); },
     fk(pl, path, w = 2.4) { api.fill(pl, path); api.key(path, w); },
-    text(str, x, y, size, pl, font = '"Ma Shan Zheng", KaiTi, serif', layer = 'color', weight = '') {
+    text(str, x, y, size, pl, font = '"Nom Na Tong", "Ma Shan Zheng", KaiTi, serif', layer = 'color', weight = '') {
       const g = layer === 'ink' ? kg : cg; if (g === cg) { const [c, [dx, dy]] = PL[pl]; T(cg, dx, dy); cg.fillStyle = c; }
       g.font = `${weight ? weight + ' ' : ''}${size}px ${font}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(str, x, y);
       if (g === kg) g.fillStyle = INK;

@@ -23,13 +23,13 @@ function pickup(x, item, msg, art) {
 }
 function secretSpot(x, ab, note) {
   const fx = x + 60;
-  const trig = function () { if (this.st !== 'hidden') return false; this.st = 'fall'; this.t = 0; toast(note, 3.6); return true; };
+  const trig = function () { if (this.st !== 'hidden') return false; this.st = 'fall'; this.t = 0; return true; };   // (owner: no notice, the seal is a secret)
   const e = {
     layer: 'top', st: SAVE.secret[S.lv] ? 'taken' : 'hidden', t: 0, ax: x, range: 280,
     update(dt) {
       this.t += dt;
       if (this.st === 'fall' && this.t > .7) { this.st = 'ground'; AU.thump(); }
-      if (this.st === 'ground' && Math.abs(groom.x - fx) < 30) { this.st = 'taken'; SAVE.secret[S.lv] = true; S.gotSecret = true; persist(); AU.pluck(88); setTimeout(() => AU.pluck(93), 120); toast('Nhặt được một mảnh triện Đông Hồ!', 3.4); }
+      if (this.st === 'ground' && Math.abs(groom.x - fx) < 30) { this.st = 'taken'; SAVE.secret[S.lv] = true; S.gotSecret = true; persist(); AU.pluck(88); setTimeout(() => AU.pluck(93), 120); }
     },
     draw(g) {
       if (this.st === 'hidden') sparkle(g, x, GROUND - 190, 9, .35 + .35 * Math.sin(S.t * 2.4));

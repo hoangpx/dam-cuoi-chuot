@@ -97,7 +97,7 @@ function finishLevel() {
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   $('#endHan').textContent = L.han; $('#endTitle').textContent = L.endTitle; $('#endText').textContent = L.endText;
   const last = S.lv === LEVELS.length - 1, n = SAVE.done.filter(Boolean).length;
-  const stats = `Bị bắt ${S.catches} lần${S.lv > 0 && !L.noSecret ? (SAVE.secret[S.lv] ? ' · Có mảnh triện ✦' : ' · Chưa tìm ra mảnh triện ẩn') : ''}`;
+  const stats = `Bị bắt ${S.catches} lần`;                                   // no golden seal (owner) and no hidden seal piece
   const tot = S.lv < C1_READY ? C1_READY : LEVELS.length;
   $('#endNote').textContent = `${S.lv + 1 === tot ? `Đã đóng triện ${SAVE.done.slice(0, tot).filter(Boolean).length}/${tot} tranh. ` : `Tranh ${S.lv + 1}/${tot} đã vào album. `}${stats}`;
   $('#bNext').hidden = last || (S.lv + 1 >= C1_READY && S.lv + 1 !== C1_TRY);
@@ -130,9 +130,9 @@ function useAbility(k) {
   if (!L.abil.includes(k)) return;
   if (k === 'parasol') {
     if (followers[0].item !== 'parasol') return;                           // lent to Tấm (tranh 5)
-    if (S.parasol) { S.parasol = false; S.paraCD = PARA_CD; AU.pluck(74); updateHud(); return; }
+    if (S.parasol) { S.parasol = false; S.paraTired = null; S.paraCD = PARA_CD; AU.pluck(74); updateHud(); return; }
     if ((S.paraCD || 0) > 0) { toast('Lọng vừa rũ xuống, chưa giương lại kịp!', 1.6); AU.pluck(60); return; }
-    S.parasol = true; S.paraT = PARA_TIME; AU.pluck(79);
+    S.parasol = true; S.paraT = PARA_TIME; S.paraTired = null; AU.pluck(79);
     if (!S.told.para) { S.told.para = true;  }
     updateHud(); return;
   }
@@ -250,7 +250,11 @@ function update(dt) {
     } else S.wallT = 0;
     if (!S.caught) for (const c of L.cps) if (groom.x > c + 30 && c > S.cp) S.cp = c;
     // parasol timer
-    if (S.parasol) { S.paraT -= dt; if (S.paraT <= 0) { S.parasol = false; S.paraCD = PARA_CD; AU.pluck(70); toast('Lọng rũ xuống rồi!', 1.4); updateHud(); } }
+    if (S.parasol) {
+      S.paraT -= dt;
+      if (S.paraT <= 0 && S.paraTired == null) { S.paraTired = 1.1; AU.snort && AU.snort(); }                       // the holder says it is tiring…
+      if (S.paraTired != null) { S.paraTired -= dt; if (S.paraTired <= 0) { S.paraTired = null; S.parasol = false; S.paraCD = PARA_CD; AU.pluck(70); updateHud(); } }   // …and then lets it down
+    }
     else if ((S.paraCD || 0) > 0) S.paraCD -= dt;
     // watchers: a ground cat sees whoever moves in the open; eyes in the sky see everyone not under the parasol, moving or not
     if (!frozen) for (const w of S.ents) {
@@ -401,7 +405,7 @@ function render() {
   for (const t of S.tufts) if (!t.front) dp(ctx, PROPS.tufts[t.k], t.x, GROUND - 6, 0, t.s * .8, t.s * .8);
   for (const e of S.ents) if (e.drawMid) e.drawMid(ctx);
   layer('mid');
-  if (S.parasol) { const f = followers[0]; dp(ctx, ITEM.parasol, f.x + 14 * f.face, GROUND + 18, Math.sin(S.pose * 1.5) * .02, 2.2, 2.2); }
+  if (S.parasol) { const f = followers[0]; dp(ctx, ITEM.parasol, f.x + 14 * f.face, GROUND + 18, Math.sin(S.pose * 1.5) * .02, 2.2, 2.2); if (S.paraTired != null) t5Say(ctx, f.x + 14 * f.face, GROUND - 292, 'Mỏi tay quá!'); }
   if (!S.hideParty) for (const i of L.kenFront ? [0, 2, 1] : [2, 1, 0]) { const f = followers[i]; drawMouse(ctx, f.m, f.x, f.face, f.ph, f.moving, f.item, i * 1.7 + 1); }   // tranh 5: the trumpet over the parasol mouse, the drum over the trumpet (owner)
   if (!S.hideParty) drawMouse(ctx, MICE.groom, groom.x, groom.face, groom.ph, groom.moving, leadItem() ? 'lead' : null, 0);   // S.hideParty: the party is gone a moment (tranh 6: taken by the cat)
   ctx.save(); ctx.beginPath();
@@ -463,7 +467,7 @@ function ch1PointerUp(e) {
 /* ---------- registration ---------- */
 registerChapter({
   id: 1, cover: true, modes: ['play', 'end'],
-  card: { num: lg('Chương I', 'Chapter I'), han: '老鼠娶親', name: lg('Đám Cưới Chuột', 'The Mouse Wedding'), desc: lg('Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', 'Lead the wedding procession through the village: a fish for the cat, a crow from the rooster, the bride by the pond, the painters\' village and the market, and a hand for Tấm on the way. More prints are being carved.'), bg: '#ecd593' },
+  card: { num: lg('Chương I', 'Chapter I'), han: '𡌽𡠣𤝞', name: lg('Đám Cưới Chuột', 'The Mouse Wedding'), desc: lg('Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', 'Lead the wedding procession through the village: a fish for the cat, a crow from the rooster, the bride by the pond, the painters\' village and the market, and a hand for Tấm on the way. More prints are being carved.'), bg: '#ecd593' },
   progress: () => `${SAVE.done.slice(0, C1_READY).filter(Boolean).length}/${C1_READY} ${lg('tranh', 'prints')}`,
   hasProgress: () => SAVE.done.some(Boolean) || SAVE.secret.some(Boolean),
   boot() { loadLevel(0); },
