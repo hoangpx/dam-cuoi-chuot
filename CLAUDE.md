@@ -368,3 +368,4 @@ Tranh 1 cat with the bell in hand: half-open warn now 1 s (was .5), sleeps 1–2
 Tranh 1 with the bell: tapping the fish on the bank comes before the bell in the groom's hand grabbing the touch (ch1PointerHit runs entity onClicks first in bellMode); the cat's half-open warn is .75 s.
 The fish carried by the parasol mouse is dragged from the fish itself (f.x + 34 face, GROUND − 110, r 58) or from its body (f.x + 16 face, GROUND − 50, r 48).
 The mice's shadows in the dark now lie on the ground (owner): the silhouette is turned over and flattened below the feet (matrix 1, 0, −lean, −.2), stretched away from the lamp. The bell diagnostic toast is gone.
+Tranh 6: the groom holds the bell in his hand (bellHeld6 in game.js, leadItem) whenever SAVE.lucLac and not SAVE.catBell and nothing else is carried.

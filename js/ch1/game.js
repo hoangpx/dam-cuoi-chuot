@@ -154,7 +154,8 @@ function useAbility(k) {
 // tranh 1 with the bell in hand (owner): the groom carries the bell, the parasol mouse carries the fish; both are dragged to the cat, the fish first
 const bellMode = () => S.lv === 0 && S.inv.includes('lucLac');
 const fishCarried = () => bellMode() && S.inv.includes('fish');
-const leadItem = () => bellMode() ? 'lucLac' : S.inv.length ? S.inv[S.inv.length - 1] : null;
+const bellHeld6 = () => S.lv === 5 && !!SAVE.lucLac && !SAVE.catBell && !S.inv.length;          // tranh 6: until it is hung on the cat the groom keeps the bell in his hand (owner)
+const leadItem = () => bellMode() || bellHeld6() ? 'lucLac' : S.inv.length ? S.inv[S.inv.length - 1] : null;
 function handPos(f = groom) { return [f.x + 16 * f.face, GROUND - 50]; }
 function dropOn(wx, wy, item) {
   let miss = false;
