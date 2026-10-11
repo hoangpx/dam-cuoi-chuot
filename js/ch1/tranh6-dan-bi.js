@@ -129,7 +129,7 @@ function t6Dark() {
   return {
     layer: 'bg', flick: 0, dawn: 0, btn: null,
     update(dt) {
-      this.flick += dt; if (!T7.bl) { T7.bl = 1; bellLoad(); }
+      this.flick += dt; if (!T7.bl) { T7.bl = 1; bellLoad(); } if (!AU.hasSample('meovo')) AU.sampleB64('meovo', MEOW_B64);
       this.dawn = Math.max(0, Math.min(1, (groom.x - (T6_OFF - 1700)) / 1500));                  // the dark thins as the trellis ends, and the moon comes out
       followers[0].item = 'lantern';
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
@@ -168,7 +168,7 @@ function t6Dark() {
       }
     },
     caught() {                                                                   // the cat has the party: a black moment, the growl, and back to the start of the dark road
-      T7.ev = null; T7.cat = null; T7.black = 1; S.catches = (S.catches || 0) + 1; AU.meow(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);
+      T7.ev = null; T7.cat = null; T7.black = 1; S.catches = (S.catches || 0) + 1; if (AU.hasSample('meovo')) AU.play('meovo', 1); else AU.meow(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);   // the owner's recorded meow
       const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0;
     },
     draw(g) {                                                                    // the posts that hold the trellis up (behind the party)
