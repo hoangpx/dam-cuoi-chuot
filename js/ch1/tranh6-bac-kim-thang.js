@@ -475,7 +475,7 @@ function t6Gate(x) {
     get spent() { return this.opened; },
     wall() { return this.opened || !t6Open() ? null : x - 120; },
     get offer() { return T6C.done && t6bOk() ? { wants: ['ech'], label: 'Dâng giỏ ếch', near: () => groom.x > x - 220, missing: '' } : null; },   // only once day has come
-    give() { this.opened = true; delete SAVE.t6; persist(); AU.pluck(81); setTimeout(() => AU.pluck(88), 140); toast('Trời sáng, bác giữ cổng làng nhận giỏ ếch, mở cổng cho đoàn qua!', 3.2); },
+    give() { this.opened = true; delete SAVE.t6; persist(); AU.pluck(81); setTimeout(() => AU.pluck(88), 140); },
     update(dt) {
       if (this.opened || !t6Open()) return;                                      // no gate to be seen until both friends are saved and chú bán dầu is across (owner)
       const at = groom.x > x - 220;
@@ -483,16 +483,16 @@ function t6Gate(x) {
       if (at && !this.ask) AU.pluck(62);
       this.ask = at ? Math.min(1, this.ask + dt * 6) : Math.max(0, this.ask - dt * 4);
     },
-    draw(g) { if (t6Open()) dp(g, PROPS.gate, x, GROUND + 4); },
-    drawFg(g) { if (t6Open() && this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done && T6B_ON ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
+    draw(g) { if (t6Open()) dp(g, PROPS.gate6, x, GROUND + 4); },
+    drawFg(g) { if (false && t6Open() && this.ask > .02) { g.globalAlpha = this.ask; drawBubble(g, x - 108, GROUND - 210 + Math.sin(S.t * 3) * 3, has('ech') ? [T6C.done && T6B_ON ? 'chim' : 'troi'] : ['ech']); g.globalAlpha = 1; } },   // the basket first, then: wait for the sun
   };
 }
 
 /* ---------- tranh 6 ---------- */
 LEVELS[5] = {
-  han: '捕蛙', name: 'Bắc Kim Thang', paper: 'blue', width: T6_OFF + 3700, key: -2, abil: [], cps: [160, T6_OFF + 340, T6_OFF + 1300, T6_OFF + 2350], song: 11, noSecret: true,   // a still night (owner): no drum, no trumpet, no water sounds; a far flute, crickets and frogs croaking
+  han: '架金梯', name: 'Bắc Kim Thang', paper: 'blue', width: T6_OFF + 3700, key: -2, abil: [], cps: [160, T6_OFF + 340, T6_OFF + 1300, T6_OFF + 2350], song: 11, noSecret: true,   // a still night (owner): no drum, no trumpet, no water sounds; a far flute, crickets and frogs croaking
   zoom: 1.35,
-  intro: '', endTitle: 'Bắt ếch đêm trăng', endText: 'Bắc kim thang cà lang bí rợ… Giỏ ếch đầy, đoàn chuột vừa đi vừa hát dưới trăng.',
+  intro: '', endTitle: 'Bắc Kim Thang', endText: 'Bắc kim thang cà lang bí rợ… Qua dàn bí, qua cầu tre, đoàn chuột vừa đi vừa hát dưới trăng.',
   build: () => {
     T6.st = 'side'; T6.k = 0; T6.found = 0; T6.pond = null; T6.done = false; Object.assign(T6C, { st: 'off', k: 0, done: false, cp: 0 }); Object.assign(T6B, { st: 'off', k: 0, done: false, stage: 0 });
     T6R.init();                                                                // what of the two friends is saved; the road is endless until both are

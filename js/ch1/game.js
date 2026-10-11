@@ -77,7 +77,7 @@ function buildAlbum() {
     const open = i === 0 || SAVE.done[i - 1] || i === C1_TRY;
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.disabled = !open;
-    const marks = (SAVE.gold[i] ? ' ★' : '') + (SAVE.secret[i] && i > 0 ? ' ✦' : '');
+    const marks = (SAVE.secret[i] && i > 0 ? ' ✦' : '');
     b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">${lv.han}</div><b>${lv.name}</b><span class="st${SAVE.done[i] ? ' done' : ''}">${SAVE.done[i] ? 'Đã đóng triện' + marks : open ? 'Chơi' : 'Chưa mở'}</span>`;
     b.addEventListener('click', () => { if (open) { loadLevel(i); startPlay(); } });
     box.appendChild(b);
@@ -97,7 +97,7 @@ function finishLevel() {
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   $('#endHan').textContent = L.han; $('#endTitle').textContent = L.endTitle; $('#endText').textContent = L.endText;
   const last = S.lv === LEVELS.length - 1, n = SAVE.done.filter(Boolean).length;
-  const stats = `Bị bắt ${S.catches} lần${S.catches === 0 ? ' · Triện vàng ★' : ''}${S.lv > 0 && !L.noSecret ? (SAVE.secret[S.lv] ? ' · Có mảnh triện ✦' : ' · Chưa tìm ra mảnh triện ẩn') : ''}`;
+  const stats = `Bị bắt ${S.catches} lần${S.lv > 0 && !L.noSecret ? (SAVE.secret[S.lv] ? ' · Có mảnh triện ✦' : ' · Chưa tìm ra mảnh triện ẩn') : ''}`;
   const tot = S.lv < C1_READY ? C1_READY : LEVELS.length;
   $('#endNote').textContent = `${S.lv + 1 === tot ? `Đã đóng triện ${SAVE.done.slice(0, tot).filter(Boolean).length}/${tot} tranh. ` : `Tranh ${S.lv + 1}/${tot} đã vào album. `}${stats}`;
   $('#bNext').hidden = last || (S.lv + 1 >= C1_READY && S.lv + 1 !== C1_TRY);
