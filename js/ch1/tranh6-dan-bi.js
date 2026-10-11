@@ -124,7 +124,7 @@ function t7Ring(e, dt) {
   if (AU.hasSample('bell')) AU.play('bell', v, r); else AU.pluck(96 + (n % 4) * 3);
 }
 function t6Dark() {
-  T7.cat = null; T7.catT = 6; T7.a = 0; T7.ev = null; T7.zi = 0; T7.black = 0; T7.zs = t7Zones();
+  T7.cat = null; T7.catT = 6; T7.a = 0; T7.ev = null; T7.pounceT = undefined; T7.zi = 0; T7.black = 0; T7.zs = t7Zones();
   const lamp = () => { const f = followers[0]; return [f.x + f.face * 44, GROUND - 78]; };                // the lamp in the hand of the third mouse
   return {
     layer: 'bg', flick: 0, dawn: 0, btn: null,
@@ -138,10 +138,15 @@ function t6Dark() {
       if (false && (T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }       // (owner: crickets off for now, to hear the bell)
       T7.black = Math.max(0, T7.black - dt * 1.4);
       if (T7.loop) t7Ring(T7.loop, dt);                                           // (demo) the bell button: rings without stopping until pressed again
+      if (S.mode === 'play' && this.dawn < .8 && !SAVE.catBell) {                  // no bell on the cat (owner): two separate things — the cat's shadow now and then, harmless, and a pounce at random moments, with no warning
+        if (!T7.cat && (T7.catT -= dt) < 0) { T7.catT = 8 + Math.random() * 13; T7.cat = { t: 0, dir: Math.random() < .5 ? -1 : 1 }; AU.rustle && AU.rustle(.7); }
+        if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > T7_CAT) T7.cat = null; }
+        if ((T7.pounceT = (T7.pounceT ?? 6 + Math.random() * 6) - dt) < 0) { T7.pounceT = 7 + Math.random() * 8; this.caught(); }
+      }
       if (S.mode === 'play' && this.dawn < .8) {
         if (!T7.ev) {
           while (T7.zi < T7.zs.length && T7.zs[T7.zi] < groom.x - 300) T7.zi++;                // zones already behind the party are not run again
-          if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { const total = T7_MIN + Math.random() * (T7_MAX - T7_MIN);
+          if (SAVE.catBell && T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { const total = T7_MIN + Math.random() * (T7_MAX - T7_MIN);
           T7.ev = { t: 0, el: 0, warn: Math.max(.05, total - T7_CAT), ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
         } else {
           const e = T7.ev; e.t += dt; e.el += dt;
