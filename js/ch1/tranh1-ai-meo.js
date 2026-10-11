@@ -122,7 +122,7 @@ function groundCat(cx, from) {
       let x = cx, lift = 0;
       if (S.catcher === this) { const p = S.caught, k = Math.min(1, p / .45), back = p > .45 ? Math.max(0, 1 - (p - .45) / .6) : 1; x += (this.from0 + 60 - cx) * Math.sin(k * Math.PI / 2) * back; lift = -Math.sin(k * Math.PI) * 60 * back; }
       drawCatAt(g, x, GROUND + lift, 1.55, this.fed ? 'fed' : S.catcher === this ? 'watch' : this.st);
-      if (SAVE.catBell) dp(g, ITEMS.lucLac.part, x - 56, GROUND + lift - 138 + Math.sin(S.t * 5) * 1.5, Math.sin(S.t * 5) * .15, 1.5, 1.5);       // the bell round its neck
+      if (SAVE.catBell) dp(g, ITEMS.lucLac.part, x - 45, GROUND + lift - 108 + Math.sin(S.t * 5) * 1.5, Math.sin(S.t * 5) * .15, 1.5, 1.5);       // the bell round its neck
       if (this.hungry > 0 || (S.catcher === this && S.caught < .45)) {
         HUNGRY = HUNGRY || hungryLabel();
         const k = this.hungry > 0 ? Math.min(1, (2 - this.hungry) / .15) : 1, pop = .6 + .4 * k + Math.sin(k * Math.PI) * .12;
