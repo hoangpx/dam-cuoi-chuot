@@ -416,6 +416,7 @@ function t5Cau(x) {
 
 // a speech bubble with words in it, its tail at x, y
 function t5Say(g, x, y, text) {
+  if (typeof sayGate === 'function' && !sayGate(text)) return;
   g.font = '700 15px "Be Vietnam Pro", sans-serif'; const words = text.split(' '), lines = []; let ln = '';
   for (const w of words) { const t = ln ? ln + ' ' + w : w; if (g.measureText(t).width > 170 && ln) { lines.push(ln); ln = w; } else ln = t; } lines.push(ln);
   const w = Math.max(...lines.map(l => g.measureText(l).width)) + 24;
@@ -423,6 +424,7 @@ function t5Say(g, x, y, text) {
 }
 
 function t5Think(g, x, y, text, a) {
+  if (typeof sayGate === 'function' && !sayGate(text)) return;
   g.save(); g.globalAlpha = a; g.font = '700 15px "Be Vietnam Pro", sans-serif';
   const w = g.measureText(text).width + 30, h = 40, cy = y - h / 2 - 22;
   g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 2.2;

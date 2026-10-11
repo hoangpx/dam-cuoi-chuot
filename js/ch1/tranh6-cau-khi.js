@@ -426,7 +426,7 @@ function t6Cau(cx) {
     },
     drawFg(g) {                                                          // what chú bán dầu says when he is tapped the first time
       if (!this.warned || T6C.st !== 'off' || !T6R.done || (T6C.done && !T6C_REPLAY) || this.sayT > 9) return;
-      g.save(); g.globalAlpha = Math.min(1, this.sayT / .25, (9 - this.sayT) / .5); t5Say(g, cx - T6C_STAND, GROUND - 215, 'Cầu này trơn lắm, cẩn thận kẻo ngã!'); g.restore();
+      g.save(); g.globalAlpha = Math.min(1, this.sayT / .25); t5Say(g, cx - T6C_STAND, GROUND - 215, 'Cầu này trơn lắm, cẩn thận kẻo ngã!'); g.restore();
     },
     drawHud(g, vw) {
       if (T6C.st === 'off' || !T6C.segs) return;

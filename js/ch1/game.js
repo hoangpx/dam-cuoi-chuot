@@ -155,6 +155,16 @@ function useAbility(k) {
 const bellMode = () => S.lv === 0 && S.inv.includes('lucLac');
 const fishCarried = () => bellMode() && S.inv.includes('fish');
 const bellHeld6 = () => S.lv === 5 && !!SAVE.lucLac && !SAVE.catBell && !S.inv.length;          // tranh 6: until it is hung on the cat the groom keeps the bell in his hand (owner)
+// every speech bubble of chương I (t5Say, t5Think, t6Say) stays until the player clicks, taps or presses any key (owner); a bubble that is no longer
+// asked for (its scene moved on) for 1.5 s is forgotten, so it can come again later
+const SAYS = { tap: -1, m: new Map() };
+addEventListener('pointerdown', () => { SAYS.tap = performance.now(); }, true); addEventListener('keydown', () => { SAYS.tap = performance.now(); }, true);
+function sayGate(text) {
+  const now = performance.now(); let r = SAYS.m.get(text);
+  if (!r || now - r.last > 1500) { r = { t0: now, gone: false }; SAYS.m.set(text, r); }
+  r.last = now; if (!r.gone && SAYS.tap > r.t0 + 350) r.gone = true;
+  return !r.gone;
+}
 const leadItem = () => bellMode() || bellHeld6() ? 'lucLac' : S.inv.length ? S.inv[S.inv.length - 1] : null;
 function handPos(f = groom) { return [f.x + 16 * f.face, GROUND - 50]; }
 function dropOn(wx, wy, item) {

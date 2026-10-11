@@ -230,7 +230,7 @@ function t6Pond(p0, p1, jx) {
         return;
       }
       if (T6.st === 'in') { T6.k = Math.min(1, T6.k + dt / 1.3); if (T6.k >= 1) T6.st = 'pond'; }
-      if (T6.st === 'out') { T6.k = Math.max(0, T6.k - dt / 1); if (T6.k <= 0) { T6.st = 'side'; $('#hud').hidden = false; if (T6.done && !has('ech')) { S.inv.push('ech'); AU.pluck(84); toast('Bắt đủ bảy chú ếch rồi! Mang giỏ ếch đi tiếp nào.', 3.4); } } }
+      if (T6.st === 'out') { T6.k = Math.max(0, T6.k - dt / 1); if (T6.k <= 0) { T6.st = 'side'; $('#hud').hidden = false; if (T6.done) AU.pluck(84); } }
       if (T6.pond) t6PondUpdate(T6.pond, dt);
     },
     onClick(wx, wy) {
@@ -460,7 +460,7 @@ function t6Resume(x) {
     update() {
       if (this.did) return; this.did = true;
       const sv = SAVE.t6 || {}; if (!sv.frogs && !sv.bridge && !sv.dark && !sv.bl && !sv.bb) return;             // the frogs and the bridge may be done in either order: each is remembered by itself; the dark stretch is not walked twice
-      if (sv.frogs) { T6.done = true; T6.found = T6_FROGS; if (!has('ech')) S.inv.push('ech'); }
+      if (sv.frogs) { T6.done = true; T6.found = T6_FROGS; }
       if (sv.birds) T6B.done = true;
       if (sv.bridge) T6C.done = true;
       x = T6_OFF + (sv.bridge ? 3000 : 2350);                                  // across the bridge already: start on the far bank, at dawn; else by the bridge
@@ -471,17 +471,36 @@ function t6Resume(x) {
 }
 
 /* ---------- the gate at the end: the keeper wants the frogs, and opens only at daybreak ---------- */
+// chú bán ếch (owner): short and fat, by the jetty of the frog pond, with his empty basket; once the seven frogs are caught they are his,
+// he thanks the mice and asks them to help his brother, the oil seller, over the slippery bridge (the words stay until a tap)
+function t6FrogSeller(x) {
+  return {
+    layer: 'mid', said: false,
+    draw(g) {
+      if (!T6R.done) return;                                                   // he comes with the rest of the road's people, once the birds are saved
+      g.save(); g.translate(x, GROUND); g.scale(1.32, .8); g.translate(-x, -GROUND);
+      c4Mouse(g, c4MouseRig(2), x, -1, S.pose * 1.2, false, T6.done ? -1.2 : null, null, 1, GROUND, x); g.restore();
+      dp(g, ITEMS.ech.part, x + 50, GROUND - 14, 0, 1.25, 1.25);             // his basket (full once the frogs are caught)
+    },
+    drawFg(g) {
+      if (!T6R.done || this.said || !T6.done || T6.st !== 'side' || Math.abs(groom.x - x) > 700) return;
+      const text = 'Cảm ơn đàn chuột! Người anh em của ta đang chuẩn bị đi bán dầu, cầu rất trơn, xin hãy giúp anh ta.';
+      if (!sayGate(text)) { this.said = true; return; }
+      t6Say(g, x, GROUND - 120, text);
+    },
+  };
+}
 function t6Gate(x) {
   return {
     layer: 'bg', gateX: x, ax: x, opened: false, ask: 0,
     get spent() { return this.opened; },
     wall() { return this.opened || !t6Open() ? null : x - 120; },
-    get offer() { return T6C.done && t6bOk() ? { wants: ['ech'], label: 'Dâng giỏ ếch', near: () => groom.x > x - 220, missing: '' } : null; },   // only once day has come
+    offer: null,   // only once day has come
     give() { this.opened = true; delete SAVE.t6; persist(); AU.pluck(81); setTimeout(() => AU.pluck(88), 140); },
     update(dt) {
       if (this.opened || !t6Open()) return;                                      // no gate to be seen until both friends are saved and chú bán dầu is across (owner)
       const at = groom.x > x - 220;
-      if (at && has('ech') && T6C.done && t6bOk()) { takeItems(['ech']); this.give(); return; }   // the basket, and day come (the bridge crossed)
+      if (at && T6.done && T6C.done && t6bOk()) { this.give(); return; }   // the frogs caught (for chú bán ếch) and the bridge crossed   // the basket, and day come (the bridge crossed)
       if (at && !this.ask) AU.pluck(62);
       this.ask = at ? Math.min(1, this.ask + dt * 6) : Math.max(0, this.ask - dt * 4);
     },
@@ -504,7 +523,7 @@ LEVELS[5] = {
       t6Dark(),                                                                  // the pitch dark and the giant gourds over the first stretch
       t6Shadow(T6_OFF + 516, 0), t6Shadow(T6_OFF + 790, 1), t6Friends(),                                                            // the shadow puzzle at the start: a tangle hung in the air, its shadow on a cloth (js/ch1/tranh6-bong-chim.js)
       decor(PROPS.bamboo, T6_OFF + 20, GROUND + 4, .8), decor(PROPS.bamboo, T6_OFF + 1070, GROUND + 4, .95, -1),
-      t6Pond(T6_OFF + 1250, T6_OFF + 3300, T6_OFF + 1800),
+      t6Pond(T6_OFF + 1250, T6_OFF + 3300, T6_OFF + 1800), t6FrogSeller(T6_OFF + 1630),
       decor(PROPS.bamboo, T6_OFF + 2330, GROUND + 4, .85, -1),
       t6Cau(T6_OFF + 2620),
       ...(T6B_ON ? [t6Chim(T6_OFF + 3180)] : []),
