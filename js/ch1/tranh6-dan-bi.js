@@ -142,7 +142,7 @@ function t6Dark() {
     update(dt) {
       this.flick += dt; if (T6R.ready && this.sayT != null) { this.sayT += dt; if (this.talk) { S.waitMove = true; if (keys.size && this.sayT > .9) this.hush(); } } if (!T7.bl) { T7.bl = 1; bellLoad(); } if (!AU.hasSample('meovo')) AU.sampleB64('meovo', MEOW_B64);
       this.dawn = Math.max(0, Math.min(1, (groom.x - (T6_OFF - 1700)) / 1500));                  // the dark thins as the trellis ends, and the moon comes out
-      followers[0].item = 'lantern';
+      followers[0].item = T6C.done ? 'parasol' : 'lantern';                     // the lamp all night; the parasol again once day comes, after the bridge (owner)
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
       const want = (isTouch ? T7.down : T7.in) && this.dawn < .98 ? 1 : 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
       cv.style.cursor = !isTouch && T7.in && this.dawn < .98 ? 'none' : '';                      // the mouse pointer is a lamp while it is dark; once the moon is out it is the plain pointer again

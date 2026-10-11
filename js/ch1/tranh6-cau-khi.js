@@ -366,6 +366,7 @@ const T6C_DEEP = 110, T6C_SIDE = .75, T6C_STAND = 95, T6C_SIDE_D = 250;   // T6C
 function t6Cau(cx) {
   const e = { layer: 'bg', ax: cx - T6C_STAND, held: false,
     update(dt) {
+      if (!this.warned && T6R.done && T6C.st === 'off' && !(T6C.done && !T6C_REPLAY) && Math.abs(groom.x - (cx - T6C_STAND)) < 420) { this.warned = true; this.sayT = 0; AU.pluck(64); }   // he warns as the party comes up (owner)
       if (this.warned) this.sayT += dt;
       if (!T6C.segs) Object.assign(T6C, t6cPath());
       if (T6C.st === 'off') { if (this.held) { S.waitMove = false; this.held = false; } if (T6C.done) this.walk = (this.walk || 0) + dt; return; }
@@ -376,9 +377,9 @@ function t6Cau(cx) {
     },
     onClick(wx, wy) {
       if (T6C.st !== 'off' || (T6C.done && !T6C_REPLAY) || !T6R.done) return false;          // he is not here at all until the two birds are saved (owner); the frogs and the bridge go in either order
-      if (Math.abs(wx - (cx - T6C_STAND)) > 70 || wy < GROUND - 190 || wy > GROUND + 20) return false;
-      if (!this.warned) { this.warned = true; this.sayT = 0; AU.pluck(64); return true; }                    // the first tap: he warns (the bridge is slippery); the second starts the run (owner)
-      this.warned = false;
+      const onMan = Math.abs(wx - (cx - T6C_STAND)) < 70 && wy > GROUND - 190 && wy < GROUND + 20, onBridge = wx > cx - 40 && wx < cx + 190 && wy > GROUND - 230 && wy < GROUND + 30;
+      if (!onMan && !onBridge) return false;                              // a tap on him or on the bridge starts the crossing (owner)
+      this.warned = true; this.sayT = 99;
       if (!T6C.segs) Object.assign(T6C, t6cPath());
       const s0 = T6C.segs[0]; Object.assign(T6C, { x: s0.x0, y: s0.y0, dir: s0.dir, camX: s0.x0, camY: s0.y0, t: 0, st: 'off' });
       for (const l of T6C.leaves) { l.ox = l.oy = 0; }
@@ -425,7 +426,7 @@ function t6Cau(cx) {
       if (sit) for (let i = 0; i < 3; i++) { const k = (S.t * .5 + i / 3) % 1; g.globalAlpha = Math.sin(k * Math.PI); dp(g, PROPS.zz, x + 20 + k * 30, GROUND - 190 - k * 50, 0, .7 + k * .5, .7 + k * .5); g.globalAlpha = 1; }
     },
     drawFg(g) {                                                          // what chú bán dầu says when he is tapped the first time
-      if (!this.warned || T6C.st !== 'off' || !T6R.done || (T6C.done && !T6C_REPLAY) || this.sayT > 9) return;
+      if (!this.warned || T6C.st !== 'off' || !T6R.done || (T6C.done && !T6C_REPLAY) || this.sayT > 60) return;
       g.save(); g.globalAlpha = Math.min(1, this.sayT / .25); t5Say(g, cx - T6C_STAND, GROUND - 215, 'Cầu này trơn lắm, cẩn thận kẻo ngã!'); g.restore();
     },
     drawHud(g, vw) {
