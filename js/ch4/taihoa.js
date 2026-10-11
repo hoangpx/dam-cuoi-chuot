@@ -21,7 +21,7 @@ function c4Dmg(frac, n = 3, pool) {
 // one ware with stock, preferring a kind; null if nothing on sale
 const c4StockedOf = kinds => { const a = c4Stocked(), b = kinds ? a.filter(g => kinds.includes(g)) : a; return b.length ? c4Pick(b) : null; };
 const c4Spend = n => { n = Math.min(Math.max(0, SAVE4.money), Math.round(n)); SAVE4.money -= n; if (C4.today) C4.today.spent += n; return n; };
-const C4_FOOD = ['che', 'xoi', 'bun'], C4_MEAT = ['thit', 'ca', 'ga'];
+const C4_FOOD = ['che', 'xoi', 'bun', 'banhcuon'], C4_MEAT = ['thit', 'ca', 'ga'];
 const c4NoFood = () => c4Owned().filter(g => !C4_FOOD.includes(g) && !C4_MEAT.includes(g));
 
 Object.assign(C4_EXTRA_EV, {

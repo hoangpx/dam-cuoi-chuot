@@ -45,6 +45,51 @@ const C4_HOUSES = 20;                                                    // mous
 const C4_ADULT_SORTS = [0, 1, 2, 3, 4, 5, 6, 7], C4_OLD_SORTS = [8, 9, 10];
 let C4P = null;
 // build the village from the save's seed
+// Round 3 (owner, 2026-10-11: more people): twelve households married or related into the old ones, with their own random
+// stream, added after the old village is complete (ids, habits and landlords of everyone before stay exactly as they were)
+const C4_GIVEN3 = { m: ['Quý', 'Trọng', 'Lâm', 'Phát', 'Định', 'Khiêm', 'Lộc', 'Phúc', 'Tường', 'Vượng', 'Sơn', 'Hải', 'Hưng', 'Tuấn', 'Khoa', 'Kỳ', 'Luân', 'Nhân', 'Quyết', 'Bảo', 'Cường', 'Dũng', 'Giáp', 'Hoàng', 'Khánh', 'Long', 'Mạnh', 'Nam', 'Phong', 'Quang', 'Tấn', 'Thắng', 'Thịnh', 'Tiến', 'Trí', 'Vinh', 'Việt', 'Xuân', 'Đạt', 'Ước'],
+  f: ['Diệu', 'Huệ', 'Nguyệt', 'Thoa', 'Thắm', 'Duyên', 'Hằng', 'Liên', 'Nhài', 'Quyên', 'Trâm', 'Uyên', 'Vân', 'Xuyến', 'Yến', 'Đào', 'Lụa', 'Nga', 'Tươi', 'Bích', 'Châu', 'Dung', 'Gấm', 'Hiền', 'Khuyên', 'Loan', 'Mơ', 'Ngân', 'Oanh', 'Phượng', 'Quế', 'Sương', 'Thảo', 'Thư', 'Trinh', 'Vy', 'Xinh', 'Hoài', 'Ánh', 'Điệp'] };
+function c4People3(list, houses, landlord, tie) {
+  const rnd = mulberry((SAVE4.seed || 7) + 303), pick = a => a[(rnd() * a.length) | 0], first = list.length;
+  const used = new Set(list.map(p => p.name.replace(/^(cụ ông|cụ bà|ông|bà|anh|chú|bác|chị|cô|thím) /, '')));   // (the given name without its title, so nobody shares a name)
+  const given = g => { for (let i = 0; i < 60; i++) { const n = pick(C4_GIVEN3[g]); if (!used.has(n)) { used.add(n); return n; } } return pick(C4_GIVEN3[g]); };
+  const trait = () => pick(['xoi', 'ky', 'chuyen', 'chat', 'hien', 'sidien', 'itnoi', 'xoi', 'hien', 'ky']);
+  const add = (h, g, role, as) => { const pre = role === 'old' ? (g === 'm' ? pick(['ông', 'cụ ông']) : pick(['bà', 'cụ bà'])) : g === 'm' ? pick(['anh', 'chú', 'bác']) : pick(['chị', 'cô', 'thím']);
+    const p = { id: list.length, name: `${pre} ${given(g)}`, g, role, kind: 'mouse', sort: pick(role === 'old' ? C4_OLD_SORTS2 : C4_ADULT_SORTS2), trait: trait(), job: pick(C4_JOBS[role === 'old' ? 'old_' + g : role]), house: h.id, as, links: [] };
+    list.push(p); h.members.push(p.id); return p; };
+  const olds = list.filter(p => p.kind === 'mouse');
+  for (let i = 0; i < 12; i++) {
+    const h = { id: houses.length, xom: C4_XOM[(i + 1) % C4_XOM.length], members: [] }; houses.push(h);
+    if (i < 5) {                                                         // a young couple; one of them a child of an old house (thông gia)
+      const a = add(h, 'm', 'adult', 'chủ nhà'), b = add(h, 'f', 'adult', 'vợ'); tie(a, b, 'vc');
+      const o = pick(olds.filter(p => p.role === 'old')); if (o) tie(o, rnd() < .5 ? a : b, 'cc');
+    } else if (i < 9) {                                                  // a family with grown children
+      const a = add(h, 'm', 'adult', 'chủ nhà'), b = add(h, 'f', 'adult', 'vợ'); tie(a, b, 'vc');
+      const kids = [add(h, rnd() < .5 ? 'm' : 'f', 'adult', 'con cả'), add(h, rnd() < .5 ? 'm' : 'f', 'adult', 'con út')];
+      for (const c of kids) { tie(a, c, 'cc'); tie(b, c, 'cc'); } tie(kids[0], kids[1], 'ae');
+    } else {                                                             // an old couple whose child married into the village
+      const o = add(h, 'm', 'old', 'chủ nhà'), b = add(h, 'f', 'old', 'vợ'); tie(o, b, 'vc');
+      const c = pick(olds.filter(p => p.role === 'adult')); if (c) { tie(o, c, 'cc'); tie(b, c, 'cc'); }
+    }
+    h.name = `nhà ${list[h.members[0]].name}`;
+  }
+  const out = p => p.links.filter(l => list[l.to].house !== p.house).length;
+  for (const p of list.slice(first)) {
+    const want = C4_TRAITS[p.trait].links + ((rnd() * 2) | 0);
+    for (let k = 0; k < 40 && out(p) < want; k++) { const q = pick(list); if (q.house === p.house) continue; const hp = houses[p.house], hq = houses[q.house];
+      tie(p, q, hp.xom === hq.xom && rnd() < .6 ? 'xom' : p.g === 'm' && q.g === 'm' && q.kind === 'mouse' && rnd() < .4 ? 'nhau' : p.g === 'f' && q.g === 'f' && rnd() < .3 ? 'ketnghia' : rnd() < .12 ? 'ghet' : 'ban'); }
+    const L = p.look = {};
+    if (p.g === 'f') { L.skirt = pick(C4_SKIRTS); if (rnd() < .3) L.hat = 'quai'; }
+    L.tool = rnd() < .5 ? pick(p.g === 'm' ? ['thung', 'o', 'cuoc', 'ganh', 'cay'] : ['thung', 'o', 'ganh']) : null;
+    L.umbCol = pick(['#a3332a', '#c98a1c', '#2f5f8f', '#2f6a4c']); L.drinker = p.g === 'm' && p.links.some(l => l.rel === 'nhau') && rnd() < .4;
+    p.hour = p.role === 'old' ? pick(['Mão', 'Thìn', 'Tỵ']) : pick(['Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu']);
+    p.fav = L.drinker ? pick(['ruou', 'ruou', 'bun']) : p.role === 'old' ? pick(['thuoc', 'banhcuon', 'trau', 'che']) : p.g === 'f' ? pick(['gom', 'banhcuon', 'xen', 'xoi', 'thuoc']) : pick(['banhcuon', 'ruou', 'gom', 'trau', 'bun']);
+    if (p.kind === 'mouse' && rnd() < .14) p.trait = 'khogan';
+    p.purse = p.trait === 'chat' ? 'chặt chẽ, tiếc từng đồng' : p.trait === 'sidien' || p.trait === 'xoi' ? 'hào phóng' : p.trait === 'khogan' ? 'kín tiếng, nhưng đã tin thì chi mạnh' : 'vừa phải';
+  }
+  const heads = list.filter(p => p.kind === 'mouse' && (p.role === 'old' || p.as === 'chủ nhà'));
+  for (const g of ['banhcuon', 'ruou', 'gom', 'thuoc']) landlord[g] = heads[(rnd() * heads.length) | 0].id;   // the new plots' landlords
+}
 function c4People() {
   if (C4P && C4P.seed === SAVE4.seed) return C4P;
   const rnd = mulberry(SAVE4.seed || 7), pick = a => a[(rnd() * a.length) | 0], used = new Set();
@@ -153,6 +198,7 @@ function c4People() {
   }
   const heads = list.filter(p => p.kind === 'mouse' && (p.role === 'old' || p.as === 'chủ nhà')), landlord = {};
   for (const g of ['trau', 'che', 'xoi', 'xen', 'bun']) landlord[g] = heads[(r2() * heads.length) | 0].id;
+  c4People3(list, houses, landlord, tie);
   return (C4P = { seed: SAVE4.seed, list, houses, landlord });
 }
 const c4F = id => SAVE4.folk[id] || (SAVE4.folk[id] = { a: 0, v: 0 });

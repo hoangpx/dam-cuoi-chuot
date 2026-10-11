@@ -60,7 +60,7 @@ const c4AskDay = g => g === 'trau' ? SAVE4.askTrau : SAVE4.shops[g].askDay;
 const c4SetAsk = g => { if (g === 'trau') SAVE4.askTrau = SAVE4.day; else SAVE4.shops[g].askDay = SAVE4.day; };
 const c4RaiseRent = g => { if (g === 'trau') SAVE4.rentKTrau = (SAVE4.rentKTrau || 1) * 1.1; else SAVE4.shops[g].rentK = (SAVE4.shops[g].rentK || 1) * 1.1; };
 // drawn behind a stall: an awning for a sạp, a counter for a quầy, a house for the house levels
-const C4_SHOP_HOUSE = { trau: 3, che: 1, xoi: 5, xen: 4, bun: 2 };   // each stall's house its own kind
+const C4_SHOP_HOUSE = { trau: 3, che: 1, xoi: 5, xen: 4, bun: 2, banhcuon: 0, ruou: 2, gom: 4, thuoc: 1 };   // each stall's house its own kind
 function c4DrawShopLv(g, x, y, s, lv, ware = 'che') {
   if (!lv) return;
   g.save(); g.translate(x, y); g.scale(s, s);
@@ -414,7 +414,7 @@ const C4_EXTRA_EV = {
   // a family orders a feast for tomorrow afternoon: enough stock then, or they are put out
   cotiec(E) {
     const k40 = c4KnownList(40), ks = k40.length ? k40 : c4People().list.filter(p => p.kind === 'mouse' && p.role !== 'child'); if (!ks.length || SAVE4.feast) return false;   // early on, anyone in the village (a player)
-    const p = c4Pick(ks), need = { trau: 25 + ((R() * 4) | 0) * 5 }; for (const g of ['xoi', 'bun', 'che']) if (c4Own(g) && R() < .7) need[g] = 10 + ((R() * 3) | 0) * 5;
+    const p = c4Pick(ks), need = { trau: 25 + ((R() * 4) | 0) * 5 }; for (const g of ['xoi', 'bun', 'che', 'banhcuon', 'ruou']) if (c4Own(g) && R() < .7) need[g] = 10 + ((R() * 3) | 0) * 5;
     const pay = Math.round(Object.entries(need).reduce((a, [g, n]) => a + n * c4Price(g) * 1.3, 0));
     Object.assign(E, { title: 'Nhà có cỗ', text: `${c4Cap1(p.name)} sắp làm cỗ mừng thọ, muốn đặt ${Object.entries(need).map(([g, n]) => `${n} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ')}. Chiều mai ${c4At('Thân')} đến lấy, trả ${c4Money(pay)}.`, opts: [
       ['Nhận lời', () => { SAVE4.feast = { day: SAVE4.day + 1, need, pay, pid: p.id }; SAVE4.notes.push({ day: SAVE4.day + 1, kind: 'co', text: `Chiều nay ${p.name} đến lấy hàng làm cỗ: ${Object.entries(need).map(([g, n]) => `${n} ${C4_GOODS[g].unit} ${C4_GOODS[g].name.toLowerCase()}`).join(', ')}. Nhớ nhập đủ!` }); toast('Đã ghi vào sổ tay. Sáng mai nhớ nhập đủ hàng!', 3.2); }],
@@ -519,7 +519,7 @@ function c4ByShopHtml(d) {
 }
 
 /* ---------- tables and stools (owner): who eats chè, xôi or bún sits down to it; more tables, more seats, longer patience ---------- */
-const C4_EAT = ['che', 'xoi', 'bun'], C4_TABLES_MAX = 3;
+const C4_EAT = ['che', 'xoi', 'bun', 'banhcuon', 'ruou'], C4_TABLES_MAX = 3;
 const c4Tables = g => C4_EAT.includes(g) && c4Own(g) ? Math.max(1, SAVE4.shops[g].tables || 1) : 0;
 const c4TableCost = g => Math.round(C4_GOODS[g].rent * .45 * c4Tables(g));
 // where each seat is: tables in a row right of the stall, behind the queue; a stool each side

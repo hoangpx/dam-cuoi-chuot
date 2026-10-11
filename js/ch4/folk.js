@@ -122,6 +122,10 @@ const C4_WANT = {
   che: ['Cho bát chè nóng nào!', 'Chè xanh đặc vào nhé!', '{n} bát chè cho cả nhà!', 'Rét quá, bát chè cho ấm bụng!'],
   xoi: ['Gói cho {n} gói xôi!', 'Xôi gấc còn không?', 'Xôi đỗ một gói mang đi!', 'Cho cháu gói xôi ăn sáng.'],
   xen: ['Có kim chỉ không?', 'Bán cho cái lược bí!', 'Lấy {n} cuộn chỉ đỏ.', 'Gương này bao nhiêu?'],
+  banhcuon: ['Cho đĩa bánh cuốn nóng!', '{n} đĩa bánh cuốn, nhiều hành phi nhé!', 'Bánh cuốn chấm nước mắm cà cuống còn không?', 'Ăn sáng đĩa bánh cuốn cho ấm bụng!'],
+  ruou: ['Cho chén rượu nếp!', '{n} chén, mời anh em một chầu!', 'Rượu nếp cái hoa vàng phải không?', 'Rét quá, chén rượu cho ấm người!'],
+  gom: ['Cái bát này bao nhiêu?', 'Lấy {n} cái bát cho nhà mới!', 'Nồi đất này có nứt không đấy?', 'Hàng Bát Tràng phải không cô?'],
+  thuoc: ['Cho thang thuốc cảm!', 'Cắt {n} thang thuốc bổ cho mẹ già!', 'Có lá xông không cô?', 'Thằng cu nhà tôi ho mãi, có thuốc gì không?'],
   bun: ['Bát bún riêu, nhiều riêu nhé!', '{n} bát bún, thêm mắm tôm!', 'Đói quá, bát bún nào!', 'Bún riêu cua đồng phải không?'],
 };
 const C4_THANKS = ['Có ngay ạ!', 'Của bác đây ạ!', 'Cảm ơn, lần sau lại ghé!', 'Nóng hổi đây ạ!', 'Vâng, có ngay!'];

@@ -99,6 +99,34 @@ function c4Art() {
     for (const x of [-30, 30]) a.key(lines([[x - 8, 0, x + 8, -3]]), 1);
   });
   const mat = (a, w) => a.fk('straw', c4Poly([[-w, -6], [w, -6], [w + 8, 2], [-w - 8, 2]]), 1.4);   // a straw mat on the ground
+  const banhcuon = part([-120, -150, 120, 6], a => {                    // a steamer with a cloth stretched over it, plates of rolled rice sheets, a bowl of sauce
+    table(a, 110);
+    a.fk('dark', c4Rect(-96, -82, -24, -62), 1.6); a.fill('red', ell(-60, -82, 24, 5));                      // the stove
+    a.fk('grey', smooth([[-98, -84], [-22, -84], [-26, -124], [-94, -124]]), 2.2); a.fk('white', ell(-60, -124, 36, 7), 1.6); a.key(lines([[-90, -124, -30, -124]]), .8);
+    for (const x of [8, 44, 80]) { a.fk('white', ell(x, -66, 16, 4.5), 1.2); for (const dx of [-6, 0, 6]) a.fk('white', c4Rect(x + dx - 3, -76, x + dx + 3, -68), .8); a.fill('brown', circ(x + 8, -76, 2)); }
+    a.fk('brown', ell(96, -70, 8, 3), 1); a.fill('red', ell(96, -71, 5, 1.6));
+  });
+  const ruou = part([-120, -140, 120, 6], a => {                       // jars of rice wine with red paper labels, little cups, a gourd
+    table(a, 110);
+    for (const [x, h] of [[-74, 60], [-26, 72]]) { a.fk('brown', smooth([[x - 22, -62], [x + 22, -62], [x + 26, -62 - h * .6], [x + 10, -62 - h], [x - 10, -62 - h], [x - 26, -62 - h * .6]]), 2); a.fk('red', c4Rect(x - 9, -62 - h * .62, x + 9, -62 - h * .38), 1); a.fk('straw', ell(x, -62 - h, 10, 3.5), 1); }
+    for (const x of [24, 44, 64]) { a.fk('white', smooth([[x - 7, -70], [x + 7, -70], [x + 5, -62], [x - 5, -62]]), 1); }
+    a.fk('yellow', circ(92, -76, 10), 1.4); a.fk('yellow', circ(92, -94, 7), 1.4); a.fk('brown', c4Rect(90, -106, 94, -100), 1);
+  });
+  const gom = part([-120, -130, 120, 6], a => {                        // Bát Tràng ware: stacks of blue-rimmed bowls, a big jar, pots
+    mat(a, 112);
+    for (const x of [-80, -48]) for (let i = 0; i < 4; i++) { const y = -10 - i * 9; a.fk('white', smooth([[x - 16, y - 6], [x + 16, y - 6], [x + 11, y + 3], [x - 11, y + 3]]), 1.1); a.key(lines([[x - 15, y - 5, x + 15, y - 5]]), 1.2); }
+    a.fk('white', smooth([[-6, -2], [34, -2], [42, -40], [28, -74], [0, -74], [-14, -40]]), 1.8); a.fk('blue', smooth([[-8, -40], [40, -40], [36, -30], [-4, -30]]), 1); a.key(ell(14, -74, 14, 3), 1.2);
+    for (const [x, c] of [[66, 'brown'], [98, 'grey']]) { a.fk(c, smooth([[x - 14, -2], [x + 14, -2], [x + 16, -22], [x + 8, -32], [x - 8, -32], [x - 16, -22]]), 1.5); a.key(lines([[x - 6, -32, x + 6, -32]]), 1); }
+  });
+  const thuoc = part([-120, -150, 120, 6], a => {                      // a cabinet of little drawers, bundles of dried herbs hanging, a mortar and a scale
+    table(a, 110);
+    a.fk('brown', c4Rect(-98, -140, -18, -62), 2);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) { const x = -92 + c * 25, y = -134 + r * 18; a.fk('straw', c4Rect(x, y, x + 21, y + 14), .9); a.ink(circ(x + 10.5, y + 7, 1.4)); }
+    a.key(lines([[-6, -148, 110, -148]]), 1.6);
+    for (const [x, c] of [[8, 'green'], [36, 'brown'], [64, 'green'], [92, 'straw']]) { a.key(lines([[x, -148, x, -138]]), .8); a.fk(c, smooth([[x - 7, -138], [x + 7, -138], [x + 4, -104], [x - 4, -104]]), 1.2); a.fk('red', c4Rect(x - 6, -132, x + 6, -128), .6); }
+    a.fk('grey', smooth([[20, -62], [52, -62], [48, -80], [24, -80]]), 1.4); a.fk('brown', c4Rect(40, -96, 44, -76), 1);
+    a.fk('brown', c4Rect(78, -84, 82, -62), 1); a.key(lines([[64, -84, 96, -84]]), 1.2); a.fk('yellow', ell(66, -78, 6, 2), .8); a.fk('yellow', ell(94, -78, 6, 2), .8);
+  });
   const hangThit = part([-100, -120, 100, 6], a => {                      // a butcher's block, a rail of hanging pork, a cleaver
     a.fk('brown', c4Rect(-70, -46, 40, -30), 1.8); for (const x of [-60, 30]) a.fk('brown', c4Rect(x - 4, -32, x + 4, 0), 1.3);
     a.fk('brown', c4Rect(-80, -112, 60, -106), 1.4); for (const x of [-80, 60]) a.fk('brown', c4Rect(x - 3, -110, x + 3, -46), 1.2);
@@ -139,7 +167,7 @@ function c4Art() {
     for (let i = 0; i < 4; i++) a.fk('straw', c4Poly([[-60, -10 - i * 10], [-20, -46 - i * 10], [20, -10 - i * 10]]), 1.4);
     a.fk('brown', c4Rect(46, -100, 52, 0), 1.2); for (const y of [-88, -58]) a.fk('straw', c4Poly([[30, y + 20], [49, y], [68, y + 20]]), 1.2);
   });
-  C4ART = { ganh, sap, gian, gate, scaffold, hangCa, hangVai, hangBanh, che, xoi, xen, bun, lot, hangThit, hangGao, hangRau, hangTrung, hangGa, hangQua, hangNon };
+  C4ART = { ganh, sap, gian, gate, scaffold, hangCa, hangVai, hangBanh, che, xoi, xen, bun, banhcuon, ruou, gom, thuoc, lot, hangThit, hangGao, hangRau, hangTrung, hangGa, hangQua, hangNon };
   return C4ART;
 }
 const c4StallArt = lv => { const A = c4Art(); return [A.ganh, A.sap, A.gian][lv]; };

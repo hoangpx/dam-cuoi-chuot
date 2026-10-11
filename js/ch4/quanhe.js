@@ -8,7 +8,7 @@
    family tree. Per person, SAVE4.folk[id] adds: heard (named by someone), tea (day offered tea), ask (day asked about
    the family), intro (day asked to introduce someone), facts [] (what they told). */
 const C4_STAR = a => '★'.repeat(Math.max(1, Math.round(a / 20))) + '☆'.repeat(5 - Math.max(1, Math.round(a / 20)));
-const C4_FAV_WORD = { trau: 'trầu cau', che: 'bát chè xanh', xoi: 'gói xôi', xen: 'hàng xén', bun: 'bát bún riêu' };
+const C4_FAV_WORD = { trau: 'trầu cau', che: 'bát chè xanh', xoi: 'gói xôi', xen: 'hàng xén', bun: 'bát bún riêu', banhcuon: 'đĩa bánh cuốn', ruou: 'chén rượu nếp', gom: 'đồ gốm Bát Tràng', thuoc: 'thuốc nam' };
 // how much someone matters to the stall: how many they know, how readily they talk, standing in the family
 function c4Imp(p) {
   const T = C4_TRAITS[p.trait];
