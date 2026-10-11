@@ -442,6 +442,7 @@ function ch1PointerDown(e) {
 function ch1PointerHit(e) {
   const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / scale + camX, wy = (e.clientY - r.top) / scale - offY;
   for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return true; } }
+  if (bellMode()) for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;                // tap things (the fish on the bank) before the bell in the groom's hand takes the touch
   { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return true; } }
   if (fishCarried()) { const f = followers[0]; if (Math.hypot(wx - (f.x + 16 * f.face), wy - (GROUND - 50)) < 48) { S.drag = { item: 'fish', x: wx, y: wy }; capturePointer(e); return true; } }
   for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;

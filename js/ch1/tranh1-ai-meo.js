@@ -114,7 +114,7 @@ function groundCat(cx, from) {
       if (this.st === 'block') { this.st = 'sleep'; this.t = 1.5; }
       const was = this.st; tickWatcher(this, dt);
       if (bellMode() && this.st !== was) {                                                      // the bell in hand: the cat is quicker and wakes more often
-        if (this.st === 'warn') { this.feint = false; this.t = 1.0; }                             // half-open for 1 s (owner: .5 s was too hard), then wide open
+        if (this.st === 'warn') { this.feint = false; this.t = .75; }                            // half-open for .75 s (owner: .5 s too hard, 1 s too easy), then wide open
         else if (this.st === 'sleep') this.t = Math.min(this.t, 1 + R() * 1);
       }
     },
