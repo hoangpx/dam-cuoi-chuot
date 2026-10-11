@@ -140,7 +140,7 @@ function t6Dark() {
   return {
     layer: 'bg', flick: 0, dawn: 0, btn: null,
     update(dt) {
-      this.flick += dt; if (!T7.bl) { T7.bl = 1; bellLoad(); } if (!AU.hasSample('meovo')) AU.sampleB64('meovo', MEOW_B64);
+      this.flick += dt; if (T6R.ready && this.sayT != null) this.sayT += dt; if (!T7.bl) { T7.bl = 1; bellLoad(); } if (!AU.hasSample('meovo')) AU.sampleB64('meovo', MEOW_B64);
       this.dawn = Math.max(0, Math.min(1, (groom.x - (T6_OFF - 1700)) / 1500));                  // the dark thins as the trellis ends, and the moon comes out
       followers[0].item = 'lantern';
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
@@ -229,6 +229,13 @@ function t6Dark() {
       return false;
     },
     drawHud(g, vw) {                                                             // the black sheet with the lights punched out of it
+      this.drawHud2(g, vw);
+      if (T6R.ready && this.dawn < .5 && !S.hideParty) {                        // as the tranh starts, the mouse with the lamp has a feeling (owner)
+        if (this.sayT == null) this.sayT = groom.x < 1200 ? 0 : 99;
+        const t = this.sayT; if (t > .6 && t < 6.2) { const f = followers[0]; g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, (t - .6) / .3, (6.2 - t) / .4); t6Say(g, f.x, GROUND - 120, 'Ta có cảm giác lão mèo mà chúng ta dâng cá đang ở đâu đây…'); g.restore(); }
+      }
+    },
+    drawHud2(g, vw) {
       const k = cv.width / vw;
       if (!T7.dk || T7.dk.width !== cv.width || T7.dk.height !== cv.height) { T7.dk = document.createElement('canvas'); T7.dk.width = cv.width; T7.dk.height = cv.height; T7.dkx = T7.dk.getContext('2d'); }
       const d = T7.dkx, base = .997 * (1 - this.dawn);
@@ -239,7 +246,7 @@ function t6Dark() {
         const light = (x, y, R, s) => { const gr = d.createRadialGradient(x, y, R * .06, x, y, R); gr.addColorStop(0, 'rgba(0,0,0,' + s + ')'); gr.addColorStop(.3, 'rgba(0,0,0,' + s * .78 + ')'); gr.addColorStop(.62, 'rgba(0,0,0,' + s * .36 + ')'); gr.addColorStop(.86, 'rgba(0,0,0,' + s * .1 + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = gr; d.beginPath(); d.arc(x, y, R, 0, 6.283); d.fill(); };
         const [lx, ly] = lamp(), fl = 1 + Math.sin(this.flick * 11) * .035 + Math.sin(this.flick * 23.7) * .03 + (Math.sin(this.flick * 3.1) > .96 ? -.1 : 0);        // the lamp: a wide, soft, guttering round, a little dimmer than before
         if (!S.hideParty) light(lx - camX, ly + offY, 205 * fl, .86);
-        if (T7.a > .02) light(T7.px, T7.py, 215, .88 * T7.a);                      // the finger's torch
+        if (T7.a > .02) { const ff = 1 + Math.sin(this.flick * 9.3 + 1) * .045 + Math.sin(this.flick * 21.1) * .035 + (Math.sin(this.flick * 2.7 + 2) > .95 ? -.12 : 0); light(T7.px, T7.py, 215 * ff, .88 * T7.a * (.92 + .08 * ff)); }   // it flickers like the oil lamp                      // the finger's torch
         d.globalCompositeOperation = 'source-over';
       }
       g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(T7.dk, 0, 0); g.restore();
@@ -249,7 +256,7 @@ function t6Dark() {
         if (x1 > x0) { g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, base * 1.3); g.lineCap = 'round'; t7Layer(g, T7_LAYERS[2], null, x0, x1, T7_TOP()); t7Fol(g, T7_FOL[2], A, x0, x1, T7_TOP(), true); g.restore(); }
       }
       if (T7.a > .05 && base > .003) {                                          // the lamp in the finger's place (above it on a touch screen, so the finger does not hide it)
-        const px = T7.px, py = T7.py + (isTouch ? -78 : -10), gl = g.createRadialGradient(px, py + 30, 2, px, py + 30, 60); gl.addColorStop(0, 'rgba(255,200,110,.55)'); gl.addColorStop(1, 'rgba(255,200,110,0)');
+        const px = T7.px, py = T7.py + (isTouch ? -78 : -10), fg = .75 + .25 * Math.abs(Math.sin(this.flick * 7.7) * Math.sin(this.flick * 3.1 + 1)), gl = g.createRadialGradient(px, py + 30, 2, px, py + 30, 52 + 14 * fg); gl.addColorStop(0, 'rgba(255,200,110,' + (.4 + .25 * fg) + ')'); gl.addColorStop(1, 'rgba(255,200,110,0)');
         g.save(); g.globalAlpha = Math.min(1, T7.a * 1.4); g.fillStyle = gl; g.fillRect(px - 60, py - 30, 120, 120); dp(g, ITEM.lantern, px, py, Math.sin(this.flick * 2.1) * .07, 1.5, 1.5); g.restore();
       }
       const c = T7.cat;
