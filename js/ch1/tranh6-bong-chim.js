@@ -303,7 +303,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
     }
     const E = {
       layer: 'bg', cx: cx0, solved: !!skip(), st: null, btn: [],
-      solveNow(dur) { startSolve(dur || 1.5, true); },                            // (trailer) turn it to the bird by itself
+      solveNow(dur, win = true) { startSolve(dur || 1.5, win); },                            // (trailer) turn it to the bird by itself
       update(dt) {
         if (this.solved) return;
         if (!st || Math.abs(groom.x - cx0) > 900) return;                       // not made yet, or far away: nothing to turn or draw
@@ -338,6 +338,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
         return false;
       },
       draw(g) {                                                                  // the cloth between its two poles, with the shadow on it (behind the party)
+        if (window.TRAILER_NOCLOTH) return;                                      // (trailer: the tangle alone, its shadow kept secret)
         if (this.solved || !st) return;
         const fade = st.done ? Math.max(0, 1 - Math.max(0, st.dt - 1.7) / .8) : 1; g.save(); g.globalAlpha = fade;
         for (const sx of [-1, 1]) {                                              // two bamboo poles
@@ -358,7 +359,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
         g.save();                                                                  // (no cord: it floats)
         g.globalAlpha = st.done ? Math.max(0, 1 - st.dt / 1.1) : 1; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(G.A.c, cx0 - SPAN * SC / 2, cy0 - SPAN * SC / 2, SPAN * SC, SPAN * SC); g.restore();
         const dxg = Math.abs(groom.x - cx0);                                     // "Cứu tôi với!" when the party comes near
-        if (!st.done && dxg < 560) { g.save(); g.globalAlpha = Math.min(1, (560 - dxg) / 160); t5Say(g, cx0 - 64, cy0 - 14 + Math.sin(S.t * 3 + idx * 1.7) * 3, 'Cứu tôi với!'); g.restore(); }
+        if (!st.done && dxg < 560 && !window.TRAILER_NOCLOTH) { g.save(); g.globalAlpha = Math.min(1, (560 - dxg) / 160); t5Say(g, cx0 - 64, cy0 - 14 + Math.sin(S.t * 3 + idx * 1.7) * 3, 'Cứu tôi với!'); g.restore(); }
       },
     };
     T6R.stations[idx] = E; window.__t6s = T6R.stations;
