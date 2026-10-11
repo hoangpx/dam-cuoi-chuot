@@ -201,7 +201,7 @@ function t6Dark() {
     },
     onClick(wx, wy) {                                                            // (demo only) skip the dark stretch
       const sx = wx - camX, sy = wy + offY;
-      for (const d of this.dbt || []) if (sx >= d.x && sx <= d.x + d.w && sy >= d.y && sy <= d.y + d.h) { if (d.v === 2) { bellLoad(); T7.loop = T7.loop ? null : { jt: 0, n: 0 }; if (T7.loop && !AU.hasSample('bell')) toast('Đang tải tiếng lục lạc (âm thanh: ' + AU.state() + ')', 3); return true; } if (d.v === 3) { SAVE.lucLac = true; SAVE.catBell = true; persist(); toast('Lục lạc đã đeo cho mèo.', 2.5); return true; } if (d.v) SAVE.lucLac = true; else { SAVE.lucLac = false; SAVE.catBell = false; } persist(); toast(d.v ? 'Có lục lạc của cô Tấm (về tranh 1 đeo cho mèo).' : 'Đã bỏ lục lạc.', 2.5); return true; }
+      for (const d of this.dbt || []) if (sx >= d.x && sx <= d.x + d.w && sy >= d.y && sy <= d.y + d.h) { if (d.v === 2) { bellLoad(); T7.loop = T7.loop ? null : { jt: 0, n: 0 }; if (T7.loop && !AU.hasSample('bell')) toast('Đang tải tiếng lục lạc (âm thanh: ' + AU.state() + ')', 3); return true; } if (d.v === 3) { SAVE.lucLac = true; SAVE.catBell = true; persist(); toast('Lục lạc đã đeo cho mèo.', 2.5); return true; } if (d.v) { SAVE.lucLac = true; SAVE.catBell = false; } else { SAVE.lucLac = false; SAVE.catBell = false; } persist(); toast(d.v ? 'Có lục lạc của cô Tấm (về tranh 1 đeo cho mèo).' : 'Đã bỏ lục lạc.', 2.5); return true; }
       const b = this.btn; if (!b) return false;
       if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) { const d = (T6_OFF - 300) - groom.x; if (d > 0) { groom.x += d; followers.forEach(f => f.x += d); camX += d; } return true; }
       return false;
