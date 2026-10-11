@@ -366,3 +366,4 @@ Owner, 2026-10-10: the golden seal (★ "Triện vàng") is gone from every tran
 Artifact test copy (scratchpad stage4): the injected jump script hid #chapters/#title/#album every .4 s for 32 s after load, so 'Về album' looked frozen; now it hides them only until the jump is done, and starts the player holding the bell (SAVE.lucLac true, catBell false). All demo buttons are gone except 'Qua dàn bí rợ' (bottom right).
 Tranh 1 cat with the bell in hand: half-open warn now 1 s (was .5), sleeps 1–2 s (was .8–1.6) — owner found it too hard.
 Tranh 1 with the bell: tapping the fish on the bank comes before the bell in the groom's hand grabbing the touch (ch1PointerHit runs entity onClicks first in bellMode); the cat's half-open warn is .75 s.
+The fish carried by the parasol mouse is dragged from the fish itself (f.x + 34 face, GROUND − 110, r 58) or from its body (f.x + 16 face, GROUND − 50, r 48).

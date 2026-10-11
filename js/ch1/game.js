@@ -444,7 +444,8 @@ function ch1PointerHit(e) {
   for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return true; } }
   if (bellMode()) for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;                // tap things (the fish on the bank) before the bell in the groom's hand takes the touch
   { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return true; } }
-  if (fishCarried()) { const f = followers[0]; if (Math.hypot(wx - (f.x + 16 * f.face), wy - (GROUND - 50)) < 48) { S.drag = { item: 'fish', x: wx, y: wy }; capturePointer(e); return true; } }
+  // the fish itself (drawn by the parasol mouse's hand, above and ahead of it) or the mouse's body starts the drag
+  if (fishCarried()) { const f = followers[0]; if (Math.hypot(wx - (f.x + 34 * f.face), wy - (GROUND - 110)) < 58 || Math.hypot(wx - (f.x + 16 * f.face), wy - (GROUND - 50)) < 48) { S.drag = { item: 'fish', x: wx, y: wy }; capturePointer(e); return true; } }
   for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;
   { const f = followers[0]; if (L.abil.includes('parasol') && f.item === 'parasol' && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return true; } }
   for (const [i, k] of [[1, 'drum'], [2, 'ken']]) { const f = followers[i]; if (L.abil.includes(k) && Math.abs(wx - f.x) < 40 && wy > GROUND - 150 && wy < GROUND + 8) { useAbility(k); return true; } }
