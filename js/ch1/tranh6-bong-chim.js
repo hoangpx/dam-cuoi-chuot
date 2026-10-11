@@ -376,7 +376,9 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
             this.prep = [() => t6rArt(), () => { try { t6SplashLoad(); } catch (e) {} }, () => { try { t6Art(); } catch (e) {} }, () => { try { if (!T6C.segs) Object.assign(T6C, t6cPath()); } catch (e) {} }];
             T6R.stations.forEach(q => { if (q && !q.solved) this.prep.push(() => q.prep(0), () => q.prep(1), () => q.prep(2)); }); this.pn = 0;
           }
-          if (this.pn < this.prep.length) { this.prep[this.pn++](); return; }       // one step a frame: the picture stays up and the cover shows it is working
+          if (this.t0 == null) this.t0 = performance.now();
+          if (this.pn < this.prep.length && performance.now() - this.t0 > 8000) { T6R.stations.forEach((q, i) => { if (q && !q.solved) { q.solved = true; T6R.save(i); } }); this.pn = this.prep.length; }   // too slow a phone: skip the shadow stations rather than wait for ever
+          if (this.pn < this.prep.length) { try { this.prep[this.pn++](); } catch (e) { console.warn('tranh 6 prep', e); } return; }       // one step a frame: the picture stays up and the cover shows it is working
           T6R.ready = true; S.waitMove = false;
         }
         if (this.cover > 0) this.cover = Math.max(0, this.cover - dt / .6);

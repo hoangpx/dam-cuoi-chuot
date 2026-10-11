@@ -377,6 +377,7 @@ const c4Unit = g => (C4.unit && C4.unit[g]) || c4Cost(g);
 function c4NoteFired(kind) { const f = SAVE4.fired && SAVE4.fired.day === SAVE4.day ? SAVE4.fired : (SAVE4.fired = { day: SAVE4.day, ks: [] }); f.ks.push(kind); }
 function c4PlanEvents() {
   const p = SAVE4.plan, ev = [], at = (a, b) => (a + R() * (b - a)) * 60, own = c4Owned();
+  if (SAVE4.feast && SAVE4.feast.day < SAVE4.day) SAVE4.feast = null;      // a feast whose day went by without being collected no longer blocks new ones (a player: no orders after ~day 30)
   if (p.cuoi) ev.push({ at: at(6.5, 8), kind: 'cuoi' });
   if (p.thue) ev.push({ at: at(8.5, 10), kind: 'thue' });
   if (p.meo) ev.push({ at: at(9, 15), kind: 'meo' });
@@ -389,6 +390,7 @@ function c4PlanEvents() {
   if (SAVE4.money >= C4_RICH) { if (SAVE4.kienNext == null) SAVE4.kienNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.kienNext && R() < .35) pool.push('kien'); if (own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner)
   for (let i = 0; i < 3 && pool.length; i++) ev.push({ at: at(7, 16.5), kind: pool.splice((R() * pool.length) | 0, 1)[0] });
   if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });
+  if (SAVE4.day > 5 && R() < .55) ev.push({ at: at(7, 12), kind: c4Pick(['cotiec', 'cotiec', 'cuoi', 'khachla']) });   // an order brought by a visitor (the red '!') on about half the days, not only by luck of the pool, which grows long later on (a player)
   if (SAVE4.day <= 5) {                                                     // a player: the first days were too quiet — a knock (thief, gale, bad areca) and often an order
     ev.push({ at: at(8, 15.5), kind: c4Pick(['trom', 'gio', 'trom', 'sau']) });
     if (R() < .55) ev.push({ at: at(7, 10.5), kind: 'cotiec' });

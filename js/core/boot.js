@@ -14,6 +14,10 @@ const safeTop = (() => { const p = document.createElement('div'); p.style.cssTex
 
 
 let scale = 1, viewH = VIEW_H, offY = 0, ZOOM = 1, ZOOMW = 1;            // a tranh may come closer on a portrait phone (ZOOM) or stand back on a wide screen to show its tall things (ZOOMW; tranh 4)
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+  r = Math.max(0, Math.min(Array.isArray(r) ? (+r[0] || 0) : (+r || 0), Math.abs(w) / 2, Math.abs(h) / 2));
+  this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
+};
 function resize() {
   const w = innerWidth, h = innerHeight;
   cv.width = Math.max(1, Math.round(w * DPR)); cv.height = Math.max(1, Math.round(h * DPR));
