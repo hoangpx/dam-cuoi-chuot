@@ -289,6 +289,13 @@ when sharing a cell). Legend in levels.js. The old 14 maps give the same shortes
 New section Biến hoá (bh: true, C2_FIRST_BH; opens after Nhập môn, like Cao thủ opening after tranh 4), 12 maps: Chìa mở cửa,
 Vò vỡ, Kéo đá, Chữ kéo, Không chặn, Mèo đẩy chữ, Lửa có cổng, Chìa đẻ chìa, Bay qua sông, Bắc cầu đá, Chữ là mình (generated: random
 boards solved, the longest kept), Chuột là chuột. New things drawn in art.js (key, door, rock, cloud; floaters hover over a shadow).
+New section Thần thông (tt: true, C2_FIRST_TT = 56, opens after the last Hơi khó map; owner asked for 30 more maps with words from the
+Baba Is You wiki): properties CHUYỂN tele (%), TRÔI shift (>), ĐỔI swap (*), TAN melt (_), BỀN safe (#), RƠI fall ($) and the conditions
+TRÊN on (@) / GẦN near (?) between noun and verb (CHUỘT TRÊN RƠM LÀ THẮNG; st.cr/st.cm, per object in c2OHas). Differences from Baba on
+purpose: NÓNG still kills ĐI (old maps unchanged); CHUYỂN sends only what has just arrived on a pad (it or the pad moved, or the rule
+is new) to the next pad of that kind by id, so nothing flickers and the solver stays deterministic. TRÔI pads show an arrow, CHUYỂN
+pads a turning dashed ring (renderC2). 8 intro maps (one word each) then 22 hard ones, last Bốn phép. Help line #c2tt only on tt maps.
+The new tile glyphs 𨕭 𧵆 散 are in FONT_CHARS and the rebuilt Nôm Na Tong subset (HanWangYanKai lacks them, they fall back).
 - iPhone notch (owner: chương VII's top buttons beside the notch could not be tapped): boot.js safeTop() reads env(safe-area-inset-top) from a probe; chương VI and VII draw their canvas below it (renderC6/renderC7 translate by it, c6Pos/c7Pos/c7HowTap subtract it). Any new canvas-drawn top bar must do the same.
 - Chương VII how-to, furniture page (owner: tiles ran into the words on short desktop windows): the picture is min(width × .92, H − 330) tall and the tiles shrink (5 a row when short) to fit inside it.
 - Chương VII stolen food (owner: "Món ăn" with a covered dish was unclear): each of the 13 foods in the cases has its own drawing in c7Thing (dua, chuoi, naichuoi, mut, trung, banhday, xoi, banhchung, xoigac, chobanh, comnep, matong, cakho) and a short label in the strip (C7_FOOD by the dish name; a new food needs a line there, else the old covered dish and its own name).

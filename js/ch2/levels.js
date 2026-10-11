@@ -6,16 +6,20 @@ const C2K = {
   key: { han: '匙', vi: 'CHÌA' }, door: { han: '𨷯', vi: 'CỬA' }, rock: { han: '坧', vi: 'ĐÁ' }, cloud: { han: '𩄲', vi: 'MÂY' }, text: { han: '𡨸', vi: 'CHỮ' },
 };
 const C2P = { you: { han: '𠫾', vi: 'ĐI' }, push: { han: '𢩽', vi: 'ĐẨY' }, stop: { han: '振', vi: 'CHẶN' }, sink: { han: '沈', vi: 'CHÌM' }, hot: { han: '燶', vi: 'NÓNG' }, win: { han: '勝', vi: 'THẮNG' },
-  open: { han: '𢲫', vi: 'MỞ' }, shut: { han: '鎖', vi: 'KHOÁ' }, float: { han: '𢒎', vi: 'BAY' }, pull: { han: '捁', vi: 'KÉO' }, move: { han: '𧼋', vi: 'CHẠY' }, weak: { han: '夭', vi: 'YẾU' } };
-// the little words between: LÀ, VÀ, KHÔNG, CÓ
-const C2OPS = { is: { han: '羅', vi: 'LÀ' }, and: { han: '吧', vi: 'VÀ' }, not: { han: '空', vi: 'KHÔNG' }, has: { han: '固', vi: 'CÓ' } };
+  open: { han: '𢲫', vi: 'MỞ' }, shut: { han: '鎖', vi: 'KHOÁ' }, float: { han: '𢒎', vi: 'BAY' }, pull: { han: '捁', vi: 'KÉO' }, move: { han: '𧼋', vi: 'CHẠY' }, weak: { han: '夭', vi: 'YẾU' },
+  // Thần thông (after the Baba Is You wiki): TELE, SHIFT, SWAP, MELT, SAFE, FALL
+  tele: { han: '轉', vi: 'CHUYỂN' }, shift: { han: '浮', vi: 'TRÔI' }, swap: { han: '替', vi: 'ĐỔI' }, melt: { han: '散', vi: 'TAN' }, safe: { han: '保', vi: 'BỀN' }, fall: { han: '落', vi: 'RƠI' } };
+// the little words between: LÀ, VÀ, KHÔNG, CÓ, and the conditions TRÊN (on) / GẦN (near): CHUỘT TRÊN RƠM LÀ ĐI
+const C2OPS = { is: { han: '羅', vi: 'LÀ' }, and: { han: '吧', vi: 'VÀ' }, not: { han: '空', vi: 'KHÔNG' }, has: { han: '固', vi: 'CÓ' }, on: { han: '𨕭', vi: 'TRÊN' }, near: { han: '𧵆', vi: 'GẦN' } };
 const C2THING = { m: 'mouse', c: 'cat', w: 'wall', '~': 'water', f: 'fire', s: 'fish', g: 'gate', h: 'hay', j: 'jar', k: 'key', d: 'door', r: 'rock', o: 'cloud' };
 const C2NOUN = { M: 'mouse', C: 'cat', W: 'wall', N: 'water', F: 'fire', S: 'fish', G: 'gate', H: 'hay', J: 'jar', K: 'key', D: 'door', R: 'rock', O: 'cloud', T: 'text' };
-const C2PROP = { 1: 'you', 2: 'push', 3: 'stop', 4: 'sink', 5: 'hot', 6: 'win', 7: 'open', 8: 'shut', 9: 'float', '<': 'pull', '^': 'move', '!': 'weak' };
-const C2OP = { '=': 'is', '&': 'and', '-': 'not', '+': 'has' };
+const C2PROP = { 1: 'you', 2: 'push', 3: 'stop', 4: 'sink', 5: 'hot', 6: 'win', 7: 'open', 8: 'shut', 9: 'float', '<': 'pull', '^': 'move', '!': 'weak',
+  '%': 'tele', '>': 'shift', '*': 'swap', '_': 'melt', '#': 'safe', '$': 'fall' };
+const C2OP = { '=': 'is', '&': 'and', '-': 'not', '+': 'has', '@': 'on', '?': 'near' };
 
 /* map legend: lowercase = objects (k chìa, d cửa, r đá, o mây too), UPPERCASE = noun words (T = CHỮ), = LÀ, & VÀ, - KHÔNG, + CÓ,
-   1..9 = ĐI ĐẨY CHẶN CHÌM NÓNG THẮNG MỞ KHOÁ BAY, < KÉO, ^ CHẠY, ! YẾU. dirs: [[x, y, 'L']] faces a thing (CHẠY). */
+   1..9 = ĐI ĐẨY CHẶN CHÌM NÓNG THẮNG MỞ KHOÁ BAY, < KÉO, ^ CHẠY, ! YẾU, % CHUYỂN, > TRÔI, * ĐỔI, _ TAN, # BỀN, $ RƠI,
+   @ TRÊN, ? GẦN. dirs: [[x, y, 'L']] faces a thing (CHẠY, TRÔI). */
 const C2LEVELS = [
   {
     han: '尋𨶛', name: 'Tìm cổng', paper: 'yellow', key: 0,
@@ -391,6 +395,222 @@ const C2LEVELS = [
     map: ["wwwwwwwwwwww", "wwmwww~~~M.w", "w..w..~~~-.w", "w.T...~~~..w", "ww.=9.~~~..w", "w...w.~~~.gw", "wwwwwwwwwwww", "W=3M=1M=9...", "N=4G=6......"],
     fixed: [[9, 1], [9, 2], [0, 7], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [8, 7], [0, 8], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8]],
   },
+  /* ---- Thần thông (30 maps with the new words CHUYỂN TRÔI ĐỔI TAN BỀN RƠI and TRÊN / GẦN, after the Baba Is You wiki; open after the last Hơi khó map); every map checked by tools/c2-solve.js and tools/c2-chain.js ---- */
+  {
+    han: "渡雲", name: "Đò mây", paper: "blue", key: -3, tt: true,
+    riddle: "Sông rộng hai ô, mà đám mây thì chẳng sợ nước.",
+    hint: "Đẩy chữ CHUYỂN vào sau MÂY LÀ để ghép MÂY LÀ CHUYỂN. Từ đó bước lên đám mây bên này là hiện ra ở đám mây bên kia sông.",
+    map: ["M=1...~~...", "......~~...", ".o..%.~~.o.", "......~~...", "O=....~~..g", ".m....~~...", "N=4...~~G=6"],
+    fixed: [[0,0], [1,0], [2,0], [0,4], [1,4], [0,6], [1,6], [2,6], [8,6], [9,6], [10,6]],
+  },
+  {
+    han: "水字", name: "Nước chở chữ", paper: "sage", key: -2, tt: true,
+    riddle: "Chữ THẮNG nằm kẹt ở đầu rãnh, chẳng tay nào với tới.",
+    hint: "Ghép NƯỚC LÀ TRÔI: nước thành dòng chảy, chở thứ gì nằm trên nó đi theo chiều mũi tên. Đẩy chữ THẮNG xuống rãnh, dòng nước đưa nó vòng xuống tận chỗ trống dưới CỔNG LÀ.",
+    map: ["ww.W=3M=1.", "~6......g.", "~w....=...", "~w...N....", "~w..G.....", "~www=..>..", "~~~~.w.m.."],
+    fixed: [[3,0], [4,0], [5,0], [6,0], [7,0], [8,0], [5,3], [4,4], [4,5]],
+    dirs: [[0, 1, "D"], [0, 2, "D"], [0, 3, "D"], [0, 4, "D"], [0, 5, "D"], [0, 6, "R"], [1, 6, "R"], [2, 6, "R"], [3, 6, "R"]],
+  },
+  {
+    han: "替牆", name: "Lách qua tường", paper: "pink", key: 2, tt: true,
+    riddle: "Bốn bề là tường, mà tường cũng có lúc biết nhường chỗ.",
+    hint: "Ghép TƯỜNG LÀ ĐỔI ngay trong buồng, dùng chữ TƯỜNG có sẵn. Bước vào bức tường nào thì chuột với tường đổi chỗ cho nhau, cứ thế lách ra ngoài mà tới cổng.",
+    map: ["M=1....W=3", ".wwwwww...", ".wW...w...", ".w.=.mw..g", ".w..*.w...", ".wwwwww...", "G=6......."],
+    fixed: [[0,0], [1,0], [2,0], [7,0], [8,0], [9,0], [2,2], [0,6], [1,6], [2,6]],
+  },
+  {
+    han: "火", name: "Lửa tự tắt", paper: "white", key: 0, tt: true,
+    riddle: "Lửa cháy chắn ngang, mà chẳng có giọt nước nào.",
+    hint: "Ghép LỬA LÀ TAN. Lửa vừa NÓNG vừa TAN thì tự đốt chính mình, cả hàng lửa tắt ngấm.",
+    map: ["M=1..f....", ".....f....", "F.=..f..g.", ".....f....", "..._.f....", ".m...f....", "G=6..fF=5."],
+    fixed: [[0,0], [1,0], [2,0], [0,2], [0,6], [1,6], [2,6], [6,6], [7,6], [8,6]],
+  },
+  {
+    han: "保石", name: "Đá bền", paper: "sage", key: -2, tt: true,
+    riddle: "Sông ba ô nước mà chỉ có một hòn đá.",
+    hint: "Đẩy đá xuống sông thì đá chìm, chỉ lấp được một ô. Ghép ĐÁ LÀ BỀN trước: đá bền làm nước chìm mà mình vẫn còn, cứ thế đẩy thẳng qua cả ba ô sông.",
+    map: ["M=1..~~~..", "R=2..~~~..", "R=...~~~.g", "N=4#.~~~..", "G=6..~~~..", ".m.r.~~~..", ".....~~~.."],
+    fixed: [[0,0], [1,0], [2,0], [0,1], [1,1], [2,1], [0,2], [1,2], [0,3], [1,3], [2,3], [0,4], [1,4], [2,4]],
+  },
+  {
+    han: "門落", name: "Cổng rơi", paper: "blue", key: -3, tt: true,
+    riddle: "Chuột rơi thì đứng đất, cổng treo lơ lửng trên trời.",
+    hint: "CHUỘT LÀ RƠI nên chuột không nhảy lên được. Đẩy chữ RƠI dọc mặt đất vào dưới CỔNG LÀ để ghép CỔNG LÀ RƠI: cổng rơi xuống đất, quay lại mà vào.",
+    map: ["..........", "g.........", "........G.", "........=.", ".m$.......", "wwwwwwwwww", "W=3M=1M=$.", "G=6......."],
+    fixed: [[8,2], [8,3], [0,6], [1,6], [2,6], [3,6], [4,6], [5,6], [6,6], [7,6], [8,6], [0,7], [1,7], [2,7]],
+  },
+  {
+    han: "立草", name: "Đứng trên rơm", paper: "yellow", key: 0, tt: true,
+    riddle: "Không có cổng, mà vẫn có chỗ để thắng.",
+    hint: "Câu CHUỘT TRÊN … LÀ THẮNG còn thiếu một chữ. Đẩy chữ RƠM vào chỗ trống: chuột đứng trên rơm là thắng. Rồi tìm đường tới đống rơm.",
+    map: ["M=1...w...", "W=3...w.h.", "......w...", ".M@.=6w...", "..........", ".m.H......", "......w..."],
+    fixed: [[0,0], [1,0], [2,0], [0,1], [1,1], [2,1], [1,3], [2,3], [4,3], [5,3]],
+  },
+  {
+    han: "石鑰", name: "Gần nước hoá chìa", paper: "pink", key: 2, tt: true,
+    riddle: "Cửa khoá mà chẳng có chìa, chỉ có hòn đá và vũng nước.",
+    hint: "Đẩy chữ CHÌA vào cuối câu ĐÁ GẦN NƯỚC LÀ: đá nào nằm sát nước sẽ hoá chìa. Đẩy đá tới cạnh vũng nước, rồi đẩy chìa vừa có vào cửa.",
+    map: ["M=1...wwww.", "R=2...w.gw.", ".m....d..w.", "......wwww.", "...r.......", "~~...K.....", "R?N=.W=3...", "K=7&2D=8G=6"],
+    fixed: [[0,6], [1,6], [2,6], [3,6], [5,6], [6,6], [7,6], [0,7], [1,7], [2,7], [3,7], [4,7], [5,7], [6,7], [7,7], [0,0], [1,0], [2,0], [0,1], [1,1], [2,1], [8,7], [9,7], [10,7]],
+  },
+  {
+    han: "貓走", name: "Mèo nhát", paper: "yellow", key: 0, tt: true,
+    riddle: "Chuột lại gần thì mèo bỏ chạy, chạy thẳng một mạch.",
+    hint: "MÈO GẦN CHUỘT LÀ CHẠY: đứng sát con mèo nào thì con ấy chạy, đẩy chữ trên nền lửa. Phải gọi mèo trên trước cho nó đẩy chữ LÀ xuống rãnh, rồi mới gọi mèo dưới đẩy THẮNG và LÀ về phía CỔNG. Gọi mèo dưới trước thì chữ THẮNG trôi qua chỗ ấy mất.",
+    map: ["...........", ".wwwwcwwwww", ".wwww=wwwww", ".Gffffff6fc", ".g....m....", "M=1F=5W=3..", "C?M=^......"],
+    fixed: [[1,3], [0,5], [1,5], [2,5], [3,5], [4,5], [5,5], [6,5], [7,5], [8,5], [0,6], [1,6], [2,6], [3,6], [4,6]],
+    dirs: [[5, 1, "D"], [10, 3, "L"]],
+  },
+  {
+    han: "火替", name: "Lửa nhường đường", paper: "yellow", key: 0, tt: true,
+    riddle: "Lửa chịu nhường đường cho chuột, nhưng không nhường cho chữ.",
+    hint: "LỬA LÀ ĐỔI: chuột bước vào lửa là đổi chỗ với lửa, không bị bỏng. Nhưng đẩy chữ vào lửa đổi chỗ thì lửa lùi về đúng ô chuột sắp bước. Rút chữ ĐỔI ra trước, đẩy THẮNG vào ô lửa (chữ không cháy), trả ĐỔI về chỗ rồi bước vào lửa: chuột đẩy THẮNG sang bên kia, lửa lùi ra sau lưng.",
+    map: ["M=1..w....", ".....w.G=.", ".m.6.f....", "F=*w.w..g.", ".....w....", "F=5..w....", "W=3..w...."],
+    fixed: [[0,0], [1,0], [2,0], [7,1], [8,1], [0,3], [1,3], [0,5], [1,5], [2,5], [0,6], [1,6], [2,6]],
+  },
+  {
+    han: "雲渡", name: "Cùng sang sông", paper: "lilac", key: -1, tt: true,
+    riddle: "Chỉ có một chữ LÀ: chữ sang sông thì chuột ở lại, chuột sang sông thì chữ ở lại.",
+    hint: "Rút chữ LÀ khỏi TƯỜNG LÀ CHẶN để vào được hốc có chữ CHUYỂN. Ô giữa MÂY và chỗ trống là một đám mây, nên MÂY LÀ CHUYỂN vừa thành thì chính chữ LÀ bay sang mây bên kia, ghép CỔNG LÀ THẮNG, luật mây mất ngay. Đặt LÀ lên mây trước, rồi đẩy CHUYỂN từ dưới lên: cú đẩy cuối để chuột đứng đúng trên đám mây thứ hai, cùng bay sang một lượt.",
+    map: ["M=1...~.....", "......~.....", "..Oo..~.Go6.", "..N.o.~.....", "..=...~.....", "..4w%w~..o..", "W=3www~...g.", ".....m~....."],
+    fixed: [[0,0], [0,6], [1,0], [2,0], [2,2], [2,3], [2,4], [2,5], [2,6], [8,2], [10,2]],
+  },
+  {
+    han: "浮字", name: "Thư theo dòng", paper: "blue", key: -3, tt: true,
+    riddle: "Dòng nước sôi chỉ chảy một chiều, chở được chữ mà không chở được chuột.",
+    hint: "Nước vừa NÓNG vừa TRÔI: chuột chạm vào là chết, còn chữ thả xuống thì nước chở sang bờ bên kia. Chữ tới trước bị chữ tới sau đẩy lên một ô, nên phải thả BỀN trước, CỔNG sau: thành CHUỘT LÀ BỀN và CỔNG LÀ THẮNG cùng lúc (thả ngược thì chuột hoá cổng). Chuột BỀN lội theo dòng, lên bờ ở khe đầu tiên.",
+    map: ["wwwwwwwwwwww", "w.....~w..gw", "w....w~....w", "w.Gw.w~wwM.w", "w..#.w~ww=.w", "w..w.w~~...w", "w..mwww.=..w", "wwwwwwww6www", "M=1N=5&>W=3."],
+    fixed: [[9,3], [9,4], [8,6], [8,7], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,8], [7,8], [8,8], [9,8], [10,8]],
+    dirs: [[6, 1, "D"], [6, 2, "D"], [6, 3, "D"], [6, 4, "D"], [6, 5, "R"], [7, 5, "R"]],
+  },
+  {
+    han: "石水", name: "Đá lên mặt nước", paper: "blue", key: -3, tt: true,
+    riddle: "Đá xuống sông thì chìm nghỉm, mà cửa lại đòi một chiếc chìa.",
+    hint: "Đẩy một hòn đá xuống sông cho chìm để mở lối sang bờ bên kia. Bên ấy có chữ KHÔNG: đẩy nó vào chỗ trống thành NƯỚC KHÔNG CHÌM, nước hết chìm nên hòn đá thứ hai nằm được trên mặt nước và hoá chìa (ĐÁ TRÊN NƯỚC LÀ CHÌA). Đẩy chìa vào cửa.",
+    map: ["M=1.~wwwww", "R=2.~N.4.w", "....~..-.w", ".r..~....w", ".mr.~wwdww", "....~wwgww", "N=4.~R@N=K", "W=3.~G=6..", "D=8.~K=7&2"],
+    fixed: [[0,0], [1,0], [2,0], [0,1], [1,1], [2,1], [5,1], [7,1], [0,6], [1,6], [2,6], [5,6], [6,6], [7,6], [8,6], [9,6], [0,7], [1,7], [2,7], [5,7], [6,7], [7,7], [0,8], [1,8], [2,8], [5,8], [6,8], [7,8], [8,8], [9,8]],
+  },
+  {
+    han: "貓轉", name: "Cưỡi mèo", paper: "white", key: 0, tt: true,
+    riddle: "Hai con mèo chạy tuần hai bên bức tường, chẳng ai sang được bên kia.",
+    hint: "Ghép MÈO LÀ CHUYỂN: hai con mèo thành hai bến biết chạy. Đứng chắn đường con mèo bên này, nó chạy vào ô của chuột là chuột sang chỗ con mèo bên kia. Xếp CỔNG LÀ THẮNG xong lại đứng chắn đường con mèo bên ấy để được đưa về chỗ cổng.",
+    map: ["M=1..wG=...", ".....w.....", ".m.w.w..w6.", "c..w.w....c", "C=.%.w.....", "C=^.gw.....", "W=3..w....."],
+    fixed: [[0,0], [1,0], [2,0], [6,0], [7,0], [0,4], [1,4], [0,5], [1,5], [2,5], [0,6], [1,6], [2,6]],
+    dirs: [[10, 3, "L"]],
+  },
+  {
+    han: "三雲", name: "Ba bến mây", paper: "sage", key: -2, tt: true,
+    riddle: "Ba đám mây là ba bến đò, nhưng đò chỉ chạy một chiều.",
+    hint: "Bước lên mây là sang đám mây kế tiếp theo vòng: mây bên chuột sang buồng chữ, buồng chữ sang buồng cổng, buồng cổng lại về bên chuột. Gửi từng chữ một sang buồng cổng và dọn chữ trước ra khỏi bến rồi mới gửi chữ sau: hai chữ chồng lên nhau thì không tách ra được nữa.",
+    map: ["M=1..w..G..", ".....w.o...", ".m...w....g", "..o..wwwwww", "O=%..w.....", ".....w.o=6.", "W=3..w....."],
+    fixed: [[0,0], [1,0], [2,0], [8,0], [0,4], [1,4], [2,4], [0,6], [1,6], [2,6]],
+  },
+  {
+    han: "保橋", name: "Bền hai lần", paper: "sage", key: -2, tt: true,
+    riddle: "Một chữ BỀN mà phải làm hai việc ở hai bờ sông.",
+    hint: "Ghép ĐÁ LÀ BỀN rồi đẩy đá vào sông: đá bền làm nước chìm mà mình vẫn còn, cứ thế dọn ra một lối qua sông. Rồi rút chữ BỀN ra khỏi câu, đẩy nó theo lối ấy sang bờ bên kia ghép CHUỘT LÀ BỀN: chuột bền thì lửa không làm gì được, cứ thế vào cổng.",
+    map: ["M=1..~~~.F=5", "R=2..~~~.fff", ".....~~~.fgf", "R=...~~~.fff", "...#.~~~....", ".m..r~~~....", ".....~~~M=..", "G=6..~~~N=4."],
+    fixed: [[0,0], [1,0], [2,0], [9,0], [10,0], [11,0], [0,1], [1,1], [2,1], [0,3], [1,3], [8,6], [9,6], [0,7], [1,7], [2,7], [8,7], [9,7], [10,7]],
+  },
+  {
+    han: "字落", name: "Chữ rơi xuống giếng", paper: "lilac", key: -1, tt: true,
+    riddle: "Giữa CỔNG và THẮNG thiếu một chữ LÀ, mà giếng sâu đầy lửa thì ai xuống được?",
+    hint: "Chuột không xuống được giếng lửa, nhưng chữ rơi qua lửa thì chẳng sao. Đảo ba chữ thành CHỮ LÀ RƠI sao cho chữ LÀ nằm đúng trên miệng giếng: vừa ghép xong là mọi chữ rơi, chữ LÀ rơi thẳng xuống chỗ trống, thành CỔNG LÀ THẮNG.",
+    map: ["wwwwwwwww", "w...m...w", "wwg$=T..w", "w..w....w", "wwwwfwwww", "wwwwfwwww", "wwwwfwwww", "M=1wfwwww", "W=3G.6F=5"],
+    fixed: [[0,7], [1,7], [2,7], [0,8], [1,8], [2,8], [3,8], [5,8], [6,8], [7,8], [8,8]],
+  },
+  {
+    han: "門降", name: "Cổng từ trời", paper: "blue", key: -3, tt: true,
+    riddle: "Cổng treo tận trời lại cứng như đá: không với tới, mà có tới cũng chẳng bước vào được.",
+    hint: "CỔNG LÀ CHẶN nên chuột không bước vào cổng được, nhưng nếu ghép CỔNG LÀ RƠI thì cổng rơi xuống, trúng ngay chỗ chuột đứng. Đám mây nằm giữa đường sẽ đỡ lấy cổng. Ghép MÂY LÀ ĐỔI: đi vào mây là đổi chỗ với mây, bấm lên dưới một đám mây là trèo lên nó. Dồn mây cho khéo để đứng được ngay dưới cổng.",
+    map: [".......g...", "...........", "...........", "O.ooo..o..G", "=.o.......=", "....*m$....", "wwwwwwwwwww", "M=1&$W=3O=3", "G=6&3......"],
+    fixed: [[0,3], [0,4], [10,3], [10,4], [0,7], [1,7], [2,7], [3,7], [4,7], [5,7], [6,7], [7,7], [8,7], [9,7], [10,7], [0,8], [1,8], [2,8], [3,8], [4,8]],
+  },
+  {
+    han: "石火", name: "Cày dung nham", paper: "pink", key: 2, tt: true,
+    riddle: "Đá lăn tới đâu thì dung nham tắt tới đó, nhưng đá chỉ biết lăn thẳng.",
+    hint: "Đẩy chữ TAN vào câu LỬA TRÊN ĐÁ LÀ: lửa nào có đá đè lên thì tự tắt. Đá chỉ cày được đường thẳng, nên cần hai hòn: hòn bên trái cày cột của nó lên tận cùng để chuột đứng ngang hàng cổng, hòn bên phải dừng ngay cạnh ở hàng ấy. Rồi đẩy hòn bên phải sang ngang, cày một đường vào cổng.",
+    map: ["ffffffwwwfff", "fffffffgffff", "fffffffwffff", "ffffffffffff", "w..wwwwwwwww", "......r..r..", "m..._.......", "F@R=.G=6W=3.", "M=1F=5R=2..."],
+    fixed: [[0,7], [1,7], [2,7], [3,7], [5,7], [6,7], [7,7], [8,7], [9,7], [10,7], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,8], [7,8], [8,8]],
+  },
+  {
+    han: "落鑰", name: "Nâng chìa", paper: "pink", key: 2, tt: true,
+    riddle: "Chìa đã rơi thì chỉ có xuống, chẳng ai nhấc lên được, phải không?",
+    hint: "CHÌA LÀ RƠI: chìa hụt chân là rơi, nhưng chữ đỡ được chìa. Để chìa rơi lên một chữ, rồi đứng dưới đẩy chữ ấy lên: chữ nâng chìa lên theo. Hai chữ CỔNG và LÀ ghép với chữ THẮNG đóng đinh thành một cây cầu, đẩy chìa qua cầu rồi thả xuống giếng vào cửa.",
+    map: ["....wwwwww", ".k.......w", "ww...6w.ww", "w..G=.w.ww", "wm....w.ww", "wwwwwwwd.g", "wwwwwwwwww", "M=1D=8W=3.", "K=7&2&$..."],
+    fixed: [[5,2], [0,7], [1,7], [2,7], [3,7], [4,7], [5,7], [6,7], [7,7], [8,7], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,8]],
+  },
+  {
+    han: "替石", name: "Gần đá thì đổi", paper: "lilac", key: -1, tt: true,
+    riddle: "Đứng cạnh đá thì đi xuyên được tường, nhưng cũng chẳng bước nổi vào cổng.",
+    hint: "Đẩy chữ ĐỔI vào câu CHUỘT GẦN ĐÁ LÀ: hễ đứng cạnh hòn đá, chuột đổi chỗ với mọi thứ nó bước vào, kể cả tường và chính hòn đá. Bước qua đá là kéo đá theo mình: dắt đá đi sát bên để xuyên qua lớp tường dày, rồi bỏ đá lại phía sau, xa hơn một ô, mới bước được vào cổng.",
+    map: ["ww.w.mwwwwww", "w.*...wwwwww", "w.wr..wwwgww", "w.r...wwwwww", "w.....wwwwww", "w.....wwwwww", "M?R=.W=3G=6.", "M=1........."],
+    fixed: [[0,6], [1,6], [2,6], [3,6], [5,6], [6,6], [7,6], [8,6], [9,6], [10,6], [0,7], [1,7], [2,7]],
+  },
+  {
+    han: "守字", name: "Bám chữ", paper: "yellow", key: 0, tt: true,
+    riddle: "Rời chữ một bước là chuột đứng chết trân.",
+    hint: "CHUỘT GẦN CHỮ LÀ ĐI: chuột chỉ đi được khi có chữ ngay sát bên. Đẩy chữ ĐÁ và chữ VÀ xuống sông để lấp hai ô nước, nhưng lúc nào cũng phải giữ một chữ cạnh mình. Rồi đẩy chữ THẮNG qua lối vừa lấp, ghép CỔNG LÀ THẮNG.",
+    map: ["M?T=1~~....", "m....~~....", "..R..~~....", ".&6..~~....", "w....~~.G=.", "N=4W=3~..g."],
+    fixed: [[0,0], [1,0], [2,0], [3,0], [4,0], [0,5], [1,5], [2,5], [3,5], [4,5], [5,5], [8,4], [9,4]],
+  },
+  {
+    han: "雲轉", name: "Phà mây", paper: "blue", key: -3, tt: true,
+    riddle: "Căn phòng có cổng kín bưng, chỉ có dòng nước sôi chảy được vào.",
+    hint: "MÂY LÀ ĐẨY: đẩy một đám mây xuống dòng nước sôi, nước TRÔI sẽ đưa nó vào phòng. Đẩy chữ CHUYỂN vào chỗ chữ ĐẨY: hai đám mây thành hai bến, bước lên mây này là sang mây kia. Chữ THẮNG nằm trong phòng: đẩy nó lên mây cho nó sang bên ngoài, ra ghép CỔNG LÀ THẮNG rồi quay lại vào cổng.",
+    map: ["wwwwwwwwwwww", "wG=.....w.gw", "w.....o.w..w", "w.......w6.w", "w..~~~~~~..w", "w.....O.w..w", "w.m.o.=.w..w", "w....%2.w..w", "M=1N=5&>W=3."],
+    fixed: [[1,1], [2,1], [6,5], [6,6], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,8], [7,8], [8,8], [9,8], [10,8]],
+  },
+  {
+    han: "鼠替", name: "Chuột đổi chỗ", paper: "blue", key: -3, tt: true,
+    riddle: "Chữ THẮNG nép trong góc, đẩy cách nào cũng không ra.",
+    hint: "Đẩy chữ ĐỔI vào dưới CHUỘT / LÀ: chuột bước vào đâu là đổi chỗ với thứ ở đó, nên đi xuyên qua một chữ là kéo chữ ấy lùi về sau lưng. Kéo THẮNG ra khỏi góc, rút ĐỔI ra cho chuột đẩy được như thường, rồi đẩy THẮNG vào sau CỔNG LÀ.",
+    map: ["M=1.....6", "=........", ".........", "...G=....", "..*......", ".m....g..", "........."],
+    fixed: [[0,0], [1,0], [2,0], [0,1], [3,3], [4,3]],
+  },
+  {
+    han: "替門", name: "Suýt nữa thì thắng", paper: "pink", key: 2, tt: true,
+    riddle: "Cổng nằm sát mép trên, chữ THẮNG chỉ vào được đúng ô có cổng.",
+    hint: "Chỗ duy nhất ghép được CỔNG LÀ THẮNG là chính ô cổng, mà chữ đã đè lên cổng thì chuột không đứng lên được. Rút chữ LÀ khỏi TƯỜNG LÀ CHẶN để vào lấy chữ ĐỔI, dựng dọc CỔNG / LÀ / ĐỔI, rồi đẩy THẮNG vào cổng: chữ vào chỗ, cổng đổi chỗ sang ngay dưới chân chuột.",
+    map: ["...G=g..6.", "....www...", ".wwwww....", ".w.*.w....", ".wwwww.W..", "..m....=..", "M=1....3.."],
+    fixed: [[3,0], [4,0], [7,4], [7,6], [0,6], [1,6], [2,6]],
+  },
+  {
+    han: "字牆", name: "Chữ xuyên tường", paper: "lilac", key: -1, tt: true,
+    riddle: "Tường tránh đường cho chuột, nhưng chữ thì vẫn bị chặn lại.",
+    hint: "TƯỜNG GẦN CHUỘT KHÔNG CHẶN: chuột đi xuyên tường, nhưng chữ đẩy tới tường vẫn bị chặn. Xuyên xuống buồng dưới, đẩy chữ CHỮ lên thay chữ CHUỘT: TƯỜNG GẦN CHỮ KHÔNG CHẶN, tường mở ra quanh mọi chữ. Đẩy chữ THẮNG xuyên tường vào buồng cổng mà ghép CỔNG LÀ THẮNG.",
+    map: ["M=1....wG=.", ".6.....w...", "m......w.g.", "W?M-3wwwwww", "...........", "..T........", "W=3........"],
+    fixed: [[0,0], [1,0], [2,0], [8,0], [9,0], [0,3], [1,3], [3,3], [4,3], [0,6], [1,6], [2,6]],
+  },
+  {
+    han: "轉火", name: "Đưa lửa đi", paper: "pink", key: 2, tt: true,
+    riddle: "Lửa chẳng dập được, nhưng có thể mời nó sang chỗ khác.",
+    hint: "Ghép ĐÁ LÀ CHUYỂN: hòn đá lăn vào lửa thì ngọn lửa bị đưa sang hòn đá kế tiếp (đá xếp lượt từ trên xuống, từ trái sang phải). Hòn bên phải mà vào lửa thì lửa sang hòn đá chắn cửa bên kia sông, lấp mất lối. Dời hòn bên phải đi, đẩy hòn bên trái vào lửa: lửa rơi xuống hòn kia vô hại.",
+    map: ["M=1..ff..wwg", "W=3%.ff..w..", "R=2..ff..w.w", "R=...ff..w..", ".....ff..r..", ".....ff..wFG", "m.rr.ff..w==", ".....ff..w56"],
+    fixed: [[0,0], [1,0], [2,0], [0,1], [1,1], [2,1], [0,2], [1,2], [2,2], [0,3], [1,3], [10,5], [11,5], [10,6], [11,6], [10,7], [11,7]],
+  },
+  {
+    han: "鼠轉", name: "Chuột gọi chuột", paper: "lilac", key: -1, tt: true,
+    riddle: "Ba con chuột cùng bước một lượt, một con bị nhốt riêng với cổng.",
+    hint: "Ghép CHUỘT LÀ CHUYỂN: mỗi con chuột thành một bến. Chữ bị đẩy vào ô của một con chuột đang đứng kẹt sẽ bay sang con chuột kế tiếp (theo thứ tự lúc đầu, đọc từ trên xuống), có lúc là con trong buồng cổng. Gửi chữ LÀ trước rồi mới tới THẮNG, để con chuột trong buồng xếp được CỔNG / LÀ / THẮNG.",
+    map: ["M=1.6=.wGw", ".......w.w", ".m.ww..w.w", ".....m.w.w", "M=..ww.wmw", "..w%...w.w", "W=3....wgw"],
+    fixed: [[0,0], [1,0], [2,0], [8,0], [0,4], [1,4], [0,6], [1,6], [2,6]],
+  },
+  {
+    han: "渡火", name: "Lội qua lửa", paper: "sage", key: -2, tt: true,
+    riddle: "Đứng gần nước thì chuột lội chẳng chìm, nhưng bên kia còn cả dòng lửa.",
+    hint: "CHUỘT GẦN NƯỚC LÀ BỀN: chuột lội xuống sông không chìm, mà ô nước nó lội qua thì mất, thành một lối khô. Đẩy chữ LỬA qua lối ấy về bờ này rồi đẩy lên thay chữ NƯỚC: CHUỘT GẦN LỬA LÀ BỀN, chuột đi qua dòng lửa vào cổng.",
+    map: ["M=1..~~..ff.", ".....~~F.ff.", "M?N=#~~..ffg", ".m...~~..ff.", ".....~~..ff.", "N=4F=5G=6..."],
+    fixed: [[0,0], [1,0], [2,0], [0,2], [1,2], [3,2], [4,2], [0,5], [1,5], [2,5], [3,5], [4,5], [5,5], [6,5], [7,5], [8,5]],
+  },
+  {
+    han: "四法", name: "Bốn phép", paper: "lilac", key: -1, tt: true,
+    riddle: "Bốn phép thần thông, mỗi phép mở một cánh cửa, mà cửa nào cũng phải mở đúng lượt.",
+    hint: "Đẩy chữ TAN vào câu LỬA LÀ cho lửa tự tắt, đẩy một đám mây xuống dòng nước sôi cho nước TRÔI đưa vào phòng, rồi đẩy chữ CHUYỂN vào chỗ chữ ĐẨY: hai đám mây thành hai bến. Chữ ĐỔI nằm trong phòng: đẩy nó lên mây cho nó sang bến ngoài, ra theo mà ghép NƯỚC LÀ ĐỔI. Vào lại: nước sôi nhường chỗ khi chuột bước vào, lội qua mà tới cổng.",
+    map: ["M=1W=3F=5G=6", "wFf..Owww~gw", "w=fo.=ww..~w", "w.f.%2.w...w", "w.f.~~~~...w", "w_fo..Nw...w", "w.f...=w.*.w", "wmf....w...w", "N=5&>wwwwwww"],
+    fixed: [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0], [8,0], [9,0], [10,0], [11,0], [1,1], [1,2], [5,1], [5,2], [6,5], [6,6], [0,8], [1,8], [2,8], [3,8], [4,8]],
+    dirs: [[9, 1, "L"], [10, 2, "R"]],
+  },
 ];
 // the bought hint (owner): just the chain of rules to make, map by map
 const C2_CHAIN = [
@@ -450,7 +670,38 @@ const C2_CHAIN = [
   "Ghép CHUỘT LÀ BAY → phá CHUỘT LÀ BAY",
   "Ghép ĐÁ LÀ CHUỘT → ghép CỔNG LÀ THẮNG",
   "Ghép CHỮ LÀ BAY → phá CHỮ LÀ BAY → ghép CHUỘT KHÔNG BAY",
+  "Ghép MÂY LÀ CHUYỂN → bước lên mây sang sông",
+  "Ghép NƯỚC LÀ TRÔI → đẩy THẮNG xuống rãnh → ghép CỔNG LÀ THẮNG",
+  "Ghép TƯỜNG LÀ ĐỔI → lách qua tường",
+  "Ghép LỬA LÀ TAN",
+  "Ghép ĐÁ LÀ BỀN → đẩy đá qua sông",
+  "Ghép CỔNG LÀ RƠI → đi tới cổng",
+  "Ghép CHUỘT TRÊN RƠM LÀ THẮNG → đứng lên rơm",
+  "Ghép ĐÁ GẦN NƯỚC LÀ CHÌA → đẩy đá tới nước → đẩy chìa vào cửa",
+  "Gọi mèo trên chạy xuống → gọi mèo dưới chạy sang → ghép CỔNG LÀ THẮNG",
+  "Phá LỬA LÀ ĐỔI → đẩy chữ THẮNG vào lửa → ghép LỬA LÀ ĐỔI → ghép CỔNG LÀ THẮNG",
+  "Phá TƯỜNG LÀ CHẶN → đặt LÀ lên mây → đẩy CHUYỂN từ dưới lên, chân đứng trên mây → ghép CỔNG LÀ THẮNG",
+  "Thả chữ BỀN xuống sông trước, chữ CỔNG theo sau → ghép CHUỘT LÀ BỀN → ghép CỔNG LÀ THẮNG → lội theo dòng sang bờ có cổng",
+  "Đẩy đá xuống sông → ghép NƯỚC KHÔNG CHÌM → đẩy đá lên nước → đẩy chìa vào cửa",
+  "Ghép MÈO LÀ CHUYỂN → cưỡi mèo sang buồng chữ → ghép CỔNG LÀ THẮNG → cưỡi mèo về",
+  "Gửi chữ LÀ sang buồng cổng → dọn chữ khỏi bến → gửi chữ THẮNG → ghép CỔNG LÀ THẮNG",
+  "Ghép ĐÁ LÀ BỀN → đẩy đá qua sông → phá ĐÁ LÀ BỀN → đưa chữ BỀN qua sông → ghép CHUỘT LÀ BỀN",
+  "Xếp CHỮ LÀ RƠI với chữ LÀ trên miệng giếng → ghép CỔNG LÀ THẮNG",
+  "Ghép MÂY LÀ ĐỔI → ghép CỔNG LÀ RƠI → đổi chỗ với đám mây đỡ cổng",
+  "Ghép LỬA TRÊN ĐÁ LÀ TAN → đẩy đá lên cột thứ nhất → đẩy đá lên cột bên cạnh → đẩy đá vào cổng",
+  "Ghép CỔNG LÀ THẮNG → đẩy chìa qua cầu chữ → thả chìa xuống cửa",
+  "Ghép CHUỘT GẦN ĐÁ LÀ ĐỔI → dắt đá xuyên tường → bỏ đá lại, bước vào cổng",
+  "Đẩy hai chữ xuống sông → đẩy chữ THẮNG qua sông → ghép CỔNG LÀ THẮNG",
+  "Đẩy mây xuống sông → phá MÂY LÀ ĐẨY → ghép MÂY LÀ CHUYỂN → gửi chữ THẮNG ra ngoài → ghép CỔNG LÀ THẮNG",
+  "Ghép CHUỘT LÀ ĐỔI → kéo chữ THẮNG ra khỏi góc → phá CHUỘT LÀ ĐỔI → ghép CỔNG LÀ THẮNG",
+  "Phá TƯỜNG LÀ CHẶN → ghép CỔNG LÀ ĐỔI → ghép CỔNG LÀ THẮNG (đẩy chữ THẮNG vào cổng)",
+  "Phá TƯỜNG GẦN CHUỘT KHÔNG CHẶN → ghép TƯỜNG GẦN CHỮ KHÔNG CHẶN → ghép CỔNG LÀ THẮNG",
+  "Ghép ĐÁ LÀ CHUYỂN → đẩy hòn đá bên trái qua lửa → đẩy hòn đá chắn cửa vào trong",
+  "Ghép CHUỘT LÀ CHUYỂN → gửi chữ LÀ rồi chữ THẮNG sang buồng cổng → ghép CỔNG LÀ THẮNG",
+  "Lội sông mở lối → đẩy chữ LỬA qua lối → phá CHUỘT GẦN NƯỚC LÀ BỀN → ghép CHUỘT GẦN LỬA LÀ BỀN",
+  "Ghép LỬA LÀ TAN → đẩy mây xuống sông → phá MÂY LÀ ĐẨY → ghép MÂY LÀ CHUYỂN → gửi chữ ĐỔI ra ngoài → ghép NƯỚC LÀ ĐỔI",
 ];
 const C2_FIRST_HARD = C2LEVELS.findIndex(l => l.hard);
 const C2_FIRST_BH = C2LEVELS.findIndex(l => l.bh);   // Biến hoá: the Baba-style words (owner)
 const C2_FIRST_SK = C2LEVELS.findIndex(l => l.sk);   // Hơi khó: 30 hard maps, open after the last Biến hoá map
+const C2_FIRST_TT = C2LEVELS.findIndex(l => l.tt);   // Thần thông: 30 maps with the new words (CHUYỂN TRÔI ĐỔI TAN BỀN RƠI, TRÊN GẦN), open after the last Hơi khó map
