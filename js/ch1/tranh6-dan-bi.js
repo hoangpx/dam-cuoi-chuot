@@ -152,7 +152,7 @@ function t6Dark() {
       if (T7.pounce) {                                                               // the pounce (owner): the shadow drops onto the party, leaps away with it, black, back at the start
         const P = T7.pounce; P.t += dt; S.waitMove = true;
         if (!P.hit && P.t > .42) { P.hit = true; S.hideParty = true; if (AU.hasSample('meovo')) AU.play('meovo', 1); else AU.meow(); }
-        if (!P.back && P.t > 1.55) { P.back = true; const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0; S.hideParty = false; toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3); }
+        if (!P.back && P.t > 1.55) { P.back = true; const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0; S.hideParty = false; toast('Mèo vồ rồi! Làm lại nào.', 3); }
         if (P.t > 2.1) { T7.pounce = null; S.waitMove = false; }
         return;
       }
@@ -187,7 +187,7 @@ function t6Dark() {
     },
     caught() {                                                                   // the cat has the party: a black moment, the growl, and back to the start of the dark road
       if (T7.pounce) return; T7.ev = null; T7.cat = null; T7.pounce = { t: 0, dir: Math.random() < .5 ? -1 : 1, hit: false, back: false }; S.catches = (S.catches || 0) + 1; return;
-      T7.black = 1; if (AU.hasSample('meovo')) AU.play('meovo', 1); else AU.meow(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);   // the owner's recorded meow
+      T7.black = 1; if (AU.hasSample('meovo')) AU.play('meovo', 1); else AU.meow(); toast('Mèo vồ rồi! Làm lại nào.', 3);   // the owner's recorded meow
       const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0;
     },
     draw(g) {                                                                    // the posts that hold the trellis up (behind the party)
