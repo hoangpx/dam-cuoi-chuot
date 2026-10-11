@@ -133,8 +133,8 @@ function t6Dark() {
       this.dawn = Math.max(0, Math.min(1, (groom.x - (T6_OFF - 1700)) / 1500));                  // the dark thins as the trellis ends, and the moon comes out
       followers[0].item = 'lantern';
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
-      const want = 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
-      cv.style.cursor = '';                      // the mouse pointer is replaced by a lamp while it is dark
+      const want = (isTouch ? T7.down : T7.in) && this.dawn < .98 ? 1 : 0; T7.a += (want - T7.a) * Math.min(1, dt * (want ? 9 : 2.4));    // the torch of the finger: on while it is down, fading when lifted
+      cv.style.cursor = !isTouch && T7.in && this.dawn < .98 ? 'none' : '';                      // the mouse pointer is a lamp while it is dark; once the moon is out it is the plain pointer again
       if (false && (T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }       // (owner: crickets off for now, to hear the bell)
       T7.black = Math.max(0, T7.black - dt * 1.4);
       if (T7.loop) t7Ring(T7.loop, dt);                                           // (demo) the bell button: rings without stopping until pressed again
