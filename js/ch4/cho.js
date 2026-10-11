@@ -41,7 +41,7 @@ const C4_GOODS = {
   che: { name: 'Chè xanh', unit: 'bát', x: 1150, price: 4, cost: 1, fuel: 10, keep: 'day', rent: 100, wage: 8, from: 2, cap: 80, serve: 1, art: 'che',
     hours: { 'Mão': 1.5, 'Thìn': 1.2, 'Tỵ': .8, 'Ngọ': .4, 'Mùi': .5, 'Thân': .8, 'Dậu': .7 }, wx: { gat: .4, mua: 1.7, ret: 2.1, dep: 1 } },
   xoi: { name: 'Xôi', unit: 'gói', x: 1580, price: 8, cost: 4, keep: 'noon', rent: 200, wage: 10, from: 4, cap: 60, serve: 1.2, art: 'xoi',
-    hours: { 'Mão': 1.8, 'Thìn': 1.4, 'Tỵ': .7, 'Ngọ': 0, 'Mùi': 0, 'Thân': 0, 'Dậu': 0 }, wx: { gat: .8, mua: .9, ret: 1.4, dep: 1 } },
+    hours: { 'Mão': 1.8, 'Thìn': 1.4, 'Tỵ': .7, 'Ngọ': .35, 'Mùi': .25, 'Thân': .35, 'Dậu': .25 }, wx: { gat: .8, mua: .9, ret: 1.4, dep: 1 } },
   xen: { name: 'Hàng xén', unit: 'món', x: 2010, price: 10, cost: 8, keep: 'ever', rent: 300, wage: 8, from: 6, cap: 60, serve: 1.6, art: 'xen',
     hours: { 'Mão': .6, 'Thìn': .9, 'Tỵ': .9, 'Ngọ': .6, 'Mùi': .7, 'Thân': .9, 'Dậu': .6 }, wx: { gat: .8, mua: .6, ret: 1, dep: 1 } },
   bun: { name: 'Bún riêu', unit: 'bát', x: 2440, price: 15, cost: 9, keep: 'day', rent: 500, wage: 15, from: 8, cap: 50, serve: 2.2, art: 'bun',
@@ -301,7 +301,7 @@ function c4Morning() {
   for (const g of c4Owned()) {
     const G = C4_GOODS[g], row = document.createElement('div'); row.className = 'ware';
     const closed = g !== 'trau' && !c4Open(g);
-    row.innerHTML = `<h5>${G.name}${g !== 'trau' && G.keep === 'ever' ? ` · còn ${c4Stock(g)} ${G.unit}` : ''}${g === 'che' ? ' · tốn củi ' + G.fuel + ' đồng' : ''}${g === 'xoi' ? ' · thiu lúc 12:00 (giờ Ngọ)' : ''}${closed ? ' · <span class="bad">không ai trông</span>' : ''}</h5><div class="ord"></div>`;
+    row.innerHTML = `<h5>${G.name}${g !== 'trau' && G.keep === 'ever' ? ` · còn ${c4Stock(g)} ${G.unit}` : ''}${g === 'che' ? ' · tốn củi ' + G.fuel + ' đồng' : ''}${g === 'xoi' ? ' · để quá 7 tiếng là thiu' : ''}${closed ? ' · <span class="bad">không ai trông</span>' : ''}</h5><div class="ord"></div>`;
     box.appendChild(row);
     if (closed) { orders[g] = 0; row.querySelector('.ord').innerHTML = ''; continue; }
     c4Stepper(row.querySelector('.ord'), g, q => { orders[g] = q; c4AmTotal(orders); });
@@ -376,6 +376,22 @@ function c4Stepper(box, g, on, mid = false) {
 function c4LogAdd(item) {
   if (!SAVE4.log || SAVE4.log.day !== SAVE4.day) SAVE4.log = { day: SAVE4.day, items: [] };
   SAVE4.log.items.push(item);
+}
+// sticky rice goes off C4_XOI_KEEP after its batch came in (owner, 2026-10-11: a batch fetched at 11:45 used to go off at 12:00 with the morning's).
+// Batches are kept oldest first in SAVE4.xoiB; whatever left the stock (sold, stolen, spilt) is taken from the oldest; new stock is a new batch.
+const C4_XOI_KEEP = 7 * 60;
+function c4XoiTick() {
+  if (!c4Own('xoi')) return;
+  const S = c4Stock('xoi'); let B = SAVE4.xoiB && SAVE4.xoiB.day === SAVE4.day ? SAVE4.xoiB.b : [], sum = B.reduce((a, x) => a + x.n, 0);
+  if (S > sum) { B.push({ n: S - sum, at: C4.mins }); sum = S; }
+  for (let ex = sum - S; ex > 0 && B.length;) { const t = Math.min(ex, B[0].n); B[0].n -= t; ex -= t; if (!B[0].n) B.shift(); }
+  const old = B.filter(x => C4.mins >= x.at + C4_XOI_KEEP), off = old.reduce((a, x) => a + x.n, 0);
+  if (off) {
+    const at = old[0].at, hm = `${Math.floor(at / 60)}:${String(Math.floor(at % 60)).padStart(2, '0')}`;
+    B = B.filter(x => C4.mins < x.at + C4_XOI_KEEP); C4.today.wilt += off; C4.today.wiltLoss += off * c4Unit('xoi'); c4SetStock('xoi', S - off);
+    toast(`Mẻ xôi mang về lúc ${hm} để đã 7 tiếng, ${off} gói thiu phải đổ bỏ.`, 3.2); c4Hud();
+  }
+  SAVE4.xoiB = { day: SAVE4.day, b: B };
 }
 function c4Receive(g, q, cost, src = 'giua') {
   if (!q) return;
@@ -668,9 +684,9 @@ function updateC4(dt) {
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
     for (const v of C4.vendors) if (!c4VendorMine(v) && (v.callT -= dt) <= 0) { v.callT = 9 + R() * 9; if (Math.abs(v.x - C4.camX - c4View().vw / 2) < 600) c4Say(v, c4Pick(v.calls)); }
     if (C4.events.length && C4.mins >= C4.events[0].at && C4.mins >= (C4.evGap || 0) && !Object.values(C4.SV).some(A => A && A.length)) { const e0 = C4.events.shift(); c4NoteFired(e0.kind); C4.evGap = C4.mins + 30; c4Dispatch(e0.kind, e0); return; }   // one at a time, half an hour apart (owner: several came together)
-    // noon: sticky rice goes off; scorching days wilt some betel
+    c4XoiTick();
+    // noon: scorching days wilt some betel
     if (was < 12 * 60 && C4.mins >= 12 * 60) {
-      if (c4Own('xoi') && c4Stock('xoi') > 0) { const n = c4Stock('xoi'); C4.today.wilt += n; C4.today.wiltLoss += n * c4Unit('xoi'); c4SetStock('xoi', 0); toast(`Đến trưa (12:00), ${n} gói xôi thiu phải đổ bỏ.`, 3); }
       if (c4Wx() === 'gat' && SAVE4.stock > 4) { const n = Math.floor(SAVE4.stock * .25); SAVE4.stock -= n; C4.today.wilt += n; C4.today.wiltLoss += n * c4Unit('trau'); toast(`Nắng gắt, ${n} miếng trầu héo rũ.`, 3); }
       c4Hud();
     }
@@ -939,7 +955,7 @@ function c4OpenUp(g = 'trau') {
   c4Sheets('c4up');
 }
 // what each ware is like, for the plot sheet
-const c4Ware = g => ({ banhcuon: 'Đông nhất lúc sáng sớm, trưa chiều vắng. Trời rét bán chạy. Tan chợ bánh thừa phải bỏ. Khách ngồi ăn tại chỗ.', ruou: 'Bán chạy chiều tối, trời rét hay mưa càng đông. Rượu để được lâu. Dân nhậu hay ghé, khách ngồi uống tại chỗ.', gom: 'Mỗi món đắt, lãi khá nhưng bán chậm; mưa thì ít người đi mua. Hàng để được mãi.', thuoc: 'Trời rét, trời mưa nhiều người ốm thì bán chạy; nắng đẹp thì vắng. Thuốc để được lâu, mỗi thang lãi khá.', che: 'Bán chạy buổi sáng, trời rét hay mưa; nắng gắt thì ế. Mỗi ngày tốn củi đun. Tan chợ chè thừa phải đổ.', xoi: 'Chỉ bán buổi sáng. Đến 12:00 (giờ Ngọ) xôi thiu, thừa bao nhiêu đổ bấy nhiêu.', xen: 'Kim chỉ, lược, gương… để lâu không hỏng, nhưng lãi mỏng, bán chậm.', bun: 'Bán chạy quanh trưa. Vốn đắt, công người phụ cao; tan chợ bún thừa phải đổ.' }[g]);
+const c4Ware = g => ({ banhcuon: 'Đông nhất lúc sáng sớm, trưa chiều vắng. Trời rét bán chạy. Tan chợ bánh thừa phải bỏ. Khách ngồi ăn tại chỗ.', ruou: 'Bán chạy chiều tối, trời rét hay mưa càng đông. Rượu để được lâu. Dân nhậu hay ghé, khách ngồi uống tại chỗ.', gom: 'Mỗi món đắt, lãi khá nhưng bán chậm; mưa thì ít người đi mua. Hàng để được mãi.', thuoc: 'Trời rét, trời mưa nhiều người ốm thì bán chạy; nắng đẹp thì vắng. Thuốc để được lâu, mỗi thang lãi khá.', che: 'Bán chạy buổi sáng, trời rét hay mưa; nắng gắt thì ế. Mỗi ngày tốn củi đun. Tan chợ chè thừa phải đổ.', xoi: 'Bán chạy buổi sáng, chiều bán chậm. Mẻ nào để quá 7 tiếng từ lúc mang về là thiu, phải đổ: mẻ sáng sớm thiu lúc trưa, mẻ lấy thêm thì thiu muộn hơn. Tan chợ còn thừa cũng phải bỏ.', xen: 'Kim chỉ, lược, gương… để lâu không hỏng, nhưng lãi mỏng, bán chậm.', bun: 'Bán chạy quanh trưa. Vốn đắt, công người phụ cao; tan chợ bún thừa phải đổ.' }[g]);
 // the new rent is written down and sealed (owner); the rise itself is applied at once, the paper only shows it
 function c4KheRaise(g, who, name) { const now = c4RentOf(g); c4Khe({ title: 'Tăng tiền thuê', a: ['Chủ nhà', c4Cap1(who)], what: 'Tiền thuê nhà bán ' + name + ' tăng lên', money: Math.round(now * 1.1), per: 'mỗi tối', k: .8 }, null); }
 function c4Rent(g) {

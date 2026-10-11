@@ -227,7 +227,7 @@ function c4FxItems(items, g, vis) {
   // the couple's food stalls (art drawn at the ware's x + 20)
   const POT = { che: [[-40, -132, 3, 7]], bun: [[-55, -132, 4, 8]], xoi: [[-46, -112, 2, 5]] };
   for (const sh of ['che', 'bun', 'xoi']) {
-    if (!c4Own(sh) || !c4Stock(sh) || (sh === 'xoi' && C4.mins >= 12 * 60)) continue;
+    if (!c4Own(sh) || !c4Stock(sh) || false) continue;
     const bx = C4_GOODS[sh].x + 20; if (!vis(bx, 160)) continue;
     items.push({ z: C4_STALL_Z + .005, f: () => {
       for (const [px, py, n, sz] of POT[sh]) c4Puffs(g, bx + px * ss, sy + py * ss, ss, sh.length * .37, n, '250,247,240', 80, sz * 1.3);
