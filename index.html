@@ -34,6 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Playfair+Display:wght@700;900&family=Be+Vietnam+Pro:wght@400;600&display=swap">
+<link rel="preload" href="fonts/hanwangyankai-subset.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/nomnatong-subset.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/ch1.css">
@@ -188,7 +189,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-22o';
+const VERSION = '2026-10-22p';
 const FONT_CHARS = '守生橋鑰戶石雲開鎖飛拉走弱和不有囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠𡌽𡠣𤝞輩遞智兒取謀𦓅化𤞺𡉦𥯌坡坳𠬠𠄩𠀧𦊚𠄼廊幀糁𥽇𢫣金簜𢄂節𡑝婚𡨸羅墻渃焒𩵜𨶛稴𡑓匙𨷯坧𩄲𠫾𢩽振沈燶𢲫𢒎捁𧼋夭吧空固扱些鞦韆蜜授權過轉替命池十浮套助跑渠牽並步靜立交脆保溺降落群？捕蛙架梯';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢỞỮÉẾẠÔ';
 const GAME_FILES = [
@@ -278,7 +279,7 @@ const loadBar = k => { const b = document.getElementById('loadBar'); if (b) b.st
   }
   try {
     await Promise.race([
-      Promise.all([document.fonts.load('60px "Nom Na Tong"', FONT_CHARS), document.fonts.load('60px "Ma Shan Zheng"', FONT_CHARS), document.fonts.load('900 28px "Playfair Display"', VIET_CHARS), document.fonts.load('700 28px "Playfair Display"', VIET_CHARS)]),
+      Promise.all([document.fonts.load('60px "Han Wang Yan Kai"', FONT_CHARS), document.fonts.load('60px "Nom Na Tong"', FONT_CHARS), document.fonts.load('60px "Ma Shan Zheng"', FONT_CHARS), document.fonts.load('900 28px "Playfair Display"', VIET_CHARS), document.fonts.load('700 28px "Playfair Display"', VIET_CHARS)]),
       new Promise(r => setTimeout(r, 3000)),
     ]);
   } catch (e) {}
