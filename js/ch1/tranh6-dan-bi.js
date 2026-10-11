@@ -92,6 +92,17 @@ function t7Fol(g, F, A, x0, x1, top, black) {
   }
 }
 // the shadow of a huge cat: only its belly and its four long legs, black, as big as the screen, running past in front of the lights
+// the cat as it pounces (owner): a whole leaping cat in black, seen side on, legs reaching forward
+function t7LeapDraw(g, x, y, s, dir, open) {
+  g.save(); g.translate(x, y); g.scale(dir * s, s); g.fillStyle = 'rgba(0,0,0,.97)'; g.strokeStyle = 'rgba(0,0,0,.97)'; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.ellipse(0, 0, 130, 56, -.12, 0, 6.283); g.fill();                                                        // the body
+  g.beginPath(); g.arc(128, -40, 48, 0, 6.283); g.fill();                                                                     // the head
+  g.beginPath(); g.moveTo(98, -70); g.lineTo(104, -128); g.lineTo(132, -84); g.moveTo(140, -86); g.lineTo(170, -124); g.lineTo(168, -66); g.fill();   // the ears
+  g.lineWidth = 30; for (const [ax, ay, bx, by] of [[80, 20, 150 + 40 * open, 110 - 30 * open], [60, 26, 120 + 50 * open, 128 - 20 * open], [-80, 24, -170, 96], [-60, 30, -130, 120]]) { g.beginPath(); g.moveTo(ax, ay); g.quadraticCurveTo((ax + bx) / 2, Math.max(ay, by) - 10, bx, by); g.stroke(); }
+  g.lineWidth = 26; g.beginPath(); g.moveTo(-120, -14); g.quadraticCurveTo(-210, -40, -230, -130); g.stroke();             // the tail
+  g.fillStyle = 'rgba(255,214,90,.9)'; g.beginPath(); g.ellipse(150, -48, 9, 6, 0, 0, 6.283); g.fill();                     // one glowing eye
+  g.restore();
+}
 function t7CatDraw(g, vw, q, dir) {
   const H = viewH, x = dir > 0 ? -vw * .55 + (vw * 2.1) * q : vw * 1.55 - (vw * 2.1) * q, ph = q * 22, sw = i => Math.sin(ph + i * 1.7) * 38;
   g.save(); g.translate(x, 0); g.scale(dir, 1); g.fillStyle = 'rgba(0,0,0,.97)'; g.strokeStyle = 'rgba(0,0,0,.97)'; g.lineCap = 'round'; g.lineJoin = 'round';
@@ -124,7 +135,7 @@ function t7Ring(e, dt) {
   if (AU.hasSample('bell')) AU.play('bell', v, r); else AU.pluck(96 + (n % 4) * 3);
 }
 function t6Dark() {
-  T7.cat = null; T7.catT = 6; T7.a = 0; T7.ev = null; T7.pounceT = undefined; T7.zi = 0; T7.black = 0; T7.zs = t7Zones();
+  T7.cat = null; T7.catT = 6; T7.a = 0; T7.ev = null; T7.pounceT = undefined; T7.pounce = null; S.hideParty = false; T7.zi = 0; T7.black = 0; T7.zs = t7Zones();
   const lamp = () => { const f = followers[0]; return [f.x + f.face * 44, GROUND - 78]; };                // the lamp in the hand of the third mouse
   return {
     layer: 'bg', flick: 0, dawn: 0, btn: null,
@@ -138,6 +149,13 @@ function t6Dark() {
       if (false && (T7.cricT -= dt) < 0) { T7.cricT = 1.4 + Math.random() * 3.2; AU.cricket(.35 + Math.random() * .4); }       // (owner: crickets off for now, to hear the bell)
       T7.black = Math.max(0, T7.black - dt * 1.4);
       if (T7.loop) t7Ring(T7.loop, dt);                                           // (demo) the bell button: rings without stopping until pressed again
+      if (T7.pounce) {                                                               // the pounce (owner): the shadow drops onto the party, leaps away with it, black, back at the start
+        const P = T7.pounce; P.t += dt; S.waitMove = true;
+        if (!P.hit && P.t > .42) { P.hit = true; S.hideParty = true; if (AU.hasSample('meovo')) AU.play('meovo', 1); else AU.meow(); }
+        if (!P.back && P.t > 1.55) { P.back = true; const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0; S.hideParty = false; toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3); }
+        if (P.t > 2.1) { T7.pounce = null; S.waitMove = false; }
+        return;
+      }
       if (S.mode === 'play' && this.dawn < .8 && !SAVE.catBell) {                  // no bell on the cat (owner): two separate things — the cat's shadow now and then, harmless, and a pounce at random moments, with no warning
         if (!T7.cat && (T7.catT -= dt) < 0) { T7.catT = 8 + Math.random() * 13; T7.cat = { t: 0, dir: Math.random() < .5 ? -1 : 1 }; AU.rustle && AU.rustle(.7); }
         if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > T7_CAT) T7.cat = null; }
@@ -168,7 +186,8 @@ function t6Dark() {
       }
     },
     caught() {                                                                   // the cat has the party: a black moment, the growl, and back to the start of the dark road
-      T7.ev = null; T7.cat = null; T7.black = 1; S.catches = (S.catches || 0) + 1; if (AU.hasSample('meovo')) AU.play('meovo', 1); else AU.meow(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);   // the owner's recorded meow
+      if (T7.pounce) return; T7.ev = null; T7.cat = null; T7.pounce = { t: 0, dir: Math.random() < .5 ? -1 : 1, hit: false, back: false }; S.catches = (S.catches || 0) + 1; return;
+      T7.black = 1; if (AU.hasSample('meovo')) AU.play('meovo', 1); else AU.meow(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);   // the owner's recorded meow
       const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0;
     },
     draw(g) {                                                                    // the posts that hold the trellis up (behind the party)
@@ -181,7 +200,7 @@ function t6Dark() {
       }
     },
     drawMid(g) {                                                                 // the long black shadows the party casts backwards from the lamp (behind the mice, over the road)
-      if (this.dawn >= .99) return;
+      if (this.dawn >= .99 || S.hideParty) return;
       const [lx] = lamp(), L = [{ m: MICE.groom, x: groom.x, face: groom.face, ph: groom.ph, mv: groom.moving, it: null }, ...followers.map(f => ({ m: f.m, x: f.x, face: f.face, ph: f.ph, mv: f.moving, it: f.item }))];
       if (!T7.sh) { T7.sh = document.createElement('canvas'); T7.sh.width = 260; T7.sh.height = 340; T7.shx = T7.sh.getContext('2d'); }
       const o = T7.shx;
@@ -219,12 +238,12 @@ function t6Dark() {
         d.setTransform(k, 0, 0, k, 0, 0); d.globalCompositeOperation = 'destination-out';
         const light = (x, y, R, s) => { const gr = d.createRadialGradient(x, y, R * .06, x, y, R); gr.addColorStop(0, 'rgba(0,0,0,' + s + ')'); gr.addColorStop(.3, 'rgba(0,0,0,' + s * .78 + ')'); gr.addColorStop(.62, 'rgba(0,0,0,' + s * .36 + ')'); gr.addColorStop(.86, 'rgba(0,0,0,' + s * .1 + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = gr; d.beginPath(); d.arc(x, y, R, 0, 6.283); d.fill(); };
         const [lx, ly] = lamp(), fl = 1 + Math.sin(this.flick * 11) * .035 + Math.sin(this.flick * 23.7) * .03 + (Math.sin(this.flick * 3.1) > .96 ? -.1 : 0);        // the lamp: a wide, soft, guttering round, a little dimmer than before
-        light(lx - camX, ly + offY, 205 * fl, .86);
+        if (!S.hideParty) light(lx - camX, ly + offY, 205 * fl, .86);
         if (T7.a > .02) light(T7.px, T7.py, 215, .88 * T7.a);                      // the finger's torch
         d.globalCompositeOperation = 'source-over';
       }
       g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(T7.dk, 0, 0); g.restore();
-      const [lx, ly] = lamp(); g.save(); g.globalCompositeOperation = 'lighter'; const wg = g.createRadialGradient(lx - camX, ly + offY, 2, lx - camX, ly + offY, 160); wg.addColorStop(0, 'rgba(255,170,70,' + .26 * (1 - this.dawn) + ')'); wg.addColorStop(1, 'rgba(255,170,70,0)'); g.fillStyle = wg; g.fillRect(lx - camX - 160, ly + offY - 160, 320, 320); g.restore();     // warm glow
+      if (!S.hideParty) { const [lx, ly] = lamp(); g.save(); g.globalCompositeOperation = 'lighter'; const wg = g.createRadialGradient(lx - camX, ly + offY, 2, lx - camX, ly + offY, 160); wg.addColorStop(0, 'rgba(255,170,70,' + .26 * (1 - this.dawn) + ')'); wg.addColorStop(1, 'rgba(255,170,70,0)'); g.fillStyle = wg; g.fillRect(lx - camX - 160, ly + offY - 160, 320, 320); g.restore(); }     // warm glow
       if (base > .003) {                                                         // the near layer of gourds: never lit, pure black shapes over the sheet
         const A = t7Art(), x0 = camX - 150, x1 = Math.min(camX + vw + 150, T6_OFF - 100);
         if (x1 > x0) { g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, base * 1.3); g.lineCap = 'round'; t7Layer(g, T7_LAYERS[2], null, x0, x1, T7_TOP()); t7Fol(g, T7_FOL[2], A, x0, x1, T7_TOP(), true); g.restore(); }
@@ -235,6 +254,16 @@ function t6Dark() {
       }
       const c = T7.cat;
       if (c && base > .003) t7CatDraw(g, vw, c.t / T7_CAT, c.dir);
+      if (T7.pounce) {
+        const P = T7.pounce, t = P.t, px = (groom.x - 150) - camX, py = GROUND - 60 + offY;
+        if (t < 1.25) { let x, y, open;
+          if (t < .45) { const k = t / .45, e = k * k; x = px - P.dir * vw * .8 * (1 - e); y = py - viewH * .7 * (1 - e) - Math.sin(k * Math.PI) * 40; open = 1 - k; }       // dropping onto them
+          else if (t < .6) { x = px; y = py + 6; open = 0; }                                                                                                   // on them
+          else { const k = (t - .6) / .65, e = k * (2 - k); x = px + P.dir * vw * .95 * e; y = py - viewH * .75 * e + Math.sin(k * Math.PI) * -60; open = k; } // and away with them
+          t7LeapDraw(g, x, y, 1.5, P.dir, open); }
+        const b = t < 1.15 ? 0 : t < 1.55 ? (t - 1.15) / .4 : t < 1.75 ? 1 : Math.max(0, 1 - (t - 1.75) / .35);                             // black, the jump back, the light again
+        if (b > 0) { g.save(); g.fillStyle = 'rgba(0,0,0,' + b + ')'; g.fillRect(0, -offY, vw, viewH + offY + 40); g.restore(); }
+      }
       if (T7.black > .01) { g.save(); g.fillStyle = 'rgba(0,0,0,' + Math.min(1, T7.black * 1.6) + ')'; g.fillRect(0, -offY, vw, viewH + offY + 40); g.restore(); }                   // the cat's shadow streaks past, very fast
       if (this.dawn < 1 && T6R.ready && !window.TRAILER) {                                           // (demo only) a button to skip the dark stretch
         const w = 136, h = 32, x = vw - w - 24, y = viewH - 62; this.btn = { x, y, w, h };

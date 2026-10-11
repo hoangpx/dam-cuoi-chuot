@@ -16,7 +16,7 @@ function loadLevel(i) {
   S.inv = []; S.parasol = false; S.hold = false; S.plate = null; S.pads = {}; S.caught = 0; S.catcher = null; S.fx = []; S.told = {}; S.cp = L.cps[0];
   S.lastHint = -99; S.wallT = 0; S.lockMove = false; S.waitMove = false; S.catches = 0; S.gotSecret = false; S.reset = false;
   placeParty(S.cp);
-  camX = 0; AU.setKey(L.key); AU.muteDrums(false); S.drag = null; S.manualDrum = false;
+  camX = 0; S.hideParty = false; AU.setKey(L.key); AU.muteDrums(false); S.drag = null; S.manualDrum = false;
   $('#lvName').textContent = `Tranh ${i + 1} · ${L.name}`;
   $('#bDrum').hidden = true; $('#bKen').hidden = true; $('#bPara').hidden = true;
   const pl = L.abil.includes('plates'); for (const c in PBTN) $(PBTN[c]).hidden = !pl;
@@ -402,8 +402,8 @@ function render() {
   for (const e of S.ents) if (e.drawMid) e.drawMid(ctx);
   layer('mid');
   if (S.parasol) { const f = followers[0]; dp(ctx, ITEM.parasol, f.x + 14 * f.face, GROUND + 18, Math.sin(S.pose * 1.5) * .02, 2.2, 2.2); }
-  for (const i of L.kenFront ? [0, 2, 1] : [2, 1, 0]) { const f = followers[i]; drawMouse(ctx, f.m, f.x, f.face, f.ph, f.moving, f.item, i * 1.7 + 1); }   // tranh 5: the trumpet over the parasol mouse, the drum over the trumpet (owner)
-  drawMouse(ctx, MICE.groom, groom.x, groom.face, groom.ph, groom.moving, leadItem() ? 'lead' : null, 0);
+  if (!S.hideParty) for (const i of L.kenFront ? [0, 2, 1] : [2, 1, 0]) { const f = followers[i]; drawMouse(ctx, f.m, f.x, f.face, f.ph, f.moving, f.item, i * 1.7 + 1); }   // tranh 5: the trumpet over the parasol mouse, the drum over the trumpet (owner)
+  if (!S.hideParty) drawMouse(ctx, MICE.groom, groom.x, groom.face, groom.ph, groom.moving, leadItem() ? 'lead' : null, 0);   // S.hideParty: the party is gone a moment (tranh 6: taken by the cat)
   ctx.save(); ctx.beginPath();
   let gx = -40; for (const [a, b] of [...S.gaps].sort((p, q) => p[0] - q[0])) { ctx.rect(gx, GROUND - 30, a - gx, 90); gx = b; }
   ctx.rect(gx, GROUND - 30, L.width + 40 - gx, 90); ctx.clip();
