@@ -478,8 +478,12 @@ function t6FrogSeller(x) {
     layer: 'mid', said: false,
     draw(g) {
       if (!T6R.done) return;                                                   // he comes with the rest of the road's people, once the birds are saved
-      g.save(); g.translate(x, GROUND); g.scale(1.32, .8); g.translate(-x, -GROUND);
-      c4Mouse(g, c4MouseRig(2), x, -1, S.pose * 1.2, false, T6.done ? -1.2 : null, null, 1, GROUND, x); g.restore();
+      g.save(); g.translate(x, GROUND); g.scale(1.06, .9); g.translate(-x, -GROUND);                 // a little shorter, not squashed (owner)
+      c4Mouse(g, c4MouseRig(2), x, -1, S.pose * 1.2, false, T6.done ? -1.2 : null, null, 1, GROUND, x);
+      const by = GROUND - 54 + Math.sin(S.t * 2) * 1.2;                          // and a big round belly over the robe: he is fat
+      g.fillStyle = '#c99436'; g.strokeStyle = INK; g.lineWidth = 2.6; g.beginPath(); g.ellipse(x - 2, by, 31, 30, 0, 0, 6.283); g.fill(); g.stroke();
+      g.fillStyle = 'rgba(255,240,200,.35)'; g.beginPath(); g.ellipse(x - 10, by - 10, 11, 8, -.5, 0, 6.283); g.fill();
+      g.strokeStyle = '#7a1f17'; g.lineWidth = 4; g.beginPath(); g.ellipse(x - 2, by + 4, 31, 9, 0, .15, Math.PI - .15); g.stroke(); g.restore();
       dp(g, ITEMS.ech.part, x + 50, GROUND - 14, 0, 1.25, 1.25);             // his basket (full once the frogs are caught)
     },
     drawFg(g) {
