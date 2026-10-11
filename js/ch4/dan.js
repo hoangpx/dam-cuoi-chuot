@@ -10,13 +10,14 @@
 const C4_BOOK_DAY = 3;
 const C4_TRAITS = {
   xoi:    { name: 'Xởi lởi', desc: 'Quen biết rộng, mến ai là rủ cả họ đến mua.', links: 4, refer: 1.8, gain: 1.1, loss: 1 },
-  ky:     { name: 'Kỹ tính', desc: 'Khó chiều: hết hàng hay phải chờ lâu là giận lâu.', links: 2, refer: .8, gain: .8, loss: 1.8 },
-  chuyen: { name: 'Nhiều chuyện', desc: 'Biết hết chuyện làng; ưng thì khen khắp nơi, không ưng thì nói xấu khắp nơi.', links: 5, refer: 1.5, gain: 1, loss: 1.3, gossip: true },
+  ky:     { name: 'Kỹ tính', desc: 'Khó chiều: hết hàng hay phải chờ lâu là giận lâu.', links: 2, refer: .8, gain: .7, loss: 2.2 },
+  chuyen: { name: 'Nhiều chuyện', desc: 'Biết hết chuyện làng; ưng thì khen khắp nơi, không ưng thì nói xấu khắp nơi.', links: 5, refer: 1.5, gain: 1, loss: 1.3, gossip: true, sour: 30 },
   chat:   { name: 'Chặt chẽ', desc: 'Tiếc từng đồng, cứ giảm giá là mừng.', links: 2, refer: .8, gain: .9, loss: 1, half: 2.2 },
   hien:   { name: 'Hiền lành', desc: 'Dễ tính, hết hàng cũng chẳng giận mấy.', links: 2, refer: 1, gain: 1.1, loss: .5 },
   sidien: { name: 'Sĩ diện', desc: 'Thích được mời, được biếu; giảm giá thì lại chê.', links: 3, refer: 1.2, gain: 1, loss: 1.2, free: 2, half: .4 },
   itnoi:  { name: 'Ít nói', desc: 'Chẳng mấy khi kể chuyện với ai.', links: 0, refer: .3, gain: 1, loss: .9 },
-  khogan: { name: 'Khó gần', desc: 'Mua mấy lần cũng chưa chịu bắt chuyện, thân lên chậm. Nhưng đã thành mối ruột thì mua nhiều, nhiệt tình, rủ cả họ đến.', links: 3, refer: 2.4, gain: .55, loss: 1.2, meet: 5, ruot: 3 },
+  khogan: { name: 'Khó gần', desc: 'Mua mấy lần cũng chưa chịu bắt chuyện, thân lên chậm. Nhưng đã thành mối ruột thì mua nhiều, nhiệt tình, rủ cả họ đến.', links: 3, refer: 2.4, gain: .5, loss: 1.3, meet: 6, ruot: 3 },
+  danhda: { name: 'Đanh đá', desc: 'Khó tính, hay bắt bẻ. Chưa ưng là đi đồn khắp làng, nói xấu quán nhà mình; chưa quen cũng nói.', links: 4, refer: 1, gain: .6, loss: 1.8, meet: 3, gossip: true, sour: 50, stranger: true },
 };
 // a regular (owner): liking from C4_RUOT on, they buy more (a hard one far more), come often and send others
 const C4_RUOT = 80;
@@ -199,6 +200,13 @@ function c4People() {
   const heads = list.filter(p => p.kind === 'mouse' && (p.role === 'old' || p.as === 'chủ nhà')), landlord = {};
   for (const g of ['trau', 'che', 'xoi', 'xen', 'bun']) landlord[g] = heads[(r2() * heads.length) | 0].id;
   c4People3(list, houses, landlord, tie);
+  { const r3 = mulberry((SAVE4.seed || 7) + 404);   // more hard folk (owner, 2026-10-11): about a third of the easy ones turn hard to meet, fussy or sharp-tongued, on their own stream so the ties stay as drawn
+    for (const p of list) { const k = r3(), j = r3(); if (p.kind !== 'mouse' || !['hien', 'xoi', 'sidien', 'itnoi', 'chat'].includes(p.trait) || k >= .36) continue;
+      p.trait = ['danhda', 'danhda', 'khogan', 'ky', 'chuyen'][(j * 5) | 0]; p.purse = p.trait === 'khogan' ? 'kín tiếng, nhưng đã tin thì chi mạnh' : p.trait === 'danhda' ? 'chi li, mua gì cũng chê' : 'vừa phải'; } }
+  { const r4 = mulberry((SAVE4.seed || 7) + 505);   // what each one will not eat (owner, 2026-10-11): some never chew betel, some won't touch one dish or another
+    for (const p of list) { p.nope = []; if (p.kind !== 'mouse') continue;
+      if (r4() < .3 && p.fav !== 'trau') p.nope.push('trau');
+      if (r4() < .55) { const g = ['che', 'xoi', 'bun', 'banhcuon', 'ruou', 'ruou'][(r4() * 6) | 0]; if (g !== p.fav && !p.nope.includes(g)) p.nope.push(g); } } }
   return (C4P = { seed: SAVE4.seed, list, houses, landlord });
 }
 const c4F = id => SAVE4.folk[id] || (SAVE4.folk[id] = { a: 0, v: 0 });
@@ -285,7 +293,7 @@ const C4_DROP = 10;   // known buyers whose liking falls this low walk out of th
 function c4Gossip() {
   const P = c4People(), R0 = { n: 0, who: [], hurt: [], cold: 0 };
   for (const p of P.list) {
-    const f = SAVE4.folk[p.id]; if (!f || !f.k || f.a >= 25 || !C4_TRAITS[p.trait].gossip) continue;
+    const f = SAVE4.folk[p.id]; const T = C4_TRAITS[p.trait]; if (!f || !T.gossip || (f.k ? f.a >= (T.sour || 25) : !(T.stranger && (f.bad || f.seen)))) continue;   // the sharp-tongued talk even unmet, once they have been here (owner)
     let any = false;
     for (const l of p.links) { const g = c4F(l.to); if (g.k) { c4Bump(l.to, -5); R0.hurt.push(P.list[l.to].name); } else if (!g.bad) { g.bad = true; R0.cold++; } else continue; R0.n++; any = true; }
     if (any) R0.who.push(p.name);
@@ -361,6 +369,35 @@ function c4OpenNotes(tab) {
   if (C4_TAB === 'nha') c4HousesWire();
 }
 const c4Bar = a => `<i class="bar"><i style="width:${a}%;background:${a >= 60 ? '#2f6a4c' : a >= 35 ? '#c98a1c' : '#a3332a'}"></i></i>`;
+// a dish sent to someone (owner, 2026-10-11: "phải mời đúng món thì họ mới gần mới thích"): their favourite wins them over
+// (a hard one only warms to that), one they do not eat offends them, anything else is taken politely. One a day each, 1 unit of stock.
+const c4NopeWord = g => g === 'trau' ? 'ăn trầu' : g === 'ruou' ? 'uống rượu' : 'ăn ' + (C4_FAV_WORD[g] || C4_GOODS[g].name.toLowerCase()).replace(/^(bát|đĩa|gói|chén) /, '');
+function c4TreatHtml(p, f) {
+  if (C4.phase !== 'open') return '<p class="sm">Mời món được lúc chợ họp.</p>';
+  const gs = c4Owned().filter(g => c4Stock(g) > 0); if (!gs.length) return '';
+  const done = f.treat === SAVE4.day;
+  return `<h5>Mời món ${done ? '(đã mời hôm nay)' : '(mời đúng món họ thích mới thân)'}</h5><div class="acts">${gs.map(g => `<button class="act o" data-treat="${g}" ${done ? 'disabled' : ''}><b>${C4_GOODS[g].name}</b><span>1 ${C4_GOODS[g].unit}${(f.nopeK || []).includes(g) ? ' · không dùng' : f.favK && p.fav === g ? ' · món ruột' : ''}</span></button>`).join('')}</div>`;
+}
+function c4Treat(id, g) {
+  const p = c4People().list[id], f = c4F(id), T = C4_TRAITS[p.trait], day = SAVE4.day, hard = !!(T.meet || T.sour || p.trait === 'ky');
+  if (c4Stock(g) < 1 || f.treat === day) return;
+  if (g === 'trau') SAVE4.stock--; else SAVE4.shops[g].stock--;
+  f.treat = day; f.facts = f.facts || []; let line;
+  if ((p.nope || []).includes(g)) {
+    if (f.k) c4Bump(id, -6); else f.bad = true;
+    if (!(f.nopeK = f.nopeK || []).includes(g)) { f.nopeK.push(g); f.facts.push(`Ngày ${day}: không ${c4NopeWord(g)}.`); }
+    line = `${c4Cap1(p.name)} xua tay: "Tôi không ${c4NopeWord(g)}! Mời thế này là chẳng hiểu gì tôi rồi."`;
+  } else if (g === p.fav) {
+    if (!f.favK) f.facts.push(`Ngày ${day}: thích nhất ${C4_FAV_WORD[g] || C4_GOODS[g].name.toLowerCase()}.`); f.favK = day;
+    if (f.k) c4Bump(id, 16);
+    else { f.seen = f.seen || day; f.v = (f.v || 1) + 2; if (f.v >= (T.meet || 2)) { f.k = day; f.a = 50 - (f.bad ? 10 : 0); C4.today.met = (C4.today.met || 0) + 1; C4.noteNew = true; } }
+    line = `${c4Cap1(p.name)} sáng mắt lên: "Đúng món tôi thích! Cảm ơn cô nhé."${f.k === day ? ' Từ nay đã quen nhau.' : ''}`;
+  } else {
+    if (f.k) c4Bump(id, hard ? 1 : 4);
+    line = hard ? `${c4Cap1(p.name)} nhận cho phải phép, mặt vẫn lạnh tanh.` : `${c4Cap1(p.name)} cảm ơn, ăn cho vui.`;
+  }
+  toast(line, 3.8); AU.tap(); persist4(); c4Hud(); c4OpenNotes('quen');
+}
 const C4_INVITES = 3, c4Invited = () => Object.values(SAVE4.folk).filter(f => f.inv === SAVE4.day).length;   // invitations a day
 function c4Act(id, act) {
   const p = c4People().list[id], f = c4F(id);

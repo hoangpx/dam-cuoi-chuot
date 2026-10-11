@@ -247,7 +247,7 @@ function c4Spawn(atX, guest = null) {
   let shop = null;
   if (guest) shop = guest.shop;
   else if (!(kind === 'mouse' && role === 'child') && C4.phase === 'open') {
-    const wants = c4Owned().map(g => [g, c4Want(g) * .56 * (P && P.fav === g ? 1.8 : 1)]), sum = wants.reduce((a, [, w]) => a + w, 0);
+    const wants = c4Owned().map(g => [g, c4Want(g) * .56 * (P && P.fav === g ? 1.8 : 1) * (P && P.nope && P.nope.includes(g) ? 0 : 1)]), sum = wants.reduce((a, [, w]) => a + w, 0);
     if (R() < Math.min(.9, sum * c4Keen(P))) { let k = R() * sum; for (const [g, w] of wants) { if ((k -= w) <= 0) { shop = g; break; } } }
   }
   // what they bring: a buffalo to lead (then they are only passing, on the way to the fields), an umbrella in the rain, too much wine
@@ -734,7 +734,8 @@ function updateC4(dt) {
     while (C4.guestQ.length && C4.guestQ[0].at <= C4.guestT) {
       const { p, no, late } = C4.guestQ.shift(), gs = C4.guestGoods();
       if (no) { toast(c4Pick([`Chờ mãi chẳng thấy ${p.name} đâu. Hẹn rồi lại quên!`, `${c4Cap1(p.name)} nhắn ra: "Bận việc nhà, hôm khác nhé!"`, `${c4Cap1(p.name)} hẹn mà không đến.`]), 3); continue; }
-      if (gs.length) { c4Spawn(undefined, { p, shop: gs[(R() * Math.min(2, gs.length)) | 0] }); const w = C4.walkers[C4.walkers.length - 1]; if (late && w && w.pid === p.id) setTimeout(() => { if (S.mode === 'c4play' && !w.say) c4Say(w, c4Pick(['Xin lỗi, tôi đến muộn!', 'Còn hàng không cô? Tôi chạy ra đây!', 'Bận tí việc, giờ mới ra được!'])); }, 900); }
+      const ok = gs.filter(g => !(p.nope || []).includes(g)), gp = ok.includes(p.fav) ? [p.fav] : ok;   // a guest goes for what they eat, their favourite first
+      if (gp.length) { c4Spawn(undefined, { p, shop: gp[(R() * Math.min(2, gp.length)) | 0] }); const w = C4.walkers[C4.walkers.length - 1]; if (late && w && w.pid === p.id) setTimeout(() => { if (S.mode === 'c4play' && !w.say) c4Say(w, c4Pick(['Xin lỗi, tôi đến muộn!', 'Còn hàng không cô? Tôi chạy ra đây!', 'Bận tí việc, giờ mới ra được!'])); }, 900); }
     }
   }
   if ((C4.chatT -= dt) <= 0) {
@@ -772,9 +773,13 @@ function c4ChatStart(a, b) {
     const yes = kinds.filter(truth), no = kinds.filter(k => !truth(k));
     if (kinds.length && Object.values(C4.said).reduce((x, y) => x + y, 0) < 3) { news = (yes.length && (R() < .5 || !no.length)) ? c4Pick(yes) : c4Pick(no.length ? no : kinds); C4.said[news] = (C4.said[news] || 0) + 1; pick = C4_NEWS[news]; }
   }
-  if (!news && SAVE4.omens && SAVE4.omens.day === SAVE4.day && SAVE4.omens.left.length && R() < .35) { const k = c4Pick(SAVE4.omens.left); SAVE4.omens.left = SAVE4.omens.left.filter(x => x !== k); pick = C4_OMENS[k]; }
-  const script = c4Pick(pick).map(([k, s]) => [k, fill(s).replace(/^./, ch => ch.toUpperCase())]);
-  const c = { a, b, script, i: -1, t: 0, news, heard: false, from: script[0][0] ? b.name : a.name };   // the one who starts the news: named in the notebook
+  let bad = null;   // a sharp tongue who does not like us bad-mouths the stalls (owner)
+  if (!news && SAVE4.day >= C4_BOOK_DAY) for (const w of [a, b]) { if (w.pid === undefined) continue; const p = c4People().list[w.pid], T = C4_TRAITS[p.trait], f = SAVE4.folk[p.id];
+    if (T.gossip && (f && f.k ? f.a < (T.sour || 25) : T.stranger || (f && f.bad)) && R() < .6) { bad = w; break; } }
+  if (bad) pick = C4_BADMOUTH;
+  if (!news && !bad && SAVE4.omens && SAVE4.omens.day === SAVE4.day && SAVE4.omens.left.length && R() < .35) { const k = c4Pick(SAVE4.omens.left); SAVE4.omens.left = SAVE4.omens.left.filter(x => x !== k); pick = C4_OMENS[k]; }
+  const script = c4Pick(pick).map(([k, s]) => [bad === b ? 1 - k : k, (bad === b ? fill(s.replace(/{A}/g, '').replace(/{B}/g, '{A}').replace(//g, '{B}')) : fill(s)).replace(/^./, ch => ch.toUpperCase())]);
+  const c = { a, b, script, i: -1, t: 0, news, bad, heard: false, from: script[0][0] ? b.name : a.name };   // the one who starts the news: named in the notebook
   for (const w of [a, b]) { w.st = 'chat'; w.chat = c; }
   a.face = 1; b.face = -1; const mid = (a.x + b.x) / 2, mz = (a.z + b.z) / 2; a.x = mid - 42; b.x = mid + 42; a.z = b.z = mz;
 }
@@ -783,6 +788,7 @@ function c4ChatStep(c, dt) {
   for (const w of [c.a, c.b]) w.talk = false;
   if (++c.i >= c.script.length) {
     for (const w of [c.a, c.b]) { w.st = 'walk'; w.face = w.dir; w.chat = null; w.cd = 18 + R() * 14; }
+    if (c.bad) { const l = c.bad === c.a ? c.b : c.a; if (l.pid !== undefined) { const g = c4F(l.pid); if (g.k) { c4Bump(l.pid, -3); C4.fx.push({ x: l.x, y: c4Y(l.z) - 200, t: 0, s: `${l.name} −3` }); } else g.bad = true; } }   // the one who listened believes it a little
     if (c.news && c.heard && !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === c.news)) {
       SAVE4.notes.push({ day: SAVE4.day + 1, kind: c.news, text: `${c.from} kể: ${C4_NOTE[c.news]}`, from: c.from }); SAVE4.notes = SAVE4.notes.filter(n => n.day >= SAVE4.day);
       persist4(); AU.pluck(90); C4.noteNew = true; c4Hud(); toast('Đã ghi vào sổ tay.', 2);

@@ -303,7 +303,7 @@ function qhCardHtml(id) {
     const buy = SAVE4.day >= C4_BOOK_DAY && C4.phase === 'open', unknownTies = p.links.filter(l => !c4Heard(l.to)).length;
     return `<div class="qhc">${QH_BACK}<div class="who"><img src="${c4Face(p)}" alt=""><div><h4>${p.name}</h4><p class="st">${C4_STAR(f.a)} <b>${c4LikeWord(f.a)}</b></p><p>${addr}<br>nghề ${p.job} · ghé quán ${f.v || 0} lần</p></div></div>
       <div class="badges">${c4Badges(p).map(([t, c]) => `<span style="border-color:${c};color:${c}">${t}</span>`).join('')}</div>
-      <h5>Thói quen</h5><ul class="hab"><li>⏰ Hay ra chợ <b>${c4Span(p.hour)}</b></li><li>♥ Thích <b>${C4_FAV_WORD[p.fav]}</b></li><li>🪙 Tiền nong: <b>${p.purse}</b></li></ul>
+      <h5>Thói quen</h5><ul class="hab"><li>⏰ Hay ra chợ <b>${c4Span(p.hour)}</b></li><li>♥ Thích ${f.favK || (f.v || 0) >= 8 ? `<b>${C4_FAV_WORD[p.fav]}</b>` : '<i>chưa biết, mời thử món xem</i>'}</li>${(f.nopeK || []).length ? `<li>✕ Không ${f.nopeK.map(c4NopeWord).join(', không ')}</li>` : ''}<li>🪙 Tiền nong: <b>${p.purse}</b></li></ul>
       <h5>Tính nết</h5><p><b>${T.name}:</b> ${T.desc}</p>
       ${(() => { const hh = (SAVE4.hao || []).filter(x => x.pid === id || (x.pid == null && x.name === p.name)).pop(); return hh ? `<h5>Họ nhận xét về gánh mình</h5><p class="haoq">${C4_HAO_STAR(hh.star)} “${hh.say}”<br><i>${hh.who === 'v' ? 'Vợ' : 'Chồng'} đáp: ${hh.reply}</i></p>` : ''; })()}
       <h5>Quan hệ (${p.links.length})</h5>${qhTieSvg(p)}
@@ -314,6 +314,7 @@ function qhCardHtml(id) {
         <button class="act o" data-act="tea" ${f.tea === day || SAVE4.money < 3 ? 'disabled' : ''}><b>Mời nước</b><span>${f.tea === day ? 'đã mời hôm nay' : '3 đồng · thêm thân'}</span></button>
         <button class="act b" data-act="ask" ${f.ask === day || !unknownTies || f.a < 35 ? 'disabled' : ''}><b>Hỏi chuyện nhà</b><span>${!unknownTies ? 'đã biết hết' : f.a < 35 ? 'chưa đủ thân' : f.ask === day ? 'mai hỏi tiếp' : `còn ${unknownTies} người chưa biết`}</span></button>
       </div>
+      ${c4TreatHtml(p, f)}
       <div class="row col"><button class="btn alt" data-act="half" ${!buy || f.deal ? 'disabled' : ''}>Lần tới giảm nửa giá</button><button class="btn alt" data-act="free" ${!buy || f.deal ? 'disabled' : ''}>Lần tới mời miễn phí</button></div></div>`;
   }
   // not met yet: how they are tied to the folk you know, and who could bring them along
@@ -321,6 +322,7 @@ function qhCardHtml(id) {
   const named = c4Heard(id), introBy = via.filter(([l, q]) => l.rel !== 'ghet' && SAVE4.folk[q.id].a >= 50);
   const seen = f.seen && !f.k;
   return `<div class="qhc">${QH_BACK}<div class="who">${named ? `<img src="${c4Face(p)}" alt="">` : '<i class="qq">?</i>'}<div><h4>${named ? p.name : 'Chưa biết là ai'}</h4><p>${seen ? (C4_TRAITS[p.trait].meet ? `người khó gần: đã ghé ${f.v}/${C4_TRAITS[p.trait].meet} lần mới chịu bắt chuyện` : 'mới ghé quán 1 lần: ghé thêm lần nữa là quen') : 'chưa quen'}${named ? `<br>${addr}` : ''}</p></div></div>
+    ${seen ? c4TreatHtml(p, f) : ''}
     <h5>Quen ai trong sổ</h5><ul class="ties">${via.map(([l, q]) => `<li><i style="background:${C4_RELS[l.rel].col}"></i>${C4_RELS[l.rel].name} của <button class="lk" data-qf="${q.id}">${q.name}</button> <small>${C4_STAR(SAVE4.folk[q.id].a)}</small></li>`).join('') || '<li>—</li>'}</ul>
     ${named ? (introBy.length
       ? `<div class="acts"><button class="act g" data-intro="${introBy[0][1].id}" ${f.intro === day || C4.phase !== 'open' ? 'disabled' : ''}><b>Nhờ ${introBy[0][1].name} giới thiệu</b><span>${f.intro === day ? 'đã nhờ hôm nay' : C4.phase !== 'open' ? 'chỉ nhờ được lúc chợ họp' : 'họ sẽ rủ người này ra chợ'}</span></button></div>`
@@ -331,6 +333,7 @@ function qhCardWire() {
   const box = $('#qhCard'); if (!box) return;
   box.querySelectorAll('[data-qback]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; c4OpenNotes('quen'); }));
   box.querySelectorAll('[data-qf]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = +b.dataset.qf; c4OpenNotes('quen'); $('#c4note').scrollTop = 0; }));
+  box.querySelectorAll('[data-treat]').forEach(b => b.addEventListener('click', () => c4Treat(C4_WHO, b.dataset.treat)));
   box.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => c4Act(C4_WHO, b.dataset.act)));
   box.querySelectorAll('[data-intro]').forEach(b => b.addEventListener('click', () => {
     const P = c4People(), q = P.list[C4_WHO], by = P.list[+b.dataset.intro], f = c4F(q.id);
