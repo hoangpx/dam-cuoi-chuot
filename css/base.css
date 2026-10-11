@@ -17,7 +17,9 @@
 html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:var(--body);transition:background-color .6s}
 *{touch-action:manipulation;-webkit-touch-callout:none}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
-.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:14px;padding:16px;box-sizing:border-box;text-align:center;z-index:5;overflow-y:auto}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:16px;box-sizing:border-box;text-align:center;z-index:5;overflow-y:auto}
+/* centred by auto margins, not by "safe center" (older iPhones, e.g. iOS 16 on an iPhone 8, ignore "safe" and a tall sheet then lost its top, out of reach of the scroll) */
+.ov>:first-child{margin-top:auto}.ov>:last-child{margin-bottom:auto}
 .sheet{background:rgba(242,236,222,.94);border:3px solid var(--ink);outline:1px solid var(--ink);outline-offset:4px;padding:24px 28px 22px;max-width:min(560px,92vw);box-shadow:6px 6px 0 rgba(29,25,21,.25);box-sizing:border-box}
 .sheet.wide{max-width:min(860px,94vw);width:100%}
 .sheet h1,.sheet h2{font-family:var(--display);font-weight:900;margin:0;letter-spacing:.02em;line-height:1.05;text-wrap:balance}

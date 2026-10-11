@@ -8,7 +8,8 @@
 #c4Money{font-size:16px}
 body.touch #c4hud .mid{position:static;transform:none}
 @media (max-width:520px){#c4hud{flex-wrap:wrap}#c4hud .mid{position:static;transform:none;order:3;width:100%;display:flex;justify-content:center}}
-.c4sheet{position:fixed;inset:0;z-index:6;display:flex;align-items:safe center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35);overflow-y:auto}
+.c4sheet{position:fixed;inset:0;z-index:6;display:flex;align-items:flex-start;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35);overflow-y:auto}
+.c4sheet>*{margin-top:auto;margin-bottom:auto;flex-shrink:0}   /* centred when it fits, scrolls from its top when it does not (old iPhones ignore "safe center") */
 .c4sheet .card4{max-width:420px;width:100%;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:16px 18px;text-align:center;font-family:var(--body)}
 .card4 h3{margin:0 0 10px;font-family:var(--display);font-weight:900;font-size:22px}
 .card4 .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
