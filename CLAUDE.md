@@ -379,3 +379,4 @@ The pounce (owner): T7.pounce timeline in t6Dark: a whole leaping black cat (t7L
 Dark stretch (owner): the finger/mouse lamp flickers like the oil lamp (radius and glow); as tranh 6 starts in the dark the lantern mouse says 'Ta có cảm giác lão mèo mà chúng ta dâng cá đang ở đâu đây…' (t6Say over the black sheet, .6–6.2 s after the tranh is ready).
 Opening line (owner): it stays until one tap (or a key) puts it away (t6Dark.hush), the party cannot walk meanwhile (S.waitMove). The no-bell pounce only comes while the party walks (the pounce timer runs only while groom.moving): standing still is safe.
 The last demo button ('Qua dàn bí rợ') is gone (owner). The artifact test copy starts every load at the very start of the dark stretch (its jump script deletes SAVE.t6), holding the bell not yet given.
+Tranh 1 with the bell in hand (owner): no finger hints (fish on the bank, ghost fish to the cat); the cat's half-open warn is .55 s.
