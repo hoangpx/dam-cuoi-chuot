@@ -370,3 +370,4 @@ The fish carried by the parasol mouse is dragged from the fish itself (f.x + 34 
 The mice's shadows in the dark now lie on the ground (owner): the silhouette is turned over and flattened below the feet (matrix 1, 0, −lean, −.2), stretched away from the lamp. The bell diagnostic toast is gone.
 Tranh 6: the groom holds the bell in his hand (bellHeld6 in game.js, leadItem) whenever SAVE.lucLac and not SAVE.catBell and nothing else is carried.
 No bell on the cat (owner): the cat's shadow and the pounce are two separate things — the shadow passes every 8–21 s and means nothing; a pounce (caught) comes at random, every 7–15 s, with no warning (T7.pounceT). With the bell only the bell-then-shadow events (zones) run, the shadow being the all-clear.
+When the cat pounces in the dark (t6Dark.caught) it is one AU.meow() (owner), no growl or thump.

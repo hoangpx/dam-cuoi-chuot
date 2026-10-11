@@ -168,7 +168,7 @@ function t6Dark() {
       }
     },
     caught() {                                                                   // the cat has the party: a black moment, the growl, and back to the start of the dark road
-      T7.ev = null; T7.cat = null; T7.black = 1; S.catches = (S.catches || 0) + 1; AU.snort && AU.snort(); AU.thump && AU.thump(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);
+      T7.ev = null; T7.cat = null; T7.black = 1; S.catches = (S.catches || 0) + 1; AU.meow(); toast('Mèo vồ! Đoàn rước phải đi lại từ đầu.', 3);
       const d = 340 - groom.x; placeParty(340); camX += d; T7.zi = 0;
     },
     draw(g) {                                                                    // the posts that hold the trellis up (behind the party)
