@@ -186,7 +186,7 @@ function buildAlbum2() {
   const box = $('#cards'); box.textContent = '';
   C2LEVELS.forEach((lv, i) => {
     if (i === 0 || i === C2_FIRST_HARD || i === C2_FIRST_BH || i === C2_FIRST_SK) { const h = document.createElement('div'); h.className = 'sec'; h.textContent = i === 0 ? 'Nhập môn' : i === C2_FIRST_HARD ? 'Cao thủ · mở sau tranh 4' : i === C2_FIRST_BH ? `Biến hoá · chữ mới · mở sau tranh ${C2_FIRST_HARD}` : `Hơi khó · mở sau tranh ${C2_FIRST_SK}`; box.appendChild(h); }
-    const open = window.C2_ALL || i === 0 || SAVE2.done[i - 1] || (i === C2_FIRST_HARD && SAVE2.done[3]) || (i === C2_FIRST_BH && SAVE2.done[C2_FIRST_HARD - 1]);
+    const open = i === 0 || SAVE2.done[i - 1] || (i === C2_FIRST_HARD && SAVE2.done[3]) || (i === C2_FIRST_BH && SAVE2.done[C2_FIRST_HARD - 1]);
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.disabled = !open;
     b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">${lv.han}</div><b>${lv.name}</b><span class="st${SAVE2.done[i] ? ' done' : ''}">${SAVE2.done[i] ? 'Đã đóng triện · ' + SAVE2.best[i] + ' bước' : open ? 'Chơi' : 'Chưa mở'}</span>`;
