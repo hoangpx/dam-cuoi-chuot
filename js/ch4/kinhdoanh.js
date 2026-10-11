@@ -431,6 +431,7 @@ const C4_EXTRA_EV = {
   // a flood coming: shore up the stalls now, or lose goods and a level tomorrow
   lut(E) {
     if (c4Wx() !== 'mua' || SAVE4.flood) return false;
+    SAVE4.lutNext = SAVE4.day + 15 + Math.floor(R() * 11);                  // floods are rare (owner): the next warning 15–25 days later at the soonest
     // (a player: shoring up cost 511 and not shoring up could cost 511 too, so there was nothing to choose) both numbers were capped at the purse; now the shoring costs only a third of the least that the flood could take
     const lossLo = c4LossRange(.05, .12)[0], fix = Math.max(5, Math.round(lossLo * .3));
     Object.assign(E, { title: 'Nước sông lên', text: `Mưa mãi không ngớt, nước sông dâng gần tới chợ. Các nhà rủ nhau đắp bờ, kê hàng lên cao. Nếu không đắp, nhiều khả năng nước tràn vào chợ và có thể thiệt ${c4LossText(.05, .12)}; đắp rồi thì nước ít khi tràn, mà tràn cũng chỉ thiệt nhẹ.${c4DikeN() ? ' Bờ đã đắp từ trước nên cũng chắc hơn.' : ''}`, opts: [
@@ -456,8 +457,8 @@ const C4_EXTRA_EV = {
 // The river bank (owner, 2026-10-10): every time the market shores it up (event 'lut') the bank gets stronger for a good while: later floods come less often,
 // and cost less when they do. Level 0–3, one level lost for every 25 days since the last shoring. c4DikeF() is the share left of the old risk.
 const c4DikeN = () => Math.max(0, (SAVE4.dike || 0) - Math.floor((SAVE4.day - (SAVE4.dikeDay || SAVE4.day)) / 25));
-const c4DikeF = () => 1 / (1 + .6 * c4DikeN());
-const c4ExtraPool = own => ['caicau', 'omdau', 'cotiec', ...(R() < c4DikeF() ? ['lut'] : []), 'khachla', 'bototron', 'mung', 'tang', ...(own.length > 1 ? ['duthue'] : []), ...c4TaiHoaPool(own)];
+const c4DikeF = () => 1 / (1 + 1.2 * c4DikeN());                           // a shored bank cuts the risk more (owner, 2026-10-11): ×.45 / ×.29 / ×.22
+const c4ExtraPool = own => ['caicau', 'omdau', 'cotiec', ...(SAVE4.day >= (SAVE4.lutNext || 0) && R() < .3 * c4DikeF() ? ['lut'] : []), 'khachla', 'bototron', 'mung', 'tang', ...(own.length > 1 ? ['duthue'] : []), ...c4TaiHoaPool(own)];
 // the feast is collected at giờ Thân; a flood the morning after a gamble
 function c4ExtraUpdate() {
   const F = SAVE4.feast;
@@ -474,7 +475,7 @@ function c4FloodMorning(back) {
   if (SAVE4.flood !== SAVE4.day) return; SAVE4.flood = 0;
   const shore = !!SAVE4.floodShore; SAVE4.floodShore = false;              // (owner) a shored-up market is flooded far less often (2 in 10, not 6) and loses far less when it is
   const f = c4DikeF();                                                    // (a bank shored up before: fewer floods and smaller ones, for good)
-  if (R() < (shore ? .2 : .6) * f) {
+  if (R() < (shore ? .15 : .5) * f) {
     const hit = C4_SHOPS.filter(g => c4Own(g)); let msg = 'Đêm qua nước tràn vào chợ!';
     const wet = Math.max(1, Math.round(c4Loss(.05, .12) * (shore ? .3 : 1) * f)); SAVE4.money -= wet; C4.today.spent += wet; msg += ` Mất ${c4Money(wet)} đồ đạc trôi.`;
     if (hit.length && !shore) { const g = c4Pick(hit), s = SAVE4.shops[g]; if ((s.lv || 0) > 0 && (s.lv || 0) < 4) { s.lv--; msg += ` Hàng ${C4_GOODS[g].name.toLowerCase()} hư hại, phải làm lại.`; } if (g === 'xen' && s.stock) { msg += ` Ướt mất ${Math.ceil(s.stock / 2)} món hàng xén.`; s.stock = Math.floor(s.stock / 2); } }
