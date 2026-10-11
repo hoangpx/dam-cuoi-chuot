@@ -141,8 +141,7 @@ function t6Dark() {
       if (S.mode === 'play' && this.dawn < .8) {
         if (!T7.ev) {
           while (T7.zi < T7.zs.length && T7.zs[T7.zi] < groom.x - 300) T7.zi++;                // zones already behind the party are not run again
-          if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { if (SAVE.catBell) toast('Lục lạc: có | file: ' + (AU.hasSample('bell') ? 'đã tải' : 'chưa tải') + ' | âm thanh: ' + AU.state(), 3);       // (demo: to find why the bell is silent)
-          const total = T7_MIN + Math.random() * (T7_MAX - T7_MIN);
+          if (T7.zi < T7.zs.length && groom.x > T7.zs[T7.zi]) { const total = T7_MIN + Math.random() * (T7_MAX - T7_MIN);
           T7.ev = { t: 0, el: 0, warn: Math.max(.05, total - T7_CAT), ph: SAVE.catBell ? 'warn' : 'sneak', dir: Math.random() < .5 ? -1 : 1, jt: 0 }; T7.zi++; }
         } else {
           const e = T7.ev; e.t += dt; e.el += dt;
@@ -185,8 +184,8 @@ function t6Dark() {
         o.setTransform(1, 0, 0, 1, 0, 0); o.globalCompositeOperation = 'source-over'; o.clearRect(0, 0, 260, 340);
         o.setTransform(1, 0, 0, 1, 130, 310 - GROUND); drawMouse(o, q.m, 0, q.face, q.ph, q.mv, q.it, i * 1.7 + 1);
         o.setTransform(1, 0, 0, 1, 0, 0); o.globalCompositeOperation = 'source-in'; o.fillStyle = '#000'; o.fillRect(0, 0, 260, 340);
-        const r = q.x - lx, sg = r >= 0 ? 1 : -1, lean = Math.max(-1.1, Math.min(1.1, r / 220 + sg * .3));
-        g.save(); g.globalAlpha = .8 * (1 - this.dawn); g.translate(q.x + r * .5 + sg * 40, GROUND + 4); g.transform(1.3, 0, -lean, .95, 0, 0); g.drawImage(T7.sh, -130, -310); g.restore();
+        const r = q.x - lx, sg = r >= 0 ? 1 : -1, lean = sg * (.9 + Math.min(.9, Math.abs(r) / 260));
+        g.save(); g.globalAlpha = .8 * (1 - this.dawn); g.translate(q.x + sg * 6, GROUND + 3); g.transform(1, 0, -lean, -.2, 0, 0); g.drawImage(T7.sh, -130, -310); g.restore();       // lying on the ground (owner): the silhouette is turned over and flattened below the feet, stretched away from the lamp
       });
     },
     drawFg(g) {                                                                  // the trellis and the far and middle layers of gourds, over the party's heads
