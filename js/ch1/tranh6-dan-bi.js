@@ -140,7 +140,7 @@ function t6Dark() {
   return {
     layer: 'bg', flick: 0, dawn: 0, btn: null,
     update(dt) {
-      this.flick += dt; if (T6R.ready && this.sayT != null) this.sayT += dt; if (!T7.bl) { T7.bl = 1; bellLoad(); } if (!AU.hasSample('meovo')) AU.sampleB64('meovo', MEOW_B64);
+      this.flick += dt; if (T6R.ready && this.sayT != null) { this.sayT += dt; if (this.talk) { S.waitMove = true; if (keys.size && this.sayT > .9) this.hush(); } } if (!T7.bl) { T7.bl = 1; bellLoad(); } if (!AU.hasSample('meovo')) AU.sampleB64('meovo', MEOW_B64);
       this.dawn = Math.max(0, Math.min(1, (groom.x - (T6_OFF - 1700)) / 1500));                  // the dark thins as the trellis ends, and the moon comes out
       followers[0].item = 'lantern';
       if (groom.x > T6_OFF && !(SAVE.t6 && SAVE.t6.dark)) { SAVE.t6 = Object.assign(SAVE.t6 || {}, { dark: true }); persist(); }       // the dark stretch is walked once
@@ -159,7 +159,7 @@ function t6Dark() {
       if (S.mode === 'play' && this.dawn < .8 && !SAVE.catBell) {                  // no bell on the cat (owner): two separate things — the cat's shadow now and then, harmless, and a pounce at random moments, with no warning
         if (!T7.cat && (T7.catT -= dt) < 0) { T7.catT = 8 + Math.random() * 13; T7.cat = { t: 0, dir: Math.random() < .5 ? -1 : 1 }; AU.rustle && AU.rustle(.7); }
         if (T7.cat) { T7.cat.t += dt; if (T7.cat.t > T7_CAT) T7.cat = null; }
-        if ((T7.pounceT = (T7.pounceT ?? 6 + Math.random() * 6) - dt) < 0) { T7.pounceT = 7 + Math.random() * 8; this.caught(); }
+        if (groom.moving && (T7.pounceT = (T7.pounceT ?? 6 + Math.random() * 6) - dt) < 0) { T7.pounceT = 7 + Math.random() * 8; this.caught(); }   // only while walking: standing still the cat does not catch them (owner)
       }
       if (S.mode === 'play' && this.dawn < .8) {
         if (!T7.ev) {
@@ -222,7 +222,9 @@ function t6Dark() {
       for (let i = Math.floor(x0 / 80); i <= Math.floor(x1 / 80); i++) { if (t7h(i, 1) < .28) continue; const lx = i * 80 + t7h(i, 2) * 80; dp(g, A.leaf, lx, top + 6, t7h(i, 3) * 1.2 - .6, .9 + t7h(i, 4) * .7, .9 + t7h(i, 4) * .7); }   // leaves along it
       t7Layer(g, T7_LAYERS[1], A, x0, x1, top); t7Fol(g, T7_FOL[1], A, x0, x1, top, false);                                                                               // the middle layer: this is the one the lights show
     },
+    hush() { if (!this.talk) return; this.talk = false; this.sayT = 99; S.waitMove = false; keys.clear(); },   // the opening line is put away: now the party may walk (owner)
     onClick(wx, wy) {                                                            // (demo only) skip the dark stretch
+      if (this.talk && this.sayT > .9) { this.hush(); return true; }
       const sx = wx - camX, sy = wy + offY;
       const b = this.btn; if (!b) return false;
       if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) { const d = (T6_OFF - 300) - groom.x; if (d > 0) { groom.x += d; followers.forEach(f => f.x += d); camX += d; } return true; }
@@ -231,8 +233,8 @@ function t6Dark() {
     drawHud(g, vw) {                                                             // the black sheet with the lights punched out of it
       this.drawHud2(g, vw);
       if (T6R.ready && this.dawn < .5 && !S.hideParty) {                        // as the tranh starts, the mouse with the lamp has a feeling (owner)
-        if (this.sayT == null) this.sayT = groom.x < 1200 ? 0 : 99;
-        const t = this.sayT; if (t > .6 && t < 6.2) { const f = followers[0]; g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, (t - .6) / .3, (6.2 - t) / .4); t6Say(g, f.x, GROUND - 120, 'Ta có cảm giác lão mèo mà chúng ta dâng cá đang ở đâu đây…'); g.restore(); }
+        if (this.sayT == null) { this.sayT = groom.x < 1200 ? 0 : 99; this.talk = this.sayT === 0; }
+        const t = this.sayT; if (this.talk && t > .6) { const f = followers[0]; g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, (t - .6) / .3); t6Say(g, f.x, GROUND - 120, 'Ta có cảm giác lão mèo mà chúng ta dâng cá đang ở đâu đây…'); g.restore(); }
       }
     },
     drawHud2(g, vw) {
