@@ -234,7 +234,7 @@ function t6Dark() {
       this.drawHud2(g, vw);
       if (T6R.ready && this.dawn < .5 && !S.hideParty) {                        // as the tranh starts, the mouse with the lamp has a feeling (owner)
         if (this.sayT == null) { this.sayT = groom.x < 1200 ? 0 : 99; this.talk = this.sayT === 0; }
-        const t = this.sayT; if (this.talk && t > .6) { const f = followers[0]; g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, (t - .6) / .3); t6Say(g, f.x, GROUND - 120, 'Ta có cảm giác lão mèo mà chúng ta dâng cá đang ở đâu đây…'); g.restore(); }
+        const t = this.sayT; if (this.talk && t > .6) { const f = followers[0]; g.save(); g.translate(-camX, offY); g.globalAlpha = Math.min(1, (t - .6) / .3); t6Say(g, f.x, GROUND - 120, 'Ta có cảm giác lão mèo mà chúng ta đã dâng cá đang ở quanh đây…'); g.restore(); }
       }
     },
     drawHud2(g, vw) {
