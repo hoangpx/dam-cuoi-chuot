@@ -422,11 +422,13 @@ function t6PondDraw(g, P, v) {
   g.globalAlpha = 1;
   // the top bar: ← back, and seven slots that fill with the frogs caught (pictures only)
   const by = v.top + 40;
+  if (!window.TRAILER) {                                                   // (the trailer shows the pond without its buttons)
   g.fillStyle = '#efe6cf'; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.arc(36, by, 22, 0, 6.283); g.fill(); g.stroke();
   g.lineWidth = 3.2; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); g.moveTo(46, by); g.lineTo(26, by); g.moveTo(34, by - 8); g.lineTo(26, by); g.lineTo(34, by + 8); g.stroke();
   const [sx0] = t6Slot(P, 0), sw = 46 * T6_FROGS + 10;
   g.fillStyle = 'rgba(239,230,207,.92)'; g.lineWidth = 2.4; g.beginPath(); g.roundRect(sx0 - 33, by - 26, sw, 52, 14); g.fill(); g.stroke();
   for (let i = 0; i < T6_FROGS; i++) { const [x, y] = t6Slot(P, i); g.globalAlpha = .18; dp(g, A.frog, x, y, 0, .5, .5); g.globalAlpha = 1; }
+  }
   for (const f of P.frogs) if (f.caught) {                               // the catch hops up into its slot
     const [x1, y1] = t6Slot(P, f.slot), k = Math.min(1, f.t / .7), e = t6E(k), [x0, y0, r0] = f.from;
     const x = x0 + (x1 - x0) * e, y = y0 + (y1 - y0) * e - Math.sin(k * Math.PI) * 120, s = (f.s + (.5 - f.s) * e) * (1 + Math.sin(k * Math.PI) * .6);

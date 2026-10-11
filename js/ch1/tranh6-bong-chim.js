@@ -303,6 +303,7 @@ function t6rBird(g, i, x, y, face, ph, s) {                                     
     }
     const E = {
       layer: 'bg', cx: cx0, solved: !!skip(), st: null, btn: [],
+      solveNow(dur) { startSolve(dur || 1.5, true); },                            // (trailer) turn it to the bird by itself
       update(dt) {
         if (this.solved) return;
         if (!st || Math.abs(groom.x - cx0) > 900) return;                       // not made yet, or far away: nothing to turn or draw

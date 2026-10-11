@@ -281,8 +281,10 @@ function t6cDraw(g, v) {
   g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = .25; g.drawImage(PAPER, 0, 0, W, H); g.restore();
   // ← back
   const by = v.top + 40;
+  if (!window.TRAILER) {                                                   // (the trailer shows the pond without its buttons)
   g.fillStyle = '#efe6cf'; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.arc(36, by, 22, 0, 6.283); g.fill(); g.stroke();
   g.lineWidth = 3.2; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); g.moveTo(46, by); g.lineTo(26, by); g.moveTo(34, by - 8); g.lineTo(26, by); g.lineTo(34, by + 8); g.stroke();
+  }
   // 3 · 2 · 1
   if (T.st === 'count') { const b = Math.min(2, Math.floor(T.ct / T6C_BEAT)), f = (T.ct / T6C_BEAT) % 1, s = 1.4 - .4 * Math.min(1, f * 3);
     g.save(); g.translate(W / 2, H * .42); g.scale(s, s); g.globalAlpha = 1 - Math.max(0, f - .7) / .3;

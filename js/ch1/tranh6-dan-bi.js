@@ -236,7 +236,7 @@ function t6Dark() {
       const c = T7.cat;
       if (c && base > .003) t7CatDraw(g, vw, c.t / T7_CAT, c.dir);
       if (T7.black > .01) { g.save(); g.fillStyle = 'rgba(0,0,0,' + Math.min(1, T7.black * 1.6) + ')'; g.fillRect(0, -offY, vw, viewH + offY + 40); g.restore(); }                   // the cat's shadow streaks past, very fast
-      if (this.dawn < 1 && T6R.ready) {                                           // (demo only) a button to skip the dark stretch
+      if (this.dawn < 1 && T6R.ready && !window.TRAILER) {                                           // (demo only) a button to skip the dark stretch
         const w = 136, h = 32, x = vw - w - 24, y = viewH - 62; this.btn = { x, y, w, h };
         g.save(); g.font = '600 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(0,0,0,.6)'; g.strokeStyle = '#e8ecff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, 16) : g.rect(x, y, w, h); g.fill(); g.stroke(); g.fillStyle = '#e8ecff'; g.fillText('Qua dàn bí rợ', x + w / 2, y + h / 2 + 1); g.restore();
       } else this.btn = null;
