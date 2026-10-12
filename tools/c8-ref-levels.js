@@ -54,8 +54,8 @@ L.push({ name: 'Thang Gãy', en: 'Broken Ladder', map: lit([
 
 // 8. Narrow Gate: a 1-high corridor with one ice plugging it under a 2-wide shaft (left column: ice, clod, 2 spirals, 2 ice; right column: 3 flames, 3 clods, a spiral). Only the corridor and the shaft are kept (owner, 2026-10-09: nothing unrelated to the mouse and the chest)
 L.push({ name: 'Cổng Hẹp', en: 'Narrow Gate', map: [
-  '#################', '#######  ########', '####### b########', '#######id########', '#######id########', '#######bd########', '#######ba########', '#######da########', '#### G iaP    ###', '#################' ],
-  plan: [{ at: [8, 8] }, { swipe: [[8, 8], [8, 7], [8, 6]] }, { at: [8, 8] }, { swipe: [[7, 7], [8, 7], [8, 6]] }, { at: [8, 8] }, { swipe: [[7, 7], [7, 6], [8, 6]] }, { at: [8, 8] }, { swipe: [[7, 8], [7, 7], [7, 6]] }] });   // found by tools/c8-joint.js: the mouse stands in the shaft the whole time
+  '#################', '#######  ########', '####### b########', '#######id########', '#######id########', '#######bd########', '#######ba########', '#######da########', '#### G ia P   ###', '#################' ],
+  plan: [{ at: [7, 6] }, { swipe: [[8, 8], [8, 7], [8, 6]] }, { at: [8, 5] }, { swipe: [[7, 6], [7, 5], [8, 5]] }, { swipe: [[8, 6], [8, 7], [7, 7]] }, { swipe: [[7, 6], [7, 7], [7, 8]] }] });   // owner's way with the crush rule (2026-10-11, his picture): jump into the shaft onto the clod beside the floor ice, burn the 3 flames, a LOW hop onto the clods of the flame column (ice right above), then 3 spirals, 3 clods, the 3 ice
 
 // 9. Dim Tunnel: a low tunnel with a row ice, 3 flames, ice, 3 flames, ice; the two end ices under the 1-high ceiling must melt, the middle one sits under a dome.
 L.push({ name: 'Hầm Tối', en: 'Dim Tunnel', map: [

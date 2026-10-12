@@ -11,6 +11,7 @@
    a one-cell gap (not two). Gathering works from anywhere on the screen. */
 
 // body in cells. The mouse jumps up 2 cells (apex 2.2) and flies over a gap of 3 cells (4–5 across) (owner: it only jumps 2 cells high but flies 4–5 cells across)
+const C8_CUT = 3;   // rising speed kept when jump is let go early
 const C8_PW = .5, C8_PH = .78, C8_GRAV = 20, C8_JV = 9.4, C8_SPEED = 4.4, C8_FALL = 26, C8_HOP = 11.2;
 let C8_AIR = 6.8;   // C8_AIR (below): sideways speed in the air (owner: it flies 7 cells, from the cell it stands on to the cell it lands on, on the same level)   // C8_HOP: the hop out of water (the feet start .4-.9 below the surface, so it climbs 2 cells above it, not 3)
 const C8_KINDS = 'abcdivr';                                                          // i = ice (owner, Frigid Well): solid like a clod, falls, gathered like the rest, and DEADLY TO TOUCH ("băng ko thể chạm vào")
@@ -99,7 +100,9 @@ function c8Walk(G, dt, inp) {
   }
   if (inp.jump) p.buf = .12;
   p.buf = Math.max(0, p.buf - dt); p.coy = Math.max(0, p.coy - dt);
-  if (p.buf > 0 && p.coy > 0) { p.vy = -C8_JV; p.buf = 0; p.coy = 0; p.on = false; G.events.push('jump'); }
+  if (p.buf > 0 && p.coy > 0) { p.vy = -C8_JV; p.buf = 0; p.coy = 0; p.on = false; p.jumping = true; G.events.push('jump'); }
+  if (p.jumping && !inp.jump && p.vy < -C8_CUT) p.vy = -C8_CUT;   // let go of jump early = a low hop (owner's Narrow Gate: a hop of about one cell under ice); held = the full 2.2 cells
+  if (p.vy >= 0) p.jumping = false;
   p.vy = Math.min(C8_FALL, p.vy + C8_GRAV * dt);
   const want = p.vy * dt, got = c8Slide(G, p, 'y', want);
   const was = p.on; p.on = false;
