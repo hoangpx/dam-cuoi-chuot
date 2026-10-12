@@ -34,4 +34,4 @@ function run(map, steps, opt = {}) {
     return { won, depth: wonLog, seen: seen.size, log, finalCells: G.cells.join(''), trail, macros: ctxHist };
   })()`, ctx);
 }
-module.exports = { run };
+module.exports = { run, engineSrc };

@@ -10,20 +10,43 @@
 const { parseMap, makeModel } = require('./c8-model.js'), { run } = require('./c8-engine-test.js'), { hardness } = require('./c8-hardness.js'), { cheap } = require('./c8-cheap.js');
 const en = process.argv[2], L = require('./c8-own-levels.js').find(l => l.en === en);
 if (!L) { console.log('no own level named ' + JSON.stringify(en)); process.exit(1); }
-const E = Object.assign({ shortest: L.plan.length, roads: 1, things: [8, 18], minOptions: 6 }, L.expect), traps = L.traps || (L.trap ? [L.trap] : []);
+const E = Object.assign({ shortest: L.plan ? L.plan.length : 0, roads: 1, things: [8, 18], minOptions: 6 }, L.expect), traps = L.traps || (L.trap ? [L.trap] : []);
 const quick = process.argv.includes('--quick'), fails = [];
 const check = (ok, msg) => { console.log((ok ? 'ok   ' : 'FAIL ') + msg); if (!ok) fails.push(msg); };
 const findX = ch => { for (const r of L.map) { const x = r.indexOf(ch); if (x >= 0) return x; } return -1; };
 
 console.log(L.map.join('\n'));
-const all = L.map.join(''), nP = all.split('P').length - 1, nG = all.split('G').length - 1, bad = [...new Set(all.replace(/[# aibvcdoPG]/g, ''))];
+const all = L.map.join(''), nP = all.split('P').length - 1, nG = all.split('G').length - 1, bad = [...new Set(all.replace(/[# aibvcdorPG]/g, ''))];
 check(nP === 1, `exactly one start P (got ${nP})`); check(nG === 1, `exactly one chest G (got ${nG})`);
 check(!bad.length, `only known characters${bad.length ? ' (bad: ' + bad.map(c => JSON.stringify(c)).join(' ') + ')' : ''}`);
 check(L.map.every(r => r.length === L.map[0].length), 'all rows have the same length');
 if (!nP || !nG) { console.log(`\n${fails.length} check(s) FAILED`); process.exit(1); }
-const things = all.replace(/[^aibvcdo]/g, '').length, swipes = L.plan.map(s => s.swipe);
+const things = all.replace(/[^aibvcdor]/g, '').length, swipes = L.plan ? L.plan.map(s => s.swipe) : [];
 check(things >= E.things[0] && things <= E.things[1], `things ${things} (want ${E.things[0]}-${E.things[1]})`);
 check(findX('P') < findX('G'), 'start left of the chest');
+
+// a level with rock PUSHES (level.moves: swipes and pushes from tools/c8-push-solve.js, expanded by its planOf into engine steps): expect.minSwipes / expect.minPushes = what
+// EVERY solution needs, in the strict and in the generous model; the real engine plays the plan (tools/c8-plan.js), also clumsily
+if (L.moves) {
+  const { solve } = require('./c8-push-solve.js'), { runPlan } = require('./c8-plan.js');
+  const PLAN = require("./c8-push-solve.js").planOf(L.map, L.moves), nSw = L.moves.filter(m => m.swipe).length, nPu = L.moves.filter(m => m.push).length;
+  console.log(`plan: ${nSw} swipes, ${nPu} pushes`);
+  for (const strict of [true, 'loose']) {
+    const a = solve(L.map, { by: 'swipes', strict }), b = solve(L.map, { by: 'pushes', strict }), nm = strict === true ? 'strict' : 'generous';
+    check(!a.capped && !b.capped && a.cost && b.cost, `${nm} model: solvable (${a.states} / ${b.states} states)`);
+    if (a.cost && b.cost) {
+      check(a.cost.swipes >= E.minSwipes, `${nm} model: every solution needs at least ${E.minSwipes} swipes (fewest: ${a.cost.swipes}, with ${a.cost.pushes} pushes)`);
+      check(b.cost.pushes >= E.minPushes, `${nm} model: every solution needs at least ${E.minPushes} pushes (fewest: ${b.cost.pushes}, with ${b.cost.swipes} swipes)`); }
+  }
+  if (!quick) {
+    const o = { cap: 60000, depth: 80 };
+    const r = runPlan(L.map, PLAN, o); check(r.won, `engine: the plan wins${r.won ? '' : ' (stuck at step ' + r.step + ', ' + r.why + ')'}`);
+    const rh = runPlan(L.map, PLAN, Object.assign({ handicap: true }, o)); check(rh.won, `engine: the plan wins for a clumsy player too (bigger ice, weaker in the air)${rh.won ? '' : ' (stuck at step ' + rh.step + ')'}`);
+    check(!run(L.map, [], { cap: 40000, depth: 150, fine: true }).won, 'engine: with no swipes (walking, jumping and pushing allowed) it does not win');
+  }
+  console.log(fails.length ? `\n${fails.length} check(s) FAILED` : '\nall checks passed');
+  process.exit(fails.length ? 1 : 0);
+}
 check(swipes.every(Boolean), 'plan has only swipes');
 
 const { g: g0, W, H, start, goal } = parseMap(L.map), M = makeModel(W, H, 12, true), toR = ([x, y]) => [x, H - 1 - y], key = g => g.map(r => r.join('')).join('/');

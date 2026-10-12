@@ -13,6 +13,7 @@ const { chromium } = require(path.join(execSync('npm root -g').toString().trim()
 const KIND = { a: 'lửa', b: 'xoáy vàng', c: 'lá', d: 'chum nước', i: 'băng', v: 'nước', r: 'đá', o: 'xoáy nét đứt' };
 const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+if (!L.plan) { console.log('this level has rock pushes (level.moves): the picture guide only knows swipe-only levels so far; its answer is in tools/c8-own-levels.js'); process.exit(1); }
 const swipes = L.plan.map(s => s.swipe), traps = L.traps || (L.trap ? [L.trap] : []);
 
 function serve() {

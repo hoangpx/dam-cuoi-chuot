@@ -26,36 +26,35 @@ module.exports = [
     '##############' ],
     plan: [{ swipe: [[5, 8], [5, 7], [6, 7]] }, { swipe: [[6, 8], [7, 8], [7, 7]] }, { swipe: [[7, 8], [8, 8], [9, 8]] }, { swipe: [[10, 8], [10, 7], [9, 7]] }],
     trap: [[6, 7], [5, 7], [5, 8]] },   // the same three flames, dragged so the last step points down: nothing melts, an ice cube drops in front of the start, no way on
-  // Vách Chum / Jar Cliff (2026-10-11; owner: "very hard, not by many moves or things, clever like level 4"). 14 things (10 jars, 3 flames,
-  // 1 peg), 2 swipes, like Crumbly Overhang: one long chain whose SHAPE decides what is left. Found by tools/c8-clever-search.js (frame
-  // "cliff", seed 3; tools/c8-hard/clever-cliff-3.jsonl), checked by node tools/c8-own-check.js "Jar Cliff". The answer:
-  //   1. burn the L of three flames (the two right columns settle to three jars each);
-  //   2. one snake of five jars: the bottom of the right column, all of the middle column, then ONE jar out of the middle of the left
-  //      column. Left: the left column four high (three jars on the peg), the middle empty, the right two high.
-  //   The stairs run BACKWARDS: floor -> right column (+2) -> back left over the gap to the left column (+2) -> fly right onto the cliff (+2).
-  //   Hardness (strict model): 1 good of 41 first moves, then 1 of 52; one road; all 25 openers that look like progress are dead.
+  // Vách Chum / Jar Cliff, VERSION 2 (2026-10-11; owner on v1: "still not that hard, more than 5 swipes and 10 pushes"). v1 was 14 things,
+  // 2 swipes (an L of flames, then a five-jar snake; map ['###############', '#             #', '#          G  #', '#        ######', '#      d d#####',
+  // '#      daa#####', '#      dda#####', '#      ddd#####', '#P     odd#####', '###############']). v2: 20 × 11, 23 things (6 rocks, 7 jars,
+  // 3 flames, 6 spirals, 1 peg): the jar pile against the cliff (chest six up) and a heap of spirals and rocks on the floor at the left.
+  // EVERY solution needs at least 5 swipes and 14 pushes (strict model; the generous model: 5 and 12). Found by tools/c8-push-search.js
+  // (frame "cliff", climbed from seed 11 to seed 21; tools/c8-hard/push-cliff-21.jsonl); `moves` = the road with the fewest swipes
+  // (5 swipes, 14 pushes), checked in the real engine by node tools/c8-own-check.js "Jar Cliff" (tools/c8-push-solve.js planOf + c8-plan.js).
   { name: 'Vách Chum', en: 'Jar Cliff', map: [
-    '###############',
-    '#             #',
-    '#          G  #',
-    '#        ######',
-    '#      d d#####',
-    '#      daa#####',
-    '#      dda#####',
-    '#      ddd#####',
-    '#P     odd#####',
-    '###############' ],
-    plan: [{ swipe: [[9, 6], [9, 5], [8, 5]] }, { swipe: [[9, 8], [8, 8], [8, 7], [8, 6], [7, 6]] }],
-    expect: { shortest: 2, things: [10, 16], minOptions: 20 },
-    traps: [[[7, 4], [7, 5], [7, 6]]],   // the jars in plain sight on top of the left column: no way up afterwards
+    '####################',
+    '#                  #',
+    '#                  #',
+    '#                G #',
+    '#             ######',
+    '#          dad######',
+    '#          rdd######',
+    '#          orb######',
+    '#  bbrb    raa######',
+    '#P brbb    drd######',
+    '####################' ],
+    moves: [{ swipe: [[3, 9], [3, 8], [4, 8]], at: [1, 9] }, { push: [4, 9], dir: -1, at: [5, 9] }, { swipe: [[5, 9], [6, 9], [6, 8]], at: [4, 9] },
+      { push: [5, 9], dir: 1, at: [4, 9] }, { push: [6, 9], dir: 1, at: [5, 9] }, { push: [7, 9], dir: 1, at: [6, 9] }, { push: [8, 9], dir: 1, at: [7, 9] },
+      { push: [9, 9], dir: 1, at: [8, 9] }, { push: [11, 8], dir: 1, at: [10, 8] }, { swipe: [[12, 9], [12, 8], [12, 7]], at: [11, 8] },
+      { swipe: [[11, 9], [12, 9], [13, 9]], at: [7, 9] }, { push: [10, 9], dir: 1, at: [9, 9] }, { push: [11, 9], dir: 1, at: [10, 9] },
+      { push: [3, 9], dir: 1, at: [2, 9] }, { push: [12, 9], dir: 1, at: [11, 9] }, { push: [4, 9], dir: 1, at: [3, 9] },
+      { swipe: [[10, 9], [11, 9], [12, 9]], at: [4, 9] }, { push: [5, 9], dir: 1, at: [4, 9] }, { push: [6, 9], dir: 1, at: [5, 9] }],
+    expect: { minSwipes: 5, minPushes: 12, things: [15, 26] },
     // the guide printed by tools/c8-level-pdf.js (Vietnamese, for the owner; never shown in the game)
     guide: {
-      idea: 'Ba cột chum dựa vào vách đá, xen ba ngọn lửa, một xoáy nét đứt kê dưới cột trái. Rương ở trên đỉnh vách, cao sáu ô. Chỉ hai lần gom, nhưng lần gom thứ hai phải là một nét rắn năm chum đúng hình: hình của nét kéo quyết định chum nào còn lại làm bậc.',
-      steps: [
-        'Gom chữ L ba ngọn lửa. Chưa thấy mở được lối nào: hai cột bên phải chỉ sụt xuống, mỗi cột còn ba chum.',
-        'Một nét rắn năm chum: chum dưới cùng cột phải, cả ba chum cột giữa, rồi rẽ trái lấy MỘT chum ở giữa cột trái. Cột trái còn ba chum đứng trên xoáy (cao bốn ô), cột giữa trống, cột phải còn hai chum.',
-      ],
-      route: 'Bậc thang đi NGƯỢC: từ sàn nhảy lên cột phải (cao 2), quay lại nhảy sang trái qua cột giữa trống lên cột trái (cao 4), rồi bay sang phải qua hết lên đỉnh vách (cao 6) tới rương.',
-      trap: 'Ba chum ngay trên đỉnh cột trái (dễ thấy nhất). Gom xong thì không còn cách nào lên được vách.',
+      idea: 'Đống chum dựa vào vách đá (rương ở trên đỉnh, cao sáu ô) và một đống xoáy vàng lẫn đá nằm trên sàn bên trái. Mọi cách thắng đều phải gom ít nhất năm lần và đẩy đá ít nhất mười hai lần: phải gỡ đống bên trái để lôi đá ra, lăn đá dọc sàn sang tận đống chum, rồi gom cả hàng ba viên đá ở chân vách.',
+      route: 'Viên đá cuối cùng được đẩy ra giữa sàn làm bậc thấp (cao 1); từ đó chuột nhảy lên cột chum trái (cao 3), sang cột chum phải (cao 4), rồi lên đỉnh vách (cao 6) tới rương.',
     } },
 ];
