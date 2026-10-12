@@ -449,7 +449,9 @@ function c4PlanEvents() {
   C4.evGap = 0;
 
   C4.events = ev.sort((a, b) => a.at - b.at); C4.evRepl = 0;
-  SAVE4.taskDay = null; c4Tasks(); c4NvInit();                                         // today's tasks, now that today's happenings are known
+  C4.evDay = SAVE4.day; c4Tasks();                                                    // today's tasks are drawn ONCE (a player: the morning sheet showed other tasks than the notebook, they were drawn again here)
+  SAVE4.tasks = SAVE4.tasks.filter(t => { const T = C4_TASKS.find(x => x.k === t.k); return t.done || !T || !T.from || T.from(); });   // one that no longer fits today (the wedding already came before a reload) goes
+  c4NvInit();
 }
 // how many a buyer takes: one to three; a regular twice that, a hard-won regular three times
 const c4BuyN = P => { const n = C4_BUY0 + ((R() * 3) | 0); return P && c4Ruot(P.id) ? n * (C4_TRAITS[P.trait].ruot || 2) : n; };
