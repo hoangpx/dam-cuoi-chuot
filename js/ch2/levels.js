@@ -705,3 +705,5 @@ const C2_FIRST_HARD = C2LEVELS.findIndex(l => l.hard);
 const C2_FIRST_BH = C2LEVELS.findIndex(l => l.bh);   // Biến hoá: the Baba-style words (owner)
 const C2_FIRST_SK = C2LEVELS.findIndex(l => l.sk);   // Hơi khó: 30 hard maps, open after the last Biến hoá map
 const C2_FIRST_TT = C2LEVELS.findIndex(l => l.tt);   // Thần thông: 30 maps with the new words (CHUYỂN TRÔI ĐỔI TAN BỀN RƠI, TRÊN GẦN), open after the last Hơi khó map
+const C2_TT_ON = !!(typeof process !== 'undefined' && process.env && process.env.C2_TT);   // Thần thông OFF in the game (owner, 2026-10-11: too easy); the maps stay here, node tools see them with C2_TT=1
+if (!C2_TT_ON && C2_FIRST_TT >= 0) C2LEVELS.length = C2_FIRST_TT;
