@@ -109,6 +109,10 @@ function c8Walk(G, dt, inp) {
 }
 
 /* ---------- things falling ---------- */
+// the mouse stands on something that stays put: earth, or a column of things already at rest down to the earth (riding down a falling stack is not standing firm)
+function c8Rest(G, i) { const { W, cells, vis } = G; for (; i < cells.length; i += W) { const ch = cells[i]; if (ch === '#' || ch === 'x') return true; if (ch === ' ' || (vis[i] && (vis[i].oy < 0 || vis[i].ox))) return false; } return true; }
+function c8Firm(G) { const p = G.p; if (!p.on) return false; const y = Math.floor(p.y + .01), x0 = Math.floor(p.x - C8_PW / 2 + .02), x1 = Math.floor(p.x + C8_PW / 2 - .02);
+  for (let x = x0; x <= x1; x++) { const i = y * G.W + x; if (i >= 0 && i < G.cells.length && G.cells[i] !== ' ' && !C8_SOFT.includes(G.cells[i]) && c8Rest(G, i)) return true; } return false; }
 function c8Fall(G, dt) {
   const { W, H, cells, vis } = G;
   for (let y = H - 1; y >= 0; y--) for (let x = 0; x < W; x++) {
@@ -116,7 +120,7 @@ function c8Fall(G, dt) {
     let v = vis[i], over = 0;
     if (v && v.ox) { v.ox -= Math.sign(v.ox) * dt / C8_PUSH_T; if (Math.abs(v.ox) < dt / C8_PUSH_T * .6 || v.ox * Math.sign(v.ox) <= 0) { v.ox = 0; if (!(v.oy < 0)) vis[i] = null; } if (vis[i]) continue; }
     if (v && v.oy < 0) { v.v += 38 * dt; v.oy += v.v * dt; if (v.oy < 0) continue; over = v.oy; v.oy = 0; }
-    if (y + 1 < H && cells[i + W] === ' ' && !C8_SOFT.includes(ch) && G.state === 'play' && c8Over(G.p, x, y + 1)) { G.state = 'dead'; G.winT = 0; G.events.push('thud', 'dead'); }   // CRUSHED (owner, 2026-10-11: "đá rơi xuống chuột là chết chuột"): a solid thing (rock, jar, ice) falling onto the mouse kills it; it used to wait above its head
+    if (y + 1 < H && cells[i + W] === ' ' && !C8_SOFT.includes(ch) && G.state === 'play' && c8Firm(G) && c8Over(G.p, x, y + 1)) { G.state = 'dead'; G.winT = 0; G.events.push('thud', 'dead'); }   // CRUSHED (owner, 2026-10-11: "đá rơi xuống chuột là chết chuột"): a solid thing (rock, jar, ice) falling onto the mouse kills it; it used to wait above its head
     if (y + 1 < H && cells[i + W] === ' ' && (C8_SOFT.includes(ch) || G.state !== 'play' || !c8Over(G.p, x, y + 1))) {
       const nv = v || { oy: 0, v: 0 }; cells[i + W] = ch; cells[i] = ' '; vis[i] = null; nv.oy = -1 + over; vis[i + W] = nv;
     } else if (v) { if (v.v > 3) G.events.push('thud'); vis[i] = null; }
