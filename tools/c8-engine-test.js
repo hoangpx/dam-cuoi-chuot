@@ -3,7 +3,7 @@
    opt.handicap = true (or { margin, jump, air }): a weaker mouse and bigger ice (death margin .04 -> .15 cell, jump unchanged (every 2-cell climb needs the full jump),
    sideways speed in the air ×.9). A plan that still wins this way leaves a human some slack; one that only wins in the true engine needs
    frame-exact play (owner, 2026-10-11: hard to think, not hard to do). opt.human: jump not pressed, a tap of 8 frames or held for the whole move (no
-   frame-precise taps); with handicap this is the check that a person can do the route (tools/c8-two-way.js). */
+   frame-precise taps); with handicap this is the check that a person can do the route (tools/c8-own-check.js). */
 const fs = require('fs'), vm = require('vm'), path = require('path');
 function engineSrc(h) {
   let src = fs.readFileSync(path.join(__dirname, '..', 'js/ch8/engine.js'), 'utf8'); if (!h) return src;

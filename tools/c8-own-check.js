@@ -1,5 +1,5 @@
 /* Chương VIII: check one of our own levels (tools/c8-own-levels.js) by its English name, against the expectations it carries
-   (level.expect = { shortest, roads, things: [lo, hi], minOptions }). Same checks as tools/c8-two-way.js, with the numbers taken from the level:
+   (level.expect = { shortest, roads, things: [lo, hi], minOptions }). Same checks as the old tools/c8-two-way.js (removed with its level), with the numbers taken from the level:
    - map: one P, one G, known characters, rectangular, stored settled; start left of the chest; the plan only swipes;
    - hard to FIND (tools/c8-hardness.js, strict model): shortest = expect.shortest, at most expect.roads roads, one good move out of at least
      expect.minOptions at every swipe, no opener that opens the way at once is on a shortest road, the right opener shows no progress;
@@ -40,6 +40,8 @@ if (L.moves) {
       check(a.cost.swipes >= E.minSwipes, `${nm} model: every solution needs at least ${E.minSwipes} swipes (fewest: ${a.cost.swipes}, with ${a.cost.pushes} pushes)`);
       check(b.cost.pushes >= E.minPushes, `${nm} model: every solution needs at least ${E.minPushes} pushes (fewest: ${b.cost.pushes}, with ${b.cost.swipes} swipes)`); }
   }
+  if (E.minBits) {                                                       // hard to FIND (tools/c8-find.js): luck a blind player needs along the road
+    const f = require('./c8-find.js').findBits(L.map); check(!f.capped && f.bits >= E.minBits, `hard to find: ${f.bits} bits (want ${E.minBits}+), steps ${(f.steps || []).join(' ')}`); }
   if (!quick) {
     const o = { cap: 60000, depth: 80 };
     const r = runPlan(L.map, PLAN, o); check(r.won, `engine: the plan wins${r.won ? '' : ' (stuck at step ' + r.step + ', ' + r.why + ')'}`);

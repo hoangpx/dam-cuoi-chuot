@@ -24,32 +24,40 @@ function solve(map, opt = {}) {
   // a small binary heap on cost
   const heap = [], hpush = e => { heap.push(e); let i = heap.length - 1; while (i) { const p = (i - 1) >> 1; if (heap[p].c <= heap[i].c) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } },
     hpop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l].c < heap[m].c) m = l; if (r < heap.length && heap[r].c < heap[m].c) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
-  const best = new Map(); let states = 0;
-  const startM = place(s0, start) || start;
-  hpush({ c: 0, sw: 0, pu: 0, g: s0, m: startM, acts: [] });
-  while (heap.length) {
-    const s = hpop(), R = reach(s.g, s.m), key = bkey(s.g) + '@' + R.cells.map(c => c.join(',')).sort()[0];
-    if (best.has(key) && best.get(key) <= s.c) continue; best.set(key, s.c);
-    if (R.won) { const moves = movesOf(s.acts, H); return { cost: { swipes: s.sw, pushes: s.pu }, acts: s.acts, moves, plan: planOf(map, moves), states }; }
-    if (++states > CAP) return { capped: true, states };
+  // every move from a position: { g, m, act, sw: 0 | 1, pu: 0 | 1 } (pushes of a rock beside a cell the mouse can stand in, and swipes from any
+  // such cell: the mouse's cell decides where it ends up)
+  const succ = (g, m, R) => { R = R || reach(g, m); const out = [];
     for (const p of R.cells) {
-      const [x, r] = p; if (s.g[r][x] === 'v') continue;                       // no pushing while swimming (engine: c8Walk pushes only on the ground, not in water)
+      const [x, r] = p; if (g[r][x] === 'v') continue;                         // no pushing while swimming (engine: c8Walk pushes only on the ground, not in water)
       for (const d of [-1, 1]) {                                                  // push the rock beside the mouse
-        const x1 = x + d, x2 = x + 2 * d; if (x2 < 0 || x2 >= W || s.g[r][x1] !== 'r' || !' oa'.includes(s.g[r][x2])) continue;
-        const h = s.g.map(row => row.slice()), t = h[r][x2]; h[r][x2] = 'r'; h[r][x1] = t === ' ' ? ' ' : t;
-        const carried = r > 0 && solid(s.g[r - 1][x1]); M.settle(h);
-        const m = place(h, carried ? [x1, r] : p); if (!m) continue;
-        hpush({ c: cost(s.sw, s.pu + 1), sw: s.sw, pu: s.pu + 1, g: h, m, acts: s.acts.concat([{ push: [x1, r], dir: d, from: p, to: [x2, r], swap: t }]) });
+        const x1 = x + d, x2 = x + 2 * d; if (x2 < 0 || x2 >= W || g[r][x1] !== 'r' || !' oa'.includes(g[r][x2])) continue;
+        const h = g.map(row => row.slice()), t = h[r][x2]; h[r][x2] = 'r'; h[r][x1] = t === ' ' ? ' ' : t;
+        const carried = r > 0 && solid(g[r - 1][x1]); M.settle(h);
+        const m2 = place(h, carried ? [x1, r] : p); if (!m2) continue;
+        out.push({ g: h, m: m2, sw: 0, pu: 1, act: { push: [x1, r], dir: d, from: p, to: [x2, r], swap: t } });
       }
     }
     const seen = new Set();
-    for (const ch of M.chains(s.g)) { const h = M.apply(s.g, ch), hk = bkey(h), kind = s.g[ch[0][1]][ch[0][0]], e = ch[ch.length - 1], q = ch[ch.length - 2],
-      ax = 2 * e[0] - q[0], ar = 2 * e[1] - q[1], melt = kind === 'a' && ax >= 0 && ax < W && ar >= 0 && ar < H && s.g[ar][ax] === 'i'; for (const p of R.cells) {   // a swipe, the mouse standing at p
-      const m = place(h, p); if (!m) continue;
-      if (seen.has(hk + '@' + m.join(','))) continue;
-      seen.add(hk + '@' + m.join(','));
-      hpush({ c: cost(s.sw + 1, s.pu), sw: s.sw + 1, pu: s.pu, g: h, m, acts: s.acts.concat([{ swipe: ch, at: p, kind, melt }]) });
+    for (const ch of M.chains(g)) { const h = M.apply(g, ch), hk = bkey(h), kind = g[ch[0][1]][ch[0][0]], e = ch[ch.length - 1], q = ch[ch.length - 2],
+      ax = 2 * e[0] - q[0], ar = 2 * e[1] - q[1], melt = kind === 'a' && ax >= 0 && ax < W && ar >= 0 && ar < H && g[ar][ax] === 'i'; for (const p of R.cells) {   // a swipe, the mouse standing at p
+      const m2 = place(h, p); if (!m2) continue;
+      if (seen.has(hk + '@' + m2.join(','))) continue;
+      seen.add(hk + '@' + m2.join(','));
+      out.push({ g: h, m: m2, sw: 1, pu: 0, act: { swipe: ch, at: p, kind, melt } });
     } }
+    return out; };
+  const skey = (g, R) => bkey(g) + '@' + R.cells.map(c => c.join(',')).sort()[0];   // a position: the board + where the mouse can get to
+  if (opt.api) return { s0, start: place(s0, start) || start, succ, reach, skey };   // opt.api: the pieces, for tools/c8-find.js
+  const best = new Map(); let states = 0;
+  const startM = opt.from ? opt.from.m : place(s0, start) || start;               // opt.from = { g, m }: solve from that position
+  hpush({ c: 0, sw: 0, pu: 0, g: opt.from ? opt.from.g : s0, m: startM, acts: [], prev: null });
+  while (heap.length) {
+    const s = hpop(), R = reach(s.g, s.m), key = skey(s.g, R);
+    if (best.has(key) && best.get(key) <= s.c) continue; best.set(key, s.c);
+    if (R.won) { const moves = movesOf(s.acts, H), path = []; for (let e = s; e; e = e.prev) path.unshift({ g: e.g, m: e.m });
+      return { cost: { swipes: s.sw, pushes: s.pu }, acts: s.acts, moves, plan: opt.from ? null : planOf(map, moves), path, states }; }
+    if (++states > CAP) return { capped: true, states };
+    for (const n of succ(s.g, s.m, R)) hpush({ c: cost(s.sw + n.sw, s.pu + n.pu), sw: s.sw + n.sw, pu: s.pu + n.pu, g: n.g, m: n.m, acts: s.acts.concat([n.act]), prev: s });
   }
   return { cost: null, states };
 }
