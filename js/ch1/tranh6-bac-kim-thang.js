@@ -465,6 +465,7 @@ function t6Resume(x) {
       if (sv.bridge) T6C.done = true;
       x = T6_OFF + (sv.bridge ? 3000 : 2350);                                  // across the bridge already: start on the far bank, at dawn; else by the bridge
       if (!T6R.done || (!sv.frogs && !sv.bridge)) x = T6_OFF + 340;            // the friends not saved yet: back at the stations (the dark stretch is behind)
+      if (!sv.dark && !sv.frogs && !sv.bridge) return;                          // a player report (2026-10-11): the birds can be counted saved by the slow-phone timeout before the dark is walked; that must not skip the dark stretch
       S.cp = x; placeParty(x); camX = Math.max(0, x - 320); updateHud();
     },
   };
