@@ -33,7 +33,7 @@ function startC8(i) {
   c8Art(); c8Reset();
 }
 function c8Reset() {
-  C8.hist = []; C8.G = c8New(C8_LEVELS[C8.i]); C8.fx = []; C8.drag = false; C8.ptr = null; C8.over = null; C8.t = 0; C8.idle = 0; C8.shake = 0; C8.flash = 0; C8.view = null;
+  C8.hist = []; C8.G = c8New(C8_LEVELS[C8.i]); C8.fx = []; C8.drag = false; C8.ptr = null; C8.over = null; C8.t = 0; C8.idle = 0; C8.shake = 0; C8.flash = 0; C8.view = null; C8.pan = null; C8.panning = null;
   C8.moved = C8.moved && C8.i > 0; C8.jumped = C8.jumped && C8.i > 0; C8.gathered = C8.gathered && C8.i > 0;
   C8.keys.clear(); C8.pad.l = C8.pad.r = C8.pad.jump = false;
 }
@@ -55,8 +55,12 @@ function c8Layout() {
 }
 function c8Cam(dt) {
   const G = C8.G, v = C8.view, c = C8.cam, px = G.p.x * v.cs, py = (G.p.y - .4) * v.cs;
-  const o = v.cs, tx = v.scrollX ? o + Math.max(0, Math.min(v.lw - v.W, px - o - v.W / 2)) : o - (v.W - v.lw) / 2;
-  const ty = v.scrollY ? o + Math.max(0, Math.min(v.lh - v.availH, py - o - v.availH / 2)) - v.top : o - (v.top + (v.availH - v.lh) / 2);
+  const o = v.cs, P = C8.pan || (C8.pan = { x: 0, y: 0 });   // P: how far the player has dragged the view away from the mouse (owner, 2026-10-11: on a phone the far pile could not be seen)
+  const tx = v.scrollX ? o + Math.max(0, Math.min(v.lw - v.W, px - o - v.W / 2 + P.x)) : o - (v.W - v.lw) / 2;
+  const ty = v.scrollY ? o + Math.max(0, Math.min(v.lh - v.availH, py - o - v.availH / 2 + P.y)) - v.top : o - (v.top + (v.availH - v.lh) / 2);
+  if (v.scrollX) P.x = Math.max(o - (px - o - v.W / 2) - o, Math.min(v.lw - v.W - (px - o - v.W / 2), P.x));   // no dragging past the ends
+  if (v.scrollY) P.y = Math.max(-(py - o - v.availH / 2), Math.min(v.lh - v.availH - (py - o - v.availH / 2), P.y));
+  if (C8.panning) { c.x = tx; c.y = ty; return; }
   if (!C8.camInit || C8.camLevel !== C8.i) { c.x = tx; c.y = ty; C8.camInit = true; C8.camLevel = C8.i; } else { const k = Math.min(1, dt * 6); c.x += (tx - c.x) * k; c.y += (ty - c.y) * k; }
 }
 const c8Pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - safeTop()]; };
@@ -76,10 +80,12 @@ function c8Down(e) {
   if (c8In(h.redo, x, y)) { AU.tap(); c8Reset(); return; }
   if (c8In(h.undo, x, y)) { c8Undo(); return; }
   if (C8.G.state !== 'play') return;
+  const [cx, cy] = c8Cell(x, y), ch = cx >= 0 && cy >= 0 && cx < C8.G.W && cy < C8.G.H ? C8.G.cells[cy * C8.G.W + cx] : '#';
+  if ((C8.view.scrollX || C8.view.scrollY) && !C8_KINDS.includes(ch)) { C8.panning = { x, y, px: (C8.pan || {}).x || 0, py: (C8.pan || {}).y || 0 }; return; }   // look around (a phone shows only part of a wide level)
   C8.drag = true; C8.ptr = [x, y]; c8Touch(x, y, true);
 }
-function c8Move(e) { if (!C8.drag || !C8.G) return; const [x, y] = c8Pos(e), a = C8.ptr; C8.ptr = [x, y]; const n = Math.max(1, Math.ceil(Math.hypot(x - a[0], y - a[1]) / (C8.view.cs * .3))); for (let k = 1; k <= n; k++) c8Touch(a[0] + (x - a[0]) * k / n, a[1] + (y - a[1]) * k / n, false); }
-function c8Up() { if (!C8.drag || !C8.G) return; C8.drag = false; const G = C8.G, n = G.sel.length, snap = n >= 3 ? c8Snap(G) : null, r = c8Let(G); if (r === 'gone' && snap) { C8.hist.push(snap); if (C8.hist.length > 60) C8.hist.shift(); } if (r === 'gone') { C8.gathered = true; AU.stamp(); c8Evt(); } else if (r === 'few') { AU.tap(); C8.shake = .25; } C8.ptr = null; }
+function c8Move(e) { if (C8.panning && C8.G) { const [x, y] = c8Pos(e), q = C8.panning; C8.pan = { x: q.px - (x - q.x), y: q.py - (y - q.y) }; return; } if (!C8.drag || !C8.G) return; const [x, y] = c8Pos(e), a = C8.ptr; C8.ptr = [x, y]; const n = Math.max(1, Math.ceil(Math.hypot(x - a[0], y - a[1]) / (C8.view.cs * .3))); for (let k = 1; k <= n; k++) c8Touch(a[0] + (x - a[0]) * k / n, a[1] + (y - a[1]) * k / n, false); }
+function c8Up() { if (C8.panning) { C8.panning = null; return; } if (!C8.drag || !C8.G) return; C8.drag = false; const G = C8.G, n = G.sel.length, snap = n >= 3 ? c8Snap(G) : null, r = c8Let(G); if (r === 'gone' && snap) { C8.hist.push(snap); if (C8.hist.length > 60) C8.hist.shift(); } if (r === 'gone') { C8.gathered = true; AU.stamp(); c8Evt(); } else if (r === 'few') { AU.tap(); C8.shake = .25; } C8.ptr = null; }
 function c8Touch(x, y) {
   const G = C8.G, [cx, cy] = c8Cell(x, y); if (cx < 0 || cy < 0 || cx >= G.W || cy >= G.H) return;
   // only count the middle of a cell so a finger crossing a corner does not grab the next one
@@ -113,6 +119,7 @@ function c8Input() {
 function updateC8(dt) {
   const G = C8.G; if (!G) return; C8.t += dt;
   const inp = c8Input(); if (inp.l || inp.r) C8.moved = true; if (inp.jump) C8.jumped = true;
+  if ((inp.l || inp.r || inp.jump) && C8.pan && !C8.panning) { const k = Math.min(1, dt * 5); C8.pan.x -= C8.pan.x * k; C8.pan.y -= C8.pan.y * k; }   // walking brings the view back to the mouse
   if (G.state === 'play') C8.idle = (inp.l || inp.r || inp.jump || G.sel.length) ? 0 : C8.idle + dt; else C8.idle = 0;
   c8Tick(G, dt, inp); c8Evt(); c8Heat(G, dt); c8Fx(dt);
   C8.shake = Math.max(0, (C8.shake || 0) - dt);

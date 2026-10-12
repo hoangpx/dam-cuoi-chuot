@@ -116,7 +116,8 @@ function c8Fall(G, dt) {
     let v = vis[i], over = 0;
     if (v && v.ox) { v.ox -= Math.sign(v.ox) * dt / C8_PUSH_T; if (Math.abs(v.ox) < dt / C8_PUSH_T * .6 || v.ox * Math.sign(v.ox) <= 0) { v.ox = 0; if (!(v.oy < 0)) vis[i] = null; } if (vis[i]) continue; }
     if (v && v.oy < 0) { v.v += 38 * dt; v.oy += v.v * dt; if (v.oy < 0) continue; over = v.oy; v.oy = 0; }
-    if (y + 1 < H && cells[i + W] === ' ' && (C8_SOFT.includes(ch) || !c8Over(G.p, x, y + 1))) {
+    if (y + 1 < H && cells[i + W] === ' ' && !C8_SOFT.includes(ch) && G.state === 'play' && c8Over(G.p, x, y + 1)) { G.state = 'dead'; G.winT = 0; G.events.push('thud', 'dead'); }   // CRUSHED (owner, 2026-10-11: "đá rơi xuống chuột là chết chuột"): a solid thing (rock, jar, ice) falling onto the mouse kills it; it used to wait above its head
+    if (y + 1 < H && cells[i + W] === ' ' && (C8_SOFT.includes(ch) || G.state !== 'play' || !c8Over(G.p, x, y + 1))) {
       const nv = v || { oy: 0, v: 0 }; cells[i + W] = ch; cells[i] = ' '; vis[i] = null; nv.oy = -1 + over; vis[i + W] = nv;
     } else if (v) { if (v.v > 3) G.events.push('thud'); vis[i] = null; }
   }
