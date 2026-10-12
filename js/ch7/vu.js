@@ -9,6 +9,26 @@ const C7_FLOOR = {
   'Gian bếp': '#d8b08a', 'Nhà ngang': '#ead3ad', 'Gian thờ': '#efc6d2', 'Nhà kho': '#cdb796', 'Chái bếp': '#c9a98a',
   'Sân gạch': '#c98a6a', 'Vườn cau': '#a9cf8f', 'Bờ ao': '#a3d0e0', 'Chuồng gà': '#e8d692', 'Ngõ trúc': '#bcd8a6',
 };
+// floor colours (owner, 2026-10-11: players mixed up rooms side by side; the old beiges were too alike): a set of clearly different
+// colours, each room kind prefers one, and c7Floors gives every room of a case its own so that no two rooms side by side look alike
+const C7_PAL = ['#f0a868', '#ece0c2', '#efa8b8', '#b8946c', '#c3a6dd', '#d9826a', '#a6d38a', '#8fcbe3', '#e9cf6a', '#86c9b4'];
+const C7_PREF = { 'Gian bếp': 0, 'Nhà ngang': 1, 'Gian thờ': 2, 'Nhà kho': 3, 'Chái bếp': 4, 'Sân gạch': 5, 'Vườn cau': 6, 'Bờ ao': 7, 'Chuồng gà': 8, 'Ngõ trúc': 9 };
+const c7ColD = (a, b) => { const p = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16)), [r1, g1, b1] = p(a), [r2, g2, b2] = p(b), rm = (r1 + r2) / 2;
+  return Math.sqrt((2 + rm / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - rm) / 256) * (b1 - b2) ** 2); };   // a "redmean" colour distance
+function c7Floors(G) {
+  if (G.K._floor) return G.K._floor;
+  const N = G.N, R = G.K.names.length, nb = Array.from({ length: R }, () => new Set());
+  for (let i = 0; i < N * N; i++) { const c = i % N; if (c < N - 1 && G.room[i] !== G.room[i + 1]) { nb[G.room[i]].add(G.room[i + 1]); nb[G.room[i + 1]].add(G.room[i]); }
+    if (i + N < N * N && G.room[i] !== G.room[i + N]) { nb[G.room[i]].add(G.room[i + N]); nb[G.room[i + N]].add(G.room[i]); } }
+  const col = new Array(R).fill(null), order = [...Array(R).keys()].sort((a, b) => nb[b].size - nb[a].size);
+  for (const k of order) {
+    const near = [...nb[k]].map(j => col[j]).filter(Boolean), taken = new Set(col.filter(Boolean)), pref = C7_PAL[C7_PREF[G.K.names[k]] ?? 1];
+    const score = c => Math.min(999, ...near.map(n => c7ColD(c, n)));
+    if (!taken.has(pref) && score(pref) >= 150) { col[k] = pref; continue; }
+    col[k] = C7_PAL.filter(c => !taken.has(c)).sort((a, b) => score(b) - score(a))[0] || pref;
+  }
+  return (G.K._floor = col);
+}
 const C7_TOK = ['#a3332a', '#2f5f8f', '#2f6a4c', '#c98a1c', '#7a4aa0', '#c0567a', '#8a5a2a', '#3f9e93'];
 const C7_BLOCK = new Set(['chum', 'coi', 'cau', 'rom', 'gieng']);
 const C7_THING = { chum: 'Chum nước', coi: 'Cối giã gạo', cau: 'Cây cau', rom: 'Đống rơm', gieng: 'Giếng nước', chong: 'Giường tre', phan: 'Ghế băng', chieu: 'Chiếu hoa', ghe: 'Ghế đẩu' };
@@ -251,7 +271,7 @@ function c7Wood(g, x, y, w, h, label, kind = 'son') {
 }
 function c7Board(g, G, x0, y0, size, opts = {}) {
   const N = G.N, cs = size / N;
-  for (let i = 0; i < N * N; i++) { const r = (i / N) | 0, c = i % N; g.fillStyle = C7_FLOOR[G.K.names[G.room[i]]] || '#e6d3b0'; g.fillRect(x0 + c * cs, y0 + r * cs, cs, cs); }
+  for (let i = 0; i < N * N; i++) { const r = (i / N) | 0, c = i % N; g.fillStyle = c7Floors(G)[G.room[i]] || '#e6d3b0'; g.fillRect(x0 + c * cs, y0 + r * cs, cs, cs); }
   g.strokeStyle = 'rgba(29,25,21,.18)'; g.lineWidth = 1; g.beginPath();
   for (let k = 1; k < N; k++) { g.moveTo(x0 + k * cs, y0); g.lineTo(x0 + k * cs, y0 + size); g.moveTo(x0, y0 + k * cs); g.lineTo(x0 + size, y0 + k * cs); } g.stroke();
   g.strokeStyle = INK; g.lineWidth = 3.4; g.lineCap = 'round'; g.beginPath();
