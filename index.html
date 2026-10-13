@@ -50,6 +50,7 @@
 </div>
 <div id="toast"><span id="toastTx"></span></div>
 <div id="lvCard"><div class="han" id="lvHan"></div><b id="lvTitle"></b></div>
+<button id="bSound" aria-label="Tắt tiếng" aria-pressed="false" title="Tắt tiếng (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3.5 9h4l5-4.2v14.4l-5-4.2h-4z" fill="#a3332a" stroke="#1d1915" stroke-width="1.8" stroke-linejoin="round"/><g class="on" fill="none" stroke="#1d1915" stroke-width="1.9" stroke-linecap="round"><path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></g><g class="off" fill="none" stroke="#1d1915" stroke-width="2.2" stroke-linecap="round"><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></g></svg></button>   <!-- global sound switch (owner): hub.js moves it into the chapter list, next to the language flag -->
 <div id="pad" hidden><button id="bL" aria-label="Đi sang trái">◀</button><button id="bR" aria-label="Đi sang phải">▶</button></div>
 <div id="abil" hidden>
   <button data-a="drum" id="bDrum"><span class="k">1</span>Trống</button>
@@ -189,7 +190,7 @@ window.addEventListener('error', e => { const el = document.getElementById('err'
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
    To add a chapter: put its files in js/chN/, list them below before js/core/hub.js, and call registerChapter() in them.
    Add any new Hán characters to FONT_CHARS so they are in the font subset before the art is printed. */
-const VERSION = '2026-10-23f';
+const VERSION = '2026-10-23g';
 const FONT_CHARS = '守生橋鑰戶石雲開鎖飛拉走弱和不有囍東湖鼠娶親貓受禮關竹巷塘邊一二三四五市集院亭迎老字即法牆水火魚門草缸行推止沉熱勝尋拼破律我變形全圖借還自焚渡河雙身是眼疾手快母雞承椰牧牛放鳶新創業冒險食米糠𡌽𡠣𤝞輩遞智兒取謀𦓅化𤞺𡉦𥯌坡坳𠬠𠄩𠀧𦊚𠄼廊幀糁𥽇𢫣金簜𢄂節𡑝婚𡨸羅墻渃焒𩵜𨶛稴𡑓匙𨷯坧𩄲𠫾𢩽振沈燶𢲫𢒎捁𧼋夭吧空固扱些鞦韆蜜授權過轉替命池十浮套助跑渠牽並步靜立交脆保溺降落群？捕蛙架梯𨕭𧵆散';
 const VIET_CHARS = 'Tùng!ÀÁÂÈÌÍÓàáâãèéêìíòóôõùúăĐđĩũƠơƯưạẢảẤấầẨẩẫậẮắằẳẶặẹẻẽếỀềểỄễệỉịọỏỐốỒồỔổỗỘộỚớỜờởợụủứừỬửữựỷẸÃÚẦỢỞỮÉẾẠÔ';
 const GAME_FILES = [

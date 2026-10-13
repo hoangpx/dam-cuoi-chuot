@@ -3,6 +3,9 @@
 const AU = (() => {
   const samples = {};                                                    // recorded sounds by key (null while loading)
   let c = null, amb = null, master, music, sfx, echo, base = .75, ducked = false, next = 0, step = 0, quiet = false, key = 0, song = 0, muteDr = false;
+  // the global sound switch (owner, 2026-10-13): silences music and effects together through the master gain, remembered in 'dcc.mute'
+  let muted = false; try { muted = localStorage.getItem('dcc.mute') === '1'; } catch (e) {}
+  const LOUD = .8;
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
   // Chương I: rước dâu rộn ràng (trống cái, chũm chọe, kèn); Chương II: khúc đố chậm rãi (trống con, mõ, kèn trầm, nhịp lẻ)
   const seq = list => list.flatMap(([m, n]) => [m, ...new Array(n - 1).fill(null)]);   // [[note, steps]…] → one entry a step
@@ -58,7 +61,7 @@ const AU = (() => {
   function init() {
     if (c) { if (c.state !== 'running') c.resume(); blip(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    c = new AC(); master = c.createGain(); master.gain.value = .8;
+    c = new AC(); master = c.createGain(); master.gain.value = muted ? 0 : LOUD;
     const comp = c.createDynamicsCompressor(); master.connect(comp); comp.connect(c.destination);
     music = c.createGain(); music.gain.value = .75; music.connect(master);
     sfx = c.createGain(); sfx.gain.value = 1; sfx.connect(master);
@@ -149,6 +152,8 @@ const AU = (() => {
     },
     setKey(k) { key = k; },
     muteDrums(v) { muteDr = !!v; },
+    isMuted() { return muted; },
+    setMuted(v) { muted = !!v; try { localStorage.setItem('dcc.mute', muted ? '1' : '0'); } catch (e) {} if (c) master.gain.setTargetAtTime(muted ? 0 : LOUD, c.currentTime, .03); },
     songPos() { if (!c || c.state !== 'running') return null; return { step: step - (next - c.currentTime) / SP() }; },
     drumPattern() { return cur().drum; },
     setSong(i) { if (i === song) return; song = i; step = 0; base = .75; if (c) next = c.currentTime + .15; },
