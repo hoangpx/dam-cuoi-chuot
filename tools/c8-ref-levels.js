@@ -186,6 +186,8 @@ if (!process.env.NOMIRROR) L.forEach(lv => {
   if (find('G') < find('P')) { const W = lv.map[0].length, mx = x => W - 1 - x; lv.map = lv.map.map(r => r.split('').reverse().join(''));
     if (lv.plan) lv.plan = lv.plan.map(st => st.swipe ? { swipe: st.swipe.map(([x, y]) => [mx(x), y]) } : st.at ? { at: [mx(st.at[0]), st.at[1]] } : st.until ? { until: st.until.map(([x, y, ch]) => [mx(x), y, ch]) } : st);
     lv.mirrored = true; } });
+// our own levels (not from the reference game), after the reference ones and after the clean-up passes above, so their checked maps ship unchanged: tools/c8-own-levels.js (checked by tools/c8-own-check.js)
+L.push(...require('./c8-own-levels.js'));
 module.exports = L;
 if (require.main === module) {
   const fs = require('fs'), path = require('path'), { runPlan } = require('./c8-plan.js');

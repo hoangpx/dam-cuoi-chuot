@@ -8,26 +8,32 @@ function parseMap(map) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let ch = map[y][x] || ' '; const r = H - 1 - y; if (ch === 'P') { start = [x, r]; ch = ' '; } else if (ch === 'G') { goal = [x, r]; ch = ' '; } else if (ch === 'S') ch = ' '; g[r][x] = ch; }
   return { g, W, H, start, goal };
 }
-const OBJ = 'aibvcdo';
-function makeModel(W, H, maxPath) {
+const OBJ = 'aibvcdor';   // r = rock (solid like a jar, falls, gathered 3+; pushes are modelled in tools/c8-push-solve.js)
+function makeModel(W, H, maxPath, strict) {   // strict (tools/c8-hard-search.js): flights one cell shorter, and a hop out of water or off its surface goes at most 2 cells sideways, a margin against the real engine
   const nb = (x, r) => [[x + 1, r], [x - 1, r], [x, r + 1], [x, r - 1]].filter(([a, b]) => a >= 0 && a < W && b >= 0 && b < H);
   const settle = g => { for (let m = true; m;) { m = false; for (let r = 1; r < H; r++) for (let x = 0; x < W; x++) if (OBJ.includes(g[r][x]) && g[r][x] !== ' ' && g[r - 1][x] === ' ') { g[r - 1][x] = g[r][x]; g[r][x] = ' '; m = true; } } };
-  const chains = g => { const out = []; for (let r = 0; r < H; r++) for (let x = 0; x < W; x++) { const k = g[r][x]; if (!'aibvcd'.includes(k) || k === ' ') continue;
+  const chains = g => { const out = []; for (let r = 0; r < H; r++) for (let x = 0; x < W; x++) { const k = g[r][x]; if (!'aibvcdr'.includes(k) || k === ' ') continue;
     const path = [[x, r]]; (function dfs() { if (path.length >= 3) out.push(path.map(p => p.slice())); if (path.length >= maxPath) return; for (const n of nb(...path[path.length - 1])) if (g[n[1]][n[0]] === k && !path.some(p => p[0] === n[0] && p[1] === n[1])) { path.push(n); dfs(); path.pop(); } })(); } return out; };
   const apply = (g, path) => { const h = g.map(r => r.slice()), k = g[path[0][1]][path[0][0]]; for (const [x, r] of path) h[r][x] = ' ';
     if (k === 'a') { const e = path[path.length - 1], p = path[path.length - 2], x = e[0] + (e[0] - p[0]), r = e[1] + (e[1] - p[1]); if (x >= 0 && x < W && r >= 0 && r < H && h[r][x] === 'i') h[r][x] = 'v'; }
     settle(h); return h; };
-  const reach = (g, start, goal) => { const free = (x, r) => x >= 0 && x < W && r >= 0 && r < H && g[r][x] !== '#' && g[r][x] !== 'i' && g[r][x] !== 'x' && g[r][x] !== 'd', wet = (x, r) => g[r][x] === 'v';
+  const reach = (g, start, goal, out) => { /* out: an optional Set that receives every cell the mouse can stand in ('x,r') */ const free = (x, r) => x >= 0 && x < W && r >= 0 && r < H && g[r][x] !== '#' && g[r][x] !== 'i' && g[r][x] !== 'x' && g[r][x] !== 'd' && g[r][x] !== 'r', wet = (x, r) => g[r][x] === 'v';
     const fall = (x, r) => { while (r > 0 && free(x, r - 1) && !wet(x, r) && !wet(x, r - 1) && g[r - 1][x] !== '#') r--; return r; };
-    const seen = new Set(), q = []; const push = (x, r) => { if (!free(x, r)) return; r = fall(x, r); if (!free(x, r) || (r > 0 && g[r - 1][x] === 'i' && !wet(x, r))) return; const k = x + ',' + r; if (seen.has(k)) return; seen.add(k); q.push([x, r]); };
+    const ice = (x, r) => x >= 0 && x < W && r >= 0 && r < H && g[r][x] === 'i', S = strict === true;   // strict (human slack): never beside ice, never a jump with ice three cells up
+    const seen = out || new Set(), q = []; const push = (x, r) => { if (!free(x, r)) return; r = fall(x, r); if (!free(x, r) || (r > 0 && g[r - 1][x] === 'i' && !wet(x, r))) return; if (S && (ice(x - 1, r) || ice(x + 1, r))) return; const k = x + ',' + r; if (seen.has(k)) return; seen.add(k); q.push([x, r]); };
     push(start[0], start[1]);
-    while (q.length) { const [x, r] = q.pop(); if (x === goal[0] && r === goal[1]) return true;
+    while (q.length) { const [x, r] = q.pop(); if (goal && x === goal[0] && r === goal[1]) return true;
       for (const d of [-1, 1]) push(x + d, r);
       if (wet(x, r)) { push(x, r + 1); push(x, r - 1); }
-      for (let u = 1; u <= 2; u++) { let ok = true; for (let t = 1; t <= u; t++) if (!free(x, r + t)) ok = false; if (!ok) break;
+      const fromWater = wet(x, r) || (r > 0 && wet(x, r - 1)), cut = strict === 'loose' ? -1 : strict ? 1 : 0;   // 'loose': flights one cell LONGER (screening for cheap ways, tools/c8-cheap.js)
+      const rise = x => { for (let u = 1; u <= (S && fromWater ? 1 : 2); u++) { if (S && ice(x, r + 3)) break; let ok = true; for (let t = 1; t <= u; t++) if (!free(x, r + t)) ok = false; if (!ok) break;
         push(x, r + u);
-        for (const d of [-1, 1]) for (let s = 1; s <= (u === 2 ? 5 : 6); s++) { let ok2 = true; for (let t = 1; t <= s; t++) if (!free(x + d * t, r + u)) ok2 = false; if (!ok2) break; push(x + d * s, r + u); } }
-      for (const d of [-1, 1]) for (let s = 2; s <= 7; s++) { let ok2 = true; for (let t = 1; t <= s; t++) if (!free(x + d * t, r)) ok2 = false; if (!ok2) break; push(x + d * s, r); } }
+        for (const d of [-1, 1]) for (let s = 1; s <= (strict === true && fromWater ? 2 : (u === 2 ? 5 : 6) - cut); s++) { let ok2 = true; for (let t = 1; t <= s; t++) if (!free(x + d * t, r + u) || (S && ice(x + d * t, r + u + 1))) ok2 = false; if (!ok2) break; push(x + d * s, r + u); } } };
+      rise(x);
+      // the real jump is an arc that drifts sideways while it rises: with something right above (ice over a water column, PR #7 redo) the
+      // mouse still gets up through the free column beside it. The generous models let a jump rise from the next cell over (not the strict one)
+      if (strict !== true) for (const d of [-1, 1]) if (free(x + d, r)) rise(x + d);
+      for (const d of [-1, 1]) for (let s = 2; s <= 7 - cut; s++) { let ok2 = true; for (let t = 1; t <= s; t++) if (!free(x + d * t, r)) ok2 = false; if (!ok2) break; push(x + d * s, r); } }
     return false; };
   return { settle, chains, apply, reach };
 }
