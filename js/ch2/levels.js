@@ -610,6 +610,46 @@ const C2LEVELS = [
     map: ["wwwMwwwwwwww", "www=ww..cwww", "wwwowwO=%h.w", "wM=1.wR=TH6w", "wG.K.w..hKrw", "w=.S.w.....w", "wrwgmwC?H=ow", "wwwwwwwwwwww", "W=3C=9......"],
     fixed: [[3,0], [3,1], [6,2], [7,2], [1,3], [2,3], [6,3], [7,3], [1,4], [1,5], [6,6], [7,6], [8,6], [9,6], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8]],
   },
+  /* ---- Cực khó (owner: five extremely hard maps; each hangs on one trick no earlier map needed). Hand-made frames, the loose
+     pieces placed by a search over the whole state space (scratch tools, not in the repo): shortest road 32–95, 88–97 % of the
+     reachable states lost, and of the first rule changes only one still wins. ---- */
+  {
+    han: "雙步", name: "Mèo nhảy cóc", paper: "yellow", key: 0, ck: true,
+    riddle: "Chuột bị nhốt trong góc, con mèo thì chạy mãi không ngừng. Một bước của mèo bằng hai bước của chuột.",
+    hint: "Đẩy chữ MÈO lên chỗ chữ CHUỘT: MÈO LÀ ĐI. Mèo vừa ĐI vừa CHẠY nên mỗi lần bấm nó đi hai ô, vượt qua được một ô nước (chỉ ô dừng chân mới tính); đâm vào tường thì nó lùi lại một ô, nhờ vậy đổi được chẵn lẻ. Mèo đẩy chữ cũng hai ô một lần: đưa LÀ và THẮNG lên hàng trên cùng sau chữ CỔNG cho thành CỔNG LÀ THẮNG, rồi cho mèo dừng đúng trên cổng.",
+    map: ["....wG...=..", "M=1.w.6.....", "C...w..~.~.~", "m...w.~.w~.~", "wwwww~......", "w.cw.......w", "~g.....w....", "~...........", "N=4W=3C=^..."],
+    fixed: [[1,1], [2,1], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,8], [7,8], [8,8]],
+    dirs: [[2, 5, "R"]],
+  },
+  {
+    han: "並步", name: "Đôi bạn", paper: "lilac", key: -1, ck: true,
+    riddle: "Hai con chuột chỉ cất bước được khi đứng sát nhau. Hễ một con vướng tường là hai con lệch nhau một ô; lệch tới hai ô là cả hai đứng sững.",
+    hint: "Hai con cùng ô cũng là gần nhau: cho một con vướng tường để con kia bước đè lên nó, từ đó hai con đi như một, không bao giờ lệch nhau nữa. Rồi đẩy chữ LÀ và chữ THẮNG về sau chữ CỔNG cho thành CỔNG LÀ THẮNG, và đi vào cổng ở mép trái.",
+    map: ["M?M=1.....", "w.w.......", "..ww...=..", "wwG...w...", "w..w.6.w..", "gmm..w...w", "......w...", "W=3.w....."],
+    fixed: [[0,0], [1,0], [2,0], [3,0], [4,0], [0,7], [1,7], [2,7]],
+  },
+  {
+    han: "𧵆𡨸", name: "Bám víu", paper: "sage", key: -2, ck: true,
+    riddle: "Chuột chỉ cất bước được khi ở sát một hòn đá. Cổng thì ở tít trên cao, quanh đó chẳng có hòn đá nào.",
+    hint: "Chữ đứng sau GẦN đổi được: đẩy chữ khác vào chỗ chữ ĐÁ là chuột bám vào thứ khác, miễn ngay sau bước đẩy chuột đang ở sát thứ ấy. Đứng dưới chữ MÈO, chờ con mèo chạy tới sát rồi đẩy MÈO lên: CHUỘT GẦN MÈO LÀ ĐI. Bám theo mèo sang phải, vòng ra sau chữ CHỮ, đẩy nó dọc hàng về dưới câu luật trong khi mèo vẫn ở cạnh, rồi đẩy lên: CHUỘT GẦN CHỮ LÀ ĐI. Giờ còn chữ ở cạnh là đi được: đẩy một chữ đi trước mình lên tới cổng.",
+    map: ["...........", ".........g.", "...........", "M?R=1......", ".wC.....T.w", "...c.......", ".r..r......", "m..........", "G=6W=3C=^.."],
+    fixed: [[0,3], [1,3], [3,3], [4,3], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,8], [7,8], [8,8]],
+    dirs: [[3, 5, "R"]],
+  },
+  {
+    han: "替身", name: "Thế thân", paper: "blue", key: -3, ck: true,
+    riddle: "Khắp sân chẳng có cái cổng nào. Hai con chuột bước cùng một nhịp, mà chỉ cần một con tới đích.",
+    hint: "Ghép dọc CHUỘT / CÓ / CỔNG dưới chữ CHUỘT cố định: con chuột nào mất đi sẽ để lại một cái cổng. Lấy tường làm lệch bước hai con, rồi dắt con bên phải xuống ao: nó chìm, cổng hiện ra đúng chỗ ấy. Rút chữ CỔNG ra, đưa qua lối thông sang bên phải, đặt lên ô cổng mới rồi đẩy xuống chỗ trống trước LÀ THẮNG: vừa ghép CỔNG LÀ THẮNG vừa bước lên cổng.",
+    map: [".M=1.w....", ".....w....", ".+...w.w~.", "...m.w.~.m", "..G...~...", ".....w.=6~", "N=4W=3...."],
+    fixed: [[1,0], [2,0], [3,0], [7,5], [8,5], [0,6], [1,6], [2,6], [3,6], [4,6], [5,6]],
+  },
+  {
+    han: "落字", name: "Rút củi đáy nồi", paper: "pink", key: 2, ck: true,
+    riddle: "Chẳng có cổng nào. Chữ thì rơi, chuột thì không; mà đi vào chữ là đẩy chữ đi mất, chẳng bao giờ đứng chung ô được với chữ.",
+    hint: "Ghép CHỮ LÀ THẮNG thì chữ nào cũng là đích, nhưng muốn chạm một chữ thì phải để chữ rơi trúng đầu chuột. Thả xuống giếng giữa lần lượt ĐÁ, THẮNG, LÀ, CHỮ (chữ thả trước nằm dưới): cột chữ đọc từ trên xuống là CHỮ LÀ THẮNG, kê trên chữ ĐÁ. Rồi theo đường hầm bên trái xuống đáy giếng, đẩy chữ ĐÁ sang phải: cả câu tụt xuống một ô, chữ THẮNG rơi đúng vào ô chuột vừa bước vào.",
+    map: ["M=1T=$W=3", "..R...Tm.", ".ww...ww.", ".=.....6.", ".www.wwww", ".www.wwww", ".www.wwww", ".ww...www", "....wwwww"],
+    fixed: [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0], [8,0]],
+  },
 ];
 // the bought hint (owner): just the chain of rules to make, map by map
 const C2_CHAIN = [
@@ -699,8 +739,14 @@ const C2_CHAIN = [
   "Ghép ĐÁ LÀ CHUYỂN → đưa chữ ĐẨY và chuột sang hòn đá bên kia → phá ĐÁ LÀ CHUYỂN → ghép ĐÁ LÀ ĐẨY → lăn đá lên lửa → ghép ĐÁ LÀ CHUYỂN → phá ĐÁ LÀ ĐẨY → phá ĐÁ LÀ CHUYỂN",
   "Ghép CHỮ LÀ RƠI → phá CHỮ LÀ RƠI → ghép CHUỘT LÀ RƠI",
   "Ghép MÈO GẦN RƠM LÀ ĐI → phá CHUỘT LÀ ĐI → ghép ĐÁ LÀ CHUYỂN → phá MÂY LÀ CHUYỂN → phá ĐÁ LÀ CHỮ → ghép CỔNG LÀ THẮNG → phá ĐÁ LÀ CHUYỂN → ghép ĐÁ LÀ RƠM → ghép CHUỘT LÀ ĐI → ghép MÂY LÀ CHUYỂN → phá MÈO GẦN RƠM LÀ ĐI → đi vào cổng",
+  "Phá CHUỘT LÀ ĐI → ghép MÈO LÀ ĐI → mèo nhảy hai ô một bước, đẩy LÀ và THẮNG lên hàng trên → ghép CỔNG LÀ THẮNG → cho mèo dừng đúng trên cổng",
+  "Cho hai con chuột đứng chung một ô → ghép CỔNG LÀ THẮNG → đi vào cổng",
+  "Phá CHUỘT GẦN ĐÁ LÀ ĐI → ghép CHUỘT GẦN MÈO LÀ ĐI (lúc mèo chạy sát bên) → bám mèo, đẩy chữ CHỮ về dưới câu luật → phá CHUỘT GẦN MÈO LÀ ĐI → ghép CHUỘT GẦN CHỮ LÀ ĐI → đẩy một chữ đi trước mình tới cổng",
+  "Ghép CHUỘT CÓ CỔNG → dắt con chuột bên phải chìm xuống ao → phá CHUỘT CÓ CỔNG → đặt chữ CỔNG lên ô cổng mới → ghép CỔNG LÀ THẮNG (đẩy chữ xuống, bước lên cổng)",
+  "Thả xuống giếng lần lượt ĐÁ, THẮNG, LÀ, CHỮ → ghép CHỮ LÀ THẮNG → theo đường hầm xuống đáy giếng, rút chữ ĐÁ ra cho cả câu rơi trúng đầu chuột",
 ];
 const C2_FIRST_HARD = C2LEVELS.findIndex(l => l.hard);
 const C2_FIRST_BH = C2LEVELS.findIndex(l => l.bh);   // Biến hoá: the Baba-style words (owner)
 const C2_FIRST_SK = C2LEVELS.findIndex(l => l.sk);   // Hơi khó: 30 hard maps, open after the last Biến hoá map
 const C2_FIRST_TT = C2LEVELS.findIndex(l => l.tt);   // Thần thông: 30 maps with the new words (CHUYỂN TRÔI ĐỔI TAN BỀN RƠI, TRÊN GẦN), open after the last Hơi khó map
+const C2_FIRST_CK = C2LEVELS.findIndex(l => l.ck);   // Cực khó: 5 maps, one trick each, open after the last Thần thông map
