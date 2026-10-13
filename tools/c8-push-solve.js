@@ -33,7 +33,10 @@ function solve(map, opt = {}) {
         const x1 = x + d, x2 = x + 2 * d; if (x2 < 0 || x2 >= W || g[r][x1] !== 'r' || !' oa'.includes(g[r][x2])) continue;
         const h = g.map(row => row.slice()), t = h[r][x2]; h[r][x2] = 'r'; h[r][x1] = t === ' ' ? ' ' : t;
         const carried = r > 0 && solid(g[r - 1][x1]); M.settle(h);
-        const m2 = place(h, carried ? [x1, r] : p); if (!m2) continue;
+        // carried into the rock's old cell; if something above drops into that cell first (it falls the moment the rock leaves), the
+        // engine just stops the mouse against it where it stood (owner's PR #7: levels 58-60 were won with no swipe by such a push,
+        // which this solver used to skip as a crush)
+        const m2 = (carried && place(h, [x1, r])) || place(h, p); if (!m2) continue;
         out.push({ g: h, m: m2, sw: 0, pu: 1, act: { push: [x1, r], dir: d, from: p, to: [x2, r], swap: t } });
       }
     }

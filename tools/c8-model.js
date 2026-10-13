@@ -26,9 +26,13 @@ function makeModel(W, H, maxPath, strict) {   // strict (tools/c8-hard-search.js
       for (const d of [-1, 1]) push(x + d, r);
       if (wet(x, r)) { push(x, r + 1); push(x, r - 1); }
       const fromWater = wet(x, r) || (r > 0 && wet(x, r - 1)), cut = strict === 'loose' ? -1 : strict ? 1 : 0;   // 'loose': flights one cell LONGER (screening for cheap ways, tools/c8-cheap.js)
-      for (let u = 1; u <= (S && fromWater ? 1 : 2); u++) { if (S && ice(x, r + 3)) break; let ok = true; for (let t = 1; t <= u; t++) if (!free(x, r + t)) ok = false; if (!ok) break;
+      const rise = x => { for (let u = 1; u <= (S && fromWater ? 1 : 2); u++) { if (S && ice(x, r + 3)) break; let ok = true; for (let t = 1; t <= u; t++) if (!free(x, r + t)) ok = false; if (!ok) break;
         push(x, r + u);
-        for (const d of [-1, 1]) for (let s = 1; s <= (strict === true && fromWater ? 2 : (u === 2 ? 5 : 6) - cut); s++) { let ok2 = true; for (let t = 1; t <= s; t++) if (!free(x + d * t, r + u) || (S && ice(x + d * t, r + u + 1))) ok2 = false; if (!ok2) break; push(x + d * s, r + u); } }
+        for (const d of [-1, 1]) for (let s = 1; s <= (strict === true && fromWater ? 2 : (u === 2 ? 5 : 6) - cut); s++) { let ok2 = true; for (let t = 1; t <= s; t++) if (!free(x + d * t, r + u) || (S && ice(x + d * t, r + u + 1))) ok2 = false; if (!ok2) break; push(x + d * s, r + u); } } };
+      rise(x);
+      // the real jump is an arc that drifts sideways while it rises: with something right above (ice over a water column, PR #7 redo) the
+      // mouse still gets up through the free column beside it. The generous models let a jump rise from the next cell over (not the strict one)
+      if (strict !== true) for (const d of [-1, 1]) if (free(x + d, r)) rise(x + d);
       for (const d of [-1, 1]) for (let s = 2; s <= 7 - cut; s++) { let ok2 = true; for (let t = 1; t <= s; t++) if (!free(x + d * t, r)) ok2 = false; if (!ok2) break; push(x + d * s, r); } }
     return false; };
   return { settle, chains, apply, reach };

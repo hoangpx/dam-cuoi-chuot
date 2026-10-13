@@ -104,6 +104,8 @@ if (process.env.ANNEAL) {
       if (ok(cur)) {                                                       // the real engine must play the road too (the model's jumps go up then across; real jumps are arcs that touch ice the model flies over)
         const { planOf } = require('./c8-push-solve.js'), { runPlan } = require('./c8-plan.js'), mv = solve(cur.map, { by: 'swipes', cap: CAP }).moves;
         const r = runPlan(cur.map, planOf(cur.map, mv), { cap: 60000, depth: 80 });
+        const z = r.won && runPlan(cur.map, [], { cap: 150000, depth: 120 });   // a deep engine search with NO swipe must not win (PR #7)
+        if (z && z.won) { console.log('engine wins with no swipe'); cur = Object.assign({}, cur, { s: cur.s - 120 }); continue; }
         if (r.won) { fs.appendFileSync(found, JSON.stringify(cur) + '\n'); console.log('FOUND', JSON.stringify({ sw: cur.sw, pu: cur.pu, things: cur.things, loose: cur.loose })); break; }
         console.log('engine refused (step ' + r.step + ', ' + r.why + ')'); cur = Object.assign({}, cur, { s: cur.s - 60 }); }
     }

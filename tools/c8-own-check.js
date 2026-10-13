@@ -33,8 +33,8 @@ if (L.moves) {
   console.log(`plan: ${nSw} swipes, ${nPu} pushes`);
   { const { g, W, H } = parseMap(L.map), h = g.map(r => r.slice()); makeModel(W, H, 8, true).settle(h);
     check(h.every((r, i) => r.join('') === g[i].join('')), 'nothing falls at the start (the map is stored settled)'); }
-  for (const strict of [true, 'loose']) {
-    const a = solve(L.map, { by: 'swipes', strict }), b = solve(L.map, { by: 'pushes', strict }), nm = strict === true ? 'strict' : 'generous';
+  for (const strict of [true, E.gen === 'plain' ? false : 'loose']) {   // expect.gen 'plain': the second model flies the engine's own 7 cells (cheap wins left to the deep engine checks below)
+    const a = solve(L.map, { by: 'swipes', strict }), b = solve(L.map, { by: 'pushes', strict }), nm = strict === true ? 'strict' : strict ? 'generous' : 'engine-like';
     check(!a.capped && !b.capped && a.cost && b.cost, `${nm} model: solvable (${a.states} / ${b.states} states)`);
     if (a.cost && b.cost) {
       check(a.cost.swipes >= E.minSwipes, `${nm} model: every solution needs at least ${E.minSwipes} swipes (fewest: ${a.cost.swipes}, with ${a.cost.pushes} pushes)`);
@@ -47,6 +47,13 @@ if (L.moves) {
     const r = runPlan(L.map, PLAN, o); check(r.won, `engine: the plan wins${r.won ? '' : ' (stuck at step ' + r.step + ', ' + r.why + ')'}`);
     const rh = runPlan(L.map, PLAN, Object.assign({ handicap: true }, o)); check(rh.won, `engine: the plan wins for a clumsy player too (bigger ice, weaker in the air)${rh.won ? '' : ' (stuck at step ' + rh.step + ')'}`);
     check(!run(L.map, [], { cap: 40000, depth: 150, fine: true }).won, 'engine: with no swipes (walking, jumping and pushing allowed) it does not win');
+    // deeper (owner, PR #7: levels 58 and 60 were won with no swipe; the check above gave up after 40 000 positions): the plan search of
+    // tools/c8-plan.js over 150 000 positions with no swipe, then every distinct first swipe (made from the start) followed by a search
+    check(!runPlan(L.map, [], { cap: 150000, depth: 120 }).won, 'engine (deep): with no swipes it does not win');
+    if (E.minSwipes >= 2) { const { g, W, H } = parseMap(L.map), M = makeModel(W, H, 8, 'loose'), s0 = g.map(r => r.slice()); M.settle(s0); const seen = new Set(); let n = 0, won = null;
+      for (const ch of M.chains(s0)) { const k = M.apply(s0, ch).map(r => r.join('')).join('/'); if (seen.has(k)) continue; seen.add(k); n++;
+        const sw = ch.map(([x, r]) => [x, H - 1 - r]); if (runPlan(L.map, [{ swipe: sw }], { cap: 60000, depth: 100 }).won) { won = sw; break; } }
+      check(!won, `engine: no single first swipe wins (${n} tried)${won ? ' WON WITH ' + JSON.stringify(won) : ''}`); }
   }
   console.log(fails.length ? `\n${fails.length} check(s) FAILED` : '\nall checks passed');
   process.exit(fails.length ? 1 : 0);

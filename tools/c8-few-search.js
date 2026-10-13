@@ -25,6 +25,33 @@ const FRAMES = {
   // a 3-high tunnel under a roof, the chest past its end (as tools/c8-push-search.js)
   tunnel3: ['####################', '#     ##########   #', '#     ##########   #', '#     ##########   #', '#     ##########   #', '#     ##########   #', '#  ...##########   #',
             '#  ... ......      #', '#  ... ......      #', '#P ... ......   G  #', '####################'],
+  // different terrain for each level (owner, PR #7: "địa hình quá giống nhau ... hầm, bậc cao, giếng, hố, mái treo"):
+  // a well nine wide and five deep between two high grounds: down into it, then build a way up the far side
+  well: ['######################', '#                    #', '#                    #', '#P                 G #', '#####.........########', '#####.........########', '#####.........########',
+         '#####.........########', '#####.........########', '######################'],
+  // two high steps of three: a step must be made on the floor, then another on the first tier
+  steps2: ['####################', '#                  #', '#                  #', '#                G #', '#        ....#######', '#        ....#######', '#        ....#######',
+           '#  ....  ###########', '#  ....  ###########', '#P ....  ###########', '####################'],
+  // an overhang: the chest on a shelf that juts out over the pile, six up
+  lip: ['###############', '#             #', '#             #', '#    G        #', '#  #####      #', '#        .... #', '#        .... #', '#        .... #', '#        .... #', '#P       .... #', '###############'],
+  // a pit four wide and three deep right under a ledge three up
+  pitledge: ['##################', '#                #', '#                #', '#            G   #', '#          #######', '#  ...     #######', '#P ...     #######', '#######....#######',
+             '#######....#######', '#######....#######', '##################'],
+  // two earth towers four high, seven apart (one flight short), the chest on the right one
+  towers: ['####################', '#                  #', '#                  #', '#                  #', '#                  #', '#               G  #', '# ....##.......#####',
+           '# ....##.......#####', '# ....##.......#####', '#P....##.......#####', '####################'],
+  // a two-wide chimney eight high up to the chest, a small room at its foot
+  chimney: ['################', '#########      #', '#########    G #', '##########..####', '##########..####', '##########..####', '##########..####', '##########..####',
+            '#  ...    ..####', '#  ...    ..####', '#P ...    ..####', '################'],
+  // a cave: a 3-high step under a low roof (3 cells of headroom over the step), the chest on the step
+  cave2: ['####################', '#     ###########  #', '#     ###########  #', '#     ###########  #', '#                  #', '#      .....       #', '#      .....     G #',
+          '#  ..  .....########', '#  ..  .....########', '#P ..  .....########', '####################'],
+  // the chest in an upper room, reached through a 2-wide hole in the ceiling five up
+  hole: ['##################', '#######      #####', '#######      #####', '#######   G  #####', '###########  #####', '#                #', '#        ....    #',
+         '#  ...   ....    #', '#P ...   ....    #', '##################'],
+  // a low gate, then a pit three wide and two deep before the chest
+  gatepit: ['####################', '#       #          #', '#       #          #', '#       #          #', '#       #          #', '#       #          #', '#       #          #',
+            '#      .#.         #', '#  ... ...         #', '#P ... ...      G  #', '############...#####', '############...#####', '####################'],
   // a cliff, the chest four up
   cliff: ['##################', '#                #', '#                #', '#              G #', '#            #####', '#         ...#####', '#  ...    ...#####', '#P ...    ...#####', '##################'],
   // a pit two wide and two deep before a ledge two up
@@ -49,10 +76,13 @@ function score(th) {
   const b = solve(map, { by: 'pushes', cap: CAP }); if (b.capped || !b.cost) return { s: -150, map };
   const f = findBits(map, { cap: 30000 }); if (f.capped || f.unsolvable) return { s: -120, map };
   const sw = a.cost.swipes, pu = b.cost.pushes, moves = sw + pu;
-  let s = Math.min(f.bits, 30) * 6 + Math.min(sw, MINSW + 1) * 12 - Math.max(0, MINSW - sw) * 40 + (SWIPE ? 0 : Math.min(moves, MOVES + 4) * 3) + f.dead * 10;   // a missing swipe costs a lot: with few things one swipe and many pushes is the easy optimum
+  let s = Math.min(f.bits, 30) * 6 + Math.min(sw, MINSW + 2) * 25 - Math.max(0, MINSW - sw) * 40   // owner, PR #7: at least 3 swipes, the more the better + (SWIPE ? 0 : Math.min(moves, MOVES + 4) * 3) + f.dead * 10;   // a missing swipe costs a lot: with few things one swipe and many pushes is the easy optimum
   let loose = null, ok = false;
   if (f.bits >= BITS && sw >= MINSW && (SWIPE || moves >= MOVES)) {
-    const la = solve(map, { by: 'swipes', cap: CAP, strict: 'loose' }), lb = solve(map, { by: 'pushes', cap: CAP, strict: 'loose' }), lf = findBits(map, { strict: 'loose', cap: 30000 });
+    // the second, generous model: 'loose' (flies 8, one more than the engine) or GEN=plain (flies exactly the engine's 7; cheap wins are then
+    // left to the deep engine searches of the gate below and of tools/c8-own-check.js)
+    const G2 = process.env.GEN === 'plain' ? false : 'loose';
+    const la = solve(map, { by: 'swipes', cap: CAP, strict: G2 }), lb = solve(map, { by: 'pushes', cap: CAP, strict: G2 }), lf = findBits(map, { strict: G2, cap: 30000 });
     loose = { sw: la.cost ? la.cost.swipes : null, pu: lb.cost ? lb.cost.pushes : null, bits: lf.bits, capped: !!(la.capped || lb.capped || lf.capped) };
     ok = !loose.capped && loose.sw >= MINSW && (SWIPE || loose.sw + loose.pu >= MOVES) && loose.bits >= BITS * .7;
     s += ok ? 40 : -10;
@@ -83,6 +113,9 @@ while (Date.now() < end) {
     if (cur.s > best && cur.sw !== undefined) { best = cur.s; console.log('best', cur.s.toFixed(1), JSON.stringify({ sw: cur.sw, pu: cur.pu, things: cur.things, bits: cur.bits, loose: cur.loose })); }
     if (cur.ok) {                                                          // the real engine must play the road too
       const r = runPlan(cur.map, planOf(cur.map, solve(cur.map, { by: 'swipes', cap: CAP }).moves), { cap: 60000, depth: 80 });
+      // and a deep engine search with NO swipe must not win (owner, PR #7: levels 58 and 60 were won with no swipe; the old check gave up
+      // after 40 000 positions, the win needs more)
+      const z = r.won && runPlan(cur.map, [], { cap: 150000, depth: 120 }); if (z && z.won) { console.log('engine wins with no swipe'); cur = Object.assign({}, cur, { s: cur.s - 120, ok: false }); continue; }
       if (r.won) { fs.appendFileSync(found, JSON.stringify(cur) + '\n'); console.log('FOUND', JSON.stringify({ sw: cur.sw, pu: cur.pu, things: cur.things, bits: cur.bits, loose: cur.loose })); break; }
       console.log('engine refused (step ' + r.step + ', ' + r.why + ')'); cur = Object.assign({}, cur, { s: cur.s - 60, ok: false });
     }
