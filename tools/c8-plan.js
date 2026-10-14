@@ -35,7 +35,7 @@ function runPlan(map, plan, opt = {}) {
       else if (s.wait) wait(s.wait);
       else { const atOk = s.wet ? g => (g.p.on || Math.abs(g.p.vy) < 1) && Math.abs(g.p.x - (s.at[0] + .5)) < .3 && g.p.y > s.at[1] + .8 && g.p.y < s.at[1] + 1.2 + s.wet   // { wet: k }: the cell stands on k water cells, the mouse may be in them
           : g => g.p.on && Math.abs(g.p.x - (s.at[0] + .5)) < .3 && Math.abs(g.p.y - (s.at[1] + 1)) < .2, boardOk = g => !s.until || s.until.every(([x, y, ch]) => g.cells[y * w + x] === ch); const goal = s.at ? (g => atOk(g) && boardOk(g)) : (g => s.until.every(([x, y, ch]) => g.cells[y * w + x] === ch)); const r = search(G, goal, cap, depth); if (!r) return { won: false, step: si, log, why: 'search', board: brd() }; G = r; log.push({ step: si, found: true, hist: r.hist }); } }
-    const r = search(G, g => g.state === 'win', cap, depth); return { won: !!r, step: plan.length, log, why: r ? '' : 'final search' };
+    const r = search(G, g => g.state === 'win', cap, depth); if (r) log.push({ final: true, hist: r.hist, x: +r.p.x.toFixed(1), y: +r.p.y.toFixed(1), cells: r.cells.join('') }); return { won: !!r, step: plan.length, log, why: r ? '' : 'final search' };
   })()`, ctx);
 }
 module.exports = { runPlan };

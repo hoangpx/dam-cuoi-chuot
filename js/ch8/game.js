@@ -2,7 +2,7 @@
    levels.js, the prints in art.js. Everything is drawn on the main canvas (CSS pixels, below the notch); the mouse is walked
    with ← → / A D and Space / ↑ / W (on phones with the three buttons #c8pad), things are gathered by dragging a finger or the
    mouse over 3 or more neighbouring ones of a kind. Saves: SAVE8 { done[], scrolls[], best[] seconds } in 'dcc.c8'. */
-const C8_SAVE_V = 2;                                  // the whole set of levels was replaced (owner, 2026-10-09): saves of the first set are not carried over
+const C8_SAVE_V = 3;                                  // the whole set of levels was replaced (owner, 2026-10-09): saves of the first set are not carried over
 let SAVE8 = { v: C8_SAVE_V, done: [], scrolls: [], best: [] };
 try { const s = JSON.parse(localStorage.getItem('dcc.c8') || 'null'); if (s && Array.isArray(s.done) && s.v === C8_SAVE_V) SAVE8 = Object.assign(SAVE8, s); } catch (e) {}
 const persist8 = () => { try { localStorage.setItem('dcc.c8', JSON.stringify(SAVE8)); } catch (e) {} };
@@ -216,7 +216,7 @@ function c8DrawWorld(g, G, v) {
   // pegs, thorns, scrolls
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const ch = G.cells[y * W + x], X = x * cs, Y = y * cs;
-    if (ch === 'o') { const vs = G.vis[y * W + x]; c8Peg(g, X + cs / 2, Y + cs / 2 + (vs ? vs.oy : 0) * cs, cs); }
+    if (ch === 'o') { const vs = G.vis[y * W + x]; g.save(); g.globalAlpha = .93; g.drawImage(A.o.c, X, Y + (vs ? vs.oy : 0) * cs + Math.sin(C8.t * 1.6 + x * 1.7) * cs * .015, cs, cs); g.restore(); }
     else if (ch === 'x') c8Thorn(g, X, Y, cs, at(x, y - 1) !== 'x', x, y);
     else if (ch === 'S') { const b = Math.sin(C8.t * 3 + x) * cs * .05; g.drawImage(A.scroll.c, X + cs * .15, Y + cs * .12 + b, cs * .7, cs * .7); }
   }
@@ -287,17 +287,33 @@ function c8DrawHud(g, G, v) {
   g.font = '600 12px "Be Vietnam Pro", sans-serif'; g.fillStyle = 'rgba(29,25,21,.7)'; g.fillText(c8Clock(G.time), W / 2, 42);
   if (G.nScroll) { const A = c8Art(); g.drawImage(A.scroll.c, W - 168, 12, 30, 30); g.fillStyle = INK; g.textAlign = 'left'; g.font = '900 16px "Playfair Display", serif'; g.fillText(`${G.got}/${G.nScroll}`, W - 136, 28); }
 }
-function c8Howto(g, G, v) {                                // no words: a finger dragging over the first three things, and the keys
-  if (C8.over || G.state !== 'play') return; const A = howtoArt(), cs = v.cs;
-  if (C8.i === 0 && C8_LEVELS[0].howto && !C8.gathered && G.sel.length === 0 && C8.idle > 1.2) {
-    const L = C8_LEVELS[0], cells = []; const kind = [...G.cells].find(ch => C8_KINDS.includes(ch)); for (let i = 0; i < G.cells.length; i++) if (G.cells[i] === kind) cells.push(i); cells.sort((a, b) => a - b);
-    const T = 2.4, kk = (C8.t % T) / T, sw = Math.min(1, Math.max(0, (kk - .15) / .6)), n = cells.length - 1, f = sw * n, a = Math.min(n - 1, Math.floor(f)), w = f - a;
+// the how-to finger of the first level (owner, 2026-10-12): level.tips = [{ k, cells: [[x, y]…], max }]: when the mouse stands still near a station whose things are all still of kind k, a finger
+// (a mouse pointer on a computer) drags over those cells; max = how many times it shows (the white spirals cannot be eaten, so the finger tries twice and the mouse learns to walk through)
+function c8Tips(g, G, v, A) {
+  const tips = C8_LEVELS[C8.i].tips; if (!tips || G.sel.length || C8.idle < .5) { C8.tipLast = undefined; return; }
+  C8.tipCyc = C8.tipCyc || {}; const cs = v.cs;
+  for (let n = 0; n < tips.length; n++) {
+    const t = tips[n], cells = t.cells.map(([x, y]) => y * G.W + x), key = C8.i + ':' + n;
+    if (!cells.every(i => G.cells[i] === t.k) || (C8.tipCyc[key] || 0) >= (t.max || 99)) continue;
+    const mx = t.cells[0][0]; if (mx - G.p.x > 10 || G.p.x - mx > 4) continue;
+    const T = 2.4, kk = (C8.t % T) / T, sw = Math.min(1, Math.max(0, (kk - .15) / .6)), m = cells.length - 1, f = sw * m, a = Math.min(m - 1, Math.floor(f)), w = f - a;
+    if (C8.tipLast !== undefined && kk < C8.tipLast) C8.tipCyc[key] = (C8.tipCyc[key] || 0) + 1; C8.tipLast = kk;
     const pt = i => [(i % G.W + .5) * cs - C8.cam.x, (((i / G.W) | 0) + .5) * cs - C8.cam.y];
     const p0 = pt(cells[a]), p1 = pt(cells[a + 1]), x = p0[0] + (p1[0] - p0[0]) * w, y = p0[1] + (p1[1] - p0[1]) * w;
     g.globalAlpha = kk > .85 ? 1 - (kk - .85) / .15 : 1;
+    if (sw > 0) {                                                // the chain being drawn, as in a real swipe: a line over the cells passed so far (gold from the third on) and the count
+      const pts = []; for (let j = 0; j <= a; j++) pts.push(pt(cells[j])); pts.push([x, y]); const lit = a >= 1 && sw > 0;
+      g.lineCap = g.lineJoin = 'round'; g.strokeStyle = INK; g.lineWidth = cs * .2; g.beginPath(); pts.forEach((q, j) => j ? g.lineTo(...q) : g.moveTo(...q)); g.stroke();
+      g.strokeStyle = lit ? '#f2c640' : '#f2ecde'; g.lineWidth = cs * .12; g.stroke();
+    }
     if (isTouch) dp(g, A.finger, x + 5, y - 2, -.15, 1.05, 1.05); else { dp(g, A.mouse, x + 10, y + 16, 0, .7, .7); if (sw > 0 && sw < 1) dp(g, A.click, x + 10, y + 16, 0, .7, .7); }
-    g.globalAlpha = 1;
+    g.globalAlpha = 1; return;
   }
+  C8.tipLast = undefined;
+}
+function c8Howto(g, G, v) {                                // no words: a finger dragging over the first three things, and the keys
+  if (C8.over || G.state !== 'play') return; const A = howtoArt(), cs = v.cs;
+  c8Tips(g, G, v, A);
   if (C8.i === 0 && !isTouch && (!C8.moved || !C8.jumped) && G.time > 1) {          // keys, bottom left
     const x0 = 56, y0 = v.H - 52, pulse = .8 + .2 * Math.sin(C8.t * 5);
     g.globalAlpha = pulse; dp(g, A.keyL, x0, y0, 0, .8, .8); dp(g, A.keyR, x0 + 40, y0, 0, .8, .8); dp(g, A.keyL, x0 + 20, y0 - 38, Math.PI / 2, .8, .8); g.globalAlpha = 1;

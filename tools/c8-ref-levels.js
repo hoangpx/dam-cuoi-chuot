@@ -188,6 +188,10 @@ if (!process.env.NOMIRROR) L.forEach(lv => {
     lv.mirrored = true; } });
 // our own levels (not from the reference game), after the reference ones and after the clean-up passes above, so their checked maps ship unchanged: tools/c8-own-levels.js (checked by tools/c8-own-check.js)
 L.push(...require('./c8-own-levels.js'));
+// no scrolls (owner, 2026-10-12: "bỏ hết mấy cuộn giấy vô nghĩa"): the S cells of the reference pictures (Frigid Well, Iceberg) become empty floor
+L.forEach(lv => { lv.map = lv.map.map(r => r.replace(/S/g, ' ')); });
+// the first level teaches the rules (owner, 2026-10-12): tools/c8-intro-level.js
+L.unshift(require('./c8-intro-level.js'));
 module.exports = L;
 if (require.main === module) {
   const fs = require('fs'), path = require('path'), { runPlan } = require('./c8-plan.js');
@@ -199,7 +203,7 @@ if (require.main === module) {
     console.log(String(i + 1).padStart(2), lv.en.padEnd(20), lv.map[0].length + 'x' + lv.map.length, 'things', String(things).padStart(3), '| plan:', res);
   });
   if (process.argv.includes('--write')) {
-    const src = L.map(lv => `  { name: ${JSON.stringify(lv.name)}, en: ${JSON.stringify(lv.en)}, map: [\n${lv.map.map(r => '    ' + JSON.stringify(r).replace(/"/g, "'")).join(',\n')} ] }`).join(',\n');
+    const src = L.map(lv => `  { name: ${JSON.stringify(lv.name)}, en: ${JSON.stringify(lv.en)}, map: [\n${lv.map.map(r => '    ' + JSON.stringify(r).replace(/"/g, "'")).join(',\n')} ]${lv.tips ? ", tips: " + JSON.stringify(lv.tips) : ""} }`).join(',\n');
     const file = path.join(__dirname, '..', 'js/ch8/levels.js'), head = fs.readFileSync(file, 'utf8').split('const C8_LEVELS')[0];
     fs.writeFileSync(file, head + 'const C8_LEVELS = [\n' + src + ',\n];\n'); console.log('wrote', L.length, 'levels');
   }

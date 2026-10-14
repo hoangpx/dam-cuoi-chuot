@@ -36,11 +36,14 @@ function c8Art() {
   // things sit on little paper tiles so a pile reads as a grid
   const tile = (pl, motif) => part([0, 0, 64, 64], a => { a.fk('white', rr(4, 4, 56, 56, 9), 2.4); a.fill(pl, rr(7, 7, 50, 50, 7)); a.fill('white', rr(7, 7, 50, 50, 7)); a.fill(pl, ell(32, 32, 22, 22)); a.fill('white', ell(32, 32, 22, 22)); motif(a); });
   const ring = (a, pl) => a.band(pl, circ(32, 32, 27), 3);                       // the soft kinds: no tile, just the picture in a faint ring
-  A.a = part([0, 0, 64, 64], a => {                                           // lửa: a flame, red outside, orange and yellow within (it melts ice)
+  A.a = part([0, 0, 64, 64], a => {                                           // lửa: a clay charcoal stove (lò than) with tall curling flames over its glowing mouth (it melts ice; replaces the reference's plain flame)
     ring(a, 'lilac');
-    const fl = (s, dy) => { const X = x => 32 + (x - 32) * s, Y = y => 58 + (y - 58) * s + dy, p = new Path2D(); p.moveTo(X(32), Y(58)); p.quadraticCurveTo(X(10), Y(56), X(13), Y(38)); p.quadraticCurveTo(X(15), Y(27), X(22), Y(14)); p.quadraticCurveTo(X(22), Y(25), X(28), Y(30)); p.quadraticCurveTo(X(26), Y(15), X(37), Y(3)); p.quadraticCurveTo(X(37), Y(18), X(46), Y(27)); p.quadraticCurveTo(X(55), Y(38), X(51), Y(49)); p.quadraticCurveTo(X(47), Y(58), X(32), Y(58)); p.closePath(); return p; };
-    a.fk('red', fl(1, 0), 2.6); a.fill('orange', fl(.74, -1)); a.fk('yellow', fl(.44, -2), 1.3);
-    a.key(smooth([[24, 44], [22, 37], [27, 30]], false), 1.2);
+    const tongue = (cx, h, w, lean) => smooth([[cx - w, 43], [cx - w * .7, 43 - h * .55], [cx + lean, 43 - h], [cx + w * .55, 43 - h * .5], [cx + w, 43]]);
+    a.fk('red', tongue(32, 36, 13, 5), 2.2); a.fk('red', tongue(19, 22, 8, -5), 2); a.fk('red', tongue(46, 20, 8, 4), 2);
+    a.fill('orange', tongue(32, 26, 8.5, 3.5)); a.fk('yellow', tongue(32, 14, 4, 2), 1.2);
+    a.fk('tan', smooth([[14, 43], [50, 43], [48, 52], [43, 60], [21, 60], [16, 52]]), 2.4);            // the bowl
+    a.fk('brown', rr(11, 40, 42, 6, 3), 2); a.fill('red', ell(32, 42.5, 15, 2));                         // the rim and the glowing mouth
+    a.key(lines([[20, 52, 44, 52]]), 1.3);
   });
   A.b = part([0, 0, 64, 64], a => {                                           // bưởi: a round yellow pomelo with a leaf
     ring(a, 'lilac');
@@ -60,34 +63,33 @@ function c8Art() {
     a.fk('brown', rr(17, 56, 30, 6, 2), 1.8);                                                  // the foot
     a.fk('straw', ell(32, 11, 21, 7), 2.4); a.fill('dark', ell(32, 11.5, 16.5, 4.4)); a.fill('blue', ell(32, 12.2, 12.5, 2.6));   // the thick rim, the mouth, the water in it
   });
-  A.i = part([0, 0, 64, 64], a => {                                           // băng: a chiselled block of ice, pale with cyan facets and a glint
-    const N = 8, amp = 3.2, p = [];
-    for (let k = 0; k <= N; k++) p.push(12 + 40 * k / N, 8 - (k % 2 ? amp : 0));
-    p.push(58, 14); for (let k = 1; k < N; k++) p.push(57 + (k % 2 ? amp : 0), 14 + 36 * k / N);
-    p.push(52, 57); for (let k = 0; k <= N; k++) p.push(52 - 40 * k / N, 57 + (k % 2 ? amp : 0));
-    p.push(6, 50); for (let k = 1; k < N; k++) p.push(7 - (k % 2 ? amp : 0), 50 - 36 * k / N);
-    const body = lines([p]); a.fk('c8ice', body, 2.5);
-    a.fill('c8cyan', lines([[51, 16, 51, 49, 17, 49]]));                                   // the shaded lower right half
-    a.band('c8foam', lines([[19, 22, 33, 22], [19, 29, 26, 29]]), 3.4);                    // two glints at the upper left
-    a.key(lines([[36, 27, 30, 35, 36, 41]]), 1.4); a.key(lines([[44, 21, 44, 27]]), 1.2);   // cracks
+  A.i = part([0, 0, 64, 64], a => {                                           // băng: a frost urchin (nhím băng): a pale-blue ball bristling with white spikes (deadly to touch; replaces the reference's jagged block)
+    for (let k = 0; k < 14; k++) { const ang = k * Math.PI * 2 / 14 + .1, c1 = Math.cos(ang - .2), s1 = Math.sin(ang - .2), c2 = Math.cos(ang + .2), s2 = Math.sin(ang + .2); a.fk('c8ice', lines([[32 + c1 * 16, 32 + s1 * 16, 32 + Math.cos(ang) * 31, 32 + Math.sin(ang) * 31, 32 + c2 * 16, 32 + s2 * 16]]), 1.8); }
+    a.fk('c8cyan', circ(32, 32, 17), 2.4); a.fill('c8ice', ell(26, 25, 8, 5, -.6));
+    a.fill('white', circ(24, 23, 2.4)); a.key(smooth([[26, 40], [32, 44], [40, 39]], false), 1.4);
   });
   if (!PL.c8rock) { PL.c8rock = ['#716f6a', [-1.2, 1]]; PL.c8rockL = ['#a3a09a', [-1.4, 1]]; PL.c8rockD = ['#4a4844', [-1, 1.2]]; }
   const poly = pts => { const p = new Path2D(); pts.forEach(([x, y], k) => k ? p.lineTo(x, y) : p.moveTo(x, y)); p.closePath(); return p; };
-  A.r = part([0, 0, 64, 64], a => {                                           // đá: a faceted grey boulder (owner's reference: rocks are pushed and gathered)
-    a.fk('c8rock', poly([[9, 52], [5, 35], [12, 19], [27, 8], [43, 9], [56, 21], [60, 39], [53, 55], [34, 60], [17, 58]]), 2.8);
-    a.fill('c8rockL', poly([[12, 19], [27, 8], [43, 9], [35, 25], [21, 29]]));
-    a.fill('c8rockD', poly([[35, 25], [43, 9], [56, 21], [60, 39], [49, 43]]));
-    a.fill('c8rockD', poly([[17, 58], [34, 60], [53, 55], [49, 43], [30, 46]]));
-    a.key(lines([[21, 29, 30, 46]]), 1.4); a.key(lines([[35, 25, 49, 43]]), 1.4);
+  A.r = part([0, 0, 64, 64], a => {                                           // bánh xe gỗ: a wooden cart wheel with an iron-bound rim, eight spokes and a hub (pushed and gathered; replaces the reference's boulder)
+    a.fk('brown', circ(32, 32, 28), 2.8);                                                                  // the iron rim
+    a.fk('tan', circ(32, 32, 23), 2.2);                                                                    // the wooden felloe
+    for (let k = 0; k < 8; k++) { const ang = k * Math.PI / 4 + .2, c = Math.cos(ang), s = Math.sin(ang); a.band('straw', lines([[32 + c * 6, 32 + s * 6, 32 + c * 22, 32 + s * 22]]), 4.6); a.key(lines([[32 + c * 6, 32 + s * 6, 32 + c * 22, 32 + s * 22]]), 1.1); }
+    a.fk('tan', circ(32, 32, 8.5), 2); a.fk('brown', circ(32, 32, 3.6), 1.4);                              // the hub and its axle hole
+    for (let k = 0; k < 8; k++) { const ang = k * Math.PI / 4 + .6; a.fill('yellow', circ(32 + Math.cos(ang) * 25.5, 32 + Math.sin(ang) * 25.5, 1.4)); }   // studs on the rim
   });
-  A.v = part([0, 0, 64, 64], a => {                                           // nước: a block of water: sea blue, a cyan crest under a wavy top, curling white waves (soft: the mouse swims in it)
-    const top = []; for (let x = 7; x <= 57; x += 2.5) top.push([x, 15 + Math.sin(x * .55) * 3]);
-    const body = new Path2D(); body.moveTo(...top[0]); for (const t of top) body.lineTo(...t); body.lineTo(57, 50); body.quadraticCurveTo(57, 59, 48, 59); body.lineTo(16, 59); body.quadraticCurveTo(7, 59, 7, 50); body.closePath();
-    a.fk('c8sea', body, 2.6);
-    a.band('c8cyan', smooth(top.map(t => [t[0], t[1] + 6.5]), false), 5);
-    a.band('white', smooth([[14, 33], [20, 29], [26, 33], [32, 29], [38, 33], [44, 29], [50, 33]], false), 2.4);
-    a.band('white', smooth([[12, 44], [18, 40], [24, 44], [30, 40], [36, 44], [42, 40]], false), 2.4);
-    a.band('white', smooth([[24, 53], [30, 49], [36, 53], [42, 49], [48, 53]], false), 2.2);
+  A.o = part([0, 0, 64, 64], a => {                                           // mây: a white curled cloud of the folk prints (it replaces the reference's dashed white spiral): the mouse walks through it, things rest on it, it cannot be eaten
+    a.fk('white', smooth([[9, 45], [5, 35], [13, 27], [17, 19], [29, 15], [39, 19], [47, 16], [57, 26], [59, 38], [52, 47], [34, 50], [19, 49]]), 2.4);
+    a.fill('lilac', ell(32, 44, 19, 4.2));                                               // a pale shade along the bottom
+    a.key(smooth([[21, 31], [25, 26], [31, 28], [29, 34], [24, 33]], false), 1.7); a.key(smooth([[39, 30], [43, 25], [49, 28], [46, 34], [41, 33]], false), 1.7);   // the two curls
+  });
+  A.v = part([0, 0, 64, 64], a => {                                           // nước: a pond block, blue with long folk-print ripples and a little red carp (soft: the mouse swims in it; replaces the reference's sea-blue crest block)
+    a.fk('c8sea', rr(5, 8, 54, 51, 10), 2.6);
+    a.band('c8cyan', smooth([[11, 17], [20, 13], [30, 17], [40, 13], [52, 17]], false), 4);
+    a.band('white', smooth([[12, 26], [22, 22], [32, 26], [42, 22], [52, 26]], false), 2.2);
+    a.band('white', smooth([[12, 52], [24, 48], [36, 52], [48, 48]], false), 2.2);
+    a.fk('orange', ell(32, 38, 10, 5), 1.7); a.fk('red', lines([[41, 38, 51, 31, 51, 45]]), 1.6); a.fill('red', lines([[41, 38, 51, 31, 51, 45]]));
+    a.fill('white', ell(29, 40, 5, 2)); a.ink(circ(26, 36.5, 1.2)); a.key(lines([[33, 34, 33, 42]]), 1.1);
+    a.fill('white', circ(18, 40, 1.8)); a.fill('white', circ(15, 35, 1.3));
   });
   // the chest at the end (gold glow is drawn behind it), and the grey one the mouse starts from
   A.goal = part([0, 0, 64, 64], a => {
