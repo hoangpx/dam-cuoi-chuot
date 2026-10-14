@@ -12,7 +12,9 @@ function instKind() {
   return null;
 }
 // counted in GoatCounter: each time the game is opened from the home screen (once a session), and the asking mouse's answers
-try { if (instStandalone() && !sessionStorage.getItem('dcc.app')) { sessionStorage.setItem('dcc.app', '1'); setTimeout(() => trackSend('cai/mo-tu-man-hinh-chinh'), 3000); } } catch (e) {}
+// the Android app (a Trusted Web Activity) opens the site with the referrer android-app://com.damcuoichuot.app; kept for the tab's session (owner: count opens from the Android app apart)
+const instAndroidApp = () => { try { if (document.referrer.startsWith('android-app://com.damcuoichuot.app')) sessionStorage.setItem('dcc.android', '1'); return sessionStorage.getItem('dcc.android') === '1'; } catch (e) { return false; } };
+try { if ((instAndroidApp() || instStandalone()) && !sessionStorage.getItem('dcc.app')) { sessionStorage.setItem('dcc.app', '1'); const ev = instAndroidApp() ? 'cai/mo-tu-app-android' : 'cai/mo-tu-man-hinh-chinh'; setTimeout(() => trackSend(ev), 3000); } } catch (e) {}
 function instButton() { const b = $('#bInstall'); if (b) b.hidden = instStandalone() || (!instKind() && !INST.prompt); }
 
 // little pictures of the buttons to look for, drawn like the game's ink
