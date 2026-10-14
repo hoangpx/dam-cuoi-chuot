@@ -1,10 +1,15 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.damcuoichuot.app",
-    "sha256_cert_fingerprints": [
-      "A7:01:7F:E7:2F:7C:28:0B:DE:D2:D4:78:A0:A3:DA:53:D4:A2:33:9A:7E:50:10:12:50:F5:02:25:82:AA:E4:E3"
-    ]
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.damcuoichuot.app",
+      "sha256_cert_fingerprints": [
+        "11:02:4D:1D:46:A9:15:04:03:C2:66:89:13:EC:17:CB:CB:D1:B9:64:C3:FB:E0:20:CF:5E:EE:EE:17:1A:65:69",
+        "A7:01:7F:E7:2F:7C:28:0B:DE:D2:D4:78:A0:A3:DA:53:D4:A2:33:9A:7E:50:10:12:50:F5:02:25:82:AA:E4:E3"
+      ]
+    }
   }
-}]
+]
