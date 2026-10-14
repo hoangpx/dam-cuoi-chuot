@@ -227,14 +227,14 @@ const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
 const c4Grow = () => 1 + Math.min(.45, Math.max(0, (SAVE4.day - 15) / 60));   // more folk come as the market becomes known (owner: more people, later days less dull)
 const c4Slump = () => (SAVE4.slump && SAVE4.slump.until >= SAVE4.day ? SAVE4.slump : null);
-const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * ({ dep: 1, gat: .85, ret: .8 }[c4Wx()] || (SAVE4.plan.rk || .3)) * (SAVE4.plan.hoi ? (SAVE4.plan.hk || 1.7) : 1) * (SAVE4.plan.cuoi ? (SAVE4.plan.ck || 1.7) : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1);   // a streak's market luck
+const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * ({ dep: 1, gat: .85, ret: 1 }[c4Wx()] || (SAVE4.plan.rk || .3)) * (SAVE4.plan.hoi ? (SAVE4.plan.hk || 1.7) : 1) * (SAVE4.plan.cuoi ? (SAVE4.plan.ck || 1.7) : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1);   // a streak's market luck
 // how much a passer-by wants a ware now
-function c4Want(g) {
+function c4Want(g, noWx) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
   if (!c4Own(g)) return 0;
   const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
   const sl = c4Slump();
-  return base * (G.wx[c4Wx()] || 1) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
+  return base * (noWx ? 1 : G.wx[c4Wx()] || 1) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
 }
 function c4Spawn(atX, guest = null) {
   // a resident of the village (dan.js), or now and then a child (nameless, never buys); or an invited guest
@@ -248,7 +248,8 @@ function c4Spawn(atX, guest = null) {
   if (guest) shop = guest.shop;
   else if (!(kind === 'mouse' && role === 'child') && C4.phase === 'open') {
     const wants = c4Owned().map(g => [g, c4Want(g) * .56 * (P && P.fav === g ? 1.8 : 1) * (P && P.nope && P.nope.includes(g) ? 0 : 1)]), sum = wants.reduce((a, [, w]) => a + w, 0);
-    if (R() < Math.min(.9, sum * c4Keen(P))) { let k = R() * sum; for (const [g, w] of wants) { if ((k -= w) <= 0) { shop = g; break; } } }
+    const sum0 = c4Owned().reduce((a, g) => a + c4Want(g, true) * .56 * (P && P.fav === g ? 1.8 : 1) * (P && P.nope && P.nope.includes(g) ? 0 : 1), 0);   // the same without the weather: a cap on busy stalls used to swallow the weather's effect (owner: a cold day sold less chè than a hot one)
+    if (R() < Math.min(1, Math.min(.9, sum0 * c4Keen(P)) * (sum0 > 0 ? sum / sum0 : 1))) { let k = R() * sum; for (const [g, w] of wants) { if ((k -= w) <= 0) { shop = g; break; } } }
   }
   // what they bring: a buffalo to lead (then they are only passing, on the way to the fields), an umbrella in the rain, too much wine
   const look = kid ? {} : P.look || {}, buf = !guest && look.tool === 'buf' && R() < .7 && C4.walkers.filter(q => q.buf).length < 2, drunk = !guest && !!look.drinker && C4.mins > 11 * 60 && R() < .3;
@@ -310,6 +311,7 @@ function c4Morning() {
   const go = document.createElement('button'); go.className = 'btn go'; go.textContent = 'Họp chợ'; box.appendChild(go);
   C4.orders = orders; c4LoanUI();
   go.addEventListener('click', () => {
+    C4.today.m0 = SAVE4.money;                                              // the purse before the morning's buying (for the evening ledger)
     for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
     c4Sheets(null); C4.phase = 'open'; c4PlanEvents(); c4ShipOrders(); c4Hud();
     SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
@@ -399,7 +401,7 @@ function c4Receive(g, q, cost, src = 'giua') {
   const st = c4Stock(g); C4.unit = C4.unit || {};
   C4.unit[g] = ((C4.unit[g] || cost) * st + cost * q) / (st + q);             // the blended price of what is in stock
   c4SetStock(g, st + q);
-  const bill = q * cost, paid = Math.min(Math.max(0, SAVE4.money), bill); SAVE4.money -= paid; SAVE4.debt += bill - paid;
+  const bill = q * cost, paid = Math.min(Math.max(0, SAVE4.money), bill); SAVE4.money -= paid; SAVE4.debt += bill - paid; if (C4.today) C4.today.bought = (C4.today.bought || 0) + paid;
   C4.fx.push({ x: C4_GOODS[g].x - 40, y: c4Y(.04) - 200, t: 0, s: '+' + q + ' ' + C4_GOODS[g].unit }); AU.pluck(76); c4Hud();
 }
 const c4Unit = g => (C4.unit && C4.unit[g]) || c4Cost(g);
@@ -840,7 +842,7 @@ function c4EndDay() {
   const extra = []; c4PayRents(d, extra);
   const gossip = SAVE4.day >= C4_BOOK_DAY ? c4Gossip() : 0;
   c4TasksEnd(d, extra);
-  const gain = d.take - d.cogs - d.wiltLoss - d.spent - d.wages + d.got;
+  const gain = d.take - d.cogs - d.wiltLoss - d.spent - d.wages + d.got - (d.theft || 0) - (d.skim || 0);
   if (gain > SAVE4.best) SAVE4.best = gain;
   SAVE4.earn = [...(SAVE4.earn || []), Math.round(gain)].slice(-C4_DUES_EVERY);   // what cụ Lý's tax is reckoned on
   c4AchCheck();
@@ -854,7 +856,8 @@ function c4EndDay() {
     + (d.wages ? `<br>Trả công người phụ: ${c4Money(d.wages)}` : '')
     + (c4Owned().some(g => c4Hands(g).length) ? `<br>Bán được ${c4Money(Math.round(d.take))} · tiền thu về tay ${c4Money(Math.round(d.take - (d.skim || 0)))}` : '')   // (owner: the player reckons whether it adds up)
     + (d.spent ? `<br>Chi khác (củi, lễ, tiền chợ, cho vay…): ${c4Money(d.spent)}` : '')
-    + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '')
+    + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '') + (d.skim ? `<br><span class="bad">Hao hụt tiền bán (người phụ ăn bớt): ${c4Money(d.skim)}</span>` : '')
+    + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '') + c4LedgerHtml(d)
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
     + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.slice(0, 4).join(', ')}${gossip.hurt.length > 4 ? ' và ' + (gossip.hurt.length - 4) + ' người nữa' : ''} bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
     + (quits.length ? `<br><span class="bad">${quits.join(' ')}</span>` : '')
@@ -862,6 +865,15 @@ function c4EndDay() {
     + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);
   persist4(); c4LoanUI(true); c4HomeOffer();
   setTimeout(() => { if (S.mode === 'c4play' && C4.phase === 'night') c4Sheets('c4day'); }, 900);
+}
+// where the purse went today (owner: 8 quan sold, yet 1 quan left in the morning): what it was when the market opened, every way it moved, and what is left unexplained
+function c4LedgerHtml(d) {
+  if (d.m0 === undefined) return '';
+  const exp = d.m0 - (d.bought || 0) + d.take - d.wages - d.spent + d.got - (d.theft || 0) - (d.skim || 0), now = Math.round(SAVE4.money), off = now - Math.round(exp), m = c4Money;
+  return `<details class="ledger"><summary>Sổ quỹ hôm nay: ${m(d.m0)} → ${m(now)}</summary>Đầu ngày trong túi ${m(d.m0)}<br>− Nhập hàng ${m(d.bought || 0)}<br>+ Bán được ${m(Math.round(d.take))}<br>− Công người phụ ${m(d.wages)}<br>− Chi khác (tiền nhà, củi, lễ…) ${m(Math.round(d.spent))}<br>+ Thu khác ${m(Math.round(d.got))}`
+    + ((d.theft || 0) + (d.skim || 0) ? `<br>− Bị cuỗm / ăn bớt ${m(Math.round((d.theft || 0) + (d.skim || 0)))}` : '') + `<br>Cuối ngày trong túi ${m(now)}`
+    + (Math.abs(off) >= 1 ? `<br><i>Còn ${off > 0 ? 'dư' : 'hụt'} ${m(Math.abs(off))} chưa rõ: trả nợ, vay, nhận tiền nợ, hay hàng giao sỉ.</i>` : '')
+    + `<br><i>Sáng mai còn có thể bị trừ: nợ đến hạn, quỹ phường, thuế cụ Lý.</i></details>`;
 }
 const c4Talk2Due = () => SAVE4.day === C4_BOOK_DAY && !SAVE4.talk2;
 function c4Talk2() { c4StoryStart(C4_TALK2, () => { SAVE4.talk2 = true; persist4(); c4MarketStart(); }); }
@@ -945,7 +957,7 @@ function c4OpenUp(g = 'trau') {
     box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
-  if (c4Owned().length > 1 || c4Hands(g).length) box.appendChild(c4HandsBlock(g));   // hiring only once there is more than the betel stall (a player)
+  box.appendChild(c4HandsBlock(g));                                          // always there (a player could not find the hire button when only the betel stall was open)
                                         // who sells here: the couple, or hired helpers (nguoiban.js)
   if (g !== 'trau') c4ShopUpBlock(g);                                       // a bought stall goes up to the Quầy gỗ (owner)
   if (g === 'trau') {
