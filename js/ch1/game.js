@@ -16,7 +16,7 @@ function loadLevel(i) {
   S.inv = []; S.parasol = false; S.hold = false; S.plate = null; S.pads = {}; S.caught = 0; S.catcher = null; S.fx = []; S.told = {}; S.cp = L.cps[0];
   S.lastHint = -99; S.wallT = 0; S.lockMove = false; S.waitMove = false; S.catches = 0; S.gotSecret = false; S.reset = false;
   placeParty(S.cp);
-  camX = 0; AU.setKey(L.key); AU.muteDrums(false); S.drag = null; S.manualDrum = false;
+  camX = 0; S.hideParty = false; AU.setKey(L.key); AU.muteDrums(false); S.drag = null; S.manualDrum = false;
   $('#lvName').textContent = `Tranh ${i + 1} · ${L.name}`;
   $('#bDrum').hidden = true; $('#bKen').hidden = true; $('#bPara').hidden = true;
   const pl = L.abil.includes('plates'); for (const c in PBTN) $(PBTN[c]).hidden = !pl;
@@ -61,7 +61,7 @@ function showCard() {
   const c = $('#lvCard'); c.classList.add('on'); setTimeout(() => c.classList.remove('on'), 2600);
 }
 // chương I: tranh 1–4 are finished, each opened by finishing the one before; later ones are still being carved and open only after 5 taps
-const C1_READY = 5;
+const C1_READY = 6;
 // a tranh still being made can be opened for trying: set C1_TRY to its index (it then opens without the one before)
 const C1_TRY = -1;
 function buildAlbum() {
@@ -77,7 +77,7 @@ function buildAlbum() {
     const open = i === 0 || SAVE.done[i - 1] || i === C1_TRY;
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.disabled = !open;
-    const marks = (SAVE.gold[i] ? ' ★' : '') + (SAVE.secret[i] && i > 0 ? ' ✦' : '');
+    const marks = (SAVE.secret[i] && i > 0 ? ' ✦' : '');
     b.innerHTML = `<div class="num">Tranh ${i + 1}</div><div class="ch">${lv.han}</div><b>${lv.name}</b><span class="st${SAVE.done[i] ? ' done' : ''}">${SAVE.done[i] ? 'Đã đóng triện' + marks : open ? 'Chơi' : 'Chưa mở'}</span>`;
     b.addEventListener('click', () => { if (open) { loadLevel(i); startPlay(); } });
     box.appendChild(b);
@@ -97,7 +97,7 @@ function finishLevel() {
   $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   $('#endHan').textContent = L.han; $('#endTitle').textContent = L.endTitle; $('#endText').textContent = L.endText;
   const last = S.lv === LEVELS.length - 1, n = SAVE.done.filter(Boolean).length;
-  const stats = `Bị bắt ${S.catches} lần${S.catches === 0 ? ' · Triện vàng ★' : ''}${S.lv > 0 ? (SAVE.secret[S.lv] ? ' · Có mảnh triện ✦' : ' · Chưa tìm ra mảnh triện ẩn') : ''}`;
+  const stats = `Bị bắt ${S.catches} lần`;                                   // no golden seal (owner) and no hidden seal piece
   const tot = S.lv < C1_READY ? C1_READY : LEVELS.length;
   $('#endNote').textContent = `${S.lv + 1 === tot ? `Đã đóng triện ${SAVE.done.slice(0, tot).filter(Boolean).length}/${tot} tranh. ` : `Tranh ${S.lv + 1}/${tot} đã vào album. `}${stats}`;
   $('#bNext').hidden = last || (S.lv + 1 >= C1_READY && S.lv + 1 !== C1_TRY);
@@ -130,9 +130,9 @@ function useAbility(k) {
   if (!L.abil.includes(k)) return;
   if (k === 'parasol') {
     if (followers[0].item !== 'parasol') return;                           // lent to Tấm (tranh 5)
-    if (S.parasol) { S.parasol = false; S.paraCD = PARA_CD; AU.pluck(74); updateHud(); return; }
+    if (S.parasol) { S.parasol = false; S.paraTired = null; S.paraCD = PARA_CD; AU.pluck(74); updateHud(); return; }
     if ((S.paraCD || 0) > 0) { toast('Lọng vừa rũ xuống, chưa giương lại kịp!', 1.6); AU.pluck(60); return; }
-    S.parasol = true; S.paraT = PARA_TIME; AU.pluck(79);
+    S.parasol = true; S.paraT = PARA_TIME; S.paraTired = null; AU.pluck(79);
     if (!S.told.para) { S.told.para = true;  }
     updateHud(); return;
   }
@@ -151,18 +151,34 @@ function useAbility(k) {
   }
 }
 // every gift rides in the groom's hand; the newest one is on top and is the one you drag
-const leadItem = () => S.inv.length ? S.inv[S.inv.length - 1] : null;
+// tranh 1 with the bell in hand (owner): the groom carries the bell, the parasol mouse carries the fish; both are dragged to the cat, the fish first
+const bellMode = () => S.lv === 0 && S.inv.includes('lucLac');
+const fishCarried = () => bellMode() && S.inv.includes('fish');
+const bellHeld6 = () => S.lv === 5 && !!SAVE.lucLac && !SAVE.catBell && !S.inv.length;          // tranh 6: until it is hung on the cat the groom keeps the bell in his hand (owner)
+// every speech bubble of chương I (t5Say, t5Think, t6Say) stays until the player clicks, taps or presses any key (owner); a bubble that is no longer
+// asked for (its scene moved on) for 1.5 s is forgotten, so it can come again later
+const SAYS = { tap: -1, m: new Map() };
+addEventListener('pointerdown', () => { SAYS.tap = performance.now(); }, true); addEventListener('keydown', () => { SAYS.tap = performance.now(); }, true);
+function sayGate(text) {
+  const now = performance.now(); let r = SAYS.m.get(text);
+  if (!r || now - r.last > 1500) { r = { t0: now, gone: false }; SAYS.m.set(text, r); }
+  r.last = now; if (!r.gone && SAYS.tap > r.t0 + 350) r.gone = true;
+  return !r.gone;
+}
+const leadItem = () => bellMode() || bellHeld6() ? 'lucLac' : S.inv.length ? S.inv[S.inv.length - 1] : null;
 function handPos(f = groom) { return [f.x + 16 * f.face, GROUND - 50]; }
 function dropOn(wx, wy, item) {
+  let miss = false;
   for (const e of S.ents) {
     if (!e.offer || e.spent || e.opened || e.fed) continue;
     const ex = e.ax ?? e.x ?? e.gateX; if (ex == null || Math.abs(wx - ex) > 150 || wy < GROUND - 300 || wy > GROUND + 20) continue;
-    if (!e.offer.wants.includes(item)) { AU.pluck(60); return false; }
+    if (!e.offer.wants.includes(item)) { miss = true; continue; }
     e.got = e.got || [];
     if (!e.got.includes(item)) { e.got.push(item); takeItems([item]); AU.pluck(84); }
     if (e.offer.wants.every(w => e.got.includes(w))) e.give();
     updateHud(); return true;
   }
+  if (miss) AU.pluck(60);
   return false;
 }
 function tryOffer() {
@@ -244,7 +260,11 @@ function update(dt) {
     } else S.wallT = 0;
     if (!S.caught) for (const c of L.cps) if (groom.x > c + 30 && c > S.cp) S.cp = c;
     // parasol timer
-    if (S.parasol) { S.paraT -= dt; if (S.paraT <= 0) { S.parasol = false; S.paraCD = PARA_CD; AU.pluck(70); toast('Lọng rũ xuống rồi!', 1.4); updateHud(); } }
+    if (S.parasol) {
+      S.paraT -= dt;
+      if (S.paraT <= 0 && S.paraTired == null) { S.paraTired = 1.1; AU.snort && AU.snort(); }                       // the holder says it is tiring…
+      if (S.paraTired != null) { S.paraTired -= dt; if (S.paraTired <= 0) { S.paraTired = null; S.parasol = false; S.paraCD = PARA_CD; AU.pluck(70); updateHud(); } }   // …and then lets it down
+    }
     else if ((S.paraCD || 0) > 0) S.paraCD -= dt;
     // watchers: a ground cat sees whoever moves in the open; eyes in the sky see everyone not under the parasol, moving or not
     if (!frozen) for (const w of S.ents) {
@@ -305,6 +325,7 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   let armN = sw * .4;
   const bigPara = item === 'parasol' && S.parasol;
   if (item === 'parasol') armN = bigPara ? -2.2 : -1.35 + Math.sin(S.pose * 2 + seed) * .04;
+  if (item === 'lantern') armN = -1.35 + Math.sin(S.pose * 2 + seed) * .04;      // tranh 7: the lamp is held up like the parasol
   if (item === 'ken') armN = -1.05;
   if (item === 'drum') armN = S.drumT > 0 ? -.4 - Math.abs(Math.sin(S.t * 22)) * .9 : S.manualDrum || S.eyeWatch ? -.4 : -.4 + Math.abs(Math.sin(S.pose * 7)) * -.6;
   if (item === 'lead') armN = -.25;
@@ -316,6 +337,8 @@ function drawMouse(g, M, x, face, ph, moving, item, seed) {
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04 + (item === 'ken' ? -.1 - (S.kenT > 0 ? .12 : 0) : 0));
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (item === 'parasol' && !bigPara) dp(g, ITEM.parasol, hx, hyy + 26, Math.sin(S.pose * 1.5 + seed) * .05);
+  if (item === 'parasol' && fishCarried() && !(S.drag && S.drag.item === 'fish')) drawItem(g, 'fish', hx + 8, hyy + 14 - Math.abs(Math.sin(S.t * 9)) * 9, 1.1, 1.3 + Math.sin(S.t * 17) * .5);
+  if (item === 'lantern') dp(g, ITEM.lantern, hx, hyy + 4, Math.sin(S.pose * 1.6 + seed) * .06);
   if (item === 'ken') dp(g, ITEM.ken, hx - 4, hyy, -.25 - (S.kenT > 0 ? Math.sin(S.t * 10) * .05 : 0));
   if (item === 'drum') dp(g, ITEM.stick, hx - 2, hyy, .5 + armN);
   const carry = item === 'lead' ? leadItem() : null;
@@ -392,9 +415,9 @@ function render() {
   for (const t of S.tufts) if (!t.front) dp(ctx, PROPS.tufts[t.k], t.x, GROUND - 6, 0, t.s * .8, t.s * .8);
   for (const e of S.ents) if (e.drawMid) e.drawMid(ctx);
   layer('mid');
-  if (S.parasol) { const f = followers[0]; dp(ctx, ITEM.parasol, f.x + 14 * f.face, GROUND + 18, Math.sin(S.pose * 1.5) * .02, 2.2, 2.2); }
-  for (const i of L.kenFront ? [0, 2, 1] : [2, 1, 0]) { const f = followers[i]; drawMouse(ctx, f.m, f.x, f.face, f.ph, f.moving, f.item, i * 1.7 + 1); }   // tranh 5: the trumpet over the parasol mouse, the drum over the trumpet (owner)
-  drawMouse(ctx, MICE.groom, groom.x, groom.face, groom.ph, groom.moving, leadItem() ? 'lead' : null, 0);
+  if (S.parasol) { const f = followers[0]; dp(ctx, ITEM.parasol, f.x + 14 * f.face, GROUND + 18, Math.sin(S.pose * 1.5) * .02, 2.2, 2.2); if (S.paraTired != null) t5Say(ctx, f.x + 14 * f.face, GROUND - 292, 'Mỏi tay quá!'); }
+  if (!S.hideParty) for (const i of L.kenFront ? [0, 2, 1] : [2, 1, 0]) { const f = followers[i]; drawMouse(ctx, f.m, f.x, f.face, f.ph, f.moving, f.item, i * 1.7 + 1); }   // tranh 5: the trumpet over the parasol mouse, the drum over the trumpet (owner)
+  if (!S.hideParty) drawMouse(ctx, MICE.groom, groom.x, groom.face, groom.ph, groom.moving, leadItem() ? 'lead' : null, 0);   // S.hideParty: the party is gone a moment (tranh 6: taken by the cat)
   ctx.save(); ctx.beginPath();
   let gx = -40; for (const [a, b] of [...S.gaps].sort((p, q) => p[0] - q[0])) { ctx.rect(gx, GROUND - 30, a - gx, 90); gx = b; }
   ctx.rect(gx, GROUND - 30, L.width + 40 - gx, 90); ctx.clip();
@@ -434,7 +457,10 @@ function ch1PointerDown(e) {
 function ch1PointerHit(e) {
   const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / scale + camX, wy = (e.clientY - r.top) / scale - offY;
   for (const en of S.ents) if (en.grab) { const d = en.grab(wx, wy); if (d) { S.drag = d; capturePointer(e); return true; } }
+  if (bellMode()) for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;                // tap things (the fish on the bank) before the bell in the groom's hand takes the touch
   { const it = leadItem(), [hx, hy] = handPos(groom); if (it && Math.hypot(wx - hx, wy - hy) < 42) { S.drag = { item: it, x: wx, y: wy }; capturePointer(e); return true; } }
+  // the fish itself (drawn by the parasol mouse's hand, above and ahead of it) or the mouse's body starts the drag
+  if (fishCarried()) { const f = followers[0]; if (Math.hypot(wx - (f.x + 34 * f.face), wy - (GROUND - 110)) < 58 || Math.hypot(wx - (f.x + 16 * f.face), wy - (GROUND - 50)) < 48) { S.drag = { item: 'fish', x: wx, y: wy }; capturePointer(e); return true; } }
   for (const en of S.ents) if (en.onClick && en.onClick(wx, wy)) return true;
   { const f = followers[0]; if (L.abil.includes('parasol') && f.item === 'parasol' && Math.abs(wx - (f.x + 14 * f.face)) < (S.parasol ? 110 : 62) && wy > GROUND - (S.parasol ? 330 : 250) && wy < GROUND + 8) { useAbility('parasol'); return true; } }
   for (const [i, k] of [[1, 'drum'], [2, 'ken']]) { const f = followers[i]; if (L.abil.includes(k) && Math.abs(wx - f.x) < 40 && wy > GROUND - 150 && wy < GROUND + 8) { useAbility(k); return true; } }
@@ -451,7 +477,7 @@ function ch1PointerUp(e) {
 /* ---------- registration ---------- */
 registerChapter({
   id: 1, cover: true, modes: ['play', 'end'],
-  card: { num: lg('Chương I', 'Chapter I'), han: '老鼠娶親', name: lg('Đám Cưới Chuột', 'The Mouse Wedding'), desc: lg('Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', 'Lead the wedding procession through the village: a fish for the cat, a crow from the rooster, the bride by the pond, the painters\' village and the market, and a hand for Tấm on the way. More prints are being carved.'), bg: '#ecd593' },
+  card: { num: lg('Chương I', 'Chapter I'), han: '𡌽𡠣𤝞', name: lg('Đám Cưới Chuột', 'The Mouse Wedding'), desc: lg('Dẫn đoàn rước dâu qua làng: dâng cá cho mèo, gọi gà trống gáy, qua bờ ao đón dâu, qua làng tranh ra chợ, giúp cô Tấm trên đường. Các bức sau đang khắc ván.', 'Lead the wedding procession through the village: a fish for the cat, a crow from the rooster, the bride by the pond, the painters\' village and the market, and a hand for Tấm on the way. More prints are being carved.'), bg: '#ecd593' },
   progress: () => `${SAVE.done.slice(0, C1_READY).filter(Boolean).length}/${C1_READY} ${lg('tranh', 'prints')}`,
   hasProgress: () => SAVE.done.some(Boolean) || SAVE.secret.some(Boolean),
   boot() { loadLevel(0); },

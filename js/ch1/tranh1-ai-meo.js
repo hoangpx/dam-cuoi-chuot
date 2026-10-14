@@ -1,4 +1,4 @@
-/* Tranh 1 · Ải Mèo 貓關 — the fish pond and the hungry cat. */
+/* Tranh 1 · Ải Mèo 貓𦓅化𤞺 — the fish pond and the hungry cat. */
 /* Màn 1: ao cá có cầu ván, chạm vào con cá để bắt */
 function fishPond(g0, g1) {
   const water = WP.pondFor(g1 - g0);
@@ -53,7 +53,7 @@ function fishPond(g0, g1) {
       const rot = f.st === 'bank' ? Math.sin(f.t * 18) * .5 : f.st === 'out' ? (f.t < T_OUT / 2 ? -.6 : .6) * f.dir : (f.t < T_IN / 2 ? -.6 : .6) * -f.dir;
       dp(g, ITEM.fish, fx, fy, rot, -f.dir * 1.2, 1.2);
       // while it flops on the bank, a finger taps at it (owner: the corner hint said nothing about what to tap)
-      if (f.st === 'bank') {
+      if (f.st === 'bank' && !bellMode()) {                                // no finger hint the second time round, with the bell in hand (owner)
         const ph = (S.t % .9) / .9, tap = ph < .2, lift = tap ? 0 : Math.sin(ph * Math.PI) * 14;
         if (tap) { g.strokeStyle = INK; g.lineWidth = 2.4; for (const r of [16, 28]) { g.globalAlpha = 1 - ph / .2; g.beginPath(); g.arc(fx, fy, r, 0, 6.283); g.stroke(); } g.globalAlpha = 1; }
         dp(g, howtoArt().finger, fx + 8, fy + 6 - lift, -.15, 1.25, 1.25);
@@ -75,6 +75,19 @@ function slipLabel(lines, w = 34) {
   });
 }
 const hungryLabel = () => slipLabel(['ĐÓI', 'QUÁ']);
+// the owner's recording of a sleigh bell (audio/luc-lac.wav, 1.77 s): AU.play('bell', volume, rate)
+const bellLoad = () => AU.sampleB64('bell', BELL_B64);
+// the bell from Tấm (tranh 5) is hung on the fed cat's neck: SAVE.catBell, which the dark stretch of tranh 6 asks for
+function catBell(cx) {
+  return {
+    layer: 'hud', x: cx - 130, get spent() { return !!SAVE.catBell; }, cat: null,
+    offer: { wants: ['lucLac'], label: 'Đeo lục lạc', near: () => false, missing: '' },                // only by dragging, like the fish
+    give() {
+      if (!this.cat.fed) { S.inv.push('lucLac'); caught(this.cat); return; }                      // hung on a cat that was not fed first: it pounces (the bell stays in hand)
+      SAVE.catBell = true; persist(); AU.hasSample('bell') ? AU.play('bell', 1.2) : [88, 93, 100, 93].forEach((m, i) => setTimeout(() => AU.pluck(m), i * 130)); toast('Mèo đeo lục lạc, leng keng!', 3); },
+    update() { if (!this.got0) { this.got0 = 1; bellLoad(); if (SAVE.lucLac && !SAVE.catBell && !S.inv.includes('lucLac')) { S.inv.push('lucLac'); updateHud(); } } },
+  };
+}
 function groundCat(cx, from) {
   const wallX = cx - 190;
   return {
@@ -99,12 +112,17 @@ function groundCat(cx, from) {
       this.hungry = 0;
       if (groom.x < from) { this.st = 'sleep'; this.t = 2 + R() * 1.5; return; }
       if (this.st === 'block') { this.st = 'sleep'; this.t = 1.5; }
-      tickWatcher(this, dt);
+      const was = this.st; tickWatcher(this, dt);
+      if (bellMode() && this.st !== was) {                                                      // the bell in hand: the cat is quicker and wakes more often
+        if (this.st === 'warn') { this.feint = false; this.t = .55; }                            // half-open for .55 s (owner: .75 s, then .2 s quicker), then wide open
+        else if (this.st === 'sleep') this.t = Math.min(this.t, 1 + R() * 1);
+      }
     },
     draw(g) {
       let x = cx, lift = 0;
       if (S.catcher === this) { const p = S.caught, k = Math.min(1, p / .45), back = p > .45 ? Math.max(0, 1 - (p - .45) / .6) : 1; x += (this.from0 + 60 - cx) * Math.sin(k * Math.PI / 2) * back; lift = -Math.sin(k * Math.PI) * 60 * back; }
       drawCatAt(g, x, GROUND + lift, 1.55, this.fed ? 'fed' : S.catcher === this ? 'watch' : this.st);
+      if (SAVE.catBell) dp(g, ITEMS.lucLac.part, x - 45, GROUND + lift - 108 + Math.sin(S.t * 5) * 1.5, Math.sin(S.t * 5) * .15, 1.5, 1.5);       // the bell round its neck
       if (this.hungry > 0 || (S.catcher === this && S.caught < .45)) {
         HUNGRY = HUNGRY || hungryLabel();
         const k = this.hungry > 0 ? Math.min(1, (2 - this.hungry) / .15) : 1, pop = .6 + .4 * k + Math.sin(k * Math.PI) * .12;
@@ -113,8 +131,8 @@ function groundCat(cx, from) {
     },
     // holding the fish in front of the cat: a finger drags a ghost of it from the groom's hand to the cat's mouth (owner)
     drawFg(g) {
-      if (this.fed || !has('fish') || S.drag || groom.x < wallX - 260 || S.caught) return;
-      const [hx, hy] = handPos(groom), mx = cx - 128, my = GROUND - 162, ph = (S.t % 1.8) / 1.8;
+      if (bellMode() || this.fed || !has('fish') || S.drag || groom.x < wallX - 260 || S.caught) return;
+      const [hx, hy] = handPos(fishCarried() ? followers[0] : groom), mx = cx - 128, my = GROUND - 162, ph = (S.t % 1.8) / 1.8;
       const u = Math.min(1, Math.max(0, (ph - .15) / .6)), e = u * u * (3 - 2 * u), x = hx + (mx - hx) * e, y = hy + 14 + (my - hy - 14) * e - Math.sin(e * Math.PI) * 30;
       const a = ph < .08 ? ph / .08 : ph > .85 ? Math.max(0, 1 - (ph - .85) / .15) : 1;
       g.globalAlpha = a * .55; dp(g, ITEM.fish, x, y, Math.sin(S.t * 12) * .3, 1.1, 1.1);
@@ -125,13 +143,13 @@ function groundCat(cx, from) {
 
 /* ---------- tranh 1 ---------- */
 LEVELS[0] = {
-  han: '貓關', name: 'Ải Mèo', paper: 'yellow', width: 3800, catchToStart: true, key: 0, abil: [], cps: [160, 1100, 1680, 2080, 2440],
+  han: '貓𦓅化𤞺', name: 'Ải Mèo', paper: 'yellow', width: 3800, catchToStart: true, key: 0, abil: [], cps: [160, 1100, 1680, 2080, 2440],
   intro: 'Mèo mở mắt thì đứng im, hoặc nấp sau rơm, sau chum!',
   endTitle: 'Qua ải Mèo', endText: 'Mèo đã nhận lễ, đoàn rước đi tiếp. Phía trước là ngõ tre dẫn vào làng.',
   build: () => [
     decor(PROPS.bamboo, 430, GROUND + 4), decor(PROPS.bamboo, 1250, GROUND + 4, .9, -1), decor(PROPS.bamboo, 1900, GROUND + 4, .85), decor(PROPS.bamboo, 3280, GROUND + 4, 1.05),
-    decor(PROPS.txt1, 70, 150, .75), decor(PROPS.txt2, 2710, 120, .8),
-    fishPond(760, 980), groundCat(2960, 420),
+    decor(PROPS.txt1, 70, 150, .75), decor(PROPS.txt2, 2710, 150, .75),
+    fishPond(760, 980), ...(() => { const c = groundCat(2960, 420), b = catBell(2960); b.cat = c; return [b, c]; })(),
     cover(1680, 'hay', 70), cover(2080, 'chum', 40), cover(2440, 'chum', 40), gate(3600),
   ],
 };

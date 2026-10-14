@@ -9,6 +9,26 @@ const C7_FLOOR = {
   'Gian bếp': '#d8b08a', 'Nhà ngang': '#ead3ad', 'Gian thờ': '#efc6d2', 'Nhà kho': '#cdb796', 'Chái bếp': '#c9a98a',
   'Sân gạch': '#c98a6a', 'Vườn cau': '#a9cf8f', 'Bờ ao': '#a3d0e0', 'Chuồng gà': '#e8d692', 'Ngõ trúc': '#bcd8a6',
 };
+// floor colours (owner, 2026-10-11: players mixed up rooms side by side; the old beiges were too alike): a set of clearly different
+// colours, each room kind prefers one, and c7Floors gives every room of a case its own so that no two rooms side by side look alike
+const C7_PAL = ['#f0a868', '#ece0c2', '#efa8b8', '#b8946c', '#c3a6dd', '#d9826a', '#a6d38a', '#8fcbe3', '#e9cf6a', '#86c9b4'];
+const C7_PREF = { 'Gian bếp': 0, 'Nhà ngang': 1, 'Gian thờ': 2, 'Nhà kho': 3, 'Chái bếp': 4, 'Sân gạch': 5, 'Vườn cau': 6, 'Bờ ao': 7, 'Chuồng gà': 8, 'Ngõ trúc': 9 };
+const c7ColD = (a, b) => { const p = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16)), [r1, g1, b1] = p(a), [r2, g2, b2] = p(b), rm = (r1 + r2) / 2;
+  return Math.sqrt((2 + rm / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - rm) / 256) * (b1 - b2) ** 2); };   // a "redmean" colour distance
+function c7Floors(G) {
+  if (G.K._floor) return G.K._floor;
+  const N = G.N, R = G.K.names.length, nb = Array.from({ length: R }, () => new Set());
+  for (let i = 0; i < N * N; i++) { const c = i % N; if (c < N - 1 && G.room[i] !== G.room[i + 1]) { nb[G.room[i]].add(G.room[i + 1]); nb[G.room[i + 1]].add(G.room[i]); }
+    if (i + N < N * N && G.room[i] !== G.room[i + N]) { nb[G.room[i]].add(G.room[i + N]); nb[G.room[i + N]].add(G.room[i]); } }
+  const col = new Array(R).fill(null), order = [...Array(R).keys()].sort((a, b) => nb[b].size - nb[a].size);
+  for (const k of order) {
+    const near = [...nb[k]].map(j => col[j]).filter(Boolean), taken = new Set(col.filter(Boolean)), pref = C7_PAL[C7_PREF[G.K.names[k]] ?? 1];
+    const score = c => Math.min(999, ...near.map(n => c7ColD(c, n)));
+    if (!taken.has(pref) && score(pref) >= 150) { col[k] = pref; continue; }
+    col[k] = C7_PAL.filter(c => !taken.has(c)).sort((a, b) => score(b) - score(a))[0] || pref;
+  }
+  return (G.K._floor = col);
+}
 const C7_TOK = ['#a3332a', '#2f5f8f', '#2f6a4c', '#c98a1c', '#7a4aa0', '#c0567a', '#8a5a2a', '#3f9e93'];
 const C7_BLOCK = new Set(['chum', 'coi', 'cau', 'rom', 'gieng']);
 const C7_THING = { chum: 'Chum nước', coi: 'Cối giã gạo', cau: 'Cây cau', rom: 'Đống rơm', gieng: 'Giếng nước', chong: 'Giường tre', phan: 'Ghế băng', chieu: 'Chiếu hoa', ghe: 'Ghế đẩu' };
@@ -55,9 +75,11 @@ const c7Who = (G, cell) => G.placed.indexOf(cell);
 /* ---------- layout (CSS px) ---------- */
 function c7Geo(G, W, H) {
   const colW = Math.min(W - 24, 470), x0 = (W - colW) / 2, top = 84;
-  const size = Math.max(200, Math.min(colW, H - top - 300)), cs = size / G.N, ox = (W - size) / 2, by = top + size;
-  const toolY = by + 12, stripY = toolY + 64, clueY = stripY + 80, subY = Math.min(H - 56, clueY + 92);
-  return { colW, x0, top, size, cs, ox, toolY, stripY, clueY, subY, back: [x0 + 24, 38], help: [x0 + 74, 38], undoB: [x0 + colW - 24, 38], legB: [x0 + colW - 74, 38] };
+  // (a player: on another phone only two lines of the statements showed) the statement panel is as tall as the longest set of statements needs, wrapped at THIS screen's width
+  let clueH = 84; { const m = typeof ctx !== 'undefined' ? ctx : null; if (m) { m.save(); m.font = '500 14px "Be Vietnam Pro", sans-serif'; for (const list of G.K.clues) { let n = 0; for (const c of list) { const t = Object.keys(C7_THING).find(k => c.includes(C7_THING[k].toLowerCase())); n += c7Wrap(m, c, colW - 28 - (t ? 26 : 0)).length; } clueH = Math.max(clueH, 32 + n * 18 + 12); } m.restore(); } }
+  const size = Math.max(200, Math.min(colW, H - top - 300 - (clueH - 84))), cs = size / G.N, ox = (W - size) / 2, by = top + size;
+  const toolY = by + 12, stripY = toolY + 64, clueY = stripY + 80, subY = Math.min(H - 56, clueY + clueH + 8);
+  return { colW, x0, top, size, cs, ox, toolY, stripY, clueY, clueH, subY, back: [x0 + 24, 38], help: [x0 + 74, 38], undoB: [x0 + colW - 24, 38], legB: [x0 + colW - 74, 38] };
 }
 function c7CellAt(G, Gm, x, y) { const c = Math.floor((x - Gm.ox) / Gm.cs), r = Math.floor((y - Gm.top) / Gm.cs); return r >= 0 && c >= 0 && r < G.N && c < G.N ? r * G.N + c : -1; }
 
@@ -249,7 +271,7 @@ function c7Wood(g, x, y, w, h, label, kind = 'son') {
 }
 function c7Board(g, G, x0, y0, size, opts = {}) {
   const N = G.N, cs = size / N;
-  for (let i = 0; i < N * N; i++) { const r = (i / N) | 0, c = i % N; g.fillStyle = C7_FLOOR[G.K.names[G.room[i]]] || '#e6d3b0'; g.fillRect(x0 + c * cs, y0 + r * cs, cs, cs); }
+  for (let i = 0; i < N * N; i++) { const r = (i / N) | 0, c = i % N; g.fillStyle = c7Floors(G)[G.room[i]] || '#e6d3b0'; g.fillRect(x0 + c * cs, y0 + r * cs, cs, cs); }
   g.strokeStyle = 'rgba(29,25,21,.18)'; g.lineWidth = 1; g.beginPath();
   for (let k = 1; k < N; k++) { g.moveTo(x0 + k * cs, y0); g.lineTo(x0 + k * cs, y0 + size); g.moveTo(x0, y0 + k * cs); g.lineTo(x0 + size, y0 + k * cs); } g.stroke();
   g.strokeStyle = INK; g.lineWidth = 3.4; g.lineCap = 'round'; g.beginPath();
@@ -320,14 +342,14 @@ function c7Draw(en, g, W, H) {
     g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm, x, Gm.stripY + pr * 2 + 14);
   });
   // what the picked one says
-  c7Round(g, Gm.x0, Gm.clueY, Gm.colW, 84, 12); g.fillStyle = '#f6f0e2'; g.fill(); g.strokeStyle = INK; g.lineWidth = 1.6; g.stroke();
+  c7Round(g, Gm.x0, Gm.clueY, Gm.colW, Gm.clueH, 12); g.fillStyle = '#f6f0e2'; g.fill(); g.strokeStyle = INK; g.lineWidth = 1.6; g.stroke();
   const e = G.ents[G.sel]; g.textAlign = 'left'; g.textBaseline = 'top';
   g.fillStyle = C7_TOK[G.sel % C7_TOK.length]; g.font = '800 15px "Be Vietnam Pro", sans-serif'; g.fillText(c7Cap(e.name), Gm.x0 + 14, Gm.clueY + 10);
   g.fillStyle = INK; g.font = '500 14px "Be Vietnam Pro", sans-serif';
   let ly = Gm.clueY + 32; for (const c of G.K.clues[G.sel]) {   // a statement naming a thing shows that thing beside it
     const t = Object.keys(C7_THING).find(k => c.includes(C7_THING[k].toLowerCase())), ind = t ? 26 : 0;
-    if (t && ly < Gm.clueY + 80) c7Thing(g, t, Gm.x0 + 24, ly + 8, 22);
-    for (const l of c7Wrap(g, c, Gm.colW - 28 - ind)) { if (ly < Gm.clueY + 80) g.fillText(l, Gm.x0 + 14 + ind, ly); ly += 18; } }
+    if (t && ly < Gm.clueY + Gm.clueH - 4) c7Thing(g, t, Gm.x0 + 24, ly + 8, 22);
+    for (const l of c7Wrap(g, c, Gm.colW - 28 - ind)) { if (ly < Gm.clueY + Gm.clueH - 4) g.fillText(l, Gm.x0 + 14 + ind, ly); ly += 18; } }
   g.textBaseline = 'alphabetic';
   // submit
   const ready = G.placed.every(p => p >= 0);

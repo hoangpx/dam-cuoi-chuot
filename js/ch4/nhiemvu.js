@@ -52,7 +52,7 @@ C4_TASKS.push(
     done: (t, d) => c4Stock(t.g) <= 0 && ((d.by && d.by[t.g] && d.by[t.g].n) || 0) >= 8 && C4.mins < t.hour * 60 },
   { k: 'dumon', from: () => c4Owned().length >= 2, make: () => { const n = Math.min(c4Owned().length, 2 + (SAVE4.day > 10 ? 1 : 0)); return { n, text: `Bán được ít nhất ${n} loại hàng khác nhau hôm nay.`, prize: 8 * n }; },
     done: (t, d) => Object.values(d.by || {}).filter(b => b.n > 0).length >= t.n },
-  { k: 'cuoi', from: () => (C4.events || []).some(e => e.kind === 'cuoi'), make: () => ({ text: 'Nhận đơn trầu cưới sáng nay và giao đủ cho nhà trai lúc giờ Thân (15:00–17:00).', prize: 15 }),
+  { k: 'cuoi', from: () => C4.evDay === SAVE4.day ? (C4.events || []).some(e => e.kind === 'cuoi') : !!(SAVE4.plan && SAVE4.plan.cuoi), make: () => ({ text: 'Nhận đơn trầu cưới sáng nay và giao đủ cho nhà trai lúc giờ Thân (15:00–17:00).', prize: 15 }),
     done: (t, d) => !!d.wedOk },
   // --- counting (asked at the end of the day) ---
   { k: 'dem_buf', end: true, from: () => SAVE4.day >= 2, make: () => ({ text: 'Đếm xem hôm nay có bao nhiêu người dắt trâu đi qua chợ. Cuối ngày sẽ hỏi.', ask: 'Hôm nay bạn thấy bao nhiêu người dắt trâu đi qua chợ?', prize: 12 }), done: t => !!t.ok },

@@ -41,7 +41,7 @@ function t4Earn(wx, wy) {
   S.coins++; S.coinFx.push({ x: wx - camX, y: wy + offY, t: 0, slot: S.coins - 1 });
   AU.pluck(88); setTimeout(() => AU.pluck(95), 130);
 }
-function t4Thanks(ent, x, msg) { ent.k.bounce = 2.4; AU.pluck(84); toast(msg, 3.8); setTimeout(() => t4Earn(x, GROUND - 120), 1500); }
+function t4Thanks(ent, x, msg) { ent.k.bounce = 2.4; AU.pluck(84); toastSay(msg); setTimeout(() => t4Earn(x, GROUND - 120), 1500); }
 // the purse: four places for coins in the top corner
 function t4Purse(need) {
   return {
@@ -136,7 +136,7 @@ function t4Dyer(W) {
     layer: 'bg', ax: W + 300, st: 'idle', mix: {}, pour: null, k: { bounce: 0 }, mud: 0,
     onClick(wx, wy) {
       if (this.st !== 'idle' || !t4Asked(wx, wy, KX)) return false;
-      this.st = 'make'; this.k.bounce = .8; AU.pluck(70); toast('Chum màu xanh lá vỡ mất rồi! Không có màu xanh lá thì in tranh làm sao được…', 3.8); return true;
+      this.st = 'make'; this.k.bounce = .8; AU.pluck(70); toastSay('Chum màu xanh lá vỡ mất rồi! Không có màu xanh lá thì in tranh làm sao được…', 3.8); return true;
     },
     grab(wx, wy) {
       if (this.st !== 'make' || this.mud > 0) return null;
@@ -162,7 +162,7 @@ function t4Dyer(W) {
       if (has.some(p => p !== 'vang' && p !== 'xanhb')) {
         const orange = has.length === 2 && has.includes('vang') && has.includes('do'), purple = has.length === 2 && has.includes('xanhb') && has.includes('do');
         this.mud = 2.2; AU.pluck(52);
-        toast(orange ? 'Màu da cam đẹp đấy, nhưng chú cần màu xanh lá cơ! Chú đổ đi nhé.' : purple ? 'Ra màu tím rồi, chưa phải xanh lá! Chú đổ đi nhé.' : 'Màu lem nhem thế này thì in làm sao! Chú thợ nhuộm đổ đi.', 3.2); return;
+        toastSay(orange ? 'Màu da cam đẹp đấy, nhưng chú cần màu xanh lá cơ! Chú đổ đi nhé.' : purple ? 'Ra màu tím rồi, chưa phải xanh lá! Chú đổ đi nhé.' : 'Màu lem nhem thế này thì in làm sao! Chú thợ nhuộm đổ đi.', 3.2); return;
       }
       if (y >= .2 && b >= .2 && b / (y + b) > .25 && b / (y + b) < .75) {
         this.st = 'done'; AU.swoosh(); t4Thanks(this, KX, 'Ra màu xanh lá rồi! Chú thợ nhuộm mừng quá, cảm tạ đoàn rước một đồng.');
@@ -172,10 +172,10 @@ function t4Dyer(W) {
       const tot = Object.values(m).reduce((p, c) => p + c, 0);
       if (tot >= 1.15) {
         const why = !has.length ? 'Cả chum toàn nước lã, chẳng có màu gì!'
-          : has.length === 1 ? `Cả chum toàn màu ${has[0] === 'vang' ? 'vàng' : 'xanh dương'}, đầy rồi không pha thêm được!`
+          : has.length === 1 ? 'Cả chum toàn một màu, đầy rồi không pha thêm được!'
           : y < .2 || b < .2 ? 'Nước lã nhiều quá, màu nhạt thếch!'
-          : b / (y + b) <= .25 ? 'Vàng nhiều quá, chưa ra xanh lá!' : 'Xanh dương nhiều quá, chưa ra xanh lá!';
-        this.mud = 2.2; AU.pluck(52); toast(why + ' Chú thợ nhuộm đổ đi, pha lại nhé: vàng với xanh dương, mỗi thứ một nửa.', 3.8);
+          : 'Pha chưa đúng, chưa ra xanh lá!';
+        this.mud = 2.2; AU.pluck(52); toastSay(why + ' Chú thợ nhuộm đổ đi, pha lại nhé.');
       }
     },
     update(dt) {
@@ -190,7 +190,7 @@ function t4Dyer(W) {
       if (j && j.tilt > .85 && this.st === 'make') {
         const total = Object.values(this.mix).reduce((a, b) => a + b, 0), a = Math.min(.2 * dt, j.l);
         if (total < 1.2) { j.l -= a; const k = j.pig || 'nuoc'; this.mix[k] = (this.mix[k] || 0) + a; }
-        if (j.l <= .001) { j.l = 0; j.empty = 3.2; this.pour = null; S.drag = null; AU.pluck(52); toast(j.base ? 'Hết cả chum màu rồi! Để chú đi múc thêm…' : 'Hết sạch cả chum rồi! Thế bây giờ lấy màu đâu mà làm?', 3); this.settle(); }
+        if (j.l <= .001) { j.l = 0; j.empty = 3.2; this.pour = null; S.drag = null; AU.pluck(52); toastSay(j.base ? 'Hết cả chum màu rồi! Để chú đi múc thêm…' : 'Hết sạch cả chum rồi! Thế bây giờ lấy màu đâu mà làm?', 3); this.settle(); }
       }
     },
     draw(g) {
@@ -271,7 +271,7 @@ function t4Print(g, subj, layers, x, y, s, wet = 0) {
   g.save(); g.translate(x, y); g.scale(s, s);
   g.fillStyle = T4_PAPER; g.fillRect(-50, -60, 100, 120);
   g.save(); g.beginPath(); g.rect(-50, -60, 100, 120); g.clip();
-  for (const k of layers) { g.globalAlpha = .9; g.fillStyle = g.strokeStyle = T4_INK[k]; g.lineCap = g.lineJoin = 'round'; T4_SUBJ[subj](g, k); }
+  for (const k of new Set(layers)) { g.globalAlpha = .9; g.fillStyle = g.strokeStyle = T4_INK[k]; g.lineCap = g.lineJoin = 'round'; T4_SUBJ[subj](g, k); }   // (an ink asked twice prints once)
   g.globalAlpha = 1; if (wet > 0) { g.fillStyle = `rgba(40,50,70,${.32 * wet})`; g.fillRect(-50, -60, 100, 120); }
   g.restore(); g.strokeStyle = INK; g.lineWidth = 2.2; g.strokeRect(-50, -60, 100, 120); g.restore();
 }
@@ -286,34 +286,42 @@ function t4Block(g, ink, x, y, lit, press) {           // a carved pear-wood blo
 }
 function t4Printer(W) {
   const BX = k => W + 70 + k * 55, BY = GROUND - 272, PX = W + 180, PY = GROUND - 376, KX = W + 380;   // the table up high, out of the party's way
-  const newOrder = () => { const o = T4_INKS.slice(); for (let i = o.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [o[i], o[j]] = [o[j], o[i]]; } return o; };
+  const shuffle = a => { const o = a.slice(); for (let i = o.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [o[i], o[j]] = [o[j], o[i]]; } return o; };
+  // random every game (owner: so a solution cannot be shared): where each ink stands on the table, which new ink comes in which round, and the order asked each round
+  // (owner) the same five inks side by side as ever, but the sequence repeats them: 5 steps in the first picture, one more each time, 9 in the last (five pictures)
+  // (e.g. xanh đỏ vàng trắng đen vàng); random every game, so there is nothing to share; the same ink never twice running
+  const newOrder = () => { const n = 5 + Math.min(4, e.round), o = []; while (o.length < n) { const k = T4_INKS[(R() * 5) | 0]; if (k !== o[o.length - 1]) o.push(k); } return o; };
   const e = {
-    layer: 'bg', ax: W, st: 'idle', t: 0, round: 0, order: newOrder(), step: 0, layers: [], press: {}, k: { bounce: 0 }, toldWrong: false,
-    show() { this.st = 'show'; this.t = -.4; },
+    layer: 'bg', ax: W, st: 'idle', t: 0, round: 0, order: [], step: 0, layers: [], press: {}, k: { bounce: 0 }, toldWrong: false,
+    show() { if (!this.order.length) this.order = newOrder(); this.st = 'show'; this.t = -.4; },
     onClick(wx, wy) {
       if (this.st === 'done') return false;
-      if (t4Asked(wx, wy, KX)) { if (this.st === 'idle') { this.k.bounce = .8; toast('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé!', 3.8); } if (this.st === 'input' || this.st === 'idle') { AU.pluck(76); this.show(); } return true; }
+      if (t4Asked(wx, wy, KX)) {
+        if (this.st === 'idle') { this.k.bounce = .8; AU.pluck(76); this.st = 'talk'; toastSay('Bác thợ in nhờ in năm bức tranh: in đúng thứ tự các ván khắc bác giơ lên nhé! Mỗi bức lại dài thêm một bước.', () => { if (this.st === 'talk') this.show(); }); }   // (owner: he says it all, then the blocks are shown)
+        else if (this.st === 'input') { AU.pluck(76); this.show(); }
+        return true;
+      }
       const i = T4_INKS.findIndex((_, k) => Math.abs(wx - BX(k)) < 26 && wy > BY - 50 && wy < BY + 16); if (i < 0) return false;
       if (this.st !== 'input') return true;
       const ink = T4_INKS[i]; this.press[ink] = .25;
       if (ink !== this.order[this.step]) {
         this.st = 'smear'; this.t = 0; AU.pluck(50); AU.thump();
-        if (!this.toldWrong) { this.toldWrong = true; toast('In sai thứ tự, tranh nhoè mất rồi! Chạm vào bác thợ in để xem lại.', 3.4); }
+        if (!this.toldWrong) { this.toldWrong = true; toastSay('In sai thứ tự, tranh nhoè mất rồi! Chạm vào bác thợ in để xem lại.', 3.4); }
         return true;
       }
       this.layers.push(ink); this.step++; AU.stamp();
-      if (this.step === 5) { this.st = 'printed'; this.t = 0; setTimeout(() => AU.pluck(86), 200); }
+      if (this.step === this.order.length) { this.st = 'printed'; this.t = 0; setTimeout(() => AU.pluck(86), 200); }
       return true;
     },
     update(dt) {
       this.t += dt; this.k.bounce = Math.max(0, this.k.bounce - dt);
       for (const k in this.press) this.press[k] -= dt;
-      if (this.st === 'show') { const k = Math.floor(this.t / .8); if (this.t > 0 && k < 5 && this.lastLit !== k) { this.lastLit = k; AU.pluck(72 + k * 2); } if (this.t > 4.2) { this.st = 'input'; this.lastLit = -1; } }
+      if (this.st === 'show') { const k = Math.floor(this.t / .8); if (this.t > 0 && k < this.order.length && this.lastLit !== k) { this.lastLit = k; AU.pluck(72 + k * 2); } if (this.t > .8 * this.order.length + .2) { this.st = 'input'; this.lastLit = -1; } }
       if (this.st === 'smear' && this.t > 1.1) { this.st = 'input'; this.layers = []; this.step = 0; }
-      if (this.st === 'printed' && this.t > 2.2) {
+      if (this.st === 'printed' && this.t > 1) {
         this.round++; S.prints = this.round;
         if (this.round >= 5) { this.st = 'done'; t4Thanks(this, KX, 'Đủ năm bức tranh đẹp! Bác thợ in cảm tạ, biếu một đồng.'); }
-        else { this.layers = []; this.step = 0; this.order = newOrder(); this.show(); }
+        else { this.layers = []; this.step = 0; this.order = []; this.show(); }
       }
     },
     draw(g) {
@@ -326,7 +334,7 @@ function t4Printer(W) {
         t4Print(g, subj, this.layers, PX, PY, 1.1);
         if (this.st === 'smear') { const a = Math.min(1, this.t * 4); g.fillStyle = `rgba(42,34,29,${.55 * a})`; for (const [dx, dy, r] of [[-10, 0, 34], [14, -20, 22], [8, 26, 26], [-22, -30, 16]]) { g.beginPath(); g.ellipse(PX + dx, PY + dy, r, r * .7, dx, 0, 6.283); g.fill(); } }
       }
-      for (let k = 0; k < 5; k++) { const x = PX - 94, y = PY - 64 + k * 32; if (k < this.round) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
+      for (let k = 0; k < 5; k++) { const x = PX - 94, y = PY - 64 + k * 32; if (k < this.round + (this.st === 'printed' ? 1 : 0)) t4Print(g, k, T4_INKS, x, y, .22); else { g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeRect(x - 11, y - 13.2, 22, 26.4); g.setLineDash([]); } }
       if (done) t4Print(g, 4, T4_INKS, PX, PY, 1.1);
       // the table and the blocks; while showing, the one to print next is raised
       g.fillStyle = '#8a5a2a'; g.strokeStyle = INK; g.lineWidth = 2.4; g.fillRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10); g.strokeRect(BX(0) - 34, BY + 8, BX(4) - BX(0) + 68, 10);
@@ -364,7 +372,7 @@ function t4Drying(W) {
     layer: 'bg', ax: W, st: 'idle', dry: 0, k: { bounce: 0 }, rainK: 1,
     onClick(wx, wy) {
       if (this.st !== 'idle' || !t4Asked(wx, wy, KX)) return false;
-      this.st = 'rain'; this.k.bounce = .8; AU.pluck(70); toast('Mưa mãi không tạnh, mây đen kín trời, tranh phơi ướt sũng chẳng khô được…', 3.8); return true;
+      this.st = 'rain'; this.k.bounce = .8; AU.pluck(70); toastSay('Mưa mãi không tạnh, mây đen kín trời, tranh phơi ướt sũng chẳng khô được…', 3.8); return true;
     },
     grab(wx, wy) {
       if (this.st !== 'rain') return null;
@@ -382,13 +390,23 @@ function t4Drying(W) {
         if (this.dry >= 1) { this.st = 'done'; t4Thanks(this, KX, 'Tranh khô cong, màu tươi rói! Bà phơi tranh cảm tạ, biếu một đồng.'); } }
     },
     draw(g) {
-      // the sun behind its clouds
-      const sun = this.st === 'sun' || this.st === 'done';
-      g.save(); g.translate(SX, top() + SY); g.rotate(S.t * .15);
-      g.fillStyle = sun ? '#e8a03a' : '#b8935a'; g.strokeStyle = INK; g.lineWidth = 2;
-      for (let k = 0; k < 12; k++) { g.save(); g.rotate(k * Math.PI / 6); g.beginPath(); g.moveTo(-6, -36); g.lineTo(0, -52 - (sun ? Math.sin(S.t * 4 + k) * 4 : 0)); g.lineTo(6, -36); g.closePath(); g.fill(); g.stroke(); g.restore(); }
-      g.beginPath(); g.arc(0, 0, 32, 0, 6.283); g.fillStyle = sun ? '#f2c640' : '#c9ac6a'; g.fill(); g.stroke(); g.restore();
-      const vw = cv.width / DPR / scale;
+      // the sun behind its clouds (owner: no sun may show wherever a dark cloud is, not even through the gaps between clouds):
+      // while it rains the sun is drawn on a small sheet and every cloud's patch of sky is rubbed out of it first
+      const sun = this.st === 'sun' || this.st === 'done', vw = cv.width / DPR / scale;
+      const drawSun = h => {
+        h.save(); h.rotate(S.t * .15);
+        h.fillStyle = sun ? '#e8a03a' : '#b8935a'; h.strokeStyle = INK; h.lineWidth = 2;
+        for (let k = 0; k < 12; k++) { h.save(); h.rotate(k * Math.PI / 6); h.beginPath(); h.moveTo(-6, -36); h.lineTo(0, -52 - (sun ? Math.sin(S.t * 4 + k) * 4 : 0)); h.lineTo(6, -36); h.closePath(); h.fill(); h.stroke(); h.restore(); }
+        h.beginPath(); h.arc(0, 0, 32, 0, 6.283); h.fillStyle = sun ? '#f2c640' : '#c9ac6a'; h.fill(); h.stroke(); h.restore();
+      };
+      if (sun) { g.save(); g.translate(SX, top() + SY); drawSun(g); g.restore(); }
+      else {
+        const sh = this.sunSheet || (this.sunSheet = document.createElement('canvas')), Z = 2, N = 160;
+        sh.width = sh.height = N * Z; const h = sh.getContext('2d'); h.scale(Z, Z); h.translate(N / 2, N / 2); drawSun(h);
+        h.globalCompositeOperation = 'destination-out'; h.fillStyle = '#000';
+        for (const c of [...clouds, ...far]) { const cx = c.x - SX, cy = top() + c.y - (top() + SY); if (Math.abs(cx) < 200 && Math.abs(cy) < 160) { h.beginPath(); h.ellipse(cx, cy + 4 * c.s, 56 * c.s, 34 * c.s, 0, 0, 6.283); h.fill(); } }
+        g.drawImage(sh, SX - N / 2, top() + SY - N / 2, N, N);
+      }
       far.forEach((c, i) => { if (c.x > camX - 140 && c.x < camX + vw + 140) c4Cloud(g, c.x, top() + c.y, c.s, i % 3, sun ? '#ece6dc' : '#5e5866'); });
       clouds.forEach((c, i) => c4Cloud(g, c.x, top() + c.y, c.s, i % 3, sun ? '#ece6dc' : '#5e5866'));   // chương IV's clouds, dark with rain
       // the drying lines and the five prints from the print house, wet and dark until the sun dries them
@@ -453,7 +471,7 @@ function t4Bridge(g0, g1) {
         const u = (this.cx - g0) / span, middle = u > .2 && u < .8;
         if (middle && !this.held()) {
           const was = this.strain; this.strain += dt / 1.1;
-          if (was < .3 && this.strain >= .3) { AU.creak(); if (!this.warned) { this.warned = true; toast('Cầu tre kêu răng rắc… giữ lấy cầu!', 2.6); } }
+          if (was < .3 && this.strain >= .3) { AU.creak(); if (!this.warned) { this.warned = true; toast('Cầu tre kêu răng rắc…', 2.6); } }
           if (this.strain >= 1) { this.st = 'back'; this.crack = 1.6; AU.thump(); AU.creak(); toast('Rắc! Cầu oằn xuống, xe tranh lăn ngược về đầu cầu.', 3); }
         } else this.strain = Math.max(0, this.strain - dt * 1.4);
         if (this.cx > END) { this.st = 'done'; this.strain = 0; S.lockMove = false; t4Thanks(this, END + 60, 'Xe tranh qua cầu rồi! Ông cụ cảm tạ cả đoàn, biếu một đồng.'); }
@@ -464,9 +482,8 @@ function t4Bridge(g0, g1) {
     },
     draw(g) {
       dp(g, water, g0, GROUND);
-      // the bridge: bamboo poles bending under the cart, a prop under the middle while you hold it
+      // the bridge: bamboo poles bending under the cart (owner: no prop shown while you hold it, that gave the answer away)
       const y = x => GROUND - 4 + this.arch(x) + this.sag(x);
-      if (this.held()) { g.strokeStyle = '#7a5a2a'; g.lineWidth = 7; g.beginPath(); g.moveTo(mid, GROUND + 56); g.lineTo(mid, y(mid)); g.stroke(); g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(mid - 4, GROUND + 56); g.lineTo(mid - 4, y(mid)); g.moveTo(mid + 4, GROUND + 56); g.lineTo(mid + 4, y(mid)); g.stroke(); }
       for (const [dy, w, c] of [[0, 7, '#c9a24a'], [-30, 3, '#7a5a2a']]) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); for (let x = g0 - 20; x <= g1 + 20; x += 10) { const yy = y(x) + dy; x === g0 - 20 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); }
       g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); for (let x = g0 - 10; x <= g1 + 10; x += 26) { g.moveTo(x, y(x) - 30); g.lineTo(x, y(x)); } g.stroke();
       g.beginPath(); for (let x = g0 - 20; x <= g1 + 20; x += 10) { const yy = y(x) + 3.5; x === g0 - 20 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke();
@@ -509,7 +526,7 @@ function t4Gate(x, need) {
         this.paid = true; this.k.bounce = 1.2;
         for (let k = 0; k < need; k++) setTimeout(() => { S.coinFx.push({ x: x - 70 - camX, y: GROUND - 90 + offY, t: 0, slot: need - 1 - k, rev: true }); AU.pluck(84 + k * 2); }, k * 180);
         setTimeout(() => { this.opened = true; AU.creak(); toast('Lính cụ Lý nhận đủ bốn đồng, mở cổng cho đoàn vào chợ!', 3.4); }, need * 180 + 900);
-      } else if (!this.told) { this.told = true; toast('Lính cụ Lý chống giáo: "Nộp đủ bốn đồng mới được vào chợ!"', 3.6); }
+      } else if (!this.told) { this.told = true; toastSay('Lính cụ Lý chống giáo: "Nộp đủ bốn đồng mới được vào chợ!"', 3.6); }
     },
     draw(g) {
       for (const sx of [x + 130, x + 230]) dp(g, MP.stall, sx, GROUND + 4, 0, .85, .85);
@@ -529,8 +546,8 @@ function t4Gate(x, need) {
 
 /* ---------- tranh 4 ---------- */
 LEVELS[3] = {
-  han: '東湖', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, zoomWide: .68, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
-  intro: '', endTitle: 'Qua Làng Tranh', endText: 'Pha màu, in tranh, gọi nắng, giữ cầu: làng tranh Đông Hồ cảm tạ bốn đồng tiền. Lính cụ Lý mở cổng, đoàn rước vào chợ.',
+  han: '廊幀', name: 'Làng Tranh', paper: 'white', width: 4800, zoom: 1.45, zoomWide: .68, key: -2, abil: ['drum', 'ken', 'parasol'], cps: [160, 860, 1760, 2710, 3540],
+  intro: '', endTitle: 'Qua Làng Tranh', endText: 'Pha màu, in tranh, gọi nắng, đẩy xe qua cầu: làng tranh Đông Hồ cảm tạ bốn đồng tiền. Lính cụ Lý mở cổng, đoàn rước vào chợ.',
   build: () => {
     S.coins = 0; S.coinShown = 0; S.coinFx = []; S.prints = 0;
     return [

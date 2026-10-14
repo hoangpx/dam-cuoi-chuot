@@ -38,10 +38,26 @@ $('#bAlbum').addEventListener('click', () => showAlbum(S.chapter));
 $('#bRetry').addEventListener('click', () => chapterById(S.chapter).retry());
 $('#howTx').textContent = isTouch ? lg('Giữ ◀ ▶ để đi · chạm vào tranh, giữ ngón tay để kéo', 'Hold ◀ ▶ to walk · tap the picture, hold to drag') : lg('← → để đi · bấm chuột để chạm, giữ chuột để kéo', '← → to walk · click to touch, hold to drag');
 
+/* ---------- the global sound switch (owner, 2026-10-13) ----------
+   A speaker button next to the language flag on the chapter list (#bSound, moved into the sheet here) plus the M key
+   anywhere: mutes music and effects together (AU.setMuted, kept in 'dcc.mute'). */
+function soundShow() {
+  const b = $('#bSound'), m = AU.isMuted();
+  b.classList.toggle('muted', m); b.setAttribute('aria-pressed', String(m));
+  const t = m ? lg('Bật tiếng', 'Sound on') : lg('Tắt tiếng', 'Sound off');
+  b.setAttribute('aria-label', t); b.title = t + ' (M)';
+}
+function soundToggle() { AU.init(); AU.setMuted(!AU.isMuted()); soundShow(); if (!AU.isMuted()) AU.tap(); }
+{ const sh = $('#chapters .sheet'); if (sh) sh.appendChild($('#bSound')); }
+$('#bSound').addEventListener('click', e => { e.stopPropagation(); soundToggle(); $('#bSound').blur(); });
+$('#bSound').addEventListener('pointerdown', e => e.stopPropagation());
+soundShow();
+
 /* ---------- input routing ---------- */
 for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => AU.init(), true);   // any of these may unlock audio (iOS wants touchend)
 addEventListener('keydown', e => {
   if (S.mode === 'title' && (e.code === 'Enter' || e.code === 'Space')) { e.preventDefault(); AU.init(); showChapters(); return; }
+  if (e.code === 'KeyM' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) { soundToggle(); return; }
   const c = activeChapter(); if (c.key) c.key(e);
 });
 for (const [ev, k] of [['pointerdown', 'down'], ['pointermove', 'move'], ['pointerup', 'up']])

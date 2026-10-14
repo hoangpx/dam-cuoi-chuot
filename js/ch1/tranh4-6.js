@@ -165,7 +165,7 @@ LEVELS[4] = {
 };
 
 /* ---------- tranh 6 ---------- */
-LEVELS[5] = {
+LEVELS[6] = {
   han: '迎親', name: 'Rước Dâu', paper: 'lilac', width: 5500, key: -1, abil: ['drum', 'ken', 'parasol', 'plates', 'hold'], cps: [160, 1320, 2320, 2820, 3950, 4250],
   intro: 'Màn cuối, gộp mọi tài nghệ: bản màu, bàn đạp, giữ đoàn, trống, kèn, lọng. Cổng nhà gái có mèo lớn canh, cần lễ cá.',
   endTitle: 'Đón dâu về', endText: 'Cả đoàn rước qua đủ sáu chặng tranh. Đám cưới chuột thành rồi, cả làng cùng vui!',

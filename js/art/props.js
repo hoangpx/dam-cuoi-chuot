@@ -67,7 +67,7 @@ function buildProps() {
     const l = smooth([[-46, 0], [-20, -14], [22, -14], [46, -2], [20, 8], [-24, 8]]);
     a.fk('green', l, 2); a.key(lines([[-40, -1, 40, -3], [-20, -2, -12, -10], [0, -2, 8, -11], [20, -3, 26, -9]]), 1.2);
   });
-  P.gate = part([-120, -330, 120, 8], a => {
+  const mkGate = hy => part([-120, -330, 120, 8], a => {
     for (const x of [-86, 86]) { const p = smooth([[x - 12, 0], [x - 10, -250], [x + 10, -250], [x + 12, 0]]); a.fk('red', p, 2.6); a.key(lines([[x - 11, -40, x + 11, -40], [x - 11, -210, x + 11, -210]]), 1.6); }
     a.fk('dark', smooth([[-100, -232], [100, -232], [100, -222], [-100, -222]]), 2);
     const roof = smooth([[-120, -250], [-108, -262], [-70, -292], [0, -306], [70, -292], [108, -262], [120, -250], [100, -254], [0, -262], [-100, -254]]);
@@ -80,14 +80,15 @@ function buildProps() {
     a.fk('red', circ(0, -312, 8), 1.6);
     const banner = smooth([[-30, -222], [30, -222], [28, -160], [0, -150], [-28, -160]]);
     a.fk('red', banner, 2.2);
-    a.text('囍', 0, -188, 44, 'yellow');
+    if (hy) a.text('囍', 0, -188, 44, 'yellow');                                  // gate6 (tranh 6) has no 囍 (owner)
   });
+  P.gate = mkGate(true); P.gate6 = mkGate(false);
   P.seal = part([-34, -34, 34, 34], a => {
     a.fill('red', smooth([[-30, -29], [30, -31], [31, 30], [-29, 30]]));
     a.text('東', 0, -12, 26, 'paper'); a.text('湖', 0, 14, 26, 'paper');
   });
-  P.txt1 = part([-30, -130, 30, 130], a => { '鼠娶親'.split('').forEach((ch, i) => a.text(ch, 0, -84 + i * 84, 70, 'dark', undefined, 'ink')); });
-  P.txt2 = part([-30, -100, 30, 100], a => { '貓受禮'.split('').forEach((ch, i) => a.text(ch, 0, -64 + i * 64, 56, 'dark', undefined, 'ink')); });
+  P.txt1 = part([-30, -168, 30, 168], a => { Array.from('鼠輩遞魚智智智').forEach((ch, i) => a.text(ch, 0, -138 + i * 46, 42, 'dark', undefined, 'ink')); });   // the couplet from the Chuột vinh quy print: seven characters (owner's friend)
+  P.txt2 = part([-30, -168, 30, 168], a => { Array.from('貓兒取禮謀謀謀').forEach((ch, i) => a.text(ch, 0, -138 + i * 46, 42, 'dark', undefined, 'ink')); });
   P.zz = part([-10, -14, 10, 14], a => a.text('z', 0, 0, 26, 'dark', 'Playfair Display, serif', 'ink'));
   return P;
 }

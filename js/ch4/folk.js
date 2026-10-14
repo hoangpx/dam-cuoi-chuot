@@ -89,6 +89,21 @@ const C4_CHATS = [
   [[0, 'Nghe nói {X} thầm thương cô hàng vải.'], [1, 'Ối giời, cả làng biết rồi!'], [0, 'Thế mà cứ tưởng giấu kín lắm!']],
   [[0, 'Đừng mua cá nhà {X}, ươn đấy!'], [1, 'Thế à? May mà {A} bảo.']],
 ];
+// bad-mouthing the couple's stalls (owner, 2026-10-11): a sharp-tongued resident who does not like us says it on the lane ({A} speaks first)
+const C4_BADMOUTH = [
+  [[0, 'Hàng nhà vợ chồng mới ấy đắt cắt cổ!'], [1, 'Thật à? Tôi thấy cũng được mà.'], [0, 'Được gì! Lần sau tôi mua chỗ khác.']],
+  [[0, 'Vợ chồng nhà ấy mới ra chợ đã làm cao.'], [1, 'Ai bảo thế?'], [0, 'Tôi bảo đấy! Chào hỏi chẳng ra gì.']],
+  [[0, 'Đứng chờ cả buổi ở hàng nhà ấy, mỏi rã cả chân.'], [1, 'Bán chậm thế thì ai mà chờ nổi.']],
+  [[0, 'Nghe đâu nhà ấy đong điêu đấy, {B} cẩn thận.'], [1, 'Ối, thế thì phải dè chừng.']],
+  [[0, 'Ông chồng cứ đi rao inh ỏi, nhức cả đầu!'], [1, 'Ừ, rao như gọi đò.']],
+  [[0, 'Hàng nhà ấy toàn đồ hôm qua bán lại!'], [1, 'Ăn vào có làm sao không?'], [0, 'Ai biết! Cứ liệu đấy.']],
+  [[0, 'Cô vợ ấy cười thì tươi mà tính thì đanh lắm.'], [1, 'Nói nhỏ thôi {A}, cô ấy nghe thấy bây giờ!']],
+  [[0, 'Mới khấm khá tí đã thuê người làm, ra vẻ lắm.'], [1, 'Ghen ăn tức ở hả {A}?'], [0, 'Ai thèm ghen!']],
+  [[0, 'Hôm trước ra hàng nhà ấy thì hết sạch, về tay không.'], [1, 'Buôn bán gì mà để hết hàng.']],
+  [[0, '{B} đừng mua hàng nhà ấy, đắt mà chẳng ngon.'], [1, 'Thế mua đâu?'], [0, 'Đâu cũng được, trừ nhà ấy!']],
+  [[0, 'Tôi trả có thiếu một đồng mà cô ấy lườm tôi.'], [1, 'Thế thì {A} trả đủ đi!'], [0, 'Hứ!']],
+  [[0, 'Nhà ấy làm ăn thế nào ấy, chắc chẳng trụ được lâu.'], [1, 'Để xem, chợ này khó lắm.']],
+];
 // on their own, now and then
 // the fortune-teller's sayings: half oracle, half joke (all original)
 const C4_BOI = [
@@ -122,6 +137,10 @@ const C4_WANT = {
   che: ['Cho bát chè nóng nào!', 'Chè xanh đặc vào nhé!', '{n} bát chè cho cả nhà!', 'Rét quá, bát chè cho ấm bụng!'],
   xoi: ['Gói cho {n} gói xôi!', 'Xôi gấc còn không?', 'Xôi đỗ một gói mang đi!', 'Cho cháu gói xôi ăn sáng.'],
   xen: ['Có kim chỉ không?', 'Bán cho cái lược bí!', 'Lấy {n} cuộn chỉ đỏ.', 'Gương này bao nhiêu?'],
+  banhcuon: ['Cho đĩa bánh cuốn nóng!', '{n} đĩa bánh cuốn, nhiều hành phi nhé!', 'Bánh cuốn chấm nước mắm cà cuống còn không?', 'Ăn sáng đĩa bánh cuốn cho ấm bụng!'],
+  ruou: ['Cho chén rượu nếp!', '{n} chén, mời anh em một chầu!', 'Rượu nếp cái hoa vàng phải không?', 'Rét quá, chén rượu cho ấm người!'],
+  gom: ['Cái bát này bao nhiêu?', 'Lấy {n} cái bát cho nhà mới!', 'Nồi đất này có nứt không đấy?', 'Hàng Bát Tràng phải không cô?'],
+  thuoc: ['Cho thang thuốc cảm!', 'Cắt {n} thang thuốc bổ cho mẹ già!', 'Có lá xông không cô?', 'Thằng cu nhà tôi ho mãi, có thuốc gì không?'],
   bun: ['Bát bún riêu, nhiều riêu nhé!', '{n} bát bún, thêm mắm tôm!', 'Đói quá, bát bún nào!', 'Bún riêu cua đồng phải không?'],
 };
 const C4_THANKS = ['Có ngay ạ!', 'Của bác đây ạ!', 'Cảm ơn, lần sau lại ghé!', 'Nóng hổi đây ạ!', 'Vâng, có ngay!'];

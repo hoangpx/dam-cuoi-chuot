@@ -14,6 +14,10 @@ const safeTop = (() => { const p = document.createElement('div'); p.style.cssTex
 
 
 let scale = 1, viewH = VIEW_H, offY = 0, ZOOM = 1, ZOOMW = 1;            // a tranh may come closer on a portrait phone (ZOOM) or stand back on a wide screen to show its tall things (ZOOMW; tranh 4)
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+  r = Math.max(0, Math.min(Array.isArray(r) ? (+r[0] || 0) : (+r || 0), Math.abs(w) / 2, Math.abs(h) / 2));
+  this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
+};
 function resize() {
   const w = innerWidth, h = innerHeight;
   cv.width = Math.max(1, Math.round(w * DPR)); cv.height = Math.max(1, Math.round(h * DPR));
@@ -25,7 +29,15 @@ function resize() {
 addEventListener('resize', resize); resize();
 function setZoom(z, zw = 1) { if (z !== ZOOM || zw !== ZOOMW) { ZOOM = z; ZOOMW = zw; resize(); } }
 
-let toastTimer;
+let toastTimer, toastSticky = false, toastStickT = 0;
+// what a character says (owner: chương I tranh 1–5): the words stay until the player taps, clicks, or presses Enter / Space
+let toastSayCb = null;
+// done (optional) runs once the words are gone: tapped away, or replaced by another message
+function toastSay(s, done) { toast(s, 1e6); toastSticky = true; toastSayCb = typeof done === 'function' ? done : null; toastStickT = performance.now(); $('#toast').classList.add('say'); }
+function toastSayEnd() { const cb = toastSayCb; toastSayCb = null; if (cb) cb(); }
+function toastDismiss() { if (!toastSticky || performance.now() - toastStickT < 400) return; toastSticky = false; clearTimeout(toastTimer); $('#toast').classList.remove('on', 'say'); toastSayEnd(); }
+addEventListener('pointerdown', toastDismiss, true);
+addEventListener('keydown', e => { if (e.code === 'Enter' || e.code === 'Space') toastDismiss(); }, true);
 // a toast may carry chương IV's coin icon (our own markup)
-function toast(s, d = 2.8) { toast.n = (toast.n || 0) + 1; if (/<(i|br|b)[ >]/.test(String(s))) $('#toastTx').innerHTML = s; else $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
+function toast(s, d = 2.8) { toast.n = (toast.n || 0) + 1; if (d < 1e5) { const was = toastSticky; toastSticky = false; $('#toast').classList.remove('say'); if (was) setTimeout(toastSayEnd, 0); } if (/<(i|br|b)[ >]/.test(String(s))) $('#toastTx').innerHTML = s; else $('#toastTx').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), d * 1000); }
 function capturePointer(e, el = cv) { try { el.setPointerCapture(e.pointerId); } catch (err) {} }

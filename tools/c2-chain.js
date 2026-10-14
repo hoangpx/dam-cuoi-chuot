@@ -5,10 +5,10 @@
 const fs = require('fs'), path = require('path'), root = path.join(__dirname, '..');
 const src = ['js/ch2/levels.js', 'js/ch2/engine.js', 'js/ch2/solver.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 const tmp = path.join(require('os').tmpdir(), 'c2c-' + process.pid + '.js');
-fs.writeFileSync(tmp, src + '\nmodule.exports = { C2LEVELS, C2_CHAIN, c2Parse, c2Settle, c2Step, c2Snap, c2StKey, C2_DIRS, C2K, C2P };'); const E = require(tmp); fs.unlinkSync(tmp);
+fs.writeFileSync(tmp, src + '\nmodule.exports = { C2LEVELS, C2_CHAIN, c2Parse, c2Settle, c2Step, c2Snap, c2StKey, C2_DIRS, C2K, C2P, C2OPS };'); const E = require(tmp); fs.unlinkSync(tmp);
 const args = process.argv.slice(2), capI = args.indexOf('--cap'), cap = capI >= 0 ? +args[capI + 1] : 2e6;
 const which = args.filter((a, i) => /^\d+$/.test(a) && args[i - 1] !== '--cap').map(Number);
-const txt = r => `${E.C2K[r.a].vi} ${r.verb === 'has' ? 'CÓ' : r.neg ? 'KHÔNG' : 'LÀ'} ${r.prop ? E.C2P[r.prop].vi : E.C2K[r.to].vi}`;
+const txt = r => `${E.C2K[r.a].vi}${r.cond ? ` ${E.C2OPS[r.cond.c].vi} ${E.C2K[r.cond.k].vi}` : ''} ${r.verb === 'has' ? 'CÓ' : r.neg ? 'KHÔNG' : 'LÀ'} ${r.prop ? E.C2P[r.prop].vi : E.C2K[r.to].vi}`;
 const rs = st => new Set(st.rules.map(txt));
 let bad = 0;
 E.C2LEVELS.forEach((L, i) => {
