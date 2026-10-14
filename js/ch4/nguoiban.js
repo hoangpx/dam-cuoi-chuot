@@ -3,7 +3,9 @@
    a wage every evening: profit and loss are the player's to weigh. ----------
    SAVE4.hands[g] = [{ name, sort, unpaid, wageUp, sick, nowage, quit }]. C4.SV[g] = the sales going on at a stall,
    [{ who, t, by }] with by = C4.wife, C4.porter or a helper. */
-const C4_HANDS_MAX = 1, C4_COUPLE_SP = 120;
+const C4_HANDS_MAX = 2, C4_COUPLE_SP = 120;
+// a level-1 stall takes one hand, from level 2 up it takes a second (owner)
+const c4HandsMax = g => Math.min(C4_HANDS_MAX, 1 + (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g)));
 C4_GOODS.trau.wage = 6;
 // a hired hand's name (a player hit an error): the old list had 11 names (one of them cụ Lý, the headman) for up to
 // 3 helpers a stall, so the 12th hire got no name and the stall sheet broke. Young folk's names, never a villager's or
@@ -146,21 +148,21 @@ function c4HandsBlock(g) {
   const G = C4_GOODS[g], H = c4Hands(g), el = document.createElement('div'); el.className = 'hands';
   let apply = null;                                                       // the applicants for the hire, while the list is open
   const draw = () => {
-    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, mỗi hàng chỉ thuê được một người, công ${c4Money(c4WageAt(g, 0))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
+    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, hàng mới chỉ thuê được một người, lên cấp 2 thì thuê thêm được một người (người thứ hai công gấp đôi người đầu; hàng này thuê được ${c4HandsMax(g)}), công người đầu ${c4Money(c4WageAt(g, 0))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
       + (H.length ? H.map((h, i) => `<div class="hand"><span><b>${c4Cap1(h.name)}</b>${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}${c4TraitBar('quan hệ', h.rel / 100)}</div></span><button class="btn alt" data-warn="${i}">Nhắc nhở</button><button class="btn alt" data-off="${i}">Đuổi việc</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
-      + (apply ? c4ApplyHtml(g, apply) : H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4NextWage(g))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
+      + (apply ? c4ApplyHtml(g, apply) : H.length < c4HandsMax(g) ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4NextWage(g))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
-      if (H.length >= C4_HANDS_MAX || Date.now() - (c4HandsBlock.last || 0) < 800) { draw(); return; }   // (a double tap could hire past the limit; a lagging tap hired twice)
+      if (H.length >= c4HandsMax(g) || Date.now() - (c4HandsBlock.last || 0) < 800) { draw(); return; }   // (a double tap could hire past the limit; a lagging tap hired twice)
       c4HandsBlock.last = Date.now();
       apply = c4Applicants(g); draw();
     });
     el.querySelector('[data-apply-no]')?.addEventListener('click', () => { apply = null; draw(); });
     el.querySelectorAll('[data-app]').forEach(btn => btn.addEventListener('click', () => {
       const x = apply && apply[+btn.dataset.app];
-      if (!x || H.length >= C4_HANDS_MAX) { apply = null; draw(); return; }
+      if (!x || H.length >= c4HandsMax(g)) { apply = null; draw(); return; }
       const { ask, ...hand } = x;
       c4Khe({ title: 'Thuê người làm', a: ['Người làm', c4Cap1(hand.name)], what: 'Bán ' + G.name.toLowerCase() + ' thuê, công trả mỗi tối', money: ask, per: 'mỗi ngày', k: .6 }, () => {
-        if (H.length >= C4_HANDS_MAX) { apply = null; draw(); return; }
+        if (H.length >= c4HandsMax(g)) { apply = null; draw(); return; }
         H.push({ ...hand, wageUp: ask - c4WageAt(g, H.length) }); apply = null;
         toast(`${c4Cap1(hand.name)} nhận bán ${G.name.toLowerCase()}, đòi công ${c4Money(ask)}/ngày.`); persist4(); draw();
       }); return;
