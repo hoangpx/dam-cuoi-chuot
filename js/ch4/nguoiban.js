@@ -146,7 +146,7 @@ function c4HandsBlock(g) {
   const G = C4_GOODS[g], H = c4Hands(g), el = document.createElement('div'); el.className = 'hands';
   let apply = null;                                                       // the applicants for the hire, while the list is open
   const draw = () => {
-    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, mỗi hàng thuê được tối đa ${C4_HANDS_MAX} người (người sau công gấp đôi người trước), người đầu công ${c4Money(c4WageAt(g, 0))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
+    el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, mỗi hàng chỉ thuê được một người, công ${c4Money(c4WageAt(g, 0))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
       + (H.length ? H.map((h, i) => `<div class="hand"><span><b>${c4Cap1(h.name)}</b>${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}${c4TraitBar('quan hệ', h.rel / 100)}</div></span><button class="btn alt" data-warn="${i}">Nhắc nhở</button><button class="btn alt" data-off="${i}">Đuổi việc</button></div>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
       + (apply ? c4ApplyHtml(g, apply) : H.length < C4_HANDS_MAX ? `<button class="btn" data-hire="1">Thuê thêm một người · ${c4Money(c4NextWage(g))}/ngày${H.length ? ` (đang thuê ${H.length})` : ''}</button>` : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
