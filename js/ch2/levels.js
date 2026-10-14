@@ -657,6 +657,13 @@ const C2LEVELS = [
     map: ["wwwwwwwww", "w..c..R.w", "w..C....w", "w.w..mG.w", "ww.M=1www", "w.=.....w", "wRr..w.gw", "w.w..=6.w", "wwwwwwwww", "W=3......"],
     fixed: [[4,4], [5,4], [5,7], [6,7], [0,9], [1,9], [2,9]],
   },
+  {
+    han: "三過", name: "Ba bận", paper: "sage", key: -2, tt: true,
+    riddle: "Lại hai buồng kín và một ô chữ thông nhau. Con mèo nằm ở buồng trên, mà chữ MÈO thì ở tít buồng dưới; con chuột đi được, nhưng chẳng với tới chữ nào.",
+    hint: "Đẩy chữ ĐÁ vào chỗ chữ CHUỘT trước LÀ ĐI: hòn đá ở buồng dưới thành kẻ đi. Mỗi lần đá đẩy cột chữ dưới ô ấy lên là chữ CHUỘT trở lại, nên đá và chuột phải thay phiên ba bận, mỗi bận đá dọn thêm một ô, tới khi đá đẩy được chữ MÈO vào chỗ trống trước LÀ THẮNG: con mèo ở buồng trên là đích. Giao lại cho chuột, chuột đi tới chỗ mèo.",
+    map: ["wwwwwwwww", "w.....m.w", "w..R....w", "w.....c.w", "wwwM=1www", "w.=G.r..w", "w.w..C..w", "wg...=6.w", "wwwwwwwww", "W=3......"],
+    fixed: [[4,4], [5,4], [5,7], [6,7], [0,9], [1,9], [2,9]],
+  },
 ];
 // the bought hint (owner): just the chain of rules to make, map by map
 const C2_CHAIN = [
@@ -752,6 +759,7 @@ const C2_CHAIN = [
   "Ghép CHUỘT CÓ CỔNG → dắt con chuột bên phải chìm xuống ao → phá CHUỘT CÓ CỔNG → đặt chữ CỔNG lên ô cổng mới → ghép CỔNG LÀ THẮNG (đẩy chữ xuống, bước lên cổng)",
   "Thả xuống giếng lần lượt ĐÁ, THẮNG, LÀ, CHỮ → ghép CHỮ LÀ THẮNG → theo đường hầm xuống đáy giếng, rút chữ ĐÁ ra cho cả câu rơi trúng đầu chuột",
   "Phá CHUỘT LÀ ĐI → ghép MÈO LÀ ĐI → phá MÈO LÀ ĐI → ghép CỔNG LÀ ĐI → phá CỔNG LÀ ĐI → ghép MÈO LÀ ĐI → phá MÈO LÀ ĐI → ghép CỔNG LÀ ĐI → phá CỔNG LÀ ĐI → ghép MÈO LÀ ĐI → phá MÈO LÀ ĐI → ghép CỔNG LÀ ĐI → ghép CHUỘT LÀ THẮNG → phá CỔNG LÀ ĐI → ghép MÈO LÀ ĐI → mèo tới chỗ chuột",
+  "Phá CHUỘT LÀ ĐI → ghép ĐÁ LÀ ĐI → phá ĐÁ LÀ ĐI → ghép CHUỘT LÀ ĐI → phá CHUỘT LÀ ĐI → ghép ĐÁ LÀ ĐI → phá ĐÁ LÀ ĐI → ghép CHUỘT LÀ ĐI → phá CHUỘT LÀ ĐI → ghép ĐÁ LÀ ĐI → ghép MÈO LÀ THẮNG → phá ĐÁ LÀ ĐI → ghép CHUỘT LÀ ĐI → chuột đi tới chỗ mèo",
 ];
 const C2_FIRST_HARD = C2LEVELS.findIndex(l => l.hard);
 const C2_FIRST_BH = C2LEVELS.findIndex(l => l.bh);   // Biến hoá: the Baba-style words (owner)
