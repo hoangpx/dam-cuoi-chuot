@@ -139,17 +139,17 @@ function renderP4() {
   const pw = PAPER.width; for (let px = Math.floor(cx / pw) * pw; px < cx + vw; px += pw) ctx.drawImage(PAPER, px, -oy - 20, pw, Math.max(V.vh + 40, PAPER.height));
   const sun = p4Sunset(), dayK = Math.max(0, Math.min(1, (P4.mins - P4_OPEN) / (19 * 60 - P4_OPEN)));
   // the sun, the sky's warmth at evening, clouds
-  g.save(); g.translate(cx * .85, 0);
+  g.save(); g.translate(cx * .25 + (P4_HOME - vw / 2) * .75, 0);             // the sun scrolls by at 3/4 of the street's speed; over the house at the start
   g.fillStyle = sun > .3 ? '#d4471c' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, P4_Y0 + oy - 170), 32, 0, 6.283); g.fill(); g.stroke();
   g.restore();
   { const skyH = P4_Y0 + oy; g.save(); g.translate(cx, -oy);
     if (sun > 0) { const gr = g.createLinearGradient(0, 0, 0, skyH); gr.addColorStop(0, `rgba(228,96,34,${.42 * sun})`); gr.addColorStop(1, `rgba(240,150,60,${.12 * sun})`); g.fillStyle = gr; g.fillRect(-10, -10, vw + 20, skyH + 10); }
     const Wd = vw + 360; for (let i = 0; i < 5; i++) { const r = mulberry(i * 31 + 5), base = r() * Wd, sp = 5 + r() * 9, type = i % 3, s = .7 + r() * .6;
-      c4Cloud(g, ((base + P4.t * sp - cx * .08) % Wd + Wd) % Wd - 180, 26 + r() * skyH * .45, s, type, sun > .3 ? '#f5d2a8' : '#f2ecde'); }
+      c4Cloud(g, ((base + P4.t * sp - cx * .7) % Wd + Wd) % Wd - 180, 26 + r() * skyH * .45, s, type, sun > .3 ? '#f5d2a8' : '#f2ecde'); }
     g.restore(); }
   // far landmarks, the street, the river
-  g.save(); g.translate(cx * .55, 0); g.globalAlpha = .5;
-  for (const [x, k, sc] of P4.scene.far) if (x + 150 > cx * .45 - 40 && x - 150 < cx * .45 + vw + 40) dp(g, p4TownPart(k), x, P4_Y0 - 70, 0, sc, sc);
+  g.save(); g.translate(cx * .3, 0); g.globalAlpha = .5;                   // the far rows at 70 % of the street's speed
+  for (const [x, k, sc] of P4.scene.far) if (x + 150 > cx * .7 - 40 && x - 150 < cx * .7 + vw + 40) dp(g, p4TownPart(k), x, P4_Y0 - 70, 0, sc, sc);
   g.globalAlpha = 1; g.restore();
   g.fillStyle = 'rgba(91,47,31,.2)'; g.fillRect(cx - 50, P4_Y0 - 4, vw + 100, P4_D + 10);
   g.fillStyle = 'rgba(91,47,31,.09)'; g.fillRect(cx - 50, P4_Y0 + P4_D + 6, vw + 100, V.vh);
