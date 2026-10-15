@@ -578,3 +578,20 @@ function c4TownFood(g, K, txt, x0, x1, R, C) {
   for (const dx of [-12, 12]) { g.fillStyle = '#efe8da'; g.beginPath(); g.ellipse(tx + dx, -33, 7, 3, 0, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(tx + dx - 2, -40); g.lineTo(tx + dx + 6, -34); g.stroke(); g.strokeStyle = ink; g.lineWidth = 1.2; }
   g.fillStyle = '#5b2f1f'; for (const dx of [-40, 40]) { g.fillRect(tx + dx - 7, -16, 14, 4); g.strokeRect(tx + dx - 7, -16, 14, 4); }
 }
+// a tap on a house of the town (owner: tapping the board or the seller in the door should both work, with room around the board):
+// the whole front from above the board down to the doorstep opens that shop's sheet: ours, a neighbour's, the rival's
+function c4TownHouseTap(x, y) {
+  if (!C4.town || !C4.scene) return false;
+  for (const n of C4.scene.near) {
+    const lab = n[4]; if (n[1] !== 'shop' || !lab || !/^[gvr]:/.test(lab)) continue;
+    const s = n[2], w = C4_TOWN_V[((n[3] | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length].w * s;
+    if (Math.abs(x - n[0]) > w + 6 || y < C4_Y0 - 200 * s || y > c4Y(.22)) continue;
+    if (lab.startsWith('r:')) { if (c4RivalTap(n[0], C4_Y0 - 60)) return true; continue; }
+    AU.tap();
+    if (lab.startsWith('g:')) { c4OpenUp(lab.slice(2)); return true; }
+    const v = C4.vendors.find(q => q.ware === lab.slice(2)); if (!v) return false;
+    if (c4VendorMine(v)) c4OpenUp(C4_VENDOR_G[v.ware]); else c4BuyOpen(v);
+    return true;
+  }
+  return false;
+}
