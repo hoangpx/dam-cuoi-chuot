@@ -715,7 +715,7 @@ function c4HoaTap(x, y) {
     const L = C4.hoaMine || (C4.hoaMine = []);
     L.push({ x, y: Math.min(y, c4View().vh - c4View().oy - 10), t0: S.t, c: C4.hoaHold.c, wish: C4.hoaHold.wish });
     if (L.length > 60) L.shift();
-    AU.plop();
+    // silent (owner: no sound when a lantern is set down)
     c4HoaHold(null); return true;
   }
   // a lantern under the finger: read its wish
