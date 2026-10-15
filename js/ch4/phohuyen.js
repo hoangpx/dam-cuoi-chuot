@@ -232,8 +232,10 @@ function c4TownRiver(g, cx, vw, V) {
     if (b.x < x0 - 140 || b.x > x1 + 140) continue;
     const y = yw + b.y + Math.sin(C4.t * 1.4 + b.x * .01) * 1.5, d = Math.sign(b.sp), ms = .55;
     // the folk first (from the waist up), then the hull over their legs
-    b.folk.forEach((M, k) => c4Mouse(g, M, b.x + d * (14 - k * 26), d, C4.t * 2 + k, false, null, null, ms, y + 22, b.x + k));
-    c4Mouse(g, b.man, b.x - d * 46, d, C4.t * 2, false, -.6 - Math.sin(C4.t * 1.2 + b.x) * .3, null, ms, y + 22, b.x + 9);
+    g.save(); g.beginPath(); g.rect(b.x - 120, y - 200, 240, 194); g.clip();                     // nothing below the gunwale shows (owner: legs stuck out under the boat)
+    b.folk.forEach((M, k) => c4Mouse(g, M, b.x + d * (14 - k * 26), d, C4.t * 2 + k, false, null, null, ms, y + 34, b.x + k));   // the passengers sit low in the boat
+    c4Mouse(g, b.man, b.x - d * 46, d, C4.t * 2, false, -.6 - Math.sin(C4.t * 1.2 + b.x) * .3, null, ms, y + 14, b.x + 9);
+    g.restore();
     g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(b.x - d * 40, y - 44); g.lineTo(b.x - d * 64 + Math.sin(C4.t * 1.2 + b.x) * 6, y + 30); g.stroke();   // the pole
     g.fillStyle = b.hull; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x - 70, y - 12); g.quadraticCurveTo(b.x, y + 14, b.x + 70, y - 12); g.lineTo(b.x + 60, y - 2); g.quadraticCurveTo(b.x, y + 6, b.x - 60, y - 2); g.closePath(); g.fill(); g.stroke();
     g.fillStyle = '#e8d8a8'; g.fillRect(b.x - 56, y - 9, 112, 3);
