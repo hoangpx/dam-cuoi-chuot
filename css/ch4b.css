@@ -29,3 +29,7 @@ body.p4holding #cv{cursor:none}
 /* naming the shop */
 #p4nameIn{width:100%;box-sizing:border-box;font:700 20px var(--display);text-transform:uppercase;text-align:center;padding:8px 10px;border:2.5px solid var(--ink);background:#fff8e6;margin:6px 0 10px}
 .p4sheet .p4name .btn{padding:3px 10px;font-size:13px;margin-left:6px}
+
+/* reading a shared flower lantern (hoadang-net.js) */
+#p4wish .wish{font:italic 600 19px var(--display);line-height:1.45;margin:10px 0}
+#p4wish .from{text-align:right;color:#7a4a22;font-size:14px;margin:0 0 8px}

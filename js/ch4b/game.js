@@ -96,6 +96,7 @@ function startP4() {
   $('#album').hidden = true; $('#end').hidden = true; $('#chapters').hidden = true; $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   if (!P4.scene) { P4.scene = p4TownScene(mulberry(7)); P4.camX = P4_HOME - p4View().vw * .5; }
   if (P4.day !== SAVE4B.day) p4NewDay();
+  p4HoaLoad();                                                              // everyone's lanterns (hoadang-net.js)
   $('#p4hud').hidden = false; p4Hud(); if (P4.hoaHold) p4HoaHold(P4.hoaHold); cv.focus();
   if (typeof trackEnter === 'function') trackEnter('chuong-4/pho-huyen');
 }
@@ -117,6 +118,7 @@ function p4EndDay() {
 }
 function updateP4(dt) {
   P4.t += dt;
+  if (P4.t - (P4.hoaLoadT ?? -1e9) > P4_HOA_RELOAD) p4HoaLoad();
   if (P4.paused) return;
   if (P4.phase === 'open') {
     P4.mins += dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);              // the evening lasts longer
@@ -215,7 +217,7 @@ function p4Key(e) {
 }
 
 // ---------- HUD and sheets ----------
-function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;
