@@ -324,11 +324,13 @@ function p4DrawLantern(g, ax, ay, s, col, len, ang) {
   g.restore();
 }
 function p4TownFront(g, hx, hy, s, v, label) {
-  const txt = p4TownSign(label);
-  if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const R = label !== 'home' ? p4ShopAt(hx) : null, fine = R ? R.sign : label === 'home' && SAVE4B.house && SAVE4B.sign;
+  const txt = R ? R.name : p4TownSign(label);
+  if (fine) p4FineBoard(g, hx, hy, s, txt);
+  else if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     let fs = 12; while (fs > 6 && g.measureText(txt).width > 84) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
   const lamp = p4IsLamp(txt) && label !== 'home';
-  if (txt && txt !== 'CHO THUÊ' && txt !== 'NHÀ BÁN') p4TownInterior(g, hx, hy, s, v, txt, label === 'home' ? 'betel' : lamp ? 'lamp' : null);   // the shop is open: its goods show inside (owner)
+  if (txt && txt !== 'CHO THUÊ' && txt !== 'NHÀ BÁN') p4TownInterior(g, hx, hy, s, v, R ? R.food : txt, label === 'home' ? 'betel' : lamp ? 'lamp' : null);   // the shop is open: its goods show inside (owner)
   if (lamp) P4.glowW = .45; p4TownLanterns(g, hx, hy, s, v, lamp); P4.glowW = 0;
   if (lamp) p4LanternShop(g, hx, hy, s, v);
 }
@@ -623,9 +625,10 @@ function p4TownFood(g, K, txt, x0, x1, R, C) {
 function p4TownHouseTap(x, y) {
   if (!P4.scene) return false;
   for (const n of P4.scene.near) {
-    if (n[1] !== 'shop' || n[4] !== 'home') continue;
+    if (n[1] !== 'shop') continue;
     const s = n[2], w = P4_TOWN_V[((n[3] | 0) % P4_TOWN_V.length + P4_TOWN_V.length) % P4_TOWN_V.length].w * s;
     if (Math.abs(x - n[0]) > w + 6 || y < P4_Y0 - 200 * s || y > p4Y(.22)) continue;
+    if (n[4] !== 'home') { if (p4ShopTap(n)) { AU.tap(); return true; } continue; }
     AU.tap(); p4HomeOpen(); return true;
   }
   return false;
