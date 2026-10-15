@@ -243,6 +243,7 @@ function c4Spawn(atX, guest = null) {
   // a resident of the village (dan.js), or now and then a child (nameless, never buys); or an invited guest
   const kid = !guest && R() < .13, P = guest ? guest.p : kid ? null : c4PickResident(); if (!kid && !P) return;
   const kind = kid ? 'mouse' : P.kind, sort = kid ? 11 + ((R() * 3) | 0) : P.sort, role = kid ? 'child' : P.role;
+  if (C4.town && kind !== 'mouse') return;                                  // phố huyện: only mice in the street (owner)
   const fromRight = atX === undefined ? R() < .6 : R() < .5;
   let x = atX !== undefined ? atX : fromRight ? C4.camX + c4View().vw + 120 + R() * 200 : C4_GATE - 40;
   const sp = { mouse: role === 'old' ? 34 + R() * 10 : role === 'child' ? 80 + R() * 30 : 55 + R() * 40, duck: 40, rooster: 65, dog: 105, toad: 50 }[kind];
@@ -469,6 +470,7 @@ function c4Event(kind) {
   const helped = own.filter(g => c4HandsOn(g).length);
   if (kind === 'meo' && (!C4.cat || C4.cat.st !== 'ask')) { AU.meow(); C4.cat = { t: 0, st: 'roof' }; return; }   // first it shows itself on the roof
   if (kind === 'meo') {
+    if (C4.town) return;                                                   // no cat in the town (owner)
     const catFee = 20 * Math.max(1, own.length);                              // a fee for every stall (owner)
     Object.assign(E, { title: 'Mèo đến!', text: 'Con mèo khoang to sụ nhảy phốc xuống trước gánh, vểnh râu đòi lễ.', opts: [
       [`Dâng con cá · ${c4Money(catFee)}`, () => { sp(catFee); C4.cat.st = 'fed'; C4.cat.t = 0; toast('Mèo ngoạm cá, nhảy tót lên mái nhà đi mất.', 3); }, SAVE4.money >= catFee],
@@ -1041,10 +1043,10 @@ function renderC4() {
   g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.lineCap = 'round'; if (!C4.town)
   for (let i = 0, rr = mulberry(41); i < 110; i++) { const tx = -300 + rr() * (C4_W + 300), ty = C4_Y0 + C4_D + 14 + rr() * Math.max(20, V.vh - oy - C4_Y0 - C4_D - 30); if (!vis(tx, 20)) continue; g.beginPath(); for (const d of [-6, 0, 6]) { g.moveTo(tx + d, ty); g.lineTo(tx + d * 1.6, ty - 12 - Math.abs(d)); } g.stroke(); }
   for (const [x, k, s, hv] of (C4.scene ? C4.scene.near : [[960, 'tree', .9], [1360, 'house', .72, 1], [1760, 'house', .7, 3], [2050, 'bamboo', .8], [2260, 'bamboo', .85], [600, 'house', .62, 5], [210, 'bamboo', .7]]))
-    if (vis(x, 260)) dp(g, k === 'shop' ? c4TownArt(hv) : (k === 'flower' || k === 'pot' || k === 'bridge') ? c4TownNear(k) : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s);
-  if (vis(C4_GATE, 140)) dp(g, C4.town ? c4TownGate() : A.gate, C4_GATE, C4_Y0 + 6, 0, .88, .88);
+    if (vis(x, 260)) { dp(g, k === 'shop' ? c4TownArt(hv) : (k === 'flower' || k === 'pot' || k === 'bridge') ? c4TownNear(k) : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s); if (k === 'shop') c4TownLanterns(g, x, C4_Y0, s, hv); }
+  if (!C4.town && vis(C4_GATE, 140)) dp(g, A.gate, C4_GATE, C4_Y0 + 6, 0, .88, .88);
   const items = [], bubbles = [];
-  const head = (x, z, tall, e, pri = 1, chat = null) => { if (e && e.say) bubbles.push({ e, x, y: c4Y(z) - tall * c4S(z) - 8, s: c4S(z), pri, chat }); };
+  const head = (x, z, tall, e, pri = 1, chat = null) => { if (e && e.say) bubbles.push({ e, x, y: c4Y(z) - c4TownLift(x) - tall * c4S(z) - 8, s: c4S(z), pri, chat }); };
   for (const v of C4.vendors) if (vis(v.x, 140)) {
     const vz = v.z || .05, wz = v.z ? v.z + .01 : .1, mine = c4VendorMine(v), vg = C4_VENDOR_G[v.ware];   // a stall we bought: our sellers, faded when sold out
     if (!mine) items.push({ z: vz, f: () => c4Mouse(g, v.M, v.x - 40, 1, C4.t * 2 + v.x, false, v.say ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null, null, c4S(vz) * .95, c4Y(vz), v.x) });
@@ -1082,7 +1084,7 @@ function renderC4() {
     if (vis(wx2, 80)) items.push({ z: C4_WIFE_Z, f: () => c4Mouse(g, MICE.wife, wx2, walk ? W.face : 1, walk ? W.ph : C4.t * 2, walk, walk ? null : -.2 - serving * 1.1, serving > .3 && W.at === 'trau' ? MP.ladong : null, c4S(C4_WIFE_Z), c4Y(C4_WIFE_Z), 2.1) });
     head(wx2, C4_WIFE_Z, 168, W, 2); }
   { const P = C4.porter, walk = P.st === 'out' || P.st === 'back' || P.st === 'walk', load = P.st === 'back', arm = load ? -1.35 : P.st === 'sell' ? -.2 - c4ServingK(P.at, P) * 1.1 : null;
-    if (P.st !== 'away' && vis(P.x, 80)) items.push({ z: P.z, f: () => c4Mouse(g, MICE.groom, P.x, P.st === 'out' ? -1 : P.st === 'walk' ? P.face : 1, walk ? P.ph : C4.t * 2, walk, arm, load ? WP.basket : null, c4S(P.z), c4Y(P.z), 1.3) });
+    if (P.st !== 'away' && vis(P.x, 80)) items.push({ z: P.z, f: () => c4Mouse(g, MICE.groom, P.x, P.st === 'out' ? -1 : P.st === 'walk' ? P.face : 1, walk ? P.ph : C4.t * 2, walk, arm, load ? WP.basket : null, c4S(P.z), c4Y(P.z) - c4TownLift(P.x), 1.3) });
     head(P.x, P.z, 168, P, 2); }
   if (C4.cat) {
     // a big cat, bigger than any mouse: on the roof behind the stall, a leap down to the stall front; back up and off
@@ -1104,7 +1106,7 @@ function renderC4() {
       items.push({ z: z + i * .001, f: () => c4Mouse(g, M, x, 1, pd.ph + i, true, arm, it, s, c4Y(z), i) });
     });
   }
-  for (const w of C4.walkers) if (vis(w.x, 80) || (w.buf && vis(w.x - w.face * 205 * c4S(w.z), 160))) { items.push({ z: w.z, f: () => c4Critter(g, w, w.x, c4Y(w.z), c4S(w.z) * C4_CROWD) }); head(w.x, w.z, C4_TALL[w.kind] * C4_CROWD * (w.kind === 'mouse' ? .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1) : 1), w, w.st === 'chat' || w.st === 'queue' ? 1.5 : .5, w.chat); }
+  for (const w of C4.walkers) if (vis(w.x, 80) || (w.buf && vis(w.x - w.face * 205 * c4S(w.z), 160))) { items.push({ z: w.z, f: () => c4Critter(g, w, w.x, c4Y(w.z) - c4TownLift(w.x), c4S(w.z) * C4_CROWD) }); head(w.x, w.z, C4_TALL[w.kind] * C4_CROWD * (w.kind === 'mouse' ? .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1) : 1), w, w.st === 'chat' || w.st === 'queue' ? 1.5 : .5, w.chat); }
   c4StreetItems(items, g, vis); c4FxItems(items, g, vis); c4FlyItems(items, g, vis); c4VisitItems(items, g, vis);
   if (C4.town) c4TownBridgeItems(items, g, vis);                       // the covered bridge (phohuyen.js)
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
