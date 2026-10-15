@@ -112,13 +112,13 @@ function c4TownScene(rs) {
   const near = [], far = []; C4.townRivalX = 0;
   // the houses that must stand at a place: ours (the betel shop, the rentable plots) and the neighbours'
   const anchors = [[C4_STALL + 10, 'g:trau'], ...C4_SHOPS.map(g => [C4_GOODS[g].x + 20, 'g:' + g]), ...C4_VENDORS.map(v => [v.x + 50, 'v:' + v.ware])].sort((p, q) => p[0] - q[0]);
-  const names = ['VẢI LỤA', 'ĐỒ GỐM', 'QUÁN NƯỚC', 'TẠP HOÁ', 'ĐÈN LỒNG', 'THỢ BẠC', 'GẠO MUỐI', 'THUỐC BẮC', 'SÁCH VỞ', 'MAY ÁO'];
+  const names = ['VẢI LỤA', 'CAO LẦU', 'ĐỒ GỐM', 'MÌ QUẢNG', 'QUÁN NƯỚC', 'CƠM GÀ', 'TẠP HOÁ', 'HOÀNH THÁNH', 'ĐÈN LỒNG', 'BÁNH VẠC', 'THỢ BẠC', 'CHÈ', 'GẠO MUỐI', 'THUỐC BẮC', 'SÁCH VỞ', 'MAY ÁO'];
   let hq = false;                                                           // one assembly hall gate in the street (hội quán)
   const put = (cx, label) => { const v = (rs() * C4_TOWN_V.length) | 0; near.push([cx, 'shop', .72, v, label]); return C4_TOWN_V[v].w * .72; };
   let x = 600, i = 0;
   for (const [ax, label] of [...anchors, [C4_W + 400, null]]) {
     if (!hq && ax - 70 - x > 330) { near.push([x + 160, 'hoiquan', .72]); x += 320; hq = true; }
-    while (x + 140 < ax - 70) { const nm = i === 0 ? 'ĐÈN LỒNG' : names[(rs() * names.length) | 0], rv = !C4.townRivalX && x + 70 > C4_STALL + 380; if (rv) C4.townRivalX = x + 70; const w = put(x + 70, rv ? 'r:' + nm : nm); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
+    while (x + 140 < ax - 70) { const nm = i === 0 ? 'ĐÈN LỒNG' : i === 1 ? 'CAO LẦU' : i === 2 ? 'BÁNH VẠC' : names[(rs() * names.length) | 0], rv = !C4.townRivalX && x + 70 > C4_STALL + 380; if (rv) C4.townRivalX = x + 70; const w = put(x + 70, rv ? 'r:' + nm : nm); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
     if (!label) break;
     const w = put(ax, label); x = ax + w;
   }
@@ -270,8 +270,8 @@ const c4TownGate = () => C4_TOWN_GATE || (C4_TOWN_GATE = part([-160, -360, 160, 
   for (const x of [-112, 112]) { a.fk('catY2', rect(x - 16, -280, 32, 280), 2.2); a.fill('tan', rect(x - 14, -30, 28, 26)); a.fk('ash', rect(x - 20, -292, 40, 14), 1.8); }
   c4TileRoof(a, -128, 128, -322, -280, 24, 'dark');
   c4TileRoof(a, -70, 70, -350, -322, 14, 'dark');
-  a.fk('red', rect(-86, -262, 172, 40), 2.2);
-  a.text('HẢI PHỐ', 0, -242, 26, 'yellow', '"Playfair Display", serif', 'color', '900');
+  a.fk('red', rect(-86, -270, 172, 50), 2.2);                              // tall enough for the accents (owner: the acute stuck out)
+  a.text('HẢI PHỐ', 0, -242, 23, 'yellow', '"Playfair Display", serif', 'color', '900');
 }));
 
 // the lanterns under a house's eave, drawn live so they sway a little, hung only either side of the sign board (owner: they hid it)
@@ -492,10 +492,11 @@ function c4TownInterior(g, hx, hy, s, v, txt) {
   g.fillStyle = '#4a2f1f'; g.fillRect(x0, y1 - 22, W, 22);                   // the floor at the back
   const shelf = (y) => { g.fillStyle = '#7a4a22'; g.fillRect(x0 + 4, y, W - 8, 5); g.lineWidth = 1.2; g.strokeRect(x0 + 4, y, W - 8, 5); };
   const C = ['#a3332a', '#2f5f8f', '#2f6a4c', '#f2c640', '#c0567a', '#e8d8a8', '#d97b2a', '#5a2f5f'];
-  const K = /SÁCH/.test(txt) ? 'book' : /MAY ÁO/.test(txt) ? 'tailor' : /VẢI|LỤA/.test(txt) ? 'cloth' : /GỐM/.test(txt) ? 'pot' : /THUỐC/.test(txt) ? 'herb' : /ĐÈN LỒNG/.test(txt) ? 'lamp'
+  const K = /CAO LẦU|MÌ QUẢNG|HOÀNH THÁNH/.test(txt) ? 'noodle' : /CƠM GÀ/.test(txt) ? 'chicken' : /BÁNH VẠC/.test(txt) ? 'dumpling' : txt === 'CHÈ' ? 'sweet' : /SÁCH/.test(txt) ? 'book' : /MAY ÁO/.test(txt) ? 'tailor' : /VẢI|LỤA/.test(txt) ? 'cloth' : /GỐM/.test(txt) ? 'pot' : /THUỐC/.test(txt) ? 'herb' : /ĐÈN LỒNG/.test(txt) ? 'lamp'
     : /BẠC/.test(txt) ? 'silver' : /QUÁN NƯỚC|CHÈ/.test(txt) ? 'tea' : /GẠO|MUỐI/.test(txt) ? 'rice' : /TRẦU/.test(txt) ? 'betel' : /RƯỢU/.test(txt) ? 'wine' : 'shop';
   g.lineWidth = 1.2;
-  if (K === 'book') {                                                       // shelves of books, spines in many colours, a scroll or two
+  if (K === 'noodle' || K === 'chicken' || K === 'dumpling' || K === 'sweet') c4TownFood(g, K, txt, x0, x1, R, C);
+  else if (K === 'book') {                                                       // shelves of books, spines in many colours, a scroll or two
     for (const y of [-100, -72, -44]) { shelf(y); for (let x = x0 + 8; x < x1 - 8;) { const bw = 4 + R() * 4, bh = 14 + R() * 8; g.fillStyle = C[(R() * C.length) | 0]; g.fillRect(x, y - bh, bw, bh); g.strokeRect(x, y - bh, bw, bh); x += bw + .5; } }
     g.fillStyle = '#e8d8a8'; g.fillRect(x0 + 10, -32, 30, 8); g.strokeRect(x0 + 10, -32, 30, 8);
   } else if (K === 'cloth' || K === 'tailor') {                             // bolts of cloth on shelves; at the tailor's, áo dài hanging on a rail
@@ -542,4 +543,38 @@ function c4TownInterior(g, hx, hy, s, v, txt) {
   for (const x of [x0, x1 - 14]) { g.fillRect(x, y0 - 2, 14, y1 - y0 + 2); g.strokeRect(x, y0 - 2, 14, y1 - y0 + 2); g.beginPath(); g.moveTo(x + 7, y0); g.lineTo(x + 7, y1); g.stroke(); }
   g.lineWidth = 2; g.strokeRect(x0, y0, W, y1 - y0);
   g.restore();
+}
+
+// inside an eating house: a stove with its pot steaming, the dish of the house, a low table and stools for those who eat in
+function c4TownFood(g, K, txt, x0, x1, R, C) {
+  const W = x1 - x0, ink = INK; g.lineWidth = 1.2; g.strokeStyle = ink;
+  // the stove at the back left, a pot on it, steam rising
+  const sx = x0 + 22; g.fillStyle = '#7a3a24'; g.fillRect(sx - 16, -40, 32, 34); g.strokeRect(sx - 16, -40, 32, 34);
+  g.fillStyle = 'rgba(230,110,40,.85)'; g.beginPath(); g.ellipse(sx, -14, 8, 5, 0, 0, 6.283); g.fill();
+  if (K === 'dumpling') { for (let k = 0; k < 3; k++) { g.fillStyle = '#c9a45a'; g.fillRect(sx - 15, -52 - k * 11, 30, 10); g.strokeRect(sx - 15, -52 - k * 11, 30, 10); g.beginPath(); g.moveTo(sx - 15, -47 - k * 11); g.lineTo(sx + 15, -47 - k * 11); g.stroke(); } }   // bamboo steamers stacked
+  else { g.fillStyle = '#3a3a3a'; g.beginPath(); g.moveTo(sx - 16, -40); g.quadraticCurveTo(sx - 18, -60, sx, -62); g.quadraticCurveTo(sx + 18, -60, sx + 16, -40); g.closePath(); g.fill(); g.stroke(); }
+  for (let k = 0; k < 3; k++) { const ph = (C4.t * .6 + k / 3) % 1, a = 1 - ph; g.fillStyle = 'rgba(242,236,222,' + (.55 * a).toFixed(2) + ')'; g.beginPath(); g.arc(sx + Math.sin(C4.t * 2 + k * 2) * 5, -70 - ph * 40, 5 + ph * 7, 0, 6.283); g.fill(); }
+  // the dish of the house, on a shelf or hanging at the back
+  if (K === 'noodle') {                                                     // noodles drying in bundles, a stack of bowls, herbs in a basket
+    g.lineWidth = 2; g.beginPath(); g.moveTo(x0 + 44, -112); g.lineTo(x1 - 8, -112); g.stroke(); g.lineWidth = 1.2;
+    for (let x = x0 + 52; x < x1 - 10; x += 14) { g.strokeStyle = txt === 'MÌ QUẢNG' ? '#e2b43c' : txt === 'CAO LẦU' ? '#c98a3a' : '#efe8da'; g.lineWidth = 2; g.beginPath(); for (let k = -3; k <= 3; k += 2) { g.moveTo(x + k, -110); g.quadraticCurveTo(x + k * 1.4, -96, x + k, -84); } g.stroke(); }
+    g.strokeStyle = ink; g.lineWidth = 1.2;
+    if (txt === 'HOÀNH THÁNH') for (let x = x0 + 54; x < x1 - 12; x += 16) { g.fillStyle = '#efe8da'; g.beginPath(); g.moveTo(x - 6, -66); g.lineTo(x, -76); g.lineTo(x + 6, -66); g.closePath(); g.fill(); g.stroke(); }
+  } else if (K === 'chicken') {                                             // boiled chickens hanging on hooks, a pot of yellow rice
+    g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0 + 44, -112); g.lineTo(x1 - 8, -112); g.stroke(); g.lineWidth = 1.2;
+    for (let x = x0 + 56; x < x1 - 14; x += 26) { g.beginPath(); g.moveTo(x, -112); g.lineTo(x, -104); g.stroke(); g.fillStyle = '#e8b04a'; g.beginPath(); g.ellipse(x, -90, 9, 13, 0, 0, 6.283); g.fill(); g.stroke(); g.beginPath(); g.moveTo(x - 4, -77); g.lineTo(x - 6, -70); g.moveTo(x + 4, -77); g.lineTo(x + 6, -70); g.stroke(); }
+    g.fillStyle = '#f2c640'; g.beginPath(); g.ellipse(x1 - 30, -50, 14, 6, 0, Math.PI, 0); g.fill(); g.stroke();
+  } else if (K === 'dumpling') {                                            // plates of little white "white rose" dumplings
+    for (let x = x0 + 56; x < x1 - 14; x += 28) { g.fillStyle = '#efe8da'; g.beginPath(); g.ellipse(x, -88, 12, 4, 0, 0, 6.283); g.fill(); g.stroke(); for (const dx of [-5, 0, 5]) { g.fillStyle = '#f7f2e8'; g.beginPath(); g.arc(x + dx, -92, 3.6, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#c0567a'; g.beginPath(); g.arc(x + dx, -93, 1, 0, 6.283); g.fill(); } }
+    g.fillStyle = '#7a4a22'; g.fillRect(x0 + 44, -82, W - 52, 4);
+  } else if (K === 'sweet') {                                               // pots of sweet soup and glasses in many colours
+    g.fillStyle = '#7a4a22'; g.fillRect(x0 + 44, -84, W - 52, 5); g.strokeRect(x0 + 44, -84, W - 52, 5);
+    for (let x = x0 + 54, i = 0; x < x1 - 10; x += 14, i++) { g.fillStyle = ['#2f6a4c', '#f2c640', '#c0567a', '#efe8da', '#7a3a24'][i % 5]; g.fillRect(x - 4, -98, 8, 14); g.strokeRect(x - 4, -98, 8, 14); }
+  }
+  // stacked bowls on the counter by the stove
+  g.fillStyle = '#efe8da'; for (let k = 0; k < 4; k++) { g.beginPath(); g.ellipse(sx + 34, -10 - k * 5, 9, 3, 0, 0, Math.PI); g.lineTo(sx + 25, -10 - k * 5); g.fill(); g.stroke(); }
+  // a low table with bowls and chopsticks, two stools
+  const tx = (x0 + x1) / 2 + 14; g.fillStyle = '#7a4a22'; g.fillRect(tx - 26, -30, 52, 6); g.strokeRect(tx - 26, -30, 52, 6); g.fillRect(tx - 22, -24, 4, 18); g.fillRect(tx + 18, -24, 4, 18);
+  for (const dx of [-12, 12]) { g.fillStyle = '#efe8da'; g.beginPath(); g.ellipse(tx + dx, -33, 7, 3, 0, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(tx + dx - 2, -40); g.lineTo(tx + dx + 6, -34); g.stroke(); g.strokeStyle = ink; g.lineWidth = 1.2; }
+  g.fillStyle = '#5b2f1f'; for (const dx of [-40, 40]) { g.fillRect(tx + dx - 7, -16, 14, 4); g.strokeRect(tx + dx - 7, -16, 14, 4); }
 }
