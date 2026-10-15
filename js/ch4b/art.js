@@ -470,21 +470,29 @@ function p4TownLook(look, seed) {
   return L;
 }
 // a long silk tunic (áo dài / áo the) over the body: rich colour, a gold edge at the neck and hem, a little woven pattern
-function p4TownDress(g, w, moving) {
+// the tunic is cut on the mouse's own body (buildMouse's outline, a little larger, so none of the robe under it shows) with the long
+// flaps of an áo dài falling to below the knee; p4Mouse draws it after the body and legs, before the head (hy = the body's anchor)
+const P4_BODY = [[-22, -2], [-27, -24], [-19, -48], [-5, -62], [10, -61], [23, -45], [27, -20], [19, -2], [0, 5]];
+function p4TownDress(g, w, moving, hy) {
   const L = w.look || {}; if (!L.silk) return;
-  const b = moving ? -Math.abs(Math.sin(w.ph)) * 3 : 0, sw = moving ? Math.sin(w.ph) * 4 : 0, woman = !!L.skirt;
-  g.save(); g.lineJoin = 'round';
-  g.fillStyle = L.silk; g.strokeStyle = INK; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(-16, -104 + b); g.lineTo(16, -104 + b); g.lineTo(24, -62 + b); g.lineTo(26 + sw, -22 + b); g.lineTo(-26 + sw, -22 + b); g.lineTo(-24, -62 + b); g.closePath(); g.fill(); g.stroke();
-  if (woman) { g.beginPath(); g.moveTo(-2, -60 + b); g.lineTo(0, -22 + b); g.stroke(); }                 // the áo dài's two flaps
-  g.strokeStyle = '#e2b43c'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(-10, -104 + b); g.quadraticCurveTo(0, -94 + b, 10, -104 + b); g.moveTo(-25 + sw, -26 + b); g.lineTo(25 + sw, -26 + b); g.stroke();
+  const sw = moving ? Math.sin(w.ph) * 4 : 0, woman = !!L.skirt, hem = -18;
+  const body = smooth(P4_BODY.map(([x, y]) => [x * 1.08, (y + 28) * 1.06 - 28 + hy]));
+  const skirt = [[-28, hy - 26], [28, hy - 26], [29 + sw, hem], [-29 + sw, hem]];
+  g.save(); g.lineJoin = 'round'; g.strokeStyle = INK; g.fillStyle = L.silk;
+  g.lineWidth = 2; g.beginPath(); skirt.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); g.stroke();
+  g.lineWidth = 2.4; g.fill(body); g.stroke(body);
+  g.beginPath(); g.moveTo(-26.5, hy - 12); g.lineTo(26.5, hy - 12); g.lineTo(27.5 + sw, hem - 1.2); g.lineTo(-27.5 + sw, hem - 1.2); g.closePath(); g.fill();   // the skirt runs on over the body's hem line
+  if (woman) { g.lineWidth = 1.6; g.beginPath(); g.moveTo(-1, hy - 8); g.lineTo(sw * .5, hem); g.stroke(); }   // the áo dài's two flaps
+  g.strokeStyle = '#e2b43c'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(-6, hy - 60); g.quadraticCurveTo(4, hy - 52, 15, hy - 58); g.moveTo(-27 + sw, hem - 4); g.lineTo(27 + sw, hem - 4); g.stroke();   // gold at the collar and the hem
   g.fillStyle = 'rgba(226,180,60,.55)';
-  if (L.pat === 0) for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(-12 + (i % 3) * 12, -80 + ((i / 3) | 0) * 22 + b, 2.6, 0, 6.283); g.fill(); }
-  else if (L.pat === 1) { g.strokeStyle = 'rgba(226,180,60,.6)'; g.lineWidth = 1.2; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(0, -78 + i * 16 + b, 6, 0, 6.283); g.stroke(); } }
+  if (L.pat === 0) for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(-12 + (i % 3) * 12, hy - 36 + ((i / 3) | 0) * 20, 2.6, 0, 6.283); g.fill(); }
+  else if (L.pat === 1) { g.strokeStyle = 'rgba(226,180,60,.6)'; g.lineWidth = 1.2; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(2, hy - 40 + i * 15, 6, 0, 6.283); g.stroke(); } }
   g.restore();
-  // the head: a black turban (khăn xếp) for the men, a gold pin in the hair for the women; none under a quai thao hat
-  if (L.hat === 'quai') return;
-  if (!woman) { g.fillStyle = '#1f1a17'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.ellipse(4, -142, 20, 7, -.08, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1; g.beginPath(); g.ellipse(4, -142, 14, 3.5, -.08, 0, 6.283); g.stroke(); }
+}
+// over the head: a black turban (khăn xếp) for the men, a gold pin in the hair for the women; none under a quai thao hat
+function p4TownHead(g, w) {
+  const L = w.look || {}; if (!L.silk || L.hat === 'quai') return;
+  if (!L.skirt) { g.fillStyle = '#1f1a17'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.ellipse(4, -142, 20, 7, -.08, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1; g.beginPath(); g.ellipse(4, -142, 14, 3.5, -.08, 0, 6.283); g.stroke(); }
   else { g.fillStyle = '#e2b43c'; g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.arc(-8, -146, 3.4, 0, 6.283); g.fill(); g.stroke(); }
 }
 // the things the town folk carry, held at the hand (about (44, -100) when raised)

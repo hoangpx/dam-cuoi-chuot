@@ -6,7 +6,7 @@
 // ---------- the folk: part 2's own mouse drawing (after part 1's, with the town's dress) ----------
 const P4_TOOL_ARM = { o: -1.2, quat: -1.5, long: -.5, sach: .35, goi: .15 };
 const P4_TALL = 168;
-function p4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y = GROUND, seed = 0) {
+function p4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y = GROUND, seed = 0, dress = null) {
   const sw = moving ? Math.sin(ph) : 0, bob = moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0;
   g.save(); g.translate(x, y); g.scale(face * s, s);
   const hy = -45 + bob, armN = arm === null ? sw * .4 : arm;
@@ -15,6 +15,7 @@ function p4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y =
   dp(g, M.arm, 2, hy - 50, -sw * .4);
   dp(g, M.body, 0, hy, .04);
   dp(g, M.leg, -2, hy, -sw * .55);
+  if (dress) dress(g, hy);                                                  // the town's tunic, between the body and the head
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04);
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (carry) dp(g, carry, hx + 4, hyy + 6, 0, .9, .9);
@@ -26,9 +27,9 @@ function p4Folk(g, w, x, y, s) {
   const busy = L.tool && L.tool !== 'o' ? L.tool : (w.umb && !p4OnBridge(w.x) ? 'o' : null);
   const arm = busy ? P4_TOOL_ARM[busy] : (w.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null);
   g.save(); g.translate(x, y); if (sort.role === 'old') g.rotate(f * .1);
-  p4Mouse(g, w.M, 0, f, w.ph, moving, sort.role === 'old' && !busy ? -.15 : arm, null, k, 0, w.seed);
+  p4Mouse(g, w.M, 0, f, w.ph, moving, sort.role === 'old' && !busy ? -.15 : arm, null, k, 0, w.seed, sort.role !== 'child' ? (g2, hy) => p4TownDress(g2, w, moving, hy) : null);
   g.save(); g.scale(f * k, k);
-  if (sort.role !== 'child') p4TownDress(g, w, moving);
+  if (sort.role !== 'child') p4TownHead(g, w);
   if (busy && busy !== 'o') p4TownThing(g, w, busy);
   if (L.hat === 'quai') {                                                   // nón quai thao
     g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-26, -140); g.lineTo(-30, -104); g.moveTo(40, -140); g.lineTo(44, -106); g.stroke();
