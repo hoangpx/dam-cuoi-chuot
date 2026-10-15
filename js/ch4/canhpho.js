@@ -20,7 +20,7 @@ function c4DayLook() {
   const far = [], near = [];
   for (let x = -120; x < 2700; x += 220 + rs() * 160) { const k = kinds[(rs() * kinds.length) | 0]; far.push([x, k === 'hay' ? 'house' : k, .4 + rs() * .08, (rs() * 6) | 0]); }
   for (let x = 160; x < C4_W + 60; x += 240 + rs() * 200) { if (Math.abs(x - C4_STALL) < 150) continue; near.push([x, kinds[(rs() * kinds.length) | 0], .6 + rs() * .35, (rs() * 6) | 0]); }
-  C4.scene = { far, near };
+  C4.scene = C4.town ? c4TownScene(rs) : { far, near };                 // phố huyện (phohuyen.js)
   // the children's games on the grass in front, two of them, somewhere along the lane
   const games = ['dacau', 'daynhay', 'keoco', 'oanquan'], gs = [];
   for (let i = 0; i < 2; i++) gs.push({ k: games.splice((r() * games.length) | 0, 1)[0], x: 300 + i * 900 + r() * 600, ph: r() * 6 });
