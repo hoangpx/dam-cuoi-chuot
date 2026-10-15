@@ -108,7 +108,7 @@ function p4NewDay() {
   for (const b of P4.townBoats || []) if (b.order) { b.order = null; b.stop = false; b.say = null; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; } }   // last night's callers are gone
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));
 }
-function p4Hide() { $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
+function p4Hide() { if (P4T.on) { P4T.on = false; $('#p4temHud').hidden = true; } $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
 function p4EndDay() {
   P4.phase = 'night';
   const wilt = SAVE4B.stock; SAVE4B.stock = 0; SAVE4B.weekTake = (SAVE4B.weekTake || 0) + P4.today.take; p4Persist();   // the week's takings, for the street master's tax                // betel does not keep overnight
@@ -120,6 +120,7 @@ function p4EndDay() {
 }
 function updateP4(dt) {
   P4.t += dt;
+  if (P4T.on) { if (!P4.sheet) p4TemUpdate(dt); return; }                 // têm trầu by hand: the street waits (temtrau.js)
   if (P4.t - (P4.hoaLoadT ?? -1e9) > P4_HOA_RELOAD) p4HoaLoad();
   if (P4.paused) return;
   if (P4.phase === 'open') {
@@ -135,6 +136,7 @@ function updateP4(dt) {
 
 // ---------- drawing ----------
 function renderP4() {
+  if (P4T.on || P4.sheet === 'p4temEnd') { if (P4T.on || P4.drawnSheet !== P4.sheet) { P4.drawnSheet = P4.sheet || null; p4TemRender(); } return; }
   if (P4.sheet && P4.drawnSheet === P4.sheet) return;
   P4.drawnSheet = P4.sheet || null; P4.glows = [];
   const V = p4View(), Sc = V.s * DPR, vw = V.vw, cx = P4.camX, oy = V.oy, g = ctx, vis = (x, w) => x + w > cx - 40 && x - w < cx + vw + 40;
@@ -206,21 +208,24 @@ const p4Sunset = () => Math.max(0, Math.min(1, (P4.mins - 15 * 60) / 210)) * (1 
 // ---------- input ----------
 function p4World(e) { const r = cv.getBoundingClientRect(), V = p4View(); return [(e.clientX - r.left) / V.s + P4.camX, (e.clientY - r.top) / V.s - V.oy]; }
 function p4Down(e) { if (S.mode !== 'c4bplay') return; P4.drag = { x0: e.clientX, cam0: P4.camX, moved: false }; capturePointer(e); }
-function p4Move(e) { const d = P4.drag; if (!d) return; const dx = e.clientX - d.x0; if (Math.abs(dx) > 8) d.moved = true; if (d.moved) P4.camX = d.cam0 - dx / p4View().s; }
+function p4Move(e) { const d = P4.drag; if (!d || P4T.on) return; const dx = e.clientX - d.x0; if (Math.abs(dx) > 8) d.moved = true; if (d.moved) P4.camX = d.cam0 - dx / p4View().s; }
 function p4Up(e) {
-  const d = P4.drag; P4.drag = null; if (!d || d.moved || S.mode !== 'c4bplay' || P4.sheet) return;
+  const d = P4.drag; P4.drag = null; if (!d || S.mode !== 'c4bplay' || P4.sheet) return;
+  if (P4T.on) { const r = cv.getBoundingClientRect(); p4TemTap(e.clientX - r.left, e.clientY - r.top); return; }
+  if (d.moved) return;
   const [x, y] = p4World(e);
   if (p4HoaTap(x, y)) return;
   if (p4TownHouseTap(x, y)) return;
 }
 cv.addEventListener('wheel', e => { if (S.mode !== 'c4bplay' || P4.sheet) return; e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; P4.camX += d * 1.5 * (e.deltaMode === 1 ? 30 : 1) / p4View().s; }, { passive: false });
 function p4Key(e) {
+  if (e.code === 'Escape' && P4T.on) { p4TemStop(); return; }
   if (e.code === 'Escape') { if (P4.sheet && P4.sheet !== 'p4buy' && P4.sheet !== 'p4day' && P4.sheet !== 'p4boss') p4Sheets(null); else showChapters(); return; }
   if (e.code === 'ArrowLeft') P4.camX -= 60; if (e.code === 'ArrowRight') P4.camX += 60;
 }
 
 // ---------- HUD and sheets ----------
-function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;
@@ -239,7 +244,7 @@ function p4BuySheet() {
 function p4HomeOpen() {
   if (!SAVE4B.house) { p4BuySheet(); return; }
   const G = SAVE4B, cost = 3;
-  $('#p4homeB').innerHTML = `<p class="p4name">Hiệu <b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b> <button class="btn alt" data-rename="1">Đổi tên</button></p><p>Trầu trong nhà: <b>${G.stock}</b> miếng · giá bán <b>${G.price}</b> đồng một miếng</p><p>Nhập trầu: ${cost} đồng một miếng. Trầu không để được qua đêm.</p>`
+  $('#p4homeB').innerHTML = `<div class="row"><button class="btn tem" data-tem="1">Têm trầu</button></div><p class="p4name">Hiệu <b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b> <button class="btn alt" data-rename="1">Đổi tên</button></p><p>Trầu trong nhà: <b>${G.stock}</b> miếng · giá bán <b>${G.price}</b> đồng một miếng</p><p>Nhập trầu: ${cost} đồng một miếng. Trầu không để được qua đêm.</p>`
     + `<div class="row"><button class="btn" data-n="20">Nhập 20</button><button class="btn" data-n="50">Nhập 50</button></div>`
     + `<div class="row"><button class="btn alt" data-p="-1">Giảm giá</button><button class="btn alt" data-p="1">Tăng giá</button></div>`
     + (SAVE4B.sign ? '' : `<div class="row"><button class="btn" data-homesign="1"${p4Purse() < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${c4Money(P4_SIGN_PRICE)} (+10% khách)</button></div>`)
@@ -268,6 +273,7 @@ function p4HomeOpen() {
   $('#p4homeX').addEventListener('click', () => p4Sheets(null));
   $('#p4homeB').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.tem) { AU.tap(); p4TemStart(); return; }
     if (b.dataset.rename) { AU.tap(); p4NameSheet(false); return; }
     if (b.dataset.homesign) { if (!SAVE4B.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); SAVE4B.sign = true; p4Persist(); toast('Biển hiệu mới sơn son thếp vàng!', 2.4); } AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (p4HandsClick(b)) { AU.tap(); p4HomeOpen(); p4Hud(); return; }

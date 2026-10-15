@@ -54,3 +54,9 @@ body.p4holding #cv{cursor:none}
 #p4wish .foot .link{background:none;border:0;padding:4px 0;font:12px var(--body);color:#8a6a4a;text-decoration:underline;cursor:pointer}
 #p4wish .foot .link[hidden]{display:none}
 #p4wish .foot .btn{margin-left:auto}
+
+/* têm trầu by hand (temtrau.js): the shift's clock, takings, the way out */
+#p4temHud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 0;z-index:4;pointer-events:none}
+#p4temHud .tag{font-family:var(--display);font-weight:900;font-size:15px;color:var(--ink)}
+#p4temHud button.tag{pointer-events:auto;cursor:pointer;background:#a3332a;color:var(--diep)}
+.p4sheet .btn.tem{font-size:18px;padding:10px 26px;background:#2f6a4c}
