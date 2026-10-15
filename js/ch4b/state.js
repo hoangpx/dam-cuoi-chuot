@@ -22,3 +22,4 @@ const p4Purse = () => SAVE4.money;
 const p4Spend = d => { SAVE4.money -= d; P4.today.spent += d; persist4(); };
 const p4Earn = d => { SAVE4.money += d; P4.today.take += d; persist4(); };
 const P4_NAME_MAX = 16;                                                   // the shop's name on its board: at most 16 letters (owner)
+const P4_PAPER = 'stone';                                                  // the town's paper: a warm stone grey, every day (owner: the street changed colour with part 1's daily paper)

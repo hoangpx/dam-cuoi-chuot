@@ -92,7 +92,7 @@ function p4WalkersUpdate(dt) {
 function p4Enter() { c4Hide(); startP4(); }                                // part 1's button "Lên Phố Huyện": go and look; buying the house is here
 function startP4() {
   AU.init(); AU.setSong(12); AU.setQuiet(false); hideChapterHuds();
-  S.chapter = 4; S.mode = 'c4bplay'; document.body.classList.add('c4');
+  S.chapter = 4; S.mode = 'c4bplay'; document.body.classList.add('c4'); document.documentElement.style.setProperty('--paper', PAPERS[P4_PAPER].css);
   $('#album').hidden = true; $('#end').hidden = true; $('#chapters').hidden = true; $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   if (!P4.scene) { P4.scene = p4TownScene(mulberry(7)); P4.camX = P4_HOME - p4View().vw * .5; }
   if (P4.day !== SAVE4B.day) p4NewDay();
@@ -134,9 +134,10 @@ function renderP4() {
   if (P4.sheet && P4.drawnSheet === P4.sheet) return;
   P4.drawnSheet = P4.sheet || null; P4.glows = [];
   const V = p4View(), Sc = V.s * DPR, vw = V.vw, cx = P4.camX, oy = V.oy, g = ctx, vis = (x, w) => x + w > cx - 40 && x - w < cx + vw + 40;
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = PAPERS.yellow.base; ctx.fillRect(0, 0, cv.width, cv.height);
+  const PP = P4.paper || (P4.paper = getPaper(P4_PAPER));                   // the town's own paper, the same every day (part 1 changes its paper daily; the street showed it)
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = PAPERS[P4_PAPER].base; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(Sc, 0, 0, Sc, -cx * Sc, oy * Sc);
-  const pw = PAPER.width; for (let px = Math.floor(cx / pw) * pw; px < cx + vw; px += pw) ctx.drawImage(PAPER, px, -oy - 20, pw, Math.max(V.vh + 40, PAPER.height));
+  const pw = PP.width; for (let px = Math.floor(cx / pw) * pw; px < cx + vw; px += pw) ctx.drawImage(PP, px, -oy - 20, pw, Math.max(V.vh + 40, PP.height));
   const sun = p4Sunset(), dayK = Math.max(0, Math.min(1, (P4.mins - P4_OPEN) / (19 * 60 - P4_OPEN)));
   // the sun, the sky's warmth at evening, clouds
   g.save(); g.translate(cx * .25 + (P4_HOME - vw / 2) * .75, 0);             // the sun scrolls by at 3/4 of the street's speed; over the house at the start
