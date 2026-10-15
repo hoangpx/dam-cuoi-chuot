@@ -111,7 +111,6 @@ function c4TownFarArt() {
 // the town's rows (called from c4DayLook): houses wall to wall, now and then a bougainvillea or a potted palm; far landmarks
 function c4TownScene(rs) {
   const near = [], far = [];
-  near.push([110, 'bridge', .62]);                                          // the covered bridge over a canal between the blocks (after Chùa Cầu)
   let x = 520, i = 0;
   while (x < C4_W + 200) {
     const v = (rs() * C4_TOWN_V.length) | 0, w = C4_TOWN_V[v].w * .72;
@@ -123,7 +122,7 @@ function c4TownScene(rs) {
   return { far, near };
 }
 const c4TownPart = k => k === 'bigtree' ? WP.bigTree : c4TownFarArt()[k];
-const c4TownNear = k => k === 'flower' ? c4FlowerArt() : k === 'pot' ? c4PotArt() : k === 'bridge' ? c4BridgeArt() : null;
+const c4TownNear = k => k === 'flower' ? c4FlowerArt() : k === 'pot' ? c4PotArt() : null;
 // the paving of the street: big worn stone slabs
 function c4TownPaving(g, cx, vw) {
   g.save(); g.fillStyle = 'rgba(160,112,58,.16)'; g.fillRect(cx - 50, C4_Y0 - 4, vw + 100, C4_D + 10);
@@ -137,42 +136,94 @@ function c4TownPaving(g, cx, vw) {
   }
   g.restore();
 }
-// in front of the street: the stone quay, the river with sampans going by, the covered bridge
-let C4_BRIDGE_ART = null;
-const c4BridgeArt = () => C4_BRIDGE_ART || (C4_BRIDGE_ART = part([-230, -250, 230, 70], a => {
-  a.fk('ash', smooth([[-220, 60], [-220, -40], [220, -40], [220, 60], [150, 60], [150, 20], [130, -4], [100, -10], [70, -4], [50, 20], [50, 60], [-50, 60], [-50, 20], [-70, -4], [-100, -10], [-130, -4], [-150, 20], [-150, 60]]), 2.4);
-  const st = []; for (let x = -210; x < 220; x += 28) st.push([x, -40, x, -18]); a.key(lines(st), .9);
-  a.fk('red', rect(-200, -52, 400, 12), 1.8);
-  for (let x = -190; x <= 190; x += 38) a.fk('red', rect(x - 5, -140, 10, 88), 1.6);
-  a.fk('brown', rect(-200, -82, 400, 8), 1.6); const R = []; for (let x = -196; x < 200; x += 10) R.push([x, -76, x, -54]); a.key(lines(R), .9);
-  c4TileRoof(a, -200, 200, -200, -138, 28, 'dark');
-  a.fk('dark', smooth([[-190, -198], [-214, -226], [-170, -212], [170, -212], [214, -226], [190, -198]]), 1.8);
-  for (const x of [-120, 0, 120]) a.fk('green', smooth([[x - 14, -212], [x, -236], [x + 14, -212]]), 1.4);
+const C4_BRIDGE_X = 150, C4_BRIDGE_HW = 140;                                 // the bridge's middle and half span: the street runs over it
+const c4OnBridge = x => Math.abs(x - C4_BRIDGE_X) < C4_BRIDGE_HW + 10;
+// the creek behind the street, coming down between the houses to the bridge; the bridge's wooden deck over the street
+function c4TownCreek(g, cx, vw) {
+  if (C4_BRIDGE_X + C4_BRIDGE_HW < cx - 60 || C4_BRIDGE_X - C4_BRIDGE_HW > cx + vw + 60) return;
+  const x0 = C4_BRIDGE_X - 70, x1 = C4_BRIDGE_X + 70, yT = C4_Y0 - 150, yB = C4_Y0 - 4;
+  g.save();
+  g.fillStyle = '#b9b0a4'; g.beginPath(); g.moveTo(x0 - 30, yB); g.lineTo(x0 + 8, yT); g.lineTo(x1 - 8, yT); g.lineTo(x1 + 30, yB); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(70,112,98,.92)'; g.beginPath(); g.moveTo(x0, yB); g.lineTo(x0 + 22, yT); g.lineTo(x1 - 22, yT); g.lineTo(x1, yB); g.closePath(); g.fill();
+  g.strokeStyle = INK; g.lineWidth = 2; g.stroke();
+  g.strokeStyle = 'rgba(242,236,222,.6)'; g.lineWidth = 1.4; g.beginPath(); for (let k = 0; k < 5; k++) { const y = yT + 20 + k * 26 + (C4.t * 6) % 26, hw = 30 + k * 8; g.moveTo(C4_BRIDGE_X - hw * .5, y); g.quadraticCurveTo(C4_BRIDGE_X, y - 3, C4_BRIDGE_X + hw * .5, y); } g.stroke();
+  // the deck: wooden planks across the street
+  g.fillStyle = 'rgba(122,74,34,.42)'; g.fillRect(C4_BRIDGE_X - C4_BRIDGE_HW, C4_Y0 - 4, C4_BRIDGE_HW * 2, C4_D + 10);
+  g.strokeStyle = 'rgba(42,34,29,.35)'; g.lineWidth = 1.2; g.beginPath(); for (let x = C4_BRIDGE_X - C4_BRIDGE_HW; x <= C4_BRIDGE_X + C4_BRIDGE_HW; x += 16) { g.moveTo(x, C4_Y0 - 4); g.lineTo(x, C4_Y0 + C4_D + 6); } g.stroke();
+  g.restore();
+}
+// the bridge's house: rear railing and pillars behind the walkers, front pillars, railing and the roof in front of them
+let C4_BRIDGE_ROOF = null;
+const c4BridgeRoof = () => C4_BRIDGE_ROOF || (C4_BRIDGE_ROOF = part([-200, -130, 200, 14], a => {
+  c4TileRoof(a, -C4_BRIDGE_HW - 6, C4_BRIDGE_HW + 6, -84, 8, 34, 'brown');
+  a.fk('red', rect(-C4_BRIDGE_HW - 10, 4, (C4_BRIDGE_HW + 10) * 2, 8), 1.6);                      // the red beam under the eave
+  // the ridge, its ends curling up, and the little dragons and pots of the real bridge as plain curls
+  a.fk('ash', smooth([[-C4_BRIDGE_HW + 4, -84], [-C4_BRIDGE_HW - 18, -104], [-C4_BRIDGE_HW + 10, -96], [C4_BRIDGE_HW - 10, -96], [C4_BRIDGE_HW + 18, -104], [C4_BRIDGE_HW - 4, -84]]), 1.8);
+  for (const x of [-90, -30, 30, 90]) { a.fk('ash', smooth([[x - 12, -96], [x - 8, -114], [x, -122], [x + 8, -114], [x + 12, -96]]), 1.4); a.key(smooth([[x - 4, -112], [x, -118], [x + 4, -112]], false), 1); }
+  for (const s of [-1, 1]) a.fk('ash', smooth([[s * (C4_BRIDGE_HW + 14), -100], [s * (C4_BRIDGE_HW + 26), -124], [s * (C4_BRIDGE_HW + 6), -116]]), 1.4);
 }));
+function c4TownBridgeItems(items, g, vis) {
+  if (!vis(C4_BRIDGE_X, C4_BRIDGE_HW + 60)) return;
+  const pill = (z, h) => { const s = c4S(z), y = c4Y(z); g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2;
+    for (let x = C4_BRIDGE_X - C4_BRIDGE_HW; x <= C4_BRIDGE_X + C4_BRIDGE_HW + 1; x += C4_BRIDGE_HW / 2) { g.beginPath(); g.rect(x - 5 * s, y - h * s, 10 * s, h * s); g.fill(); g.stroke(); } };
+  const rail = z => { const s = c4S(z), y = c4Y(z); g.strokeStyle = INK; g.fillStyle = '#e8d8a8'; g.lineWidth = 1.6;
+    g.beginPath(); g.rect(C4_BRIDGE_X - C4_BRIDGE_HW, y - 40 * s, C4_BRIDGE_HW * 2, 6 * s); g.fill(); g.stroke();
+    g.beginPath(); for (let x = C4_BRIDGE_X - C4_BRIDGE_HW + 6; x < C4_BRIDGE_X + C4_BRIDGE_HW; x += 9) { g.moveTo(x, y - 34 * s); g.lineTo(x, y); } g.stroke(); };
+  // behind everyone: the far pillars and railing
+  items.push({ z: -.5, f: () => { pill(0, 165); rail(0); } });
+  // in front of everyone: the near railing, the pillars and the roof over the deck, with paper lanterns hanging from the eave
+  items.push({ z: 1.08, f: () => {
+    rail(1); pill(1, 165);
+    const s = c4S(1), y = c4Y(1) - 165 * s;
+    dp(g, c4BridgeRoof(), C4_BRIDGE_X, y, 0, s, s);
+    for (const lx of [-90, -30, 30, 90]) { const x = C4_BRIDGE_X + lx * s, ly = y + 24 * s + Math.sin(C4.t * 1.3 + lx) * 1.5;
+      g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y + 8 * s); g.lineTo(x, ly - 9 * s); g.stroke();
+      g.fillStyle = '#f2ecde'; g.lineWidth = 1.6; g.beginPath(); g.ellipse(x, ly, 9 * s, 11 * s, 0, 0, 6.283); g.fill(); g.stroke();
+      g.fillStyle = '#a3332a'; g.beginPath(); g.arc(x, ly, 3.4 * s, 0, 6.283); g.fill(); }
+  } });
+}
+// in front of the street: the stone quay, the bridge's piers and arches over the creek's mouth, the river with boats going by
+const C4_BOAT_HULLS = ['#2f6a4c', '#a3332a', '#2f5f8f', '#7a4a22', '#2f6a4c', '#d97b2a'];
 function c4TownRiver(g, cx, vw, V) {
   const yq = C4_Y0 + C4_D + 8, yw = yq + 16, x0 = cx - 50, x1 = cx + vw + 50, yb = V.vh - V.oy + 60;
+  const bx0 = C4_BRIDGE_X - C4_BRIDGE_HW, bx1 = C4_BRIDGE_X + C4_BRIDGE_HW;
   g.save();
-  // the quay: a band of stone blocks
-  g.fillStyle = '#b9b0a4'; g.fillRect(x0, yq, x1 - x0, 16); g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(x0, yq); g.lineTo(x1, yq); g.moveTo(x0, yw); g.lineTo(x1, yw); g.stroke();
-  g.lineWidth = 1; g.beginPath(); for (let x = Math.floor(x0 / 46) * 46; x < x1; x += 46) { g.moveTo(x, yq); g.lineTo(x, yw); } g.stroke();
-  // the water: green-grey, the town's ochre and the lanterns reflected in streaks, ripples drifting
-  g.fillStyle = 'rgba(86,128,112,.78)'; g.fillRect(x0, yw, x1 - x0, yb - yw);
+  // the water: green, the town's ochre and the lanterns reflected in streaks, ripples drifting
+  g.fillStyle = 'rgba(70,112,98,.85)'; g.fillRect(x0, yq, x1 - x0, yb - yq);
   g.globalAlpha = .22; for (let x = Math.floor(x0 / 90) * 90; x < x1; x += 90) { g.fillStyle = (x / 90) % 3 ? '#d9a94e' : '#a3332a'; g.fillRect(x + 10, yw + 4, 30 + ((x / 90) % 2) * 20, 40); }
-  g.globalAlpha = 1; g.strokeStyle = 'rgba(242,236,222,.7)'; g.lineWidth = 1.6; g.beginPath();
-  for (let r = 0; r < 6; r++) { const y = yw + 14 + r * 22, off = (C4.t * (6 + r * 3)) % 80; for (let x = Math.floor((x0 - off) / 80) * 80 + off; x < x1; x += 80) { g.moveTo(x + r * 23, y); g.quadraticCurveTo(x + r * 23 + 10, y - 4, x + r * 23 + 20, y); } }
+  g.globalAlpha = 1;
+  // the quay: stone blocks, broken where the creek comes out under the bridge
+  g.fillStyle = '#b9b0a4'; g.strokeStyle = INK; g.lineWidth = 2;
+  for (const [a, b] of [[x0, bx0], [bx1, x1]]) { if (b <= a) continue; g.fillRect(a, yq, b - a, 16); g.beginPath(); g.moveTo(a, yq); g.lineTo(b, yq); g.moveTo(a, yw); g.lineTo(b, yw); g.stroke();
+    g.lineWidth = 1; g.beginPath(); for (let x = Math.ceil(a / 46) * 46; x < b; x += 46) { g.moveTo(x, yq); g.lineTo(x, yw); } g.stroke(); g.lineWidth = 2; }
+  // the bridge's foot: a stone face with four arches standing in the water
+  if (bx1 > x0 && bx0 < x1) {
+    const top = yq - 2, bot = yq + 92;
+    g.fillStyle = '#c9bfa6'; g.beginPath(); g.rect(bx0 - 12, top, bx1 - bx0 + 24, bot - top); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(42,60,52,.95)';
+    const n = 4, sp = (bx1 - bx0) / n;
+    for (let i = 0; i < n; i++) { const ax = bx0 + sp * i + sp / 2, aw = sp * .62; g.beginPath(); g.moveTo(ax - aw / 2, bot); g.lineTo(ax - aw / 2, top + 40); g.quadraticCurveTo(ax - aw / 2, top + 16, ax, top + 14); g.quadraticCurveTo(ax + aw / 2, top + 16, ax + aw / 2, top + 40); g.lineTo(ax + aw / 2, bot); g.closePath(); g.fill(); g.stroke(); }
+    g.strokeStyle = 'rgba(42,34,29,.35)'; g.lineWidth = 1; g.beginPath(); for (let y = top + 10; y < bot; y += 12) { g.moveTo(bx0 - 12, y); g.lineTo(bx1 + 12, y); } g.stroke();
+    g.fillStyle = 'rgba(70,112,98,.55)'; g.fillRect(bx0 - 12, bot - 18, bx1 - bx0 + 24, 18);         // the water at the piers' feet
+  }
+  g.strokeStyle = 'rgba(242,236,222,.7)'; g.lineWidth = 1.6; g.beginPath();
+  for (let r = 0; r < 7; r++) { const y = yw + 40 + r * 22, off = (C4.t * (6 + r * 3)) % 80; for (let x = Math.floor((x0 - off) / 80) * 80 + off; x < x1; x += 80) { g.moveTo(x + r * 23, y); g.quadraticCurveTo(x + r * 23 + 10, y - 4, x + r * 23 + 20, y); } }
   g.stroke();
-  // sampans: one going each way
-  const B = C4.townBoats || (C4.townBoats = [{ x: 300, sp: 16, y: 40 }, { x: 2200, sp: -11, y: 92 }]);
-  for (const b of B) {
+  // boats coming and going, some with a lantern (owner: "trên sông thì có thuyền qua lại")
+  const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 56 + (i % 3) * 30, hull: C4_BOAT_HULLS[i], lamp: i % 2 === 0, folk: 1 + (i % 3) })));
+  for (const b of [...B].sort((p, q) => p.y - q.y)) {
     if (!C4.paused) { b.x += b.sp / 60; if (b.x > C4_W + 300) b.x = -300; if (b.x < -300) b.x = C4_W + 300; }
     if (b.x < x0 - 120 || b.x > x1 + 120) continue;
-    const y = yw + b.y + Math.sin(C4.t * 1.4 + b.x) * 1.5, d = Math.sign(b.sp);
-    g.fillStyle = '#7a4a22'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x - 66, y - 10); g.quadraticCurveTo(b.x, y + 14, b.x + 66, y - 10); g.lineTo(b.x + 56, y - 2); g.quadraticCurveTo(b.x, y + 6, b.x - 56, y - 2); g.closePath(); g.fill(); g.stroke();
-    g.fillStyle = '#a3332a'; g.fillRect(b.x - 50, y - 8, 100, 4);
-    g.fillStyle = '#b57a22'; g.beginPath(); g.moveTo(b.x - 24, y - 6); g.quadraticCurveTo(b.x - 4, y - 32, b.x + 16, y - 6); g.closePath(); g.fill(); g.stroke();
-    const px = b.x - d * 40; g.fillStyle = '#2f5f8f'; g.beginPath(); g.ellipse(px, y - 20, 7, 10, 0, 0, 6.283); g.fill(); g.stroke();
-    g.fillStyle = '#e8d8a8'; g.beginPath(); g.moveTo(px - 12, y - 28); g.lineTo(px, y - 42); g.lineTo(px + 12, y - 28); g.closePath(); g.fill(); g.stroke();
-    g.lineWidth = 2.4; g.beginPath(); g.moveTo(px + d * 6, y - 34); g.lineTo(px - d * 18 + Math.sin(C4.t * 1.2) * 6, y + 28); g.stroke();
+    const y = yw + b.y + Math.sin(C4.t * 1.4 + b.x * .01) * 1.5, d = Math.sign(b.sp);
+    g.fillStyle = b.hull; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x - 66, y - 12); g.quadraticCurveTo(b.x, y + 14, b.x + 66, y - 12); g.lineTo(b.x + 56, y - 2); g.quadraticCurveTo(b.x, y + 6, b.x - 56, y - 2); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#e8d8a8'; g.fillRect(b.x - 52, y - 9, 104, 3);
+    for (let k = 0; k < b.folk; k++) { const fx = b.x + d * (10 - k * 22); g.fillStyle = ['#c0567a', '#f2c640', '#3f8a86'][k % 3]; g.beginPath(); g.ellipse(fx, y - 16, 7, 9, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#e8d8a8'; g.beginPath(); g.arc(fx, y - 29, 5, 0, 6.283); g.fill(); g.stroke(); }
+    const px = b.x - d * 46; g.fillStyle = '#2f6a4c'; g.beginPath(); g.ellipse(px, y - 22, 7, 11, 0, 0, 6.283); g.fill(); g.stroke();   // the boatman (green shirt)
+    g.fillStyle = '#e8d8a8'; g.beginPath(); g.moveTo(px - 12, y - 32); g.lineTo(px, y - 46); g.lineTo(px + 12, y - 32); g.closePath(); g.fill(); g.stroke();
+    g.lineWidth = 2.4; g.beginPath(); g.moveTo(px + d * 6, y - 38); g.lineTo(px - d * 18 + Math.sin(C4.t * 1.2 + b.x) * 6, y + 28); g.stroke();
+    if (b.lamp) { const lx = b.x + d * 54, ly = y - 34; g.lineWidth = 1.4; g.beginPath(); g.moveTo(b.x + d * 48, y - 8); g.lineTo(lx, ly - 10); g.stroke();
+      g.fillStyle = 'rgba(255,214,120,.35)'; g.beginPath(); g.arc(lx, ly, 16, 0, 6.283); g.fill();
+      g.fillStyle = '#f2ecde'; g.beginPath(); g.ellipse(lx, ly, 8, 10, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#a3332a'; g.beginPath(); g.arc(lx, ly, 3, 0, 6.283); g.fill(); }
   }
   g.restore();
 }

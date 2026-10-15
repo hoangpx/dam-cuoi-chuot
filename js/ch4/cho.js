@@ -1037,7 +1037,7 @@ function renderC4() {
   g.strokeStyle = 'rgba(29,25,21,.25)'; g.lineWidth = 1.4; g.setLineDash([18, 14]);
   for (const z of [.45, .78]) { g.beginPath(); g.moveTo(cx - 50, c4Y(z)); g.lineTo(cx + vw + 50, c4Y(z)); g.stroke(); }
   g.setLineDash([]);
-  if (C4.town) { c4TownPaving(g, cx, vw); c4TownRiver(g, cx, vw, V); }
+  if (C4.town) { c4TownPaving(g, cx, vw); c4TownCreek(g, cx, vw); c4TownRiver(g, cx, vw, V); }
   g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.lineCap = 'round'; if (!C4.town)
   for (let i = 0, rr = mulberry(41); i < 110; i++) { const tx = -300 + rr() * (C4_W + 300), ty = C4_Y0 + C4_D + 14 + rr() * Math.max(20, V.vh - oy - C4_Y0 - C4_D - 30); if (!vis(tx, 20)) continue; g.beginPath(); for (const d of [-6, 0, 6]) { g.moveTo(tx + d, ty); g.lineTo(tx + d * 1.6, ty - 12 - Math.abs(d)); } g.stroke(); }
   for (const [x, k, s, hv] of (C4.scene ? C4.scene.near : [[960, 'tree', .9], [1360, 'house', .72, 1], [1760, 'house', .7, 3], [2050, 'bamboo', .8], [2260, 'bamboo', .85], [600, 'house', .62, 5], [210, 'bamboo', .7]]))
@@ -1106,6 +1106,7 @@ function renderC4() {
   }
   for (const w of C4.walkers) if (vis(w.x, 80) || (w.buf && vis(w.x - w.face * 205 * c4S(w.z), 160))) { items.push({ z: w.z, f: () => c4Critter(g, w, w.x, c4Y(w.z), c4S(w.z) * C4_CROWD) }); head(w.x, w.z, C4_TALL[w.kind] * C4_CROWD * (w.kind === 'mouse' ? .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1) : 1), w, w.st === 'chat' || w.st === 'queue' ? 1.5 : .5, w.chat); }
   c4StreetItems(items, g, vis); c4FxItems(items, g, vis); c4FlyItems(items, g, vis); c4VisitItems(items, g, vis);
+  if (C4.town) c4TownBridgeItems(items, g, vis);                       // the covered bridge (phohuyen.js)
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
   if (c4CanUp() && C4.phase === 'open' && !C4.build) { const b = Math.sin(C4.t * 4) * 6, ax = C4_STALL + 20, ay = c4Y(C4_STALL_Z) - [200, 270, 310][Math.min(2, lv)] * c4S(C4_STALL_Z) + b; g.fillStyle = '#2f6a4c'; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(ax, ay - 26); g.lineTo(ax + 20, ay); g.lineTo(ax + 8, ay); g.lineTo(ax + 8, ay + 18); g.lineTo(ax - 8, ay + 18); g.lineTo(ax - 8, ay); g.lineTo(ax - 20, ay); g.closePath(); g.fill(); g.stroke(); }
   for (const gq of Object.keys(C4.Q)) for (const w of C4.Q[gq]) { const k = Math.max(0, 1 - w.wait / (c4Lv().wait + C4.Q[gq].indexOf(w) * 2)), y = c4Y(w.z) - C4_TALL[w.kind] * c4S(w.z) - 14; if (w.say) continue; g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(w.x - 22, y, 44, 7); g.strokeRect(w.x - 22, y, 44, 7); g.fillStyle = k > .4 ? '#2f6a4c' : '#a3332a'; g.fillRect(w.x - 21, y + 1, 42 * k, 5); }
