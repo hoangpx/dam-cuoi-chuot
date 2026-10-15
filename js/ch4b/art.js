@@ -18,12 +18,29 @@ const P4_TOWN_V = [
 const P4_LANTERN_COLS = ['red', 'yellow', 'red', 'blue', 'green', 'orange', 'red', 'pink'];
 const P4_LANTERN_BRIGHT = ['#e8393a', '#f7c531', '#2fae74', '#3b8fd8', '#9b59d0', '#f06aa0', '#f28a2e', '#f4efe2'];   // the lantern maker's silks
 // a tiled roof slope seen from the street: the tiles run down in rows of tubes (ngói âm dương)
+// a roof of yin-yang tiles (ngói âm dương, owner: "mái ngói không giống Hội An, nhìn như mái rơm"): dark channels, rows of round cover
+// tiles running down the slope (each row a little lighter along one side, the tiles' laps marked across it), round tile ends along
+// the eave, a thick ridge on top with its ends turned up
+const p4Poly = pts => { const q = new Path2D(); q.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) q.lineTo(pts[i][0], pts[i][1]); q.closePath(); return q; };   // straight edges (smooth() rounds every corner)
+const P4_TILE_HI = { brown: 'red', tan: 'catY2', dark: 'brown', green: 'teal', red: 'ltred' };
 function p4TileRoof(a, x0, x1, yTop, yBot, out, pl = 'brown') {
-  const p = smooth([[x0 - out, yBot], [x0 - out + 4, yBot - 6], [x0 + 6, yTop], [x1 - 6, yTop], [x1 + out - 4, yBot - 6], [x1 + out, yBot]]);
-  a.fk(pl, p, 2.4);
-  const t = []; for (let x = x0 - out + 8; x < x1 + out - 6; x += 9) { const k = (x - x0) / (x1 - x0); t.push([x + (0.5 - k) * 6, yTop + 3, x, yBot - 2]); }
-  a.key(lines(t), .8);
-  a.key(lines([[x0 - out + 2, yBot - 2, x1 + out - 2, yBot - 2]]), 2);
+  const p = p4Poly([[x0 - out - 3, yBot + 1], [x0 - out + 2, yBot - 3], [x0 + 4, yTop], [x1 - 4, yTop], [x1 + out - 2, yBot - 3], [x1 + out + 3, yBot + 1]]);   // straight slopes, the eave's corners flicked up a little
+  a.fk('dark', p, 2.4);                                                      // the channels between the rows
+  const L = x0 - out + 7, Rr = x1 + out - 7, span = Rr - L, h = yBot - yTop, step = Math.max(9, Math.min(13, h * .35)), tw = step * .62, hi = P4_TILE_HI[pl] || pl;
+  for (let x = L; x <= Rr + .1; x += step) {
+    const k = (x - L) / span, xt = x0 + 6 + k * (x1 - x0 - 12);            // the rows lean in towards the ridge
+    const roll = [[xt - tw * .42, yTop + 2], [xt + tw * .42, yTop + 2], [x + tw / 2, yBot - 3], [x - tw / 2, yBot - 3]];
+    a.fk(pl, p4Poly(roll), 1.1);
+    a.fill(hi, p4Poly([[xt - tw * .42, yTop + 3], [xt - tw * .1, yTop + 3], [x - tw * .12, yBot - 5], [x - tw / 2 + 1, yBot - 5]]));   // the light along one side
+    const laps = [];                                                          // where each tile laps over the next, down the row
+    for (let y = yTop + 9; y < yBot - 6; y += 8) { const kk = (y - yTop) / h, cx = xt + (x - xt) * kk, hw = (tw * .42 + (tw / 2 - tw * .42) * kk); laps.push([cx - hw, y, cx + hw, y + 1.6]); }
+    if (laps.length) a.key(lines(laps), .7);
+    a.fk(pl, circ(x, yBot - 1, tw * .52), 1.2);                               // the round tile end at the eave
+    a.fill('dark', circ(x, yBot - 1, tw * .18));
+  }
+  a.fk('dark', p4Poly([[x0 - 2, yTop + 3], [x0 - 9, yTop - 9], [x0 + 6, yTop - 6], [x1 - 6, yTop - 6], [x1 + 9, yTop - 9], [x1 + 2, yTop + 3]]), 2);   // the ridge, ends turned up
+  a.key(lines([[x0 + 4, yTop - 2, x1 - 4, yTop - 2]]), 1);
+  a.key(lines([[x0 - out + 2, yBot + 2, x1 + out - 2, yBot + 2]]), 1.6);   // the eave's edge
 }
 function p4Lanterns(a, x0, x1, y, seed) {
   for (let x = x0, i = 0; x <= x1; x += 22, i++) {
@@ -60,7 +77,7 @@ function p4TownArt(v) {
       }
     }
     // the deep eave over the shop front, lanterns hanging from it
-    p4TileRoof(a, -w, w, eave - 26, eave + 4, 22, 'tan');
+    p4TileRoof(a, -w, w, eave - 26, eave + 4, 22, 'brown');                 // the lower eave over the shop front, tiled too
     // the main roof: big, low, dark tiles, a straight ridge with little upturned ends
     p4TileRoof(a, -w + (o.two ? 8 : 0), w - (o.two ? 8 : 0), roofTop, o.two ? upTop + 8 : eave - 24, o.two ? 18 : 22, 'brown');
     a.fk('dark', smooth([[-w + 4, roofTop + 2], [-w - 2, roofTop - 12], [-w + 14, roofTop - 6], [w - 14, roofTop - 6], [w + 2, roofTop - 12], [w - 4, roofTop + 2]]), 1.6);
