@@ -4,7 +4,7 @@
    next hand asks about twice the one before. In the town a hand does what the wife does: serves at the counter, or runs a boat's
    order down to the quay, whoever is free first (so one can mind the counter while the other runs). Part 2's own code: it reads only
    part 1's name lists and the trait bar (C4_HAND_TITLES, C4_HAND_NAMES, C4_HELPERS, c4TraitBar). */
-const P4_HANDS_MAX = 2, P4_WAGE0 = 40;                                      // at most two hands; the first asks about 40 đồng a day
+const P4_HANDS_MAX = 1, P4_WAGE0 = 40;                                      // one hand only (owner, like part 1), asking about 40 đồng a day
 const p4Cap1 = s => s[0].toUpperCase() + s.slice(1);
 const p4Hands = () => SAVE4B.hands || (SAVE4B.hands = []);
 const p4NextWage = () => P4_WAGE0 * Math.pow(2, p4Hands().length);
@@ -86,7 +86,7 @@ function p4PayHands() {
 // the hands' block on the house sheet: the hands, the applicants while the list is open
 function p4HandsHtml() {
   const H = p4Hands();
-  let s = '<div class="hands"><h4>Người làm</h4><p class="hint">Người làm đứng quầy bán cùng vợ, hoặc chạy ra bến giao trầu cho thuyền, ai rảnh thì làm. Công trả mỗi tối; hai tối không trả là bỏ đi. Người sau đòi công gấp đôi người trước.</p>';
+  let s = '<div class="hands"><h4>Người làm</h4><p class="hint">Người làm đứng quầy bán cùng vợ, hoặc chạy ra bến giao trầu cho thuyền, ai rảnh thì làm. Chỉ thuê được một người. Công trả mỗi tối; hai tối không trả là bỏ đi.</p>';
   s += H.map((h, i) => `<div class="hand"><span><b>${p4Cap1(h.name)}</b> · công ${c4Money(h.wage)}/ngày${h.unpaid ? ' · <span class="bad">nợ công</span>' : ''}<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}</div></span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div>`).join('');
   if (P4.apply) s += `<h4>Người xin việc</h4>` + P4.apply.map((x, i) => `<div class="hand app"><span><b>${p4Cap1(x.name)}</b> · đòi công ${c4Money(x.wage)}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', x.sp)}${c4TraitBar('nhiệt tình', x.wm)}${c4TraitBar('trung thực', x.ho)}</div></span><button class="btn" data-app="${i}">Thuê</button></div>`).join('') + '<button class="btn alt" data-appno="1">Thôi</button>';
   else if (H.length < P4_HANDS_MAX) s += `<button class="btn" data-hire="1">Thuê một người · khoảng ${c4Money(p4NextWage())}/ngày</button>`;
