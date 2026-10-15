@@ -224,24 +224,34 @@ function c4TownRiver(g, cx, vw, V) {
   g.strokeStyle = 'rgba(242,236,222,.7)'; g.lineWidth = 1.6; g.beginPath();
   for (let r = 0; r < 7; r++) { const y = yw + 40 + r * 22, off = (C4.t * (6 + r * 3)) % 80; for (let x = Math.floor((x0 - off) / 80) * 80 + off; x < x1; x += 80) { g.moveTo(x + r * 23, y); g.quadraticCurveTo(x + r * 23 + 10, y - 4, x + r * 23 + 20, y); } }
   g.stroke();
-  // boats coming and going, the folk in them mice of the town (owner), some with a lantern
-  const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 34 + (i % 3) * 28, hull: C4_BOAT_HULLS[i], lamp: i % 2 === 0,
-    folk: Array.from({ length: 1 + (i % 3) }, (_, k) => c4MouseRig(C4_BOAT_SORTS[(i * 3 + k) % C4_BOAT_SORTS.length])), man: c4MouseRig(C4_BOAT_SORTS[(i + 4) % C4_BOAT_SORTS.length]) })));
+  // boats coming and going (owner: one or two mice a boat, a proper deep hull): a sampan with an eye on its bow, a painted band, a
+  // woven bamboo canopy on some; the boatman stands at the stern with his pole, now and then a passenger sits in the middle
+  const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 40 + (i % 3) * 30, hull: C4_BOAT_HULLS[i],
+    lamp: i % 3 !== 1, mui: i % 3 === 1, pass: i % 3 === 1 ? null : i % 2 ? null : c4MouseRig(C4_BOAT_SORTS[(i * 3) % C4_BOAT_SORTS.length]), man: c4MouseRig(C4_BOAT_SORTS[(i + 4) % C4_BOAT_SORTS.length]) })));
   for (const b of [...B].sort((p, q) => p.y - q.y)) {
     if (!C4.paused) { b.x += b.sp / 60; if (b.x > C4_W + 300) b.x = -300; if (b.x < -300) b.x = C4_W + 300; }
     if (b.x < x0 - 140 || b.x > x1 + 140) continue;
-    const y = yw + b.y + Math.sin(C4.t * 1.4 + b.x * .01) * 1.5, d = Math.sign(b.sp), ms = .55;
-    // the folk first (from the waist up), then the hull over their legs
-    g.save(); g.beginPath(); g.rect(b.x - 120, y - 200, 240, 194); g.clip();                     // nothing below the gunwale shows (owner: legs stuck out under the boat)
-    b.folk.forEach((M, k) => c4Mouse(g, M, b.x + d * (14 - k * 26), d, C4.t * 2 + k, false, null, null, ms, y + 34, b.x + k));   // the passengers sit low in the boat
-    c4Mouse(g, b.man, b.x - d * 46, d, C4.t * 2, false, -.6 - Math.sin(C4.t * 1.2 + b.x) * .3, null, ms, y + 14, b.x + 9);
+    const y = yw + b.y + Math.sin(C4.t * 1.4 + b.x * .01) * 1.5, d = Math.sign(b.sp), ms = .52, L2 = 78, deck = y - 16;
+    const gun = x => deck - Math.pow(Math.abs(x - b.x) / L2, 3) * 16;    // the gunwale rises to bow and stern
+    // the people, cut off at the gunwale
+    g.save(); g.beginPath(); g.moveTo(b.x - L2, gun(b.x - L2) - 300); g.lineTo(b.x + L2, gun(b.x + L2) - 300); for (let x = b.x + L2; x >= b.x - L2; x -= 6) g.lineTo(x, gun(x) + 2); g.closePath(); g.clip();
+    if (b.pass) c4Mouse(g, b.pass, b.x + d * 8, d, C4.t * 2, false, null, null, ms, deck + 30, b.x + 3);
+    c4Mouse(g, b.man, b.x - d * 52, d, C4.t * 2, false, -.6 - Math.sin(C4.t * 1.2 + b.x) * .3, null, ms, deck + 12, b.x + 9);
     g.restore();
-    g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(b.x - d * 40, y - 44); g.lineTo(b.x - d * 64 + Math.sin(C4.t * 1.2 + b.x) * 6, y + 30); g.stroke();   // the pole
-    g.fillStyle = b.hull; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x - 70, y - 12); g.quadraticCurveTo(b.x, y + 14, b.x + 70, y - 12); g.lineTo(b.x + 60, y - 2); g.quadraticCurveTo(b.x, y + 6, b.x - 60, y - 2); g.closePath(); g.fill(); g.stroke();
-    g.fillStyle = '#e8d8a8'; g.fillRect(b.x - 56, y - 9, 112, 3);
-    if (b.lamp) { const lx = b.x + d * 58, ly = y - 34; g.lineWidth = 1.4; g.beginPath(); g.moveTo(b.x + d * 52, y - 8); g.lineTo(lx, ly - 10); g.stroke();
-      g.fillStyle = 'rgba(255,214,120,.35)'; g.beginPath(); g.arc(lx, ly, 16, 0, 6.283); g.fill();
-      g.fillStyle = '#f2ecde'; g.beginPath(); g.ellipse(lx, ly, 8, 10, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#a3332a'; g.beginPath(); g.arc(lx, ly, 3, 0, 6.283); g.fill(); }
+    g.strokeStyle = INK; g.lineWidth = 2.6; g.beginPath(); g.moveTo(b.x - d * 46, deck - 58); g.lineTo(b.x - d * 72 + Math.sin(C4.t * 1.2 + b.x) * 6, y + 40); g.stroke();   // the pole
+    // the canopy: an arch of woven bamboo over the middle
+    if (b.mui) { g.fillStyle = '#b57a22'; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x - 34, deck + 2); g.bezierCurveTo(b.x - 34, deck - 40, b.x + 34, deck - 40, b.x + 34, deck + 2); g.closePath(); g.fill(); g.stroke();
+      g.strokeStyle = 'rgba(42,34,29,.45)'; g.lineWidth = 1; g.beginPath(); for (const k of [-18, -6, 6, 18]) { g.moveTo(b.x + k, deck - 28 + Math.abs(k) * .5); g.lineTo(b.x + k * 1.2, deck); } g.stroke(); g.strokeStyle = INK; }
+    // the hull: deep, the gunwale curving up at both ends, a coloured band, the bottom rounded
+    g.fillStyle = '#5b3a22'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(b.x - L2, gun(b.x - L2));
+    for (let x = b.x - L2; x <= b.x + L2; x += 6) g.lineTo(x, gun(x));
+    g.quadraticCurveTo(b.x + L2 - 8, y + 10, b.x + L2 - 30, y + 14); g.lineTo(b.x - L2 + 30, y + 14); g.quadraticCurveTo(b.x - L2 + 8, y + 10, b.x - L2, gun(b.x - L2)); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = b.hull; g.beginPath(); for (let x = b.x - L2 + 4; x <= b.x + L2 - 4; x += 6) { const yy = gun(x) + 3; x === b.x - L2 + 4 ? g.moveTo(x, yy) : g.lineTo(x, yy); } for (let x = b.x + L2 - 8; x >= b.x - L2 + 8; x -= 6) g.lineTo(x, gun(x) + 12); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(b.x - L2 + 26, y + 4); g.lineTo(b.x + L2 - 26, y + 4); g.stroke(); g.strokeStyle = INK;
+    // the eye on the bow, to see the way (mắt thuyền)
+    { const ex = b.x + d * (L2 - 22), ey = gun(ex) + 20; g.fillStyle = '#f2ecde'; g.lineWidth = 1.4; g.beginPath(); g.ellipse(ex, ey, 7, 4, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(ex + d * 1.5, ey, 2.4, 0, 6.283); g.fill(); }
+    if (b.lamp) { const lx = b.x + d * (L2 - 8), ly = gun(b.x + d * L2) - 6; g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(lx, gun(lx)); g.lineTo(lx, ly - 4); g.stroke();
+      c4DrawLantern(g, lx, ly - 4, .9, b.hull === '#a3332a' ? '#f2c640' : '#c4473a', 4, Math.sin(C4.t * 1.6 + b.x) * .12); }
   }
   g.restore();
 }
