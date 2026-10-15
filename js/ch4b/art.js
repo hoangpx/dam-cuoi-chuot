@@ -127,9 +127,10 @@ function p4TownFarArt() {
 // assembly hall; far landmarks behind
 function p4TownScene(rs) {
   const near = [], far = [];
-  const names = P4_SHOP_NAMES.slice(), lamps = P4_LAMP_NAMES.slice();
-  for (let k = names.length - 1; k > 0; k--) { const j = (rs() * (k + 1)) | 0; [names[k], names[j]] = [names[j], names[k]]; }   // shuffled once, then each used once
-  const next = n => (n % 6 === 0 && lamps.length) ? lamps.shift() : names.length ? names.shift() : lamps.length ? lamps.shift() : 'TẠP HOÁ';
+  const shuf = L => { L = L.slice(); for (let k = L.length - 1; k > 0; k--) { const j = (rs() * (k + 1)) | 0; [L[k], L[j]] = [L[j], L[k]]; } return L; };   // shuffled once, then each used once
+  const names = shuf(P4_SHOP_NAMES.filter(n => n !== 'THUỐC BẮC')), foods = shuf(P4_FOOD_NAMES), lamps = P4_LAMP_NAMES.slice();
+  names.splice(1, 0, 'THUỐC BẮC');                                           // the street's one pharmacy, always there (owner)
+  const next = n => (n % 6 === 0 && lamps.length) ? lamps.shift() : (n % 2 === 1 && foods.length) ? foods.shift() : names.length ? names.shift() : foods.length ? foods.shift() : lamps.length ? lamps.shift() : 'TẠP HOÁ';   // every other house an eating house
   let hq = false;
   const put = (cx, label) => { const v = (rs() * P4_TOWN_V.length) | 0; near.push([cx, 'shop', .72, v, label]); return P4_TOWN_V[v].w * .72; };
   let x = 600, i = 0;
@@ -531,7 +532,7 @@ function p4TownInterior(g, hx, hy, s, v, txt, kind = null) {
   g.fillStyle = '#4a2f1f'; g.fillRect(x0, y1 - 22, W, 22);                   // the floor at the back
   const shelf = (y) => { g.fillStyle = '#7a4a22'; g.fillRect(x0 + 4, y, W - 8, 5); g.lineWidth = 1.2; g.strokeRect(x0 + 4, y, W - 8, 5); };
   const C = ['#a3332a', '#2f5f8f', '#2f6a4c', '#f2c640', '#c0567a', '#e8d8a8', '#d97b2a', '#5a2f5f'];
-  const K = kind || (/CAO LẦU|MÌ QUẢNG|HOÀNH THÁNH/.test(txt) ? 'noodle' : /CƠM GÀ/.test(txt) ? 'chicken' : /BÁNH VẠC/.test(txt) ? 'dumpling' : txt === 'CHÈ' ? 'sweet' : /SÁCH/.test(txt) ? 'book' : /MAY ÁO/.test(txt) ? 'tailor' : /VẢI|LỤA/.test(txt) ? 'cloth' : /GỐM/.test(txt) ? 'pot' : /THUỐC/.test(txt) ? 'herb' : /ĐÈN LỒNG/.test(txt) ? 'lamp'
+  const K = kind || (/CAO LẦU|MÌ QUẢNG|HOÀNH THÁNH|PHỞ|BÚN|HỦ TIẾU/.test(txt) ? 'noodle' : /CƠM/.test(txt) ? 'chicken' : /BÁNH VẠC|BÁNH BAO|SỦI CẢO|BÁNH BÈO/.test(txt) ? 'dumpling' : txt === 'CHÈ' || /TÀO PHỚ/.test(txt) ? 'sweet' : /SÁCH/.test(txt) ? 'book' : /MAY ÁO/.test(txt) ? 'tailor' : /VẢI|LỤA/.test(txt) ? 'cloth' : /GỐM/.test(txt) ? 'pot' : /THUỐC/.test(txt) ? 'herb' : /ĐÈN LỒNG/.test(txt) ? 'lamp'
     : /BẠC/.test(txt) ? 'silver' : /QUÁN NƯỚC|CHÈ/.test(txt) ? 'tea' : /GẠO|MUỐI/.test(txt) ? 'rice' : /TRẦU/.test(txt) ? 'betel' : /RƯỢU/.test(txt) ? 'wine' : /TRÀ/.test(txt) ? 'tea' : 'shop');
   g.lineWidth = 1.2;
   if (K === 'noodle' || K === 'chicken' || K === 'dumpling' || K === 'sweet') p4TownFood(g, K, txt, x0, x1, R, C);
@@ -850,9 +851,11 @@ function p4TintStops(col) {
 }
 
 // the neighbours' trades along the street, each once (the board's words also decide what is set out inside, p4TownInterior)
-const P4_SHOP_NAMES = ['VẢI LỤA', 'LỤA TƠ TẰM', 'ĐỒ GỐM', 'GỐM BÁT TRÀNG', 'CAO LẦU', 'MÌ QUẢNG', 'HOÀNH THÁNH', 'CƠM GÀ', 'BÁNH VẠC', 'CHÈ',
-  'QUÁN NƯỚC', 'TRÀ SEN', 'RƯỢU NẾP', 'TẠP HOÁ', 'HÀNG XÉN', 'THỢ BẠC', 'VÀNG BẠC', 'GẠO MUỐI', 'GẠO TÁM THƠM', 'THUỐC BẮC', 'THUỐC NAM',
-  'SÁCH VỞ', 'HIỆU SÁCH', 'MAY ÁO', 'MAY ÁO DÀI', 'QUẠT GIẤY', 'NÓN LÁ', 'HƯƠNG TRẦM', 'TRANH ĐÔNG HỒ', 'GIẤY BÚT'];
+const P4_FOOD_NAMES = ['CAO LẦU', 'MÌ QUẢNG', 'HOÀNH THÁNH', 'CƠM GÀ', 'BÁNH VẠC', 'CHÈ', 'PHỞ BÒ', 'BÚN CHẢ', 'HỦ TIẾU', 'CƠM TẤM',
+  'BÁNH BAO', 'SỦI CẢO', 'TÀO PHỚ', 'BÁNH BÈO'];
+const P4_SHOP_NAMES = ['VẢI LỤA', 'LỤA TƠ TẰM', 'ĐỒ GỐM', 'GỐM BÁT TRÀNG', 'QUÁN NƯỚC', 'TRÀ SEN', 'RƯỢU NẾP', 'TẠP HOÁ', 'HÀNG XÉN', 'THỢ BẠC',
+  'VÀNG BẠC', 'GẠO MUỐI', 'GẠO TÁM THƠM', 'THUỐC BẮC', 'SÁCH VỞ', 'HIỆU SÁCH', 'MAY ÁO', 'MAY ÁO DÀI', 'QUẠT GIẤY', 'NÓN LÁ', 'HƯƠNG TRẦM',
+  'TRANH ĐÔNG HỒ', 'GIẤY BÚT'];
 // the lantern makers: the only trade that comes back along the street, never under the same name
 const P4_LAMP_NAMES = ['ĐÈN LỒNG', 'LỒNG ĐÈN PHÚC', 'ĐÈN HOA SEN', 'ĐÈN LỒNG TÀI LỘC', 'LỒNG ĐÈN AN KHANG'];
 const p4IsLamp = txt => /ĐÈN|LỒNG/.test(txt || '');
