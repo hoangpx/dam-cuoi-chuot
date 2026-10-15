@@ -3,7 +3,7 @@
    cloud save; table dcc_hoadang, only through the rpc dcc_hoa_add / dcc_hoa_list / dcc_hoa_report, docs/supabase-hoa-dang.sql). In the
    town the latest P4_HOA_NET wishes of everyone come down and each drifts on the river as a lantern of its own at night; a tap reads it
    (signed with the sender's shop name) and can report it (3 reports hide it). Bad words are refused here and again on the server. */
-const P4_HOA_NET = 60, P4_HOA_RELOAD = 120;                                // how many shared lanterns, how often to fetch them again (s)
+const P4_HOA_NET = 250, P4_HOA_RELOAD = 120;                                // how many shared lanterns, how often to fetch them again (s)
 const P4_RPC = 'https://mamafzllyhbmzyystivo.supabase.co/rest/v1/rpc/', P4_RPC_KEY = 'sb_publishable_aY82m4E4mmc0AN2_n0Gcdw_2Kl31gCd';   // the same public key as js/core/cloud.js
 async function p4Rpc(fn, body) {
   const r = await fetch(P4_RPC + fn, { method: 'POST', headers: { apikey: P4_RPC_KEY, 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -30,22 +30,13 @@ function p4HoaLoad() {
     P4.shared = list.filter(w => w && w.wish && !rep.has(w.id)).map(w => ({ id: w.id, wish: w.wish, shop: w.shop || '', t: w.created_at }));
   }).catch(() => {});
 }
-// each shared wish its own lantern: spread along the river by its id, drifting with the current, round and round the town's length
-function p4HoaShared(g, k, x0, x1, yw) {
-  const L = P4.shared; if (!L || !L.length) return;
-  const span = P4_W + 800, sent = P4.sent || new Set(), alive = new Set((P4.hoaMine || []).map(h => h.netId).filter(Boolean));
-  for (const w of L) {
-    if (sent.has(w.id) && alive.has(w.id)) continue;                      // your own, still drifting as you set it down
-    const r = mulberry(w.id * 7919 + 13), x = ((r() * span + P4.t * (5 + r() * 4)) % span) - 400, y = yw + 36 + r() * 120 + Math.sin(P4.t * 1.5 + w.id) * 1.6;
-    if (x < x0 - 60 || x > x1 + 60) continue;
-    const s = .75 + (y - yw) / 400, [c1, c2] = P4_HOA_COLS[w.id % P4_HOA_COLS.length];
-    g.save(); g.translate(x, y); g.scale(s, s); g.globalAlpha = k;
-    g.drawImage(p4HoaSprite(c1, c2), -20, -22, 40, 30);
-    P4.hoaHits.push({ x, y: y - 6 * s, r: 18 * s, shared: w });
-    if (P4.glows) { const T = g.getTransform(), P = new DOMPoint(0, -8).matrixTransform(T), Q = new DOMPoint(0, 6).matrixTransform(T), sc = Math.hypot(T.a, T.b) * k;
-      P4.glows.push([P.x, P.y, 30 * sc, '#ffcf7a']); P4.glows.push([Q.x, Q.y, 20 * sc, '#ffcf7a', 1]); }
-    g.restore();
-  }
+// the real wishes to put on the river's lanterns (art.js p4HoaDang gives each a lantern by P4_HOA_RANK, the rest keep villagers'
+// wishes); your own, still drifting where you set it down, is left out so it is not there twice
+function p4HoaReal() {
+  const L = P4.shared; if (!L || !L.length) return [];
+  const sent = P4.sent; if (!sent || !sent.size) return L;
+  const alive = new Set((P4.hoaMine || []).map(h => h.netId).filter(Boolean));
+  return L.filter(w => !(sent.has(w.id) && alive.has(w.id)));
 }
 // reading a lantern's wish: a little letter of the lantern festival: warm paper in a red double frame, the lotus of that lantern
 // glowing over its top, the words in a hand, who set it afloat and when; everyone's can be reported (a small link, not a button)

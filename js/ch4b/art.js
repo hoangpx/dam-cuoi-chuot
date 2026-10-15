@@ -696,7 +696,7 @@ function p4HoaDang(g, x0, x1, yw, yb) {
   if (P4.hoaHold && P4.phase !== 'open') { const V = p4View(); P4.hoaCdT = -99; p4HoaTap(P4.camX + V.vw / 2, yw + 60); }   // the market closed with a lantern still in hand: it is set afloat
   const k = p4NightK(); if (k <= 0) return;
   p4HoaMine(g, k, x0, x1);
-  p4HoaShared(g, k, x0, x1, yw);                                           // everyone's wishes (hoadang-net.js)
+  const real = p4HoaReal();                                                 // everyone's wishes, each taking a lantern's place (hoadang-net.js)
   const span = P4_W + 800, drift = P4.t * 7;
   for (let gi = 0; gi < 34; gi++) {
     const h = n => Math.abs(Math.sin(gi * 127.1 + n * 311.7) * 43758.5) % 1;
@@ -709,7 +709,8 @@ function p4HoaDang(g, x0, x1, yw, yb) {
       const x = x0b + Math.sin(P4.t * .7 + i * 2 + gi) * 5, y = y0b + Math.sin(P4.t * 1.6 + i * 1.3 + gi) * 1.6, s = .75 + (y - yw) / 400, [c1, c2] = P4_HOA_COLS[(gi + i) % P4_HOA_COLS.length];
       g.save(); g.translate(x, y); g.scale(s, s); g.globalAlpha = k; g.strokeStyle = INK; g.lineWidth = 1.3;
       g.drawImage(p4HoaSprite(c1, c2), -20, -22, 40, 30);                // the lotus on its leaf raft, printed once per colour
-      P4.hoaHits.push({ x, y: y - 6 * s, r: 18 * s, id: gi * 16 + i });
+      const id = gi * 16 + i, rank = P4_HOA_RANK[id], w = rank < real.length ? real[rank] : null;   // a real wish if there are enough of them, else a villager's
+      P4.hoaHits.push(w ? { x, y: y - 6 * s, r: 18 * s, shared: w } : { x, y: y - 6 * s, r: 18 * s, id });
       if (P4.glows) { const T = g.getTransform(), P = new DOMPoint(0, -8).matrixTransform(T), Q = new DOMPoint(0, 6).matrixTransform(T), sc = Math.hypot(T.a, T.b);
         P4.glows.push([P.x, P.y, 30 * sc, '#ffcf7a']); P4.glows.push([Q.x, Q.y, 20 * sc, '#ffcf7a', 1]); }
       g.restore();
@@ -855,3 +856,9 @@ const P4_SHOP_NAMES = ['VẢI LỤA', 'LỤA TƠ TẰM', 'ĐỒ GỐM', 'GỐM B
 // the lantern makers: the only trade that comes back along the street, never under the same name
 const P4_LAMP_NAMES = ['ĐÈN LỒNG', 'LỒNG ĐÈN PHÚC', 'ĐÈN HOA SEN', 'ĐÈN LỒNG TÀI LỘC', 'LỒNG ĐÈN AN KHANG'];
 const p4IsLamp = txt => /ĐÈN|LỒNG/.test(txt || '');
+
+// the order in which the river's lanterns are given real wishes: every lantern of the 34 groups (ids gi*16+i), shuffled once so the
+// first real wishes are scattered along the whole river rather than filling one group; only the lanterns that are there (5–10 a
+// group, the same sizes p4HoaDang draws)
+const P4_HOA_RANK = (() => { const ids = []; for (let gi = 0; gi < 34; gi++) { const n = 5 + ((Math.abs(Math.sin(gi * 127.1 + 3 * 311.7) * 43758.5) % 1 * 6) | 0); for (let i = 0; i < n; i++) ids.push(gi * 16 + i); } const r = mulberry(2024);
+  for (let k = ids.length - 1; k > 0; k--) { const j = (r() * (k + 1)) | 0; [ids[k], ids[j]] = [ids[j], ids[k]]; } const rank = {}; ids.forEach((id, k) => { rank[id] = k; }); return rank; })();

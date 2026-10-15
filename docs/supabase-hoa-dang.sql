@@ -44,7 +44,7 @@ end $$;
 create or replace function public.dcc_hoa_list(p_limit int)
 returns table (id bigint, wish text, shop text, created_at timestamptz)
 language sql stable security definer set search_path = public as $$
-  select id, wish, shop, created_at from dcc_hoadang where not hidden order by created_at desc limit least(greatest(coalesce(p_limit, 60), 1), 100)
+  select id, wish, shop, created_at from dcc_hoadang where not hidden order by created_at desc limit least(greatest(coalesce(p_limit, 60), 1), 300)
 $$;
 
 -- báo xấu: mỗi lần +1, đủ 3 thì ẩn
