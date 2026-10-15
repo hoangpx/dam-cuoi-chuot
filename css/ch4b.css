@@ -15,3 +15,8 @@ body.p4holding #cv{cursor:none}
 #p4hoaW{width:100%;box-sizing:border-box;font:16px var(--body);padding:8px 10px;border:2.5px solid var(--ink);background:#fff8e6;resize:none}
 /* part 1's button to go up to the town */
 #c4hud .bar .tag.pho{background:#a3332a;color:var(--diep)}
+
+/* the hired hands on the house sheet (nguoilam.js), like part 1's */
+.p4sheet .hands .hand{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0;text-align:left}
+.p4sheet .hands .hand .btn{padding:4px 12px;font-size:14px}
+.p4sheet .hands h4{margin:12px 0 4px}

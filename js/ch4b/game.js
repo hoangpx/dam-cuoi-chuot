@@ -62,7 +62,7 @@ function p4Spawn(atX) {
   const x = atX !== undefined ? atX : fromRight ? P4.camX + V.vw + 120 + Math.random() * 200 : P4.camX - 120 - Math.random() * 200;
   const look = kid ? {} : p4TownLook({ skirt: Math.random() < .5, hat: Math.random() < .25 ? 'quai' : null }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
-  const buy = !kid && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price));
+  const buy = !kid && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth();
   P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o', x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
     sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: 1 + ((Math.random() * 3) | 0), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
@@ -79,27 +79,12 @@ function p4WalkersUpdate(dt) {
       w.moving = d > 3; if (w.moving) { const st = Math.min(d, 70 * dt); w.x += dx / d * st; w.z += dz * 300 / d * st / 300; w.ph += dt * 7; w.face = dx > 0 ? 1 : -1; }
       else { w.st = 'queue'; w.face = -1; }
       w.wait += dt;
-      if (w.st === 'queue' && i === 0 && !P4.wife.serving && !w.asked) { w.asked = true; w.askT = P4.t; p4Say(w, P4_ASK(w.n)); }
-      if (w.wait > 30 && P4.wife.serving !== w) { Q.splice(Q.indexOf(w), 1); w.st = 'leave'; w.dir = w.x < P4.camX + V.vw / 2 ? -1 : 1; p4Say(w, 'Lâu quá, thôi đi chỗ khác.'); }
+      if (w.st === 'queue' && i < P4.sellers.length && !w.asked) { w.asked = true; w.askT = P4.t; p4Say(w, P4_ASK(w.n)); }
+      if (w.wait > 30 && !w.servedBy) { Q.splice(Q.indexOf(w), 1); w.st = 'leave'; w.dir = w.x < P4.camX + V.vw / 2 ? -1 : 1; p4Say(w, 'Lâu quá, thôi đi chỗ khác.'); }
     }
   }
   P4.walkers = P4.walkers.filter(w => !(w.st !== 'queue' && w.st !== 'go' && (w.x < P4.camX - 500 || w.x > P4.camX + V.vw + 500)));
-  // the wife serves the first in the queue
-  const W = P4.wife;
-  if (W.say) { W.say.t += dt; if (W.say.t > W.say.life) W.say = null; }
-  p4BoatOrders(dt);
-  if (W.st === 'counter' && !W.serving) {
-    const boat = p4NextBoat(), q = Q.length && Q[0].st === 'queue' && Q[0].asked ? Q[0] : null;
-    if (boat && (!q || boat.order.t0 < q.askT)) { W.st = 'out'; W.job = boat; p4Say(W, p4Pick(['Có ngay, có ngay!', 'Chờ em chút nhé!', 'Em mang ra đây!'])); }
-    else if (q) { W.serving = q; W.t = 2.2; }
-  }
-  p4WifeRun(dt);
-  if (W.serving && (W.t -= dt) <= 0) {
-    const w = W.serving, n = Math.min(w.n, SAVE4B.stock);
-    if (n > 0) { SAVE4B.stock -= n; SAVE4B.sold = (SAVE4B.sold || 0) + n; P4.today.sold += n; p4Earn(n * SAVE4B.price); P4.fx.push({ x: door, y: p4Y(.12) - 120, s: '+' + n * SAVE4B.price, t: 0 }); p4Say(W, p4Pick(['Trầu đây, mời bác!', 'Của bác đây ạ!', 'Ăn ngon lại ghé nhé!'])); }
-    else { p4Say(W, 'Hết trầu mất rồi!'); P4.today.lost++; }
-    Q.splice(Q.indexOf(w), 1); w.st = 'leave'; w.dir = Math.random() < .5 ? -1 : 1; W.serving = null; p4Persist(); p4Hud();
-  }
+  p4BoatOrders(dt); p4SellersUpdate(dt);                                   // nguoilam.js: the wife and the hired hands
 }
 
 // ---------- start, the day, leaving ----------
@@ -119,7 +104,7 @@ function startP4() {
 }
 function p4NewDay() {
   Object.assign(P4, { day: SAVE4B.day, mins: P4_OPEN, phase: 'open', walkers: [], Q: [], fx: [], today: { sold: 0, take: 0, spent: 0, lost: 0 } });
-  P4.wife = { say: null, serving: null, t: 0, x: P4_HOME - 6, z: .07, st: 'counter', job: null }; P4.boatT = 25;
+  P4.sellers = p4MakeSellers(); P4.wife = P4.sellers[0]; P4.apply = null; P4.boatT = 25;
   for (const b of P4.townBoats || []) if (b.order) { b.order = null; b.stop = false; b.say = null; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; } }   // last night's callers are gone
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));
 }
@@ -129,7 +114,7 @@ function p4EndDay() {
   const wilt = SAVE4B.stock; SAVE4B.stock = 0; p4Persist();                // betel does not keep overnight
   $('#p4dayB').innerHTML = `<p>Bán được <b>${P4.today.sold}</b> miếng trầu: <b>${c4Money(P4.today.take)}</b></p><p>Chi: ${c4Money(P4.today.spent)}</p>`
     + (wilt ? `<p class="bad">Trầu thừa héo mất ${wilt} miếng.</p>` : '') + (P4.today.lost ? `<p>${P4.today.lost} khách đến mà hết trầu.</p>` : '')
-    + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
+    + p4PayHands() + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
   $('#p4dayT').textContent = `Tối ngày ${SAVE4B.day} trên phố huyện`;
   p4Sheets('p4day');
 }
@@ -185,13 +170,14 @@ function renderP4() {
     items.push({ z: .04, f: () => p4Mouse(g, M, x, f, P4.t * 2 + n[0], false, null, null, p4S(.04) * P4_CROWD * .95, p4Y(.04), n[0]) }); }
   // the couple's house: the wife behind the counter, the husband by the door
   if (vis(P4_HOME, 160)) {
-    const Wf = P4.wife;
-    if (Wf.st === 'counter') items.push({ z: .07, f: () => p4Mouse(g, MICE.b, P4_HOME - 6, 1, P4.t * 2, false, Wf.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, null, p4S(.07) * .95, p4Y(.07), 1) });
     items.push({ z: .09, f: () => p4TownCounter(g, P4_HOME + 10, 'trau') });
     items.push({ z: .16, f: () => p4Mouse(g, MICE.groom, P4_HOME - 120, 1, P4.t * 2, false, null, null, p4S(.16) * .95, p4Y(.16), 2) });
-    if (P4.wife.st === 'counter') head(P4_HOME - 6, .07, 168 * .95, P4.wife, 3);
   }
-  { const Wf = P4.wife; if (Wf.st !== 'counter' && vis(Wf.x, 80)) { items.push({ z: Wf.z, f: () => p4Mouse(g, MICE.b, Wf.x, Wf.face || 1, Wf.ph || 0, Wf.moving, Wf.st === 'out' ? -.9 : null, Wf.st === 'out' ? WP.basket : null, p4S(Wf.z) * .95, p4Y(Wf.z), 1) }); head(Wf.x, Wf.z, 168 * .95, Wf, 3); } }
+  for (const m of P4.sellers) if (vis(m.x, 80)) {                          // the wife and the hands: behind the counter, or running a boat's order
+    const out = m.st !== 'counter';
+    items.push({ z: m.z, f: () => p4Mouse(g, m.M, m.x, m.face || 1, out ? m.ph : P4.t * 2, out && m.moving, m.st === 'out' ? -.9 : m.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, m.st === 'out' ? WP.basket : null, p4S(m.z) * .95, p4Y(m.z), m.slot + 1) });
+    head(m.x, m.z, 168 * .95, m, 3);
+  }
   for (const b of P4.townBoats || []) if (b.say && vis(b.x, 100)) bubbles.push({ e: b, x: b.x, y: P4_Y0 + P4_D + 24 + b.y - 16 - 70, s: .9, pri: 2 });
   for (const w of P4.walkers) if (vis(w.x, 80)) { items.push({ z: w.z, f: () => p4Folk(g, w, w.x, p4Y(w.z) - p4TownLift(w.x), p4S(w.z) * P4_CROWD) }); head(w.x, w.z, P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), w, w.asked ? 2 : 1); }
   p4TownBridgeItems(items, g, vis);
@@ -249,7 +235,7 @@ function p4HomeOpen() {
   $('#p4homeB').innerHTML = `<p>Trầu trong nhà: <b>${G.stock}</b> miếng · giá bán <b>${G.price}</b> đồng một miếng</p><p>Nhập trầu: ${cost} đồng một miếng. Trầu không để được qua đêm.</p>`
     + `<div class="row"><button class="btn" data-n="20">Nhập 20</button><button class="btn" data-n="50">Nhập 50</button></div>`
     + `<div class="row"><button class="btn alt" data-p="-1">Giảm giá</button><button class="btn alt" data-p="1">Tăng giá</button></div>`
-    + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
+    + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>` + p4HandsHtml();
   p4Sheets('p4home');
 }
 {
@@ -272,6 +258,7 @@ function p4HomeOpen() {
   $('#p4homeX').addEventListener('click', () => p4Sheets(null));
   $('#p4homeB').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (p4HandsClick(b)) { AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (b.dataset.n) { const n = +b.dataset.n, c = n * 3; if (p4Purse() < c) { toast('Không đủ tiền nhập trầu.', 2); return; } p4Spend(c); SAVE4B.stock += n; }
     if (b.dataset.p) SAVE4B.price = Math.max(4, Math.min(20, SAVE4B.price + +b.dataset.p));
     p4Persist(); AU.tap(); p4HomeOpen(); p4Hud();
@@ -313,20 +300,4 @@ function p4BoatLeave(b, line, lost) {
   if (line) p4Say(b, line); if (lost) P4.today.lost++;
   b.order = null; b.stop = false; b.fast = Math.sign(b.sp) * 40; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; }
   setTimeout(() => { b.fast = 0; }, 6000);
-}
-// the seller running: from the counter to the quay at the boat, hand it over, back; the counter waits meanwhile
-function p4WifeRun(dt) {
-  const W = P4.wife, b = W.job;
-  if (W.st === 'counter') return;
-  const go = (tx, tz) => { const dx = tx - W.x, dz = (tz - W.z) * 300, d = Math.hypot(dx, dz); W.moving = d > 3; if (!W.moving) return true; const st = Math.min(d, 150 * dt); W.x += dx / d * st; W.z += dz / d * st / 300; W.ph = (W.ph || 0) + dt * 12; W.face = dx >= 0 ? 1 : -1; return false; };
-  if (W.st === 'out') {
-    if (!b || !b.order) { W.st = 'back'; W.job = null; return; }
-    b.order.taken = true;
-    if (go(b.x - 30, P4_DOCK_Z)) {
-      const n = Math.min(b.order.n, SAVE4B.stock);
-      if (n > 0) { SAVE4B.stock -= n; SAVE4B.sold = (SAVE4B.sold || 0) + n; P4.today.sold += n; p4Earn(n * SAVE4B.price); P4.fx.push({ x: b.x, y: P4_Y0 + P4_D - 30, s: '+' + n * SAVE4B.price, t: 0 }); p4Say(W, 'Trầu đây ạ!'); p4BoatLeave(b, p4Pick(['Cảm ơn nhé!', 'Trầu thơm quá!', 'Mai lại ghé!']), false); }
-      else { p4Say(W, 'Hết trầu mất rồi!'); p4BoatLeave(b, 'Tiếc quá!', true); }
-      p4Persist(); p4Hud(); W.st = 'back'; W.job = null;
-    }
-  } else if (W.st === 'back' && go(P4_HOME - 6, .07)) { W.st = 'counter'; W.face = 1; W.moving = false; }
 }
