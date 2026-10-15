@@ -235,6 +235,7 @@ function c4TownRiver(g, cx, vw, V) {
   const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 40 + (i % 3) * 30, hull: C4_BOAT_HULLS[i],
     lamp: i % 3 !== 1, mui: i % 3 === 1, pass: i % 3 === 1 ? null : i % 2 ? null : c4MouseRig(C4_BOAT_SORTS[(i * 3) % C4_BOAT_SORTS.length]), man: c4MouseRig(C4_BOAT_SORTS[(i + 4) % C4_BOAT_SORTS.length]) })));
   { const J = C4.townJunk || (C4.townJunk = { x: 1600, sp: 6 }); if (!C4.paused) { J.x += J.sp / 60; if (J.x > C4_W + 400) J.x = -400; } C4.townJunkAt = J.x > x0 - 200 && J.x < x1 + 200 ? [J.x, yw + 26 + Math.sin(C4.t) * 1.2] : null; }   // drawn later, in front of the street (c4TownBridgeItems)
+  c4HoaDang(g, x0, x1, yw, yb);                                            // flower lanterns on the water at night
   C4.townBoatFns = [];
   for (const b of [...B].sort((p, q) => p.y - q.y)) {
     if (!C4.paused) { b.x += b.sp / 60; if (b.x > C4_W + 300) b.x = -300; if (b.x < -300) b.x = C4_W + 300; }
@@ -602,21 +603,39 @@ function c4TownHouseTap(x, y) {
 // the town's evening (owner: "buổi tối cho đèn lung linh lên"): from 17:30 the street sinks into a deep blue dusk; the lanterns and the
 // open shops glow through it, each lantern flickering a little
 const c4NightK = () => !C4.town ? 0 : C4.phase === 'night' ? 1 : Math.max(0, Math.min(1, (C4.mins - 17.5 * 60) / 100));
+// soft light sprites, made once (a radial gradient per light per frame was the costly part): the pool on the light map, the halo in
+// the air, the lantern's lit core; each 128 px, drawn scaled
+const c4GlowSprite = (() => { const S = {}; return (key, stops) => { if (S[key]) return S[key];
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  for (const [o, col] of stops) gr.addColorStop(o, col); x.fillStyle = gr; x.fillRect(0, 0, 128, 128); return S[key] = c; }; })();
+const C4_POOL = [[0, 'rgb(255,196,120)'], [.45, 'rgba(240,150,80,.45)'], [1, 'rgba(200,110,60,0)']];
+const C4_HALO = [[0, 'rgb(255,205,115)'], [.35, 'rgba(255,155,60,.36)'], [1, 'rgba(255,120,40,0)']];
+const C4_CORE = [[0, 'rgb(255,248,220)'], [.55, 'rgba(255,195,95,.53)'], [1, 'rgba(255,150,60,0)']];
 function c4TownNight(g) {
   const k = c4NightK(); if (k <= 0) return;
+  // a light map (owner: the light falls on the street, the houses and the folk): deep blue everywhere, warm white pools round every
+  // lantern and lit room; multiplied over the picture, so what stands near a light keeps its colours, lit warm. Made at half size
+  // (light is soft, nobody sees the difference) and stretched over the picture.
+  const Q = .5, L = C4.lightMap || (C4.lightMap = document.createElement('canvas')), w = Math.ceil(cv.width * Q), h = Math.ceil(cv.height * Q);
+  if (L.width !== w || L.height !== h) { L.width = w; L.height = h; }
+  const lg = L.getContext('2d'), mix = n => Math.round(255 + (n - 255) * k);
+  lg.globalCompositeOperation = 'source-over'; lg.globalAlpha = 1; lg.fillStyle = 'rgb(' + mix(56) + ',' + mix(66) + ',' + mix(132) + ')'; lg.fillRect(0, 0, w, h);
+  lg.globalCompositeOperation = 'lighter';
+  const pool = c4GlowSprite('pool', C4_POOL), halo = c4GlowSprite('halo', C4_HALO), core = c4GlowSprite('core', C4_CORE);
+  const flick = (x, y) => .88 + Math.sin(C4.t * 7 + x * .05) * .06 + Math.sin(C4.t * 13 + y * .07) * .04;
+  const glows = (C4.glows || []).filter(([x, y, r]) => x > -r * 3 && x < cv.width + r * 3 && y > -r * 3 && y < cv.height + r * 3);   // only what can reach the screen
+  for (const [x, y, r, , room] of glows) {
+    const f = flick(x, y), R = r * (room ? 1.7 : 2.6) * f * Q, cy = (y + (room ? 0 : r * .55)) * Q, ry = R * (room ? .9 : 1.05);   // a lantern's pool reaches down onto the street
+    lg.globalAlpha = (room ? .6 : .8) * k; lg.drawImage(pool, x * Q - R, cy - ry, R * 2, ry * 2);
+  }
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-  const mix = (d, n) => Math.round(255 + (n - 255) * k);                    // multiply by a deep blue: the warm paper turns to night, not to brown
-  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgb(' + mix(0, 62) + ',' + mix(0, 72) + ',' + mix(0, 138) + ')'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(L, 0, 0, cv.width, cv.height);
   ctx.globalCompositeOperation = 'lighter';
-  for (const [x, y, r, col, room] of C4.glows || []) {
-    const f = .8 + Math.sin(C4.t * 7 + x * .05) * .08 + Math.sin(C4.t * 13 + y * .07) * .05;     // a living flame
-    const gr = ctx.createRadialGradient(x, y, 0, x, y, r * f);
-    gr.addColorStop(0, 'rgba(255,200,110,' + (.4 * k).toFixed(3) + ')'); gr.addColorStop(.35, 'rgba(255,150,60,' + (.13 * k).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,40,0)');
-    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r * f, 0, 6.283); ctx.fill();
-    if (room) continue;                                                     // a lit room: only the soft halo
-    const cr = r * .25, gc = ctx.createRadialGradient(x, y, 0, x, y, cr);           // the lantern itself, lit from inside
-    gc.addColorStop(0, 'rgba(255,246,214,' + (.55 * k * f).toFixed(3) + ')'); gc.addColorStop(.55, 'rgba(255,190,90,' + (.3 * k).toFixed(3) + ')'); gc.addColorStop(1, 'rgba(255,150,60,0)');
-    ctx.fillStyle = gc; ctx.beginPath(); ctx.arc(x, y, cr, 0, 6.283); ctx.fill();
+  for (const [x, y, r, , room] of glows) {                                  // the glow in the air, and the lanterns themselves lit from inside
+    const f = flick(x, y), R = r * f;
+    ctx.globalAlpha = (room ? .25 : .45) * k; ctx.drawImage(halo, x - R, y - R, R * 2, R * 2);
+    if (room) continue;
+    const cr = r * .25; ctx.globalAlpha = Math.min(1, .85 * k * f); ctx.drawImage(core, x - cr, y - cr, cr * 2, cr * 2);
   }
   ctx.restore();
 }
@@ -638,4 +657,40 @@ function c4QuayLamps(items, g, vis) {
       c4DrawLantern(g, x + 32 * s, yq - 150 * s, s * 1.25, ((x / 300) | 0) % 2 ? '#f2c640' : '#c4473a', 8, Math.sin(C4.t * 1.5 + x * .01) * .14);
     } });
   }
+}
+
+// hoa đăng (owner): at night groups of paper lotus lanterns drift down the river, each with a candle, bobbing, their light on the water
+const C4_HOA_COLS = [['#e86a8a', '#f7b9c8'], ['#e2b43c', '#f6dc8a'], ['#c4473a', '#f09a7a'], ['#f2ece0', '#ffffff']];
+function c4HoaDang(g, x0, x1, yw, yb) {
+  const k = c4NightK(); if (k <= 0) return;
+  const span = C4_W + 800, drift = C4.t * 7;
+  for (let gi = 0; gi < 34; gi++) {
+    const h = n => Math.abs(Math.sin(gi * 127.1 + n * 311.7) * 43758.5) % 1;
+    const gx = ((gi * span / 34 + h(1) * 160 + drift) % span) - 400, gy = yw + 30 + h(2) * Math.max(60, Math.min(260, yb - yw - 110)), n = 5 + ((h(3) * 6) | 0);
+    if (gx < x0 - 200 || gx > x1 + 200) continue;
+    const items = [];
+    for (let i = 0; i < n; i++) items.push([gx + (h(10 + i) - .5) * 150, gy + (h(30 + i) - .5) * 44, i]);
+    items.sort((a, b) => a[1] - b[1]);
+    for (const [x0b, y0b, i] of items) {
+      const x = x0b + Math.sin(C4.t * .7 + i * 2 + gi) * 5, y = y0b + Math.sin(C4.t * 1.6 + i * 1.3 + gi) * 1.6, s = .75 + (y - yw) / 400, [c1, c2] = C4_HOA_COLS[(gi + i) % C4_HOA_COLS.length];
+      g.save(); g.translate(x, y); g.scale(s, s); g.globalAlpha = k; g.strokeStyle = INK; g.lineWidth = 1.3;
+      g.drawImage(c4HoaSprite(c1, c2), -20, -22, 40, 30);                // the lotus on its leaf raft, printed once per colour
+      if (C4.glows) { const T = g.getTransform(), P = new DOMPoint(0, -8).matrixTransform(T), Q = new DOMPoint(0, 6).matrixTransform(T), sc = Math.hypot(T.a, T.b);
+        C4.glows.push([P.x, P.y, 30 * sc, '#ffcf7a']); C4.glows.push([Q.x, Q.y, 20 * sc, '#ffcf7a', 1]); }
+      g.restore();
+    }
+  }
+}
+
+function c4HoaSprite(c1, c2) {
+  const S = c4HoaSprite.S || (c4HoaSprite.S = {}), key = c1 + c2; if (S[key]) return S[key];
+  const c = document.createElement('canvas'); c.width = 160; c.height = 120; const g = c.getContext('2d');
+  g.scale(4, 4); g.translate(20, 22); g.strokeStyle = INK; g.lineWidth = 1.3;
+  g.fillStyle = 'rgba(255,200,110,.35)'; g.beginPath(); g.ellipse(0, 3, 16, 3.5, 0, 0, 6.283); g.fill();          // its light on the water
+  g.fillStyle = '#5f7a4a'; g.beginPath(); g.ellipse(0, 1, 14, 3.4, 0, 0, 6.283); g.fill(); g.stroke();              // a leaf raft
+  for (const [a, len, col] of [[-1.15, 13, c1], [1.15, 13, c1], [-.55, 15, c2], [.55, 15, c2], [0, 16, c2]]) {    // the lotus petals
+    g.save(); g.rotate(a); g.fillStyle = col; g.beginPath(); g.moveTo(-4.5, 0); g.quadraticCurveTo(-5, -len * .7, 0, -len); g.quadraticCurveTo(5, -len * .7, 4.5, 0); g.closePath(); g.fill(); g.stroke(); g.restore();
+  }
+  g.fillStyle = '#ffe9a8'; g.beginPath(); g.ellipse(0, -10, 2, 3.5, 0, 0, 6.283); g.fill();                           // the candle flame
+  return S[key] = c;
 }
