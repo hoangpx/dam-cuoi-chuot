@@ -72,7 +72,7 @@ function p4Run(m, dt) {
 function p4PayHands() {
   const H = p4Hands(), out = [], quit = [];
   let short = 0;
-  for (const s of P4.sellers) if (s.who === 'hand' && s.take > 0 && Math.random() < (1 - s.h.ho) * .45) short += Math.round(s.take * (.05 + .12 * (1 - s.h.ho)));
+  for (const s of P4.sellers) if (s.who === 'hand' && s.take > 0 && Math.random() < (1 - s.h.ho) * .12) short += Math.round(s.take * (.03 + .07 * (1 - s.h.ho)));   // (owner: less often)
   if (short > 0) { SAVE4.money -= Math.min(short, Math.max(0, SAVE4.money)); persist4(); }
   for (const h of H) {
     if (p4Purse() >= h.wage) { p4Spend(h.wage); h.unpaid = 0; out.push(`${p4Cap1(h.name)}: ${c4Money(h.wage)}`); }

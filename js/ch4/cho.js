@@ -439,7 +439,7 @@ function c4PlanEvents() {
   if (!SAVE4.cauDoi) pool.push('do');
   if (['che', 'xoi', 'bun', 'banhcuon', 'ruou'].some(g => own.includes(g))) pool.push('do2', 'do2');
   if (own.length > 1) pool.push('om', 'om');                       // ('bot', the announced skimming, is gone: a hand's skimming is silent now, the player finds it in the tally)
-  if (SAVE4.money >= C4_RICH) { if (SAVE4.kienNext == null) SAVE4.kienNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.kienNext && R() < .35) pool.push('kien'); if (own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner)
+  if (SAVE4.money >= C4_RICH) { if (SAVE4.kienNext == null) SAVE4.kienNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.kienNext && R() < .35) pool.push('kien'); if (SAVE4.tromNext == null) SAVE4.tromNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.tromNext && R() < .15 && own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner); a hand runs off at most once in 20–30 days, rarely (owner: less often)
   for (let i = 0; i < 3 && pool.length; i++) ev.push({ at: at(7, 16.5), kind: pool.splice((R() * pool.length) | 0, 1)[0] });
   if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });
   if (SAVE4.day > 5 && R() < .55) ev.push({ at: at(7, 12), kind: c4Pick(['cotiec', 'cotiec', 'cuoi', 'khachla']) });   // an order brought by a visitor (the red '!') on about half the days, not only by luck of the pool, which grows long later on (a player)
@@ -576,6 +576,7 @@ function c4Event(kind) {
       ['Bỏ qua lần này', () => {}]] });
   } else if (kind === 'trom_ngay') {                                       // a hired hand runs off with the day's takings (only when rich)
     if (SAVE4.money < C4_RICH || !helped.length) return;
+    SAVE4.tromNext = SAVE4.day + 20 + Math.floor(R() * 11);                 // the next one only 20–30 days later, and maybe never
     const g = c4Pick(helped), s = c4PickHonest(c4HandsOn(g)), take = Math.min(Math.max(0, C4.today.take), SAVE4.money);
     if (take <= 0) return;
     Object.assign(E, { title: 'Người làm bỏ trốn!', text: `${c4Cap1(s.name)} ôm theo ${c4Money(take)} tiền bán hàng hôm nay rồi biến mất tăm. Làm sao đây?`, opts: [
