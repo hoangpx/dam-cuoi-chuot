@@ -662,6 +662,8 @@ function c4QuayLamps(items, g, vis) {
 // hoa đăng (owner): at night groups of paper lotus lanterns drift down the river, each with a candle, bobbing, their light on the water
 const C4_HOA_COLS = [['#e86a8a', '#f7b9c8'], ['#e2b43c', '#f6dc8a'], ['#c4473a', '#f09a7a'], ['#f2ece0', '#ffffff']];
 function c4HoaDang(g, x0, x1, yw, yb) {
+  C4.hoaHits = [];
+  if (C4.hoaHold && C4.phase !== 'open') { const V = c4View(); C4.hoaCdT = -99; c4HoaTap(C4.camX + V.vw / 2, yw + 60); }   // the market closed with a lantern still in hand: it is set afloat
   const k = c4NightK(); if (k <= 0) return;
   c4HoaMine(g, k, x0, x1);
   const span = C4_W + 800, drift = C4.t * 7;
@@ -676,6 +678,7 @@ function c4HoaDang(g, x0, x1, yw, yb) {
       const x = x0b + Math.sin(C4.t * .7 + i * 2 + gi) * 5, y = y0b + Math.sin(C4.t * 1.6 + i * 1.3 + gi) * 1.6, s = .75 + (y - yw) / 400, [c1, c2] = C4_HOA_COLS[(gi + i) % C4_HOA_COLS.length];
       g.save(); g.translate(x, y); g.scale(s, s); g.globalAlpha = k; g.strokeStyle = INK; g.lineWidth = 1.3;
       g.drawImage(c4HoaSprite(c1, c2), -20, -22, 40, 30);                // the lotus on its leaf raft, printed once per colour
+      C4.hoaHits.push({ x, y: y - 6 * s, r: 18 * s, id: gi * 16 + i });
       if (C4.glows) { const T = g.getTransform(), P = new DOMPoint(0, -8).matrixTransform(T), Q = new DOMPoint(0, 6).matrixTransform(T), sc = Math.hypot(T.a, T.b);
         C4.glows.push([P.x, P.y, 30 * sc, '#ffcf7a']); C4.glows.push([Q.x, Q.y, 20 * sc, '#ffcf7a', 1]); }
       g.restore();
@@ -700,22 +703,32 @@ function c4HoaSprite(c1, c2) {
 // down the river with the others, a ring of ripples where it touched the water, and fades out after a while
 const C4_HOA_CD = 2, C4_HOA_LIFE = 90;
 function c4HoaTap(x, y) {
-  if (!C4.town || c4NightK() < .35) return false;
-  const yw = C4_Y0 + C4_D + 24; if (y < yw + 14) return false;              // only on the water
-  if (C4.t - (C4.hoaT ?? -99) < C4_HOA_CD) return true;                     // still lighting the last one: the tap does nothing else either
-  C4.hoaT = C4.t;
-  const L = C4.hoaMine || (C4.hoaMine = []);
-  L.push({ x, y: Math.min(y, c4View().vh - c4View().oy - 10), t0: C4.t, c: (C4.hoaN = (C4.hoaN || 0) + 1) % C4_HOA_COLS.length });
-  if (L.length > 60) L.shift();
-  AU.plop(); AU.pluck([74, 76, 79, 81, 83, 86][(Math.random() * 6) | 0]);
-  return true;
+  if (!C4.town || c4NightK() < .35) { if (C4.hoaHold) c4HoaHold(null); return false; }
+  const water = y > C4_Y0 + C4_D + 38;
+  if (C4.hoaHold) {                                                         // holding a lantern: set it down on the water
+    if (!water) return false;
+    if (S.t - (C4.hoaCdT ?? -99) < C4_HOA_CD) return true;
+    C4.hoaCdT = S.t;
+    const L = C4.hoaMine || (C4.hoaMine = []);
+    L.push({ x, y: Math.min(y, c4View().vh - c4View().oy - 10), t0: S.t, c: C4.hoaHold.c, wish: C4.hoaHold.wish });
+    if (L.length > 60) L.shift();
+    AU.plop(); AU.pluck([74, 76, 79, 81, 83, 86][(Math.random() * 6) | 0]);
+    c4HoaHold(null); return true;
+  }
+  // a lantern under the finger: read its wish
+  let best = null, bd = 1e9;
+  for (const h of C4.hoaHits || []) { const d = Math.hypot(x - h.x, y - h.y); if (d < h.r + 8 && d < bd) { bd = d; best = h; } }
+  if (best) { AU.tap(); c4HoaRead(best); return true; }
+  if (!water) return false;
+  if (S.t - (C4.hoaCdT ?? -99) < C4_HOA_CD) return true;
+  AU.tap(); c4HoaShop(); return true;
 }
 function c4HoaMine(g, k, x0, x1) {
   const L = C4.hoaMine; if (!L || !L.length) return;
-  C4.hoaMine = L.filter(h => C4.t - h.t0 < C4_HOA_LIFE);
+  C4.hoaMine = L.filter(h => S.t - h.t0 < C4_HOA_LIFE);
   const yw = C4_Y0 + C4_D + 24;
   for (const h of [...C4.hoaMine].sort((a, b) => a.y - b.y)) {
-    const age = C4.t - h.t0, x = h.x + age * 7 + Math.sin(C4.t * .7 + h.t0) * 4, y = h.y + Math.sin(C4.t * 1.6 + h.t0 * 3) * 1.6;
+    const age = S.t - h.t0, x = h.x + age * 7 + Math.sin(C4.t * .7 + h.t0) * 4, y = h.y + Math.sin(C4.t * 1.6 + h.t0 * 3) * 1.6;
     if (x < x0 - 60 || x > x1 + 60) continue;
     const a = k * Math.min(1, age / .4, (C4_HOA_LIFE - age) / 6), s = (.75 + (y - yw) / 400) * (age < .4 ? .6 + age : 1);
     if (age < 1.6) { const r = age / 1.6; g.save(); g.strokeStyle = 'rgba(255,236,190,' + (.7 * (1 - r) * k).toFixed(3) + ')'; g.lineWidth = 1.5;
@@ -723,8 +736,76 @@ function c4HoaMine(g, k, x0, x1) {
     const [c1, c2] = C4_HOA_COLS[h.c];
     g.save(); g.translate(x, y); g.scale(s, s); g.globalAlpha = a;
     g.drawImage(c4HoaSprite(c1, c2), -20, -22, 40, 30);
+    C4.hoaHits.push({ x, y: y - 6 * s, r: 18 * s, mine: h });
     if (C4.glows) { const T = g.getTransform(), P = new DOMPoint(0, -8).matrixTransform(T), Q = new DOMPoint(0, 6).matrixTransform(T), sc = Math.hypot(T.a, T.b) * a;
       C4.glows.push([P.x, P.y, 30 * sc, '#ffcf7a']); C4.glows.push([Q.x, Q.y, 20 * sc, '#ffcf7a', 1]); }
     g.restore();
   }
+}
+
+// buying a lantern (owner): 1 quan each; then a wish is written on it, and the pointer becomes two hands holding it until it is set
+// down on the river. Every lantern on the water carries a wish: the player's own, or a villager's (C4_HOA_WISH, all original)
+const C4_HOA_PRICE = 600;
+const C4_HOA_WISH = [
+  'Cầu cho mẹ già mạnh khoẻ, sống lâu trăm tuổi.', 'Mong mùa này lúa trúng, nhà nhà no đủ.', 'Mong anh bán vải ở đầu phố để ý đến em một lần.',
+  'Cầu buôn may bán đắt, tiền vào như nước sông Hoài.', 'Ước con mèo nhà bên đi lạc thật xa, xa mãi.', 'Mong thằng cu nhà tôi năm nay đỗ tú tài.',
+  'Cầu cho chồng tôi bớt rượu, về nhà sớm hơn.', 'Mong khoản nợ cụ Lý tự dưng... quên mất.', 'Ước được một bát cao lầu no nê mà không ai bắt trả tiền.',
+  'Cầu cho thuyền buôn của cha đi biển bình an trở về.', 'Mong vợ chồng hoà thuận, con cháu đầy nhà.', 'Cầu trời đừng mưa vào phiên chợ rằm.',
+  'Mong cho cái răng sâu đừng đau nữa.', 'Ước có đôi guốc mộc mới để đi lễ chùa.', 'Cầu cho bà nội bên kia thế giới được an lành.',
+  'Mong hàng xóm bớt nói xấu nhà mình.', 'Ước lũ chuột con nghe lời, đừng trèo lên bàn thờ nữa.', 'Cầu cho làng ta năm nay không lụt.',
+  'Mong học được chữ để tự viết điều ước lên đèn.', 'Ước năm sau được thả hai chiếc đèn.', 'Cầu bình an cho người đi xa chưa về.',
+  'Mong cô hàng chè nhớ mặt tôi, múc cho đầy bát.', 'Ước con gà mái nhà tôi đẻ trứng vàng.', 'Mong cửa hàng nhỏ của tôi mai có khách đầu tiên.',
+];
+const c4HoaWho = id => { const N = C4_NAMES.mouse.concat(C4_NAMES.old); return N[(id * 7 + 3) % N.length]; };
+const c4Esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function c4HoaRead(h) {
+  if (h.mine) { toast('<b>Điều ước của mình:</b> ' + c4Esc(h.mine.wish), 5); return; }
+  toast('<b>Điều ước của ' + c4HoaWho(h.id) + ':</b> ' + C4_HOA_WISH[(h.id * 5 + 1) % C4_HOA_WISH.length], 5);
+}
+{
+  const d = document.createElement('div'); d.id = 'c4hoa'; d.className = 'c4sheet'; d.hidden = true;
+  d.innerHTML = '<div class="card4"><h3>Thả đèn hoa đăng</h3><div id="c4hoaB"></div></div>';
+  document.body.appendChild(d);
+  const hands = document.createElement('div'); hands.id = 'c4hands'; hands.hidden = true; document.body.appendChild(hands);
+  addEventListener('pointermove', e => { if (C4.hoaHold && e.pointerType === 'mouse') { hands.style.left = e.clientX + 'px'; hands.style.top = e.clientY + 'px'; } }, true);
+}
+function c4HoaShop() {
+  const B = $('#c4hoaB'), ok = SAVE4.money >= C4_HOA_PRICE;
+  B.innerHTML = '<p>Một chiếc đèn hoa sen giấy giá <b>' + c4Money(C4_HOA_PRICE) + '</b>. Viết điều ước lên đèn rồi thả xuống sông, cầu bình an và tài lộc.</p>'
+    + '<p>Trong túi: ' + c4Money(Math.round(SAVE4.money)) + '</p>' + (ok ? '' : '<p class="bad">Chưa đủ tiền mua đèn.</p>')
+    + '<div class="row">' + (ok ? '<button class="btn" id="c4hoaBuy">Mua một đèn</button>' : '') + '<button class="btn alt" id="c4hoaX">Thôi</button></div>';
+  $('#c4hoaX').onclick = () => c4Sheets(null);
+  if (ok) $('#c4hoaBuy').onclick = () => {
+    SAVE4.money -= C4_HOA_PRICE; C4.today.spent += C4_HOA_PRICE; persist4(); c4Hud(); AU.tap();
+    B.innerHTML = '<p>Viết điều ước lên đèn:</p><textarea id="c4hoaW" maxlength="90" rows="3" placeholder="Cầu cho…"></textarea><div class="row"><button class="btn" id="c4hoaOk">Viết xong</button></div>';
+    const ta = $('#c4hoaW'); setTimeout(() => ta.focus(), 50);
+    $('#c4hoaOk').onclick = () => { const w = ta.value.trim() || 'Cầu bình an.'; c4Sheets(null); c4HoaHold({ wish: w, c: (C4.hoaN = (C4.hoaN || 0) + 1) % C4_HOA_COLS.length }); };
+  };
+  c4Sheets('c4hoa');
+}
+// two hands cupping the lantern: they follow the mouse on a computer; on a phone they wait low in the middle of the screen, over the river
+function c4HoaHold(h) {
+  C4.hoaHold = h; const el = $('#c4hands');
+  document.body.classList.toggle('c4holding', !!h);
+  if (!h) { el.hidden = true; return; }
+  const [c1, c2] = C4_HOA_COLS[h.c];
+  const pet2 = (a, len, col) => '<path transform="rotate(' + a + ' 80 74)" d="M74 74 Q73 ' + (74 - len * .7) + ' 80 ' + (74 - len) + ' Q87 ' + (74 - len * .7) + ' 86 74 Z" fill="' + col + '" stroke="#1d1915" stroke-width="1.6"/>';
+  // two hands turned up and cupped together, little fingers touching in the middle, thumbs out at the sides (owner); drawn for the left, mirrored for the right
+  const cap = (x0, y0, x1, y1, w) => { const d = 'M' + x0 + ' ' + y0 + ' L' + x1 + ' ' + y1; return '<path d="' + d + '" stroke="#1d1915" stroke-width="' + (w + 4) + '" stroke-linecap="round" fill="none"/><path d="' + d + '" stroke="#e0b48c" stroke-width="' + w + '" stroke-linecap="round" fill="none"/>'; };
+  const hand = '<path d="M44 160 L46 136 L79 136 L79 160 Z" fill="#a3332a" stroke="#1d1915" stroke-width="2.2" stroke-linejoin="round"/>'          // the sleeve
+    + cap(46, 120, 30, 100, 10)                                                                                                                   // the thumb, out at the side
+    + cap(49, 104, 43, 80, 9) + cap(58, 102, 55, 75, 9) + cap(67, 102, 66, 74, 9) + cap(76, 104, 77, 80, 8.5)                                   // four fingers, up
+    + '<path d="M46 138 C42 124 42 110 48 102 L79 102 L79 138 Z" fill="#e0b48c" stroke="#1d1915" stroke-width="2.2" stroke-linejoin="round"/>'   // the palm
+    + '<path d="M46 104 L79 104" stroke="#e0b48c" stroke-width="5"/>'                                                                       // the palm runs into the fingers
+    + '<path d="M52 114 Q62 120 72 112 M54 126 Q63 130 74 124" fill="none" stroke="#9a6a48" stroke-width="1.3" stroke-linecap="round"/>';   // palm lines
+  el.innerHTML = '<svg viewBox="0 0 160 160" overflow="visible" width="100%" height="100%"><defs><radialGradient id="c4hg"><stop offset="0" stop-color="#ffe6a8" stop-opacity=".75"/><stop offset=".5" stop-color="#ffbf6a" stop-opacity=".3"/><stop offset="1" stop-color="#ff9a40" stop-opacity="0"/></radialGradient></defs>'
+    + '<circle cx="80" cy="62" r="50" fill="url(#c4hg)"/>'
+    + hand + '<g transform="translate(160 0) scale(-1 1)">' + hand + '</g>'
+    + '<path d="M80 104 L80 136" stroke="#1d1915" stroke-width="1.6"/>'                                                                      // where the two hands meet
+    + '<g transform="translate(0 8)"><ellipse cx="80" cy="76" rx="23" ry="5.5" fill="#5f7a4a" stroke="#1d1915" stroke-width="1.6"/>'
+    + pet2(-66, 20, c1) + pet2(66, 20, c1) + pet2(-32, 24, c2) + pet2(32, 24, c2) + pet2(0, 26, c2)
+    + '<ellipse cx="80" cy="57" rx="3" ry="5.5" fill="#fff2c0"/></g></svg>';
+  el.hidden = false;
+  if (!matchMedia('(pointer: fine)').matches) el.classList.add('touch');
+  else { el.classList.remove('touch'); if (!el.style.top) { el.style.left = '50%'; el.style.top = '75%'; } }
 }

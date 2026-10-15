@@ -206,7 +206,7 @@ function startC4() {
   c4MarketStart();
 }
 // coming back to a day still in memory: the same market, and whatever sheet was open (the morning order only if it was not yet given)
-function c4Resume() { $('#c4hud').hidden = false; c4Sheets(C4.away || null); c4Hud(); cv.focus(); }
+function c4Resume() { $('#c4hud').hidden = false; if (C4.hoaHold) c4HoaHold(C4.hoaHold); c4Sheets(C4.away || null); c4Hud(); cv.focus(); }
 function c4MarketStart() {
   $('#c4hud').hidden = false;
   if (!SAVE4.plan || !SAVE4.plan.wx) { SAVE4.plan = c4Roll(SAVE4.day); SAVE4.next = c4Roll(SAVE4.day + 1); }
@@ -224,9 +224,9 @@ function c4MarketStart() {
   if (SAVE4.openDay === SAVE4.day) { C4.phase = 'open'; C4.mins = Math.max(C4_OPEN, SAVE4.openMins || C4_OPEN); c4PlanEvents(); C4.events = C4.events.filter(e => e.at > C4.mins); c4ShipOrders(true); c4Hud(); cv.focus(); return; }
   c4Hud(); c4Morning(); cv.focus();
 }
-function c4Hide() { AU.ambient({}); C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
+function c4Hide() { AU.ambient({}); if (C4.hoaHold) { $('#c4hands').hidden = true; document.body.classList.remove('c4holding'); } C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
 // one sheet at a time: morning plan, stall, event, notebook, tally
-function c4Sheets(id) { if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
+function c4Sheets(id) { if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4hoa']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 // a sheet opened by a tap on the market (a visitor, a stall) appears under the finger, and some phones (an Oppo) then send that tap's click
 // to the button now there, e.g. the refusal (a player): clicks inside a sheet in its first .45 s are dropped
 addEventListener('click', e => { if (S.mode === 'c4play' && C4.sheet && performance.now() - (C4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + C4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
@@ -1231,7 +1231,7 @@ function c4Up(e) {
     const c = w.chat, mx = (c.a.x + c.b.x) / 2, s = c4S(c.a.z), top = c4Y(c.a.z) - 230 * s;
     if (Math.abs(x - mx) < 95 * s && y > top && y < c4Y(c.a.z) + 10) { c4Listen(c); return; }
   }
-  if (c4HoaTap(x, y)) return;                                            // phố huyện at night: a tap on the river sets a flower lantern afloat (phohuyen.js)
+  if (c4HoaTap(x, y)) return;                                            // phố huyện at night, the river: buy a flower lantern, set it afloat, read a wish (phohuyen.js)
   if (c4TownHouseTap(x, y)) return;                                     // phố huyện: the whole shop front (phohuyen.js)
   const sy = c4Y(C4_STALL_Z), s = c4S(C4_STALL_Z);
   if (c4SignHit(x, y, C4_STALL + (SAVE4.lv ? 10 : 30), sy, s)) { AU.tap(); c4OpenUp('trau'); return; }
