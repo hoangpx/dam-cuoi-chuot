@@ -1212,6 +1212,8 @@ function c4TapHint() {
 function c4World(e) { const r = cv.getBoundingClientRect(), V = c4View(); return [(e.clientX - r.left) / V.s + C4.camX, (e.clientY - r.top) / V.s - V.oy]; }
 function c4Down(e) { if (S.mode !== 'c4play') return; C4.drag = { x0: e.clientX, cam0: C4.camX, moved: false }; if (C4.phase !== 'story') capturePointer(e); }
 function c4Move(e) { const d = C4.drag; if (!d || C4.phase === 'story') return; const dx = e.clientX - d.x0; if (Math.abs(dx) > 8) d.moved = true; if (d.moved) C4.camX = d.cam0 - dx / c4View().s; }
+// the mouse wheel looks along the lane (owner: scrolling the wheel moves the view sideways)
+cv.addEventListener('wheel', e => { if (S.mode !== 'c4play' || C4.phase === 'story' || (C4.sheet && C4.sheet !== 'c4day')) return; e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; C4.camX += d * 1.5 * (e.deltaMode === 1 ? 30 : 1) / c4View().s; }, { passive: false });
 function c4Up(e) {
   const d = C4.drag; C4.drag = null; if (!d || d.moved || S.mode !== 'c4play') return;
   if (C4.phase === 'story') { c4StoryNext(); return; }
