@@ -103,7 +103,7 @@ const c4Wx = () => (SAVE4.plan && SAVE4.plan.wx) || 'dep';
 // the view: a phone shows ~430 units across with the lane in its lower part; a wide screen the whole height of the scene
 function c4View() {
   const w = innerWidth || 430, h = innerHeight || 800, portrait = h > w, s = portrait ? w / 470 : Math.min(h / 600, w / 760), vh = h / s;
-  return { s, vh, vw: w / s, oy: vh * (portrait ? .8 : .88) - (C4_Y0 + C4_D) };
+  return { s, vh, vw: w / s, oy: vh * (C4.town ? (portrait ? .72 : .81) : portrait ? .8 : .88) - (C4_Y0 + C4_D) };
 }
 // stock, price and cost of a ware; the betel stall keeps its old fields in SAVE4
 const c4Own = g => g === 'trau' || !!(SAVE4.shops[g] && SAVE4.shops[g].own);
@@ -1042,15 +1042,15 @@ function renderC4() {
   if (C4.town) { c4TownPaving(g, cx, vw); c4TownCreek(g, cx, vw); c4TownRiver(g, cx, vw, V); }
   g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.lineCap = 'round'; if (!C4.town)
   for (let i = 0, rr = mulberry(41); i < 110; i++) { const tx = -300 + rr() * (C4_W + 300), ty = C4_Y0 + C4_D + 14 + rr() * Math.max(20, V.vh - oy - C4_Y0 - C4_D - 30); if (!vis(tx, 20)) continue; g.beginPath(); for (const d of [-6, 0, 6]) { g.moveTo(tx + d, ty); g.lineTo(tx + d * 1.6, ty - 12 - Math.abs(d)); } g.stroke(); }
-  for (const [x, k, s, hv] of (C4.scene ? C4.scene.near : [[960, 'tree', .9], [1360, 'house', .72, 1], [1760, 'house', .7, 3], [2050, 'bamboo', .8], [2260, 'bamboo', .85], [600, 'house', .62, 5], [210, 'bamboo', .7]]))
-    if (vis(x, 260)) { dp(g, k === 'shop' ? c4TownArt(hv) : (k === 'flower' || k === 'pot' || k === 'bridge') ? c4TownNear(k) : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s); if (k === 'shop') c4TownLanterns(g, x, C4_Y0, s, hv); }
-  if (C4.town ? vis(C4_GATE + 60, 160) : vis(C4_GATE, 140)) dp(g, C4.town ? c4TownGate() : A.gate, C4.town ? C4_GATE + 60 : C4_GATE, C4_Y0 + 6, 0, .88, .88);   // phố huyện: the gate stands just past the covered bridge
+  for (const [x, k, s, hv, lab] of (C4.scene ? C4.scene.near : [[960, 'tree', .9], [1360, 'house', .72, 1], [1760, 'house', .7, 3], [2050, 'bamboo', .8], [2260, 'bamboo', .85], [600, 'house', .62, 5], [210, 'bamboo', .7]]))
+    if (vis(x, 260)) { dp(g, k === 'shop' ? c4TownArt(hv) : (k === 'flower' || k === 'pot' || k === 'bridge') ? c4TownNear(k) : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s); if (k === 'shop') c4TownFront(g, x, C4_Y0, s, hv, lab); }
+  if (C4.town ? vis(C4_GATE + 60, 160) : vis(C4_GATE, 140)) { dp(g, C4.town ? c4TownGate() : A.gate, C4.town ? C4_GATE + 60 : C4_GATE, C4_Y0 + 6, 0, .88, .88); if (C4.town) c4TownGateLanterns(g, C4_GATE + 60, C4_Y0 + 6, .88); }   // phố huyện: the gate stands just past the covered bridge
   const items = [], bubbles = [];
   const head = (x, z, tall, e, pri = 1, chat = null) => { if (e && e.say) bubbles.push({ e, x, y: c4Y(z) - c4TownLift(x) - tall * c4S(z) - 8, s: c4S(z), pri, chat }); };
   for (const v of C4.vendors) if (vis(v.x, 140)) {
     const vz = v.z || .05, wz = v.z ? v.z + .01 : .1, mine = c4VendorMine(v), vg = C4_VENDOR_G[v.ware];   // a stall we bought: our sellers, faded when sold out
     if (!mine) items.push({ z: vz, f: () => c4Mouse(g, v.M, v.x - 40, 1, C4.t * 2 + v.x, false, v.say ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null, null, c4S(vz) * .95, c4Y(vz), v.x) });
-    items.push({ z: wz, f: () => { if (mine) c4DrawShopLv(g, v.x + 50, c4Y(wz), c4S(wz), c4SLvI(vg), vg); g.globalAlpha = mine && c4Stock(vg) <= 0 ? .45 : 1; dp(g, A[v.ware], v.x + 50, c4Y(wz), 0, c4S(wz), c4S(wz)); g.globalAlpha = 1;
+    items.push({ z: wz, f: () => { if (mine) c4DrawShopLv(g, v.x + 50, c4Y(wz), c4S(wz), c4SLvI(vg), vg); g.globalAlpha = mine && c4Stock(vg) <= 0 ? .45 : 1; if (C4.town) dp(g, A[v.ware], v.x + 50, c4Y(.09), 0, c4S(.09) * .8, c4S(.09) * .8); else dp(g, A[v.ware], v.x + 50, c4Y(wz), 0, c4S(wz), c4S(wz)); g.globalAlpha = 1;
       if (mine && c4Stock(vg) <= 0 && C4.phase === 'open') { g.font = '900 14px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', v.x + 50, c4Y(wz) - 90 * c4S(wz)); } } });
     if (mine) c4HandItems(items, vg, head); else head(v.x - 40, vz, 168 * .95, v, 0);
   }
@@ -1061,7 +1061,7 @@ function renderC4() {
     if (c4Own(sh)) {
       c4HandItems(items, sh, head);
       c4TableItems(items, g, vis, sh);
-      items.push({ z: C4_STALL_Z, f: () => { c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = c4Open(sh) && !(C4.shut > 0) ? 1 : .45; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
+      items.push({ z: C4_STALL_Z, f: () => { if (C4.town) { c4TownCounter(g, sx + 20, sh); return; } c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = c4Open(sh) && !(C4.shut > 0) ? 1 : .45; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
         c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase());
         if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } } });
     } else {
@@ -1073,7 +1073,7 @@ function renderC4() {
   if (C4.build) items.push({ z: C4_STALL_Z, f: () => { dp(g, A.scaffold, C4_STALL, c4Y(C4_STALL_Z), 0, c4S(C4_STALL_Z), c4S(C4_STALL_Z)); for (let i = 0; i < 3; i++) { const k = (C4.t * .8 + i / 3) % 1; g.globalAlpha = .5 * (1 - k); g.fillStyle = '#c3b596'; g.beginPath(); g.arc(C4_STALL - 60 + i * 60, c4Y(C4_STALL_Z) - 20 - k * 60, 14 + k * 20, 0, 6.283); g.fill(); g.globalAlpha = 1; } } });
   else {
     c4HandItems(items, 'trau', head);
-    items.push({ z: C4_STALL_Z, f: () => { const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
+    items.push({ z: C4_STALL_Z, f: () => { if (C4.town) { c4TownCounter(g, C4_STALL + 10, 'trau'); return; } const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
       if (lv >= 3) c4DrawShopLv(g, sx, sy, ss, lv, 'trau');                       // the house behind it
       g.globalAlpha = C4.shut > 0 ? .45 : 1; dp(g, c4StallArt(Math.min(2, lv)), sx, sy, 0, ss, ss); g.globalAlpha = 1;
       if (lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU');

@@ -48,7 +48,6 @@ function c4TownArt(v) {
     for (let i = 0; i < pn; i++) { const x = -w + 22 + i * pw; if (i % 4 === 1) { a.fill('dark', rect(x + 2, eave + 34, pw - 4, -eave - 42)); continue; } a.key(lines([[x, eave + 30, x, -6], [x + 3, eave + 46, x + pw - 3, eave + 46], [x + 3, -40, x + pw - 3, -40]]), 1); }
     a.fk('ash', rect(-w + 8, -6, w * 2 - 16, 6), 1.6);
     a.fk(o.board, rect(-44, eave + 6, 88, 20), 1.8);
-    a.text(o.sign, 0, eave + 16, 12, o.board === 'dark' ? 'yellow' : 'yellow', '"Playfair Display", serif', 'color', '900');
     if (o.two) {
       // the upper floor, set back a little: wood with a balcony, a lattice, or an ochre wall with a small window
       const ux = w - 10;
@@ -110,11 +109,15 @@ function c4TownFarArt() {
 // the town's rows (called from c4DayLook): houses wall to wall, now and then a bougainvillea or a potted palm; far landmarks
 function c4TownScene(rs) {
   const near = [], far = [];
+  // the houses that must stand at a place: ours (the betel shop, the rentable plots) and the neighbours'
+  const anchors = [[C4_STALL + 10, 'g:trau'], ...C4_SHOPS.map(g => [C4_GOODS[g].x + 20, 'g:' + g]), ...C4_VENDORS.map(v => [v.x + 50, 'v:' + v.ware])].sort((p, q) => p[0] - q[0]);
+  const names = ['VẢI LỤA', 'ĐỒ GỐM', 'QUÁN NƯỚC', 'TẠP HOÁ', 'ĐÈN LỒNG', 'THỢ BẠC', 'GẠO MUỐI', 'THUỐC BẮC', 'SÁCH VỞ', 'MAY ÁO'];
+  const put = (cx, label) => { const v = (rs() * C4_TOWN_V.length) | 0; near.push([cx, 'shop', .72, v, label]); return C4_TOWN_V[v].w * .72; };
   let x = 600, i = 0;
-  while (x < C4_W + 200) {
-    const v = (rs() * C4_TOWN_V.length) | 0, w = C4_TOWN_V[v].w * .72;
-    near.push([x + w, 'shop', .72, v]); x += w * 2; i++;
-    if (i % 3 === 0) { near.push([x + 14, rs() < .5 ? 'flower' : 'pot', .7]); x += 30; }
+  for (const [ax, label] of [...anchors, [C4_W + 400, null]]) {
+    while (x + 140 < ax - 70) { const w = put(x + 70, names[(rs() * names.length) | 0]); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
+    if (!label) break;
+    const w = put(ax, label); x = ax + w;
   }
   for (let fx = -100; fx < 3200; fx += 300 + rs() * 120) far.push([fx, 'roofs', .85]);
   far.push([700, 'gate', 1], [1500, 'tower', 1.05], [2300, 'temple', 1.1], [1100, 'bigtree', .75], [2900, 'tower', .95]);
@@ -172,10 +175,7 @@ function c4TownBridgeItems(items, g, vis) {
     rail(1); pillars(1, 165);
     const s = c4S(1);
     c4TownRoofBand(g, a - 30, b + 30, x => c4DeckY(Math.max(a, Math.min(b, x)), 1) - 165 * s, 70 * s, s);
-    for (let i = 0; i < 6; i++) { const lx = a + 40 + i * (b - a - 80) / 5, ey = c4DeckY(lx, 1) - 165 * s, ly = ey + 26 * s + Math.sin(C4.t * 1.3 + i) * 1.5;
-      g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(lx, ey + 6 * s); g.lineTo(lx, ly - 10 * s); g.stroke();
-      g.fillStyle = '#f2ecde'; g.lineWidth = 1.6; g.beginPath(); g.ellipse(lx, ly, 10 * s, 11 * s, 0, 0, 6.283); g.fill(); g.stroke();
-      g.fillStyle = '#a3332a'; for (const [dx, dy] of [[0, 0], [-4, -3], [4, -3], [-3, 4], [3, 4]]) { g.beginPath(); g.arc(lx + dx * s, ly + dy * s, 1.8 * s, 0, 6.283); g.fill(); } }
+    for (let i = 0; i < 6; i++) { const lx = a + 40 + i * (b - a - 80) / 5, ey = c4DeckY(lx, 1) - 165 * s; c4DrawLantern(g, lx, ey + 4 * s, s * 1.15, i % 2 ? '#f2c640' : '#c4473a', 10, Math.sin(C4.t * 1.5 + i * 1.7) * .14); }
   } });
 }
 // a long tiled roof drawn along a curve: eave at eaveY(x), height h; orange tiles with white mortar lines, a red beam under the eave,
@@ -225,7 +225,7 @@ function c4TownRiver(g, cx, vw, V) {
   for (let r = 0; r < 7; r++) { const y = yw + 40 + r * 22, off = (C4.t * (6 + r * 3)) % 80; for (let x = Math.floor((x0 - off) / 80) * 80 + off; x < x1; x += 80) { g.moveTo(x + r * 23, y); g.quadraticCurveTo(x + r * 23 + 10, y - 4, x + r * 23 + 20, y); } }
   g.stroke();
   // boats coming and going, the folk in them mice of the town (owner), some with a lantern
-  const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 64 + (i % 3) * 30, hull: C4_BOAT_HULLS[i], lamp: i % 2 === 0,
+  const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 34 + (i % 3) * 28, hull: C4_BOAT_HULLS[i], lamp: i % 2 === 0,
     folk: Array.from({ length: 1 + (i % 3) }, (_, k) => c4MouseRig(C4_BOAT_SORTS[(i * 3 + k) % C4_BOAT_SORTS.length])), man: c4MouseRig(C4_BOAT_SORTS[(i + 4) % C4_BOAT_SORTS.length]) })));
   for (const b of [...B].sort((p, q) => p.y - q.y)) {
     if (!C4.paused) { b.x += b.sp / 60; if (b.x > C4_W + 300) b.x = -300; if (b.x < -300) b.x = C4_W + 300; }
@@ -251,23 +251,55 @@ const c4TownGate = () => C4_TOWN_GATE || (C4_TOWN_GATE = part([-160, -360, 160, 
   c4TileRoof(a, -70, 70, -350, -322, 14, 'dark');
   a.fk('red', rect(-86, -262, 172, 40), 2.2);
   a.text('HẢI PHỐ', 0, -242, 26, 'yellow', '"Playfair Display", serif', 'color', '900');
-  c4Lanterns(a, -90, 90, -280, 1);
 }));
 
 // the lanterns under a house's eave, drawn live so they sway a little, hung only either side of the sign board (owner: they hid it)
+// what a house's board says: our ware (or CHO THUÊ while the plot is not ours), a neighbour's ware, or a name of its own
+function c4TownSign(label) {
+  if (!label) return '';
+  if (label.startsWith('g:')) { const g = label.slice(2); return c4Own(g) ? C4_GOODS[g].name.toUpperCase() : 'CHO THUÊ'; }
+  if (label.startsWith('v:')) { const G = C4_GOODS[C4_VENDOR_G[label.slice(2)]]; return G ? G.name.toUpperCase() : ''; }
+  return label;
+}
+// a silk lantern hanging from (ax, ay) on a string, swung by ang: a cap, a round ribbed body, a cap, a tassel
+function c4DrawLantern(g, ax, ay, s, col, len, ang) {
+  g.save(); g.translate(ax, ay); g.rotate(ang); g.scale(s, s); g.strokeStyle = INK; g.lineJoin = 'round';
+  g.lineWidth = 1.1; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, len); g.stroke();
+  const cy = len + 12;
+  g.fillStyle = 'rgba(255,214,120,.22)'; g.beginPath(); g.arc(0, cy, 15, 0, 6.283); g.fill();
+  g.fillStyle = '#2a221d'; g.fillRect(-4, len, 8, 3); g.fillRect(-4, cy + 9, 8, 3);
+  g.fillStyle = col; g.lineWidth = 1.6; g.beginPath(); g.ellipse(0, cy, 9, 9.5, 0, 0, 6.283); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(42,34,29,.55)'; g.lineWidth = .9; g.beginPath(); g.ellipse(0, cy, 4.5, 9.3, 0, 0, 6.283); g.moveTo(0, cy - 9.5); g.lineTo(0, cy + 9.5); g.stroke();
+  g.strokeStyle = '#a3332a'; g.lineWidth = 1.6; g.beginPath(); for (const dx of [-2, 0, 2]) { g.moveTo(dx, cy + 12); g.lineTo(dx * 1.5, cy + 22); } g.stroke();
+  g.restore();
+}
+function c4TownFront(g, hx, hy, s, v, label) {
+  const txt = c4TownSign(label);
+  if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    let fs = 12; while (fs > 8 && g.measureText(txt).width > 82) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
+  c4TownLanterns(g, hx, hy, s, v);
+}
 function c4TownLanterns(g, hx, hy, s, v) {
-  const o = C4_TOWN_V[((v | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length], w = o.w, ay = -146;
-  g.save(); g.translate(hx, hy); g.scale(s, s); g.strokeStyle = INK;
+  const o = C4_TOWN_V[((v | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length], w = o.w;
   for (let x = -w + 12, i = 0; x <= w - 12; x += 22, i++) {
     if (Math.abs(x) < 58) continue;                                         // the sign board's place
-    const c = PL[C4_LANTERN_COLS[(v * 2 + i * 3) % C4_LANTERN_COLS.length]][0], len = 8 + (i % 2) * 6;
-    const ang = Math.sin(C4.t * 1.7 + hx * .013 + i * 1.3) * .16;             // a gentle sway in the breeze
-    g.save(); g.translate(x, ay); g.rotate(ang);
-    g.lineWidth = 1.2; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, len); g.stroke();
-    g.fillStyle = c; g.lineWidth = 1.8; g.beginPath(); g.ellipse(0, len + 9, 7, 9, 0, 0, 6.283); g.fill(); g.stroke();
-    g.lineWidth = 1.2; g.beginPath(); g.moveTo(-5, len + 3); g.lineTo(5, len + 3); g.moveTo(-5, len + 15); g.lineTo(5, len + 15); g.moveTo(0, len + 18); g.lineTo(0, len + 26); g.stroke();
-    g.restore();
+    c4DrawLantern(g, hx + x * s, hy - 146 * s, s, PL[C4_LANTERN_COLS[(v * 2 + i * 3) % C4_LANTERN_COLS.length]][0], 6 + (i % 2) * 6, Math.sin(C4.t * 1.7 + hx * .013 + i * 1.3) * .16);
   }
+}
+// the gate's lanterns, hung outside its board (owner: they hid HẢI PHỐ), swaying
+function c4TownGateLanterns(g, gx, gy, s) {
+  for (const [x, i] of [[-142, 0], [-104, 1], [104, 2], [142, 3]]) c4DrawLantern(g, gx + x * s, gy - 286 * s, s * 1.1, i % 2 ? '#f2c640' : '#c4473a', 6 + (i % 2) * 8, Math.sin(C4.t * 1.4 + i * 1.9) * .15);
+}
+// the counter in a shop's doorway: the ware set out on it, the seller standing behind it (owner: in the town selling is indoors)
+function c4TownCounter(g, x, ware) {
+  const z = .09, s = c4S(z), y = c4Y(z), open = c4Stock(ware) > 0;
+  g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = INK; g.lineWidth = 2;
+  g.fillStyle = '#7a4a22'; g.fillRect(-62, -34, 124, 34); g.strokeRect(-62, -34, 124, 34);
+  g.fillStyle = '#b57a22'; g.fillRect(-68, -42, 136, 9); g.strokeRect(-68, -42, 136, 9);
+  g.strokeStyle = 'rgba(42,34,29,.45)'; g.lineWidth = 1; g.beginPath(); for (const dx of [-30, 0, 30]) { g.moveTo(dx, -32); g.lineTo(dx, -2); } g.stroke();
+  if (open) { g.strokeStyle = INK; g.lineWidth = 1.6; const col = ware === 'trau' ? '#2f6a4c' : '#e8d8a8';
+    for (const dx of [-38, 0, 38]) { g.fillStyle = '#5b2f1f'; g.beginPath(); g.ellipse(dx, -42, 16, 5, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = col; g.beginPath(); g.ellipse(dx, -47, 12, 7, 0, Math.PI, 0); g.fill(); g.stroke(); } }
+  else if (C4.phase === 'open') { g.fillStyle = '#a3332a'; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillText('Hết hàng', 0, -52); }
   g.restore();
 }
 
