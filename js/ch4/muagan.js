@@ -66,8 +66,6 @@ function c4BuyOpen(v) {
 const C4_RIVAL_X = C4_STALL + 60, C4_RIVAL_Z = .96;
 const C4_RIVAL_CALL = ['Trầu rẻ đây! Năm đồng một miếng thôi!', 'Trầu nhà tôi cay hơn, rẻ hơn!', 'Ai mua trầu rẻ thì sang bên này!', 'Cau non, lá tươi, giá mềm đây!'];
 const c4RivalOn = () => SAVE4.rival > 0 && C4.phase === 'open';
-// where the rival sells: across the lane in the village; in the town a shop a few doors down (C4.townRivalX), or streets away (null)
-const c4RivalSpot = () => !C4.town ? { x: C4_RIVAL_X, z: C4_RIVAL_Z, to: C4_RIVAL_Z - .1, dx: 70 } : SAVE4.rivalFar || !C4.townRivalX ? null : { x: C4.townRivalX, z: .07, to: .3, dx: 0 };
 function c4RivalUpdate(dt) {
   if (!c4RivalOn()) return;
   const R0 = C4.rivalM || (C4.rivalM = { say: null, callT: 2, M: c4MouseRig(20) });
@@ -76,39 +74,32 @@ function c4RivalUpdate(dt) {
   if (SAVE4.cheap > 0 || R() > dt * 1.2) return;
   // (a player: the rival barely hurt) — buyers on their way to our betel stall are lured too, not only passers-by
   const w = C4.walkers.find(w => w.st === 'walk' && !w.visit && w.kind === 'mouse' && !w.buf && Math.abs(w.x - C4_RIVAL_X) < 300 && !w.rival && (!w.buy || w.shop === 'trau') && !w.guest);
-  if (w && !c4RivalSpot()) { w.rival = true; w.buy = false; w.shop = null; w.st = 'leave'; w.face = 1; w.cd = 1e9; c4Say(w, c4Pick(['Sang phố bên mua trầu rẻ thôi!', 'Nghe nói phố bên trầu rẻ hơn.'])); return; }
   if (w) { w.rival = true; w.buy = false; w.shop = null; w.st = 'torival'; w.cd = 1e9; }
 }
 function c4RivalWalk(dt) {
   for (const w of C4.walkers) {
     if (w.st !== 'torival') continue;
-    const sp = c4RivalSpot(); if (!sp) { w.st = 'leave'; continue; }
-    const tx = sp.x + sp.dx + (w.seed % 1) * 40, dx = tx - w.x, dz = sp.to - w.z, d = Math.hypot(dx, dz * 300);
+    const tx = C4_RIVAL_X + 70 + (w.seed % 1) * 40, dx = tx - w.x, dz = (C4_RIVAL_Z - .1) - w.z, d = Math.hypot(dx, dz * 300);
     if (d > 4) { const k = Math.min(1, 80 * dt / d); w.x += dx * k; w.z += dz * k; w.ph += dt * 9; w.face = dx < 0 ? -1 : 1; }
     else { w.face = -1; w.rivalT = (w.rivalT || 0) + dt; if (w.rivalT > 2.5) { w.st = 'leave'; w.face = R() < .5 ? 1 : -1; w.carry = MP.ladong; c4Say(w, c4Pick(['Rẻ hơn hẳn!', 'Bên này rẻ, mua bên này.', 'Được hời một đồng!'])); } }
   }
 }
 function c4RivalItems(items, g, head, vis) {
-  if (!c4RivalOn()) return;
-  if (C4.town) { const sp = c4RivalSpot(); if (!sp || !vis(sp.x, 160)) return; const R0 = C4.rivalM || (C4.rivalM = { say: null, callT: 2, M: c4MouseRig(20) });
-    items.push({ z: .07, f: () => c4Mouse(g, R0.M, sp.x, 1, C4.t * 2, false, R0.say ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null, null, c4S(.07) * C4_CROWD, c4Y(.07), 3.3) });
-    items.push({ z: C4_STALL_Z, f: () => c4TownCounter(g, sp.x, 'trau', true) }); head(sp.x, .07, 168 * C4_CROWD, R0, 1); return; }
-  if (!vis(C4_RIVAL_X, 160)) return;
-  const R0 = C4.rivalM || (C4.rivalM = { say: null, callT: 2, M: c4MouseRig(20) }), A = c4Art(), z = C4_RIVAL_Z, s = c4S(z) * .9 * C4_CROWD;   // the size of everyone else (owner: the rival by the river looked too big)
+  if (!c4RivalOn() || !vis(C4_RIVAL_X, 160)) return;
+  const R0 = C4.rivalM || (C4.rivalM = { say: null, callT: 2, M: c4MouseRig(20) }), A = c4Art(), z = C4_RIVAL_Z, s = c4S(z) * .9;
   items.push({ z, f: () => { dp(g, A.ganh, C4_RIVAL_X + 20, c4Y(z), 0, s, s); c4Mouse(g, R0.M, C4_RIVAL_X - 70, 1, C4.t * 2, false, R0.say ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null, null, s, c4Y(z), 3.3);
     const bx = C4_RIVAL_X + 20, by = c4Y(z) - 128 * s;                      // a red board so it reads as the rival
     g.fillStyle = INK; g.fillRect(bx - 2, by, 4, 40 * s); g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2; g.fillRect(bx - 44, by - 26, 88, 26); g.strokeRect(bx - 44, by - 26, 88, 26);
     g.fillStyle = '#f2ecde'; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TRẦU RẺ', bx, by - 12); g.textBaseline = 'alphabetic'; } });
-  head(C4_RIVAL_X - 70, z, 168 * .9 * C4_CROWD, R0, 1);
+  head(C4_RIVAL_X - 70, z, 168 * .9, R0, 1);
 }
 function c4RivalTap(x, y) {
   if (!c4RivalOn()) return false;
-  const sp = c4RivalSpot(); if (!sp) return false;                        // streets away: nothing to tap
-  const z = sp.z, s = c4S(z), sy = c4Y(z);
-  if (C4.town ? (Math.abs(x - sp.x) > 80 || y < C4_Y0 - 220 || y > c4Y(.2)) : (x < C4_RIVAL_X - 120 * s || x > C4_RIVAL_X + 130 * s || y < sy - 190 * s || y > sy + 20)) return false;
+  const z = C4_RIVAL_Z, s = c4S(z), sy = c4Y(z);
+  if (x < C4_RIVAL_X - 120 * s || x > C4_RIVAL_X + 130 * s || y < sy - 190 * s || y > sy + 20) return false;
   AU.tap();
   const who = SAVE4.rivalWho || 'một nhà trong làng', price = 250 + 60 * SAVE4.rival, box = $('#c4upO');
-  $('#c4upT').textContent = C4.town ? 'Cửa hàng trầu rẻ' : 'Gánh trầu đối diện'; $('#c4upB').innerHTML = '';
+  $('#c4upT').textContent = 'Gánh trầu đối diện'; $('#c4upB').innerHTML = '';
   box.innerHTML = `<p>Gánh trầu của ${who} bán rẻ một đồng, ${SAVE4.cheap > 0 ? 'nhà mình đã hạ giá giữ khách.' : 'đang kéo khách của nhà mình.'} Còn ${SAVE4.rival} ngày nữa họ mới dẹp.</p><p class="hint">Mua đứt gánh ấy thì hết người tranh khách, trầu nhà mình lại bán đủ giá.</p>`;
   $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < price; $('#c4upGo').innerHTML = `Mua đứt gánh ấy · ${c4Money(price)}`;
   $('#c4upGo').onclick = () => { if (SAVE4.money < price) return; SAVE4.money -= price; if (C4.today) C4.today.spent += price; SAVE4.rival = 0; SAVE4.cheap = 0; c4Sheets(null); AU.stamp(); persist4(); c4Hud(); toast(`Đã mua đứt gánh trầu của ${who}. Hết người tranh khách!`, 3.4); };

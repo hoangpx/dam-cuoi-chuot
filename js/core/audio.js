@@ -27,20 +27,9 @@ const AU = (() => {
     // Thả Diều (chương III tranh 4): slow and easy, a bamboo flute over the hum of the kite's own flute, a soft drum now and then
     { bpm: 76, hold: 8, inst: 'sao', drone: 55, mel: [74,null,null,null,76,null,79,null,81,null,null,null,null,null,null,null,79,null,null,76,74,null,null,null,71,null,null,null,null,null,null,null,74,null,null,null,76,null,79,null,83,null,81,null,79,null,null,null,76,null,null,74,76,null,null,null,74,null,null,null,null,null,null,null],
       drum: [.35, 0, 0, 0, 0, 0, 0, 0, .2, 0, 0, 0, 0, 0, 0, 0], perc: s => (s === 6 || s === 14 ? 'mo' : null), vol: .1, oct: 0 },
-    // Chương IV (owner, 2026-10-14: "làm lại nhạc cho chill chill, nghe lâu không bị chán"): an easy tune for long market days — a bamboo
-    // flute drifting in D pentatonic over a đàn tranh picking the chords (D Bm G A | D F#m G A), a low hum, a heartbeat drum and a
-    // woodblock once a bar. Four sections of 64 steps (A A' B A''), about a minute and a half; the đàn tranh runs 128 steps, so the two
-    // line up differently on each turn round
-    { bpm: 80, hold: 8, inst: 'sao', drone: 50, vol: .065, oct: 0,
-      mel: seq([[74,4],[76,2],[78,2],[81,6],[78,2],  [76,4],[74,4],[null,8],  [71,4],[74,2],[76,2],[78,8],  [76,2],[74,2],[71,4],[null,8],
-                [74,4],[76,2],[78,2],[83,6],[81,2],  [78,4],[76,4],[null,8],  [74,4],[71,2],[69,2],[71,8],  [74,6],[null,10],
-                [81,8],[83,4],[81,4],  [78,8],[null,8],  [76,4],[78,4],[81,4],[78,4],  [76,8],[null,8],
-                [69,4],[71,4],[74,8],  [76,4],[74,2],[71,2],[69,8],  [66,4],[69,4],[71,8],  [69,4],[null,12]]),
-      arp: seq([[50,2],[57,2],[62,2],[66,2],[57,2],[62,2],[66,4],  [47,2],[54,2],[59,2],[62,2],[54,2],[59,2],[62,4],
-                [43,2],[50,2],[55,2],[59,2],[50,2],[55,2],[59,4],  [45,2],[52,2],[57,2],[61,2],[52,2],[57,2],[61,4],
-                [50,2],[57,2],[62,2],[66,2],[57,2],[62,2],[66,4],  [42,2],[49,2],[54,2],[57,2],[49,2],[54,2],[57,4],
-                [43,2],[50,2],[55,2],[59,2],[50,2],[55,2],[59,4],  [45,2],[52,2],[57,2],[61,2],[64,2],[61,2],[57,4]]),
-      drum: [.28, 0, 0, 0, 0, 0, 0, 0, .16, 0, 0, 0, 0, 0, 0, 0], perc: s => (s === 12 ? 'mo' : null) },
+    // Chợ Làng Chuột (chương IV): a lively market tune, kèn over drum and woodblock, easy to hear for a long while
+    { bpm: 104, hold: 3, mel: [72,null,74,null,76,79,76,null,74,null,72,null,69,null,null,null,72,null,74,76,79,null,81,null,79,76,74,null,76,null,null,null,81,null,79,null,76,null,74,76,79,null,76,null,74,null,72,null,69,null,72,null,74,76,74,72,69,null,67,null,69,null,null,null],
+      drum: [.7, 0, 0, .25, .5, 0, .3, 0, .6, 0, 0, .25, .5, 0, .3, .2], perc: s => (s % 4 === 2 ? 'mo' : s === 7 ? 'mo2' : null), vol: .09, oct: 0 },
     // Chương VI · Tìm Chuột: an easy, thinking tune in the five-note scale, slow wooden knocks
     { bpm: 92, hold: 3, mel: [62,null,64,null,67,null,null,69,67,null,64,null,62,null,null,null,64,null,67,null,69,null,74,null,71,null,69,null,67,null,null,null,69,null,71,null,74,null,null,71,69,null,67,null,64,null,null,null,62,null,64,67,64,null,62,null,59,null,62,null,null,null,null,null],
       drum: [.6, 0, 0, 0, .3, 0, .2, 0, .5, 0, 0, 0, .3, 0, 0, .2], perc: s => (s % 8 === 4 ? 'mo' : s === 14 ? 'mo2' : null), vol: .085, oct: 0 },
@@ -66,6 +55,20 @@ const AU = (() => {
     { bpm: 58, hold: 12, inst: 'sao', echo: true, vol: .06, oct: 0, drum: new Array(16).fill(0), perc: () => null,
       mel: seq([[69,6],[72,2],[74,8],[null,8],[76,4],[74,2],[72,2],[69,12],[null,12],
                 [67,4],[69,4],[72,8],[null,8],[74,3],[72,1],[69,4],[67,4],[64,10],[null,14]]) },
+    // Chương IV phần 2 · Phố Huyện (owner, 2026-10-14: "làm lại nhạc cho chill chill, nghe lâu không bị chán"): an easy tune for long town days — a bamboo
+    // flute drifting in D pentatonic over a đàn tranh picking the chords (D Bm G A | D F#m G A), a low hum, a heartbeat drum and a
+    // woodblock once a bar. Four sections of 64 steps (A A' B A''), about a minute and a half; the đàn tranh runs 128 steps, so the two
+    // line up differently on each turn round
+    { bpm: 80, hold: 8, inst: 'sao', drone: 50, vol: .065, oct: 0,
+      mel: seq([[74,4],[76,2],[78,2],[81,6],[78,2],  [76,4],[74,4],[null,8],  [71,4],[74,2],[76,2],[78,8],  [76,2],[74,2],[71,4],[null,8],
+                [74,4],[76,2],[78,2],[83,6],[81,2],  [78,4],[76,4],[null,8],  [74,4],[71,2],[69,2],[71,8],  [74,6],[null,10],
+                [81,8],[83,4],[81,4],  [78,8],[null,8],  [76,4],[78,4],[81,4],[78,4],  [76,8],[null,8],
+                [69,4],[71,4],[74,8],  [76,4],[74,2],[71,2],[69,8],  [66,4],[69,4],[71,8],  [69,4],[null,12]]),
+      arp: seq([[50,2],[57,2],[62,2],[66,2],[57,2],[62,2],[66,4],  [47,2],[54,2],[59,2],[62,2],[54,2],[59,2],[62,4],
+                [43,2],[50,2],[55,2],[59,2],[50,2],[55,2],[59,4],  [45,2],[52,2],[57,2],[61,2],[52,2],[57,2],[61,4],
+                [50,2],[57,2],[62,2],[66,2],[57,2],[62,2],[66,4],  [42,2],[49,2],[54,2],[57,2],[49,2],[54,2],[57,4],
+                [43,2],[50,2],[55,2],[59,2],[50,2],[55,2],[59,4],  [45,2],[52,2],[57,2],[61,2],[64,2],[61,2],[57,4]]),
+      drum: [.28, 0, 0, 0, 0, 0, 0, 0, .16, 0, 0, 0, 0, 0, 0, 0], perc: s => (s === 12 ? 'mo' : null) },
   ];
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;

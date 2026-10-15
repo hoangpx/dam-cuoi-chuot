@@ -1,0 +1,17 @@
+/* Chương IV phần 2 · Phố Huyện (js/ch4b/): its own top bar and the hands holding a flower lantern; the sheets use .c4sheet/.card4 */
+#p4hud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;z-index:4;pointer-events:none}
+#p4hud .tag{font-family:var(--display);font-weight:900;font-size:14px;color:var(--ink);white-space:nowrap}
+#p4hud button.tag{pointer-events:auto;cursor:pointer}
+#p4hud .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#p4hud .mid{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px))}
+#p4hud .bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;pointer-events:auto}
+#p4hud .bar .tag{font-size:16px;padding:8px 14px;box-shadow:3px 3px 0 rgba(29,25,21,.3)}
+@media (max-width:520px){#p4hud{flex-wrap:wrap}#p4hud .mid{position:static;transform:none;order:3;width:100%;display:flex;justify-content:center}}
+/* the hands holding a lantern: they follow the pointer; on a phone they wait over the river */
+#p4hands{position:fixed;z-index:5;pointer-events:none;width:clamp(130px,11vw,200px);aspect-ratio:1;transform:translate(-50%,-70%);filter:drop-shadow(0 0 10px rgba(255,200,110,.6))}
+#p4hands.touch{left:50%;top:auto;bottom:24%;width:118px;transform:translateX(-50%);animation:p4bob 2.4s ease-in-out infinite}
+@keyframes p4bob{50%{transform:translate(-50%,-6px)}}
+body.p4holding #cv{cursor:none}
+#p4hoaW{width:100%;box-sizing:border-box;font:16px var(--body);padding:8px 10px;border:2.5px solid var(--ink);background:#fff8e6;resize:none}
+/* part 1's button to go up to the town */
+#c4hud .bar .tag.pho{background:#a3332a;color:var(--diep)}
