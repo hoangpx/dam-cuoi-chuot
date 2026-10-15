@@ -238,7 +238,6 @@ function c4TownRiver(g, cx, vw, V) {
     if (b.pass) c4Mouse(g, b.pass, b.x + d * 8, d, C4.t * 2, false, null, null, ms, deck + 30, b.x + 3);
     c4Mouse(g, b.man, b.x - d * 52, d, C4.t * 2, false, -.6 - Math.sin(C4.t * 1.2 + b.x) * .3, null, ms, deck + 12, b.x + 9);
     g.restore();
-    g.strokeStyle = INK; g.lineWidth = 2.6; g.beginPath(); g.moveTo(b.x - d * 46, deck - 58); g.lineTo(b.x - d * 72 + Math.sin(C4.t * 1.2 + b.x) * 6, y + 40); g.stroke();   // the pole
     // the canopy: an arch of woven bamboo over the middle
     if (b.mui) { g.fillStyle = '#b57a22'; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x - 34, deck + 2); g.bezierCurveTo(b.x - 34, deck - 40, b.x + 34, deck - 40, b.x + 34, deck + 2); g.closePath(); g.fill(); g.stroke();
       g.strokeStyle = 'rgba(42,34,29,.45)'; g.lineWidth = 1; g.beginPath(); for (const k of [-18, -6, 6, 18]) { g.moveTo(b.x + k, deck - 28 + Math.abs(k) * .5); g.lineTo(b.x + k * 1.2, deck); } g.stroke(); g.strokeStyle = INK; }
@@ -248,6 +247,7 @@ function c4TownRiver(g, cx, vw, V) {
     g.quadraticCurveTo(b.x + L2 - 8, y + 10, b.x + L2 - 30, y + 14); g.lineTo(b.x - L2 + 30, y + 14); g.quadraticCurveTo(b.x - L2 + 8, y + 10, b.x - L2, gun(b.x - L2)); g.closePath(); g.fill(); g.stroke();
     g.fillStyle = b.hull; g.beginPath(); for (let x = b.x - L2 + 4; x <= b.x + L2 - 4; x += 6) { const yy = gun(x) + 3; x === b.x - L2 + 4 ? g.moveTo(x, yy) : g.lineTo(x, yy); } for (let x = b.x + L2 - 8; x >= b.x - L2 + 8; x -= 6) g.lineTo(x, gun(x) + 12); g.closePath(); g.fill(); g.stroke();
     g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(b.x - L2 + 26, y + 4); g.lineTo(b.x + L2 - 26, y + 4); g.stroke(); g.strokeStyle = INK;
+    c4Oar(g, b, d, gun, y);                                               // the oar, on the near side, rowed by the boatman
     // the eye on the bow, to see the way (mắt thuyền)
     { const ex = b.x + d * (L2 - 22), ey = gun(ex) + 20; g.fillStyle = '#f2ecde'; g.lineWidth = 1.4; g.beginPath(); g.ellipse(ex, ey, 7, 4, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(ex + d * 1.5, ey, 2.4, 0, 6.283); g.fill(); }
     if (b.lamp) { const lx = b.x + d * (L2 - 8), ly = gun(b.x + d * L2) - 6; g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(lx, gun(lx)); g.lineTo(lx, ly - 4); g.stroke();
@@ -351,5 +351,22 @@ function c4RidgeCeramics(g, ridge, s) {
     g.strokeStyle = BL; g.lineWidth = 4 * s; g.stroke();
     g.lineWidth = 2 * s; g.beginPath(); g.arc(x + d * 3 * s, y - 22 * s, 5 * s, d > 0 ? 0 : Math.PI, d > 0 ? Math.PI * 1.5 : Math.PI * -.5, d < 0); g.stroke();
   }
+  g.restore();
+}
+
+// a boatman's oar (owner: the pole looked ugly): a wooden shaft through a rest on the gunwale near the stern, a broad blade in the
+// water; it swings back and forth with the stroke, the blade dipping and throwing a little splash
+function c4Oar(g, b, d, gun, y) {
+  const px = b.x - d * 60, py = gun(px) + 2, k = Math.sin(C4.t * 1.6 + b.x * .01), a = .42 + k * .28, ang = -d * a;   // the top leans towards the bow (in the boatman's hands), the blade trails to the stern
+  const up = 46, down = 58, ux = px + d * Math.sin(a) * up, uy = py - Math.cos(a) * up, lx = px - d * Math.sin(a) * down, ly = py + Math.cos(a) * down;
+  g.save(); g.lineCap = 'round';
+  g.strokeStyle = INK; g.lineWidth = 6.4; g.beginPath(); g.moveTo(ux, uy); g.lineTo(lx, ly); g.stroke();
+  g.strokeStyle = '#a0703a'; g.lineWidth = 3.6; g.stroke();
+  g.fillStyle = '#c9a36a'; g.strokeStyle = INK; g.lineWidth = 1.8;                       // the blade
+  g.beginPath(); g.ellipse(lx - d * Math.sin(a) * 8, ly + Math.cos(a) * 8, 6, 15, -ang, 0, 6.283); g.fill(); g.stroke();
+  g.fillStyle = '#5b2f1f'; g.beginPath(); g.ellipse(px, py, 5, 3.5, 0, 0, 6.283); g.fill(); g.stroke();   // the oar rest
+  g.fillStyle = '#2a221d'; g.beginPath(); g.arc(ux, uy, 3.2, 0, 6.283); g.fill();          // the grip
+  if (k < -.6) { g.strokeStyle = 'rgba(242,236,222,.85)'; g.lineWidth = 1.6; const sx = lx, sy = Math.min(ly, y + 26);
+    g.beginPath(); g.arc(sx - 6, sy, 5, Math.PI * 1.1, Math.PI * 1.7); g.moveTo(sx + 10, sy); g.arc(sx + 6, sy, 5, Math.PI * 1.3, Math.PI * 1.9); g.stroke(); }
   g.restore();
 }
