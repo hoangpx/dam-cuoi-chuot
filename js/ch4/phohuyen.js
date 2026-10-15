@@ -110,7 +110,7 @@ function c4TownFarArt() {
 // the town's rows (called from c4DayLook): houses wall to wall, now and then a bougainvillea or a potted palm; far landmarks
 function c4TownScene(rs) {
   const near = [], far = [];
-  let x = 520, i = 0;
+  let x = 600, i = 0;
   while (x < C4_W + 200) {
     const v = (rs() * C4_TOWN_V.length) | 0, w = C4_TOWN_V[v].w * .72;
     near.push([x + w, 'shop', .72, v]); x += w * 2; i++;
@@ -137,7 +137,7 @@ function c4TownPaving(g, cx, vw) {
 }
 // the covered bridge (after Chùa Cầu; owner's photo: a long bridge whose deck rises in a hump, a stone foot with arches, orange tiles
 // with white ridges, blue ceramic dragons along the ridge, red-walled houses at both ends): the street runs over it
-const C4_BRIDGE_X = 150, C4_BRIDGE_HW = 200, C4_BRIDGE_UP = 48;            // its middle, half span, and how high the deck rises
+const C4_BRIDGE_X = 110, C4_BRIDGE_HW = 200, C4_BRIDGE_UP = 48;            // its middle, half span, and how high the deck rises
 // how high the deck lifts a walker at x (a smooth hump, 0 off the bridge)
 const c4TownLift = x => { if (!C4.town) return 0; const k = Math.abs(x - C4_BRIDGE_X) / C4_BRIDGE_HW; return k >= 1 ? 0 : C4_BRIDGE_UP * Math.pow(Math.cos(k * Math.PI / 2), 1.3); };
 const c4OnBridge = x => Math.abs(x - C4_BRIDGE_X) < C4_BRIDGE_HW;
@@ -166,12 +166,7 @@ function c4TownBridgeItems(items, g, vis) {
   const rail = z => { const s = c4S(z); g.strokeStyle = INK; g.lineWidth = 1.6; g.fillStyle = '#c9a36a';
     g.beginPath(); for (let x = a; x <= b + .1; x += 8) { const y = c4DeckY(x, z) - 40 * s; x === a ? g.moveTo(x, y) : g.lineTo(x, y); } for (let x = b; x >= a - .1; x -= 8) g.lineTo(x, c4DeckY(x, z) - 34 * s); g.closePath(); g.fill(); g.stroke();
     g.beginPath(); for (let x = a + 5; x < b; x += 8) { const y = c4DeckY(x, z); g.moveTo(x, y - 34 * s); g.lineTo(x, y); } g.stroke(); };
-  // the red-walled houses at both ends, behind the walkers
-  const endHouse = (x, f) => { const y = C4_Y0 + 6, w = 70, h = 190;
-    g.fillStyle = '#c4473a'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.rect(x - w, y - h, w * 2, h); g.fill(); g.stroke();
-    g.fillStyle = '#d98a7c'; g.globalAlpha = .5; g.fillRect(x - w + 8, y - h + 20, 20, 60); g.globalAlpha = 1;
-    c4TownRoofBand(g, x - w - 14, x + w + 14, () => y - h, 48, 1); };
-  items.push({ z: -.6, f: () => { endHouse(a - 46, -1); endHouse(b + 46, 1); rail(0); } });
+  items.push({ z: -.6, f: () => rail(0) });                                 // the far railing, behind the walkers
   // in front of the walkers: the near railing, the pillars, and the long roof over the deck
   items.push({ z: 1.08, f: () => {
     rail(1); pillars(1, 165);
@@ -255,7 +250,7 @@ const c4TownGate = () => C4_TOWN_GATE || (C4_TOWN_GATE = part([-160, -360, 160, 
   c4TileRoof(a, -128, 128, -322, -280, 24, 'dark');
   c4TileRoof(a, -70, 70, -350, -322, 14, 'dark');
   a.fk('red', rect(-86, -262, 172, 40), 2.2);
-  a.text('PHỐ HUYỆN', 0, -242, 24, 'yellow', '"Playfair Display", serif', 'color', '900');
+  a.text('HẢI PHỐ', 0, -242, 26, 'yellow', '"Playfair Display", serif', 'color', '900');
   c4Lanterns(a, -90, 90, -280, 1);
 }));
 
