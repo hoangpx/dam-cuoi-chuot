@@ -1043,7 +1043,7 @@ function renderC4() {
   g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.lineCap = 'round'; if (!C4.town)
   for (let i = 0, rr = mulberry(41); i < 110; i++) { const tx = -300 + rr() * (C4_W + 300), ty = C4_Y0 + C4_D + 14 + rr() * Math.max(20, V.vh - oy - C4_Y0 - C4_D - 30); if (!vis(tx, 20)) continue; g.beginPath(); for (const d of [-6, 0, 6]) { g.moveTo(tx + d, ty); g.lineTo(tx + d * 1.6, ty - 12 - Math.abs(d)); } g.stroke(); }
   for (const [x, k, s, hv, lab] of (C4.scene ? C4.scene.near : [[960, 'tree', .9], [1360, 'house', .72, 1], [1760, 'house', .7, 3], [2050, 'bamboo', .8], [2260, 'bamboo', .85], [600, 'house', .62, 5], [210, 'bamboo', .7]]))
-    if (vis(x, 260)) { dp(g, k === 'shop' ? c4TownArt(hv) : (k === 'flower' || k === 'pot' || k === 'bridge') ? c4TownNear(k) : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s); if (k === 'shop') c4TownFront(g, x, C4_Y0, s, hv, lab); }
+    if (vis(x, 260)) { dp(g, k === 'shop' ? c4TownArt(hv) : (k === 'flower' || k === 'pot' || k === 'hoiquan') ? c4TownNear(k) : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s); if (k === 'shop') c4TownFront(g, x, C4_Y0, s, hv, lab); }
   if (C4.town ? vis(C4_GATE + 60, 160) : vis(C4_GATE, 140)) { dp(g, C4.town ? c4TownGate() : A.gate, C4.town ? C4_GATE + 60 : C4_GATE, C4_Y0 + 6, 0, .88, .88); if (C4.town) c4TownGateLanterns(g, C4_GATE + 60, C4_Y0 + 6, .88); }   // phố huyện: the gate stands just past the covered bridge
   const items = [], bubbles = [];
   const head = (x, z, tall, e, pri = 1, chat = null) => { if (e && e.say) bubbles.push({ e, x, y: c4Y(z) - c4TownLift(x) - tall * c4S(z) - 8, s: c4S(z), pri, chat }); };

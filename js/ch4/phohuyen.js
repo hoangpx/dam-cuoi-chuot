@@ -47,6 +47,7 @@ function c4TownArt(v) {
     const pn = Math.max(4, Math.round((w * 2 - 44) / 20)), pw = (w * 2 - 44) / pn;
     for (let i = 0; i < pn; i++) { const x = -w + 22 + i * pw; if (i % 4 === 1) { a.fill('dark', rect(x + 2, eave + 34, pw - 4, -eave - 42)); continue; } a.key(lines([[x, eave + 30, x, -6], [x + 3, eave + 46, x + pw - 3, eave + 46], [x + 3, -40, x + pw - 3, -40]]), 1); }
     a.fk('ash', rect(-w + 8, -6, w * 2 - 16, 6), 1.6);
+    for (const ex of [-w + 40, w - 40]) { a.fk('dark', circ(ex, eave + 40, 8), 1.6); a.fk('yellow', circ(ex, eave + 40, 5), 1.2); a.fk('dark', circ(ex + 1, eave + 40, 2.2), 1); }   // mắt cửa: the door's eyes keep watch (Hội An)
     a.fk(o.board, rect(-44, eave + 6, 88, 20), 1.8);
     if (o.two) {
       // the upper floor, set back a little: wood with a balcony, a lattice, or an ochre wall with a small window
@@ -112,10 +113,12 @@ function c4TownScene(rs) {
   // the houses that must stand at a place: ours (the betel shop, the rentable plots) and the neighbours'
   const anchors = [[C4_STALL + 10, 'g:trau'], ...C4_SHOPS.map(g => [C4_GOODS[g].x + 20, 'g:' + g]), ...C4_VENDORS.map(v => [v.x + 50, 'v:' + v.ware])].sort((p, q) => p[0] - q[0]);
   const names = ['VẢI LỤA', 'ĐỒ GỐM', 'QUÁN NƯỚC', 'TẠP HOÁ', 'ĐÈN LỒNG', 'THỢ BẠC', 'GẠO MUỐI', 'THUỐC BẮC', 'SÁCH VỞ', 'MAY ÁO'];
+  let hq = false;                                                           // one assembly hall gate in the street (hội quán)
   const put = (cx, label) => { const v = (rs() * C4_TOWN_V.length) | 0; near.push([cx, 'shop', .72, v, label]); return C4_TOWN_V[v].w * .72; };
   let x = 600, i = 0;
   for (const [ax, label] of [...anchors, [C4_W + 400, null]]) {
-    while (x + 140 < ax - 70) { const w = put(x + 70, names[(rs() * names.length) | 0]); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
+    if (!hq && ax - 70 - x > 330) { near.push([x + 160, 'hoiquan', .72]); x += 320; hq = true; }
+    while (x + 140 < ax - 70) { const w = put(x + 70, i === 0 ? 'ĐÈN LỒNG' : names[(rs() * names.length) | 0]); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
     if (!label) break;
     const w = put(ax, label); x = ax + w;
   }
@@ -124,7 +127,7 @@ function c4TownScene(rs) {
   return { far, near };
 }
 const c4TownPart = k => k === 'bigtree' ? WP.bigTree : c4TownFarArt()[k];
-const c4TownNear = k => k === 'flower' ? c4FlowerArt() : k === 'pot' ? c4PotArt() : null;
+const c4TownNear = k => k === 'flower' ? c4FlowerArt() : k === 'pot' ? c4PotArt() : k === 'hoiquan' ? c4HoiQuanArt() : null;
 // the paving of the street: big worn stone slabs
 function c4TownPaving(g, cx, vw) {
   g.save(); g.fillStyle = 'rgba(160,112,58,.16)'; g.fillRect(cx - 50, C4_Y0 - 4, vw + 100, C4_D + 10);
@@ -228,6 +231,7 @@ function c4TownRiver(g, cx, vw, V) {
   // woven bamboo canopy on some; the boatman stands at the stern with his pole, now and then a passenger sits in the middle
   const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 40 + (i % 3) * 30, hull: C4_BOAT_HULLS[i],
     lamp: i % 3 !== 1, mui: i % 3 === 1, pass: i % 3 === 1 ? null : i % 2 ? null : c4MouseRig(C4_BOAT_SORTS[(i * 3) % C4_BOAT_SORTS.length]), man: c4MouseRig(C4_BOAT_SORTS[(i + 4) % C4_BOAT_SORTS.length]) })));
+  { const J = C4.townJunk || (C4.townJunk = { x: 1600, sp: 6 }); if (!C4.paused) { J.x += J.sp / 60; if (J.x > C4_W + 400) J.x = -400; } if (J.x > x0 - 200 && J.x < x1 + 200) c4Junk(g, J.x, yw + 26 + Math.sin(C4.t) * 1.2, 1); }
   for (const b of [...B].sort((p, q) => p.y - q.y)) {
     if (!C4.paused) { b.x += b.sp / 60; if (b.x > C4_W + 300) b.x = -300; if (b.x < -300) b.x = C4_W + 300; }
     if (b.x < x0 - 140 || b.x > x1 + 140) continue;
@@ -290,6 +294,7 @@ function c4TownFront(g, hx, hy, s, v, label) {
   if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     let fs = 12; while (fs > 8 && g.measureText(txt).width > 82) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
   c4TownLanterns(g, hx, hy, s, v);
+  if (txt === 'ĐÈN LỒNG') c4LanternShop(g, hx, hy, s, v);
 }
 function c4TownLanterns(g, hx, hy, s, v) {
   const o = C4_TOWN_V[((v | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length], w = o.w;
@@ -368,5 +373,50 @@ function c4Oar(g, b, d, gun, y) {
   g.fillStyle = '#2a221d'; g.beginPath(); g.arc(ux, uy, 3.2, 0, 6.283); g.fill();          // the grip
   if (k < -.6) { g.strokeStyle = 'rgba(242,236,222,.85)'; g.lineWidth = 1.6; const sx = lx, sy = Math.min(ly, y + 26);
     g.beginPath(); g.arc(sx - 6, sy, 5, Math.PI * 1.1, Math.PI * 1.7); g.moveTo(sx + 10, sy); g.arc(sx + 6, sy, 5, Math.PI * 1.3, Math.PI * 1.9); g.stroke(); }
+  g.restore();
+}
+
+// the assembly hall of the Fujian merchants (after Hội quán Phúc Kiến): a three-door gate under a three-tier roof of green-glazed
+// tiles, red pillars, a carved board, dragons on the ridge; through the middle door the courtyard and a giant incense coil
+let C4_HQ_ART = null;
+const c4HoiQuanArt = () => C4_HQ_ART || (C4_HQ_ART = part([-240, -400, 240, 6], a => {
+  a.fk('catY2', rect(-220, -170, 440, 170), 2.4);                           // the wall
+  a.fk('dark', smooth([[-50, 0], [-50, -120], [-40, -140], [0, -150], [40, -140], [50, -120], [50, 0]]), 2.2);   // the middle door, open
+  a.key(lines([[0, -150, 0, -100]]), 1);                                    // the incense coil hanging inside
+  for (let r = 0; r < 4; r++) a.band('yellow', ell(0, -84 + r * 8, 24 - r * 5, 7 - r), 2.4);   // the coil, smouldering
+  a.fk('red', circ(0, -58, 3), 1);
+  for (const x of [-140, 140]) { a.fk('dark', rect(x - 28, -110, 56, 110), 2); a.fk('red', rect(x - 24, -106, 48, 102), 1.6); a.fk('yellow', circ(x - 10, -58, 3), .8); a.fk('yellow', circ(x + 10, -58, 3), .8); }
+  for (const x of [-196, -86, 86, 196]) a.fk('red', rect(x - 10, -170, 20, 170), 2);
+  a.fk('red', rect(-90, -166, 180, 28), 2.2); a.text('HỘI QUÁN', 0, -152, 17, 'yellow', '"Playfair Display", serif', 'color', '900');
+  c4TileRoof(a, -224, 224, -228, -170, 22, 'green');                         // three tiers of green tiles, the middle one highest
+  c4TileRoof(a, -150, 150, -290, -238, 18, 'green');
+  c4TileRoof(a, -80, 80, -346, -298, 14, 'green');
+  for (const [w, y] of [[224, -228], [150, -290], [80, -346]]) { a.fk('yellow', smooth([[-w + 6, y + 2], [-w - 16, y - 18], [-w + 12, y - 8], [w - 12, y - 8], [w + 16, y - 18], [w - 6, y + 2]]), 1.6); }
+  for (const d of [-1, 1]) a.fk('blue', smooth([[d * 20, -354], [d * 34, -372], [d * 56, -366], [d * 70, -378], [d * 62, -358], [d * 40, -356]]), 1.4);   // dragons on the top ridge
+  a.fk('red', circ(0, -366, 7), 1.4);                                       // the pearl between them
+}));
+// the lantern makers' house: lanterns hang thick on bamboo poles either side of its board
+function c4LanternShop(g, hx, hy, s, v) {
+  const o = C4_TOWN_V[((v | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length], w = o.w;
+  const cols = ['#c4473a', '#f2c640', '#2f5f8f', '#2f6a4c', '#d97b2a', '#c0567a'];
+  for (const side of [-1, 1]) for (let row = 0; row < 2; row++) for (let k = 0; k < 3; k++) {
+    const x = side * (w - 18 - k * 14), y = -112 + row * 34;
+    c4DrawLantern(g, hx + x * s, hy + y * s, s * .9, cols[(k + row * 2 + (side > 0 ? 3 : 0)) % cols.length], 4, Math.sin(C4.t * 1.6 + k + row * 2 + side) * .16);
+  }
+}
+// a merchant junk (the port traded with Chinese and Japanese ships): a big hull with a raised stern, an eye on the bow, two masts with
+// ribbed sails; it moves slowly along the river farther out
+function c4Junk(g, x, y, d) {
+  g.save(); g.translate(x, y); g.scale(d, 1); g.strokeStyle = INK; g.lineJoin = 'round';
+  for (const [mx, h, w] of [[-30, 150, 70], [50, 120, 56]]) {               // the masts and sails
+    g.lineWidth = 3; g.beginPath(); g.moveTo(mx, -18); g.lineTo(mx, -18 - h); g.stroke();
+    g.fillStyle = '#c9783e'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx + 4, -18 - h); g.quadraticCurveTo(mx + w * .9, -18 - h * .85, mx + w, -28); g.lineTo(mx + 4, -28); g.closePath(); g.fill(); g.stroke();
+    g.lineWidth = 1.2; g.beginPath(); for (let k = 1; k < 6; k++) { const yy = -28 - (h - 10) * k / 6; g.moveTo(mx + 4, yy); g.lineTo(mx + 4 + w * (1 - .1 * k) , yy + 4); } g.stroke();
+  }
+  g.fillStyle = '#4a2c1a'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-120, -40); g.lineTo(-96, -26); g.lineTo(100, -26); g.lineTo(122, -34); g.quadraticCurveTo(116, 10, 80, 16); g.lineTo(-80, 16); g.quadraticCurveTo(-112, 6, -120, -40); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#a3332a'; g.fillRect(-100, -22, 200, 7); g.strokeRect(-100, -22, 200, 7);
+  g.fillStyle = '#4a2c1a'; g.beginPath(); g.rect(-122, -62, 38, 34); g.fill(); g.stroke();   // the raised stern house
+  g.fillStyle = '#f2c640'; g.fillRect(-114, -54, 10, 10); g.strokeRect(-114, -54, 10, 10);
+  g.fillStyle = '#f2ecde'; g.lineWidth = 1.4; g.beginPath(); g.ellipse(96, -10, 8, 5, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(98, -10, 2.6, 0, 6.283); g.fill();
   g.restore();
 }
