@@ -205,12 +205,21 @@ function p4TownBridgeItems(items, g, vis) {
 // a white ridge with blue ceramic curls on it
 function p4TownRoofBand(g, x0, x1, eaveY, h, s) {
   const pts = []; for (let x = x0; x <= x1 + .1; x += 8) pts.push([x, eaveY(x)]);
-  const ridge = pts.map(([x, y]) => [x, y - h]);
-  g.save(); g.strokeStyle = INK;
-  g.fillStyle = '#c4473a'; g.lineWidth = 1.6; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y + 6 * s) : g.moveTo(x, y + 6 * s)); for (let i = pts.length - 1; i >= 0; i--) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); g.fill(); g.stroke();
-  g.fillStyle = '#d9874a'; g.lineWidth = 2.2; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); for (let i = ridge.length - 1; i >= 0; i--) g.lineTo(ridge[i][0] + (ridge[i][0] < (x0 + x1) / 2 ? 14 : -14) * s, ridge[i][1]); g.closePath(); g.fill(); g.stroke();
-  g.strokeStyle = 'rgba(242,236,222,.85)'; g.lineWidth = 2 * s; g.beginPath();
-  for (let i = 0; i < pts.length; i += 1) { const [x, y] = pts[i], rx = x + (x < (x0 + x1) / 2 ? 14 : -14) * s * .9; g.moveTo(x, y - 2); g.lineTo(rx, y - h + 2); } g.stroke();
+  const ridge = pts.map(([x, y]) => [x, y - h]), mid = (x0 + x1) / 2, inn = x => (x < mid ? 14 : -14) * s;   // the ridge sits a little in from the eave's ends
+  g.save(); g.strokeStyle = INK; g.lineJoin = 'round';
+  // yin-yang tiles like the town's houses (owner): the dark channels first, the whole slope
+  g.fillStyle = '#2a221d'; g.lineWidth = 2.2; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y + 4 * s) : g.moveTo(x, y + 4 * s)); for (let i = ridge.length - 1; i >= 0; i--) g.lineTo(ridge[i][0] + inn(ridge[i][0]), ridge[i][1]); g.closePath(); g.fill(); g.stroke();
+  // the rows of round cover tiles from the eave up to the ridge, lighter along one side, their laps marked across
+  const tw = 5.2 * s;
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = pts[i], rx = x + inn(x) * .9, ry = y - h + 2;
+    g.fillStyle = '#5b2f1f'; g.lineWidth = 1; g.beginPath(); g.moveTo(rx - tw * .4, ry); g.lineTo(rx + tw * .4, ry); g.lineTo(x + tw / 2, y - 1); g.lineTo(x - tw / 2, y - 1); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#a3332a'; g.beginPath(); g.moveTo(rx - tw * .4, ry + 1); g.lineTo(rx - tw * .05, ry + 1); g.lineTo(x - tw * .08, y - 2); g.lineTo(x - tw / 2 + .8, y - 2); g.closePath(); g.fill();
+    g.lineWidth = .7; g.beginPath(); for (let k = .18; k < .95; k += .2) { const lx = x + (rx - x) * k, ly = y - 1 + (ry - y + 1) * k; g.moveTo(lx - tw * .45, ly); g.lineTo(lx + tw * .45, ly - 1.2); } g.stroke();
+  }
+  // the round tile ends along the eave, and the eave's edge
+  for (const [x, y] of pts) { g.fillStyle = '#5b2f1f'; g.lineWidth = 1; g.beginPath(); g.arc(x, y + 1, tw * .55, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#2a221d'; g.beginPath(); g.arc(x, y + 1, tw * .2, 0, 6.283); g.fill(); }
+  g.lineWidth = 1.6; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y + 4 * s) : g.moveTo(x, y + 4 * s)); g.stroke();
   // the ridge: a white band, blue curls rising from it
   g.fillStyle = '#efe8da'; g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath();
   ridge.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); for (let i = ridge.length - 1; i >= 0; i--) g.lineTo(ridge[i][0], ridge[i][1] - 10 * s); g.closePath(); g.fill(); g.stroke();
