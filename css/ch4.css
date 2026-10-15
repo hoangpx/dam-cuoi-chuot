@@ -289,7 +289,7 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 #c4day .ledger{margin-top:8px;font-size:13px;text-align:left;line-height:1.5}#c4day .ledger summary{cursor:pointer;font-weight:700}
 
 /* thả đèn hoa đăng (phohuyen.js): the hands holding a lantern follow the pointer; on a phone they wait over the river */
-#c4hands{position:fixed;z-index:5;pointer-events:none;width:clamp(130px,11vw,200px);aspect-ratio:1;transform:translate(-50%,-50%);filter:drop-shadow(0 0 10px rgba(255,200,110,.6))}
+#c4hands{position:fixed;z-index:5;pointer-events:none;width:clamp(130px,11vw,200px);aspect-ratio:1;transform:translate(-50%,-70%);filter:drop-shadow(0 0 10px rgba(255,200,110,.6))}
 #c4hands.touch{left:50%;top:auto;bottom:24%;width:118px;transform:translateX(-50%);animation:c4bob 2.4s ease-in-out infinite}
 @keyframes c4bob{50%{transform:translate(-50%,-6px)}}
 body.c4holding #cv{cursor:none}

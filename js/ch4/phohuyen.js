@@ -730,7 +730,7 @@ function c4HoaMine(g, k, x0, x1) {
   for (const h of [...C4.hoaMine].sort((a, b) => a.y - b.y)) {
     const age = S.t - h.t0, x = h.x + age * 7 + Math.sin(C4.t * .7 + h.t0) * 4, y = h.y + Math.sin(C4.t * 1.6 + h.t0 * 3) * 1.6;
     if (x < x0 - 60 || x > x1 + 60) continue;
-    const a = k * Math.min(1, age / .4, (C4_HOA_LIFE - age) / 6), s = (.75 + (y - yw) / 400) * (age < .4 ? .6 + age : 1);
+    const a = k * Math.min(1, age / .4, (C4_HOA_LIFE - age) / 6), s = (.75 + (y - yw) / 400) * (age < .4 ? .6 + age : 1) * (h.big || 1);
     if (age < 1.6) { const r = age / 1.6; g.save(); g.strokeStyle = 'rgba(255,236,190,' + (.7 * (1 - r) * k).toFixed(3) + ')'; g.lineWidth = 1.5;
       for (const m of [1, .6]) { g.beginPath(); g.ellipse(h.x, h.y + 2, (8 + 40 * r) * m, (2 + 9 * r) * m, 0, 0, 6.283); g.stroke(); } g.restore(); }   // the ripples where it was set down
     const [c1, c2] = C4_HOA_COLS[h.c];
@@ -789,23 +789,22 @@ function c4HoaHold(h) {
   document.body.classList.toggle('c4holding', !!h);
   if (!h) { el.hidden = true; return; }
   const [c1, c2] = C4_HOA_COLS[h.c];
-  const pet2 = (a, len, col) => '<path transform="rotate(' + a + ' 80 74)" d="M74 74 Q73 ' + (74 - len * .7) + ' 80 ' + (74 - len) + ' Q87 ' + (74 - len * .7) + ' 86 74 Z" fill="' + col + '" stroke="#1d1915" stroke-width="1.6"/>';
-  // two hands turned up and cupped together, little fingers touching in the middle, thumbs out at the sides (owner); drawn for the left, mirrored for the right
-  const cap = (x0, y0, x1, y1, w) => { const d = 'M' + x0 + ' ' + y0 + ' L' + x1 + ' ' + y1; return '<path d="' + d + '" stroke="#1d1915" stroke-width="' + (w + 4) + '" stroke-linecap="round" fill="none"/><path d="' + d + '" stroke="#e0b48c" stroke-width="' + w + '" stroke-linecap="round" fill="none"/>'; };
-  const hand = '<path d="M44 160 L46 136 L79 136 L79 160 Z" fill="#a3332a" stroke="#1d1915" stroke-width="2.2" stroke-linejoin="round"/>'          // the sleeve
-    + cap(46, 120, 30, 100, 10)                                                                                                                   // the thumb, out at the side
-    + cap(49, 104, 43, 80, 9) + cap(58, 102, 55, 75, 9) + cap(67, 102, 66, 74, 9) + cap(76, 104, 77, 80, 8.5)                                   // four fingers, up
-    + '<path d="M46 138 C42 124 42 110 48 102 L79 102 L79 138 Z" fill="#e0b48c" stroke="#1d1915" stroke-width="2.2" stroke-linejoin="round"/>'   // the palm
-    + '<path d="M46 104 L79 104" stroke="#e0b48c" stroke-width="5"/>'                                                                       // the palm runs into the fingers
-    + '<path d="M52 114 Q62 120 72 112 M54 126 Q63 130 74 124" fill="none" stroke="#9a6a48" stroke-width="1.3" stroke-linecap="round"/>';   // palm lines
-  el.innerHTML = '<svg viewBox="0 0 160 160" overflow="visible" width="100%" height="100%"><defs><radialGradient id="c4hg"><stop offset="0" stop-color="#ffe6a8" stop-opacity=".75"/><stop offset=".5" stop-color="#ffbf6a" stop-opacity=".3"/><stop offset="1" stop-color="#ff9a40" stop-opacity="0"/></radialGradient></defs>'
-    + '<circle cx="80" cy="62" r="50" fill="url(#c4hg)"/>'
-    + hand + '<g transform="translate(160 0) scale(-1 1)">' + hand + '</g>'
-    + '<path d="M80 104 L80 136" stroke="#1d1915" stroke-width="1.6"/>'                                                                      // where the two hands meet
-    + '<g transform="translate(0 8)"><ellipse cx="80" cy="76" rx="23" ry="5.5" fill="#5f7a4a" stroke="#1d1915" stroke-width="1.6"/>'
-    + pet2(-66, 20, c1) + pet2(66, 20, c1) + pet2(-32, 24, c2) + pet2(32, 24, c2) + pet2(0, 26, c2)
-    + '<ellipse cx="80" cy="57" rx="3" ry="5.5" fill="#fff2c0"/></g></svg>';
+  el.innerHTML = c4HandsSvg(c1, c2);
   el.hidden = false;
   if (!matchMedia('(pointer: fine)').matches) el.classList.add('touch');
   else { el.classList.remove('touch'); if (!el.style.top) { el.style.left = '50%'; el.style.top = '75%'; } }
+}
+
+// the two hands holding a lantern (owner chose the plainest: two round mittens with a thumb bump, a red cuff, the lantern in the palms)
+function c4HandsSvg(c1, c2) {
+  const I = '#2a1d16', cx = 100, y = 140, k = 1.4;
+  const pet = (a, len, col) => '<path transform="rotate(' + a + ' ' + cx + ' ' + y + ')" d="M' + (cx - 6 * k) + ' ' + y + ' Q' + (cx - 7 * k) + ' ' + (y - len * .7 * k) + ' ' + cx + ' ' + (y - len * k) + ' Q' + (cx + 7 * k) + ' ' + (y - len * .7 * k) + ' ' + (cx + 6 * k) + ' ' + y + ' Z" fill="' + col + '" stroke="' + I + '" stroke-width="2" stroke-linejoin="round"/>';
+  const mit = '<path d="M100 196 L58 196 C52 170 40 150 40 128 C40 114 52 110 58 120 C58 104 66 94 80 94 C94 94 100 104 100 116 Z" fill="#efc39b" stroke="' + I + '" stroke-width="3" stroke-linejoin="round"/>'
+    + '<path d="M58 196 L60 178 L100 178 L100 196 Z" fill="#a3332a" stroke="' + I + '" stroke-width="3" stroke-linejoin="round"/>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%"><defs><radialGradient id="c4hg"><stop offset="0" stop-color="#ffe6a8" stop-opacity=".8"/><stop offset=".5" stop-color="#ffbf6a" stop-opacity=".28"/><stop offset="1" stop-color="#ff9a40" stop-opacity="0"/></radialGradient></defs>'
+    + '<circle cx="100" cy="110" r="80" fill="url(#c4hg)"/>' + mit + '<g transform="translate(200 0) scale(-1 1)">' + mit + '</g>'
+    + '<path d="M100 144 L100 196" stroke="' + I + '" stroke-width="2"/>'
+    + '<ellipse cx="' + cx + '" cy="' + (y + 1) + '" rx="' + 30 * k + '" ry="' + 7 * k + '" fill="#5f7a4a" stroke="' + I + '" stroke-width="2"/>'
+    + pet(-68, 26, c1) + pet(68, 26, c1) + pet(-34, 31, c2) + pet(34, 31, c2) + pet(0, 34, c2)
+    + '<ellipse cx="' + cx + '" cy="' + (y - 24 * k) + '" rx="' + 3.6 * k + '" ry="' + 6.5 * k + '" fill="#fff4c8"/></svg>';
 }
