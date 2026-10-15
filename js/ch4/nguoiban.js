@@ -208,7 +208,7 @@ function c4HandPlan(ev) {
       if (h.rel <= 30 && R() < .35) cands.push({ kind: 'hanghi', g, name: h.name });
       else if (SAVE4.day - h.askDay >= 5 && SAVE4.day - (SAVE4.lastHandAsk ?? -99) >= 2 && R() < .08 + .3 * low) cands.push({ kind: 'tangluong', g, name: h.name });
     }
-    hp.item = cands.length ? { ...c4Pick(cands), at: C4_OPEN + 60 + R() * (C4_CLOSE - C4_OPEN - 120) } : null;
+    hp.item = cands.length ? { ...c4Pick(cands), at: C4_OPEN + 60 + R() * (c4CloseAt() - C4_OPEN - 120) } : null;
   }
   const it = hp.item; if (!it) return;
   const h = c4Hands(it.g).find(x => x.name === it.name); if (h) ev.push({ at: it.at, kind: it.kind, hand: { g: it.g, h } });

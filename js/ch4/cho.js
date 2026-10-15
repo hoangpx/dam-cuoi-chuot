@@ -21,7 +21,8 @@ const C4_Y0 = 300, C4_D = 190;                                            // the
 const c4Y = z => C4_Y0 + z * C4_D, c4S = z => (C4.town ? .52 + .34 * z : .62 + .42 * z);   // phố huyện: folk a little smaller beside the two-storey houses (owner: they looked too big)
 const C4_CROWD = .86;                                                         // passers-by drawn this much smaller (owner: our stalls stand out)              // where depth z stands on screen, and how big
 const C4_STALL_Z = .12, C4_WIFE_Z = .07, C4_Q_Z = .32;
-const C4_OPEN = 5 * 60, C4_CLOSE = 19 * 60, C4_MPS = 4;                 // market hours (game minutes), game minutes per second
+const C4_OPEN = 5 * 60, C4_CLOSE = 19 * 60, C4_MPS = 4;
+const c4CloseAt = () => C4.town ? 21 * 60 : C4_CLOSE;                    // phố huyện: open till 9 in the evening (owner)                 // market hours (game minutes), game minutes per second
 let C4_BUY0 = 1;                                                            // a buyer takes 1–3 (C4_BUY0 … +2)
 let C4_PACE = .62;                                                          // how many come (a player: ~20 buyers a day; bots: ~15–30 a day, 2 quan ~day 17 with the stall upgraded)
 const C4_GOAL = 1200;                                                     // 2 quan: then the children come, and chương V
@@ -34,7 +35,7 @@ const C4_LV = [
   { name: 'Gian mái ngói', cap: 300, cost: 2, serve: .95, flow: 1.9, buy: .68, wait: 7, up: 900 },
 ];
 const C4_HOURS = ['Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'];
-const C4_BUSY = { 'Mão': .7, 'Thìn': 1, 'Tỵ': .8, 'Ngọ': .35, 'Mùi': .5, 'Thân': .9, 'Dậu': .45 };   // how busy each double-hour is
+const C4_BUSY = { 'Mão': .7, 'Thìn': 1, 'Tỵ': .8, 'Ngọ': .35, 'Mùi': .5, 'Thân': .9, 'Dậu': .45, 'Tuất': .85 };   // Tuất only in the town (open till 21:00)   // how busy each double-hour is
 // the wares: where their stall stands, price and cost, when they keep, who wants them at which hour and weather
 const C4_GOODS = {
   trau: { name: 'Trầu cau', unit: 'miếng', x: C4_STALL, price: 6, keep: 'day', serve: 0, hours: C4_BUSY, wx: { gat: 1, mua: .9, ret: 1, dep: 1 } },
@@ -124,7 +125,10 @@ function c4Confiscate(value) {
   if (!list) return 'Lính huyện lục gánh chẳng còn gì đáng giá, chửi đổng rồi đi.';
   return `Lính huyện tịch thu ${list} (trị giá khoảng ${c4Money(Math.round(total))})${left > 0 ? ', lục hết gánh mà vẫn chưa đủ, chửi đổng bỏ đi' : ' thay tiền'}.`;
 }
-const c4Price = g => g === 'trau' ? (SAVE4.cheap > 0 ? 5 : 6) : C4_GOODS[g].price;
+const c4Price = g => g === 'trau' ? (SAVE4.cheap > 0 ? 5 : 6) : Math.round(C4_GOODS[g].price * (c4TownEve() && C4_EVE_FOOD.has(g) ? 1.25 : 1));
+const C4_EVE_FOOD = new Set(['che', 'xoi', 'bun', 'banhcuon', 'ruou', 'banh', 'thit', 'ca']);   // eating, drinking: busiest in the town's evening
+const c4TownEve = () => C4.town && C4.mins >= 18 * 60;
+const C4_TOWN_NIGHT = { ruou: 2.4, bun: 1.8, che: 1.4, banhcuon: 1, xoi: .6 };   // how much each ware is wanted in giờ Tuất (19–21), the town only
 const c4Owned = () => ['trau', ...C4_SHOPS.filter(c4Own), ...C4_BUYS.filter(c4Own)];   // (C4_BUYS: neighbours' stalls bought out, muagan.js)
 const c4QX = g => g === 'trau' ? [175, 200, 225, 225, 225][SAVE4.lv] : 140;          // where the queue starts, right of a stall
 
@@ -235,7 +239,7 @@ const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * 
 function c4Want(g, noWx) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
   if (!c4Own(g)) return 0;
-  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
+  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .45 : 1) : .28 * (G.hours[h] ?? (C4.town ? C4_TOWN_NIGHT[g] ?? .4 : 0)) * (c4TownEve() && C4_EVE_FOOD.has(g) ? 1.4 : 1) * c4SLv(g).want * (1 + .12 * c4Tables(g));
   const sl = c4Slump();
   return base * (noWx ? 1 : G.wx[c4Wx()] || 1) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
 }
@@ -689,7 +693,7 @@ function updateC4(dt) {
   for (const f of C4.fx) f.t += dt; C4.fx = C4.fx.filter(f => f.t < 1.2);
   for (const e of [...C4.walkers, C4.wife, ...C4.vendors, C4.porter, ...C4_SHOPS.map(g => SAVE4.shops[g]).filter(Boolean), ...c4AllHands().map(o => o.h)]) if (e.say && (e.say.t += dt) > e.say.life) e.say = null;
   if (C4.phase === 'open') {
-    const was = C4.mins; C4.mins += dt * C4_MPS;
+    const was = C4.mins; C4.mins += dt * C4_MPS * (C4.town && C4.mins >= 18 * 60 ? .6 : 1);   // the town's evening lasts a little longer (owner)
     if (Math.floor(was / 30) !== Math.floor(C4.mins / 30)) { SAVE4.openMins = C4.mins; persist4(); }   // every half hour of the market
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
@@ -708,7 +712,7 @@ function updateC4(dt) {
       c4Hud();
     }
     c4NvUpdate(dt); c4DelivUpdate(); c4ExtraUpdate(); c4StreetUpdate(dt); c4CoupleTalk(dt); c4Ambience(dt); c4FlowerSeller(dt); c4VisitorsUpdate(dt); c4RivalUpdate(dt); c4RivalWalk(dt); c4HusbTout(dt); c4TripsUpdate(dt); c4AutoUpdate(dt);
-    if (C4.mins >= C4_CLOSE) { C4.mins = C4_CLOSE - 1; c4EndDay(); }
+    if (C4.mins >= c4CloseAt()) { C4.mins = c4CloseAt() - 1; c4EndDay(); }
   }
   // the cat: on the roof, a leap down, the decision; fed it goes back over the roof; refused it sits, then takes betel
   if (C4.cat) {
@@ -1010,7 +1014,7 @@ const c4SignHit = (x, y, sx, sy, s) => Math.abs(x - sx) < 66 * s && y > sy + (C4
 function renderC4() {
   // a sheet is open: the market behind it is drawn once and then kept still (the book lagged phones)
   if (C4.sheet && C4.sheet !== 'c4day' && C4.drawnSheet === C4.sheet) return;
-  C4.drawnSheet = C4.sheet || null;
+  C4.drawnSheet = C4.sheet || null; C4.glows = [];                       // lantern glows for the town's evening (phohuyen.js)
   const A = c4Art(), V = c4View(), Sc = V.s * DPR, vw = V.vw, cx = C4.camX, oy = V.oy;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = PAPERS[C4.paperKey || 'yellow'].base; ctx.fillRect(0, 0, cv.width, cv.height);   // each day its own paper
   ctx.setTransform(Sc, 0, 0, Sc, -cx * Sc, oy * Sc);
@@ -1024,7 +1028,7 @@ function renderC4() {
     return;
   }
   const wx = c4Wx(), rain = wx === 'mua';
-  const dayK = Math.max(0, Math.min(1, (C4.mins - C4_OPEN) / (C4_CLOSE - C4_OPEN)));
+  const dayK = Math.max(0, Math.min(1, (C4.mins - C4_OPEN) / ((C4.town ? 19 * 60 : C4_CLOSE) - C4_OPEN)));
   g.save(); g.translate(cx * .85, 0);
   if (!rain && c4OmenOn('quang')) { const sx = 80 + dayK * (vw - 160), sy = -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, C4_Y0 + oy - 170); g.strokeStyle = 'rgba(255,244,205,.35)'; g.lineWidth = 6; g.beginPath(); g.arc(sx, sy, 50, 0, 6.283); g.stroke(); g.strokeStyle = 'rgba(255,244,205,.16)'; g.lineWidth = 12; g.beginPath(); g.arc(sx, sy, 62, 0, 6.283); g.stroke(); }
   g.fillStyle = rain || wx === 'ret' ? '#9d95b9' : c4Sunset() > .3 ? '#d4471c' : wx === 'gat' ? '#c73a1e' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, C4_Y0 + oy - 170), wx === 'gat' ? 40 : 32, 0, 6.283); g.fill(); g.stroke();
@@ -1117,6 +1121,7 @@ function renderC4() {
   for (const f of C4.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 26px "Playfair Display", serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = f.s[0] === '+' ? '#2f6a4c' : INK; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
   // speech bubbles, each fixed over its speaker's head; once shown a bubble keeps its place; a whisper shows "…" and an ear
   const shown = b => b.e.say.shown ? 1 : 0;
+  if (C4.town) c4TownNight(g);                                            // phohuyen.js
   bubbles.sort((a, b) => shown(b) - shown(a) || b.pri - a.pri || a.e.say.t - b.e.say.t);
   const placed = []; C4.ears = [];
   for (const b of bubbles) {
@@ -1128,17 +1133,17 @@ function renderC4() {
     if (whisper) { c4Ear(g, x + B.w / 2 * sc, y - B.bh * sc - 4, sc * 1.6, C4.t); if (b.chat) C4.ears.push({ x0: x - B.w / 2 * sc - 12, x1: x + B.w / 2 * sc + 30, y0: y - B.bh * sc - 34, y1: y + 14, chat: b.chat }); }
     g.globalAlpha = 1;
   }
-  const m = C4.mins, dusk = C4.phase === 'night' ? .45 : Math.max(0, Math.min(.3, (m - (C4_CLOSE - 60)) / 60 * .3)) + Math.max(0, (C4_OPEN + 40 - m) / 40 * .18);
+  const m = C4.mins, dusk = C4.town ? Math.max(0, (C4_OPEN + 40 - m) / 40 * .18) : C4.phase === 'night' ? .45 : Math.max(0, Math.min(.3, (m - (C4_CLOSE - 60)) / 60 * .3)) + Math.max(0, (C4_OPEN + 40 - m) / 40 * .18);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (rain) { ctx.strokeStyle = 'rgba(47,95,143,.35)'; ctx.lineWidth = 1.5 * DPR; ctx.beginPath(); for (let i = 0, rr = mulberry(7 + ((C4.t * 12) | 0)); i < 70; i++) { const x = rr() * cv.width, y = rr() * cv.height; ctx.moveTo(x, y); ctx.lineTo(x - 6 * DPR, y + 16 * DPR); } ctx.stroke(); ctx.fillStyle = 'rgba(80,90,110,.12)'; ctx.fillRect(0, 0, cv.width, cv.height); }
   if (wx === 'ret') { ctx.fillStyle = 'rgba(120,140,170,.14)'; ctx.fillRect(0, 0, cv.width, cv.height); }
-  { const k = c4Sunset(); if (k > 0 && C4.phase !== 'story') { ctx.fillStyle = `rgba(232,110,36,${.2 * k})`; ctx.fillRect(0, 0, cv.width, cv.height); } }
+  { const k = c4Sunset() * (1 - .7 * (typeof c4NightK === 'function' ? c4NightK() : 0)); if (k > 0 && C4.phase !== 'story') { ctx.fillStyle = `rgba(232,110,36,${.2 * k})`; ctx.fillRect(0, 0, cv.width, cv.height); } }
   if (wx === 'gat') { ctx.fillStyle = 'rgba(255,170,60,.08)'; ctx.fillRect(0, 0, cv.width, cv.height); }
   if (C4.fire > 0) { ctx.fillStyle = `rgba(200,60,20,${.12 + Math.sin(C4.t * 8) * .04})`; ctx.fillRect(0, 0, cv.width, cv.height); }
   if (dusk > 0) { ctx.fillStyle = `rgba(40,30,60,${dusk})`; ctx.fillRect(0, 0, cv.width, cv.height); }
 }
 // sunset: from 15:00 the light warms to orange (0 … 1 at 18:30)
-const c4Sunset = () => Math.max(0, Math.min(1, (C4.mins - 15 * 60) / 210));
+const c4Sunset = () => Math.max(0, Math.min(1, (C4.mins - 15 * 60) / 210)) * (C4.town && typeof c4NightK === 'function' ? 1 - .8 * c4NightK() : 1);   // in the town the glow of sunset gives way to the night
 function c4Sky(g, V, cx, wx) {
   const skyH = C4_Y0 + V.oy, rain = wx === 'mua', sun = c4Sunset();
   g.save(); g.translate(cx, -V.oy);                                        // screen space: (0,0) the top left corner

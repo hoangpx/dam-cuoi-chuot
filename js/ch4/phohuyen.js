@@ -288,6 +288,7 @@ function c4DrawLantern(g, ax, ay, s, col, len, ang) {
   g.save(); g.translate(ax, ay); g.rotate(ang); g.scale(s, s); g.strokeStyle = INK; g.lineJoin = 'round';
   g.lineWidth = 1.1; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, len); g.stroke();
   const cy = len + 12;
+  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint(0, cy).matrixTransform(T); C4.glows.push([P.x, P.y, 34 * Math.hypot(T.a, T.b), col]); }
   g.fillStyle = 'rgba(255,214,120,.22)'; g.beginPath(); g.arc(0, cy, 15, 0, 6.283); g.fill();
   g.fillStyle = '#2a221d'; g.fillRect(-4, len, 8, 3); g.fillRect(-4, cy + 9, 8, 3);
   g.fillStyle = col; g.lineWidth = 1.6; g.beginPath(); g.ellipse(0, cy, 9, 9.5, 0, 0, 6.283); g.fill(); g.stroke();
@@ -489,6 +490,7 @@ function c4TownInterior(g, hx, hy, s, v, txt) {
   g.save(); g.translate(hx, hy); g.scale(s, s); g.strokeStyle = ink; g.lineJoin = 'round';
   g.fillStyle = '#5e4330'; g.fillRect(x0, y0, W, y1 - y0);                   // the room
   g.fillStyle = 'rgba(255,214,140,.16)'; g.fillRect(x0, y0, W, (y1 - y0) * .5); // lamplight
+  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint((x0 + x1) / 2, (y0 + y1) / 2).matrixTransform(T); C4.glows.push([P.x, P.y, W * .9 * Math.hypot(T.a, T.b), '#ffcf7a']); }
   g.fillStyle = '#4a2f1f'; g.fillRect(x0, y1 - 22, W, 22);                   // the floor at the back
   const shelf = (y) => { g.fillStyle = '#7a4a22'; g.fillRect(x0 + 4, y, W - 8, 5); g.lineWidth = 1.2; g.strokeRect(x0 + 4, y, W - 8, 5); };
   const C = ['#a3332a', '#2f5f8f', '#2f6a4c', '#f2c640', '#c0567a', '#e8d8a8', '#d97b2a', '#5a2f5f'];
@@ -594,4 +596,22 @@ function c4TownHouseTap(x, y) {
     return true;
   }
   return false;
+}
+
+// the town's evening (owner: "buổi tối cho đèn lung linh lên"): from 17:30 the street sinks into a deep blue dusk; the lanterns and the
+// open shops glow through it, each lantern flickering a little
+const c4NightK = () => !C4.town ? 0 : C4.phase === 'night' ? 1 : Math.max(0, Math.min(1, (C4.mins - 17.5 * 60) / 100));
+function c4TownNight(g) {
+  const k = c4NightK(); if (k <= 0) return;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const mix = (d, n) => Math.round(255 + (n - 255) * k);                    // multiply by a deep blue: the warm paper turns to night, not to brown
+  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgb(' + mix(0, 62) + ',' + mix(0, 72) + ',' + mix(0, 138) + ')'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [x, y, r, col] of C4.glows || []) {
+    const f = .8 + Math.sin(C4.t * 7 + x * .05) * .08 + Math.sin(C4.t * 13 + y * .07) * .05;     // a living flame
+    const gr = ctx.createRadialGradient(x, y, 0, x, y, r * f);
+    gr.addColorStop(0, 'rgba(255,200,110,' + (.5 * k).toFixed(3) + ')'); gr.addColorStop(.35, 'rgba(255,150,60,' + (.18 * k).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,40,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r * f, 0, 6.283); ctx.fill();
+  }
+  ctx.restore();
 }

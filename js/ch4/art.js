@@ -302,10 +302,10 @@ function c4Deco(g, w, k, moving = false) {
   else if (t === 'quat' || t === 'long' || t === 'sach' || t === 'goi') c4TownThing(g, w, t);   // phohuyen.js
   else if (t === 'cay' || t === 'cuoc') c4Stroke(g, t === 'cay' ? 7 : 5, '#8a5a2a', [[46, -136], [30, -128]]);   // the handle's end in front of the hand
   if (w.umb && (rain || t === 'o')) {                                       // an umbrella (paper, oiled)
-    c4Stroke(g, 3, '#7a4a22', [[44, -96], [40, -214]]);
+    c4Stroke(g, 3, '#7a4a22', [[44, -96], [42, -176]]);                    // held low (owner)
     g.fillStyle = L.umbCol || '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2.4;
-    g.beginPath(); g.moveTo(-14, -196); g.quadraticCurveTo(40, -262, 96, -196); g.quadraticCurveTo(68, -204, 41, -196); g.quadraticCurveTo(14, -204, -14, -196); g.closePath(); g.fill(); g.stroke();
-    g.lineWidth = 1.1; g.beginPath(); for (const x of [-14, 14, 41, 68, 96]) { g.moveTo(40, -226); g.lineTo(x, -197); } g.stroke();
+    g.beginPath(); g.moveTo(-12, -160); g.quadraticCurveTo(42, -222, 96, -160); g.quadraticCurveTo(69, -168, 42, -160); g.quadraticCurveTo(15, -168, -12, -160); g.closePath(); g.fill(); g.stroke();
+    g.lineWidth = 1.1; g.beginPath(); for (const x of [-12, 15, 42, 69, 96]) { g.moveTo(42, -188); g.lineTo(x, -161); } g.stroke();
   }
 }
 // a buffalo (chương III's Chăn Trâu art), side on, led on a rope; feet on y = 0, face 1 = facing right
