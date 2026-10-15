@@ -144,7 +144,7 @@ const c4OnBridge = x => Math.abs(x - C4_BRIDGE_X) < C4_BRIDGE_HW;
 // the creek behind the street, coming down to the bridge; the bridge's deck, raised over the street
 function c4TownCreek(g, cx, vw) {
   if (C4_BRIDGE_X + C4_BRIDGE_HW < cx - 80 || C4_BRIDGE_X - C4_BRIDGE_HW > cx + vw + 80) return;
-  const x0 = C4_BRIDGE_X - 80, x1 = C4_BRIDGE_X + 80, yT = C4_Y0 - 150, yB = C4_Y0 - 4;
+  const x0 = C4_BRIDGE_X - 80, x1 = C4_BRIDGE_X + 80, yT = C4_Y0 - 46, yB = C4_Y0 - 4;
   g.save();
   g.fillStyle = '#b9b0a4'; g.beginPath(); g.moveTo(x0 - 30, yB); g.lineTo(x0 + 8, yT); g.lineTo(x1 - 8, yT); g.lineTo(x1 + 30, yB); g.closePath(); g.fill();
   g.fillStyle = 'rgba(70,112,98,.92)'; g.beginPath(); g.moveTo(x0, yB); g.lineTo(x0 + 22, yT); g.lineTo(x1 - 22, yT); g.lineTo(x1, yB); g.closePath(); g.fill();
@@ -162,7 +162,7 @@ function c4TownBridgeItems(items, g, vis) {
   if (!vis(C4_BRIDGE_X, C4_BRIDGE_HW + 120)) return;
   const a = C4_BRIDGE_X - C4_BRIDGE_HW, b = C4_BRIDGE_X + C4_BRIDGE_HW;
   const pillars = (z, h) => { const s = c4S(z); g.fillStyle = '#7a3a24'; g.strokeStyle = INK; g.lineWidth = 2;
-    for (let x = a + 6; x <= b - 5; x += (b - a - 12) / 6) { const y = c4DeckY(x, z); g.beginPath(); g.rect(x - 5 * s, y - h * s, 10 * s, h * s); g.fill(); g.stroke(); } };
+    for (const k of [-.92, -.31, .31, .92]) { const x = C4_BRIDGE_X + k * C4_BRIDGE_HW; const y = c4DeckY(x, z); g.beginPath(); g.rect(x - 5 * s, y - h * s, 10 * s, h * s); g.fill(); g.stroke(); } };
   const rail = z => { const s = c4S(z); g.strokeStyle = INK; g.lineWidth = 1.6; g.fillStyle = '#c9a36a';
     g.beginPath(); for (let x = a; x <= b + .1; x += 8) { const y = c4DeckY(x, z) - 40 * s; x === a ? g.moveTo(x, y) : g.lineTo(x, y); } for (let x = b; x >= a - .1; x -= 8) g.lineTo(x, c4DeckY(x, z) - 34 * s); g.closePath(); g.fill(); g.stroke();
     g.beginPath(); for (let x = a + 5; x < b; x += 8) { const y = c4DeckY(x, z); g.moveTo(x, y - 34 * s); g.lineTo(x, y); } g.stroke(); };
@@ -171,7 +171,7 @@ function c4TownBridgeItems(items, g, vis) {
     g.fillStyle = '#c4473a'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.rect(x - w, y - h, w * 2, h); g.fill(); g.stroke();
     g.fillStyle = '#d98a7c'; g.globalAlpha = .5; g.fillRect(x - w + 8, y - h + 20, 20, 60); g.globalAlpha = 1;
     c4TownRoofBand(g, x - w - 14, x + w + 14, () => y - h, 48, 1); };
-  items.push({ z: -.6, f: () => { endHouse(a - 46, -1); endHouse(b + 46, 1); pillars(0, 165); rail(0); } });
+  items.push({ z: -.6, f: () => { endHouse(a - 46, -1); endHouse(b + 46, 1); rail(0); } });
   // in front of the walkers: the near railing, the pillars, and the long roof over the deck
   items.push({ z: 1.08, f: () => {
     rail(1); pillars(1, 165);
@@ -197,8 +197,7 @@ function c4TownRoofBand(g, x0, x1, eaveY, h, s) {
   g.fillStyle = '#efe8da'; g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath();
   ridge.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); for (let i = ridge.length - 1; i >= 0; i--) g.lineTo(ridge[i][0], ridge[i][1] - 10 * s); g.closePath(); g.fill(); g.stroke();
   g.strokeStyle = '#2f5f8f'; g.lineWidth = 2.2 * s; g.lineCap = 'round';
-  for (let i = 3; i < ridge.length - 2; i += 6) { const [x, y] = ridge[i], yy = y - 10 * s; g.beginPath(); g.moveTo(x - 9 * s, yy); g.quadraticCurveTo(x - 10 * s, yy - 14 * s, x - 2 * s, yy - 16 * s); g.quadraticCurveTo(x + 6 * s, yy - 16 * s, x + 4 * s, yy - 8 * s); g.moveTo(x + 2 * s, yy); g.quadraticCurveTo(x + 10 * s, yy - 6 * s, x + 12 * s, yy - 14 * s); g.stroke(); }
-  for (const e of [ridge[0], ridge[ridge.length - 1]]) { const d = e === ridge[0] ? -1 : 1; g.beginPath(); g.moveTo(e[0], e[1] - 8 * s); g.quadraticCurveTo(e[0] + d * 14 * s, e[1] - 12 * s, e[0] + d * 10 * s, e[1] - 26 * s); g.stroke(); }
+  c4RidgeCeramics(g, ridge, s);
   g.restore();
 }
 // in front of the street: the stone quay, the bridge's stone foot with its arches, the river with boats going by
@@ -214,18 +213,17 @@ function c4TownRiver(g, cx, vw, V) {
   g.fillStyle = '#b9b0a4'; g.strokeStyle = INK; g.lineWidth = 2;
   for (const [a, b] of [[x0, bx0 - 20], [bx1 + 20, x1]]) { if (b <= a) continue; g.fillRect(a, yq, b - a, 16); g.beginPath(); g.moveTo(a, yq); g.lineTo(b, yq); g.moveTo(a, yw); g.lineTo(b, yw); g.stroke();
     g.lineWidth = 1; g.beginPath(); for (let x = Math.ceil(a / 46) * 46; x < b; x += 46) { g.moveTo(x, yq); g.lineTo(x, yw); } g.stroke(); g.lineWidth = 2; }
-  // the stone foot: its top follows the deck's hump, a white plaster band, five arches (the middle one wide and square)
-  if (bx1 > x0 - 40 && bx0 < x1 + 40) {
-    const bot = yq + 110, topAt = x => c4DeckY(x, 1) + 6;
-    g.fillStyle = '#8f8a7c'; g.beginPath(); g.moveTo(bx0 - 20, bot); for (let x = bx0 - 20; x <= bx1 + 20.1; x += 8) g.lineTo(x, topAt(Math.max(bx0, Math.min(bx1, x)))); g.lineTo(bx1 + 20, bot); g.closePath(); g.fill(); g.stroke();
-    g.fillStyle = '#efe8da'; g.beginPath(); for (let x = bx0 - 24; x <= bx1 + 24.1; x += 8) { const y = topAt(Math.max(bx0, Math.min(bx1, x))); x === bx0 - 24 ? g.moveTo(x, y) : g.lineTo(x, y); } for (let x = bx1 + 24; x >= bx0 - 24.1; x -= 8) g.lineTo(x, topAt(Math.max(bx0, Math.min(bx1, x))) + 14); g.closePath(); g.fill(); g.stroke();
-    g.strokeStyle = 'rgba(42,34,29,.3)'; g.lineWidth = 1; g.beginPath(); for (let y = yq + 10; y < bot; y += 13) { g.moveTo(bx0 - 20, y); g.lineTo(bx1 + 20, y); } g.stroke();
-    g.fillStyle = 'rgba(30,48,42,.96)'; g.strokeStyle = INK; g.lineWidth = 2;
-    const spans = [[-.8, .13], [-.42, .16], [0, .26], [.42, .16], [.8, .13]];
-    for (const [k, wk] of spans) { const ax = C4_BRIDGE_X + k * C4_BRIDGE_HW, aw = wk * C4_BRIDGE_HW * 2, at = topAt(ax) + 26, mid = k === 0;
-      g.beginPath(); g.moveTo(ax - aw / 2, bot); g.lineTo(ax - aw / 2, at + (mid ? 6 : 24));
-      if (mid) { g.lineTo(ax - aw / 2, at); g.lineTo(ax + aw / 2, at); } else { g.quadraticCurveTo(ax - aw / 2, at, ax, at - 2); g.quadraticCurveTo(ax + aw / 2, at, ax + aw / 2, at + 24); }
-      g.lineTo(ax + aw / 2, bot); g.closePath(); g.fill(); g.stroke(); }
+  // the foot (owner: four rows of two stone piers): a white plaster band and a stone beam following the deck's hump, four piers in the water, stone banks at both ends
+  if (bx1 > x0 - 60 && bx0 < x1 + 60) {
+    const bot = yq + 110, topAt = x => c4DeckY(Math.max(bx0, Math.min(bx1, x)), 1) + 6, beam = 26;
+    g.fillStyle = '#9a958a'; g.strokeStyle = INK; g.lineWidth = 2;
+    for (const [e0, e1] of [[bx0 - 60, bx0 + 4], [bx1 - 4, bx1 + 60]]) { g.beginPath(); g.moveTo(e0, bot); g.lineTo(e0, topAt(e0) + 10); g.lineTo(e1, topAt(e1) + 10); g.lineTo(e1, bot); g.closePath(); g.fill(); g.stroke(); }
+    for (const k of [-.62, -.2, .2, .62]) { const px = C4_BRIDGE_X + k * C4_BRIDGE_HW, pw = .11 * C4_BRIDGE_HW, pt = topAt(px) + beam;
+      g.fillStyle = '#8f8a7c'; g.beginPath(); g.rect(px - pw / 2, pt, pw, bot - pt); g.fill(); g.stroke();
+      g.fillStyle = '#a9a294'; g.beginPath(); g.rect(px - pw / 2 - 5, pt, pw + 10, 9); g.fill(); g.stroke();
+      g.strokeStyle = 'rgba(42,34,29,.3)'; g.lineWidth = 1; g.beginPath(); for (let y = pt + 20; y < bot; y += 14) { g.moveTo(px - pw / 2, y); g.lineTo(px + pw / 2, y); } g.stroke(); g.strokeStyle = INK; g.lineWidth = 2; }
+    g.fillStyle = '#8f8a7c'; g.beginPath(); for (let x = bx0; x <= bx1 + .1; x += 8) { const y = topAt(x); x === bx0 ? g.moveTo(x, y) : g.lineTo(x, y); } for (let x = bx1; x >= bx0 - .1; x -= 8) g.lineTo(x, topAt(x) + beam); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#efe8da'; g.beginPath(); for (let x = bx0 - 4; x <= bx1 + 4.1; x += 8) { const y = topAt(x); x === bx0 - 4 ? g.moveTo(x, y) : g.lineTo(x, y); } for (let x = bx1 + 4; x >= bx0 - 4.1; x -= 8) g.lineTo(x, topAt(x) + 12); g.closePath(); g.fill(); g.stroke();
     g.fillStyle = 'rgba(70,112,98,.6)'; g.fillRect(bx0 - 20, bot - 20, bx1 - bx0 + 40, 20);
   }
   g.strokeStyle = 'rgba(242,236,222,.7)'; g.lineWidth = 1.6; g.beginPath();
@@ -274,6 +272,45 @@ function c4TownLanterns(g, hx, hy, s, v) {
     g.fillStyle = c; g.lineWidth = 1.8; g.beginPath(); g.ellipse(0, len + 9, 7, 9, 0, 0, 6.283); g.fill(); g.stroke();
     g.lineWidth = 1.2; g.beginPath(); g.moveTo(-5, len + 3); g.lineTo(5, len + 3); g.moveTo(-5, len + 15); g.lineTo(5, len + 15); g.moveTo(0, len + 18); g.lineTo(0, len + 26); g.stroke();
     g.restore();
+  }
+  g.restore();
+}
+
+// blue-and-white ceramic on the bridge's ridge (after Chùa Cầu): a pearl in flames in the middle, a dragon either side coming to it,
+// cloud curls along the rest, and a dragon head curling up at each end
+function c4RidgeCeramics(g, ridge, s) {
+  const BL = '#2f5f8f', WH = '#efe8da', n = ridge.length, at = f => { const i = Math.max(0, Math.min(n - 1, Math.round(f * (n - 1)))); return [ridge[i][0], ridge[i][1] - 10 * s]; };
+  g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+  // cloud curls
+  g.strokeStyle = BL; g.lineWidth = 2 * s;
+  for (const f of [.1, .2, .8, .9]) { const [x, y] = at(f); g.beginPath(); g.arc(x - 5 * s, y - 6 * s, 5 * s, Math.PI * .1, Math.PI * 1.6); g.arc(x + 5 * s, y - 7 * s, 6 * s, Math.PI * 1.1, Math.PI * 2.2); g.stroke(); }
+  // the pearl: a white ball ringed in blue with flames
+  { const [x, y] = at(.5), r = 7 * s, cy = y - 16 * s;
+    g.fillStyle = BL; g.beginPath(); for (let k = 0; k < 7; k++) { const a = -Math.PI / 2 + (k - 3) * .42; g.moveTo(x + Math.cos(a) * r, cy + Math.sin(a) * r); g.quadraticCurveTo(x + Math.cos(a) * r * 2.1, cy + Math.sin(a) * r * 2.1, x + Math.cos(a + .2) * r * 2.4, cy + Math.sin(a + .2) * r * 2.4); } g.lineWidth = 2.2 * s; g.strokeStyle = BL; g.stroke();
+    g.fillStyle = WH; g.strokeStyle = BL; g.lineWidth = 2 * s; g.beginPath(); g.arc(x, cy, r, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = BL; g.beginPath(); g.arc(x, cy, r * .45, 0, 6.283); g.fill();
+    g.strokeStyle = BL; g.lineWidth = 3 * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x, cy + r); g.stroke(); }
+  // two dragons: a wavy body along the ridge, the head raised towards the pearl, spines on the back
+  for (const d of [-1, 1]) {
+    const [hx, hy] = at(.5 + d * .11), [tx, ty] = at(.5 + d * .33), body = [];
+    for (let k = 0; k <= 16; k++) { const f = k / 16, x = tx + (hx - tx) * f, yb = ty + (hy - ty) * f; body.push([x, yb - 9 * s - Math.sin(f * Math.PI * 3) * 6 * s - f * 6 * s]); }
+    g.strokeStyle = WH; g.lineWidth = 8 * s; g.beginPath(); body.forEach(([x, y], k) => k ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke();
+    g.strokeStyle = BL; g.lineWidth = 5 * s; g.stroke();
+    g.lineWidth = 1.6 * s; g.beginPath(); for (let k = 2; k < 15; k += 2) { const [x, y] = body[k]; g.moveTo(x, y - 3 * s); g.lineTo(x + d * 2 * s, y - 9 * s); } g.stroke();
+    // the head: a raised muzzle, an open jaw, a horn swept back
+    const [x, y] = body[16], f = -d;
+    g.fillStyle = BL; g.strokeStyle = BL; g.beginPath(); g.moveTo(x, y + 3 * s); g.quadraticCurveTo(x + d * 4 * s, y - 12 * s, x + d * 12 * s, y - 10 * s); g.lineTo(x + d * 15 * s, y - 4 * s); g.lineTo(x + d * 8 * s, y - 2 * s); g.lineTo(x + d * 13 * s, y + 3 * s); g.closePath(); g.fill();
+    g.lineWidth = 1.8 * s; g.beginPath(); g.moveTo(x + d * 3 * s, y - 10 * s); g.quadraticCurveTo(x + f * 6 * s, y - 20 * s, x + f * 12 * s, y - 16 * s); g.stroke();
+    g.fillStyle = WH; g.beginPath(); g.arc(x + d * 7 * s, y - 7 * s, 1.6 * s, 0, 6.283); g.fill();
+    // the tail: a curl of flame
+    const [qx, qy] = body[0]; g.lineWidth = 2.2 * s; g.beginPath(); g.moveTo(qx, qy); g.quadraticCurveTo(qx + f * 8 * s, qy - 2 * s, qx + f * 6 * s, qy - 12 * s); g.quadraticCurveTo(qx + f * 2 * s, qy - 16 * s, qx + f * 1 * s, qy - 9 * s); g.stroke();
+  }
+  // the ends: dragon heads curling up and out
+  for (const [e, d] of [[ridge[0], -1], [ridge[n - 1], 1]]) {
+    const x = e[0], y = e[1] - 8 * s;
+    g.strokeStyle = WH; g.lineWidth = 7 * s; g.beginPath(); g.moveTo(x - d * 6 * s, y + 2 * s); g.quadraticCurveTo(x + d * 10 * s, y - 2 * s, x + d * 8 * s, y - 20 * s); g.stroke();
+    g.strokeStyle = BL; g.lineWidth = 4 * s; g.stroke();
+    g.lineWidth = 2 * s; g.beginPath(); g.arc(x + d * 3 * s, y - 22 * s, 5 * s, d > 0 ? 0 : Math.PI, d > 0 ? Math.PI * 1.5 : Math.PI * -.5, d < 0); g.stroke();
   }
   g.restore();
 }
