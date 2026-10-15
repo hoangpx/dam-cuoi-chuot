@@ -299,6 +299,7 @@ function c4TownFront(g, hx, hy, s, v, label) {
   const txt = c4TownSign(label);
   if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     let fs = 12; while (fs > 8 && g.measureText(txt).width > 82) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
+  if (txt && txt !== 'CHO THUÊ') c4TownInterior(g, hx, hy, s, v, txt);   // the shop is open: its goods show inside (owner)
   c4TownLanterns(g, hx, hy, s, v);
   if (txt === 'ĐÈN LỒNG') c4LanternShop(g, hx, hy, s, v);
 }
@@ -477,5 +478,68 @@ function c4TownThing(g, w, t) {
     g.fillStyle = '#c0567a'; g.beginPath(); g.moveTo(-4, -6); g.lineTo(-8, -16); g.lineTo(0, -10); g.lineTo(8, -16); g.lineTo(4, -6); g.closePath(); g.fill(); g.stroke();
     g.strokeStyle = '#f2c640'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-14, 5); g.lineTo(14, 5); g.stroke();
   }
+  g.restore();
+}
+
+// an open shop front (owner: "cho các hàng khác mở cửa… bên trong có hàng hoá"): the shutter panels folded back to both sides, the
+// warm dim room, and what the shop sells set out inside according to its board
+function c4TownInterior(g, hx, hy, s, v, txt) {
+  const o = C4_TOWN_V[((v | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length], w = o.w, x0 = -w + 22, x1 = w - 22, y0 = -120, y1 = -6, W = x1 - x0;
+  const R = mulberry(v * 31 + txt.length * 7), ink = INK;
+  g.save(); g.translate(hx, hy); g.scale(s, s); g.strokeStyle = ink; g.lineJoin = 'round';
+  g.fillStyle = '#5e4330'; g.fillRect(x0, y0, W, y1 - y0);                   // the room
+  g.fillStyle = 'rgba(255,214,140,.16)'; g.fillRect(x0, y0, W, (y1 - y0) * .5); // lamplight
+  g.fillStyle = '#4a2f1f'; g.fillRect(x0, y1 - 22, W, 22);                   // the floor at the back
+  const shelf = (y) => { g.fillStyle = '#7a4a22'; g.fillRect(x0 + 4, y, W - 8, 5); g.lineWidth = 1.2; g.strokeRect(x0 + 4, y, W - 8, 5); };
+  const C = ['#a3332a', '#2f5f8f', '#2f6a4c', '#f2c640', '#c0567a', '#e8d8a8', '#d97b2a', '#5a2f5f'];
+  const K = /SÁCH/.test(txt) ? 'book' : /MAY ÁO/.test(txt) ? 'tailor' : /VẢI|LỤA/.test(txt) ? 'cloth' : /GỐM/.test(txt) ? 'pot' : /THUỐC/.test(txt) ? 'herb' : /ĐÈN LỒNG/.test(txt) ? 'lamp'
+    : /BẠC/.test(txt) ? 'silver' : /QUÁN NƯỚC|CHÈ/.test(txt) ? 'tea' : /GẠO|MUỐI/.test(txt) ? 'rice' : /TRẦU/.test(txt) ? 'betel' : /RƯỢU/.test(txt) ? 'wine' : 'shop';
+  g.lineWidth = 1.2;
+  if (K === 'book') {                                                       // shelves of books, spines in many colours, a scroll or two
+    for (const y of [-100, -72, -44]) { shelf(y); for (let x = x0 + 8; x < x1 - 8;) { const bw = 4 + R() * 4, bh = 14 + R() * 8; g.fillStyle = C[(R() * C.length) | 0]; g.fillRect(x, y - bh, bw, bh); g.strokeRect(x, y - bh, bw, bh); x += bw + .5; } }
+    g.fillStyle = '#e8d8a8'; g.fillRect(x0 + 10, -32, 30, 8); g.strokeRect(x0 + 10, -32, 30, 8);
+  } else if (K === 'cloth' || K === 'tailor') {                             // bolts of cloth on shelves; at the tailor's, áo dài hanging on a rail
+    shelf(-60);
+    for (let x = x0 + 10, i = 0; x < x1 - 20; x += 22, i++) { g.fillStyle = C[i % C.length]; for (let k = 0; k < 2; k++) { g.beginPath(); g.roundRect ? g.roundRect(x, -60 - 12 - k * 12, 20, 11, 4) : g.rect(x, -72 - k * 12, 20, 11); g.fill(); g.stroke(); } }
+    if (K === 'tailor') { g.lineWidth = 2; g.beginPath(); g.moveTo(x0 + 6, -112); g.lineTo(x1 - 6, -112); g.stroke(); g.lineWidth = 1.2;
+      for (let x = x0 + 20, i = 0; x < x1 - 14; x += 26, i++) { g.fillStyle = C[(i + 3) % C.length]; g.beginPath(); g.moveTo(x, -112); g.lineTo(x - 9, -106); g.lineTo(x - 7, -78); g.lineTo(x + 7, -78); g.lineTo(x + 9, -106); g.closePath(); g.fill(); g.stroke(); } }
+    else for (let x = x0 + 14, i = 0; x < x1 - 14; x += 30, i++) { g.fillStyle = C[(i + 2) % C.length]; g.fillRect(x, -112, 16, 30); g.strokeRect(x, -112, 16, 30); g.beginPath(); g.moveTo(x - 2, -112); g.lineTo(x + 18, -112); g.stroke(); }
+    for (let x = x0 + 12, i = 0; x < x1 - 30; x += 34, i++) { g.fillStyle = C[(i + 5) % C.length]; g.fillRect(x, -30, 28, 10); g.strokeRect(x, -30, 28, 10); g.fillRect(x + 3, -40, 22, 10); g.strokeRect(x + 3, -40, 22, 10); }
+  } else if (K === 'pot') {                                                 // jars and vases, blue on white and brown glaze, on a shelf and the floor
+    shelf(-70);
+    const jar = (x, y, r, h, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(x - r * .5, y - h); g.quadraticCurveTo(x - r * 1.3, y - h * .5, x - r * .6, y); g.lineTo(x + r * .6, y); g.quadraticCurveTo(x + r * 1.3, y - h * .5, x + r * .5, y - h); g.closePath(); g.fill(); g.stroke(); if (col === '#efe8da') { g.strokeStyle = '#2f5f8f'; g.beginPath(); g.moveTo(x - r * .8, y - h * .5); g.lineTo(x + r * .8, y - h * .5); g.stroke(); g.strokeStyle = ink; } };
+    for (let x = x0 + 14, i = 0; x < x1 - 8; x += 20, i++) jar(x, -70, 7, 16 + (i % 3) * 5, i % 2 ? '#efe8da' : '#8a4a22');
+    for (let x = x0 + 16, i = 0; x < x1 - 10; x += 30, i++) jar(x, -6, 11, 28 + (i % 2) * 8, i % 3 === 1 ? '#efe8da' : '#6a3a1a');
+  } else if (K === 'herb') {                                                // the herbalist's wall of little drawers, jars on top
+    const cols = Math.floor((W - 12) / 16); g.fillStyle = '#7a4a22'; g.fillRect(x0 + 6, -110, cols * 16, 84); g.strokeRect(x0 + 6, -110, cols * 16, 84);
+    for (let r = 0; r < 6; r++) for (let c = 0; c < cols; c++) { const x = x0 + 6 + c * 16, y = -110 + r * 14; g.strokeRect(x + 1, y + 1, 14, 12); g.fillStyle = '#f2c640'; g.beginPath(); g.arc(x + 8, y + 7, 1.6, 0, 6.283); g.fill(); }
+    g.fillStyle = '#efe8da'; for (let x = x0 + 16; x < x1 - 10; x += 26) { g.beginPath(); g.ellipse(x, -18, 7, 9, 0, 0, 6.283); g.fill(); g.stroke(); }
+  } else if (K === 'lamp') {                                                // lanterns hanging inside, frames being covered with silk
+    for (let x = x0 + 14, i = 0; x < x1 - 8; x += 18, i++) c4DrawLantern(g, x, -118, .8, C[i % 6], 6 + (i % 3) * 10, Math.sin(C4.t * 1.3 + i) * .08);
+    g.lineWidth = 1; for (let x = x0 + 20; x < x1 - 20; x += 34) { g.beginPath(); g.ellipse(x, -24, 10, 13, 0, 0, 6.283); g.moveTo(x, -37); g.lineTo(x, -11); g.stroke(); }
+  } else if (K === 'silver') {                                              // a workbench with a lamp, little boxes, rings and bowls catching the light
+    g.fillStyle = '#7a4a22'; g.fillRect(x0 + 10, -48, W - 20, 8); g.strokeRect(x0 + 10, -48, W - 20, 8);
+    g.fillStyle = 'rgba(255,214,120,.35)'; g.beginPath(); g.arc(x0 + 30, -66, 18, 0, 6.283); g.fill(); g.fillStyle = '#f2c640'; g.beginPath(); g.arc(x0 + 30, -62, 4, 0, 6.283); g.fill(); g.stroke();
+    for (let x = x0 + 50; x < x1 - 12; x += 18) { g.fillStyle = '#d9d4cc'; g.beginPath(); g.arc(x, -54, 5, Math.PI, 0); g.fill(); g.stroke(); }
+    shelf(-90); for (let x = x0 + 12; x < x1 - 12; x += 16) { g.fillStyle = '#a3332a'; g.fillRect(x, -100, 11, 10); g.strokeRect(x, -100, 11, 10); }
+  } else if (K === 'tea' || K === 'wine') {                                  // a low table with a teapot (or a wine jar) and cups, stools
+    g.fillStyle = '#7a4a22'; g.fillRect(-36, -36, 72, 7); g.strokeRect(-36, -36, 72, 7); g.fillRect(-30, -29, 5, 23); g.fillRect(25, -29, 5, 23);
+    g.fillStyle = K === 'tea' ? '#2f6a4c' : '#8a4a22'; g.beginPath(); g.ellipse(0, -46, 10, 9, 0, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = '#efe8da'; for (const x of [-22, -12, 14, 24]) { g.beginPath(); g.rect(x - 3, -43, 6, 6); g.fill(); g.stroke(); }
+    g.fillStyle = '#5b2f1f'; for (const x of [-52, 52]) { g.fillRect(x - 8, -20, 16, 5); g.strokeRect(x - 8, -20, 16, 5); }
+    shelf(-90); for (let x = x0 + 14; x < x1 - 10; x += 18) { g.fillStyle = K === 'tea' ? '#c9a45a' : '#6a3a1a'; g.beginPath(); g.ellipse(x, -98, 6, 8, 0, 0, 6.283); g.fill(); g.stroke(); }
+  } else if (K === 'rice') {                                                // sacks of rice, a basket of salt, a measure
+    for (let x = x0 + 18, i = 0; x < x1 - 12; x += 28, i++) { g.fillStyle = i % 2 ? '#efe8da' : '#e8d8a8'; g.beginPath(); g.moveTo(x - 12, -6); g.quadraticCurveTo(x - 14, -36, x - 6, -40); g.lineTo(x + 6, -40); g.quadraticCurveTo(x + 14, -36, x + 12, -6); g.closePath(); g.fill(); g.stroke(); }
+    shelf(-80); for (let x = x0 + 16; x < x1 - 14; x += 24) { g.fillStyle = '#c9a45a'; g.beginPath(); g.ellipse(x, -88, 9, 6, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#f2ecde'; g.beginPath(); g.ellipse(x, -91, 7, 3, 0, 0, 6.283); g.fill(); }
+  } else if (K === 'betel') {                                               // baskets of betel leaves and areca nuts
+    shelf(-70); for (let x = x0 + 16, i = 0; x < x1 - 12; x += 24, i++) { g.fillStyle = '#c9a45a'; g.beginPath(); g.ellipse(x, -76, 10, 6, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = i % 2 ? '#2f6a4c' : '#b57a22'; g.beginPath(); g.ellipse(x, -82, 8, 5, 0, Math.PI, 0); g.fill(); g.stroke(); }
+  } else {                                                                  // a general store: jars, baskets, bundles on two shelves
+    for (const y of [-92, -56]) { shelf(y); for (let x = x0 + 12, i = 0; x < x1 - 10; x += 18, i++) { g.fillStyle = C[(i + (y > -60 ? 3 : 0)) % C.length]; g.beginPath(); (i % 2 ? g.ellipse(x, y - 8, 6, 8, 0, 0, 6.283) : g.rect(x - 6, y - 13, 12, 13)); g.fill(); g.stroke(); } }
+    for (let x = x0 + 20; x < x1 - 16; x += 30) { g.fillStyle = '#c9a45a'; g.beginPath(); g.ellipse(x, -16, 12, 9, 0, 0, 6.283); g.fill(); g.stroke(); }
+  }
+  // the shutter panels folded back at both sides of the opening
+  g.fillStyle = o.wood === 'dark' ? '#2a221d' : '#5b2f1f'; g.lineWidth = 1.6;
+  for (const x of [x0, x1 - 14]) { g.fillRect(x, y0 - 2, 14, y1 - y0 + 2); g.strokeRect(x, y0 - 2, 14, y1 - y0 + 2); g.beginPath(); g.moveTo(x + 7, y0); g.lineTo(x + 7, y1); g.stroke(); }
+  g.lineWidth = 2; g.strokeRect(x0, y0, W, y1 - y0);
   g.restore();
 }
