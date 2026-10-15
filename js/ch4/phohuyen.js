@@ -617,7 +617,6 @@ function c4TownNight(g) {
     const cr = r * .34, gc = ctx.createRadialGradient(x, y, 0, x, y, cr);           // the lantern itself, lit from inside
     gc.addColorStop(0, 'rgba(255,246,214,' + (.85 * k * f).toFixed(3) + ')'); gc.addColorStop(.55, 'rgba(255,190,90,' + (.45 * k).toFixed(3) + ')'); gc.addColorStop(1, 'rgba(255,150,60,0)');
     ctx.fillStyle = gc; ctx.beginPath(); ctx.arc(x, y, cr, 0, 6.283); ctx.fill();
-    const tw = Math.sin(C4.t * 3.1 + x * .13 + y * .07); if (tw > .93) { ctx.strokeStyle = 'rgba(255,240,200,' + (.7 * k).toFixed(3) + ')'; ctx.lineWidth = 1.2; const L = cr * 1.6; ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke(); }   // a twinkle
   }
   ctx.restore();
 }
