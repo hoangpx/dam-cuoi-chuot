@@ -1106,7 +1106,7 @@ function renderC4() {
       items.push({ z: z + i * .001, f: () => c4Mouse(g, M, x, 1, pd.ph + i, true, arm, it, s, c4Y(z), i) });
     });
   }
-  for (const w of C4.walkers) if (vis(w.x, 80) || (w.buf && vis(w.x - w.face * 205 * c4S(w.z), 160))) { items.push({ z: w.z, f: () => c4Critter(g, w, w.x, c4Y(w.z) - c4TownLift(w.x), c4S(w.z) * C4_CROWD) }); head(w.x, w.z, C4_TALL[w.kind] * C4_CROWD * (w.kind === 'mouse' ? .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1) : 1), w, w.st === 'chat' || w.st === 'queue' ? 1.5 : .5, w.chat); }
+  for (const w of C4.walkers) if (vis(w.x, 80) || (w.buf && vis(w.x - w.face * 205 * c4S(w.z), 160))) { items.push({ z: w.z, f: () => { const fold = w.umb && C4.town && c4OnBridge(w.x); if (fold) w.umb = false; c4Critter(g, w, w.x, c4Y(w.z) - c4TownLift(w.x), c4S(w.z) * C4_CROWD); if (fold) w.umb = true; } }); head(w.x, w.z, C4_TALL[w.kind] * C4_CROWD * (w.kind === 'mouse' ? .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1) : 1), w, w.st === 'chat' || w.st === 'queue' ? 1.5 : .5, w.chat); }
   c4StreetItems(items, g, vis); c4FxItems(items, g, vis); c4FlyItems(items, g, vis); c4VisitItems(items, g, vis);
   if (C4.town) c4TownBridgeItems(items, g, vis);                       // the covered bridge (phohuyen.js)
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
