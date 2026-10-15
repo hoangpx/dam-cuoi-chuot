@@ -693,7 +693,7 @@ function updateC4(dt) {
   for (const f of C4.fx) f.t += dt; C4.fx = C4.fx.filter(f => f.t < 1.2);
   for (const e of [...C4.walkers, C4.wife, ...C4.vendors, C4.porter, ...C4_SHOPS.map(g => SAVE4.shops[g]).filter(Boolean), ...c4AllHands().map(o => o.h)]) if (e.say && (e.say.t += dt) > e.say.life) e.say = null;
   if (C4.phase === 'open') {
-    const was = C4.mins; C4.mins += dt * C4_MPS * (C4.town && C4.mins >= 18 * 60 ? .6 : 1);   // the town's evening lasts a little longer (owner)
+    const was = C4.mins; C4.mins += dt * C4_MPS * (C4.town && C4.mins >= 18 * 60 ? .4 : 1);   // the town's evening lasts a little longer (owner)
     if (Math.floor(was / 30) !== Math.floor(C4.mins / 30)) { SAVE4.openMins = C4.mins; persist4(); }   // every half hour of the market
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }

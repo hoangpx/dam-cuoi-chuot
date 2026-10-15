@@ -165,6 +165,7 @@ function c4TownCreek(g, cx, vw) {
 // the line of the deck's edge at depth z, and a polyline along it
 const c4DeckY = (x, z) => c4Y(z) - c4TownLift(x);
 function c4TownBridgeItems(items, g, vis) {
+  c4QuayLamps(items, g, vis);
   const J = C4.townJunkAt; if (J) items.push({ z: 2, f: () => c4Junk(g, J[0], J[1], 1) });
   (C4.townBoatFns || []).forEach((f, i) => items.push({ z: 2.1 + i * .001, f }));   // the junk is on the river, nearer than the street: its sails go in front of the walkers (owner)
   if (!vis(C4_BRIDGE_X, C4_BRIDGE_HW + 120)) return;
@@ -288,7 +289,7 @@ function c4DrawLantern(g, ax, ay, s, col, len, ang) {
   g.save(); g.translate(ax, ay); g.rotate(ang); g.scale(s, s); g.strokeStyle = INK; g.lineJoin = 'round';
   g.lineWidth = 1.1; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, len); g.stroke();
   const cy = len + 12;
-  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint(0, cy).matrixTransform(T); C4.glows.push([P.x, P.y, 34 * Math.hypot(T.a, T.b), col]); }
+  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint(0, cy).matrixTransform(T); C4.glows.push([P.x, P.y, 46 * Math.hypot(T.a, T.b), col]); }
   g.fillStyle = 'rgba(255,214,120,.22)'; g.beginPath(); g.arc(0, cy, 15, 0, 6.283); g.fill();
   g.fillStyle = '#2a221d'; g.fillRect(-4, len, 8, 3); g.fillRect(-4, cy + 9, 8, 3);
   g.fillStyle = col; g.lineWidth = 1.6; g.beginPath(); g.ellipse(0, cy, 9, 9.5, 0, 0, 6.283); g.fill(); g.stroke();
@@ -490,7 +491,7 @@ function c4TownInterior(g, hx, hy, s, v, txt) {
   g.save(); g.translate(hx, hy); g.scale(s, s); g.strokeStyle = ink; g.lineJoin = 'round';
   g.fillStyle = '#5e4330'; g.fillRect(x0, y0, W, y1 - y0);                   // the room
   g.fillStyle = 'rgba(255,214,140,.16)'; g.fillRect(x0, y0, W, (y1 - y0) * .5); // lamplight
-  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint((x0 + x1) / 2, (y0 + y1) / 2).matrixTransform(T); C4.glows.push([P.x, P.y, W * .9 * Math.hypot(T.a, T.b), '#ffcf7a']); }
+  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint((x0 + x1) / 2, (y0 + y1) / 2).matrixTransform(T); C4.glows.push([P.x, P.y, W * .6 * Math.hypot(T.a, T.b), '#ffcf7a', 1]); }
   g.fillStyle = '#4a2f1f'; g.fillRect(x0, y1 - 22, W, 22);                   // the floor at the back
   const shelf = (y) => { g.fillStyle = '#7a4a22'; g.fillRect(x0 + 4, y, W - 8, 5); g.lineWidth = 1.2; g.strokeRect(x0 + 4, y, W - 8, 5); };
   const C = ['#a3332a', '#2f5f8f', '#2f6a4c', '#f2c640', '#c0567a', '#e8d8a8', '#d97b2a', '#5a2f5f'];
@@ -607,11 +608,35 @@ function c4TownNight(g) {
   const mix = (d, n) => Math.round(255 + (n - 255) * k);                    // multiply by a deep blue: the warm paper turns to night, not to brown
   ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgb(' + mix(0, 62) + ',' + mix(0, 72) + ',' + mix(0, 138) + ')'; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.globalCompositeOperation = 'lighter';
-  for (const [x, y, r, col] of C4.glows || []) {
+  for (const [x, y, r, col, room] of C4.glows || []) {
     const f = .8 + Math.sin(C4.t * 7 + x * .05) * .08 + Math.sin(C4.t * 13 + y * .07) * .05;     // a living flame
     const gr = ctx.createRadialGradient(x, y, 0, x, y, r * f);
-    gr.addColorStop(0, 'rgba(255,200,110,' + (.5 * k).toFixed(3) + ')'); gr.addColorStop(.35, 'rgba(255,150,60,' + (.18 * k).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,40,0)');
+    gr.addColorStop(0, 'rgba(255,200,110,' + (.6 * k).toFixed(3) + ')'); gr.addColorStop(.35, 'rgba(255,150,60,' + (.18 * k).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,40,0)');
     ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r * f, 0, 6.283); ctx.fill();
+    if (room) continue;                                                     // a lit room: only the soft halo
+    const cr = r * .34, gc = ctx.createRadialGradient(x, y, 0, x, y, cr);           // the lantern itself, lit from inside
+    gc.addColorStop(0, 'rgba(255,246,214,' + (.85 * k * f).toFixed(3) + ')'); gc.addColorStop(.55, 'rgba(255,190,90,' + (.45 * k).toFixed(3) + ')'); gc.addColorStop(1, 'rgba(255,150,60,0)');
+    ctx.fillStyle = gc; ctx.beginPath(); ctx.arc(x, y, cr, 0, 6.283); ctx.fill();
+    const tw = Math.sin(C4.t * 3.1 + x * .13 + y * .07); if (tw > .93) { ctx.strokeStyle = 'rgba(255,240,200,' + (.7 * k).toFixed(3) + ')'; ctx.lineWidth = 1.2; const L = cr * 1.6; ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke(); }   // a twinkle
   }
   ctx.restore();
+}
+
+// wooden lamp posts along the quay, an arm reaching out over the water with a silk lantern hanging from it (owner)
+function c4QuayLamps(items, g, vis) {
+  const s = c4S(1), yq = C4_Y0 + C4_D + 10;
+  for (let x = 520; x < C4_W; x += 300) {
+    if (!vis(x, 60)) continue;
+    items.push({ z: 1.05, f: () => {
+      g.save(); g.strokeStyle = INK; g.lineCap = 'round';
+      g.lineWidth = 7 * s; g.beginPath(); g.moveTo(x, yq); g.lineTo(x, yq - 150 * s); g.stroke();
+      g.strokeStyle = '#5b2f1f'; g.lineWidth = 4.2 * s; g.stroke();
+      g.strokeStyle = INK; g.lineWidth = 4 * s; g.beginPath(); g.moveTo(x, yq - 146 * s); g.quadraticCurveTo(x + 18 * s, yq - 160 * s, x + 34 * s, yq - 150 * s); g.stroke();
+      g.strokeStyle = '#7a4a22'; g.lineWidth = 2 * s; g.stroke();
+      g.fillStyle = '#5b2f1f'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(x - 7 * s, yq - 6 * s, 14 * s, 6 * s); g.strokeRect(x - 7 * s, yq - 6 * s, 14 * s, 6 * s);
+      g.fillStyle = '#c4473a'; g.beginPath(); g.moveTo(x - 6 * s, yq - 150 * s); g.lineTo(x, yq - 162 * s); g.lineTo(x + 6 * s, yq - 150 * s); g.closePath(); g.fill(); g.stroke();   // a little cap on the post
+      g.restore();
+      c4DrawLantern(g, x + 32 * s, yq - 150 * s, s * 1.25, ((x / 300) | 0) % 2 ? '#f2c640' : '#c4473a', 8, Math.sin(C4.t * 1.5 + x * .01) * .14);
+    } });
+  }
 }
