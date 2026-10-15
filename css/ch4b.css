@@ -25,3 +25,7 @@ body.p4holding #cv{cursor:none}
 #p4hud .bar .tag.buy{background:#a3332a;color:var(--diep)}
 #p4hud .bar .tag.buy.off{background:#b9b0a4;color:#5a5048}
 .p4sheet .btn:disabled{opacity:.45;cursor:default}
+
+/* naming the shop */
+#p4nameIn{width:100%;box-sizing:border-box;font:700 20px var(--display);text-transform:uppercase;text-align:center;padding:8px 10px;border:2.5px solid var(--ink);background:#fff8e6;margin:6px 0 10px}
+.p4sheet .p4name .btn{padding:3px 10px;font-size:13px;margin-left:6px}

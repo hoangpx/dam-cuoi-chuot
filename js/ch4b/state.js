@@ -21,3 +21,4 @@ const p4Persist = () => { try { localStorage.setItem(P4_SAVE_KEY, JSON.stringify
 const p4Purse = () => SAVE4.money;
 const p4Spend = d => { SAVE4.money -= d; P4.today.spent += d; persist4(); };
 const p4Earn = d => { SAVE4.money += d; P4.today.take += d; persist4(); };
+const P4_NAME_MAX = 16;                                                   // the shop's name on its board: at most 16 letters (owner)

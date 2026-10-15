@@ -213,7 +213,7 @@ function p4Key(e) {
 }
 
 // ---------- HUD and sheets ----------
-function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;
@@ -232,7 +232,7 @@ function p4BuySheet() {
 function p4HomeOpen() {
   if (!SAVE4B.house) { p4BuySheet(); return; }
   const G = SAVE4B, cost = 3;
-  $('#p4homeB').innerHTML = `<p>Trầu trong nhà: <b>${G.stock}</b> miếng · giá bán <b>${G.price}</b> đồng một miếng</p><p>Nhập trầu: ${cost} đồng một miếng. Trầu không để được qua đêm.</p>`
+  $('#p4homeB').innerHTML = `<p class="p4name">Hiệu <b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b> <button class="btn alt" data-rename="1">Đổi tên</button></p><p>Trầu trong nhà: <b>${G.stock}</b> miếng · giá bán <b>${G.price}</b> đồng một miếng</p><p>Nhập trầu: ${cost} đồng một miếng. Trầu không để được qua đêm.</p>`
     + `<div class="row"><button class="btn" data-n="20">Nhập 20</button><button class="btn" data-n="50">Nhập 50</button></div>`
     + `<div class="row"><button class="btn alt" data-p="-1">Giảm giá</button><button class="btn alt" data-p="1">Tăng giá</button></div>`
     + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>` + p4HandsHtml();
@@ -245,6 +245,7 @@ function p4HomeOpen() {
   document.body.append(hud,
     sheet('p4buy', '<h3>Lên Phố Huyện</h3><div id="p4buyB"></div><div class="row"><button class="btn" id="p4buyGo">Mua nhà</button><button class="btn alt" id="p4buyX">Thôi</button></div>'),
     sheet('p4home', '<h3>Hiệu trầu nhà chuột</h3><div id="p4homeB"></div><div class="row"><button class="btn alt" id="p4homeX">Đóng</button></div>'),
+    sheet('p4name', '<h3>Đặt tên hiệu</h3><p>Tên treo trên biển trước nhà (tối đa ' + P4_NAME_MAX + ' chữ).</p><input id="p4nameIn" maxlength="' + P4_NAME_MAX + '" autocomplete="off"><div class="row"><button class="btn" id="p4nameGo">Treo biển</button><button class="btn alt" id="p4nameX">Thôi</button></div>'),
     sheet('p4day', '<h3 id="p4dayT"></h3><div id="p4dayB"></div><div class="row"><button class="btn" id="p4dayGo">Sang ngày mới</button></div>'));
   $('#p4Name').addEventListener('click', () => showChapters());
   $('#p4Buy').addEventListener('click', () => { AU.tap(); p4BuySheet(); });
@@ -254,16 +255,20 @@ function p4HomeOpen() {
     if (p4Purse() < P4_HOUSE_PRICE) return;
     SAVE4.money -= P4_HOUSE_PRICE; persist4();
     SAVE4B = { house: true, day: 1, stock: 30, price: 8, sold: 0 }; p4Persist();
-    p4Sheets(null); P4.day = 0; startP4(); toast('Vợ chồng chuột đã có nhà trên phố huyện!', 3);
+    p4Sheets(null); P4.day = 0; startP4(); toast('Vợ chồng chuột đã có nhà trên phố huyện!', 3); p4NameSheet(true);
   });
   $('#p4homeX').addEventListener('click', () => p4Sheets(null));
   $('#p4homeB').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.rename) { AU.tap(); p4NameSheet(false); return; }
     if (p4HandsClick(b)) { AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (b.dataset.n) { const n = +b.dataset.n, c = n * 3; if (p4Purse() < c) { toast('Không đủ tiền nhập trầu.', 2); return; } p4Spend(c); SAVE4B.stock += n; }
     if (b.dataset.p) SAVE4B.price = Math.max(4, Math.min(20, SAVE4B.price + +b.dataset.p));
     p4Persist(); AU.tap(); p4HomeOpen(); p4Hud();
   });
+  $('#p4nameGo').addEventListener('click', () => { const v = $('#p4nameIn').value.replace(/\s+/g, ' ').trim().slice(0, P4_NAME_MAX).trim(); if (v) { SAVE4B.name = v.toLocaleUpperCase('vi'); p4Persist(); toast('Biển mới: ' + p4Esc(SAVE4B.name), 2.4); } AU.tap(); if (P4.nameBack) p4HomeOpen(); else p4Sheets(null); });
+  $('#p4nameX').addEventListener('click', () => { if (P4.nameBack) p4HomeOpen(); else p4Sheets(null); });
+  $('#p4nameIn').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#p4nameGo').click(); });
   $('#p4dayGo').addEventListener('click', () => { SAVE4B.day++; p4Persist(); p4Sheets(null); p4NewDay(); p4Hud(); });
 }
 // part 2 is a mode of chương IV (no card of its own): the hub routes to it by its mode
@@ -301,4 +306,11 @@ function p4BoatLeave(b, line, lost) {
   if (line) p4Say(b, line); if (lost) P4.today.lost++;
   b.order = null; b.stop = false; b.fast = Math.sign(b.sp) * 40; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; }
   setTimeout(() => { b.fast = 0; }, 6000);
+}
+
+// the shop's name (owner: the player names it once the house is theirs; at most P4_NAME_MAX letters, shown in capitals on the board)
+
+function p4NameSheet(first) {
+  P4.nameBack = !first; $('#p4nameIn').value = SAVE4B.name || 'TRẦU CAU';
+  p4Sheets('p4name'); setTimeout(() => { const i = $('#p4nameIn'); i.focus(); i.select(); }, 60);
 }

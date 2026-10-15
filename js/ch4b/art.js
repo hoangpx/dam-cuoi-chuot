@@ -110,13 +110,15 @@ function p4TownFarArt() {
 // assembly hall; far landmarks behind
 function p4TownScene(rs) {
   const near = [], far = [];
-  const names = ['VẢI LỤA', 'CAO LẦU', 'ĐỒ GỐM', 'MÌ QUẢNG', 'QUÁN NƯỚC', 'CƠM GÀ', 'TẠP HOÁ', 'HOÀNH THÁNH', 'ĐÈN LỒNG', 'BÁNH VẠC', 'THỢ BẠC', 'CHÈ', 'GẠO MUỐI', 'THUỐC BẮC', 'SÁCH VỞ', 'MAY ÁO'];
+  const names = P4_SHOP_NAMES.slice(), lamps = P4_LAMP_NAMES.slice();
+  for (let k = names.length - 1; k > 0; k--) { const j = (rs() * (k + 1)) | 0; [names[k], names[j]] = [names[j], names[k]]; }   // shuffled once, then each used once
+  const next = n => (n % 6 === 0 && lamps.length) ? lamps.shift() : names.length ? names.shift() : lamps.length ? lamps.shift() : 'TẠP HOÁ';
   let hq = false;
   const put = (cx, label) => { const v = (rs() * P4_TOWN_V.length) | 0; near.push([cx, 'shop', .72, v, label]); return P4_TOWN_V[v].w * .72; };
   let x = 600, i = 0;
   for (const [ax, label] of [[P4_HOME, 'home'], [P4_W + 400, null]]) {
     if (!hq && ax > P4_HOME && ax - 70 - x > 330) { near.push([x + 160, 'hoiquan', .72]); x += 320; hq = true; }
-    while (x + 140 < ax - 70) { const nm = i === 0 ? 'ĐÈN LỒNG' : i === 1 ? 'CAO LẦU' : i === 2 ? 'BÁNH VẠC' : names[(rs() * names.length) | 0]; const w = put(x + 70, nm); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
+    while (x + 140 < ax - 70) { const nm = next(i); const w = put(x + 70, nm); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
     if (!label) break;
     const w = put(ax, label); x = ax + w;
   }
@@ -278,7 +280,7 @@ const p4TownGate = () => P4_TOWN_GATE || (P4_TOWN_GATE = part([-160, -360, 160, 
 // what a house's board says: TRẦU CAU on the couple's house, else the neighbour's own trade
 function p4TownSign(label) {
   if (!label) return '';
-  if (label === 'home') return SAVE4B.house ? 'TRẦU CAU' : 'NHÀ BÁN';
+  if (label === 'home') return SAVE4B.house ? (SAVE4B.name || 'TRẦU CAU') : 'NHÀ BÁN';
   return label;
 }
 // a silk lantern hanging from (ax, ay) on a string, swung by ang: a cap, a round ribbed body, a cap, a tassel
@@ -297,10 +299,11 @@ function p4DrawLantern(g, ax, ay, s, col, len, ang) {
 function p4TownFront(g, hx, hy, s, v, label) {
   const txt = p4TownSign(label);
   if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    let fs = 12; while (fs > 8 && g.measureText(txt).width > 82) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
-  if (txt && txt !== 'CHO THUÊ' && txt !== 'NHÀ BÁN') p4TownInterior(g, hx, hy, s, v, txt);   // the shop is open: its goods show inside (owner)
-  if (txt === 'ĐÈN LỒNG') P4.glowW = .45; p4TownLanterns(g, hx, hy, s, v, txt === 'ĐÈN LỒNG'); P4.glowW = 0;
-  if (txt === 'ĐÈN LỒNG') p4LanternShop(g, hx, hy, s, v);
+    let fs = 12; while (fs > 6 && g.measureText(txt).width > 84) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
+  const lamp = p4IsLamp(txt) && label !== 'home';
+  if (txt && txt !== 'CHO THUÊ' && txt !== 'NHÀ BÁN') p4TownInterior(g, hx, hy, s, v, txt, label === 'home' ? 'betel' : lamp ? 'lamp' : null);   // the shop is open: its goods show inside (owner)
+  if (lamp) P4.glowW = .45; p4TownLanterns(g, hx, hy, s, v, lamp); P4.glowW = 0;
+  if (lamp) p4LanternShop(g, hx, hy, s, v);
 }
 function p4TownLanterns(g, hx, hy, s, v, bright = false) {
   const o = P4_TOWN_V[((v | 0) % P4_TOWN_V.length + P4_TOWN_V.length) % P4_TOWN_V.length], w = o.w;
@@ -484,7 +487,7 @@ function p4TownThing(g, w, t) {
 
 // an open shop front (owner: "cho các hàng khác mở cửa… bên trong có hàng hoá"): the shutter panels folded back to both sides, the
 // warm dim room, and what the shop sells set out inside according to its board
-function p4TownInterior(g, hx, hy, s, v, txt) {
+function p4TownInterior(g, hx, hy, s, v, txt, kind = null) {
   const o = P4_TOWN_V[((v | 0) % P4_TOWN_V.length + P4_TOWN_V.length) % P4_TOWN_V.length], w = o.w, x0 = -w + 22, x1 = w - 22, y0 = -120, y1 = -6, W = x1 - x0;
   const R = mulberry(v * 31 + txt.length * 7), ink = INK;
   g.save(); g.translate(hx, hy); g.scale(s, s); g.strokeStyle = ink; g.lineJoin = 'round';
@@ -494,8 +497,8 @@ function p4TownInterior(g, hx, hy, s, v, txt) {
   g.fillStyle = '#4a2f1f'; g.fillRect(x0, y1 - 22, W, 22);                   // the floor at the back
   const shelf = (y) => { g.fillStyle = '#7a4a22'; g.fillRect(x0 + 4, y, W - 8, 5); g.lineWidth = 1.2; g.strokeRect(x0 + 4, y, W - 8, 5); };
   const C = ['#a3332a', '#2f5f8f', '#2f6a4c', '#f2c640', '#c0567a', '#e8d8a8', '#d97b2a', '#5a2f5f'];
-  const K = /CAO LẦU|MÌ QUẢNG|HOÀNH THÁNH/.test(txt) ? 'noodle' : /CƠM GÀ/.test(txt) ? 'chicken' : /BÁNH VẠC/.test(txt) ? 'dumpling' : txt === 'CHÈ' ? 'sweet' : /SÁCH/.test(txt) ? 'book' : /MAY ÁO/.test(txt) ? 'tailor' : /VẢI|LỤA/.test(txt) ? 'cloth' : /GỐM/.test(txt) ? 'pot' : /THUỐC/.test(txt) ? 'herb' : /ĐÈN LỒNG/.test(txt) ? 'lamp'
-    : /BẠC/.test(txt) ? 'silver' : /QUÁN NƯỚC|CHÈ/.test(txt) ? 'tea' : /GẠO|MUỐI/.test(txt) ? 'rice' : /TRẦU/.test(txt) ? 'betel' : /RƯỢU/.test(txt) ? 'wine' : 'shop';
+  const K = kind || (/CAO LẦU|MÌ QUẢNG|HOÀNH THÁNH/.test(txt) ? 'noodle' : /CƠM GÀ/.test(txt) ? 'chicken' : /BÁNH VẠC/.test(txt) ? 'dumpling' : txt === 'CHÈ' ? 'sweet' : /SÁCH/.test(txt) ? 'book' : /MAY ÁO/.test(txt) ? 'tailor' : /VẢI|LỤA/.test(txt) ? 'cloth' : /GỐM/.test(txt) ? 'pot' : /THUỐC/.test(txt) ? 'herb' : /ĐÈN LỒNG/.test(txt) ? 'lamp'
+    : /BẠC/.test(txt) ? 'silver' : /QUÁN NƯỚC|CHÈ/.test(txt) ? 'tea' : /GẠO|MUỐI/.test(txt) ? 'rice' : /TRẦU/.test(txt) ? 'betel' : /RƯỢU/.test(txt) ? 'wine' : /TRÀ/.test(txt) ? 'tea' : 'shop');
   g.lineWidth = 1.2;
   if (K === 'noodle' || K === 'chicken' || K === 'dumpling' || K === 'sweet') p4TownFood(g, K, txt, x0, x1, R, C);
   else if (K === 'book') {                                                       // shelves of books, spines in many colours, a scroll or two
@@ -807,3 +810,11 @@ function p4TintStops(col) {
   const n = parseInt(col.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255, mix = (a, t) => Math.round(a + (255 - a) * t);
   return [[0, 'rgb(255,236,190)'], [.3, 'rgba(' + mix(r, .35) + ',' + mix(g, .35) + ',' + mix(b, .35) + ',.55)'], [1, 'rgba(' + r + ',' + g + ',' + b + ',0)']];
 }
+
+// the neighbours' trades along the street, each once (the board's words also decide what is set out inside, p4TownInterior)
+const P4_SHOP_NAMES = ['VẢI LỤA', 'LỤA TƠ TẰM', 'ĐỒ GỐM', 'GỐM BÁT TRÀNG', 'CAO LẦU', 'MÌ QUẢNG', 'HOÀNH THÁNH', 'CƠM GÀ', 'BÁNH VẠC', 'CHÈ',
+  'QUÁN NƯỚC', 'TRÀ SEN', 'RƯỢU NẾP', 'TẠP HOÁ', 'HÀNG XÉN', 'THỢ BẠC', 'VÀNG BẠC', 'GẠO MUỐI', 'GẠO TÁM THƠM', 'THUỐC BẮC', 'THUỐC NAM',
+  'SÁCH VỞ', 'HIỆU SÁCH', 'MAY ÁO', 'MAY ÁO DÀI', 'QUẠT GIẤY', 'NÓN LÁ', 'HƯƠNG TRẦM', 'TRANH ĐÔNG HỒ', 'GIẤY BÚT'];
+// the lantern makers: the only trade that comes back along the street, never under the same name
+const P4_LAMP_NAMES = ['ĐÈN LỒNG', 'LỒNG ĐÈN PHÚC', 'ĐÈN HOA SEN', 'ĐÈN LỒNG TÀI LỘC', 'LỒNG ĐÈN AN KHANG'];
+const p4IsLamp = txt => /ĐÈN|LỒNG/.test(txt || '');
