@@ -63,7 +63,7 @@ function p4Spawn(atX) {
   const x = atX !== undefined ? atX : fromRight ? P4.camX + V.vw + 120 + Math.random() * 200 : P4.camX - 120 - Math.random() * 200;
   const look = kid ? {} : p4TownLook({ skirt: Math.random() < .5, hat: Math.random() < .25 ? 'quai' : null }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
-  const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1);
+  const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass();
   P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o', x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
     sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: 1 + ((Math.random() * 3) | 0), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
@@ -86,7 +86,7 @@ function p4WalkersUpdate(dt) {
     }
   }
   P4.walkers = P4.walkers.filter(w => !(w.st !== 'queue' && w.st !== 'go' && !(w.food && w.st !== 'leave') && (w.x < P4.camX - 500 || w.x > P4.camX + V.vw + 500)));
-  p4BoatOrders(dt); p4SellersUpdate(dt); p4ShopsUpdate(dt);                                   // nguoilam.js: the wife and the hired hands
+  p4BoatOrders(dt); p4SellersUpdate(dt); p4ShopsUpdate(dt); p4BossUpdate(dt);   // chupho.js: the street's master and his men                                   // nguoilam.js: the wife and the hired hands
 }
 
 // ---------- start, the day, leaving ----------
@@ -103,7 +103,7 @@ function startP4() {
 }
 function p4NewDay() {
   Object.assign(P4, { day: SAVE4B.day, mins: P4_OPEN, phase: 'open', walkers: [], Q: [], fx: [], today: { sold: 0, take: 0, spent: 0, lost: 0 } });
-  P4.FQ = {}; P4.shopDay = {};
+  P4.FQ = {}; P4.shopDay = {}; P4.boss = null; P4.thugs = null;
   P4.sellers = p4MakeSellers(); P4.wife = P4.sellers[0]; P4.apply = null; P4.boatT = 25;
   for (const b of P4.townBoats || []) if (b.order) { b.order = null; b.stop = false; b.say = null; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; } }   // last night's callers are gone
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));
@@ -111,10 +111,10 @@ function p4NewDay() {
 function p4Hide() { $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
 function p4EndDay() {
   P4.phase = 'night';
-  const wilt = SAVE4B.stock; SAVE4B.stock = 0; p4Persist();                // betel does not keep overnight
+  const wilt = SAVE4B.stock; SAVE4B.stock = 0; SAVE4B.weekTake = (SAVE4B.weekTake || 0) + P4.today.take; p4Persist();   // the week's takings, for the street master's tax                // betel does not keep overnight
   $('#p4dayB').innerHTML = `<p>Bán được <b>${P4.today.sold}</b> miếng trầu: <b>${c4Money(P4.today.take)}</b></p><p>Chi: ${c4Money(P4.today.spent)}</p>`
     + (wilt ? `<p class="bad">Trầu thừa héo mất ${wilt} miếng.</p>` : '') + (P4.today.lost ? `<p>${P4.today.lost} khách đến mà hết trầu.</p>` : '')
-    + p4PayHands() + p4ShopsEvening() + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
+    + p4PayHands() + p4ShopsEvening() + (P4.today.smash ? `<p class="bad">Bị tay chân bá hộ phá: mất ${c4Money(P4.today.smash)}.</p>` : '') + (p4Harass() < 1 ? '<p class="bad">Tay chân bá hộ còn quấy, khách ngại ghé.</p>' : '') + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
   $('#p4dayT').textContent = `Tối ngày ${SAVE4B.day} trên phố huyện`;
   p4Sheets('p4day');
 }
@@ -182,6 +182,7 @@ function renderP4() {
   }
   for (const b of P4.townBoats || []) if (b.say && vis(b.x, 100)) bubbles.push({ e: b, x: b.x, y: P4_Y0 + P4_D + 24 + b.y - 16 - 70, s: .9, pri: 2 });
   for (const w of P4.walkers) if (vis(w.x, 80)) { items.push({ z: w.z, f: () => p4Folk(g, w, w.x, p4Y(w.z) - p4TownLift(w.x), p4S(w.z) * P4_CROWD) }); head(w.x, w.z, P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), w, w.asked ? 2 : 1); }
+  for (const m of [...(P4.boss ? P4.boss.men : []), ...(P4.thugs || [])]) if (vis(m.x, 80)) { items.push({ z: m.z, f: () => p4Folk(g, m, m.x, p4Y(m.z), p4S(m.z) * P4_CROWD * (m === (P4.boss && P4.boss.men[0]) ? 1.08 : 1)) }); head(m.x, m.z, P4_TALL * P4_CROWD * .92, m, 3); }
   p4TownBridgeItems(items, g, vis);
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
   for (const f of P4.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 26px "Playfair Display", serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = '#2f6a4c'; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
@@ -214,12 +215,12 @@ function p4Up(e) {
 }
 cv.addEventListener('wheel', e => { if (S.mode !== 'c4bplay' || P4.sheet) return; e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; P4.camX += d * 1.5 * (e.deltaMode === 1 ? 30 : 1) / p4View().s; }, { passive: false });
 function p4Key(e) {
-  if (e.code === 'Escape') { if (P4.sheet && P4.sheet !== 'p4buy' && P4.sheet !== 'p4day') p4Sheets(null); else showChapters(); return; }
+  if (e.code === 'Escape') { if (P4.sheet && P4.sheet !== 'p4buy' && P4.sheet !== 'p4day' && P4.sheet !== 'p4boss') p4Sheets(null); else showChapters(); return; }
   if (e.code === 'ArrowLeft') P4.camX -= 60; if (e.code === 'ArrowRight') P4.camX += 60;
 }
 
 // ---------- HUD and sheets ----------
-function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;

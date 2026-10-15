@@ -23,7 +23,7 @@ function p4ShopsUpdate(dt) {
   if (P4.phase !== 'open') return;
   const S = p4Shops(), h = P4.mins / 60, dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);   // game minutes this frame
   for (const key in S) {
-    const R = S[key], x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R);   // customers a game minute
+    const R = S[key], x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R) * p4Harass();   // customers a game minute
     R.acc = (R.acc || 0) + rate * dm;
     while (R.acc >= 1) { R.acc -= 1; p4FoodCustomer(x, key); }
     // the cook serves the first in the queue
