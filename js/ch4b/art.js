@@ -236,7 +236,7 @@ function p4TownRiver(g, cx, vw, V) {
   p4HoaDang(g, x0, x1, yw, yb);                                            // flower lanterns on the water at night
   P4.townBoatFns = [];
   for (const b of [...B].sort((p, q) => p.y - q.y)) {
-    if (!P4.paused) { b.x += b.sp / 60; if (b.x > P4_W + 300) b.x = -300; if (b.x < -300) b.x = P4_W + 300; }
+    if (!P4.paused && !b.stop) { b.x += (b.fast || b.sp) / 60; if (b.x > P4_W + 300) b.x = -300; if (b.x < -300) b.x = P4_W + 300; }
     if (b.x < x0 - 140 || b.x > x1 + 140) continue;
     P4.townBoatFns.push(() => {                                             // drawn in front of the street and the junk (p4TownBridgeItems)
     const y = yw + b.y + Math.sin(P4.t * 1.4 + b.x * .01) * 1.5, d = Math.sign(b.sp), ms = .52, L2 = 78, deck = y - 16;

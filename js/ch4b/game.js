@@ -79,7 +79,7 @@ function p4WalkersUpdate(dt) {
       w.moving = d > 3; if (w.moving) { const st = Math.min(d, 70 * dt); w.x += dx / d * st; w.z += dz * 300 / d * st / 300; w.ph += dt * 7; w.face = dx > 0 ? 1 : -1; }
       else { w.st = 'queue'; w.face = -1; }
       w.wait += dt;
-      if (w.st === 'queue' && i === 0 && !P4.wife.serving && !w.asked) { w.asked = true; p4Say(w, P4_ASK(w.n)); }
+      if (w.st === 'queue' && i === 0 && !P4.wife.serving && !w.asked) { w.asked = true; w.askT = P4.t; p4Say(w, P4_ASK(w.n)); }
       if (w.wait > 30 && P4.wife.serving !== w) { Q.splice(Q.indexOf(w), 1); w.st = 'leave'; w.dir = w.x < P4.camX + V.vw / 2 ? -1 : 1; p4Say(w, 'Lâu quá, thôi đi chỗ khác.'); }
     }
   }
@@ -87,7 +87,13 @@ function p4WalkersUpdate(dt) {
   // the wife serves the first in the queue
   const W = P4.wife;
   if (W.say) { W.say.t += dt; if (W.say.t > W.say.life) W.say = null; }
-  if (!W.serving && Q.length && Q[0].st === 'queue' && Q[0].asked) { W.serving = Q[0]; W.t = 2.2; }
+  p4BoatOrders(dt);
+  if (W.st === 'counter' && !W.serving) {
+    const boat = p4NextBoat(), q = Q.length && Q[0].st === 'queue' && Q[0].asked ? Q[0] : null;
+    if (boat && (!q || boat.order.t0 < q.askT)) { W.st = 'out'; W.job = boat; p4Say(W, p4Pick(['Có ngay, có ngay!', 'Chờ em chút nhé!', 'Em mang ra đây!'])); }
+    else if (q) { W.serving = q; W.t = 2.2; }
+  }
+  p4WifeRun(dt);
   if (W.serving && (W.t -= dt) <= 0) {
     const w = W.serving, n = Math.min(w.n, SAVE4B.stock);
     if (n > 0) { SAVE4B.stock -= n; SAVE4B.sold = (SAVE4B.sold || 0) + n; P4.today.sold += n; p4Earn(n * SAVE4B.price); P4.fx.push({ x: door, y: p4Y(.12) - 120, s: '+' + n * SAVE4B.price, t: 0 }); p4Say(W, p4Pick(['Trầu đây, mời bác!', 'Của bác đây ạ!', 'Ăn ngon lại ghé nhé!'])); }
@@ -113,7 +119,8 @@ function startP4() {
 }
 function p4NewDay() {
   Object.assign(P4, { day: SAVE4B.day, mins: P4_OPEN, phase: 'open', walkers: [], Q: [], fx: [], today: { sold: 0, take: 0, spent: 0, lost: 0 } });
-  P4.wife = { say: null, serving: null, t: 0 };
+  P4.wife = { say: null, serving: null, t: 0, x: P4_HOME - 6, z: .07, st: 'counter', job: null }; P4.boatT = 25;
+  for (const b of P4.townBoats || []) if (b.order) { b.order = null; b.stop = false; b.say = null; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; } }   // last night's callers are gone
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));
 }
 function p4Hide() { $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
@@ -178,11 +185,14 @@ function renderP4() {
     items.push({ z: .04, f: () => p4Mouse(g, M, x, f, P4.t * 2 + n[0], false, null, null, p4S(.04) * P4_CROWD * .95, p4Y(.04), n[0]) }); }
   // the couple's house: the wife behind the counter, the husband by the door
   if (vis(P4_HOME, 160)) {
-    items.push({ z: .07, f: () => p4Mouse(g, MICE.b, P4_HOME - 6, 1, P4.t * 2, false, P4.wife.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, null, p4S(.07) * .95, p4Y(.07), 1) });
+    const Wf = P4.wife;
+    if (Wf.st === 'counter') items.push({ z: .07, f: () => p4Mouse(g, MICE.b, P4_HOME - 6, 1, P4.t * 2, false, Wf.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, null, p4S(.07) * .95, p4Y(.07), 1) });
     items.push({ z: .09, f: () => p4TownCounter(g, P4_HOME + 10, 'trau') });
     items.push({ z: .16, f: () => p4Mouse(g, MICE.groom, P4_HOME - 120, 1, P4.t * 2, false, null, null, p4S(.16) * .95, p4Y(.16), 2) });
-    head(P4_HOME - 6, .07, 168 * .95, P4.wife, 3);
+    if (P4.wife.st === 'counter') head(P4_HOME - 6, .07, 168 * .95, P4.wife, 3);
   }
+  { const Wf = P4.wife; if (Wf.st !== 'counter' && vis(Wf.x, 80)) { items.push({ z: Wf.z, f: () => p4Mouse(g, MICE.b, Wf.x, Wf.face || 1, Wf.ph || 0, Wf.moving, Wf.st === 'out' ? -.9 : null, Wf.st === 'out' ? WP.basket : null, p4S(Wf.z) * .95, p4Y(Wf.z), 1) }); head(Wf.x, Wf.z, 168 * .95, Wf, 3); } }
+  for (const b of P4.townBoats || []) if (b.say && vis(b.x, 100)) bubbles.push({ e: b, x: b.x, y: P4_Y0 + P4_D + 24 + b.y - 16 - 70, s: .9, pri: 2 });
   for (const w of P4.walkers) if (vis(w.x, 80)) { items.push({ z: w.z, f: () => p4Folk(g, w, w.x, p4Y(w.z) - p4TownLift(w.x), p4S(w.z) * P4_CROWD) }); head(w.x, w.z, P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), w, w.asked ? 2 : 1); }
   p4TownBridgeItems(items, g, vis);
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
@@ -276,3 +286,47 @@ registerChapter({
   pointer: { down: p4Down, move: p4Move, up: p4Up },
   next() { startP4(); }, retry() { startP4(); },
 });
+
+// ---------- orders from the boats (owner): a boat comes in to the quay in front of the house and calls for betel; the seller has to
+// leave the counter and run down to the water with it, and back (the counter waits meanwhile) ----------
+const P4_DOCK_Z = 1.03;                                                    // where she stands to hand it over: the quay's edge
+const p4NextBoat = () => (P4.townBoats || []).filter(b => b.order && b.stop && !b.order.taken).sort((a, b) => a.order.t0 - b.order.t0)[0] || null;
+function p4BoatOrders(dt) {
+  const B = P4.townBoats; if (!B) return;
+  for (const b of B) {
+    if (b.say) { b.say.t += dt; if (b.say.t > b.say.life) b.say = null; }
+    if (!b.order) continue;
+    const o = b.order;
+    if (!b.stop && Math.abs(b.x - o.dock) < 6) { b.stop = true; b.fast = 0; o.t0 = P4.t; p4Say(b, p4Pick([`Ơi nhà trầu! Cho ${o.n} miếng!`, `Mang ra đây ${o.n} miếng trầu!`, `Bến ơi! ${o.n} miếng trầu nhé!`])); }
+    if (b.stop && !o.taken && P4.t - o.t0 > 40) p4BoatLeave(b, p4Pick(['Thôi, đi tiếp vậy.', 'Chờ lâu quá!']), true);
+  }
+  // now and then (more when the street is busy) a boat turns in towards the house: it comes from off the screen and stops at the quay
+  if (P4.phase !== 'open' || SAVE4B.stock <= 0 || B.some(b => b.order)) return;
+  if ((P4.boatT -= dt) > 0) return;
+  P4.boatT = (22 + Math.random() * 25) / p4Busy();
+  const V = p4View(), b = B.filter(q => !q.order && (q.x < P4.camX - 150 || q.x > P4.camX + V.vw + 150)).sort((p, q) => Math.abs(p.x - P4_HOME) - Math.abs(q.x - P4_HOME))[0]; if (!b) return;
+  const from = Math.random() < .5 ? -1 : 1, dock = P4_HOME + 40 + (Math.random() - .5) * 120;
+  b.y0 = b.y; b.y = 40; b.x = dock + from * (V.vw * .7 + 120); b.sp = -from * Math.abs(b.sp); b.fast = -from * 60;
+  b.order = { n: 2 + ((Math.random() * 5) | 0), dock, t0: Infinity, taken: false };
+}
+function p4BoatLeave(b, line, lost) {
+  if (line) p4Say(b, line); if (lost) P4.today.lost++;
+  b.order = null; b.stop = false; b.fast = Math.sign(b.sp) * 40; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; }
+  setTimeout(() => { b.fast = 0; }, 6000);
+}
+// the seller running: from the counter to the quay at the boat, hand it over, back; the counter waits meanwhile
+function p4WifeRun(dt) {
+  const W = P4.wife, b = W.job;
+  if (W.st === 'counter') return;
+  const go = (tx, tz) => { const dx = tx - W.x, dz = (tz - W.z) * 300, d = Math.hypot(dx, dz); W.moving = d > 3; if (!W.moving) return true; const st = Math.min(d, 150 * dt); W.x += dx / d * st; W.z += dz / d * st / 300; W.ph = (W.ph || 0) + dt * 12; W.face = dx >= 0 ? 1 : -1; return false; };
+  if (W.st === 'out') {
+    if (!b || !b.order) { W.st = 'back'; W.job = null; return; }
+    b.order.taken = true;
+    if (go(b.x - 30, P4_DOCK_Z)) {
+      const n = Math.min(b.order.n, SAVE4B.stock);
+      if (n > 0) { SAVE4B.stock -= n; SAVE4B.sold = (SAVE4B.sold || 0) + n; P4.today.sold += n; p4Earn(n * SAVE4B.price); P4.fx.push({ x: b.x, y: P4_Y0 + P4_D - 30, s: '+' + n * SAVE4B.price, t: 0 }); p4Say(W, 'Trầu đây ạ!'); p4BoatLeave(b, p4Pick(['Cảm ơn nhé!', 'Trầu thơm quá!', 'Mai lại ghé!']), false); }
+      else { p4Say(W, 'Hết trầu mất rồi!'); p4BoatLeave(b, 'Tiếc quá!', true); }
+      p4Persist(); p4Hud(); W.st = 'back'; W.job = null;
+    }
+  } else if (W.st === 'back' && go(P4_HOME - 6, .07)) { W.st = 'counter'; W.face = 1; W.moving = false; }
+}
