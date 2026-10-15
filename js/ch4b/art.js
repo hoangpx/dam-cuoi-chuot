@@ -278,7 +278,7 @@ const p4TownGate = () => P4_TOWN_GATE || (P4_TOWN_GATE = part([-160, -360, 160, 
 // what a house's board says: TRẦU CAU on the couple's house, else the neighbour's own trade
 function p4TownSign(label) {
   if (!label) return '';
-  if (label === 'home') return 'TRẦU CAU';
+  if (label === 'home') return SAVE4B.house ? 'TRẦU CAU' : 'NHÀ BÁN';
   return label;
 }
 // a silk lantern hanging from (ax, ay) on a string, swung by ang: a cap, a round ribbed body, a cap, a tassel
@@ -298,7 +298,7 @@ function p4TownFront(g, hx, hy, s, v, label) {
   const txt = p4TownSign(label);
   if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     let fs = 12; while (fs > 8 && g.measureText(txt).width > 82) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
-  if (txt && txt !== 'CHO THUÊ') p4TownInterior(g, hx, hy, s, v, txt);   // the shop is open: its goods show inside (owner)
+  if (txt && txt !== 'CHO THUÊ' && txt !== 'NHÀ BÁN') p4TownInterior(g, hx, hy, s, v, txt);   // the shop is open: its goods show inside (owner)
   if (txt === 'ĐÈN LỒNG') P4.glowW = .45; p4TownLanterns(g, hx, hy, s, v, txt === 'ĐÈN LỒNG'); P4.glowW = 0;
   if (txt === 'ĐÈN LỒNG') p4LanternShop(g, hx, hy, s, v);
 }
@@ -712,7 +712,7 @@ function p4HoaTap(x, y) {
   let best = null, bd = 1e9;
   for (const h of P4.hoaHits || []) { const d = Math.hypot(x - h.x, y - h.y); if (d < h.r + 8 && d < bd) { bd = d; best = h; } }
   if (best) { AU.tap(); p4HoaRead(best); return true; }
-  if (!water) return false;
+  if (!water || !SAVE4B.house) return false;
   if (S.t - (P4.hoaCdT ?? -99) < P4_HOA_CD) return true;
   AU.tap(); p4HoaShop(); return true;
 }

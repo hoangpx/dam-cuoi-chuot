@@ -926,7 +926,7 @@ function c4Invite(ps, deal) {
   toast(`Chồng chạy đi mời ${ps.map(p => p.name).join(', ')}. Người bảo "Ra ngay!", người bảo "Để tí nữa"…`, 3.6);
 }
 function c4Hud() {
-  $('#c4Pho').hidden = !(typeof P4_HOUSE_PRICE !== 'undefined' && (SAVE4.money >= P4_HOUSE_PRICE || SAVE4B.house));   // part 2 · Phố Huyện (js/ch4b): from 500 quan
+  $('#c4Pho').hidden = typeof P4_HOUSE_PRICE === 'undefined';           // part 2 · Phố Huyện (js/ch4b): always there; the town's own buttons wait for the house
   $('#c4Invite').hidden = !c4CanInvite();
   $('#c4Money').innerHTML = c4Money(SAVE4.money);
   $('#c4Time').textContent = `Ngày ${SAVE4.day}  ${C4_ZOD[c4Hour(C4.mins)] || ''} ${c4Clock(C4.mins)}  ${C4_WXI[c4Wx()]}`;

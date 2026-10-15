@@ -20,3 +20,8 @@ body.p4holding #cv{cursor:none}
 .p4sheet .hands .hand{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0;text-align:left}
 .p4sheet .hands .hand .btn{padding:4px 12px;font-size:14px}
 .p4sheet .hands h4{margin:12px 0 4px}
+
+/* the house is not ours yet: "Mua nhà" waits in the bar, greyed while the purse is short */
+#p4hud .bar .tag.buy{background:#a3332a;color:var(--diep)}
+#p4hud .bar .tag.buy.off{background:#b9b0a4;color:#5a5048}
+.p4sheet .btn:disabled{opacity:.45;cursor:default}
