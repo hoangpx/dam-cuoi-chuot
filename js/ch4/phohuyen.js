@@ -18,6 +18,7 @@ const C4_TOWN_V = [
   { w: 102, two: false, wall: 'catY', wood: 'brown', up: null, sign: 'GẠO MUỐI', board: 'dark' },
 ];
 const C4_LANTERN_COLS = ['red', 'yellow', 'red', 'blue', 'green', 'orange', 'red', 'pink'];
+const C4_LANTERN_BRIGHT = ['#e8393a', '#f7c531', '#2fae74', '#3b8fd8', '#9b59d0', '#f06aa0', '#f28a2e', '#f4efe2'];   // the lantern maker's silks
 // a tiled roof slope seen from the street: the tiles run down in rows of tubes (ngói âm dương)
 function c4TileRoof(a, x0, x1, yTop, yBot, out, pl = 'brown') {
   const p = smooth([[x0 - out, yBot], [x0 - out + 4, yBot - 6], [x0 + 6, yTop], [x1 - 6, yTop], [x1 + out - 4, yBot - 6], [x1 + out, yBot]]);
@@ -290,7 +291,7 @@ function c4DrawLantern(g, ax, ay, s, col, len, ang) {
   g.save(); g.translate(ax, ay); g.rotate(ang); g.scale(s, s); g.strokeStyle = INK; g.lineJoin = 'round';
   g.lineWidth = 1.1; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, len); g.stroke();
   const cy = len + 12;
-  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint(0, cy).matrixTransform(T); C4.glows.push([P.x, P.y, 62 * Math.hypot(T.a, T.b), col]); }
+  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint(0, cy).matrixTransform(T); C4.glows.push([P.x, P.y, 62 * Math.hypot(T.a, T.b) * (C4.glowW ? .7 : 1), col, 0, C4.glowW || 1]); }
   g.fillStyle = 'rgba(255,214,120,.22)'; g.beginPath(); g.arc(0, cy, 15, 0, 6.283); g.fill();
   g.fillStyle = '#2a221d'; g.fillRect(-4, len, 8, 3); g.fillRect(-4, cy + 9, 8, 3);
   g.fillStyle = col; g.lineWidth = 1.6; g.beginPath(); g.ellipse(0, cy, 9, 9.5, 0, 0, 6.283); g.fill(); g.stroke();
@@ -303,14 +304,14 @@ function c4TownFront(g, hx, hy, s, v, label) {
   if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     let fs = 12; while (fs > 8 && g.measureText(txt).width > 82) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
   if (txt && txt !== 'CHO THUÊ') c4TownInterior(g, hx, hy, s, v, txt);   // the shop is open: its goods show inside (owner)
-  c4TownLanterns(g, hx, hy, s, v);
+  if (txt === 'ĐÈN LỒNG') C4.glowW = .45; c4TownLanterns(g, hx, hy, s, v, txt === 'ĐÈN LỒNG'); C4.glowW = 0;
   if (txt === 'ĐÈN LỒNG') c4LanternShop(g, hx, hy, s, v);
 }
-function c4TownLanterns(g, hx, hy, s, v) {
+function c4TownLanterns(g, hx, hy, s, v, bright = false) {
   const o = C4_TOWN_V[((v | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length], w = o.w;
   for (let x = -w + 12, i = 0; x <= w - 12; x += 22, i++) {
     if (Math.abs(x) < 58) continue;                                         // the sign board's place
-    c4DrawLantern(g, hx + x * s, hy - 146 * s, s, PL[C4_LANTERN_COLS[(v * 2 + i * 3) % C4_LANTERN_COLS.length]][0], 6 + (i % 2) * 6, Math.sin(C4.t * 1.7 + hx * .013 + i * 1.3) * .16);
+    c4DrawLantern(g, hx + x * s, hy - 146 * s, s, bright ? C4_LANTERN_BRIGHT[i % C4_LANTERN_BRIGHT.length] : PL[C4_LANTERN_COLS[(v * 2 + i * 3) % C4_LANTERN_COLS.length]][0], 6 + (i % 2) * 6, Math.sin(C4.t * 1.7 + hx * .013 + i * 1.3) * .16);
   }
 }
 // the gate's lanterns, hung outside its board (owner: they hid HẢI PHỐ), swaying
@@ -407,12 +408,14 @@ const c4HoiQuanArt = () => C4_HQ_ART || (C4_HQ_ART = part([-240, -400, 240, 6], 
 }));
 // the lantern makers' house: lanterns hang thick on bamboo poles either side of its board
 function c4LanternShop(g, hx, hy, s, v) {
+  C4.glowW = .22;
   const o = C4_TOWN_V[((v | 0) % C4_TOWN_V.length + C4_TOWN_V.length) % C4_TOWN_V.length], w = o.w;
-  const cols = ['#c4473a', '#f2c640', '#2f5f8f', '#2f6a4c', '#d97b2a', '#c0567a'];
-  for (const side of [-1, 1]) for (let row = 0; row < 2; row++) for (let k = 0; k < 3; k++) {
-    const x = side * (w - 18 - k * 14), y = -112 + row * 34;
-    c4DrawLantern(g, hx + x * s, hy + y * s, s * .9, cols[(k + row * 2 + (side > 0 ? 3 : 0)) % cols.length], 4, Math.sin(C4.t * 1.6 + k + row * 2 + side) * .16);
+  const cols = C4_LANTERN_BRIGHT;
+  for (const side of [-1, 1]) for (let row = 0; row < 3; row++) for (let k = 0; k < 4; k++) {
+    const x = side * (w - 14 - k * 13 - (row % 2) * 6), y = -116 + row * 30;
+    c4DrawLantern(g, hx + x * s, hy + y * s, s * .85, cols[(k * 3 + row * 5 + (side > 0 ? 2 : 0)) % cols.length], 3 + (k % 2) * 4, Math.sin(C4.t * 1.6 + k + row * 2 + side) * .16);
   }
+  C4.glowW = 0;
 }
 // a merchant junk (the port traded with Chinese and Japanese ships): a big hull with a raised stern, an eye on the bow, two masts with
 // ribbed sails; it moves slowly along the river farther out
@@ -520,7 +523,7 @@ function c4TownInterior(g, hx, hy, s, v, txt) {
     for (let r = 0; r < 6; r++) for (let c = 0; c < cols; c++) { const x = x0 + 6 + c * 16, y = -110 + r * 14; g.strokeRect(x + 1, y + 1, 14, 12); g.fillStyle = '#f2c640'; g.beginPath(); g.arc(x + 8, y + 7, 1.6, 0, 6.283); g.fill(); }
     g.fillStyle = '#efe8da'; for (let x = x0 + 16; x < x1 - 10; x += 26) { g.beginPath(); g.ellipse(x, -18, 7, 9, 0, 0, 6.283); g.fill(); g.stroke(); }
   } else if (K === 'lamp') {                                                // lanterns hanging inside, frames being covered with silk
-    for (let x = x0 + 14, i = 0; x < x1 - 8; x += 18, i++) c4DrawLantern(g, x, -118, .8, C[i % 6], 6 + (i % 3) * 10, Math.sin(C4.t * 1.3 + i) * .08);
+    C4.glowW = .22; for (let row = 0; row < 2; row++) for (let x = x0 + 12 + row * 9, i = 0; x < x1 - 8; x += 18, i++) c4DrawLantern(g, x, -118 + row * 30, .78, C4_LANTERN_BRIGHT[(i * 3 + row * 4) % C4_LANTERN_BRIGHT.length], 4 + (i % 3) * 6, Math.sin(C4.t * 1.3 + i + row) * .08); C4.glowW = 0;
     g.lineWidth = 1; for (let x = x0 + 20; x < x1 - 20; x += 34) { g.beginPath(); g.ellipse(x, -24, 10, 13, 0, 0, 6.283); g.moveTo(x, -37); g.lineTo(x, -11); g.stroke(); }
   } else if (K === 'silver') {                                              // a workbench with a lamp, little boxes, rings and bowls catching the light
     g.fillStyle = '#7a4a22'; g.fillRect(x0 + 10, -48, W - 20, 8); g.strokeRect(x0 + 10, -48, W - 20, 8);
@@ -624,18 +627,18 @@ function c4TownNight(g) {
   const pool = c4GlowSprite('pool', C4_POOL), halo = c4GlowSprite('halo', C4_HALO), core = c4GlowSprite('core', C4_CORE);
   const flick = (x, y) => .88 + Math.sin(C4.t * 7 + x * .05) * .06 + Math.sin(C4.t * 13 + y * .07) * .04;
   const glows = (C4.glows || []).filter(([x, y, r]) => x > -r * 3 && x < cv.width + r * 3 && y > -r * 3 && y < cv.height + r * 3);   // only what can reach the screen
-  for (const [x, y, r, , room] of glows) {
+  for (const [x, y, r, , room, wt = 1] of glows) {
     const f = flick(x, y), R = r * (room ? 1.7 : 2.6) * f * Q, cy = (y + (room ? 0 : r * .55)) * Q, ry = R * (room ? .9 : 1.05);   // a lantern's pool reaches down onto the street
-    lg.globalAlpha = (room ? .6 : .8) * k; lg.drawImage(pool, x * Q - R, cy - ry, R * 2, ry * 2);
+    lg.globalAlpha = (room ? .6 : .8) * k * wt; lg.drawImage(pool, x * Q - R, cy - ry, R * 2, ry * 2);
   }
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(L, 0, 0, cv.width, cv.height);
   ctx.globalCompositeOperation = 'lighter';
-  for (const [x, y, r, , room] of glows) {                                  // the glow in the air, and the lanterns themselves lit from inside
+  for (const [x, y, r, col, room, wt = 1] of glows) {                               // the glow in the air, and the lanterns themselves lit from inside
     const f = flick(x, y), R = r * f;
-    ctx.globalAlpha = (room ? .25 : .45) * k; ctx.drawImage(halo, x - R, y - R, R * 2, R * 2);
+    ctx.globalAlpha = (room ? .25 : .45) * k * Math.sqrt(wt); ctx.drawImage(room || !/^#[0-9a-f]{6}$/i.test(col || '') ? halo : c4GlowSprite('h' + col, c4TintStops(col)), x - R, y - R, R * 2, R * 2);
     if (room) continue;
-    const cr = r * .25; ctx.globalAlpha = Math.min(1, .85 * k * f); ctx.drawImage(core, x - cr, y - cr, cr * 2, cr * 2);
+    const cr = r * .25; ctx.globalAlpha = Math.min(1, .85 * k * f * (wt < 1 ? .3 : 1)); ctx.drawImage(core, x - cr, y - cr, cr * 2, cr * 2);
   }
   ctx.restore();
 }
@@ -712,7 +715,7 @@ function c4HoaTap(x, y) {
     const L = C4.hoaMine || (C4.hoaMine = []);
     L.push({ x, y: Math.min(y, c4View().vh - c4View().oy - 10), t0: S.t, c: C4.hoaHold.c, wish: C4.hoaHold.wish });
     if (L.length > 60) L.shift();
-    AU.plop(); AU.pluck([74, 76, 79, 81, 83, 86][(Math.random() * 6) | 0]);
+    AU.plop();
     c4HoaHold(null); return true;
   }
   // a lantern under the finger: read its wish
@@ -807,4 +810,10 @@ function c4HandsSvg(c1, c2) {
     + '<ellipse cx="' + cx + '" cy="' + (y + 1) + '" rx="' + 30 * k + '" ry="' + 7 * k + '" fill="#5f7a4a" stroke="' + I + '" stroke-width="2"/>'
     + pet(-68, 26, c1) + pet(68, 26, c1) + pet(-34, 31, c2) + pet(34, 31, c2) + pet(0, 34, c2)
     + '<ellipse cx="' + cx + '" cy="' + (y - 24 * k) + '" rx="' + 3.6 * k + '" ry="' + 6.5 * k + '" fill="#fff4c8"/></svg>';
+}
+
+// a halo in a lantern's own colour: warm white in the middle, the silk's colour around it
+function c4TintStops(col) {
+  const n = parseInt(col.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255, mix = (a, t) => Math.round(a + (255 - a) * t);
+  return [[0, 'rgb(255,236,190)'], [.3, 'rgba(' + mix(r, .35) + ',' + mix(g, .35) + ',' + mix(b, .35) + ',.55)'], [1, 'rgba(' + r + ',' + g + ',' + b + ',0)']];
 }
