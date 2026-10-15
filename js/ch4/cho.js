@@ -1026,7 +1026,7 @@ function renderC4() {
   g.fillStyle = rain || wx === 'ret' ? '#9d95b9' : c4Sunset() > .3 ? '#d4471c' : wx === 'gat' ? '#c73a1e' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, C4_Y0 + oy - 170), wx === 'gat' ? 40 : 32, 0, 6.283); g.fill(); g.stroke();
   g.restore();
   c4Sky(g, V, cx, wx); c4OmenSky(g, V, cx);
-  c4River(g, cx, vw);                                                     // the river is behind the houses: drawn before them (owner)
+  if (!C4.town) c4River(g, cx, vw);                                                     // the river is behind the houses: drawn before them (owner)
   g.save(); g.translate(cx * .55, 0); g.globalAlpha = .5;
   for (const [x, k, sc, hv] of (C4.scene ? C4.scene.far : [[-80, 'house', .45, 0], [260, 'bamboo', .5], [520, 'house', .42, 2], [880, 'tree', .45], [1180, 'house', .45, 4], [1500, 'bamboo', .45], [1720, 'house', .42, 1]]))
     if (x + 150 > cx * .45 - 40 && x - 150 < cx * .45 + vw + 40) dp(g, C4.town ? c4TownPart(k) : k === 'house' ? c4HouseArt(hv) : k === 'tree' ? WP.bigTree : PROPS.bamboo, x, C4_Y0 - 70, 0, sc, sc);
@@ -1037,11 +1037,11 @@ function renderC4() {
   g.strokeStyle = 'rgba(29,25,21,.25)'; g.lineWidth = 1.4; g.setLineDash([18, 14]);
   for (const z of [.45, .78]) { g.beginPath(); g.moveTo(cx - 50, c4Y(z)); g.lineTo(cx + vw + 50, c4Y(z)); g.stroke(); }
   g.setLineDash([]);
-  if (C4.town) c4TownPaving(g, cx, vw);
-  g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.lineCap = 'round';
+  if (C4.town) { c4TownPaving(g, cx, vw); c4TownRiver(g, cx, vw, V); }
+  g.strokeStyle = '#2f6a4c'; g.lineWidth = 2.4; g.lineCap = 'round'; if (!C4.town)
   for (let i = 0, rr = mulberry(41); i < 110; i++) { const tx = -300 + rr() * (C4_W + 300), ty = C4_Y0 + C4_D + 14 + rr() * Math.max(20, V.vh - oy - C4_Y0 - C4_D - 30); if (!vis(tx, 20)) continue; g.beginPath(); for (const d of [-6, 0, 6]) { g.moveTo(tx + d, ty); g.lineTo(tx + d * 1.6, ty - 12 - Math.abs(d)); } g.stroke(); }
   for (const [x, k, s, hv] of (C4.scene ? C4.scene.near : [[960, 'tree', .9], [1360, 'house', .72, 1], [1760, 'house', .7, 3], [2050, 'bamboo', .8], [2260, 'bamboo', .85], [600, 'house', .62, 5], [210, 'bamboo', .7]]))
-    if (vis(x, 260)) dp(g, k === 'shop' ? c4TownArt(hv) : k === 'lamp' ? c4LampArt() : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s);
+    if (vis(x, 260)) dp(g, k === 'shop' ? c4TownArt(hv) : (k === 'flower' || k === 'pot' || k === 'bridge') ? c4TownNear(k) : k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s);
   if (vis(C4_GATE, 140)) dp(g, C4.town ? c4TownGate() : A.gate, C4_GATE, C4_Y0 + 6, 0, .88, .88);
   const items = [], bubbles = [];
   const head = (x, z, tall, e, pri = 1, chat = null) => { if (e && e.say) bubbles.push({ e, x, y: c4Y(z) - tall * c4S(z) - 8, s: c4S(z), pri, chat }); };

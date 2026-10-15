@@ -24,7 +24,7 @@ function c4DayLook() {
   // the children's games on the grass in front, two of them, somewhere along the lane
   const games = ['dacau', 'daynhay', 'keoco', 'oanquan'], gs = [];
   for (let i = 0; i < 2; i++) gs.push({ k: games.splice((r() * games.length) | 0, 1)[0], x: 300 + i * 900 + r() * 600, ph: r() * 6 });
-  C4.games = gs; C4.show = null; C4.streetT = 25 + r() * 20; C4.fightT = 40 + r() * 40; C4.talkT = 4;
+  C4.games = C4.town ? [] : gs; C4.show = null; C4.streetT = 25 + r() * 20; C4.fightT = 40 + r() * 40; C4.talkT = 4;
 }
 
 /* ---------- processions along the lane: lion dance, horses, a mandarin ---------- */
