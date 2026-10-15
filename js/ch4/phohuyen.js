@@ -165,6 +165,8 @@ function c4TownCreek(g, cx, vw) {
 // the line of the deck's edge at depth z, and a polyline along it
 const c4DeckY = (x, z) => c4Y(z) - c4TownLift(x);
 function c4TownBridgeItems(items, g, vis) {
+  const J = C4.townJunkAt; if (J) items.push({ z: 2, f: () => c4Junk(g, J[0], J[1], 1) });
+  (C4.townBoatFns || []).forEach((f, i) => items.push({ z: 2.1 + i * .001, f }));   // the junk is on the river, nearer than the street: its sails go in front of the walkers (owner)
   if (!vis(C4_BRIDGE_X, C4_BRIDGE_HW + 120)) return;
   const a = C4_BRIDGE_X - C4_BRIDGE_HW, b = C4_BRIDGE_X + C4_BRIDGE_HW;
   const pillars = (z, h) => { const s = c4S(z); g.fillStyle = '#7a3a24'; g.strokeStyle = INK; g.lineWidth = 2;
@@ -231,10 +233,12 @@ function c4TownRiver(g, cx, vw, V) {
   // woven bamboo canopy on some; the boatman stands at the stern with his pole, now and then a passenger sits in the middle
   const B = C4.townBoats || (C4.townBoats = [0, 1, 2, 3, 4, 5].map(i => ({ x: 200 + i * 900 + (i % 2) * 300, sp: (i % 2 ? -1 : 1) * (9 + i * 2.5), y: 40 + (i % 3) * 30, hull: C4_BOAT_HULLS[i],
     lamp: i % 3 !== 1, mui: i % 3 === 1, pass: i % 3 === 1 ? null : i % 2 ? null : c4MouseRig(C4_BOAT_SORTS[(i * 3) % C4_BOAT_SORTS.length]), man: c4MouseRig(C4_BOAT_SORTS[(i + 4) % C4_BOAT_SORTS.length]) })));
-  { const J = C4.townJunk || (C4.townJunk = { x: 1600, sp: 6 }); if (!C4.paused) { J.x += J.sp / 60; if (J.x > C4_W + 400) J.x = -400; } if (J.x > x0 - 200 && J.x < x1 + 200) c4Junk(g, J.x, yw + 26 + Math.sin(C4.t) * 1.2, 1); }
+  { const J = C4.townJunk || (C4.townJunk = { x: 1600, sp: 6 }); if (!C4.paused) { J.x += J.sp / 60; if (J.x > C4_W + 400) J.x = -400; } C4.townJunkAt = J.x > x0 - 200 && J.x < x1 + 200 ? [J.x, yw + 26 + Math.sin(C4.t) * 1.2] : null; }   // drawn later, in front of the street (c4TownBridgeItems)
+  C4.townBoatFns = [];
   for (const b of [...B].sort((p, q) => p.y - q.y)) {
     if (!C4.paused) { b.x += b.sp / 60; if (b.x > C4_W + 300) b.x = -300; if (b.x < -300) b.x = C4_W + 300; }
     if (b.x < x0 - 140 || b.x > x1 + 140) continue;
+    C4.townBoatFns.push(() => {                                             // drawn in front of the street and the junk (c4TownBridgeItems)
     const y = yw + b.y + Math.sin(C4.t * 1.4 + b.x * .01) * 1.5, d = Math.sign(b.sp), ms = .52, L2 = 78, deck = y - 16;
     const gun = x => deck - Math.pow(Math.abs(x - b.x) / L2, 3) * 16;    // the gunwale rises to bow and stern
     // the people, cut off at the gunwale
@@ -256,6 +260,7 @@ function c4TownRiver(g, cx, vw, V) {
     { const ex = b.x + d * (L2 - 22), ey = gun(ex) + 20; g.fillStyle = '#f2ecde'; g.lineWidth = 1.4; g.beginPath(); g.ellipse(ex, ey, 7, 4, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(ex + d * 1.5, ey, 2.4, 0, 6.283); g.fill(); }
     if (b.lamp) { const lx = b.x + d * (L2 - 8), ly = gun(b.x + d * L2) - 6; g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.moveTo(lx, gun(lx)); g.lineTo(lx, ly - 4); g.stroke();
       c4DrawLantern(g, lx, ly - 4, .9, b.hull === '#a3332a' ? '#f2c640' : '#c4473a', 4, Math.sin(C4.t * 1.6 + b.x) * .12); }
+    });
   }
   g.restore();
 }
@@ -407,7 +412,7 @@ function c4LanternShop(g, hx, hy, s, v) {
 // a merchant junk (the port traded with Chinese and Japanese ships): a big hull with a raised stern, an eye on the bow, two masts with
 // ribbed sails; it moves slowly along the river farther out
 function c4Junk(g, x, y, d) {
-  g.save(); g.translate(x, y); g.scale(d, 1); g.strokeStyle = INK; g.lineJoin = 'round';
+  g.save(); g.translate(x, y); g.scale(d * .72, .72); g.strokeStyle = INK; g.lineJoin = 'round';
   for (const [mx, h, w] of [[-30, 150, 70], [50, 120, 56]]) {               // the masts and sails
     g.lineWidth = 3; g.beginPath(); g.moveTo(mx, -18); g.lineTo(mx, -18 - h); g.stroke();
     g.fillStyle = '#c9783e'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx + 4, -18 - h); g.quadraticCurveTo(mx + w * .9, -18 - h * .85, mx + w, -28); g.lineTo(mx + 4, -28); g.closePath(); g.fill(); g.stroke();
@@ -418,5 +423,58 @@ function c4Junk(g, x, y, d) {
   g.fillStyle = '#4a2c1a'; g.beginPath(); g.rect(-122, -62, 38, 34); g.fill(); g.stroke();   // the raised stern house
   g.fillStyle = '#f2c640'; g.fillRect(-114, -54, 10, 10); g.strokeRect(-114, -54, 10, 10);
   g.fillStyle = '#f2ecde'; g.lineWidth = 1.4; g.beginPath(); g.ellipse(96, -10, 8, 5, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(98, -10, 2.6, 0, 6.283); g.fill();
+  g.restore();
+}
+
+// the folk of the town (owner: "dân bây giờ không vác cuốc nữa… ăn mặc sang lên"): no ploughs, hoes or buffaloes; a folding fan, a bird
+// cage, a bundle of books, a parcel of silk, a silk parasol; long silk tunics in rich colours with a gold edge, black turbans for the men
+const C4_TOWN_TOOLS = ['quat', 'long', 'sach', 'goi', 'o', null, 'quat', 'goi'];
+const C4_SILKS = ['#2f3f6f', '#7a2a22', '#2f5f4f', '#5a2f5f', '#a3332a', '#1f3a5a', '#6a4a1a', '#2a2a2a'];
+function c4TownLook(look, seed) {
+  const L = { ...(look || {}) }, r = Math.abs(Math.sin(seed * 91.7)) * 1000;
+  if (['buf', 'cay', 'cuoc', 'dieu'].includes(L.tool) || !L.tool || r % 3 < 1) L.tool = C4_TOWN_TOOLS[(r | 0) % C4_TOWN_TOOLS.length];
+  L.silk = C4_SILKS[((r * 7) | 0) % C4_SILKS.length]; L.pat = ((r * 13) | 0) % 3;
+  if (L.tool === 'o') L.umbCol = ['#c4473a', '#f2c640', '#2f5f8f', '#c0567a'][((r * 3) | 0) % 4];
+  return L;
+}
+// a long silk tunic (áo dài / áo the) over the body: rich colour, a gold edge at the neck and hem, a little woven pattern
+function c4TownDress(g, w, moving) {
+  const L = w.look || {}; if (!L.silk) return;
+  const b = moving ? -Math.abs(Math.sin(w.ph)) * 3 : 0, sw = moving ? Math.sin(w.ph) * 4 : 0, woman = !!L.skirt;
+  g.save(); g.lineJoin = 'round';
+  g.fillStyle = L.silk; g.strokeStyle = INK; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(-16, -104 + b); g.lineTo(16, -104 + b); g.lineTo(24, -62 + b); g.lineTo(26 + sw, -22 + b); g.lineTo(-26 + sw, -22 + b); g.lineTo(-24, -62 + b); g.closePath(); g.fill(); g.stroke();
+  if (woman) { g.beginPath(); g.moveTo(-2, -60 + b); g.lineTo(0, -22 + b); g.stroke(); }                 // the áo dài's two flaps
+  g.strokeStyle = '#e2b43c'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(-10, -104 + b); g.quadraticCurveTo(0, -94 + b, 10, -104 + b); g.moveTo(-25 + sw, -26 + b); g.lineTo(25 + sw, -26 + b); g.stroke();
+  g.fillStyle = 'rgba(226,180,60,.55)';
+  if (L.pat === 0) for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(-12 + (i % 3) * 12, -80 + ((i / 3) | 0) * 22 + b, 2.6, 0, 6.283); g.fill(); }
+  else if (L.pat === 1) { g.strokeStyle = 'rgba(226,180,60,.6)'; g.lineWidth = 1.2; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(0, -78 + i * 16 + b, 6, 0, 6.283); g.stroke(); } }
+  g.restore();
+  // the head: a black turban (khăn xếp) for the men, a gold pin in the hair for the women; none under a quai thao hat
+  if (L.hat === 'quai') return;
+  if (!woman) { g.fillStyle = '#1f1a17'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.ellipse(4, -142, 20, 7, -.08, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1; g.beginPath(); g.ellipse(4, -142, 14, 3.5, -.08, 0, 6.283); g.stroke(); }
+  else { g.fillStyle = '#e2b43c'; g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.arc(-8, -146, 3.4, 0, 6.283); g.fill(); g.stroke(); }
+}
+// the things the town folk carry, held at the hand (about (44, -100) when raised)
+function c4TownThing(g, w, t) {
+  g.save(); g.strokeStyle = INK; g.lineJoin = 'round';
+  if (t === 'quat') {                                                       // a folding fan, waved a little
+    const a = Math.sin(C4.t * 4 + w.seed) * .25; g.translate(50, -122); g.rotate(-.5 + a);
+    g.fillStyle = '#efe8da'; g.lineWidth = 1.8; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, 26, -Math.PI * .95, -Math.PI * .05); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = '#a3332a'; g.lineWidth = 1; g.beginPath(); for (let k = 1; k < 7; k++) { const an = -Math.PI * (.95 - k * .13); g.moveTo(0, 0); g.lineTo(Math.cos(an) * 26, Math.sin(an) * 26); } g.stroke();
+  } else if (t === 'long') {                                                // a bird cage hanging from the hand, a little bird inside
+    g.translate(48, -84); g.lineWidth = 1.4; g.beginPath(); g.moveTo(0, -8); g.lineTo(0, 0); g.stroke();
+    g.fillStyle = 'rgba(181,122,34,.25)'; g.lineWidth = 1.8; g.beginPath(); g.moveTo(-14, 34); g.lineTo(-14, 10); g.quadraticCurveTo(-14, 0, 0, 0); g.quadraticCurveTo(14, 0, 14, 10); g.lineTo(14, 34); g.closePath(); g.fill(); g.stroke();
+    g.lineWidth = 1; g.beginPath(); for (const x of [-7, 0, 7]) { g.moveTo(x, 2); g.lineTo(x, 34); } g.stroke();
+    g.fillStyle = '#b57a22'; g.fillRect(-16, 32, 32, 4); g.strokeRect(-16, 32, 32, 4);
+    g.fillStyle = '#f2c640'; g.beginPath(); g.ellipse(0, 22, 5, 4, 0, 0, 6.283); g.fill(); g.stroke();
+  } else if (t === 'sach') {                                                // a bundle of books tied with string, under the arm
+    g.translate(22, -70); for (let k = 0; k < 3; k++) { g.fillStyle = ['#2f5f8f', '#a3332a', '#e8d8a8'][k]; g.lineWidth = 1.6; g.fillRect(-14, -k * 6, 28, 6); g.strokeRect(-14, -k * 6, 28, 6); }
+    g.strokeStyle = '#7a4a22'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(0, 6); g.lineTo(0, -12); g.stroke();
+  } else if (t === 'goi') {                                                 // a parcel of silk wrapped in cloth, held by its knot
+    g.translate(44, -60); g.fillStyle = '#c0567a'; g.lineWidth = 1.8; g.beginPath(); g.roundRect ? g.roundRect(-14, -6, 28, 22, 5) : g.rect(-14, -6, 28, 22); g.fill(); g.stroke();
+    g.fillStyle = '#c0567a'; g.beginPath(); g.moveTo(-4, -6); g.lineTo(-8, -16); g.lineTo(0, -10); g.lineTo(8, -16); g.lineTo(4, -6); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = '#f2c640'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-14, 5); g.lineTo(14, 5); g.stroke();
+  }
   g.restore();
 }

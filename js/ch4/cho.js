@@ -18,7 +18,7 @@ const C4_W = 5900,                                                          // (
       C4_W_OLD = 3950, C4_STALL = 720, C4_GATE = 390, C4_OFF = 300;           // … how far (at least) the husband goes for goods
 const c4HusbX = () => SAVE4.lv ? C4_STALL + 70 : C4_STALL - 40;           // where he waits: just behind the betel stall
 const C4_Y0 = 300, C4_D = 190;                                            // the lane: its far edge on screen, and its depth
-const c4Y = z => C4_Y0 + z * C4_D, c4S = z => .62 + .42 * z;
+const c4Y = z => C4_Y0 + z * C4_D, c4S = z => (C4.town ? .52 + .34 * z : .62 + .42 * z);   // phố huyện: folk a little smaller beside the two-storey houses (owner: they looked too big)
 const C4_CROWD = .86;                                                         // passers-by drawn this much smaller (owner: our stalls stand out)              // where depth z stands on screen, and how big
 const C4_STALL_Z = .12, C4_WIFE_Z = .07, C4_Q_Z = .32;
 const C4_OPEN = 5 * 60, C4_CLOSE = 19 * 60, C4_MPS = 4;                 // market hours (game minutes), game minutes per second
@@ -263,6 +263,7 @@ function c4Spawn(atX, guest = null) {
   if (shop && fromRight && atX === undefined) x = Math.max(x, C4_GOODS[shop].x + 260);         // buyers come from a side that takes them past their stall
   C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, smokeX, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, guest: !!guest, sp: guest ? 120 : buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
     buy: !!shop, shop, st: 'walk', n: guest ? 3 + ((R() * 4) | 0) : c4BuyN(P), carry: null, cd: 3 + R() * 6, say: null });
+  if (C4.town) { const W2 = C4.walkers[C4.walkers.length - 1]; W2.buf = false; W2.look = c4TownLook(W2.look, W2.seed); }   // phố huyện: town things, no hoes or buffaloes (owner)
   if (kind === 'mouse' && role === 'child' && atX === undefined && R() < .5) {             // a gang of children chasing each other
     const lead = C4.walkers[C4.walkers.length - 1]; lead.sp = 150; lead.cd = 99;
     for (let i = 1; i <= 1 + ((R() * 2) | 0); i++) { const s2 = 11 + ((R() * 3) | 0); C4.walkers.push({ ...lead, pid: undefined, sort: s2, M: c4MouseRig(s2), seed: R() * 6, name: c4Pick(C4_NAMES.child), x: lead.x - lead.face * 60 * i, z: Math.min(.98, lead.z + (R() - .5) * .2), ph: R() * 6, say: null }); }
