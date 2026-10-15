@@ -47,12 +47,22 @@ function p4HoaShared(g, k, x0, x1, yw) {
     g.restore();
   }
 }
-// reading a shared wish: a card with the words, the sender's shop, the day; it can be reported
+// reading a lantern's wish: a little letter of the lantern festival: warm paper in a red double frame, the lotus of that lantern
+// glowing over its top, the words in a hand, who set it afloat and when; everyone's can be reported (a small link, not a button)
+const P4_LOTUS_IMG = {};
+const p4LotusImg = c => { if (P4_LOTUS_IMG[c]) return P4_LOTUS_IMG[c]; const [c1, c2] = P4_HOA_COLS[c % P4_HOA_COLS.length]; return (P4_LOTUS_IMG[c] = p4HoaSprite(c1, c2).toDataURL()); };
 function p4WishCard(w) {
-  const d = new Date(w.t), days = Math.floor((Date.now() - d) / 864e5);
-  $('#p4wishB').innerHTML = `<p class="wish">“${p4Esc(w.wish)}”</p><p class="from">— ${p4Esc(w.shop || 'một hiệu trên phố')}, ${days <= 0 ? 'hôm nay' : days === 1 ? 'hôm qua' : days + ' ngày trước'}</p>`;
-  $('#p4wishRep').hidden = false; $('#p4wishRep').onclick = () => {
-    const rep = p4Reported(); rep.add(w.id); try { localStorage.setItem('dcc.hoaRep', JSON.stringify([...rep].slice(-300))); } catch (e) {}
+  const c = w.c ?? (w.id || 0) % P4_HOA_COLS.length;
+  let when = '';
+  if (w.t) { const days = Math.floor((Date.now() - new Date(w.t)) / 864e5); when = days <= 0 ? 'thả hôm nay' : days === 1 ? 'thả hôm qua' : 'thả ' + days + ' ngày trước'; }
+  else if (w.mine) when = 'đèn của mình'; else if (w.village) when = 'người trong phố';
+  $('#p4wishB').innerHTML = `<div class="lotus"><img src="${p4LotusImg(c)}" alt=""></div>
+    <div class="kicker">Lời chúc trên đèn hoa đăng</div><div class="p4rule"><span></span><em>❀</em><span></span></div>
+    <p class="wish">${p4Esc(w.wish)}</p>
+    <p class="from">${p4Esc(w.shop || 'một hiệu trên phố')}</p><p class="when">${when}</p>`;
+  const rep = $('#p4wishRep'); rep.hidden = !w.id;
+  rep.onclick = () => {
+    const R = p4Reported(); R.add(w.id); try { localStorage.setItem('dcc.hoaRep', JSON.stringify([...R].slice(-300))); } catch (e) {}
     p4Rpc('dcc_hoa_report', { p_id: w.id }).catch(() => {});
     P4.shared = (P4.shared || []).filter(x => x.id !== w.id); p4Sheets(null); toast('Đã báo. Cảm ơn bạn.', 2);
   };
@@ -60,7 +70,8 @@ function p4WishCard(w) {
 }
 {
   const d = document.createElement('div'); d.id = 'p4wish'; d.className = 'c4sheet p4sheet'; d.hidden = true;
-  d.innerHTML = '<div class="card4"><h3>Lời chúc trên đèn hoa đăng</h3><div id="p4wishB"></div><div class="row"><button class="btn alt" id="p4wishRep">Báo lời chúc xấu</button><button class="btn" id="p4wishX">Đóng</button></div></div>';
+  d.innerHTML = '<div class="card4 wishcard"><div id="p4wishB"></div><div class="foot"><button class="link" id="p4wishRep">Báo lời chúc xấu</button><button class="btn" id="p4wishX">Đóng</button></div></div>';
   document.body.appendChild(d);
   $('#p4wishX').addEventListener('click', () => p4Sheets(null));
+  d.addEventListener('click', e => { if (e.target === d) p4Sheets(null); });   // a tap on the night around it closes it too
 }

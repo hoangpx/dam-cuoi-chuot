@@ -30,6 +30,27 @@ body.p4holding #cv{cursor:none}
 #p4nameIn{width:100%;box-sizing:border-box;font:700 20px var(--display);text-transform:uppercase;text-align:center;padding:8px 10px;border:2.5px solid var(--ink);background:#fff8e6;margin:6px 0 10px}
 .p4sheet .p4name .btn{padding:3px 10px;font-size:13px;margin-left:6px}
 
-/* reading a shared flower lantern (hoadang-net.js) */
-#p4wish .wish{font:italic 600 19px var(--display);line-height:1.45;margin:10px 0}
-#p4wish .from{text-align:right;color:#7a4a22;font-size:14px;margin:0 0 8px}
+
+/* reading a lantern's wish (hoadang-net.js): a letter of the lantern festival over the night river */
+#p4wish{background:radial-gradient(ellipse at 50% 60%,rgba(40,30,70,.35),rgba(8,10,30,.7))}
+#p4wish .card4.wishcard{position:relative;max-width:360px;padding:54px 26px 16px;border:3px solid #a3332a;border-radius:6px;
+  background:radial-gradient(ellipse at 50% 0%,#fffaf0 0%,#f8ecd0 55%,#efdcb2 100%);
+  box-shadow:0 0 0 5px #f3e2bd,0 0 0 8px #a3332a,0 0 46px 6px rgba(255,190,90,.55);animation:p4card .45s ease-out}
+#p4wish .card4.wishcard::before{content:'';position:absolute;inset:8px;border:1.5px solid rgba(163,51,42,.55);border-radius:3px;pointer-events:none}
+@keyframes p4card{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+#p4wish .lotus{position:absolute;left:50%;top:-58px;transform:translateX(-50%);width:120px;height:90px;border-radius:50%;
+  background:radial-gradient(circle at 50% 55%,rgba(255,236,170,.95),rgba(255,190,90,.45) 45%,rgba(255,170,60,0) 70%);animation:p4lotus 3s ease-in-out infinite}
+#p4wish .lotus img{width:120px;height:90px;filter:drop-shadow(0 0 8px rgba(255,210,120,.9))}
+@keyframes p4lotus{50%{transform:translate(-50%,-5px)}}
+#p4wish .kicker{font:700 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#a3332a}
+#p4wish .p4rule{display:flex;align-items:center;gap:8px;margin:6px 24px 4px;color:#c4473a}
+#p4wish .p4rule span{flex:1;height:1px;background:linear-gradient(90deg,transparent,#c4473a,transparent);border:0}
+#p4wish .p4rule em{font-style:normal;font-size:14px}
+#p4wish .wish{font:600 27px/1.35 'Dancing Script',var(--display),cursive;color:#2a1d16;margin:12px 4px 14px;word-wrap:break-word}
+#p4wish .from{font:700 14px var(--display);color:#7a2a22;margin:0;letter-spacing:.04em}
+#p4wish .from::before{content:'— '}
+#p4wish .when{font:italic 12px var(--body);color:#8a6a4a;margin:2px 0 12px}
+#p4wish .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:4px}
+#p4wish .foot .link{background:none;border:0;padding:4px 0;font:12px var(--body);color:#8a6a4a;text-decoration:underline;cursor:pointer}
+#p4wish .foot .link[hidden]{display:none}
+#p4wish .foot .btn{margin-left:auto}

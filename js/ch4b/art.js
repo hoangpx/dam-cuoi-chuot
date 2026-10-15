@@ -792,8 +792,8 @@ const p4HoaWho = id => { const N = C4_NAMES.mouse.concat(C4_NAMES.old); return N
 const p4Esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function p4HoaRead(h) {
   if (h.shared) { p4WishCard(h.shared); return; }
-  if (h.mine) { toast('<b>Điều ước của mình:</b> ' + p4Esc(h.mine.wish), 5); return; }
-  toast('<b>Điều ước của ' + p4HoaWho(h.id) + ':</b> ' + P4_HOA_WISH[(h.id * 5 + 1) % P4_HOA_WISH.length], 5);
+  if (h.mine) { p4WishCard({ wish: h.mine.wish, shop: SAVE4B.name || 'TRẦU CAU', mine: true, c: h.mine.c }); return; }
+  p4WishCard({ wish: P4_HOA_WISH[(h.id * 5 + 1) % P4_HOA_WISH.length], shop: p4HoaWho(h.id), village: true, c: (h.id >> 4) % P4_HOA_COLS.length });
 }
 {
   const d = document.createElement('div'); d.id = 'p4hoa'; d.className = 'c4sheet p4sheet'; d.hidden = true;
