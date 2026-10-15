@@ -616,9 +616,10 @@ function c4Event(kind) {
   } else if (kind === 'nvdem') { if (!c4NvDemEvent(E)) return;                 // the evening question of a counting task (nhiemvu.js)
   } else if (kind === 'rival') {                                            // a rival betel stall across the lane, cheaper
     if (SAVE4.rival > 0) return;
-    Object.assign(E, { title: 'Có người tranh khách', text: `Nhà ${who} mở gánh trầu ngay đối diện, bán rẻ hơn một đồng!`, opts: [
-      ['Hạ giá trầu còn 5 đồng (3 ngày)', () => { SAVE4.rival = 3; SAVE4.cheap = 3; SAVE4.rivalWho = who; toast('Hạ giá giữ khách, lãi mỗi miếng mỏng đi.', 3); }],
-      ['Giữ giá', () => { SAVE4.rival = 3; SAVE4.rivalWho = who; toast('Khách bị kéo sang gánh bên kia mất mấy hôm. Chạm vào gánh ấy nếu muốn mua đứt.', 3.6); }]] });
+    const far = C4.town && R() < .5;                                       // phố huyện: a shop a few doors down, or streets away (owner)
+    Object.assign(E, { title: 'Có người tranh khách', text: C4.town ? (far ? `Nhà ${who} mở cửa hàng trầu ở phố bên, bán rẻ hơn một đồng, khách kéo nhau sang đó!` : `Nhà ${who} mở cửa hàng trầu ngay gần đây, bán rẻ hơn một đồng!`) : `Nhà ${who} mở gánh trầu ngay đối diện, bán rẻ hơn một đồng!`, opts: [
+      ['Hạ giá trầu còn 5 đồng (3 ngày)', () => { SAVE4.rival = 3; SAVE4.cheap = 3; SAVE4.rivalWho = who; SAVE4.rivalFar = far; toast('Hạ giá giữ khách, lãi mỗi miếng mỏng đi.', 3); }],
+      ['Giữ giá', () => { SAVE4.rival = 3; SAVE4.rivalWho = who; SAVE4.rivalFar = far; toast(far ? 'Khách bị kéo sang phố bên mất mấy hôm.' : C4.town ? 'Khách bị kéo sang cửa hàng kia mất mấy hôm. Chạm vào cửa hàng ấy nếu muốn mua đứt.' : 'Khách bị kéo sang gánh bên kia mất mấy hôm. Chạm vào gánh ấy nếu muốn mua đứt.', 3.6); }]] });
   } else if (kind === 'gio') {                                              // a gale
     const fix = c4Loss(.03, .08);
     Object.assign(E, { title: 'Gió to!', text: SAVE4.lv ? 'Cơn gió lốc thổi tốc cả mái lều, hàng hoá bay tứ tung!' : 'Cơn gió lốc thổi lật cả gánh, trầu cau văng tứ tung!', opts: [

@@ -109,7 +109,7 @@ function c4TownFarArt() {
 }
 // the town's rows (called from c4DayLook): houses wall to wall, now and then a bougainvillea or a potted palm; far landmarks
 function c4TownScene(rs) {
-  const near = [], far = [];
+  const near = [], far = []; C4.townRivalX = 0;
   // the houses that must stand at a place: ours (the betel shop, the rentable plots) and the neighbours'
   const anchors = [[C4_STALL + 10, 'g:trau'], ...C4_SHOPS.map(g => [C4_GOODS[g].x + 20, 'g:' + g]), ...C4_VENDORS.map(v => [v.x + 50, 'v:' + v.ware])].sort((p, q) => p[0] - q[0]);
   const names = ['VẢI LỤA', 'ĐỒ GỐM', 'QUÁN NƯỚC', 'TẠP HOÁ', 'ĐÈN LỒNG', 'THỢ BẠC', 'GẠO MUỐI', 'THUỐC BẮC', 'SÁCH VỞ', 'MAY ÁO'];
@@ -118,7 +118,7 @@ function c4TownScene(rs) {
   let x = 600, i = 0;
   for (const [ax, label] of [...anchors, [C4_W + 400, null]]) {
     if (!hq && ax - 70 - x > 330) { near.push([x + 160, 'hoiquan', .72]); x += 320; hq = true; }
-    while (x + 140 < ax - 70) { const w = put(x + 70, i === 0 ? 'ĐÈN LỒNG' : names[(rs() * names.length) | 0]); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
+    while (x + 140 < ax - 70) { const nm = i === 0 ? 'ĐÈN LỒNG' : names[(rs() * names.length) | 0], rv = !C4.townRivalX && x + 70 > C4_STALL + 380; if (rv) C4.townRivalX = x + 70; const w = put(x + 70, rv ? 'r:' + nm : nm); x += 2 * w; if (++i % 3 === 0) { near.push([x + 10, rs() < .5 ? 'flower' : 'pot', .7]); x += 22; } }
     if (!label) break;
     const w = put(ax, label); x = ax + w;
   }
@@ -279,6 +279,7 @@ const c4TownGate = () => C4_TOWN_GATE || (C4_TOWN_GATE = part([-160, -360, 160, 
 function c4TownSign(label) {
   if (!label) return '';
   if (label.startsWith('g:')) { const g = label.slice(2); return c4Own(g) ? C4_GOODS[g].name.toUpperCase() : 'CHO THUÊ'; }
+  if (label.startsWith('r:')) return c4RivalOn() && !SAVE4.rivalFar ? 'TRẦU RẺ' : label.slice(2);
   if (label.startsWith('v:')) { const G = C4_GOODS[C4_VENDOR_G[label.slice(2)]]; return G ? G.name.toUpperCase() : ''; }
   return label;
 }
@@ -313,8 +314,8 @@ function c4TownGateLanterns(g, gx, gy, s) {
   for (const [x, i] of [[-142, 0], [-104, 1], [104, 2], [142, 3]]) c4DrawLantern(g, gx + x * s, gy - 286 * s, s * 1.1, i % 2 ? '#f2c640' : '#c4473a', 6 + (i % 2) * 8, Math.sin(C4.t * 1.4 + i * 1.9) * .15);
 }
 // the counter in a shop's doorway: the ware set out on it, the seller standing behind it (owner: in the town selling is indoors)
-function c4TownCounter(g, x, ware) {
-  const z = .09, s = c4S(z), y = c4Y(z), open = c4Stock(ware) > 0;
+function c4TownCounter(g, x, ware, full = false) {
+  const z = .09, s = c4S(z), y = c4Y(z), open = full || c4Stock(ware) > 0;
   g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = INK; g.lineWidth = 2;
   g.fillStyle = '#7a4a22'; g.fillRect(-62, -34, 124, 34); g.strokeRect(-62, -34, 124, 34);
   g.fillStyle = '#b57a22'; g.fillRect(-68, -42, 136, 9); g.strokeRect(-68, -42, 136, 9);
