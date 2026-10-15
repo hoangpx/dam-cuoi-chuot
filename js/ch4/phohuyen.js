@@ -289,7 +289,7 @@ function c4DrawLantern(g, ax, ay, s, col, len, ang) {
   g.save(); g.translate(ax, ay); g.rotate(ang); g.scale(s, s); g.strokeStyle = INK; g.lineJoin = 'round';
   g.lineWidth = 1.1; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, len); g.stroke();
   const cy = len + 12;
-  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint(0, cy).matrixTransform(T); C4.glows.push([P.x, P.y, 46 * Math.hypot(T.a, T.b), col]); }
+  if (C4.glows && c4NightK() > 0) { const T = g.getTransform(), P = new DOMPoint(0, cy).matrixTransform(T); C4.glows.push([P.x, P.y, 62 * Math.hypot(T.a, T.b), col]); }
   g.fillStyle = 'rgba(255,214,120,.22)'; g.beginPath(); g.arc(0, cy, 15, 0, 6.283); g.fill();
   g.fillStyle = '#2a221d'; g.fillRect(-4, len, 8, 3); g.fillRect(-4, cy + 9, 8, 3);
   g.fillStyle = col; g.lineWidth = 1.6; g.beginPath(); g.ellipse(0, cy, 9, 9.5, 0, 0, 6.283); g.fill(); g.stroke();
@@ -611,11 +611,11 @@ function c4TownNight(g) {
   for (const [x, y, r, col, room] of C4.glows || []) {
     const f = .8 + Math.sin(C4.t * 7 + x * .05) * .08 + Math.sin(C4.t * 13 + y * .07) * .05;     // a living flame
     const gr = ctx.createRadialGradient(x, y, 0, x, y, r * f);
-    gr.addColorStop(0, 'rgba(255,200,110,' + (.6 * k).toFixed(3) + ')'); gr.addColorStop(.35, 'rgba(255,150,60,' + (.18 * k).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,40,0)');
+    gr.addColorStop(0, 'rgba(255,200,110,' + (.4 * k).toFixed(3) + ')'); gr.addColorStop(.35, 'rgba(255,150,60,' + (.13 * k).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,40,0)');
     ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r * f, 0, 6.283); ctx.fill();
     if (room) continue;                                                     // a lit room: only the soft halo
-    const cr = r * .34, gc = ctx.createRadialGradient(x, y, 0, x, y, cr);           // the lantern itself, lit from inside
-    gc.addColorStop(0, 'rgba(255,246,214,' + (.85 * k * f).toFixed(3) + ')'); gc.addColorStop(.55, 'rgba(255,190,90,' + (.45 * k).toFixed(3) + ')'); gc.addColorStop(1, 'rgba(255,150,60,0)');
+    const cr = r * .25, gc = ctx.createRadialGradient(x, y, 0, x, y, cr);           // the lantern itself, lit from inside
+    gc.addColorStop(0, 'rgba(255,246,214,' + (.55 * k * f).toFixed(3) + ')'); gc.addColorStop(.55, 'rgba(255,190,90,' + (.3 * k).toFixed(3) + ')'); gc.addColorStop(1, 'rgba(255,150,60,0)');
     ctx.fillStyle = gc; ctx.beginPath(); ctx.arc(x, y, cr, 0, 6.283); ctx.fill();
   }
   ctx.restore();
