@@ -663,6 +663,7 @@ function c4QuayLamps(items, g, vis) {
 const C4_HOA_COLS = [['#e86a8a', '#f7b9c8'], ['#e2b43c', '#f6dc8a'], ['#c4473a', '#f09a7a'], ['#f2ece0', '#ffffff']];
 function c4HoaDang(g, x0, x1, yw, yb) {
   const k = c4NightK(); if (k <= 0) return;
+  c4HoaMine(g, k, x0, x1);
   const span = C4_W + 800, drift = C4.t * 7;
   for (let gi = 0; gi < 34; gi++) {
     const h = n => Math.abs(Math.sin(gi * 127.1 + n * 311.7) * 43758.5) % 1;
@@ -693,4 +694,37 @@ function c4HoaSprite(c1, c2) {
   }
   g.fillStyle = '#ffe9a8'; g.beginPath(); g.ellipse(0, -10, 2, 3.5, 0, 0, 6.283); g.fill();                           // the candle flame
   return S[key] = c;
+}
+
+// thả đèn hoa đăng (owner): after dark a tap on the river sets a flower lantern afloat where the finger is, one every 2 s; it bobs
+// down the river with the others, a ring of ripples where it touched the water, and fades out after a while
+const C4_HOA_CD = 2, C4_HOA_LIFE = 90;
+function c4HoaTap(x, y) {
+  if (!C4.town || c4NightK() < .35) return false;
+  const yw = C4_Y0 + C4_D + 24; if (y < yw + 14) return false;              // only on the water
+  if (C4.t - (C4.hoaT ?? -99) < C4_HOA_CD) return true;                     // still lighting the last one: the tap does nothing else either
+  C4.hoaT = C4.t;
+  const L = C4.hoaMine || (C4.hoaMine = []);
+  L.push({ x, y: Math.min(y, c4View().vh - c4View().oy - 10), t0: C4.t, c: (C4.hoaN = (C4.hoaN || 0) + 1) % C4_HOA_COLS.length });
+  if (L.length > 60) L.shift();
+  AU.plop(); AU.pluck([74, 76, 79, 81, 83, 86][(Math.random() * 6) | 0]);
+  return true;
+}
+function c4HoaMine(g, k, x0, x1) {
+  const L = C4.hoaMine; if (!L || !L.length) return;
+  C4.hoaMine = L.filter(h => C4.t - h.t0 < C4_HOA_LIFE);
+  const yw = C4_Y0 + C4_D + 24;
+  for (const h of [...C4.hoaMine].sort((a, b) => a.y - b.y)) {
+    const age = C4.t - h.t0, x = h.x + age * 7 + Math.sin(C4.t * .7 + h.t0) * 4, y = h.y + Math.sin(C4.t * 1.6 + h.t0 * 3) * 1.6;
+    if (x < x0 - 60 || x > x1 + 60) continue;
+    const a = k * Math.min(1, age / .4, (C4_HOA_LIFE - age) / 6), s = (.75 + (y - yw) / 400) * (age < .4 ? .6 + age : 1);
+    if (age < 1.6) { const r = age / 1.6; g.save(); g.strokeStyle = 'rgba(255,236,190,' + (.7 * (1 - r) * k).toFixed(3) + ')'; g.lineWidth = 1.5;
+      for (const m of [1, .6]) { g.beginPath(); g.ellipse(h.x, h.y + 2, (8 + 40 * r) * m, (2 + 9 * r) * m, 0, 0, 6.283); g.stroke(); } g.restore(); }   // the ripples where it was set down
+    const [c1, c2] = C4_HOA_COLS[h.c];
+    g.save(); g.translate(x, y); g.scale(s, s); g.globalAlpha = a;
+    g.drawImage(c4HoaSprite(c1, c2), -20, -22, 40, 30);
+    if (C4.glows) { const T = g.getTransform(), P = new DOMPoint(0, -8).matrixTransform(T), Q = new DOMPoint(0, 6).matrixTransform(T), sc = Math.hypot(T.a, T.b) * a;
+      C4.glows.push([P.x, P.y, 30 * sc, '#ffcf7a']); C4.glows.push([Q.x, Q.y, 20 * sc, '#ffcf7a', 1]); }
+    g.restore();
+  }
 }

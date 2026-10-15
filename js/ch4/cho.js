@@ -1231,6 +1231,7 @@ function c4Up(e) {
     const c = w.chat, mx = (c.a.x + c.b.x) / 2, s = c4S(c.a.z), top = c4Y(c.a.z) - 230 * s;
     if (Math.abs(x - mx) < 95 * s && y > top && y < c4Y(c.a.z) + 10) { c4Listen(c); return; }
   }
+  if (c4HoaTap(x, y)) return;                                            // phố huyện at night: a tap on the river sets a flower lantern afloat (phohuyen.js)
   if (c4TownHouseTap(x, y)) return;                                     // phố huyện: the whole shop front (phohuyen.js)
   const sy = c4Y(C4_STALL_Z), s = c4S(C4_STALL_Z);
   if (c4SignHit(x, y, C4_STALL + (SAVE4.lv ? 10 : 30), sy, s)) { AU.tap(); c4OpenUp('trau'); return; }
