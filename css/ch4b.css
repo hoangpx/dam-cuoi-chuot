@@ -60,3 +60,5 @@ body.p4holding #cv{cursor:none}
 #p4temHud .tag{font-family:var(--display);font-weight:900;font-size:15px;color:var(--ink)}
 #p4temHud button.tag{pointer-events:auto;cursor:pointer;background:#a3332a;color:var(--diep)}
 .p4sheet .btn.tem{font-size:18px;padding:10px 26px;background:#2f6a4c}
+#p4temHud button.tag.more{background:#2f6a4c;flex-basis:100%;max-width:520px;white-space:normal}
+#p4temHud button.tag.more:disabled{background:#6f665c;cursor:default}

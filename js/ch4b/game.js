@@ -108,7 +108,7 @@ function p4NewDay() {
   for (const b of P4.townBoats || []) if (b.order) { b.order = null; b.stop = false; b.say = null; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; } }   // last night's callers are gone
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));
 }
-function p4Hide() { if (P4T.on) { P4T.on = false; $('#p4temHud').hidden = true; } $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
+function p4Hide() { if (P4T.on) { P4T.on = false; if (P4T.fetch > 0) { SAVE4B.stock += P4_TEM_MORE.n; P4T.fetch = 0; p4Persist(); } $('#p4temHud').hidden = true; } $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
 function p4EndDay() {
   P4.phase = 'night';
   const wilt = SAVE4B.stock; SAVE4B.stock = 0; SAVE4B.weekTake = (SAVE4B.weekTake || 0) + P4.today.take; p4Persist();   // the week's takings, for the street master's tax                // betel does not keep overnight

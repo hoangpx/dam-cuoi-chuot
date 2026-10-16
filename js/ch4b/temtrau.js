@@ -15,18 +15,23 @@ const P4_TEM_RECIPES = [
   { id: 'kho', name: 'Trầu cau khô', need: ['la', 'voi', 'caukho'], fold: false, price: 10, w: 2 },
   { id: 'phuong', name: 'Trầu cánh phượng', need: ['la', 'voi', 'cau'], fold: true, price: 14, w: 2 }];
 const P4T = { on: false };
+// running out mid-shift (owner, 2026-10-15): with no betel left and both trays bare the shop offers to fetch more (P4_TEM_MORE.n at
+// P4_TEM_MORE.each đồng, dearer than the morning's 3) which arrives P4_TEM_MORE.wait s later; no new customers while out. Left
+// P4_TEM_MORE.decide s unanswered (or no money), the shift closes early: those waiting are sent off kindly, not counted as walkouts.
+const P4_TEM_MORE = { n: 20, each: 4, wait: 30, decide: 10 };
 const p4TemOrderY = L => L.counterY - 118 * L.custS - (13 * L.u + 4) - 10;   // the order bubble's middle: above the head and a hat
 function p4TemStart() {
   if (!SAVE4B.house) return;
   if (SAVE4B.stock <= 0) { toast('Hết trầu trong nhà. Nhập trầu trước đã.', 2.6); return; }
   p4Sheets(null); $('#p4hud').hidden = true; $('#p4temHud').hidden = false;
-  Object.assign(P4T, { on: true, t: 0, cust: [], boards: [{ items: [], fold: false }, { items: [], fold: false }], sel: 0, next: 1.2, served: 0, wrong: 0, missed: 0, earned: 0, fx: [], shake: null });
+  Object.assign(P4T, { on: true, out: 0, fetch: 0, early: false, t: 0, cust: [], boards: [{ items: [], fold: false }, { items: [], fold: false }], sel: 0, next: 1.2, served: 0, wrong: 0, missed: 0, earned: 0, fx: [], shake: null });
 }
 function p4TemStop() {
+  if (P4T.fetch > 0) { SAVE4B.stock += P4_TEM_MORE.n; P4T.fetch = 0; }   // already paid for: it reaches the house anyway
   P4T.on = false; $('#p4temHud').hidden = true; $('#p4hud').hidden = false; p4Persist(); p4Hud();
-  $('#p4temEndB').innerHTML = `<p>Đưa đúng <b>${P4T.served}</b> miếng trầu · thu <b>${c4Money(P4T.earned)}</b></p>`
+  $('#p4temEndB').innerHTML = (P4T.early ? '<p class="bad"><b>Hết trầu, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> miếng trầu · thu <b>${c4Money(P4T.earned)}</b></p>`
     + (P4T.wrong ? `<p>Đưa nhầm ${P4T.wrong} lần</p>` : '') + (P4T.missed ? `<p class="bad">${P4T.missed} khách chờ lâu bỏ đi</p>` : '') + `<p>Trầu còn: ${SAVE4B.stock} miếng</p>`;
-  p4Sheets('p4temEnd');
+  $('#p4temAgain').hidden = SAVE4B.stock <= 0; p4Sheets('p4temEnd');
 }
 // the layout, in CSS pixels, from the canvas size
 function p4TemLay() {
@@ -46,8 +51,13 @@ function p4TemUpdate(dt) {
   if (!P4T.on) return;
   P4T.t += dt;
   if (P4T.t >= P4_TEM_SHIFT && !P4T.cust.some(c => !c.leaving)) { p4TemStop(); return; }
+  if (P4T.fetch > 0 && (P4T.fetch -= dt) <= 0) { P4T.fetch = 0; SAVE4B.stock += P4_TEM_MORE.n; p4Persist(); toast(`Trầu về rồi! Thêm ${P4_TEM_MORE.n} miếng.`, 2.2); AU.coin && AU.coin(); }
+  const bare = SAVE4B.stock <= 0 && !P4T.fetch && !P4T.boards.some(b => b.items.length);
+  if (bare && P4T.t < P4_TEM_SHIFT) { if (!P4T.out) P4T.out = P4_TEM_MORE.decide; else if ((P4T.out -= dt) <= 0) { p4TemCloseEarly(); return; } }
+  else P4T.out = 0;
+  p4TemMoreBtn();
   // customers come, faster as the shift goes on (not in the last seconds)
-  if (P4T.t < P4_TEM_SHIFT - 6 && (P4T.next -= dt) <= 0) {
+  if (P4T.t < P4_TEM_SHIFT - 6 && !P4T.out && (P4T.next -= dt) <= 0) {
     const free = p4TemLay().slots.map((_, i) => i).filter(i => !P4T.cust.some(c => c.slot === i && !c.gone));
     if (free.length) {
       const tot = P4_TEM_RECIPES.reduce((a, r) => a + r.w, 0); let k = Math.random() * tot, rec = P4_TEM_RECIPES[0];
@@ -82,10 +92,29 @@ function p4TemTap(px, py) {
     p4TemGive(c); return;
   }
 }
+// the HUD button while out of betel / the betel on its way
+function p4TemMoreBtn() {
+  const B = $('#p4temMore'), cost = P4_TEM_MORE.n * P4_TEM_MORE.each;
+  if (P4T.fetch > 0) { B.hidden = false; B.disabled = true; B.textContent = `Trầu đang về · ${Math.ceil(P4T.fetch)} giây`; return; }
+  if (!P4T.out) { B.hidden = true; return; }
+  const can = p4Purse() >= cost; B.hidden = false; B.disabled = !can;
+  B.textContent = can ? `Hết trầu! Lấy thêm ${P4_TEM_MORE.n} miếng · ${c4Money(cost)} (đóng ca sau ${Math.ceil(P4T.out)} giây)` : `Hết trầu, không đủ tiền lấy thêm · đóng ca sau ${Math.ceil(P4T.out)} giây`;
+}
+function p4TemFetch() {
+  const cost = P4_TEM_MORE.n * P4_TEM_MORE.each;
+  if (!P4T.out || P4T.fetch || p4Purse() < cost) return;
+  p4Spend(cost); P4T.out = 0; P4T.fetch = P4_TEM_MORE.wait; p4Persist();
+  toast(`Người nhà chạy đi lấy trầu, ${P4_TEM_MORE.wait} giây nữa về.`, 2.4); p4TemMoreBtn();
+}
+function p4TemCloseEarly() {
+  P4T.early = true; P4T.out = 0;
+  for (const c of P4T.cust) if (!c.leaving) { c.leaving = .01; c.say = { text: 'Hết trầu rồi à? Mai ghé vậy.', t: 0, life: 1.4 }; }
+  p4TemStop();
+}
 function p4TemAdd(k) {
   const b = P4T.boards[P4T.sel], has = b.items.includes('la'), bad = () => { P4T.shake = { i: P4T.sel, t: 0 }; };
   if (k === 'bo') { b.items = []; b.fold = false; return; }
-  if (k === 'la') { if (b.items.length) return bad(); if (SAVE4B.stock <= 0) { toast('Hết trầu trong nhà!', 2); return bad(); } SAVE4B.stock--; b.items.push('la'); return; }
+  if (k === 'la') { if (b.items.length) return bad(); if (SAVE4B.stock <= 0) { toast(P4T.fetch ? `Trầu đang về, còn ${Math.ceil(P4T.fetch)} giây.` : 'Hết trầu trong nhà!', 2); return bad(); } SAVE4B.stock--; b.items.push('la'); return; }
   if (!has || b.fold) return bad();                                         // a leaf first; a folded quid is finished
   if (k === 'gap') { if (!b.items.includes('voi')) return bad(); b.fold = true; return; }
   if (b.items.includes(k) || (k === 'cau' && b.items.includes('caukho')) || (k === 'caukho' && b.items.includes('cau'))) return bad();
@@ -288,11 +317,12 @@ function p4TemOrder(g, L, c, x) {
 }
 {
   const hud = document.createElement('div'); hud.id = 'p4temHud'; hud.hidden = true;
-  hud.innerHTML = '<div class="tag" id="p4temTime"></div><div class="tag" id="p4temMoney"></div><button class="tag" id="p4temQuit">Thôi, ra phố</button>';
+  hud.innerHTML = '<div class="tag" id="p4temTime"></div><div class="tag" id="p4temMoney"></div><button class="tag" id="p4temQuit">Thôi, ra phố</button><button class="tag more" id="p4temMore" hidden></button>';
   const end = document.createElement('div'); end.id = 'p4temEnd'; end.className = 'c4sheet p4sheet'; end.hidden = true;
   end.innerHTML = '<div class="card4"><h3>Hết ca têm trầu</h3><div id="p4temEndB"></div><div class="row"><button class="btn" id="p4temAgain">Têm tiếp</button><button class="btn alt" id="p4temOut">Ra phố</button></div></div>';
   document.body.append(hud, end);
   $('#p4temQuit').addEventListener('click', () => { AU.tap(); p4TemStop(); });
+  $('#p4temMore').addEventListener('click', () => { AU.tap(); p4TemFetch(); });
   $('#p4temAgain').addEventListener('click', () => { AU.tap(); p4Sheets(null); p4TemStart(); });
   $('#p4temOut').addEventListener('click', () => { AU.tap(); p4Sheets(null); });
 }
