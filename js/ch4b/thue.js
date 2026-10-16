@@ -80,6 +80,7 @@ function p4ShopTap(n) {
   P4.shopSel = { key, name }; p4ShopSheet(); return true;
 }
 function p4ShopSheet() {
+  if (!SAVE4B.house) return;
   const { key, name } = P4.shopSel, R = p4Shops()[key], m = c4Money, purse = p4Purse();
   let h = '';
   if (!R) {

@@ -310,7 +310,7 @@ function p4BoatOrders(dt) {
     if (b.stop && !o.taken && P4.t - o.t0 > 40) p4BoatLeave(b, p4Pick(['Thôi, đi tiếp vậy.', 'Chờ lâu quá!']), true);
   }
   // now and then (more when the street is busy) a boat turns in towards the house: it comes from off the screen and stops at the quay
-  if (P4.phase !== 'open' || SAVE4B.stock <= 0 || B.some(b => b.order)) return;
+  if (!SAVE4B.house || P4.phase !== 'open' || SAVE4B.stock <= 0 || B.some(b => b.order)) return;
   if ((P4.boatT -= dt) > 0) return;
   P4.boatT = (22 + Math.random() * 25) / p4Busy();
   const V = p4View(), b = B.filter(q => !q.order && (q.x < P4.camX - 150 || q.x > P4.camX + V.vw + 150)).sort((p, q) => Math.abs(p.x - P4_HOME) - Math.abs(q.x - P4_HOME))[0]; if (!b) return;
@@ -327,6 +327,7 @@ function p4BoatLeave(b, line, lost) {
 // the shop's name (owner: the player names it once the house is theirs; at most P4_NAME_MAX letters, shown in capitals on the board)
 
 function p4NameSheet(first, key = null) {
+  if (!SAVE4B.house) return;
   P4.nameBack = !first; P4.nameKey = key; $('#p4nameIn').value = key ? p4Shops()[key].name : SAVE4B.name || 'TRẦU CAU';
   p4Sheets('p4name'); setTimeout(() => { const i = $('#p4nameIn'); i.focus(); i.select(); }, 60);
 }

@@ -628,7 +628,7 @@ function p4TownHouseTap(x, y) {
     if (n[1] !== 'shop') continue;
     const s = n[2], w = P4_TOWN_V[((n[3] | 0) % P4_TOWN_V.length + P4_TOWN_V.length) % P4_TOWN_V.length].w * s;
     if (Math.abs(x - n[0]) > w + 6 || y < P4_Y0 - 200 * s || y > p4Y(.22)) continue;
-    if (n[4] !== 'home') { if (p4ShopTap(n)) { AU.tap(); return true; } continue; }
+    if (n[4] !== 'home') { if (!SAVE4B.house) continue; if (p4ShopTap(n)) { AU.tap(); return true; } continue; }   // before the house is bought only the house for sale answers (it opens the sale)
     AU.tap(); p4HomeOpen(); return true;
   }
   return false;
@@ -808,6 +808,7 @@ function p4HoaRead(h) {
   addEventListener('pointermove', e => { if (P4.hoaHold && e.pointerType === 'mouse') { hands.style.left = e.clientX + 'px'; hands.style.top = e.clientY + 'px'; } }, true);
 }
 function p4HoaShop() {
+  if (!SAVE4B.house) return;                                               // lanterns are bought once the house is ours; their wishes can always be read
   const B = $('#p4hoaB'), ok = p4Purse() >= P4_HOA_PRICE;
   B.innerHTML = '<p>Một chiếc đèn hoa sen giấy giá <b>' + c4Money(P4_HOA_PRICE) + '</b>. Viết điều ước lên đèn rồi thả xuống sông, cầu bình an và tài lộc.</p>'
     + '<p>Trong túi: ' + c4Money(Math.round(p4Purse())) + '</p>' + (ok ? '' : '<p class="bad">Chưa đủ tiền mua đèn.</p>')
@@ -823,6 +824,7 @@ function p4HoaShop() {
 }
 // two hands cupping the lantern: they follow the mouse on a computer; on a phone they wait low in the middle of the screen, over the river
 function p4HoaHold(h) {
+  if (h && !SAVE4B.house) h = null;
   P4.hoaHold = h; const el = $('#p4hands');
   document.body.classList.toggle('p4holding', !!h);
   if (!h) { el.hidden = true; return; }

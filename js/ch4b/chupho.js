@@ -50,6 +50,7 @@ function p4BossMan(i) {
 }
 // the visit's sheet: what is asked, and three answers
 function p4BossSheet() {
+  if (!SAVE4B.house) return;
   const base = SAVE4B.weekTake || 0, owe = SAVE4B.bossOwe || 0, tax = Math.round(base * P4_BOSS.tax) + owe, guard = Math.max(P4_BOSS.guardMin, Math.round(base * P4_BOSS.guard)), m = c4Money;
   P4.bossAsk = { tax, guard };
   $('#p4bossB').innerHTML = `<p><b>${P4_BOSS.name}</b>, ${P4_BOSS.title}, phe phẩy quạt trước cửa hiệu, hai tay chân đứng sau.</p>`
