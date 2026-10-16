@@ -1240,7 +1240,7 @@ function c4Key(e) {
 /* ---------- HUD, sheets, registration ---------- */
 {
   const hud = document.createElement('div'); hud.id = 'c4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag" id="c4Rank">Tổng sắp</button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
+  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'),
@@ -1254,7 +1254,6 @@ function c4Key(e) {
   $('#c4Invite').addEventListener('click', () => { if (c4CanInvite()) { AU.tap(); C4_PICK = { deal: 'half', sel: new Set() }; C4_WHO = null; c4OpenNotes('quen'); } });
   $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
   $('#c4Pho').addEventListener('click', () => { AU.tap(); p4Enter(); });
-  $('#c4Rank').addEventListener('click', () => { AU.tap(); c4RankOpen(); });   // the board of the richest (xephang.js)
   $('#c4dayPho').addEventListener('click', () => { AU.tap(); p4Enter(); });   // after closing, the town is still open (dongho.js)   // part 2 · Phố Huyện (js/ch4b/game.js)
   $('#c4Ups').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); c4OpenUps(); } });
   $('#c4Home').addEventListener('click', () => { AU.tap(); $('#c4homeB').innerHTML = c4HomeHtml(); c4Sheets('c4home'); });

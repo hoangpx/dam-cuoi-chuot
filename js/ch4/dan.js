@@ -323,9 +323,9 @@ let C4_TAB = 'tin', C4_WHO = null;
 let C4_PICK = null;                                                         // { deal, sel }: choosing whom to invite to take the leftovers
 function c4OpenNotes(tab) {
   C4.noteNew = false; c4Hud();
-  if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY && C4_TAB !== 'viec') C4_TAB = 'tin';
+  if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY && C4_TAB !== 'viec' && C4_TAB !== 'rank') C4_TAB = 'tin';
   const P = c4People(), known = P.list.filter(p => c4Known(p.id)), open = SAVE4.day >= C4_BOOK_DAY;
-  const tabs = [['tin', 'Tin đồn'], ['viec', 'Việc'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['thanh', 'Thành tựu']] : [])];
+  const tabs = [['tin', 'Tin đồn'], ['viec', 'Việc'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['thanh', 'Thành tựu']] : []), ['rank', 'Tổng sắp']];   // Tổng sắp: the board of the richest (xephang.js)
   let h = `<div class="c4tabs">${tabs.map(([k, n]) => `<button class="${k === C4_TAB ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
   const seen = P.list.filter(p => !c4Known(p.id) && SAVE4.folk[p.id] && SAVE4.folk[p.id].seen);
   if (open) h += `<p class="cnt">${known.length} người quen · ${seen.length} người biết mặt</p>`;
@@ -353,9 +353,11 @@ function c4OpenNotes(tab) {
   else if (C4_TAB === 'web') h += c4WebTab();
   else if (C4_TAB === 'viec') h += c4TasksTab();
   else if (C4_TAB === 'thanh') h += c4AchHtml();
+  else if (C4_TAB === 'rank') h += '<h4>Bảng tổng sắp nhà giàu</h4><div id="c4rankTab"></div>';
   else if (C4_TAB === 'nha') h += c4HousesTab();
   const wasWeb = !!$('#qhCv');
   $('#c4noteB').innerHTML = h;
+  if (C4_TAB === 'rank') c4RankInto($('#c4rankTab'));
   $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha');
   $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
   $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
