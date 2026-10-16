@@ -439,7 +439,7 @@ function c4PlanEvents() {
   if (!SAVE4.cauDoi) pool.push('do');
   if (['che', 'xoi', 'bun', 'banhcuon', 'ruou'].some(g => own.includes(g))) pool.push('do2', 'do2');
   if (own.length > 1) pool.push('om', 'om');                       // ('bot', the announced skimming, is gone: a hand's skimming is silent now, the player finds it in the tally)
-  if (SAVE4.money >= C4_RICH) { if (SAVE4.kienNext == null) SAVE4.kienNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.kienNext && R() < .35) pool.push('kien'); if (SAVE4.tromNext == null) SAVE4.tromNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.tromNext && R() < .15 && own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner); a hand runs off at most once in 20–30 days, rarely (owner: less often)
+  if (SAVE4.money >= C4_RICH) { if (SAVE4.kienNext == null) SAVE4.kienNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.kienNext && R() < .35) pool.push('kien'); if (SAVE4.tromNext == null) SAVE4.tromNext = SAVE4.day + 35 + Math.floor(R() * 16); if (SAVE4.day >= SAVE4.tromNext && R() < .06 && own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner); a hand runs off at most once in 20–30 days, rarely (owner: less often)
   for (let i = 0; i < 3 && pool.length; i++) ev.push({ at: at(7, 16.5), kind: pool.splice((R() * pool.length) | 0, 1)[0] });
   if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });
   if (SAVE4.day > 5 && R() < .55) ev.push({ at: at(7, 12), kind: c4Pick(['cotiec', 'cotiec', 'cuoi', 'khachla']) });   // an order brought by a visitor (the red '!') on about half the days, not only by luck of the pool, which grows long later on (a player)
@@ -859,9 +859,9 @@ function c4EndDay() {
   $('#c4dayN').innerHTML = c4ByShopHtml(d) + `${d.served} khách mua${d.lost ? ' · ' + d.lost + ' khách bỏ đi' : ''}`
     + (lines.length || d.wiltLoss ? `<br><span class="bad">Hàng hỏng phải bỏ${lines.length ? ' (' + lines.join(', ') + ')' : ''}: mất ${c4Money(d.wiltLoss)}</span>` : '')
     + (d.wages ? `<br>Trả công người phụ: ${c4Money(d.wages)}` : '')
-    + (c4Owned().some(g => c4Hands(g).length) ? `<br>Bán được ${c4Money(Math.round(d.take))} · tiền thu về tay ${c4Money(Math.round(d.take - (d.skim || 0)))}` : '')   // (owner: the player reckons whether it adds up)
+       // (owner: the player reckons whether it adds up)
     + (d.spent ? `<br>Chi khác (củi, lễ, tiền chợ, cho vay…): ${c4Money(d.spent)}` : '')
-    + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '') + (d.skim ? `<br><span class="bad">Hao hụt tiền bán (người phụ ăn bớt): ${c4Money(d.skim)}</span>` : '')
+    + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '')
     + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '') + c4LedgerHtml(d)
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
     + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.slice(0, 4).join(', ')}${gossip.hurt.length > 4 ? ' và ' + (gossip.hurt.length - 4) + ' người nữa' : ''} bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
@@ -877,7 +877,7 @@ function c4LedgerHtml(d) {
   if (d.m0 === undefined) return '';
   const exp = d.m0 - (d.bought || 0) + d.take - d.wages - d.spent + d.got - (d.theft || 0) - (d.skim || 0), now = Math.round(SAVE4.money), off = now - Math.round(exp), m = c4Money;
   return `<details class="ledger"><summary>Sổ quỹ hôm nay: ${m(d.m0)} → ${m(now)}</summary>Đầu ngày trong túi ${m(d.m0)}<br>− Nhập hàng ${m(d.bought || 0)}<br>+ Bán được ${m(Math.round(d.take))}<br>− Công người phụ ${m(d.wages)}<br>− Chi khác (tiền nhà, củi, lễ…) ${m(Math.round(d.spent))}<br>+ Thu khác ${m(Math.round(d.got))}`
-    + ((d.theft || 0) + (d.skim || 0) ? `<br>− Bị cuỗm / ăn bớt ${m(Math.round((d.theft || 0) + (d.skim || 0)))}` : '') + `<br>Cuối ngày trong túi ${m(now)}`
+    + (d.theft ? `<br>− Bị cuỗm ${m(Math.round(d.theft))}` : '') + `<br>Cuối ngày trong túi ${m(now)}`
     + (Math.abs(off) >= 1 ? `<br><i>Còn ${off > 0 ? 'dư' : 'hụt'} ${m(Math.abs(off))} chưa rõ: trả nợ, vay, nhận tiền nợ, hay hàng giao sỉ.</i>` : '')
     + `<br><i>Sáng mai còn có thể bị trừ: nợ đến hạn, quỹ phường, thuế cụ Lý.</i></details>`;
 }
