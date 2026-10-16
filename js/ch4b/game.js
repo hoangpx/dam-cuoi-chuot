@@ -96,8 +96,7 @@ function startP4() {
   S.chapter = 4; S.mode = 'c4bplay'; document.body.classList.add('c4'); document.documentElement.style.setProperty('--paper', PAPERS[P4_PAPER].css);
   $('#album').hidden = true; $('#end').hidden = true; $('#chapters').hidden = true; $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   if (!P4.scene) { P4.scene = p4TownScene(mulberry(7)); P4.camX = P4_HOME - p4View().vw * .5; }
-  if (SAVE4B.house && !SAVE4B.from) { SAVE4B.from = Math.max(1, SAVE4.day - SAVE4B.day + 1); p4Persist(); }   // older saves: the town's today is part 1's today
-  if (P4.day !== SAVE4B.day) p4NewDay();
+  w4TownEnter();                                                           // the village's day and hour (dongho.js)
   p4HoaLoad();                                                              // everyone's lanterns (hoadang-net.js)
   $('#p4hud').hidden = false; p4Hud(); if (P4.hoaHold) p4HoaHold(P4.hoaHold); cv.focus();
   if (typeof trackEnter === 'function') trackEnter('chuong-4/pho-huyen');
@@ -110,14 +109,16 @@ function p4NewDay() {
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));
 }
 function p4Hide() { P4.talk = null; if (P4T.on) { P4T.on = false; if (P4T.fetch > 0) { SAVE4B.stock += P4_TEM_MORE.n; P4T.fetch = 0; p4Persist(); } $('#p4temHud').hidden = true; } $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
-function p4EndDay() {
+function p4EndDay(silent) {
   P4.phase = 'night';
+  if (!SAVE4B.house) { $('#p4dayT').textContent = `Khuya rồi, ngày ${p4DayNo()} đã hết`; $('#p4dayB').innerHTML = '<p>Phố huyện đã lên đèn hết, hàng quán đóng cửa.</p>' + w4VillageLine(); if (!silent) p4Sheets('p4day'); return; }
+  SAVE4B.settled = SAVE4.day;
   const wilt = SAVE4B.stock; SAVE4B.stock = 0; SAVE4B.weekTake = (SAVE4B.weekTake || 0) + P4.today.take; p4Persist();   // the week's takings, for the street master's tax                // betel does not keep overnight
   $('#p4dayB').innerHTML = `<p>Bán được <b>${P4.today.sold}</b> miếng trầu: <b>${c4Money(P4.today.take)}</b></p><p>Chi: ${c4Money(P4.today.spent)}</p>`
     + (wilt ? `<p class="bad">Trầu thừa héo mất ${wilt} miếng.</p>` : '') + (P4.today.lost ? `<p>${P4.today.lost} khách đến mà hết trầu.</p>` : '')
-    + p4PayHands() + p4ShopsEvening() + (P4.today.smash ? `<p class="bad">Bị tay chân bá hộ phá: mất ${c4Money(P4.today.smash)}.</p>` : '') + (p4Harass() < 1 ? '<p class="bad">Tay chân bá hộ còn quấy, khách ngại ghé.</p>' : '') + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
+    + p4PayHands() + p4ShopsEvening() + (P4.today.smash ? `<p class="bad">Bị tay chân bá hộ phá: mất ${c4Money(P4.today.smash)}.</p>` : '') + (p4Harass() < 1 ? '<p class="bad">Tay chân bá hộ còn quấy, khách ngại ghé.</p>' : '') + w4VillageLine() + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
   $('#p4dayT').textContent = `Tối ngày ${p4DayNo()} trên phố huyện`;
-  p4Sheets('p4day');
+  if (!silent) p4Sheets('p4day');
 }
 function updateP4(dt) {
   P4.t += dt;
@@ -126,8 +127,9 @@ function updateP4(dt) {
   if (P4.talk) p4TalkUpdate(dt);                                           // the couple talking before buying the house (muanha.js)
   if (P4.paused) return;
   if (P4.phase === 'open') {
-    P4.mins += dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);              // the evening lasts longer
-    if (P4.mins >= P4_CLOSE) { if (SAVE4B.house) { P4.mins = P4_CLOSE; p4EndDay(); } else { P4.mins = P4_OPEN; P4.walkers = []; } }
+    const dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1); P4.mins += dm;   // the evening lasts longer
+    w4TownTick(dm);                                                        // one clock with the village, which trades on meanwhile (dongho.js)
+    if (P4.mins >= P4_CLOSE) { P4.mins = P4_CLOSE; p4EndDay(); }
     if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / (p4Busy() * p4WxFlow()); p4Spawn(); }
     p4Hud();
   }
@@ -290,7 +292,7 @@ function p4HomeOpen() {
   $('#p4nameGo').addEventListener('click', () => { const v = $('#p4nameIn').value.replace(/\s+/g, ' ').trim().slice(0, P4_NAME_MAX).trim().toLocaleUpperCase('vi'); if (v) { if (P4.nameKey && p4Shops()[P4.nameKey]) p4Shops()[P4.nameKey].name = v; else SAVE4B.name = v; p4Persist(); toast('Biển mới: ' + p4Esc(v), 2.4); } AU.tap(); nameBack(); });
   $('#p4nameX').addEventListener('click', nameBack);
   $('#p4nameIn').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#p4nameGo').click(); });
-  $('#p4dayGo').addEventListener('click', () => { SAVE4B.day++; p4Persist(); p4Sheets(null); p4NewDay(); p4Hud(); });
+  $('#p4dayGo').addEventListener('click', () => { AU.tap(); w4TownNextDay(); });   // the day turns for the village too (dongho.js)
 }
 // part 2 is a mode of chương IV (no card of its own): the hub routes to it by its mode
 registerChapter({

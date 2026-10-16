@@ -202,7 +202,7 @@ function startC4() {
   c4MarketStart();
 }
 // coming back to a day still in memory: the same market, and whatever sheet was open (the morning order only if it was not yet given)
-function c4Resume() { $('#c4hud').hidden = false; c4Sheets(C4.away || null); c4Hud(); cv.focus(); }
+function c4Resume() { $('#c4hud').hidden = false; c4Sheets(C4.away || null); if (typeof w4VillageEnter === 'function') w4VillageEnter(); c4Hud(); cv.focus(); }
 function c4MarketStart() {
   $('#c4hud').hidden = false;
   if (!SAVE4.plan || !SAVE4.plan.wx) { SAVE4.plan = c4Roll(SAVE4.day); SAVE4.next = c4Roll(SAVE4.day + 1); }
@@ -217,8 +217,8 @@ function c4MarketStart() {
   for (let i = 0; i < 8; i++) c4Spawn(C4.camX - 200 + R() * (c4View().vw + 400));
   C4.day = SAVE4.day;
   // the page was reloaded during a day already under way: no new morning order, the market opens at the hour it had reached
-  if (SAVE4.openDay === SAVE4.day) { C4.phase = 'open'; C4.mins = Math.max(C4_OPEN, SAVE4.openMins || C4_OPEN); c4PlanEvents(); C4.events = C4.events.filter(e => e.at > C4.mins); c4ShipOrders(true); c4Hud(); cv.focus(); return; }
-  c4Hud(); c4Morning(); cv.focus();
+  if (SAVE4.openDay === SAVE4.day) { C4.phase = 'open'; C4.mins = Math.max(C4_OPEN, SAVE4.openMins || C4_OPEN); c4PlanEvents(); C4.events = C4.events.filter(e => e.at > C4.mins); c4ShipOrders(true); if (typeof w4VillageEnter === 'function') w4VillageEnter(); c4Hud(); cv.focus(); return; }
+  c4Hud(); c4Morning(); if (typeof w4VillageEnter === 'function') w4VillageEnter(); cv.focus();
 }
 function c4Hide() { AU.ambient({}); C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
 // one sheet at a time: morning plan, stall, event, notebook, tally
@@ -687,6 +687,7 @@ function updateC4(dt) {
   for (const e of [...C4.walkers, C4.wife, ...C4.vendors, C4.porter, ...C4_SHOPS.map(g => SAVE4.shops[g]).filter(Boolean), ...c4AllHands().map(o => o.h)]) if (e.say && (e.say.t += dt) > e.say.life) e.say = null;
   if (C4.phase === 'open') {
     const was = C4.mins; C4.mins += dt * C4_MPS;
+    if (typeof w4VillageTick === 'function') w4VillageTick(dt * C4_MPS);   // one clock with the town (js/ch4b/dongho.js)
     if (Math.floor(was / 30) !== Math.floor(C4.mins / 30)) { SAVE4.openMins = C4.mins; persist4(); }   // every half hour of the market
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
@@ -868,6 +869,7 @@ function c4EndDay() {
     + (extra.length ? `<br>${extra.join('<br>')}` : '')
     + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);
   persist4(); c4LoanUI(true); c4HomeOffer();
+  if (typeof w4DayButtons === 'function') w4DayButtons();
   setTimeout(() => { if (S.mode === 'c4play' && C4.phase === 'night') c4Sheets('c4day'); }, 900);
 }
 // where the purse went today (owner: 8 quan sold, yet 1 quan left in the morning): what it was when the market opened, every way it moved, and what is left unexplained
@@ -881,7 +883,7 @@ function c4LedgerHtml(d) {
 }
 const c4Talk2Due = () => SAVE4.day === C4_BOOK_DAY && !SAVE4.talk2;
 function c4Talk2() { c4StoryStart(C4_TALK2, () => { SAVE4.talk2 = true; persist4(); c4MarketStart(); }); }
-function c4DayAdvance() { trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4(); }
+function c4DayAdvance() { if (typeof w4BeforeDay === 'function') w4BeforeDay(); trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4(); }
 function c4NewDay() {
   c4DayAdvance();
   if (c4Talk2Due()) { c4Sheets(null); c4Talk2(); return; }
@@ -1246,11 +1248,12 @@ function c4Key(e) {
     sheet('c4note', '<h3>Sổ tay</h3><div id="c4noteB"></div><div class="row"><button class="btn alt" id="c4noteX">Đóng</button></div>'),
     sheet('c4home', '<div id="c4homeB"></div><div class="row"><button class="btn" id="c4homeShop">Sắm đồ</button><button class="btn alt" id="c4homeX">Đóng</button></div>'),
     sheet('c4shop', '<div id="c4shopB"></div><div class="row"><button class="btn alt" id="c4shopX">Quay lại</button></div>'),
-    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><div id="c4homeN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'));
+    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><div id="c4homeN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn pho" id="c4dayPho" hidden>Lên phố huyện</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'));
   $('#c4Name').addEventListener('click', () => showChapters());
   $('#c4Invite').addEventListener('click', () => { if (c4CanInvite()) { AU.tap(); C4_PICK = { deal: 'half', sel: new Set() }; C4_WHO = null; c4OpenNotes('quen'); } });
   $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
-  $('#c4Pho').addEventListener('click', () => { AU.tap(); p4Enter(); });   // part 2 · Phố Huyện (js/ch4b/game.js)
+  $('#c4Pho').addEventListener('click', () => { AU.tap(); p4Enter(); });
+  $('#c4dayPho').addEventListener('click', () => { AU.tap(); p4Enter(); });   // after closing, the town is still open (dongho.js)   // part 2 · Phố Huyện (js/ch4b/game.js)
   $('#c4Ups').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); c4OpenUps(); } });
   $('#c4Home').addEventListener('click', () => { AU.tap(); $('#c4homeB').innerHTML = c4HomeHtml(); c4Sheets('c4home'); });
   $('#c4homeShop').addEventListener('click', () => { AU.tap(); $('#c4shopB').innerHTML = c4ShopHtml(); c4Sheets('c4shop'); });

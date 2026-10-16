@@ -1,11 +1,10 @@
 /* Chương IV phần 2 · Phố Huyện: the calendar and the weather follow part 1 (owner, 2026-10-15: "ngày tháng trên phố huyện giống ngày tháng
-   và thời tiết ở phần trước"). The day number goes on from the village market's: before the house is bought the town shows part 1's
-   own day; once bought, SAVE4B.from = part 1's day at the purchase and the town counts on from it (p4DayNo). The HUD reads like part 1's:
+   và thời tiết ở phần trước"). The day is the village's own (one calendar, dongho.js). The HUD reads like part 1's:
    "Ngày 12  🐉 7:40  ☀️" (part 1's C4_ZOD, c4Hour, c4Clock, C4_WXI, read only). The weather of a day the two share is part 1's own
    (c4Wx); any other day is rolled with part 1's odds from the day number. In town there are no floods or gales (owner): rain is a light
    rain (streaks, umbrellas, fewer folk out), a hot day or a cold one only thins the street a little. Part 2's own code. */
 const P4_WX_FLOW = { dep: 1, gat: .88, mua: .62, ret: .85 };
-const p4DayNo = () => SAVE4B.house ? (SAVE4B.from || SAVE4.day) + SAVE4B.day - 1 : SAVE4.day;
+const p4DayNo = () => SAVE4.day;   // one calendar with the village (dongho.js)
 function p4Wx() {
   const n = p4DayNo();
   if (n === SAVE4.day && SAVE4.plan && SAVE4.plan.wx) return c4Wx();

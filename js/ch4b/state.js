@@ -4,7 +4,7 @@
 const P4 = { t: 0, camX: 0, mins: 6 * 60, phase: 'open', walkers: [], Q: [], fx: [], sheet: null, scene: null, glows: [], paused: false,
   spawnT: 1, chatT: 4, today: { sold: 0, take: 0, spent: 0, lost: 0 }, wife: { say: null, serving: null, t: 0 }, husband: { x: 0, say: null, t: 0 } };
 const P4_W = 3600, P4_HOME = 720, P4_GATE = 390, P4_Y0 = 300, P4_D = 190;   // the street's length, the couple's house, the gate; the street's far edge and depth
-const P4_OPEN = 6 * 60, P4_CLOSE = 21 * 60, P4_MPS = 4;                     // the day: from 6:00 to 21:00, game minutes per second (slower after 18:00)
+const P4_OPEN = 5 * 60, P4_CLOSE = 23 * 60, P4_MPS = 4;                     // the day: from 5:00 (with the village) to 23:00 (owner: the town is open late), game minutes per second (slower after 18:00)
 const P4_HOUSE_PRICE = 500 * 600;                                         // 500 quan (600 đồng a quan)
 const P4_CROWD = .86;                                                       // folk drawn a little smaller than the houses' scale
 const p4Y = z => P4_Y0 + z * P4_D, p4S = z => .52 + .34 * z;              // where depth z stands on screen, and how big
