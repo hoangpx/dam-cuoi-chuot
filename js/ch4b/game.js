@@ -128,7 +128,6 @@ function updateP4(dt) {
   if (P4.paused) return;
   if (P4.phase === 'open') {
     const dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1); P4.mins += dm;   // the evening lasts longer
-    w4TownTick(dm);                                                        // one clock with the village, which trades on meanwhile (dongho.js)
     if (P4.mins >= P4_CLOSE) { P4.mins = P4_CLOSE; p4EndDay(); }
     if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / (p4Busy() * p4WxFlow()); p4Spawn(); }
     p4Hud();
