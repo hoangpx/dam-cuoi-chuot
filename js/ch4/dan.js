@@ -345,14 +345,8 @@ function c4OpenNotes(tab) {
   }
   else if (C4_TAB === 'quen' && C4_WHO !== null) { h += `<div id="qhCard">${qhCardHtml(C4_WHO)}</div>`; }   // one person: their card, with their ties drawn (owner)
   else if (C4_TAB === 'quen') {
-    // (a player: "lúc mời trầu thì làm thế nào để không phải ấn vào trong từng người"): each card carries its own quick buttons, Mời trầu,
-    // Mời ghé, Mời nước, the same as on the person's page; the page itself still opens from the portrait
-    const day = SAVE4.day, mkt = C4.phase === 'open', quick = (p, f) => {
-      const b = (q, on, txt, done) => `<button data-q="${q}" data-qid="${p.id}" ${on ? '' : 'disabled'}>${done ? '✓ ' : ''}${txt}</button>`;
-      return `<div class="fq">${b('trau', mkt && SAVE4.stock > 0 && f.treat !== day, 'Mời trầu', f.treat === day)}${b('moi', mkt && day >= C4_BOOK_DAY && f.inv !== day && c4Invited() < C4_INVITES, 'Mời ghé', f.inv === day)}${b('tea', f.tea !== day && SAVE4.money >= 3, 'Mời nước', f.tea === day)}</div>`; };
     h += known.length ? `<div class="folk">${known.sort((a, b) => SAVE4.folk[b.id].a - SAVE4.folk[a.id].a).map(p => { const f = SAVE4.folk[p.id];
-      return `<div class="fkw"><button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>${quick(p, f)}</div>`; }).join('')}</div>`
-      + (mkt ? `<p class="sm">Mời ghé còn ${Math.max(0, C4_INVITES - c4Invited())} lượt hôm nay · mời nước 3 đồng · mời trầu mất 1 miếng trầu</p>` : '<p class="sm">Mời trầu, mời ghé được lúc chợ họp.</p>')
+      return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}</div>`
       : '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
     if (seen.length) h += `<h4>Biết mặt</h4><div class="folk">${seen.map(p => `<div class="fk unk2"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>`;
   } else if (C4_TAB === 'don') h += c4OrdersTab();
@@ -364,11 +358,6 @@ function c4OpenNotes(tab) {
   $('#c4noteB').innerHTML = h;
   $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha');
   $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
-  $('#c4noteB').querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', e => {   // the list's quick buttons, the list stays where it was
-    e.stopPropagation(); const id = +b.dataset.qid, q = b.dataset.q, y = $('#c4note').scrollTop;
-    if (q === 'trau') c4Treat(id, 'trau'); else c4Act(id, q);
-    $('#c4note').scrollTop = y;
-  }));
   $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   $('#c4noteB').querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_PICK.deal = b.dataset.deal; const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   { const b = $('#c4noteB [data-invite]'); if (b) b.addEventListener('click', () => { const P = c4People(), ps = [...C4_PICK.sel].map(id => P.list[id]), deal = C4_PICK.deal; C4_PICK = null; c4Sheets(null); c4Invite(ps, deal); }); }
@@ -384,12 +373,9 @@ const c4Bar = a => `<i class="bar"><i style="width:${a}%;background:${a >= 60 ? 
 // (a hard one only warms to that), one they do not eat offends them, anything else is taken politely. One a day each, 1 unit of stock.
 const c4NopeWord = g => g === 'trau' ? 'ăn trầu' : g === 'ruou' ? 'uống rượu' : 'ăn ' + (C4_FAV_WORD[g] || C4_GOODS[g].name.toLowerCase()).replace(/^(bát|đĩa|gói|chén) /, '');
 function c4TreatHtml(p, f) {
-  if (C4.phase !== 'open') return '<p class="sm">Mời món được lúc chợ họp.</p>';
-  const gs = c4Owned().filter(g => c4Stock(g) > 0); if (!gs.length) return '';
-  const done = f.treat === SAVE4.day;
-  return `<h5>Mời món ${done ? '(đã mời hôm nay)' : '(mời đúng món họ thích mới thân)'}</h5><div class="acts">${gs.map(g => `<button class="act o" data-treat="${g}" ${done ? 'disabled' : ''}><b>${C4_GOODS[g].name}</b><span>1 ${C4_GOODS[g].unit}${(f.nopeK || []).includes(g) ? ' · không dùng' : f.favK && p.fav === g ? ' · món ruột' : ''}</span></button>`).join('')}</div>`;
+  return `<p class="sm">Mời ăn thử món: bấm vào quán có món đó${f.treat === SAVE4.day ? ' (hôm nay đã mời rồi)' : ''}.</p>`;   // (owner: the treats moved to each stall, c4TreatBlock)
 }
-function c4Treat(id, g) {
+function c4Treat(id, g, back) {
   const p = c4People().list[id], f = c4F(id), T = C4_TRAITS[p.trait], day = SAVE4.day, hard = !!(T.meet || T.sour || p.trait === 'ky');
   if (c4Stock(g) < 1 || f.treat === day) return;
   if (g === 'trau') SAVE4.stock--; else SAVE4.shops[g].stock--;
@@ -407,7 +393,24 @@ function c4Treat(id, g) {
     if (f.k) c4Bump(id, hard ? 1 : 4);
     line = hard ? `${c4Cap1(p.name)} nhận cho phải phép, mặt vẫn lạnh tanh.` : `${c4Cap1(p.name)} cảm ơn, ăn cho vui.`;
   }
-  toast(line, 3.8); AU.tap(); persist4(); c4Hud(); c4OpenNotes('quen');
+  toast(line, 3.8); AU.tap(); persist4(); c4Hud(); if (back) back(); else c4OpenNotes('quen');
+}
+// (owner, 2026-10-16: "cái vụ mời này move ra từng quán riêng"): a stall's sheet lists the folk you know with "Mời" to give them one of
+// that stall's ware (c4Treat: once a person a day, the right dish makes friends, a dish they will not eat sours them); ♥ marks a known favourite
+function c4TreatBlock(g) {
+  const d = document.createElement('div'); d.className = 'treat';
+  const G = C4_GOODS[g], day = SAVE4.day, known = c4People().list.filter(p => c4Known(p.id) || (SAVE4.folk[p.id] && SAVE4.folk[p.id].seen));   // the known, and those seen once (a treat helps them come round)
+  if (SAVE4.day < C4_BOOK_DAY || !known.length) return d;
+  if (C4.phase !== 'open') { d.innerHTML = '<p class="sm">Mời khách quen ăn thử được lúc chợ họp.</p>'; return d; }
+  const has = c4Stock(g) > 0;
+  d.innerHTML = `<h4>Mời khách quen ${g === 'trau' ? 'miếng trầu' : 'ăn ' + G.name.toLowerCase()}</h4><p class="sm">Mỗi người một lần một ngày, mất 1 ${G.unit}. Mời đúng món họ thích mới thân${has ? '' : '. <b>Hết hàng rồi.</b>'}</p>`
+    + `<div class="trl">${known.sort((a, b) => (c4Known(b.id) - c4Known(a.id)) || (SAVE4.folk[b.id].a || 0) - (SAVE4.folk[a.id].a || 0)).map(p => { const f = SAVE4.folk[p.id], done = f.treat === day, fav = f.favK && p.fav === g, no = (f.nopeK || []).includes(g);
+      return `<div class="tr"><img src="${c4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}${c4Known(p.id) ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã mời' : 'Mời'}</button></div>`; }).join('')}</div>`;
+  d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', () => {
+    const sc = $('#c4up'), y = sc.scrollTop, card = sc.querySelector('.card4'), y2 = card ? card.scrollTop : 0;
+    c4Treat(+b.dataset.tr, g, () => { c4OpenUp(g); sc.scrollTop = y; const c = sc.querySelector('.card4'); if (c) c.scrollTop = y2; });
+  }));
+  return d;
 }
 const C4_INVITES = 3, c4Invited = () => Object.values(SAVE4.folk).filter(f => f.inv === SAVE4.day).length;   // invitations a day
 function c4Act(id, act) {

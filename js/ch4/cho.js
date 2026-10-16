@@ -963,6 +963,7 @@ function c4OpenUp(g = 'trau') {
     let q = 0; c4Stepper(box.querySelector('.ord'), g, v => { q = v; }, true);
     box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
+  box.appendChild(c4TreatBlock(g));                                         // treat the folk you know to this stall's ware (dan.js)
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
   box.appendChild(c4HandsBlock(g));                                          // always there (a player could not find the hire button when only the betel stall was open)
                                         // who sells here: the couple, or hired helpers (nguoiban.js)
