@@ -294,7 +294,6 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .uptabs button{flex:1;padding:8px 6px;font:700 15px var(--body);color:var(--ink);background:#e6dccb;border:1.5px solid rgba(29,25,21,.45);border-radius:4px;cursor:pointer}
 .uptabs button.on{background:#a3332a;color:#f2ecde;border-color:#a3332a}
 #c4up.tab-moi #c4upB,#c4up.tab-moi #c4upGo,#c4up.tab-moi #c4upO>:not(.treat):not(.uptabs){display:none!important}
-#c4up.tab-moi .treat .trl{max-height:none}
 #c4up:not(.tab-moi) #c4upO .uptabs~.treat{display:none}
 .card4 .trh{display:block;width:100%;text-align:left;margin:12px 0 4px;padding:8px 10px;font:700 15px var(--body);color:var(--ink);background:#efe3c4;border:1.5px solid rgba(29,25,21,.45);border-radius:4px;cursor:pointer}
 .card4 .trh small{font-weight:400;color:#6b5f52}
@@ -326,3 +325,9 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .rankbox tr.me td{background:#d9ebc9;font-weight:700}
 .rankbox tr.gap td{text-align:center;opacity:.6}
 .rankbox td:nth-child(2),.rankbox th:nth-child(2){text-align:left;overflow-wrap:anywhere}
+
+/* every sheet fits the screen (owner, 2026-10-16: "nút đóng ở tít dưới đang phải kéo mãi"): the card scrolls inside itself, its last row of
+   buttons (Đóng…) stays stuck to the bottom, and long lists sit in their own scrolling box of at most about half the screen */
+.c4sheet .card4{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.c4sheet .card4>.row:last-child{position:sticky;bottom:-16px;margin:12px -18px -16px;padding:10px 18px 14px;background:var(--diep);border-top:2px solid rgba(29,25,21,.25);z-index:2}
+.card4 .folk,.card4 .trl,.card4 .rk{max-height:46vh;max-height:46dvh;overflow-y:auto;overscroll-behavior:contain;border:1.5px solid rgba(29,25,21,.2);padding:4px;box-sizing:border-box}
