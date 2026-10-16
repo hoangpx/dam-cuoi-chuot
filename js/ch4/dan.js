@@ -412,7 +412,7 @@ function c4TreatBlock(g) {
   d.querySelector('.trh').addEventListener('click', () => { AU.tap(); C4.treatOpen = !C4.treatOpen; const b = d.querySelector('.trb'); b.hidden = !C4.treatOpen; d.querySelector('.trh').firstChild.textContent = (C4.treatOpen ? '▾' : '▸') + d.querySelector('.trh').firstChild.textContent.slice(1); });
   d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', () => {
     const sc = $('#c4up'), y = sc.scrollTop, card = sc.querySelector('.card4'), y2 = card ? card.scrollTop : 0;
-    c4Treat(+b.dataset.tr, g, () => { c4OpenUp(g); sc.scrollTop = y; const c = sc.querySelector('.card4'); if (c) c.scrollTop = y2; });
+    c4Treat(+b.dataset.tr, g, () => { C4.keepTab = true; c4OpenUp(g); sc.scrollTop = y; const c = sc.querySelector('.card4'); if (c) c.scrollTop = y2; });
   }));
   return d;
 }

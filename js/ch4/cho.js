@@ -222,7 +222,8 @@ function c4MarketStart() {
 }
 function c4Hide() { AU.ambient({}); C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
 // one sheet at a time: morning plan, stall, event, notebook, tally
-function c4Sheets(id) { if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
+function c4Sheets(id) { const up = $('#c4up'); if (up) up.classList.remove('tab-moi');   // the stall sheet's "Mời khách" tab (c4UpTabs) is set again after each opening
+ if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 // a sheet opened by a tap on the market (a visitor, a stall) appears under the finger, and some phones (an Oppo) then send that tap's click
 // to the button now there, e.g. the refusal (a player): clicks inside a sheet in its first .45 s are dropped
 addEventListener('click', e => { if (S.mode === 'c4play' && C4.sheet && performance.now() - (C4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + C4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
@@ -974,7 +975,18 @@ function c4OpenUp(g = 'trau') {
     else if (!nx) $('#c4upB').innerHTML = '<p>Gian hàng trầu khang trang nhất phiên chợ.</p>';
     else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${nx.house === 'own' ? c4HouseNote(nx.up) : ''}<p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(c4UpPrice(nx, nx.up))}`; $('#c4upGo').onclick = () => { const price = c4UpPrice(nx, nx.up); if (SAVE4.money < price || C4.build) return; if (!nx.house) { c4DoUp(); return; } const L = c4Landlord('trau'); c4Khe({ title: nx.house === 'own' ? 'Mua nhà mặt chợ' : 'Thuê nhà mặt chợ', a: [nx.house === 'own' ? 'Bên bán' : 'Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ nhà'], what: (nx.house === 'own' ? 'Bán đứt ' : 'Cho thuê ') + nx.name.toLowerCase() + ' bán trầu', money: price }, c4DoUp); }; }
   }
-  c4Sheets('c4up');
+  c4Sheets('c4up'); c4UpTabs();
+}
+// the stall sheet in two tabs (owner, 2026-10-16: "cho 1 tab riêng"): "Hàng quán" (more goods, fetching by itself, hands, upgrades) and
+// "Mời khách" (c4TreatBlock, unfolded). A treat keeps the tab (C4.keepTab); any other opening starts on "Hàng quán". CSS #c4up.tab-moi hides the rest.
+function c4UpTabs() {
+  const box = $('#c4upO'), tr = box && box.querySelector('.treat'); if (!tr || !tr.children.length) return;
+  const n = tr.querySelectorAll('.tr').length, bar = document.createElement('div'); bar.className = 'uptabs';
+  bar.innerHTML = `<button type="button" data-ut="q">Hàng quán</button><button type="button" data-ut="m">Mời khách${n ? ' (' + n + ')' : ''}</button>`; box.prepend(bar);
+  const h = tr.querySelector('.trh'), b = tr.querySelector('.trb'); if (h) h.hidden = true; if (b) b.hidden = false;
+  const set = t => { C4.upTab = t; $('#c4up').classList.toggle('tab-moi', t === 'm'); bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.ut === t)); };
+  bar.querySelectorAll('button').forEach(x => x.addEventListener('click', () => { AU.tap(); set(x.dataset.ut); }));
+  set(C4.keepTab ? C4.upTab || 'q' : 'q'); C4.keepTab = false;
 }
 // what each ware is like, for the plot sheet
 const c4Ware = g => ({ banhcuon: 'Đông nhất lúc sáng sớm, trưa chiều vắng. Trời rét bán chạy. Tan chợ bánh thừa phải bỏ. Khách ngồi ăn tại chỗ.', ruou: 'Bán chạy chiều tối, trời rét hay mưa càng đông. Rượu để được lâu. Dân nhậu hay ghé, khách ngồi uống tại chỗ.', gom: 'Mỗi món đắt, lãi khá nhưng bán chậm; mưa thì ít người đi mua. Hàng để được mãi.', thuoc: 'Trời rét, trời mưa nhiều người ốm thì bán chạy; nắng đẹp thì vắng. Thuốc để được lâu, mỗi thang lãi khá.', che: 'Bán chạy buổi sáng, trời rét hay mưa; nắng gắt thì ế. Mỗi ngày tốn củi đun. Tan chợ chè thừa phải đổ.', xoi: 'Bán chạy buổi sáng, chiều bán chậm. Mẻ nào để quá 7 tiếng từ lúc mang về là thiu, phải đổ: mẻ sáng sớm thiu lúc trưa, mẻ lấy thêm thì thiu muộn hơn. Tan chợ còn thừa cũng phải bỏ.', xen: 'Kim chỉ, lược, gương… để lâu không hỏng, nhưng lãi mỏng, bán chậm.', bun: 'Bán chạy quanh trưa. Vốn đắt, công người phụ cao; tan chợ bún thừa phải đổ.' }[g]);
