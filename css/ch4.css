@@ -298,3 +298,21 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .card4 .tr .no{color:#6b5f52;font-style:normal}
 .card4 .tr button{font-family:var(--body);font-size:12px;font-weight:700;padding:5px 2px;border:1.5px solid rgba(29,25,21,.5);background:#d9ebc9;color:var(--ink);cursor:pointer;border-radius:3px}
 .card4 .tr button[disabled]{opacity:.45;cursor:default;background:#e6dccb}
+
+/* the board of the richest (xephang.js) */
+.card4.rank{max-width:460px}
+.card4.rank .rkme{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px}
+.card4.rank .rkme input{font-family:var(--body);font-size:16px;padding:6px 8px;border:2px solid var(--ink);background:#fbf6ea;min-width:0;width:12em}
+.card4.rank .rkme .btn{font-size:14px;padding:6px 14px}
+.card4.rank .rk{max-height:52vh;overflow-y:auto;border:2px solid rgba(29,25,21,.35)}
+.card4.rank table{width:100%;border-collapse:collapse;font-family:var(--body);font-size:13.5px}
+.card4.rank th{position:sticky;top:0;background:#e6dccb;padding:5px 4px;text-align:left}
+.card4.rank td{padding:5px 4px;border-top:1px solid rgba(29,25,21,.12)}
+.card4.rank td:first-child,.card4.rank th:first-child{width:2.4em;text-align:center}
+.card4.rank td:nth-child(3),.card4.rank th:nth-child(3),.card4.rank td:nth-child(4),.card4.rank th:nth-child(4){text-align:right;white-space:nowrap}
+.card4.rank tr.top1 td:first-child{color:#b8860b;font-weight:900}
+.card4.rank tr.top2 td:first-child{color:#7d7d7d;font-weight:900}
+.card4.rank tr.top3 td:first-child{color:#a0522d;font-weight:900}
+.card4.rank tr.me td{background:#d9ebc9;font-weight:700}
+.card4.rank tr.gap td{text-align:center;opacity:.6}
+.card4.rank td:nth-child(2),.card4.rank th:nth-child(2){text-align:left;overflow-wrap:anywhere}

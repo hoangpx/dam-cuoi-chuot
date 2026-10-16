@@ -222,7 +222,7 @@ function c4MarketStart() {
 }
 function c4Hide() { AU.ambient({}); C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
 // one sheet at a time: morning plan, stall, event, notebook, tally
-function c4Sheets(id) { if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop']) $('#' + s).hidden = s !== id; C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
+function c4Sheets(id) { if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 // a sheet opened by a tap on the market (a visitor, a stall) appears under the finger, and some phones (an Oppo) then send that tap's click
 // to the button now there, e.g. the refusal (a player): clicks inside a sheet in its first .45 s are dropped
 addEventListener('click', e => { if (S.mode === 'c4play' && C4.sheet && performance.now() - (C4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + C4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
@@ -883,7 +883,7 @@ function c4LedgerHtml(d) {
 }
 const c4Talk2Due = () => SAVE4.day === C4_BOOK_DAY && !SAVE4.talk2;
 function c4Talk2() { c4StoryStart(C4_TALK2, () => { SAVE4.talk2 = true; persist4(); c4MarketStart(); }); }
-function c4DayAdvance() { if (typeof w4BeforeDay === 'function') w4BeforeDay(); trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4(); }
+function c4DayAdvance() { if (typeof w4BeforeDay === 'function') w4BeforeDay(); trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4(); if (typeof c4RankSend === 'function') c4RankSend(); }
 function c4NewDay() {
   c4DayAdvance();
   if (c4Talk2Due()) { c4Sheets(null); c4Talk2(); return; }
@@ -1240,7 +1240,7 @@ function c4Key(e) {
 /* ---------- HUD, sheets, registration ---------- */
 {
   const hud = document.createElement('div'); hud.id = 'c4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
+  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag" id="c4Rank">Tổng sắp</button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'),
@@ -1254,6 +1254,7 @@ function c4Key(e) {
   $('#c4Invite').addEventListener('click', () => { if (c4CanInvite()) { AU.tap(); C4_PICK = { deal: 'half', sel: new Set() }; C4_WHO = null; c4OpenNotes('quen'); } });
   $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
   $('#c4Pho').addEventListener('click', () => { AU.tap(); p4Enter(); });
+  $('#c4Rank').addEventListener('click', () => { AU.tap(); c4RankOpen(); });   // the board of the richest (xephang.js)
   $('#c4dayPho').addEventListener('click', () => { AU.tap(); p4Enter(); });   // after closing, the town is still open (dongho.js)   // part 2 · Phố Huyện (js/ch4b/game.js)
   $('#c4Ups').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); c4OpenUps(); } });
   $('#c4Home').addEventListener('click', () => { AU.tap(); $('#c4homeB').innerHTML = c4HomeHtml(); c4Sheets('c4home'); });

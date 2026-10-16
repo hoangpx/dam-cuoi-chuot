@@ -233,7 +233,7 @@ function p4Key(e) {
 }
 
 // ---------- HUD and sheets ----------
-function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd', 'c4rank']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;
@@ -261,7 +261,7 @@ function p4HomeOpen() {
 }
 {
   const hud = document.createElement('div'); hud.id = 'p4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="p4Name">Phố Huyện</button><div class="mid"><div class="tag" id="p4Time"></div></div><div class="right"><div class="tag" id="p4Money"></div><div class="tag" id="p4Stock"></div></div><div class="bar"><button class="tag" id="p4Back">Về chợ quê</button><button class="tag buy" id="p4Buy" hidden>Mua nhà · 500 quan</button></div>';
+  hud.innerHTML = '<button class="tag" id="p4Name">Phố Huyện</button><div class="mid"><div class="tag" id="p4Time"></div></div><div class="right"><div class="tag" id="p4Money"></div><div class="tag" id="p4Stock"></div></div><div class="bar"><button class="tag" id="p4Back">Về chợ quê</button><button class="tag" id="p4Rank">Tổng sắp</button><button class="tag buy" id="p4Buy" hidden>Mua nhà · 500 quan</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet p4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('p4buy', '<h3>Lên Phố Huyện</h3><div id="p4buyB"></div><div class="row"><button class="btn" id="p4buyGo">Mua nhà</button><button class="btn alt" id="p4buyX">Thôi</button></div>'),
@@ -270,6 +270,7 @@ function p4HomeOpen() {
     sheet('p4day', '<h3 id="p4dayT"></h3><div id="p4dayB"></div><div class="row"><button class="btn" id="p4dayGo">Sang ngày mới</button></div>'));
   $('#p4Name').addEventListener('click', () => showChapters());
   $('#p4Buy').addEventListener('click', () => { AU.tap(); p4BuySheet(); });
+  $('#p4Rank').addEventListener('click', () => { AU.tap(); c4RankOpen(); });   // the board of the richest (js/ch4/xephang.js)
   $('#p4Back').addEventListener('click', () => { AU.tap(); p4Hide(); startC4(); });
   $('#p4buyX').addEventListener('click', () => p4Sheets(null));
   $('#p4buyGo').addEventListener('click', () => {
