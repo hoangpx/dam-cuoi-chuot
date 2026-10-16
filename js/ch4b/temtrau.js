@@ -123,7 +123,7 @@ function p4TemRender() {
     const x = L.slots[c.slot] + (1 - c.in) * 60 + (c.leaving ? c.leaving * 120 : 0), a = c.leaving ? Math.max(0, 1 - c.leaving * 1.25) : c.in;
     g.save(); g.globalAlpha = a; p4Folk(g, c, x, L.counterY + 50 * L.custS, L.custS); g.restore();
     if (!c.leaving) p4TemOrder(g, L, c, x);
-    if (c.say) { const B = c4Bubble(c.say.text, 0, 13, 150), sc = 1.25 * Math.max(.8, L.u); g.save(); g.globalAlpha = Math.min(1, (c.say.life - c.say.t) * 4); const bx = Math.max(B.w / 2 * sc + 6, Math.min(L.W - B.w / 2 * sc - 6, x)); dp(g, B, bx, p4TemOrderY(L) - (13 * L.u + 4) - 14, 0, sc, sc); g.restore(); }   // the bubble kept inside the screen   // what they say, over their order
+    if (c.say) { const B = c4Bubble(c.say.text, 0, 13, 150), sc = 1.25 * Math.max(.8, L.u); g.save(); g.globalAlpha = Math.min(1, (c.say.life - c.say.t) * 4); const bx = Math.max(B.w / 2 * sc + 6, Math.min(L.W - B.w / 2 * sc - 6, x)); dp(g, B, bx, p4TemOrderY(L) - (13 * L.u + 4) - 14, 0, sc, sc); g.restore(); }   // what they say, over their order, kept inside the screen
   }
   // the window's wooden frame and lanterns: we are inside the shop
   g.fillStyle = '#5b2f1f'; g.fillRect(0, 0, W, 16 * u); g.fillRect(0, 0, 14 * u, L.counterY); g.fillRect(W - 14 * u, 0, 14 * u, L.counterY);
@@ -139,36 +139,145 @@ function p4TemRender() {
   const left = Math.max(0, Math.ceil(P4_TEM_SHIFT - P4T.t));
   $('#p4temTime').textContent = `Còn ${left} giây`; $('#p4temMoney').textContent = `Thu ${c4Money(P4T.earned)} · trầu ${SAVE4B.stock}`;
 }
-// a little picture for each ingredient (used on the counter, on the trays and in the orders)
-function p4TemIcon(g, k, x, y, r) {
-  g.save(); g.translate(x, y); g.strokeStyle = INK; g.lineWidth = Math.max(1.2, r * .08); g.lineJoin = 'round';
-  if (k === 'la') { g.fillStyle = '#3f8a4a'; g.beginPath(); g.moveTo(0, -r); g.bezierCurveTo(r * 1.1, -r * .6, r * .8, r * .7, 0, r); g.bezierCurveTo(-r * .8, r * .7, -r * 1.1, -r * .6, 0, -r); g.fill(); g.stroke(); g.beginPath(); g.moveTo(0, -r * .8); g.lineTo(0, r * .8); g.stroke(); }
-  else if (k === 'voi') { g.fillStyle = '#efe8da'; g.beginPath(); g.ellipse(0, r * .2, r * .8, r * .5, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(-r * .2, 0, r * .25, 0, 6.283); g.fill(); }
-  else if (k === 'cau') { g.fillStyle = '#d8d26a'; g.beginPath(); g.ellipse(0, 0, r * .75, r * .55, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#e8c890'; g.beginPath(); g.ellipse(0, 0, r * .45, r * .3, 0, 0, 6.283); g.fill(); }
-  else if (k === 'caukho') { g.fillStyle = '#8a5a2a'; g.beginPath(); g.ellipse(0, 0, r * .7, r * .5, 0, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = '#c9a070'; g.lineWidth = 1; g.beginPath(); g.moveTo(-r * .4, 0); g.lineTo(r * .4, 0); g.moveTo(0, -r * .3); g.lineTo(0, r * .3); g.stroke(); }
-  else if (k === 'chay') { g.fillStyle = '#a3332a'; g.rotate(-.5); g.fillRect(-r * .8, -r * .14, r * 1.6, r * .28); g.strokeRect(-r * .8, -r * .14, r * 1.6, r * .28); }
-  else if (k === 'gap') { g.fillStyle = '#3f8a4a'; g.beginPath(); g.moveTo(-r * .8, r * .6); g.quadraticCurveTo(-r * .1, -r * .2, r * .2, -r * .9); g.quadraticCurveTo(r * .4, -r * .1, r * .85, r * .1); g.quadraticCurveTo(r * .2, r * .2, -r * .8, r * .6); g.fill(); g.stroke(); g.fillStyle = '#a3332a'; g.beginPath(); g.arc(r * .2, -r * .8, r * .14, 0, 6.283); g.fill(); }
-  else if (k === 'bo') { g.fillStyle = '#7a4a22'; g.fillRect(-r * .6, -r * .5, r * 1.2, r * 1.2); g.strokeRect(-r * .6, -r * .5, r * 1.2, r * 1.2); g.beginPath(); g.moveTo(-r * .75, -r * .6); g.lineTo(r * .75, -r * .6); g.stroke(); }
+// the ingredients drawn after the real things: a heart-shaped betel leaf with its veins, a Bát Tràng lime pot with its spatula,
+// slices of fresh areca (green rind, marbled flesh) and of dried areca, a curl of red chay bark, the folded phoenix wing pinned
+// with a sliver of bamboo, a bamboo basket for throwing a quid away. mode: 'pile' on the counter's dishes, 'on' on the tray.
+function p4TemLeaf(g, r, rot, dark) {
+  g.save(); g.rotate(rot || 0);
+  const gr = g.createLinearGradient(-r, -r, r, r); gr.addColorStop(0, dark ? '#4f9a48' : '#6cb85c'); gr.addColorStop(.55, dark ? '#2c6e34' : '#3a8a40'); gr.addColorStop(1, '#1d5428');
+  g.fillStyle = gr; g.strokeStyle = '#15361b'; g.lineWidth = Math.max(1, r * .06);
+  g.beginPath(); g.moveTo(0, -r * .68);
+  g.bezierCurveTo(r * .38, -r * 1.06, r * 1.02, -r * .86, r * .92, -r * .2); g.bezierCurveTo(r * .82, r * .38, r * .32, r * .72, 0, r);
+  g.bezierCurveTo(-r * .32, r * .72, -r * .82, r * .38, -r * .92, -r * .2); g.bezierCurveTo(-r * 1.02, -r * .86, -r * .38, -r * 1.06, 0, -r * .68);
+  g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(190,230,150,.75)'; g.lineWidth = Math.max(.8, r * .045); g.beginPath(); g.moveTo(0, -r * .66); g.lineTo(0, r * .9);
+  for (const k of [-1, 1]) { g.moveTo(0, -r * .6); g.quadraticCurveTo(k * r * .55, -r * .2, k * r * .42, r * .5); g.moveTo(0, -r * .62); g.quadraticCurveTo(k * r * .72, -r * .55, k * r * .8, -r * .05); g.moveTo(0, -r * .1); g.quadraticCurveTo(k * r * .3, r * .1, k * r * .26, r * .62); }
+  g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(-r * .38, -r * .42, r * .26, r * .12, -.6, 0, 6.283); g.fill();
+  g.strokeStyle = '#4d6a2a'; g.lineWidth = Math.max(1.2, r * .08); g.lineCap = 'round'; g.beginPath(); g.moveTo(0, -r * .7); g.quadraticCurveTo(r * .04, -r * .95, r * .18, -r * 1.08); g.stroke();
   g.restore();
 }
-function p4TemIng(g, L, ing, i) {
-  const [x, y] = L.ing[i], r = L.ingR;
-  g.fillStyle = ing.k === 'gap' ? '#e2b43c' : ing.k === 'bo' ? '#b9b0a4' : '#efe2c0'; g.strokeStyle = INK; g.lineWidth = 2;
-  g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); g.stroke();
-  p4TemIcon(g, ing.k, x, y - r * .1, r * .55);
-  g.fillStyle = '#f2ecde'; g.font = `700 ${Math.max(12, r * .34)}px 'Be Vietnam Pro', sans-serif`; g.textAlign = 'center'; g.fillText(ing.name, x, y + r + 13 * L.u);
+function p4TemSlice(g, r, rot) {   // a slice of fresh areca: green rind, cream flesh marbled red-brown
+  g.save(); g.rotate(rot || 0); g.lineWidth = Math.max(1, r * .07); g.strokeStyle = INK;
+  let gr = g.createLinearGradient(0, -r * .6, 0, r * .6); gr.addColorStop(0, '#a6cc58'); gr.addColorStop(1, '#5d8a28');
+  g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, r * .82, r * .6, 0, 0, 6.283); g.fill(); g.stroke();
+  gr = g.createRadialGradient(0, 0, r * .05, 0, 0, r * .62); gr.addColorStop(0, '#d9a07a'); gr.addColorStop(.35, '#f3e4c4'); gr.addColorStop(1, '#e9d3a0');
+  g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, r * .62, r * .43, 0, 0, 6.283); g.fill();
+  g.strokeStyle = 'rgba(150,80,45,.75)'; g.lineWidth = Math.max(.7, r * .04); g.beginPath();
+  for (let i = 0; i < 9; i++) { const t = i / 9 * 6.283, c = Math.cos(t), sn = Math.sin(t); g.moveTo(c * r * .12, sn * r * .08); g.quadraticCurveTo(c * r * .36 + sn * r * .08, sn * r * .26, c * r * .55, sn * r * .38); }
+  g.stroke(); g.restore();
 }
-function p4TemBoard(g, L, b, i) {
-  const [x0, y] = L.boards[i], sh = P4T.shake && P4T.shake.i === i ? Math.sin(P4T.shake.t * 60) * 5 : 0, x = x0 + sh, r = L.boardR;
-  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 4, y + 6, r, r * .55, 0, 0, 6.283); g.fill();
-  g.fillStyle = '#c9a45a'; g.strokeStyle = P4T.sel === i ? '#f2c640' : INK; g.lineWidth = P4T.sel === i ? 4 : 2; g.beginPath(); g.ellipse(x, y, r, r * .55, 0, 0, 6.283); g.fill(); g.stroke();
-  g.strokeStyle = INK; g.lineWidth = 1; g.beginPath(); g.ellipse(x, y, r * .8, r * .42, 0, 0, 6.283); g.stroke();
-  if (!b.items.length) return;
-  if (b.fold) { p4TemIcon(g, 'gap', x, y - r * .1, r * .55); }
-  else {
-    p4TemIcon(g, 'la', x, y - r * .05, r * .5);
-    b.items.filter(k => k !== 'la').forEach((k, j) => p4TemIcon(g, k, x + (j - 1) * r * .28, y - r * .05 + (j % 2) * r * .1, r * .28));
+function p4TemDry(g, r, rot) {   // a slice of dried areca: brown, puckered, a net of pale grain
+  g.save(); g.rotate(rot || 0); g.lineWidth = Math.max(1, r * .07); g.strokeStyle = INK;
+  const gr = g.createRadialGradient(-r * .2, -r * .2, r * .1, 0, 0, r * .8); gr.addColorStop(0, '#b88048'); gr.addColorStop(1, '#6e3f1c');
+  g.fillStyle = gr; g.beginPath();
+  for (let i = 0; i <= 14; i++) { const t = i / 14 * 6.283, rr = r * (.66 + (i % 2 ? .05 : -.03)); i ? g.lineTo(Math.cos(t) * rr, Math.sin(t) * rr * .82) : g.moveTo(Math.cos(t) * rr, Math.sin(t) * rr * .82); }
+  g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(230,195,140,.7)'; g.lineWidth = Math.max(.7, r * .04); g.beginPath();
+  for (let i = 0; i < 6; i++) { const t = i / 6 * 6.283 + .3; g.moveTo(0, 0); g.quadraticCurveTo(Math.cos(t + .4) * r * .3, Math.sin(t + .4) * r * .25, Math.cos(t) * r * .55, Math.sin(t) * r * .45); }
+  g.stroke(); g.fillStyle = '#4a2610'; g.beginPath(); g.arc(0, 0, r * .09, 0, 6.283); g.fill(); g.restore();
+}
+function p4TemBark(g, r, rot) {   // a curl of red chay bark, rough at the edges, fibres along it
+  g.save(); g.rotate(rot || 0); g.lineWidth = Math.max(1, r * .07); g.strokeStyle = INK;
+  const gr = g.createLinearGradient(0, -r * .2, 0, r * .2); gr.addColorStop(0, '#c4503c'); gr.addColorStop(1, '#7a2016');
+  g.fillStyle = gr; g.beginPath(); g.moveTo(-r * .9, -r * .1);
+  for (let i = 1; i <= 8; i++) g.lineTo(-r * .9 + i * r * .22, -r * .16 + (i % 2 ? -1 : 1) * r * .04);
+  g.quadraticCurveTo(r * 1.05, 0, r * .86, r * .16);
+  for (let i = 8; i >= 0; i--) g.lineTo(-r * .9 + i * r * .2, r * .17 + (i % 2 ? 1 : -1) * r * .035);
+  g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(240,170,140,.55)'; g.lineWidth = Math.max(.6, r * .035); g.beginPath();
+  for (const yy of [-.07, .03, .1]) { g.moveTo(-r * .8, yy * r); g.lineTo(r * .7, yy * r + r * .02); } g.stroke();
+  g.fillStyle = '#5a140e'; g.beginPath(); g.ellipse(r * .84, r * .02, r * .1, r * .15, 0, 0, 6.283); g.fill(); g.restore();
+}
+function p4TemPot(g, r) {   // the Bát Tràng lime pot: a round glazed belly with blue bands, the white lime at its mouth, the spatula
+  g.lineWidth = Math.max(1, r * .07); g.strokeStyle = INK;
+  g.strokeStyle = '#6b4220'; g.lineCap = 'round'; g.lineWidth = Math.max(1.4, r * .09); g.beginPath(); g.moveTo(r * .05, -r * .35); g.lineTo(r * .55, -r * 1.02); g.stroke();
+  g.strokeStyle = INK; g.lineWidth = Math.max(1, r * .07);
+  let gr = g.createRadialGradient(-r * .25, 0, r * .1, 0, r * .25, r * .8); gr.addColorStop(0, '#fbf7ec'); gr.addColorStop(1, '#c9bf9f');
+  g.fillStyle = gr; g.beginPath(); g.ellipse(0, r * .28, r * .74, r * .6, 0, 0, 6.283); g.fill(); g.stroke();
+  g.strokeStyle = '#2f5a9a'; g.lineWidth = Math.max(.8, r * .05); g.beginPath(); g.ellipse(0, r * .28, r * .74, r * .14, 0, 0, 3.1416); g.stroke();
+  g.beginPath(); for (let i = -2; i <= 2; i++) { const x = i * r * .26; g.moveTo(x - r * .08, r * .52); g.quadraticCurveTo(x, r * .4, x + r * .08, r * .52); } g.stroke();
+  g.strokeStyle = INK; g.lineWidth = Math.max(1, r * .07);
+  g.fillStyle = '#d8ccae'; g.fillRect(-r * .24, -r * .38, r * .48, r * .2); g.strokeRect(-r * .24, -r * .38, r * .48, r * .2);
+  gr = g.createRadialGradient(-r * .05, -r * .5, r * .02, 0, -r * .42, r * .36); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#e2ddd2');
+  g.fillStyle = gr; g.beginPath(); g.moveTo(-r * .3, -r * .36); g.quadraticCurveTo(-r * .32, -r * .62, -r * .1, -r * .6); g.quadraticCurveTo(0, -r * .74, r * .14, -r * .6); g.quadraticCurveTo(r * .34, -r * .6, r * .3, -r * .36); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.ellipse(-r * .38, r * .12, r * .12, r * .22, -.3, 0, 6.283); g.fill();
+}
+function p4TemSmear(g, r) {   // a dab of lime spread on the leaf
+  g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(r * .04, r * .06, r * .5, r * .3, -.2, 0, 6.283); g.fill();
+  g.fillStyle = '#f7f4ec'; g.strokeStyle = 'rgba(40,30,20,.45)'; g.lineWidth = Math.max(.8, r * .05); g.beginPath();
+  for (let i = 0; i <= 12; i++) { const t = i / 12 * 6.283, rr = r * (.42 + (i % 3 ? .06 : -.04)); i ? g.lineTo(Math.cos(t) * rr * 1.15, Math.sin(t) * rr * .7) : g.moveTo(Math.cos(t) * rr * 1.15, Math.sin(t) * rr * .7); }
+  g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(200,195,185,.8)'; g.beginPath(); g.moveTo(-r * .3, 0); g.quadraticCurveTo(0, -r * .1, r * .3, r * .02); g.stroke();
+}
+function p4TemWing(g, r) {   // the phoenix wing: the leaf folded into fanned feathers, pinned with a sliver of bamboo
+  const lobes = [[-1.25, .82], [-.9, .98], [-.55, 1.08], [-.2, 1], [.15, .82]];
+  for (const [a, k] of lobes) {
+    g.save(); g.translate(-r * .45, r * .55); g.rotate(a);
+    const L = r * 1.25 * k, gr = g.createLinearGradient(0, 0, L, 0); gr.addColorStop(0, '#2d7436'); gr.addColorStop(1, '#6cb85c');
+    g.fillStyle = gr; g.strokeStyle = '#15361b'; g.lineWidth = Math.max(1, r * .06);
+    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(L * .4, -r * .5, L, -r * .06); g.quadraticCurveTo(L * .6, r * .3, 0, 0); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(190,230,150,.7)'; g.lineWidth = Math.max(.7, r * .04); g.beginPath(); g.moveTo(r * .1, -r * .02); g.quadraticCurveTo(L * .5, -r * .14, L * .92, -r * .06); g.stroke();
+    g.restore();
   }
+  g.fillStyle = '#c4503c'; g.strokeStyle = INK; g.lineWidth = Math.max(1, r * .06); g.beginPath(); g.ellipse(-r * .4, r * .5, r * .22, r * .16, -.5, 0, 6.283); g.fill(); g.stroke();
+  g.strokeStyle = '#d9b26a'; g.lineCap = 'round'; g.lineWidth = Math.max(1.3, r * .08); g.beginPath(); g.moveTo(-r * .78, r * .82); g.lineTo(-r * .05, r * .18); g.stroke();
+}
+function p4TemBasket(g, r) {   // a bamboo basket to throw a quid away
+  g.lineWidth = Math.max(1, r * .07); g.strokeStyle = INK;
+  const gr = g.createLinearGradient(0, -r * .5, 0, r * .7); gr.addColorStop(0, '#d8b678'); gr.addColorStop(1, '#9a7238');
+  g.fillStyle = gr; g.beginPath(); g.moveTo(-r * .72, -r * .45); g.lineTo(r * .72, -r * .45); g.lineTo(r * .5, r * .72); g.lineTo(-r * .5, r * .72); g.closePath(); g.fill(); g.stroke();
+  g.save(); g.clip(); g.strokeStyle = 'rgba(90,60,25,.6)'; g.lineWidth = Math.max(.7, r * .05); g.beginPath();
+  for (let y = -r * .3; y < r * .72; y += r * .2) { g.moveTo(-r, y); g.lineTo(r, y); }
+  for (let x = -r * .6; x <= r * .6; x += r * .24) { g.moveTo(x, -r * .45); g.lineTo(x * .72, r * .72); }
+  g.stroke(); g.restore();
+  g.fillStyle = '#b8935a'; g.beginPath(); g.ellipse(0, -r * .45, r * .78, r * .14, 0, 0, 6.283); g.fill(); g.stroke();
+  g.fillStyle = '#4a2f16'; g.beginPath(); g.ellipse(0, -r * .45, r * .62, r * .08, 0, 0, 6.283); g.fill();
+}
+function p4TemIcon(g, k, x, y, r, mode) {
+  g.save(); g.translate(x, y); g.lineJoin = 'round';
+  const pile = mode === 'pile';
+  if (k === 'la') { if (pile) { p4TemLeaf(g, r * .95, -.45, true); g.translate(r * .12, r * .05); } p4TemLeaf(g, r, pile ? .2 : 0); }
+  else if (k === 'voi') { if (mode === 'on') p4TemSmear(g, r); else p4TemPot(g, r); }
+  else if (k === 'cau') { if (pile) { p4TemSlice(g, r * .8, -.5); g.translate(r * .3, r * .3); p4TemSlice(g, r * .8, .3); g.translate(-r * .55, r * .05); p4TemSlice(g, r * .8, .1); } else p4TemSlice(g, r, -.2); }
+  else if (k === 'caukho') { if (pile) { g.translate(-r * .25, -r * .15); p4TemDry(g, r * .8, .2); g.translate(r * .5, r * .1); p4TemDry(g, r * .8, 1.1); g.translate(-r * .25, r * .35); p4TemDry(g, r * .8, 2); } else p4TemDry(g, r, 0); }
+  else if (k === 'chay') { if (pile) { g.translate(0, -r * .25); p4TemBark(g, r, -.35); g.translate(0, r * .5); p4TemBark(g, r * .9, -.1); } else p4TemBark(g, r, -.45); }
+  else if (k === 'gap') p4TemWing(g, r);
+  else if (k === 'bo') p4TemBasket(g, r);
+  g.restore();
+}
+function p4TemIng(g, L, ing, i) {   // each ingredient in a glazed dish on the counter (the fold and the basket on their own mats)
+  const [x, y] = L.ing[i], r = L.ingR;
+  g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(x + 3, y + 5, r, r * .96, 0, 0, 6.283); g.fill();
+  g.strokeStyle = INK; g.lineWidth = 2;
+  if (ing.k === 'gap' || ing.k === 'bo') { g.fillStyle = ing.k === 'gap' ? '#e2b43c' : '#b9b0a4'; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = 'rgba(42,34,29,.35)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, r * .84, 0, 6.283); g.stroke(); }
+  else {
+    let gr = g.createRadialGradient(x - r * .3, y - r * .3, r * .1, x, y, r); gr.addColorStop(0, '#fbf8ef'); gr.addColorStop(1, '#d7cfbd');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); g.stroke();
+    g.strokeStyle = '#2f5a9a'; g.lineWidth = Math.max(1.2, r * .05); g.beginPath(); g.arc(x, y, r * .86, 0, 6.283); g.stroke();
+    g.fillStyle = '#2f5a9a'; for (let j = 0; j < 12; j++) { const t = j / 12 * 6.283; g.beginPath(); g.arc(x + Math.cos(t) * r * .93, y + Math.sin(t) * r * .93, r * .035, 0, 6.283); g.fill(); }
+    gr = g.createRadialGradient(x, y + r * .1, r * .1, x, y, r * .78); gr.addColorStop(0, '#efe8d8'); gr.addColorStop(1, '#ddd3bd');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r * .78, 0, 6.283); g.fill();
+  }
+  p4TemIcon(g, ing.k, x, y - r * .04, r * .6, 'pile');
+  g.font = `700 ${Math.max(12, r * .34)}px 'Be Vietnam Pro', sans-serif`; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = 'rgba(42,26,14,.8)'; g.strokeText(ing.name, x, y + r + 13 * L.u); g.fillStyle = '#f2ecde'; g.fillText(ing.name, x, y + r + 13 * L.u);
+}
+function p4TemBoard(g, L, b, i) {   // a red lacquered betel tray with a gold rim; the quid built on it
+  const [x0, y] = L.boards[i], sh = P4T.shake && P4T.shake.i === i ? Math.sin(P4T.shake.t * 60) * 5 : 0, x = x0 + sh, r = L.boardR, sel = P4T.sel === i;
+  g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x + 4, y + 8, r, r * .55, 0, 0, 6.283); g.fill();
+  g.fillStyle = '#5a1410'; g.beginPath(); g.ellipse(x, y + r * .07, r, r * .55, 0, 0, 6.283); g.fill();
+  let gr = g.createLinearGradient(x, y - r * .55, x, y + r * .55); gr.addColorStop(0, '#c23b2e'); gr.addColorStop(1, '#7e1c16');
+  g.fillStyle = gr; g.strokeStyle = sel ? '#f7d548' : INK; g.lineWidth = sel ? 4 : 2; g.beginPath(); g.ellipse(x, y, r, r * .55, 0, 0, 6.283); g.fill(); g.stroke();
+  g.strokeStyle = '#e0b04a'; g.lineWidth = Math.max(1.5, r * .03); g.beginPath(); g.ellipse(x, y, r * .9, r * .49, 0, 0, 6.283); g.stroke();
+  gr = g.createRadialGradient(x - r * .2, y - r * .15, r * .05, x, y, r * .8); gr.addColorStop(0, '#9e2a20'); gr.addColorStop(1, '#6a1611');
+  g.fillStyle = gr; g.beginPath(); g.ellipse(x, y + r * .02, r * .8, r * .42, 0, 0, 6.283); g.fill();
+  g.strokeStyle = 'rgba(224,176,74,.55)'; g.lineWidth = 1; g.beginPath(); g.ellipse(x, y + r * .02, r * .72, r * .36, 0, 0, 6.283); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.14)'; g.beginPath(); g.ellipse(x - r * .45, y - r * .3, r * .3, r * .06, -.15, 0, 6.283); g.fill();
+  if (!b.items.length) return;
+  if (b.fold) { p4TemIcon(g, 'gap', x + r * .05, y - r * .1, r * .62); return; }
+  g.save(); g.translate(x, y - r * .02); g.scale(1, .8); p4TemLeaf(g, r * .66, 1.35); g.restore();
+  const at = { voi: [-.12, -.08, .38], cau: [.26, .0, .34], caukho: [.26, .0, .34], chay: [-.1, .14, .4] };
+  for (const k of ['voi', 'cau', 'caukho', 'chay']) if (b.items.includes(k)) { const [dx, dy, s] = at[k]; p4TemIcon(g, k, x + dx * r, y + dy * r, s * r, 'on'); }
 }
 // the order bubble over a customer: the pictures of what they want, and their patience
 function p4TemOrder(g, L, c, x) {
