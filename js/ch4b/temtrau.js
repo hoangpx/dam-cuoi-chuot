@@ -24,7 +24,7 @@ function p4TemStart() {
   if (!SAVE4B.house) return;
   if (SAVE4B.stock <= 0) { toast('Hết trầu trong nhà. Nhập trầu trước đã.', 2.6); return; }
   p4Sheets(null); $('#p4hud').hidden = true; $('#p4temHud').hidden = false;
-  Object.assign(P4T, { on: true, out: 0, fetch: 0, early: false, t: 0, cust: [], boards: [{ items: [], fold: false }, { items: [], fold: false }], sel: 0, next: 1.2, served: 0, wrong: 0, missed: 0, earned: 0, fx: [], shake: null });
+  Object.assign(P4T, { drag: null, on: true, out: 0, fetch: 0, early: false, t: 0, cust: [], boards: [{ items: [], fold: false }, { items: [], fold: false }], sel: 0, next: 1.2, served: 0, wrong: 0, missed: 0, earned: 0, fx: [], shake: null });
 }
 function p4TemStop() {
   if (P4T.fetch > 0) { SAVE4B.stock += P4_TEM_MORE.n; P4T.fetch = 0; }   // already paid for: it reaches the house anyway
@@ -79,17 +79,30 @@ function p4TemUpdate(dt) {
   if (P4T.shake) { P4T.shake.t += dt; if (P4T.shake.t > .35) P4T.shake = null; }
 }
 // a tap: an ingredient onto the chosen tray, a tray to choose it, a customer to hand them the chosen tray
-function p4TemTap(px, py) {
-  const L = p4TemLay();
+// (owner: "chuột và control drag cái đĩa cho khách"): press on a tray picks it up (and chooses it for the ingredients), it follows the
+// mouse / the finger, and let go over a customer it is handed to them; let go anywhere else it goes back. Ingredients are tapped.
+function p4TemCustAt(L, px, py) {
+  for (const c of P4T.cust) {
+    if (c.leaving) continue;
+    const x = L.slots[c.slot], top = p4TemOrderY(L) - 40; if (Math.abs(px - x) > 70 * L.custS + 24 || py < top || py > L.counterY + 30 * L.u) continue;
+    return c;
+  }
+  return null;
+}
+function p4TemDown(px, py) {
+  const L = p4TemLay(); P4T.drag = null;
+  for (let i = 0; i < 2; i++) { const [x, y] = L.boards[i]; if (Math.hypot(px - x, (py - y) * 1.4) < L.boardR * 1.15) { P4T.sel = i; P4T.drag = { i, x0: px, y0: py, x: px, y: py, moved: false }; return; } }
+}
+function p4TemMove(px, py) {
+  const D = P4T.drag; if (!D) return;
+  D.x = px; D.y = py; if (Math.hypot(px - D.x0, py - D.y0) > 8) D.moved = true;
+}
+function p4TemUp(px, py) {
+  const D = P4T.drag, L = p4TemLay(); P4T.drag = null;
+  if (D) { if (D.moved) { const c = p4TemCustAt(L, px, py); if (c) { P4T.sel = D.i; p4TemGive(c); } } return; }
   for (let i = 0; i < P4_TEM_ING.length; i++) {
     const [x, y] = L.ing[i]; if (Math.hypot(px - x, py - y) > L.ingR * 1.1) continue;
     p4TemAdd(P4_TEM_ING[i].k); return;
-  }
-  for (let i = 0; i < 2; i++) { const [x, y] = L.boards[i]; if (Math.hypot(px - x, py - y) < L.boardR * 1.15) { P4T.sel = i; return; } }
-  for (const c of P4T.cust) {
-    if (c.leaving) continue;
-    const x = L.slots[c.slot], top = p4TemOrderY(L) - 30; if (Math.abs(px - x) > 70 * L.custS + 20 || py < top || py > L.counterY + 10) continue;
-    p4TemGive(c); return;
   }
 }
 // the HUD button while out of betel / the betel on its way
@@ -139,19 +152,18 @@ function p4TemRender() {
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
   // the view out: the sky, the far bank of the Thu Bồn with its houses and trees, the river with boats going by
   let gr = g.createLinearGradient(0, 0, 0, L.bankY); gr.addColorStop(0, '#cfe0dc'); gr.addColorStop(1, '#efe6cf'); g.fillStyle = gr; g.fillRect(0, 0, W, L.bankY + 2);
-  g.fillStyle = '#9fb59a'; for (let i = 0; i < 9; i++) { const x = ((i * 157 + 40) % (W + 120)) - 60, r = 30 * u + (i % 3) * 10 * u; g.beginPath(); g.arc(x, L.bankY - r * .3, r, Math.PI, 0); g.fill(); }
-  for (let i = 0; i < 7; i++) { const x = ((i * 211 + 90) % (W + 100)) - 50, w = 46 * u, h = 26 * u; g.fillStyle = i % 2 ? '#e8d39a' : '#d9b46a'; g.fillRect(x, L.bankY - h, w, h); g.fillStyle = '#7a3a24'; g.beginPath(); g.moveTo(x - 6 * u, L.bankY - h); g.lineTo(x + w / 2, L.bankY - h - 16 * u); g.lineTo(x + w + 6 * u, L.bankY - h); g.fill(); }
+  p4TemBank(g, L);
   g.fillStyle = '#6f9a8c'; g.fillRect(0, L.bankY, W, L.counterY - L.bankY);
+  g.fillStyle = 'rgba(242,236,222,.18)'; g.fillRect(0, L.bankY, W, 4 * u);
   g.strokeStyle = 'rgba(242,236,222,.55)'; g.lineWidth = 1.5 * u; g.beginPath();
   for (let r = 0; r < 6; r++) { const y = L.waterY + r * (L.counterY - L.waterY) / 6, off = (P4.t * (8 + r * 4)) % 70; for (let x = -70 + off; x < W; x += 70) { g.moveTo(x, y); g.quadraticCurveTo(x + 10 * u, y - 3 * u, x + 20 * u, y); } } g.stroke();
-  for (let i = 0; i < 2; i++) { const bx = ((P4.t * (14 + i * 9) + i * 400) % (W + 300)) - 150, by = L.waterY + (i ? 30 : 8) * u; g.fillStyle = i ? '#a3332a' : '#2f6a4c'; g.strokeStyle = INK; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(bx - 60 * u, by); g.quadraticCurveTo(bx, by + 18 * u, bx + 60 * u, by); g.lineTo(bx + 50 * u, by + 6 * u); g.quadraticCurveTo(bx, by + 20 * u, bx - 50 * u, by + 6 * u); g.closePath(); g.fill(); g.stroke();
-    g.fillStyle = '#c9a45a'; g.beginPath(); g.ellipse(bx, by - 2 * u, 24 * u, 12 * u, 0, Math.PI, 0); g.fill(); g.stroke(); }
+  for (let i = 0; i < 3; i++) { const sp = [11, -16, 8][i], span = W + 420, bx = (((P4.t * sp + i * 523) % span) + span) % span - 210, by = L.waterY + [6, 34, 64][i] * u;
+    if (by < L.counterY - 10 * u) p4TemBoat(g, bx, by, (.55 + i * .12) * Math.max(.7, u), Math.sign(sp), i); }
   // the customers outside the counter (only their upper half shows over it), their orders and patience
   for (const c of P4T.cust) {
     const x = L.slots[c.slot] + (1 - c.in) * 60 + (c.leaving ? c.leaving * 120 : 0), a = c.leaving ? Math.max(0, 1 - c.leaving * 1.25) : c.in;
     g.save(); g.globalAlpha = a; p4Folk(g, c, x, L.counterY + 50 * L.custS, L.custS); g.restore();
-    if (!c.leaving) p4TemOrder(g, L, c, x);
+    if (!c.leaving) p4TemOrder(g, L, c, x, P4T.drag && P4T.drag.moved && p4TemCustAt(L, P4T.drag.x, P4T.drag.y) === c);
     if (c.say) { const B = c4Bubble(c.say.text, 0, 13, 150), sc = 1.25 * Math.max(.8, L.u); g.save(); g.globalAlpha = Math.min(1, (c.say.life - c.say.t) * 4); const bx = Math.max(B.w / 2 * sc + 6, Math.min(L.W - B.w / 2 * sc - 6, x)); dp(g, B, bx, p4TemOrderY(L) - (13 * L.u + 4) - 14, 0, sc, sc); g.restore(); }   // what they say, over their order, kept inside the screen
   }
   // the window's wooden frame and lanterns: we are inside the shop
@@ -161,8 +173,9 @@ function p4TemRender() {
   gr = g.createLinearGradient(0, L.counterY, 0, H); gr.addColorStop(0, '#8a5a2a'); gr.addColorStop(.08, '#6b3f1f'); gr.addColorStop(1, '#4a2a16'); g.fillStyle = gr; g.fillRect(0, L.counterY, W, H - L.counterY);
   g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.moveTo(0, L.counterY); g.lineTo(W, L.counterY); g.stroke();
   g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 1; g.beginPath(); for (let y = L.counterY + 30 * u; y < H; y += 26 * u) { g.moveTo(0, y); g.lineTo(W, y); } g.stroke();
-  P4T.boards.forEach((b, i) => p4TemBoard(g, L, b, i));
+  P4T.boards.forEach((b, i) => { if (!(P4T.drag && P4T.drag.moved && P4T.drag.i === i)) p4TemBoard(g, L, b, i); });
   P4_TEM_ING.forEach((ing, i) => p4TemIng(g, L, ing, i));
+  if (P4T.drag && P4T.drag.moved) p4TemBoard(g, L, P4T.boards[P4T.drag.i], P4T.drag.i);
   for (const f of P4T.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = `900 ${26 * u}px "Playfair Display", serif`; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = f.ok ? '#2f6a4c' : '#a3332a'; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
   // the shift's clock and takings
   const left = Math.max(0, Math.ceil(P4_TEM_SHIFT - P4T.t));
@@ -292,8 +305,10 @@ function p4TemIng(g, L, ing, i) {   // each ingredient in a glazed dish on the c
   g.font = `700 ${Math.max(12, r * .34)}px 'Be Vietnam Pro', sans-serif`; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = 'rgba(42,26,14,.8)'; g.strokeText(ing.name, x, y + r + 13 * L.u); g.fillStyle = '#f2ecde'; g.fillText(ing.name, x, y + r + 13 * L.u);
 }
 function p4TemBoard(g, L, b, i) {   // a red lacquered betel tray with a gold rim; the quid built on it
-  const [x0, y] = L.boards[i], sh = P4T.shake && P4T.shake.i === i ? Math.sin(P4T.shake.t * 60) * 5 : 0, x = x0 + sh, r = L.boardR, sel = P4T.sel === i;
-  g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x + 4, y + 8, r, r * .55, 0, 0, 6.283); g.fill();
+  const D = P4T.drag && P4T.drag.moved && P4T.drag.i === i ? P4T.drag : null;
+  if (D) { const [hx, hy] = L.boards[i]; g.strokeStyle = 'rgba(242,236,222,.35)'; g.setLineDash([6, 6]); g.lineWidth = 2; g.beginPath(); g.ellipse(hx, hy, L.boardR, L.boardR * .55, 0, 0, 6.283); g.stroke(); g.setLineDash([]); }
+  const sh = P4T.shake && P4T.shake.i === i ? Math.sin(P4T.shake.t * 60) * 5 : 0, x = (D ? D.x : L.boards[i][0]) + sh, y = D ? D.y : L.boards[i][1], r = L.boardR * (D ? .78 : 1), sel = P4T.sel === i;
+  g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x + (D ? 14 : 4), y + (D ? 26 : 8), r, r * .55, 0, 0, 6.283); g.fill();
   g.fillStyle = '#5a1410'; g.beginPath(); g.ellipse(x, y + r * .07, r, r * .55, 0, 0, 6.283); g.fill();
   let gr = g.createLinearGradient(x, y - r * .55, x, y + r * .55); gr.addColorStop(0, '#c23b2e'); gr.addColorStop(1, '#7e1c16');
   g.fillStyle = gr; g.strokeStyle = sel ? '#f7d548' : INK; g.lineWidth = sel ? 4 : 2; g.beginPath(); g.ellipse(x, y, r, r * .55, 0, 0, 6.283); g.fill(); g.stroke();
@@ -308,10 +323,49 @@ function p4TemBoard(g, L, b, i) {   // a red lacquered betel tray with a gold ri
   const at = { voi: [-.12, -.08, .38], cau: [.26, .0, .34], caukho: [.26, .0, .34], chay: [-.1, .14, .4] };
   for (const k of ['voi', 'cau', 'caukho', 'chay']) if (b.items.includes(k)) { const [dx, dy, s] = at[k]; p4TemIcon(g, k, x + dx * r, y + dy * r, s * r, 'on'); }
 }
+// the far bank of the Thu Bồn seen from the shop: the town's own houses (p4TownArt, yin-yang tiled roofs), trees between them, a
+// pale haze for the distance; made once per screen size into a canvas (the houses are many parts)
+function p4TemBank(g, L) {
+  const key = L.W + 'x' + L.H + 'x' + DPR;
+  if (!P4T.bank || P4T.bankKey !== key) {
+    const c = document.createElement('canvas'); c.width = Math.ceil(L.W * DPR); c.height = Math.ceil(L.bankY * DPR) + 2;
+    const b = c.getContext('2d'); b.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const hH = Math.max(28, (L.bankY - 18 * L.u) * .62), s = hH / 345, r = mulberry(7);   // the town houses are ~345 tall with the roof
+    b.globalAlpha = .6; for (let x = -40; x < L.W + 60; x += 120 * s + 24) dp(b, WP.bigTree, x + r() * 30, L.bankY + 4, 0, s * .8, s * (.75 + r() * .3));
+    b.globalAlpha = .9;
+    for (let x = 20 * s, v = 0; x < L.W + 120 * s; v++) { const V = P4_TOWN_V[v % P4_TOWN_V.length], w = V.w * s; x += w; dp(b, p4TownArt(v % P4_TOWN_V.length), x, L.bankY + 2, 0, s, s); x += w + (v % 2 ? 150 * s : 40 * s); }
+    b.globalAlpha = 1; b.fillStyle = 'rgba(207,224,220,.35)'; b.fillRect(0, 0, L.W, L.bankY + 2);
+    P4T.bank = c; P4T.bankKey = key;
+  }
+  g.drawImage(P4T.bank, 0, 0, L.W, P4T.bank.height / DPR);
+}
+// a sampan on the river behind the customers, drawn like the street's boats: a deep hull rising to bow and stern, a painted band, the
+// eye on the bow, a woven canopy on some, the boatman at the stern leaning on his pole
+const P4_TEM_BOATS = [{ hull: '#2f6a4c', mui: true, sort: 3 }, { hull: '#a3332a', mui: false, sort: 7 }, { hull: '#2f5f8f', mui: true, sort: 5 }];
+function p4TemBoat(g, x, y, s, d, i) {
+  const B = P4_TEM_BOATS[i], M = B.M || (B.M = c4MouseRig(B.sort)), L2 = 78, deck = -16, bob = Math.sin(P4.t * 1.4 + i) * 1.5;
+  const gun = xx => deck - Math.pow(Math.abs(xx) / L2, 3) * 16;
+  g.save(); g.translate(x, y + bob * s); g.scale(s, s); g.strokeStyle = INK; g.lineJoin = 'round';
+  g.fillStyle = 'rgba(30,60,55,.25)'; g.beginPath(); g.ellipse(0, 16, L2 * .95, 7, 0, 0, 6.283); g.fill();
+  g.save(); g.beginPath(); g.moveTo(-L2, gun(-L2) - 300); g.lineTo(L2, gun(L2) - 300); for (let xx = L2; xx >= -L2; xx -= 6) g.lineTo(xx, gun(xx) + 2); g.closePath(); g.clip();
+  p4Mouse(g, M, -d * 50, d, P4.t * 2, false, -.6 - Math.sin(P4.t * 1.2 + i) * .3, null, .52, deck + 12, i + 9);
+  g.restore();
+  g.lineWidth = 2.4; g.strokeStyle = '#4a2f16'; g.lineCap = 'round'; g.beginPath(); g.moveTo(-d * 40, deck - 70); g.lineTo(-d * 74, 30); g.stroke(); g.strokeStyle = INK; g.lineCap = 'butt';
+  if (B.mui) { g.fillStyle = '#b57a22'; g.lineWidth = 2; g.beginPath(); g.moveTo(-30, deck + 2); g.bezierCurveTo(-30, deck - 38, 34, deck - 38, 34, deck + 2); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(42,34,29,.45)'; g.lineWidth = 1; g.beginPath(); for (const k of [-16, -4, 8, 20]) { g.moveTo(k, deck - 27 + Math.abs(k - 2) * .4); g.lineTo(k * 1.15, deck); } g.stroke(); g.strokeStyle = INK; }
+  g.fillStyle = '#5b3a22'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(-L2, gun(-L2));
+  for (let xx = -L2; xx <= L2; xx += 6) g.lineTo(xx, gun(xx));
+  g.quadraticCurveTo(L2 - 8, 10, L2 - 30, 14); g.lineTo(-L2 + 30, 14); g.quadraticCurveTo(-L2 + 8, 10, -L2, gun(-L2)); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = B.hull; g.beginPath(); for (let xx = -L2 + 4; xx <= L2 - 4; xx += 6) { const yy = gun(xx) + 3; xx === -L2 + 4 ? g.moveTo(xx, yy) : g.lineTo(xx, yy); } for (let xx = L2 - 8; xx >= -L2 + 8; xx -= 6) g.lineTo(xx, gun(xx) + 12); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(-L2 + 26, 4); g.lineTo(L2 - 26, 4); g.stroke(); g.strokeStyle = INK;
+  { const ex = d * (L2 - 22), ey = gun(ex) + 20; g.fillStyle = '#f2ecde'; g.lineWidth = 1.4; g.beginPath(); g.ellipse(ex, ey, 7, 4, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); g.arc(ex + d * 1.5, ey, 2.4, 0, 6.283); g.fill(); }
+  g.strokeStyle = 'rgba(242,236,222,.6)'; g.lineWidth = 1.5; g.beginPath(); for (const k of [-1, 1]) { g.moveTo(k * L2 * .9, 16); g.quadraticCurveTo(k * (L2 + 14), 13, k * (L2 + 28), 17); } g.stroke();
+  g.restore();
+}
 // the order bubble over a customer: the pictures of what they want, and their patience
-function p4TemOrder(g, L, c, x) {
+function p4TemOrder(g, L, c, x, hot) {
   const need = c.order.fold ? [...c.order.need, 'gap'] : c.order.need, r = 13 * L.u + 4, w = need.length * r * 2.1 + 12, y = p4TemOrderY(L);
-  g.fillStyle = '#fbf6ea'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x - w / 2, y - r - 6, w, r * 2 + 12, 10) : g.rect(x - w / 2, y - r - 6, w, r * 2 + 12); g.fill(); g.stroke();
+  g.fillStyle = hot ? '#fff4c8' : '#fbf6ea'; g.strokeStyle = hot ? '#d9a21f' : INK; g.lineWidth = hot ? 4 : 2; g.beginPath(); g.roundRect ? g.roundRect(x - w / 2, y - r - 6, w, r * 2 + 12, 10) : g.rect(x - w / 2, y - r - 6, w, r * 2 + 12); g.fill(); g.stroke();
   need.forEach((k, j) => p4TemIcon(g, k, x - w / 2 + 6 + r * 1.05 + j * r * 2.1, y, r * .85));
   const k = Math.max(0, c.pat / c.patMax); g.fillStyle = '#e6dccb'; g.fillRect(x - w / 2, y + r + 9, w, 6); g.fillStyle = k > .5 ? '#4f9a4a' : k > .25 ? '#e0b43a' : '#b8412e'; g.fillRect(x - w / 2, y + r + 9, w * k, 6); g.strokeRect(x - w / 2, y + r + 9, w, 6);
 }

@@ -91,7 +91,7 @@ function p4ShopSheet() {
   } else {
     const left = 7 - ((SAVE4B.day - R.since) % 7), T = P4.shopDay[key] || { n: 0, take: 0, cost: 0 };
     h = `<h3>${p4Esc(R.name)}</h3><p>${R.own === 'buy' ? 'Cửa hàng của mình' : 'Cửa hàng thuê'} · bán ${p4Esc(R.food.toLowerCase())}${R.sign ? ' · biển hiệu đẹp' : ''}</p>`
-      + `<p>Hôm nay: ${T.n} bát/đĩa, thu ${m(T.take)}</p><p>${R.own === 'buy' ? 'Thuế nhà ' + m(P4_TAX_WEEK) : 'Tiền thuê ' + m(P4_RENT_WEEK)} đóng sau ${left} ngày nữa (tối ngày ${SAVE4B.day + left - 1}).</p>`
+      + `<p>Hôm nay: ${T.n} bát/đĩa, thu ${m(T.take)}</p><p>${R.own === 'buy' ? 'Thuế nhà ' + m(P4_TAX_WEEK) : 'Tiền thuê ' + m(P4_RENT_WEEK)} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).</p>`
       + `<div class="row">` + (R.sign ? '' : `<button class="btn" data-sign="1"${purse < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${m(P4_SIGN_PRICE)} (+10% khách)</button>`)
       + `<button class="btn alt" data-shopname="1">Đổi tên</button></div>`
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);

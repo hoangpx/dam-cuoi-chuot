@@ -64,7 +64,7 @@ function p4Spawn(atX) {
   const look = kid ? {} : p4TownLook({ skirt: Math.random() < .5, hat: Math.random() < .25 ? 'quai' : null }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
   const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass();
-  P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o', x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
+  P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o' || (p4Wx() === 'mua' && Math.random() < .75), x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
     sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: 1 + ((Math.random() * 3) | 0), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
 function p4WalkersUpdate(dt) {
@@ -96,6 +96,7 @@ function startP4() {
   S.chapter = 4; S.mode = 'c4bplay'; document.body.classList.add('c4'); document.documentElement.style.setProperty('--paper', PAPERS[P4_PAPER].css);
   $('#album').hidden = true; $('#end').hidden = true; $('#chapters').hidden = true; $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   if (!P4.scene) { P4.scene = p4TownScene(mulberry(7)); P4.camX = P4_HOME - p4View().vw * .5; }
+  if (SAVE4B.house && !SAVE4B.from) { SAVE4B.from = Math.max(1, SAVE4.day - SAVE4B.day + 1); p4Persist(); }   // older saves: the town's today is part 1's today
   if (P4.day !== SAVE4B.day) p4NewDay();
   p4HoaLoad();                                                              // everyone's lanterns (hoadang-net.js)
   $('#p4hud').hidden = false; p4Hud(); if (P4.hoaHold) p4HoaHold(P4.hoaHold); cv.focus();
@@ -115,7 +116,7 @@ function p4EndDay() {
   $('#p4dayB').innerHTML = `<p>Bán được <b>${P4.today.sold}</b> miếng trầu: <b>${c4Money(P4.today.take)}</b></p><p>Chi: ${c4Money(P4.today.spent)}</p>`
     + (wilt ? `<p class="bad">Trầu thừa héo mất ${wilt} miếng.</p>` : '') + (P4.today.lost ? `<p>${P4.today.lost} khách đến mà hết trầu.</p>` : '')
     + p4PayHands() + p4ShopsEvening() + (P4.today.smash ? `<p class="bad">Bị tay chân bá hộ phá: mất ${c4Money(P4.today.smash)}.</p>` : '') + (p4Harass() < 1 ? '<p class="bad">Tay chân bá hộ còn quấy, khách ngại ghé.</p>' : '') + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
-  $('#p4dayT').textContent = `Tối ngày ${SAVE4B.day} trên phố huyện`;
+  $('#p4dayT').textContent = `Tối ngày ${p4DayNo()} trên phố huyện`;
   p4Sheets('p4day');
 }
 function updateP4(dt) {
@@ -127,7 +128,7 @@ function updateP4(dt) {
   if (P4.phase === 'open') {
     P4.mins += dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);              // the evening lasts longer
     if (P4.mins >= P4_CLOSE) { if (SAVE4B.house) { P4.mins = P4_CLOSE; p4EndDay(); } else { P4.mins = P4_OPEN; P4.walkers = []; } }
-    if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / p4Busy(); p4Spawn(); }
+    if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / (p4Busy() * p4WxFlow()); p4Spawn(); }
     p4Hud();
   }
   p4WalkersUpdate(dt);
@@ -203,6 +204,7 @@ function renderP4() {
   }
   if (P4.talk) p4TalkDraw(g);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  p4WxDraw(); ctx.setTransform(1, 0, 0, 1, 0, 0);
   const k = sun * (1 - .7 * p4NightK()); if (k > 0) { ctx.fillStyle = `rgba(232,110,36,${.2 * k})`; ctx.fillRect(0, 0, cv.width, cv.height); }
   const dawn = Math.max(0, (P4_OPEN + 40 - P4.mins) / 40 * .18); if (dawn > 0) { ctx.fillStyle = `rgba(40,30,60,${dawn})`; ctx.fillRect(0, 0, cv.width, cv.height); }
 }
@@ -210,11 +212,11 @@ const p4Sunset = () => Math.max(0, Math.min(1, (P4.mins - 15 * 60) / 210)) * (1 
 
 // ---------- input ----------
 function p4World(e) { const r = cv.getBoundingClientRect(), V = p4View(); return [(e.clientX - r.left) / V.s + P4.camX, (e.clientY - r.top) / V.s - V.oy]; }
-function p4Down(e) { if (S.mode !== 'c4bplay') return; P4.drag = { x0: e.clientX, cam0: P4.camX, moved: false }; capturePointer(e); }
-function p4Move(e) { const d = P4.drag; if (!d || P4T.on || P4.talk) return; const dx = e.clientX - d.x0; if (Math.abs(dx) > 8) d.moved = true; if (d.moved) P4.camX = d.cam0 - dx / p4View().s; }
+function p4Down(e) { if (S.mode !== 'c4bplay') return; P4.drag = { x0: e.clientX, cam0: P4.camX, moved: false }; capturePointer(e); if (P4T.on && !P4.sheet) { const r = cv.getBoundingClientRect(); p4TemDown(e.clientX - r.left, e.clientY - r.top); } }
+function p4Move(e) { const d = P4.drag; if (d && P4T.on) { const r = cv.getBoundingClientRect(); p4TemMove(e.clientX - r.left, e.clientY - r.top); return; } if (!d || P4T.on || P4.talk) return; const dx = e.clientX - d.x0; if (Math.abs(dx) > 8) d.moved = true; if (d.moved) P4.camX = d.cam0 - dx / p4View().s; }
 function p4Up(e) {
   const d = P4.drag; P4.drag = null; if (!d || S.mode !== 'c4bplay' || P4.sheet) return;
-  if (P4T.on) { const r = cv.getBoundingClientRect(); p4TemTap(e.clientX - r.left, e.clientY - r.top); return; }
+  if (P4T.on) { const r = cv.getBoundingClientRect(); p4TemUp(e.clientX - r.left, e.clientY - r.top); return; }
   if (P4.talk) { p4TalkNext(); return; }
   if (d.moved) return;
   const [x, y] = p4World(e);
@@ -234,7 +236,7 @@ function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now()
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;
-  $('#p4Time').textContent = `Ngày ${SAVE4B.day} · ${p4Clock()}`;
+  p4HudTime();                                                             // like part 1: day, the hour's animal, the clock, the weather (thoitiet.js)
   $('#p4Money').innerHTML = c4Money(Math.round(p4Purse()));
   $('#p4Stock').textContent = `Trầu ${SAVE4B.stock}`; $('#p4Stock').hidden = !SAVE4B.house;
   $('#p4Buy').hidden = !!SAVE4B.house; $('#p4Buy').classList.toggle('off', p4Purse() < P4_HOUSE_PRICE);
