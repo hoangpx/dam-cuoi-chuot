@@ -25,11 +25,11 @@ async function c4RankOpen() {
   await c4RankSend();
   try {
     const [top, me] = await Promise.all([p4Rpc('dcc_rank_top', { p_limit: 100 }), p4Rpc('dcc_rank_me', { p_device: p4Device() })]);
-    const mine = Array.isArray(me) && me[0];
+    const got = Array.isArray(me) && me[0], mine = got && got.pos ? got : null;   // pos is null while the server holds the row back (money far beyond what the days allow, docs/supabase-bang-xep-hang-chan.sql)
     const row = (r, isMe) => `<tr class="${isMe ? 'me' : ''}${r.pos <= 3 ? ' top' + r.pos : ''}"><td>${r.pos}</td><td>${p4Esc(r.name)}</td><td>${c4RankMoney(r.money)}</td><td>${r.day}</td></tr>`;
     const list = Array.isArray(top) ? top : [];
     const inTop = mine && list.some(r => +r.pos === +mine.pos);
-    B.innerHTML = `<p class="sm">${mine ? `Bạn đứng thứ <b>${mine.pos}</b> trong ${mine.total} nhà buôn.` : 'Chưa có tên bạn trên bảng.'}</p>`
+    B.innerHTML = `<p class="sm">${mine ? `Bạn đứng thứ <b>${mine.pos}</b> trong ${mine.total} nhà buôn.` : got && got.flag ? 'Số tiền của bạn không khớp với số ngày đã chơi nên chưa được xếp hạng.' : 'Chưa có tên bạn trên bảng.'}</p>`
       + `<div class="rk"><table><thead><tr><th>#</th><th>Tên</th><th>Tiền</th><th>Ngày</th></tr></thead><tbody>`
       + list.map(r => row(r, mine && +r.pos === +mine.pos)).join('')
       + (mine && !inTop ? `<tr class="gap"><td colspan="4">…</td></tr>${row(mine, true)}` : '')
