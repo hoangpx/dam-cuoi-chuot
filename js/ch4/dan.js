@@ -345,8 +345,14 @@ function c4OpenNotes(tab) {
   }
   else if (C4_TAB === 'quen' && C4_WHO !== null) { h += `<div id="qhCard">${qhCardHtml(C4_WHO)}</div>`; }   // one person: their card, with their ties drawn (owner)
   else if (C4_TAB === 'quen') {
+    // (a player: "lúc mời trầu thì làm thế nào để không phải ấn vào trong từng người"): each card carries its own quick buttons, Mời trầu,
+    // Mời ghé, Mời nước, the same as on the person's page; the page itself still opens from the portrait
+    const day = SAVE4.day, mkt = C4.phase === 'open', quick = (p, f) => {
+      const b = (q, on, txt, done) => `<button data-q="${q}" data-qid="${p.id}" ${on ? '' : 'disabled'}>${done ? '✓ ' : ''}${txt}</button>`;
+      return `<div class="fq">${b('trau', mkt && SAVE4.stock > 0 && f.treat !== day, 'Mời trầu', f.treat === day)}${b('moi', mkt && day >= C4_BOOK_DAY && f.inv !== day && c4Invited() < C4_INVITES, 'Mời ghé', f.inv === day)}${b('tea', f.tea !== day && SAVE4.money >= 3, 'Mời nước', f.tea === day)}</div>`; };
     h += known.length ? `<div class="folk">${known.sort((a, b) => SAVE4.folk[b.id].a - SAVE4.folk[a.id].a).map(p => { const f = SAVE4.folk[p.id];
-      return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}</div>`
+      return `<div class="fkw"><button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>${quick(p, f)}</div>`; }).join('')}</div>`
+      + (mkt ? `<p class="sm">Mời ghé còn ${Math.max(0, C4_INVITES - c4Invited())} lượt hôm nay · mời nước 3 đồng · mời trầu mất 1 miếng trầu</p>` : '<p class="sm">Mời trầu, mời ghé được lúc chợ họp.</p>')
       : '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
     if (seen.length) h += `<h4>Biết mặt</h4><div class="folk">${seen.map(p => `<div class="fk unk2"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>`;
   } else if (C4_TAB === 'don') h += c4OrdersTab();
@@ -358,6 +364,11 @@ function c4OpenNotes(tab) {
   $('#c4noteB').innerHTML = h;
   $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha');
   $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
+  $('#c4noteB').querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', e => {   // the list's quick buttons, the list stays where it was
+    e.stopPropagation(); const id = +b.dataset.qid, q = b.dataset.q, y = $('#c4note').scrollTop;
+    if (q === 'trau') c4Treat(id, 'trau'); else c4Act(id, q);
+    $('#c4note').scrollTop = y;
+  }));
   $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   $('#c4noteB').querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_PICK.deal = b.dataset.deal; const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   { const b = $('#c4noteB [data-invite]'); if (b) b.addEventListener('click', () => { const P = c4People(), ps = [...C4_PICK.sel].map(id => P.list[id]), deal = C4_PICK.deal; C4_PICK = null; c4Sheets(null); c4Invite(ps, deal); }); }
