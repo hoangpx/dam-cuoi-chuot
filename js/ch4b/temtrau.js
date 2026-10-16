@@ -123,7 +123,7 @@ function p4TemRender() {
     const x = L.slots[c.slot] + (1 - c.in) * 60 + (c.leaving ? c.leaving * 120 : 0), a = c.leaving ? Math.max(0, 1 - c.leaving * 1.25) : c.in;
     g.save(); g.globalAlpha = a; p4Folk(g, c, x, L.counterY + 50 * L.custS, L.custS); g.restore();
     if (!c.leaving) p4TemOrder(g, L, c, x);
-    if (c.say) { const B = c4Bubble(c.say.text, 0, 13, 150), sc = 1.25 * Math.max(.8, L.u); g.save(); g.globalAlpha = Math.min(1, (c.say.life - c.say.t) * 4); dp(g, B, x, p4TemOrderY(L) - (13 * L.u + 4) - 14, 0, sc, sc); g.restore(); }   // what they say, over their order
+    if (c.say) { const B = c4Bubble(c.say.text, 0, 13, 150), sc = 1.25 * Math.max(.8, L.u); g.save(); g.globalAlpha = Math.min(1, (c.say.life - c.say.t) * 4); const bx = Math.max(B.w / 2 * sc + 6, Math.min(L.W - B.w / 2 * sc - 6, x)); dp(g, B, bx, p4TemOrderY(L) - (13 * L.u + 4) - 14, 0, sc, sc); g.restore(); }   // the bubble kept inside the screen   // what they say, over their order
   }
   // the window's wooden frame and lanterns: we are inside the shop
   g.fillStyle = '#5b2f1f'; g.fillRect(0, 0, W, 16 * u); g.fillRect(0, 0, 14 * u, L.counterY); g.fillRect(W - 14 * u, 0, 14 * u, L.counterY);
