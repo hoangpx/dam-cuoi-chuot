@@ -108,7 +108,7 @@ function p4NewDay() {
   for (const b of P4.townBoats || []) if (b.order) { b.order = null; b.stop = false; b.say = null; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; } }   // last night's callers are gone
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));
 }
-function p4Hide() { if (P4T.on) { P4T.on = false; if (P4T.fetch > 0) { SAVE4B.stock += P4_TEM_MORE.n; P4T.fetch = 0; p4Persist(); } $('#p4temHud').hidden = true; } $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
+function p4Hide() { P4.talk = null; if (P4T.on) { P4T.on = false; if (P4T.fetch > 0) { SAVE4B.stock += P4_TEM_MORE.n; P4T.fetch = 0; p4Persist(); } $('#p4temHud').hidden = true; } $('#p4hud').hidden = true; p4Sheets(null); $('#p4hands').hidden = true; document.body.classList.remove('p4holding', 'c4'); }
 function p4EndDay() {
   P4.phase = 'night';
   const wilt = SAVE4B.stock; SAVE4B.stock = 0; SAVE4B.weekTake = (SAVE4B.weekTake || 0) + P4.today.take; p4Persist();   // the week's takings, for the street master's tax                // betel does not keep overnight
@@ -122,6 +122,7 @@ function updateP4(dt) {
   P4.t += dt;
   if (P4T.on) { if (!P4.sheet) p4TemUpdate(dt); return; }                 // têm trầu by hand: the street waits (temtrau.js)
   if (P4.t - (P4.hoaLoadT ?? -1e9) > P4_HOA_RELOAD) p4HoaLoad();
+  if (P4.talk) p4TalkUpdate(dt);                                           // the couple talking before buying the house (muanha.js)
   if (P4.paused) return;
   if (P4.phase === 'open') {
     P4.mins += dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);              // the evening lasts longer
@@ -183,9 +184,10 @@ function renderP4() {
     head(m.x, m.z, 168 * .95, m, 3);
   }
   for (const b of P4.townBoats || []) if (b.say && vis(b.x, 100)) bubbles.push({ e: b, x: b.x, y: P4_Y0 + P4_D + 24 + b.y - 16 - 70, s: .9, pri: 2 });
-  for (const w of P4.walkers) if (vis(w.x, 80)) { items.push({ z: w.z, f: () => p4Folk(g, w, w.x, p4Y(w.z) - p4TownLift(w.x), p4S(w.z) * P4_CROWD) }); head(w.x, w.z, P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), w, w.asked ? 2 : 1); }
+  for (const w of P4.walkers) if (vis(w.x, 80) && !(P4.talk && Math.abs(w.x - P4_HOME) < 170)) { items.push({ z: w.z, f: () => p4Folk(g, w, w.x, p4Y(w.z) - p4TownLift(w.x), p4S(w.z) * P4_CROWD) }); head(w.x, w.z, P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), w, w.asked ? 2 : 1); }
   for (const m of [...(P4.boss ? P4.boss.men : []), ...(P4.thugs || [])]) if (vis(m.x, 80)) { items.push({ z: m.z, f: () => p4Folk(g, m, m.x, p4Y(m.z), p4S(m.z) * P4_CROWD * (m === (P4.boss && P4.boss.men[0]) ? 1.08 : 1)) }); head(m.x, m.z, P4_TALL * P4_CROWD * .92, m, 3); }
   p4TownBridgeItems(items, g, vis);
+  if (P4.talk) p4TalkItems(items, g);
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
   for (const f of P4.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 26px "Playfair Display", serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = '#2f6a4c'; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
   p4TownNight(g);
@@ -199,6 +201,7 @@ function renderP4() {
     sy.shown = true; placed.push({ x, y, w: bw, h: hh });
     g.globalAlpha = Math.max(0, a); dp(g, B, x, y, 0, sc, sc); g.globalAlpha = 1;
   }
+  if (P4.talk) p4TalkDraw(g);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const k = sun * (1 - .7 * p4NightK()); if (k > 0) { ctx.fillStyle = `rgba(232,110,36,${.2 * k})`; ctx.fillRect(0, 0, cv.width, cv.height); }
   const dawn = Math.max(0, (P4_OPEN + 40 - P4.mins) / 40 * .18); if (dawn > 0) { ctx.fillStyle = `rgba(40,30,60,${dawn})`; ctx.fillRect(0, 0, cv.width, cv.height); }
@@ -208,10 +211,11 @@ const p4Sunset = () => Math.max(0, Math.min(1, (P4.mins - 15 * 60) / 210)) * (1 
 // ---------- input ----------
 function p4World(e) { const r = cv.getBoundingClientRect(), V = p4View(); return [(e.clientX - r.left) / V.s + P4.camX, (e.clientY - r.top) / V.s - V.oy]; }
 function p4Down(e) { if (S.mode !== 'c4bplay') return; P4.drag = { x0: e.clientX, cam0: P4.camX, moved: false }; capturePointer(e); }
-function p4Move(e) { const d = P4.drag; if (!d || P4T.on) return; const dx = e.clientX - d.x0; if (Math.abs(dx) > 8) d.moved = true; if (d.moved) P4.camX = d.cam0 - dx / p4View().s; }
+function p4Move(e) { const d = P4.drag; if (!d || P4T.on || P4.talk) return; const dx = e.clientX - d.x0; if (Math.abs(dx) > 8) d.moved = true; if (d.moved) P4.camX = d.cam0 - dx / p4View().s; }
 function p4Up(e) {
   const d = P4.drag; P4.drag = null; if (!d || S.mode !== 'c4bplay' || P4.sheet) return;
   if (P4T.on) { const r = cv.getBoundingClientRect(); p4TemTap(e.clientX - r.left, e.clientY - r.top); return; }
+  if (P4.talk) { p4TalkNext(); return; }
   if (d.moved) return;
   const [x, y] = p4World(e);
   if (p4HoaTap(x, y)) return;
@@ -219,6 +223,7 @@ function p4Up(e) {
 }
 cv.addEventListener('wheel', e => { if (S.mode !== 'c4bplay' || P4.sheet) return; e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; P4.camX += d * 1.5 * (e.deltaMode === 1 ? 30 : 1) / p4View().s; }, { passive: false });
 function p4Key(e) {
+  if (P4.talk) { if (['Space', 'Enter', 'NumpadEnter'].includes(e.code)) { e.preventDefault && e.preventDefault(); p4TalkNext(); } return; }
   if (e.code === 'Escape' && P4T.on) { p4TemStop(); return; }
   if (e.code === 'Escape') { if (P4.sheet && P4.sheet !== 'p4buy' && P4.sheet !== 'p4day' && P4.sheet !== 'p4boss') p4Sheets(null); else showChapters(); return; }
   if (e.code === 'ArrowLeft') P4.camX -= 60; if (e.code === 'ArrowRight') P4.camX += 60;
@@ -265,10 +270,8 @@ function p4HomeOpen() {
   $('#p4Back').addEventListener('click', () => { AU.tap(); p4Hide(); startC4(); });
   $('#p4buyX').addEventListener('click', () => p4Sheets(null));
   $('#p4buyGo').addEventListener('click', () => {
-    if (p4Purse() < P4_HOUSE_PRICE) return;
-    SAVE4.money -= P4_HOUSE_PRICE; persist4();
-    SAVE4B = { house: true, day: 1, stock: 30, price: 8, sold: 0 }; p4Persist();
-    p4Sheets(null); P4.day = 0; startP4(); toast('Vợ chồng chuột đã có nhà trên phố huyện!', 3); p4NameSheet(true);
+    if (p4Purse() < P4_HOUSE_PRICE || SAVE4B.house) return;
+    AU.tap(); p4BuyTalkStart(p4DoBuy);                                     // the couple talk it over first (muanha.js)
   });
   $('#p4homeX').addEventListener('click', () => p4Sheets(null));
   $('#p4homeB').addEventListener('click', e => {
