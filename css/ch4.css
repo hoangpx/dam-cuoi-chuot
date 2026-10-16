@@ -8,9 +8,9 @@
 #c4Money{font-size:16px}
 body.touch #c4hud .mid{position:static;transform:none}
 @media (max-width:520px){#c4hud{flex-wrap:wrap}#c4hud .mid{position:static;transform:none;order:3;width:100%;display:flex;justify-content:center}}
-.c4sheet{position:fixed;inset:0;z-index:6;display:flex;align-items:flex-start;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35);overflow-y:auto}
+.c4sheet{position:fixed;inset:0;z-index:6;display:flex;align-items:flex-start;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(29,25,21,.35);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y}   /* iPhone: a sheet only scrolls up and down, it never drifts sideways */
 .c4sheet>*{margin-top:auto;margin-bottom:auto;flex-shrink:0}   /* centred when it fits, scrolls from its top when it does not (old iPhones ignore "safe center") */
-.c4sheet .card4{max-width:420px;width:100%;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:16px 18px;text-align:center;font-family:var(--body)}
+.c4sheet .card4{max-width:420px;width:100%;min-width:0;box-sizing:border-box;overflow-x:hidden;background:var(--diep);border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(29,25,21,.35);padding:16px 18px;text-align:center;font-family:var(--body)}
 .card4 h3{margin:0 0 10px;font-family:var(--display);font-weight:900;font-size:22px}
 .card4 .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
 .card4 .nums div{border:2px solid var(--ink);padding:8px 4px;background:#f6f0e2;display:flex;flex-direction:column;gap:2px}
@@ -301,6 +301,8 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .card4 .trl{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;padding-right:2px}
 .card4 .tr{display:grid;grid-template-columns:34px 1fr 64px 74px;align-items:center;gap:6px;padding:3px 4px;border:1.5px solid rgba(29,25,21,.25);background:#f6f0e2}
 .card4 .tr img{width:32px;height:32px}
+.card4 .tr .bar{width:100%;min-width:0;box-sizing:border-box}   /* the liking bar fits its column (a player's iPhone: the 110 px bar ran under the button and made the sheet wider than the screen) */
+.card4 .tr>*{min-width:0}
 .card4 .tr b{font-size:13px;line-height:1.15;min-width:0}
 .card4 .tr .fav{color:#a3332a;font-style:normal}
 .card4 .tr .no{color:#6b5f52;font-style:normal}
