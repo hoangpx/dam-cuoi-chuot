@@ -290,6 +290,8 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 
 /* a stall's sheet: treat the folk you know to its ware (owner: the treats moved from the book to each stall) */
 .card4 .treat h4{margin:12px 0 2px}
+.card4 .trh{display:block;width:100%;text-align:left;margin:12px 0 4px;padding:8px 10px;font:700 15px var(--body);color:var(--ink);background:#efe3c4;border:1.5px solid rgba(29,25,21,.45);border-radius:4px;cursor:pointer}
+.card4 .trh small{font-weight:400;color:#6b5f52}
 .card4 .trl{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;padding-right:2px}
 .card4 .tr{display:grid;grid-template-columns:34px 1fr 64px 74px;align-items:center;gap:6px;padding:3px 4px;border:1.5px solid rgba(29,25,21,.25);background:#f6f0e2}
 .card4 .tr img{width:32px;height:32px}
