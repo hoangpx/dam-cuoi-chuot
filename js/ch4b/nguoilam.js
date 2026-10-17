@@ -41,7 +41,7 @@ function p4SellersUpdate(dt) {
     }
     if (m.serving && (m.t -= dt) <= 0) {
       const w = m.serving, n = Math.min(w.n, SAVE4B.stock);
-      if (n > 0) { p4Sale(m, n, m.x, p4Y(.12) - 120); p4Say(m, p4Pick(['Trầu đây, mời bác!', 'Của bác đây ạ!', 'Ăn ngon lại ghé nhé!'])); }
+      if (n > 0) { p4Sale(m, n, m.x, p4Y(.12) - 120); p4Served(w, 'trau'); p4Say(m, p4Pick(['Trầu đây, mời bác!', 'Của bác đây ạ!', 'Ăn ngon lại ghé nhé!'])); }
       else { p4Say(m, 'Hết trầu mất rồi!'); P4.today.lost++; }
       const i = Q.indexOf(w); if (i >= 0) Q.splice(i, 1); w.st = 'leave'; w.dir = Math.random() < .5 ? -1 : 1; m.serving = null; p4Persist(); p4Hud();
     }
@@ -49,7 +49,7 @@ function p4SellersUpdate(dt) {
   }
 }
 function p4Sale(m, n, fx, fy) {
-  const got = p4SalePrice('home', n * SAVE4B.price);                        // a sale lowers the price (giamgia.js)
+  const got = m.serving && m.serving.treat ? 0 : p4SalePrice('home', n * SAVE4B.price);   // a sale lowers the price (giamgia.js); an invited guest eats free
   SAVE4B.stock -= n; SAVE4B.sold = (SAVE4B.sold || 0) + n; P4.today.sold += n; p4Earn(got); m.take += got;
   P4.fx.push({ x: fx, y: fy, s: '+' + got, t: 0 });
 }

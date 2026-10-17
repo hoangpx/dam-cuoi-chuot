@@ -309,9 +309,6 @@ function qhCardHtml(id) {
       <h5>Quan hệ (${p.links.length})</h5>${qhTieSvg(p)}
       ${facts.length ? `<h5>Điều đã biết (${facts.length})</h5><ul class="facts">${facts.map(t => `<li>${t}</li>`).join('')}</ul>` : ''}
       ${f.deal ? `<p class="back">Lần tới ghé: ${f.deal === 'free' ? 'mời miễn phí' : 'giảm nửa giá'}.</p>` : ''}
-      <div class="acts">
-        <button class="act b" data-act="ask" ${f.ask === day || !unknownTies || f.a < 35 ? 'disabled' : ''}><b>Hỏi chuyện nhà</b><span>${!unknownTies ? 'đã biết hết' : f.a < 35 ? 'chưa đủ thân' : f.ask === day ? 'mai hỏi tiếp' : `còn ${unknownTies} người chưa biết`}</span></button>
-      </div>
       ${c4TreatHtml(p, f)}
       </div>`;
   }
@@ -325,7 +322,7 @@ function qhCardHtml(id) {
     ${named ? (introBy.length
       ? `<div class="acts"><button class="act g" data-intro="${introBy[0][1].id}" ${f.intro === day || C4.phase !== 'open' ? 'disabled' : ''}><b>Nhờ ${introBy[0][1].name} giới thiệu</b><span>${f.intro === day ? 'đã nhờ hôm nay' : C4.phase !== 'open' ? 'chỉ nhờ được lúc chợ họp' : 'họ sẽ rủ người này ra chợ'}</span></button></div>`
       : `<p class="sm">Muốn được giới thiệu, hãy lấy lòng ${via.map(([, q]) => q.name).join(', ')} (thân từ 3 sao trở lên).</p>`)
-      : `<p class="sm">Thân với ${via.map(([, q]) => q.name).join(', ')} rồi <b>Hỏi chuyện nhà</b> để biết người này là ai.</p>`}</div>`;
+      : ''}</div>`;   // "Hỏi chuyện nhà" is gone (owner, 2026-10-17)
 }
 function qhCardWire() {
   const box = $('#qhCard'); if (!box) return;

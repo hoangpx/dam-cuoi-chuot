@@ -32,7 +32,7 @@ function p4SaleBlock(k, reopen) {
     <label>đến <select class="sto">${hours(6, 23, s.to)}</select></label>
     <label>Ngày nào cũng giảm <input type="checkbox" class="sdaily"${s.daily ? ' checked' : ''}></label></div>
     <p class="sm">${now ? `<b>Đang giảm ${s.pct} %.</b>` : on ? `Hôm nay giảm ${s.pct} % từ ${s.from}:00 đến ${s.to}:00.` : 'Không giảm giá.'}</p>`
-    + (wait > 0 ? `<p class="sm bad">Giảm liền nhiều ngày rồi: khoảng ${Math.round(wait * 100)} % khách giờ chỉ chờ giảm giá mới mua.</p>` : '');
+    ;
   const save = () => {
     const pct = +d.querySelector('.spct').value, from = +d.querySelector('.sfrom').value, to = Math.max(from + 1, +d.querySelector('.sto').value), daily = d.querySelector('.sdaily').checked;
     (SAVE4B.sale = SAVE4B.sale || {})[k] = { pct, from, to, daily, day: SAVE4.day }; p4Persist(); AU.tap(); reopen();
@@ -48,7 +48,8 @@ function p4SaleTag(g, hx, hy, s, k) {
   g.fillText(`GIẢM ${pct}%`, 0, 1); g.restore();
 }
 // a sheet drawn again keeps its scroll (owner, 2026-10-17, part 1's fix brought here)
-function p4KeepScroll(id, draw) {
-  const el = $('#' + id), c = el && el.querySelector('.card4'), same = P4.sheet === id, y = same && c ? c.scrollTop : 0, y2 = same && el ? el.scrollTop : 0;
-  draw(); if (same) { if (c) c.scrollTop = y; if (el) el.scrollTop = y2; }
+function p4KeepScroll(id, draw) {   // the sheet, its card and every list box inside (C4_SCROLLERS: the Mời khách list…)
+  const el = $('#' + id), same = P4.sheet === id && el, c = same && el.querySelector('.card4');
+  const k = same && { s: el.scrollTop, c: c ? c.scrollTop : 0, l: [...el.querySelectorAll(C4_SCROLLERS)].map(e => e.scrollTop) };
+  draw(); if (!k) return; const c2 = el.querySelector('.card4'); el.scrollTop = k.s; if (c2) c2.scrollTop = k.c; [...el.querySelectorAll(C4_SCROLLERS)].forEach((e, i) => { if (k.l[i] != null) e.scrollTop = k.l[i]; });
 }

@@ -57,7 +57,7 @@ function c4SaleBlock(g) {
     <label>đến <select class="sto">${hours(6, 19, s.to)}</select></label>
     <label>Ngày nào cũng giảm <input type="checkbox" class="sdaily"${s.daily ? ' checked' : ''}></label></div>
     <p class="sm">${now ? `<b>Đang giảm ${s.pct} %</b>, bán ${c4Money(Math.round(c4Price(g) * (1 - s.pct / 100)))} thay vì ${c4Money(c4Price(g))}.` : on ? `Hôm nay giảm ${s.pct} % từ ${s.from}:00 đến ${s.to}:00.` : 'Không giảm giá.'}</p>`
-    + (wait > 0 ? `<p class="sm bad">Giảm liền nhiều ngày rồi: khoảng ${Math.round(wait * 100)} % khách quen giờ chỉ chờ giảm giá mới mua.</p>` : '');
+    ;
   const save = () => {
     const pct = +d.querySelector('.spct').value, from = +d.querySelector('.sfrom').value, to = Math.max(from + 1, +d.querySelector('.sto').value), daily = d.querySelector('.sdaily').checked;
     (SAVE4.sale = SAVE4.sale || {})[g] = { pct, from, to, daily, day: SAVE4.day }; persist4(); AU.tap(); c4OpenUp(g);

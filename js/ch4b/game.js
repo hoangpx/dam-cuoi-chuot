@@ -56,16 +56,17 @@ const p4Busy = () => { const h = P4.mins / 60; for (let i = P4_BUSY.length - 1; 
 const P4_CHAT = ['Phố hôm nay đông thật!', 'Tối nay có thả đèn không?', 'Hàng vải bên kia mới về lụa đẹp.', 'Nhà chuột trầu cau ngon lắm đấy!',
   'Thuyền buôn vừa cập bến.', 'Đi qua chùa cầu mát ghê.', 'Mua cái đèn lồng về treo Tết nào.', 'Cao lầu ở đây là nhất phố.', 'Chiều nay trời đẹp quá.'];
 const P4_ASK = n => p4Pick([`Cho tôi ${n} miếng trầu.`, `Bán cho ${n} miếng trầu nhé!`, `${n} miếng trầu têm cánh phượng!`]);
-function p4Spawn(atX) {
-  const kid = Math.random() < .1, old = !kid && Math.random() < .14;
-  const sort = kid ? 11 + ((Math.random() * 3) | 0) : old ? p4Pick(C4_OLD_SORTS2) : p4Pick(C4_ADULT_SORTS2);
-  const fromRight = Math.random() < .5, V = p4View(), seed = Math.random() * 6;
+// a walker: now and then a child, else one of the townsfolk (khachquen.js: who, if not given, is picked; opt { buy, treat, n } for invited / sale guests)
+function p4Spawn(atX, who, opt) {
+  const kid = !who && Math.random() < .1, P = kid ? null : who || p4PickResident(), old = !!(P && P.old);
+  const sort = kid ? 11 + ((Math.random() * 3) | 0) : P.sort;
+  const fromRight = Math.random() < .5, V = p4View(), seed = P ? P.seed : Math.random() * 6;
   const x = atX !== undefined ? atX : fromRight ? P4.camX + V.vw + 120 + Math.random() * 200 : P4.camX - 120 - Math.random() * 200;
-  const look = kid ? {} : p4TownLook({ skirt: Math.random() < .5, hat: Math.random() < .25 ? 'quai' : null }, seed);
+  const look = kid ? {} : p4TownLook({ skirt: P.look.skirt, hat: P.look.hat }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
-  const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4SaleK('home');   // a sale brings more, a habit of sales makes buyers wait (giamgia.js)
+  const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4KeenK(P) && !p4HoldBack(P, 'home') || !!(opt && opt.buy && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0);   // regulars buy more, a habit of sales makes them wait; invited / sale guests come to buy (khachquen.js)
   P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o' || (p4Wx() === 'mua' && Math.random() < .75), x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
-    sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: 1 + ((Math.random() * 3) | 0), wait: 0, say: null, cd: 3 + Math.random() * 8 });
+    sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: (opt && opt.n) || 1 + ((Math.random() * 3) | 0), pid: P ? P.id : undefined, treat: !!(opt && opt.treat), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
 function p4WalkersUpdate(dt) {
   const V = p4View(), Q = P4.Q, door = P4_HOME, qz = .3;
@@ -132,7 +133,7 @@ function updateP4(dt) {
     if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / (p4Busy() * p4WxFlow()); p4Spawn(); }
     p4Hud();
   }
-  p4WalkersUpdate(dt);
+  p4WalkersUpdate(dt); p4FolkTick(dt);                                     // invited guests and a sale's regulars (khachquen.js)
   for (const f of P4.fx) f.t += dt; P4.fx = P4.fx.filter(f => f.t < 1.2);
   if (P4.drag && P4.drag.moved) {} else { const V = p4View(); P4.camX = Math.max(-260, Math.min(P4_W - V.vw + 200, P4.camX)); }
 }
@@ -261,6 +262,7 @@ function p4HomeDraw() {
     + (SAVE4B.sign ? '' : `<div class="row"><button class="btn" data-homesign="1"${p4Purse() < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${c4Money(P4_SIGN_PRICE)} (+10% khách)</button></div>`)
     + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>` + p4HandsHtml();
   $('#p4homeB').appendChild(p4SaleBlock('home', p4HomeOpen));               // a sale at the betel house (giamgia.js)
+  { const tb = p4TreatBlock('trau'); $('#p4homeB').appendChild(tb); p4Tabs('p4home', $('#p4homeB'), tb, 'Hiệu trầu'); }   // the Mời khách tab (khachquen.js)
   p4Sheets('p4home');
 }
 {
