@@ -14,7 +14,7 @@
    Máy chủ chưa dựng thì mọi rpc lặng lẽ hỏng: không có khách phương xa, hồ sơ chỉ lưu trên máy. */
 const HS_NAME_MAX = 12, HS_DESC_MAX = 200, HS_STORY_MAX = 120, HS_STORIES = 8, HS_REVIEW_MAX = 200;
 const HS_PER_DAY = 2;                                                      // far-away guests a day at each market (owner: "đừng để chợ quá đông")
-const HS_POOL_EVERY = 10 * 60 * 1000;                                      // fetch other players' profiles again every 10 minutes
+const HS_POOL_EVERY = 60 * 60 * 1000;                                      // fetch other players' profiles again every hour (was 10 min; owner 2026-10-17: fewer requests)
 const HS_ROLES = [['chong', 'Chuột chồng'], ['vo', 'Chuột vợ']];
 const HS_AGES = [['tre', 'Trẻ'], ['trung', 'Trung niên'], ['gia', 'Già']];
 const HS_FURS = [['brown', 'Nâu'], ['dark', 'Đen'], ['grey', 'Xám'], ['tan', 'Vàng đất'], ['ash', 'Tro'], ['cream', 'Kem'], ['white', 'Trắng']];
@@ -171,11 +171,13 @@ function hsPush() {
 }
 // other players' profiles: a random handful, plus every one already met here (so regulars keep coming)
 function hsPoolEnsure() {
-  if (HS.loading || Date.now() - HS.poolAt < HS_POOL_EVERY) return;
+  if (HS.loading || document.hidden || Date.now() - HS.poolAt < HS_POOL_EVERY) return;
   HS.loading = true; HS.poolAt = Date.now();
-  const K = hsKhach(), mine = (hsGet('dcc.hoso', {}) || {}).id, met = Object.keys(K).filter(i => K[i].seen || K[i].k).map(Number).slice(0, 200);
+  const K = hsKhach(), mine = (hsGet('dcc.hoso', {}) || {}).id, full = Date.now() - (+localStorage.getItem('hsGetAt') || 0) > 6 * 3600e3,   // the guests met: their profiles are kept here (K[i].p); fetched again in full every 6 hours, else only those missing
+    met = Object.keys(K).filter(i => (K[i].seen || K[i].k) && (full || !K[i].p)).map(Number).slice(0, 200);
+  if (full) try { localStorage.setItem('hsGetAt', String(Date.now())); } catch (e) {}
   const put = list => { if (Array.isArray(list)) for (const r of list) if (r && r.id && r.id !== mine && r.data) { const d = hsClean(r.data); if (!d.name) continue; HS.pool.set(+r.id, { id: +r.id, d, stars: r.stars === null ? null : +r.stars, nrev: +r.nrev || 0, nreg: +r.nreg || 0 }); if (K[r.id]) K[r.id].p = d; } };
-  Promise.all([p4Rpc('dcc_prof_pick', { p_device: p4Device(), p_limit: 40 }).then(put).catch(() => {}), met.length ? p4Rpc('dcc_prof_get', { p_ids: met }).then(put).catch(() => {}) : null, hsMeLoad()])
+  Promise.all([p4Rpc('dcc_prof_pick', { p_device: p4Device(), p_limit: 12 }).then(put).catch(() => {}), met.length ? p4Rpc('dcc_prof_get', { p_ids: met }).then(put).catch(() => {}) : null, hsMeLoad()])
     .finally(() => { HS.loading = false; hsSaveK(); });
 }
 // my own numbers on the server, and a word when new reviews have come in
