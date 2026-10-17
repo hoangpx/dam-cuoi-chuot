@@ -115,7 +115,8 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .card4 .pick .btn{font-size:15px;padding:6px 12px}
 .card4 .fk.sel{border-color:#2f6a4c;background:#d6e6c4;box-shadow:inset 0 0 0 2px #2f6a4c}
 .card4 .fk[disabled]{opacity:.45;cursor:default}
-.card4 .fk.unk2{cursor:default;opacity:.65}
+.card4 .fk.unk2{opacity:.55}
+.card4 .tr.unk2>img,.card4 .tr.unk2>b,.card4 .tr.unk2>.bar{opacity:.5}   /* known by sight: faded in the same list (owner, 2026-10-17) */
 .card4 .loan .pays{display:flex;gap:6px}
 .card4 .loan .btn{white-space:nowrap}
 /* the book's web of bubbles (quanhe.js) and family trees */

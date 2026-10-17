@@ -269,7 +269,7 @@ function hsTreatRows(place, kind, has, redraw) {
   const ids = hsGuests(); if (!ids.length) return null;
   const K = hsKhach(), day = SAVE4.day, dish = hsDish(place, kind), d = document.createElement('div');
   d.innerHTML = `<h5 class="hsTrH">Khách phương xa</h5><div class="trl">${ids.map(i => { const p = hsProf(i).d, f = K[i], done = f.treat === day, fav = p.likes.includes(dish);
-    return `<div class="tr"><img src="${hsFace(p, i)}" alt=""><b>${p4Esc(hsName(p))}${fav ? ' <i class="fav">♥</i>' : ''}${f.k ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-hst="${i}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
+    return `<div class="tr${f.k ? '' : ' unk2'}"><img src="${hsFace(p, i)}" alt=""><b>${p4Esc(hsName(p))}${fav ? ' <i class="fav">♥</i>' : ''}</b>${c4Bar(f.a || 0)}<button data-hst="${i}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
   d.querySelectorAll('[data-hst]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); hsInvite(+b.dataset.hst, place, kind); redraw(); }));
   return d;
 }
@@ -517,9 +517,8 @@ function hsOpen(tab) {
   else if (HS.tab === 'rank') { T.innerHTML = '<h4>Bảng tổng sắp nhà giàu</h4><div class="hsRank"></div>'; c4RankInto(T.querySelector('.hsRank')); }
   else {
     const F = id => SAVE4B.folk[id], seen = p4People().filter(p => p4Seen(p.id)), known = seen.filter(p => p4Known(p.id)).sort((a, b) => (F(b.id).a || 0) - (F(a.id).a || 0)), face = seen.filter(p => !p4Known(p.id));
-    T.innerHTML = `<p class="cnt">${known.length} người quen · ${face.length} người biết mặt</p>`
-      + (known.length ? `<div class="folk">${known.map(p => `<div class="fk"><img src="${p4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(F(p.id).a || 0)}<span>ghé ${F(p.id).v || 0} lần</span></div>`).join('')}</div>` : '<p>Chưa quen ai trên phố. Khách ghé mua lần thứ hai mới thành quen.</p>')
-      + (face.length ? `<h4>Biết mặt</h4><div class="folk">${face.map(p => `<div class="fk unk2"><img src="${p4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>` : '')
+    T.innerHTML = `<p class="cnt">${seen.length} khách</p>`
+      + (seen.length ? `<div class="folk">${known.map(p => `<div class="fk"><img src="${p4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(F(p.id).a || 0)}<span>ghé ${F(p.id).v || 0} lần</span></div>`).join('')}${face.map(p => `<div class="fk unk2"><img src="${p4Face(p)}" alt=""><b>${p.name}</b><span>ghé ${F(p.id).v || 1} lần</span></div>`).join('')}</div>` : '<p>Chưa có khách nào trên phố.</p>')
       + hsBookHtml();
     hsBookWire(T, back);
   }
