@@ -392,3 +392,17 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
   #c4hud #c4Stock .w+.w{margin-left:0}
   #c4hud .mid,body.touch #c4hud .mid{position:absolute;left:16px;top:calc(56px + env(safe-area-inset-top,0px));transform:none;width:auto;order:0;display:block}
 }
+/* the morning order: quick buttons for every ware, then one short line a ware (cho.js c4OrderRows) */
+.ordQ{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0 6px}
+.ordQ .btn{font-size:13px;padding:5px 9px;margin:0}
+.ordR{display:grid;grid-template-columns:1fr 36px 58px 36px;gap:6px;align-items:center;border-top:1.5px dashed rgba(29,25,21,.3);padding:5px 0;text-align:left}
+.ordR .nm{min-width:0}
+.ordR .nm b{display:block;font-size:15px;line-height:1.2}
+.ordR .nm small{display:block;font-size:11.5px;line-height:1.3;opacity:.75}
+.ordR button{width:36px;height:36px;font:900 20px/1 var(--display);border:2px solid var(--ink);background:#fffaf0;color:var(--ink);cursor:pointer;padding:0}
+.ordR input{width:58px;height:36px;box-sizing:border-box;text-align:center;font:900 16px var(--display);border:2px solid var(--ink);background:#fff;color:var(--ink);padding:0;-moz-appearance:textfield}
+.ordR input::-webkit-outer-spin-button,.ordR input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ordR.off{opacity:.5}
+#c4amO .tot{margin-top:8px}
+#c4amO .go{position:sticky;bottom:4px;z-index:3}
+.ordH{margin:0 0 4px;text-align:center}

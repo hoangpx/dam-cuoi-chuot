@@ -306,22 +306,16 @@ function c4Morning() {
     + (heard.length ? `<div class="heard"><b>Hôm qua nghe được:</b>${heard.map(n => `<p>• ${n.text}</p>`).join('')}</div>` : '')
     + '<div id="c4biz"></div>';
   c4BizRefresh();
-  // one stepper per ware the couple sells
+  // the wares to buy: one short line each, filled with a suggestion (c4OrderRows)
   const box = $('#c4amO'); box.innerHTML = '';
   const orders = {};
-  for (const g of c4Owned()) {
-    const G = C4_GOODS[g], row = document.createElement('div'); row.className = 'ware';
-    const closed = g !== 'trau' && !c4Open(g);
-    row.innerHTML = `<h5>${G.name}${g !== 'trau' && G.keep === 'ever' ? ` · còn ${c4Stock(g)} ${G.unit}` : ''}${g === 'che' ? ' · tốn củi ' + G.fuel + ' đồng' : ''}${g === 'xoi' ? ' · để quá 7 tiếng là thiu' : ''}${closed ? ' · <span class="bad">không ai trông</span>' : ''}</h5><div class="ord"></div>`;
-    box.appendChild(row);
-    if (closed) { orders[g] = 0; row.querySelector('.ord').innerHTML = ''; continue; }
-    c4Stepper(row.querySelector('.ord'), g, q => { orders[g] = q; c4AmTotal(orders); });
-  }
+  c4OrderRows(box, orders);
   const tot = document.createElement('div'); tot.className = 'tot'; box.appendChild(tot);
   const go = document.createElement('button'); go.className = 'btn go'; go.textContent = 'Họp chợ'; box.appendChild(go);
   C4.orders = orders; c4LoanUI();
   go.addEventListener('click', () => {
     C4.today.m0 = SAVE4.money;                                              // the purse before the morning's buying (for the evening ledger)
+    SAVE4.lastOrder = { ...orders };                                         // "Như hôm qua" tomorrow (c4OrderRows)
     for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
     c4Sheets(null); C4.phase = 'open'; c4PlanEvents(); c4ShipOrders(); c4Hud();
     SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
@@ -382,6 +376,58 @@ function c4Stepper(box, g, on, mid = false) {
   const show = () => { q = Math.max(0, Math.min(q, max)); box.querySelector('.q').textContent = `${q} ${G.unit}`; const r1 = v => Math.round(v * 10) / 10, coin = ' đồng'; box.querySelector('.cost').innerHTML = `${r1(cost)}${coin}/${G.unit}${mid ? ` (sáng sớm ${r1(c4Cost(g))})` : ''} · bán ${c4Price(g)}${coin}`; on(q); };
   box.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { q += +b.dataset.d; AU.tap(); show(); }));
   show();
+}
+/* ---------- the morning order (owner, 2026-10-17: "bảng buổi sáng nhập bao nhiêu cần làm thông minh 1 chút, đang phải scroll và ấn quá
+   nhiều nút cho từng hàng"): every ware starts filled with a suggestion (what sold lately), so a plain day is one tap on Họp chợ; quick
+   buttons set every ware at once (Gợi ý / Như hôm qua / Vừa túi tiền / Bỏ hết); one short line a ware, the number can be typed. ---------- */
+const C4_SALES_DAYS = 3;
+// each evening: what every ware sold and how many buyers left for want of it (the last C4_SALES_DAYS days, newest first)
+function c4SalesKeep() {
+  const B = C4.today.by || {}, L = C4.today.lostBy || {}, by = {};
+  for (const g of c4Owned()) by[g] = { n: (B[g] && B[g].n) || 0, lost: L[g] || 0 };
+  SAVE4.salesHist = [{ day: SAVE4.day, by }, ...(SAVE4.salesHist || []).filter(h => h.day !== SAVE4.day)].slice(0, C4_SALES_DAYS);
+}
+// how many to buy this morning: the average sold lately plus the buyers lost (about 2 each), by today's weather and a fair, 15 %
+// spare, less what is still in stock, in fives, within the stall's room. Nothing known yet: about a third of the stall.
+function c4Suggest(g) {
+  const G = C4_GOODS[g], H = (SAVE4.salesHist || []).filter(h => h.by[g]), p = SAVE4.plan || {}, room = Math.max(0, c4Cap(g) - c4Stock(g));
+  let base = H.length ? H.reduce((a, h) => a + h.by[g].n + h.by[g].lost * 2, 0) / H.length : c4Cap(g) * .35;
+  base *= ((G.wx && G.wx[p.wx]) || 1) * (p.hoi ? 1.3 : 1);
+  return Math.max(0, Math.min(room, Math.ceil((base * 1.15 - c4Stock(g)) / 5) * 5));
+}
+function c4OrderRows(box, orders) {
+  const H0 = (SAVE4.salesHist || [])[0], last = SAVE4.lastOrder, rows = {}, w = document.createElement('div'); w.className = 'ordW';
+  w.innerHTML = `<div class="ordQ"><button class="btn alt" data-all="goi">Gợi ý</button><button class="btn alt" data-all="qua"${last ? '' : ' disabled'}>Như hôm qua</button>`
+    + `<button class="btn alt" data-all="vua">Vừa túi tiền</button><button class="btn alt" data-all="0">Bỏ hết</button></div><p class="sm ordH"></p><div class="ordL"></div>`;
+  box.appendChild(w);
+  for (const g of c4Owned()) {
+    const G = C4_GOODS[g], closed = g !== 'trau' && !c4Open(g), max = closed ? 0 : Math.max(0, c4Cap(g) - c4Stock(g)), s = H0 && H0.by[g], r1 = v => Math.round(v * 10) / 10;
+    const note = closed ? '<span class="bad">không ai trông</span>' : [s ? `hôm qua bán ${s.n}${s.lost ? `, lỡ ${s.lost} khách` : ''}` : '', c4Stock(g) ? `còn ${c4Stock(g)}` : '', g === 'xoi' ? 'để quá 7 tiếng là thiu' : '', g === 'che' ? `củi ${G.fuel} đồng` : '', `${r1(c4Cost(g))} → ${c4Price(g)} đồng`].filter(Boolean).join(' · ');
+    const r = document.createElement('div'); r.className = 'ordR' + (closed ? ' off' : '');
+    r.innerHTML = `<div class="nm"><b>${G.name}</b><small>${note}</small></div><button type="button" class="m"${closed ? ' disabled' : ''}>−</button>`
+      + `<input type="number" inputmode="numeric" min="0" max="${max}" step="5"${closed ? ' disabled' : ''}><button type="button" class="p"${closed ? ' disabled' : ''}>+</button>`;
+    w.querySelector('.ordL').appendChild(r);
+    const inp = r.querySelector('input'), set = q => { q = Math.max(0, Math.min(max, Math.round(+q || 0))); orders[g] = q; inp.value = q; };
+    rows[g] = set; set(0);
+    r.querySelector('.m').addEventListener('click', () => { AU.tap(); set((orders[g] || 0) - 5); c4AmTotal(orders); });
+    r.querySelector('.p').addEventListener('click', () => { AU.tap(); set((orders[g] || 0) + 5); c4AmTotal(orders); });
+    inp.addEventListener('focus', () => inp.select());
+    inp.addEventListener('change', () => { set(inp.value); c4AmTotal(orders); });
+    inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); });   // typing must not walk the lane
+  }
+  // everything within what can be paid: the purse plus what the trader still lends (the chè's firewood counted too)
+  const fit = () => {
+    const can = SAVE4.money + Math.max(0, C4_DEBT - SAVE4.debt) - (orders.che ? C4_GOODS.che.fuel : 0);
+    const sum = Object.entries(orders).reduce((a, [g, q]) => a + q * c4Cost(g), 0); if (sum <= can) return false;
+    const k = Math.max(0, can) / sum; for (const g in rows) rows[g](Math.floor(orders[g] * k / 5) * 5); return true;
+  };
+  const H = { goi: SAVE4.salesHist && SAVE4.salesHist.length ? 'Đã điền sẵn theo số bán mấy hôm trước và thời tiết hôm nay' : 'Chưa biết bán được bao nhiêu: điền tạm một phần ba sức chứa mỗi hàng', qua: 'Như số nhập sáng hôm qua', vua: 'Giữ số đang có', 0: 'Không nhập gì' };
+  const fill = how => {
+    for (const g in rows) rows[g](how === 'goi' ? c4Suggest(g) : how === 'qua' ? (last && last[g]) || 0 : how === 'vua' ? orders[g] : 0);
+    const cut = how !== '0' && fit(); w.querySelector('.ordH').textContent = H[how] + (cut ? ', đã bớt cho vừa tiền.' : '.'); c4AmTotal(orders);
+  };
+  w.querySelectorAll('[data-all]').forEach(b => b.addEventListener('click', () => { AU.tap(); fill(b.dataset.all); }));
+  fill('goi');
 }
 // the goods arrive: paid from the purse, the rest on credit with the trader
 // today's orders, for the book's Đơn hàng tab (owner): each is { src, g, q, cost, who? }; the list restarts each day
@@ -755,7 +801,7 @@ function updateC4(dt) {
       w.moving = d > 3;
       if (w.moving) { const k = Math.min(1, 90 * dt / d); w.x += dx * k; w.z += dz * k; w.ph += dt * 9; w.face = dx < -1 ? -1 : dx > 1 ? 1 : -1; } else w.face = -1;
       w.wait += dt;
-      if ((w.wait > (c4Lv().wait + i * 2) * (w.guest ? 4 : 1) * (1 + .35 * c4Tables(g)) || (g === 'trau' && C4.cat && C4.cat.st === 'sit') || !c4Open(g)) && !(C4.SV[g] || []).some(sv => sv.who === w)) { c4Say(w, c4Stock(g) ? c4Pick(C4_GIVEUP) : 'Hết hàng rồi à? Tiếc quá!'); if (!w.guest) c4Snubbed(w, !c4Stock(g)); c4Leave(w, false); C4.today.lost++; }
+      if ((w.wait > (c4Lv().wait + i * 2) * (w.guest ? 4 : 1) * (1 + .35 * c4Tables(g)) || (g === 'trau' && C4.cat && C4.cat.st === 'sit') || !c4Open(g)) && !(C4.SV[g] || []).some(sv => sv.who === w)) { c4Say(w, c4Stock(g) ? c4Pick(C4_GIVEUP) : 'Hết hàng rồi à? Tiếc quá!'); if (!w.guest) c4Snubbed(w, !c4Stock(g)); c4Leave(w, false); C4.today.lost++; (C4.today.lostBy = C4.today.lostBy || {})[g] = (C4.today.lostBy[g] || 0) + 1; }
     } else if (w.st === 'chat') {
       const c = w.chat; if (c.a === w) c4ChatStep(c, dt);
     } else if (w.st === 'leave') { w.x += w.face * w.sp * dt; w.ph += dt * w.sp / 9; }
@@ -843,6 +889,7 @@ function c4Listen(c) {
 function c4Leave(w, bought) { const q = w.shop && C4.Q[w.shop], i = q ? q.indexOf(w) : -1; if (i >= 0) q.splice(i, 1); w.st = 'leave'; w.face = bought ? (R() < .5 ? 1 : -1) : 1; w.sp = (w.kind === 'mouse' ? 70 : w.sp) + R() * 20; }
 function c4EndDay() {
   c4SaleDayEnd();                                                            // sales in a row teach the regulars to wait (giamgia.js)
+  c4SalesKeep();                                                             // what each ware sold, for tomorrow's order (c4OrderSheet)
   AU.ambient({});
   C4.phase = 'night'; SAVE4.openDay = 0;
   for (const w of C4.walkers) if (w.st !== 'leave') { w.st = 'leave'; w.face = w.x < C4_STALL ? -1 : 1; w.chat = null; w.talk = false; }
