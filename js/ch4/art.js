@@ -184,6 +184,7 @@ function c4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y =
   dp(g, M.arm, 2, hy - 50, -sw * .4);
   dp(g, M.body, 0, hy, .04);
   dp(g, M.leg, -2, hy, C4_SIT ? -1.1 : -sw * .55);
+  if (M.skirt) dp(g, M.skirt, 0, hy, .04 + sw * .03);                       // a skirt drawn as part of the mouse (buildMouse o.skirt)
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04);
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (carry) dp(g, carry, hx + 4, hyy + (carry === WP.basket ? -16 : 6), 0, carry === WP.basket ? 1.1 : .9, carry === WP.basket ? 1.1 : .9);
@@ -216,7 +217,13 @@ const C4_MOUSE_SORTS = [
 ];
 const C4_ADULT_SORTS2 = [0, 1, 2, 3, 4, 5, 6, 7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25], C4_OLD_SORTS2 = [8, 9, 10, 26, 27];
 let C4_MOUSE_RIGS = null;
-const c4MouseRig = i => { if (!C4_MOUSE_RIGS) C4_MOUSE_RIGS = []; return C4_MOUSE_RIGS[i] || (C4_MOUSE_RIGS[i] = buildMouse(C4_MOUSE_SORTS[i].o)); };
+// a woman's skirt is part of her rig (owner, 2026-10-17: the skirt laid over the mouse looked cheap): c4MouseRig(sort, skirt) with the
+// skirt as a plate name, or one of C4_SKIRTS' old colours (residents' look.skirt) mapped to its nearest plate
+const C4_SKIRT_PL = { '#3a2a22': 'brown', '#2a2320': 'dark', '#2f3f6f': 'blue', '#7a2a22': 'red', '#2f4f3c': 'green' };
+const c4MouseRig = (i, sk) => {
+  if (!C4_MOUSE_RIGS) C4_MOUSE_RIGS = {}; const pl = sk ? (PL[sk] ? sk : C4_SKIRT_PL[sk] || 'dark') : '', key = i + '|' + pl;
+  return C4_MOUSE_RIGS[key] || (C4_MOUSE_RIGS[key] = buildMouse(pl ? { ...C4_MOUSE_SORTS[i].o, skirt: pl } : C4_MOUSE_SORTS[i].o));
+};
 // a conical hat (nón lá) over a mouse's head, in the mouse's own frame
 function c4Non(g) {
   g.fillStyle = '#b57a22'; g.strokeStyle = INK; g.lineWidth = 2.2;
@@ -266,7 +273,7 @@ function c4DecoBack(g, w) {
 // over the mouse: skirt, rain cape, hat, the things held in front
 function c4Deco(g, w, k, moving = false) {
   const L = w.look || {}, rain = typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story', t = L.tool;
-  if (L.skirt) {
+  if (L.skirt && !(w.M && w.M.skirt)) {                                  // (a rig with its own skirt, buildMouse o.skirt, needs none laid over it)
     const b = moving ? -Math.abs(Math.sin(w.ph)) * 3.5 : 0, sw = moving ? Math.sin(w.ph) * 5 : 0;
     c4Shape(g, L.skirt, [[-20, -50 + b], [20, -50 + b], [26 + sw, -12 + b], [0 + sw * .6, -9 + b], [-26 + sw, -12 + b]]);
     g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1.2; g.beginPath(); for (const x of [-10, 0, 10]) { g.moveTo(x, -47 + b); g.lineTo(x * 1.25 + sw * .8, -12 + b); } g.stroke();

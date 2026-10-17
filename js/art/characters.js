@@ -35,6 +35,20 @@ function buildMouse(o) {
       a.key(lines([[-14, -26, 12, -34]]), 1.2);
     } else a.fk(o.trim, smooth([[-18, -19], [-7, -34], [4, -32], [-10, -15]]), 1.6);
   });
+  // o.skirt (chương IV, owner 2026-10-17: "vẽ luôn 1 chuột với váy"): a váy đụp of that plate, part of the mouse, not laid over it:
+  // a sash at the waist, the skirt flaring to just above the feet with its folds, a darker band at the hem. c4Mouse / p4Mouse draw it
+  // after the front leg, so only the shins and feet show under it.
+  if (o.skirt) P.skirt = part(o.fat ? [-46, -30, 50, 40] : [-36, -30, 36, 40], a => {
+    const W = o.fat ? (pts => pts.map(([x, y]) => [x * 1.3 + 4, y])) : (pts => pts);   // a stout one: a wider skirt over the wider body
+    const sk = smooth(W([[-26, -24], [0, -26], [26, -22], [29, 4], [33, 31], [16, 36], [0, 34], [-16, 36], [-33, 31], [-30, 4]]));
+    a.fill(o.skirt, sk);
+    a.fill(o.skirt === 'dark' ? 'brown' : 'dark', smooth(W([[-31, 22], [0, 23], [31, 22], [33, 31], [16, 36], [0, 34], [-16, 36], [-33, 31]])));
+    const folds = [[[-14, -18], [-19, 22]], [[-2, -20], [-3, 23]], [[10, -18], [14, 22]], [[20, -14], [25, 21]]];
+    a.key(lines(folds.map(f => W(f).flat())), 1.1);
+    a.key(sk, 2.4);
+    const sash = smooth(W([[-27, -28], [0, -29], [27, -25], [27, -18], [0, -21], [-27, -20]]));
+    a.fk(o.skirt === 'red' ? 'yellow' : 'red', sash, 1.4);
+  });
   P.arm = part([-14, -12, 32, 44], a => {
     a.fk(o.robe, smooth([[-6, -4], [7, -6], [15, 10], [19, 25], [11, 29], [2, 15]]), 2.2);
     a.fk('lilac', ell(16, 31, 5, 4), 1.6);

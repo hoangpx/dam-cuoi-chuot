@@ -22,7 +22,7 @@ const HS_ROBES = [['red', 'Đỏ son'], ['blue', 'Chàm'], ['green', 'Lục'], [
 const HS_TRIM = { red: 'yellow', blue: 'yellow', green: 'red', yellow: 'red', white: 'blue', brown: 'yellow', lilac: 'green', pink: 'white', orange: 'blue', teal: 'yellow', cream: 'red', straw: 'brown' };
 // a wife and a husband dress apart (owner, 2026-10-17: "chọn vợ cho chồng phải có hình thức khác nhau"): she wears a skirt (váy đụp,
 // drawn over the legs) and a woman's headwear, he wears trousers (the rig's legs in that colour, buildMouse o.leg) and a man's
-const HS_SKIRTS = [['#3a2a22', 'Nâu đất'], ['#2a2320', 'Đen'], ['#2f3f6f', 'Chàm'], ['#7a2a22', 'Đỏ mận'], ['#2f4f3c', 'Xanh rêu'], ['#5a2f5f', 'Tím than'], ['#6a4a1a', 'Nâu vàng'], ['#e8d8a8', 'Trắng ngà']];
+const HS_SKIRTS = [['dark', 'Đen'], ['brown', 'Nâu'], ['blue', 'Chàm'], ['red', 'Đỏ son'], ['green', 'Xanh rêu'], ['teal', 'Lam'], ['pink', 'Hồng'], ['cream', 'Ngà']];   // plates: the skirt is part of the rig (buildMouse o.skirt)
 const HS_PANTS = [['dark', 'Đen'], ['brown', 'Nâu'], ['blue', 'Chàm'], ['white', 'Trắng'], ['cream', 'Ngà'], ['grey', 'Xám'], ['straw', 'Vàng rơm']];
 const HS_TOPS = [['tran', 'Để trần'], ['van', 'Khăn vấn'], ['xep', 'Khăn xếp'], ['quai', 'Nón quai thao'], ['mu', 'Mũ'], ['hoa', 'Cài hoa']];
 const HS_TOPS_OF = { vo: ['tran', 'van', 'quai', 'hoa'], chong: ['tran', 'xep', 'mu'] };
@@ -36,7 +36,7 @@ const HS_LANGS = ['làng Đông Hồ', 'làng Kim Liên', 'làng Đình Bảng',
 const HS_FOOD_LANG = [['trau', 'Trầu cau'], ['che', 'Chè xanh'], ['xoi', 'Xôi'], ['bun', 'Bún riêu'], ['banhcuon', 'Bánh cuốn'], ['ruou', 'Rượu nếp']];
 const HS_FOOD_PHO = P4_FOOD_NAMES.map(n => ['pho:' + n, c4Cap1(n.toLowerCase())]);
 const HS_FOOD_NAME = Object.fromEntries([...HS_FOOD_LANG, ...HS_FOOD_PHO]);
-const HS_DEF = { name: '', role: 'vo', age: 'tre', body: 'vua', fur: 'brown', robe: 'red', skirt: '#2f3f6f', pants: 'dark', top: 'van', xom: C4_XOM[0], lang: HS_LANGS[0], likes: [], desc: '', stories: [] };
+const HS_DEF = { name: '', role: 'vo', age: 'tre', body: 'vua', fur: 'brown', robe: 'red', skirt: 'blue', pants: 'dark', top: 'van', xom: C4_XOM[0], lang: HS_LANGS[0], likes: [], desc: '', stories: [] };
 // a profile is there from the start, every field drawn at random (owner, 2026-10-17: "hồ sơ có sẵn ... đều được random, câu chuyện cũng
 // được gắn sẵn 1 câu chuyện random"); the player changes what they like. All lines original.
 const HS_RAND_DESC = ['Hiền lành, chăm chỉ, sáng nào cũng dậy từ gà gáy.', 'Tính hay cười, ai nhờ gì cũng giúp.', 'Mê hát chèo, tối nào cũng ra đình nghe hát.',
@@ -86,20 +86,19 @@ function hsClean(d) {
     stories: (Array.isArray(d.stories) ? d.stories : []).map(s => str(s, HS_STORY_MAX)).filter(Boolean).slice(0, HS_STORIES),
     shop: str(d.shop, 24), stats: { day: Math.max(1, +st.day || 1), known: Math.max(0, +st.known || 0), fame: Math.max(0, Math.min(100, +st.fame || 0)) } };
 }
-// "chị Lan", "ông Tèo": the title follows the role and the age
-const hsTitle = d => { const m = d.role === 'chong'; return d.age === 'gia' ? (m ? 'ông' : 'bà') : d.age === 'trung' ? (m ? 'chú' : 'cô') : (m ? 'anh' : 'chị'); };
-const hsName = d => (d ? `${hsTitle(d)} ${d.name}` : 'khách phương xa');
+// the name exactly as the player wrote it, nothing added (owner, 2026-10-17: "ko thêm cô hay cái j cả")
+const hsName = d => (d && d.name ? d.name : 'khách phương xa');
 const hsAddr = d => [d.xom, d.lang].filter(Boolean).join(', ');
 
 /* ---------- looks: a rig of their own colours, a portrait ---------- */
 const HS_RIGS = new Map();
 function hsRig(d) {
-  const man = d.role === 'chong', key = [d.fur, d.robe, d.top === 'mu' ? 1 : 0, man ? d.pants : '', d.body === 'beo' ? 1 : 0].join('|');
-  if (!HS_RIGS.has(key)) HS_RIGS.set(key, buildMouse({ robe: d.robe, trim: HS_TRIM[d.robe] || 'yellow', head: d.fur, hat: d.top === 'mu' ? 'dark' : undefined, leg: man ? d.pants : undefined, fat: d.body === 'beo' }));
+  const man = d.role === 'chong', key = [d.fur, d.robe, d.top === 'mu' ? 1 : 0, man ? d.pants : '', man ? '' : d.skirt, d.body === 'beo' ? 1 : 0].join('|');
+  if (!HS_RIGS.has(key)) HS_RIGS.set(key, buildMouse({ robe: d.robe, trim: HS_TRIM[d.robe] || 'yellow', head: d.fur, hat: d.top === 'mu' ? 'dark' : undefined, leg: man ? d.pants : undefined, skirt: man ? undefined : d.skirt, fat: d.body === 'beo' }));
   return HS_RIGS.get(key);
 }
 const hsSort = d => (d.age === 'gia' ? 9 : 0);                             // a base sort for the walk (old ones stoop with a stick); colours come from hsRig
-const hsLook = d => ({ skirt: d.role === 'vo' ? d.skirt : null, hat: d.top === 'quai' ? 'quai' : null, umbCol: hsCol(d.robe) });
+const hsLook = d => ({ skirt: null, hat: d.top === 'quai' ? 'quai' : null, umbCol: hsCol(d.robe) });
 // what sits on the head besides the rig's own cap (mũ): c4FaceExtras' parts (a turban, a flower, glasses, a beard); the quai thao hat
 // is the lane's own (look.hat), so only the portrait asks for it here
 function hsExtras(d, face) {
@@ -286,7 +285,7 @@ function hsInvTick(place, dt) {
   for (const e of Q.filter(e => e.place === place)) {
     if ((e.left -= dt) > 0) continue;
     Q.splice(Q.indexOf(e), 1);
-    const P = hsProf(e.id); if (!P) continue; const d = P.d, nm = c4Cap1(hsName(d));
+    const P = hsProf(e.id); if (!P) continue; const d = P.d, nm = hsName(d);
     if (e.no) { toast(c4Pick([`Chờ mãi chẳng thấy ${hsName(d)} đâu. Đường xa quá chăng?`, `${nm} nhắn ra: "Hôm nay bận quá, hẹn dịp khác nhé!"`]), 3); continue; }
     const say = w => setTimeout(() => { if (!w.say) (place === 'pho' ? p4Say : c4Say)(w, c4Pick(e.late ? ['Đường xa, giờ tôi mới tới!', 'Xin lỗi, tôi đến muộn!'] : ['Được mời là tôi đến ngay!', 'Nghe mời là tôi sang liền!'])); }, 900);
     if (place === 'lang') {
@@ -303,7 +302,7 @@ function hsInvTick(place, dt) {
 }
 // they have eaten the free portion: pleased or polite, and a gift for the profile's owner
 function hsTreatDone(w, place) {
-  const id = w.net, P = hsProf(id); if (!P) return; const d = P.d, f = hsK(id), day = SAVE4.day, nm = c4Cap1(hsName(d));
+  const id = w.net, P = hsProf(id); if (!P) return; const d = P.d, f = hsK(id), day = SAVE4.day, nm = hsName(d);
   const dish = place === 'pho' ? (w.food ? 'pho:' + ((p4Shops()[w.food] || {}).food || '') : 'trau') : w.shop, liked = d.likes.includes(dish);
   f.p = d; f.last = Date.now(); const was = !!f.k; let line;
   if (liked) {
@@ -328,7 +327,7 @@ function hsServed(w, place) {
   if (!f.seen) { f.seen = day; fx(nm); }
   else if (!f.k) {
     f.k = day; f.a = 45; fx('★ ' + nm);
-    toast(`${c4Cap1(nm)} (người chơi phương xa) đã thành khách quen. ${place === 'pho' ? 'Xem ở nút Hồ sơ.' : 'Xem trong Sổ tay › Khách quen.'}`, 3.6);
+    toast(`${nm} (người chơi phương xa) đã thành khách quen. ${place === 'pho' ? 'Xem ở nút Hồ sơ.' : 'Xem trong Sổ tay › Khách quen.'}`, 3.6);
     if (place !== 'pho') C4.noteNew = true;
     p4Rpc('dcc_regular_add', { p_device: p4Device(), p_target: +id }).catch(() => {});
   } else f.a = Math.min(100, (f.a || 0) + 5);
@@ -356,7 +355,7 @@ function hsWhoOpen(id, back) {
     : f.k ? `<div class="hsRev"><p class="sm">Đánh giá vị khách này (chỉ được một lần, người ấy sẽ đọc được trong sổ tay):</p><div class="hsStars">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-st="${n}">☆</button>`).join('')}</div>`
       + `<textarea class="hsRevT" maxlength="${HS_REVIEW_MAX}" rows="3" placeholder="Vài lời về vị khách này…"></textarea><p class="hsCnt sm"><span>0</span>/${HS_REVIEW_MAX}</p><button class="btn hsRevGo" disabled>Gửi đánh giá</button></div>`
     : '<p class="sm">Ghé mua thêm lần nữa, thành khách quen rồi mới đánh giá được.</p>';
-  $('#hsWhoB').innerHTML = `<div class="hsHead"><img src="${hsFace(d, id)}" alt=""><div><h3>${p4Esc(c4Cap1(hsName(d)))}</h3><p class="sm">${hsOpt(HS_ROLES, d.role)} · ${hsOpt(HS_AGES, d.age).toLowerCase()} · ${hsOpt(HS_BODIES, d.body).toLowerCase()} · người chơi phương xa</p>${hsAddr(d) ? `<p class="sm">Ở ${p4Esc(hsAddr(d))}</p>` : ''}`
+  $('#hsWhoB').innerHTML = `<div class="hsHead"><img src="${hsFace(d, id)}" alt=""><div><h3>${p4Esc(hsName(d))}</h3><p class="sm">${hsOpt(HS_ROLES, d.role)} · ${hsOpt(HS_AGES, d.age).toLowerCase()} · ${hsOpt(HS_BODIES, d.body).toLowerCase()} · người chơi phương xa</p>${hsAddr(d) ? `<p class="sm">Ở ${p4Esc(hsAddr(d))}</p>` : ''}`
     + (d.shop ? `<p class="sm">Chủ hiệu <b>${p4Esc(d.shop)}</b></p>` : '') + `</div></div>`
     + `<div class="hsStats"><div><b>${d.stats.day}</b><span>ngày buôn</span></div><div><b>${d.stats.known}</b><span>người quen</span></div><div><b>${P.nreg || 0}</b><span>chợ coi là khách quen</span></div><div><b>${P.stars ? P.stars + '★' : '–'}</b><span>${P.nrev || 0} đánh giá</span></div></div>`
     + `<p class="hsFame">Danh tiếng: <b>${hsFameWord(d.stats.fame)}</b> ${c4Bar(d.stats.fame)}</p>`
@@ -401,7 +400,7 @@ function hsReview(id, btn) {
 async function hsProfileInto(box, back) {
   box.classList.add('hsBox');
   const p = hsMine(), fame = hsFame(), me = HS.me || {};
-  box.innerHTML = `<div class="hsHead"><img src="${hsFace(p, me.id || 0)}" alt=""><div><h3>${p4Esc(c4Cap1(hsName(p)))}</h3><p class="sm">${hsOpt(HS_ROLES, p.role)} · ${hsOpt(HS_AGES, p.age).toLowerCase()} · ${hsOpt(HS_BODIES, p.body).toLowerCase()}</p>`
+  box.innerHTML = `<div class="hsHead"><img src="${hsFace(p, me.id || 0)}" alt=""><div><h3>${p4Esc(hsName(p))}</h3><p class="sm">${hsOpt(HS_ROLES, p.role)} · ${hsOpt(HS_AGES, p.age).toLowerCase()} · ${hsOpt(HS_BODIES, p.body).toLowerCase()}</p>`
     + `<p class="sm">${p4Esc(hsAddr(p))}</p></div></div>`
     + `<div class="hsStats"><div><b>${Math.max(1, SAVE4.day || 1)}</b><span>ngày buôn</span></div><div><b>${hsKnownCount()}</b><span>người quen</span></div><div><b class="hsReg">${me.nreg ?? '–'}</b><span>chợ coi là khách quen</span></div><div><b class="hsAvg">${me.stars ? me.stars + '★' : '–'}</b><span><i class="hsN">${me.nrev || 0}</i> đánh giá</span></div></div>`
     + `<p class="hsFame">Danh tiếng: <b>${hsFameWord(fame)}</b> ${c4Bar(fame)}</p>`
@@ -433,7 +432,7 @@ async function hsGiftsInto(box) {
     const [mine, sent] = await Promise.all([p4Rpc('dcc_gift_mine', { p_device: p4Device() }), p4Rpc('dcc_gift_sent', { p_device: p4Device() })]);
     const L = Array.isArray(mine) ? mine : [], S2 = (Array.isArray(sent) ? sent : []).filter(g => g.thanks);
     hsSet('dcc.hsGiftSeen', L.length); hsSet('dcc.hsThankSeen', S2.length);
-    G.innerHTML = L.length ? `<div class="hsRl">${L.map(g => `<div class="hsR" data-g="${g.id}"><p><b>${p4Esc(c4Cap1(g.from_name || 'một nhà buôn'))}</b>${g.shop ? ` (${p4Esc(g.shop)})` : ''} mời bạn ăn thử ${p4Esc(g.what)}${g.liked ? ' <i class="fav">♥ đúng món bạn thích</i>' : ''} <small>· ${hsAgo(g.created_at)}</small></p>`
+    G.innerHTML = L.length ? `<div class="hsRl">${L.map(g => `<div class="hsR" data-g="${g.id}"><p><b>${p4Esc(g.from_name || 'một nhà buôn')}</b>${g.shop ? ` (${p4Esc(g.shop)})` : ''} mời bạn ăn thử ${p4Esc(g.what)}${g.liked ? ' <i class="fav">♥ đúng món bạn thích</i>' : ''} <small>· ${hsAgo(g.created_at)}</small></p>`
       + (g.thanks ? `<p class="sm">Bạn đã cảm ơn: “${p4Esc(g.thanks)}”</p>`
         : `<div class="hsTk"><p class="hsChips">${HS_THANKS.map(t => `<button type="button" class="hsChip" data-tk="${p4Esc(t)}">${p4Esc(t)}</button>`).join('')}</p><input class="hsIn" maxlength="80" placeholder="Hoặc tự viết lời cảm ơn…"><button class="btn alt hsTkGo">Gửi lời cảm ơn</button></div>`) + '</div>').join('')}</div>`
       : '<p class="sm">Chưa ai mời. Khi hồ sơ của bạn đi chợ nhà người khác, chủ hàng có thể mời bạn ăn thử; lời mời sẽ hiện ở đây.</p>';
@@ -448,7 +447,7 @@ async function hsGiftsInto(box) {
           .catch(() => { e.target.disabled = false; toast('Chưa gửi được (mất kết nối?). Thử lại sau nhé.', 3); });
       });
     });
-    T.innerHTML = S2.length ? `<div class="hsRl">${S2.map(g => { const who = hsClean(g.who || {}); return `<div class="hsR"><p><b>${p4Esc(c4Cap1(hsName(who)))}</b> cảm ơn bạn vì ${p4Esc(g.what)}:</p><p><i>“${p4Esc(g.thanks)}”</i> <small>· ${hsAgo(g.thanked_at || g.created_at)}</small></p></div>`; }).join('')}</div>`
+    T.innerHTML = S2.length ? `<div class="hsRl">${S2.map(g => { const who = hsClean(g.who || {}); return `<div class="hsR"><p><b>${p4Esc(hsName(who))}</b> cảm ơn bạn vì ${p4Esc(g.what)}:</p><p><i>“${p4Esc(g.thanks)}”</i> <small>· ${hsAgo(g.thanked_at || g.created_at)}</small></p></div>`; }).join('')}</div>`
       : '<p class="sm">Mời khách phương xa ăn thử ở tab "Mời khách" của từng hàng; họ cảm ơn thì lời cảm ơn hiện ở đây.</p>';
   } catch (e) { G.innerHTML = T.innerHTML = '<p class="sm">Chưa kết nối được máy chủ. Lát nữa thử lại nhé.</p>'; }
 }
@@ -467,19 +466,19 @@ function hsEditDraw() {
   const wife = E.role === 'vo';
   B.innerHTML = `<div class="hsPrev"><img class="hsFig" alt=""></div><p><button type="button" class="btn alt hsRnd">🎲 Đổi ngẫu nhiên</button></p>`
     + `<h4>Là</h4>${pills('role', HS_ROLES)}`
-    + `<h4>Tên <small>(tối đa ${HS_NAME_MAX} chữ)</small></h4><input class="hsIn hsName" maxlength="${HS_NAME_MAX}" autocomplete="off" value="${p4Esc(E.name)}" placeholder="Ví dụ: Mận"><p class="sm hsWho"></p>`
+    + `<h4>Tên <small>(tối đa ${HS_NAME_MAX} chữ)</small></h4><input class="hsIn hsName" maxlength="${HS_NAME_MAX}" autocomplete="off" value="${p4Esc(E.name)}" placeholder="Ví dụ: Mận">`
     + `<h4>Tuổi</h4>${pills('age', HS_AGES)}`
     + `<h4>Dáng người</h4>${pills('body', HS_BODIES)}`
     + `<h4>Ở đâu</h4>${pills('xom', C4_XOM.map(x => [x, x]))}<div style="height:6px"></div>${pills('lang', HS_LANGS.map(x => [x, x]))}`
     + `<h4>Màu lông</h4>${sw('fur', HS_FURS, hsCol)}`
     + `<h4>Tóc, đội đầu</h4>${pills('top', hsTops(E.role))}`
     + `<h4>Màu áo</h4>${sw('robe', HS_ROBES, hsCol)}`
-    + (wife ? `<h4>Màu váy</h4>${sw('skirt', HS_SKIRTS, k => k)}` : `<h4>Màu quần</h4>${sw('pants', HS_PANTS, hsCol)}`)
+    + (wife ? `<h4>Màu váy</h4>${sw('skirt', HS_SKIRTS, hsCol)}` : `<h4>Màu quần</h4>${sw('pants', HS_PANTS, hsCol)}`)
     + `<h4>Thích ăn <small>(tick các món)</small></h4><p class="sm">Ở làng</p>${ticks(HS_FOOD_LANG)}<p class="sm">Trên phố huyện</p>${ticks(HS_FOOD_PHO)}`
     + `<h4>Mô tả bản thân</h4><textarea class="hsIn hsDescT" maxlength="${HS_DESC_MAX}" rows="3" placeholder="Tính tình, nghề ngỗng, chuyện nhà…">${p4Esc(E.desc)}</textarea><p class="sm hsCnt"><span>${E.desc.length}</span>/${HS_DESC_MAX}</p>`
     + `<h4>Câu chuyện <small>(hiện trong bong bóng khi bạn đi chợ nhà người khác)</small></h4><div class="hsSts">${E.stories.map((s, i) => `<div class="hsStI"><textarea class="hsIn" data-story="${i}" maxlength="${HS_STORY_MAX}" rows="2" placeholder="Một chuyện muốn kể…">${p4Esc(s)}</textarea><button type="button" class="link" data-del="${i}">Xoá</button></div>`).join('')}</div>`
     + (E.stories.length < HS_STORIES ? `<button type="button" class="btn alt hsAdd">+ Thêm chuyện</button>` : '');
-  const prev = () => { const d = hsClean(E); B.querySelector('.hsFig').src = hsFigure(d); B.querySelector('.hsWho').textContent = d.name ? 'Người khác sẽ gọi bạn là: ' + hsName(d) : ''; };
+  const prev = () => { const d = hsClean(E); B.querySelector('.hsFig').src = hsFigure(d); };
   B.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
     AU.tap(); E[b.dataset.k] = b.dataset.v;
     if (b.dataset.k === 'role') { E.top = hsClean(E).top; hsEditKeep(); return; }   // a wife and a husband have their own headwear and clothes
