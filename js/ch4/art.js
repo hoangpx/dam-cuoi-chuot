@@ -328,7 +328,7 @@ const C4_TALL = { mouse: 168, duck: 58, rooster: 150, dog: 70, toad: 100 };
 // a far-away guest's build (js/ch4/hoso.js: thin, tall, stout) stretches the whole figure about its feet
 let C4_SHAPED = false;
 function c4Critter(g, w, x, y, s) {
-  if (w.sx && !C4_SHAPED) { C4_SHAPED = true; g.save(); g.translate(x, y); g.scale(w.sx, w.sy || 1); try { c4Critter(g, w, 0, 0, s); } finally { C4_SHAPED = false; g.restore(); } return; }
+  if ((w.sx || w.hx) && !C4_SHAPED) { C4_SHAPED = true; g.save(); g.translate(x, y); g.scale(w.sx || 1, w.sy || 1); try { c4Critter(g, w, 0, 0, s); hsHeadOn(g, w, 0, 0, s); } finally { C4_SHAPED = false; g.restore(); } return; }   // and the head's things (turban, flower: hsHeadOn)
   const ph = w.ph, moving = w.st === 'walk' || w.st === 'leave' || ((w.st === 'queue' || w.st === 'toseat') && w.moving), f = w.face;
   if (w.kind === 'mouse') {
     const sort = C4_MOUSE_SORTS[w.sort], k = s * .92 * (sort.role === 'child' ? .68 : 1), L = w.look || {};

@@ -100,7 +100,29 @@ function hsRig(d) {
 }
 const hsSort = d => (d.age === 'gia' ? 9 : 0);                             // a base sort for the walk (old ones stoop with a stick); colours come from hsRig
 const hsLook = d => ({ skirt: d.role === 'vo' ? d.skirt : null, hat: d.top === 'quai' ? 'quai' : null, umbCol: hsCol(d.robe) });
-const hsShape = d => HS_SHAPE[d.body] || {};                                // w.sx / w.sy for c4Critter and p4Folk
+// what sits on the head besides the rig's own cap (mũ): c4FaceExtras' parts (a turban, a flower, glasses, a beard); the quai thao hat
+// is the lane's own (look.hat), so only the portrait asks for it here
+function hsExtras(d, face) {
+  const X = {};
+  if (face && d.top === 'quai') X.quai = true;
+  if (d.top === 'van' || d.top === 'xep') { X.wrap = d.top; X.wrapCol = d.role === 'vo' ? '#3a2a5a' : '#2a2320'; }
+  if (d.top === 'hoa') X.flower = '#c0567a';
+  if (d.age === 'gia') { X.glasses = true; if (d.role === 'chong') X.beard = true; }
+  return X;
+}
+// w.sx / w.sy (the build) and w.hx (the head's things) for c4Critter and p4Folk, which hand w.hx back to hsHeadOn
+const hsShape = d => { const X = hsExtras(d); return { ...(HS_SHAPE[d.body] || {}), hx: Object.keys(X).length ? X : null }; };
+// the head's things on a whole figure: c4FaceExtras draws in the portrait's space (the mouse at 44,150, size 1.05, facing right), so map
+// that onto this figure (its feet at x,y, size s, facing w.face), bobbing with the walk and lowered on a stool as c4Mouse does
+function hsHeadOn(g, w, x, y, s) {
+  if (!w.hx) return;
+  const k = s * .92, moving = ['walk', 'leave', 'go'].includes(w.st) || (['queue', 'toseat', 'fgo', 'fq'].includes(w.st) && w.moving);
+  const bob = moving ? -Math.abs(Math.sin(w.ph)) * 3.5 : 0, sit = w.st === 'sit' || w.st === 'eat' ? -8 : 0;
+  const old = (C4_MOUSE_SORTS[w.sort] || {}).role === 'old' && !sit;   // the old stoop forward about the feet (c4Critter, p4Folk)
+  g.save(); g.translate(x, y); if (old) g.rotate((w.face || 1) * .1); g.scale(w.face || 1, 1); g.translate(0, (bob + sit) * k); g.scale(s / 1.05, s / 1.05); g.translate(-44, -150);
+  try { c4FaceExtras(g, w.hx); } catch (e) {}
+  g.restore();
+}
 const HS_FACE = new Map();
 function hsFace(d, id) {
   const key = id + '|' + [d.fur, d.robe, d.top, d.age, d.role, d.body].join('|'); if (HS_FACE.has(key)) return HS_FACE.get(key);
@@ -110,16 +132,16 @@ function hsFace(d, id) {
   const t = C4.t; C4.t = 0;
   try { c4Critter(g, { kind: 'mouse', sort: hsSort(d), M: hsRig(d), seed: 0, ph: 0, st: 'idle', face: 1 }, 44, 150, 1.05); } catch (e) {}
   C4.t = t;
-  const X = {}; if (d.top === 'quai') X.quai = true; if (d.top === 'van' || d.top === 'xep') { X.wrap = d.top; X.wrapCol = d.role === 'vo' ? '#3a2a5a' : '#2a2320'; } if (d.top === 'hoa') X.flower = '#c0567a';
-  if (d.age === 'gia') { X.glasses = true; if (d.role === 'chong') X.beard = true; }
+  const X = hsExtras(d, true);
+  if (d.age === 'gia') { g.translate(44, 150); g.rotate(.1); g.translate(-44, -150); }   // with the old one's stoop, as hsHeadOn
   try { c4FaceExtras(g, X); } catch (e) {}
   g.restore(); g.strokeStyle = '#b39a6a'; g.lineWidth = 5; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.stroke();
   const url = c.toDataURL(); HS_FACE.set(key, url); return url;
 }
 // the whole figure for the editor's preview (the market's own drawing)
 function hsFigure(d) {
-  const c = mk(150, 210), g = c.getContext('2d'), t = C4.t; C4.t = 0;
-  try { c4Critter(g, { kind: 'mouse', sort: hsSort(d), M: hsRig(d), seed: 0, ph: 0, st: 'idle', face: 1, look: hsLook(d), ...hsShape(d) }, 66, 204, .88); } catch (e) {}
+  const c = mk(180, 250), g = c.getContext('2d'), t = C4.t; C4.t = 0;
+  try { c4Critter(g, { kind: 'mouse', sort: hsSort(d), M: hsRig(d), seed: 0, ph: 0, st: 'idle', face: 1, look: hsLook(d), ...hsShape(d) }, 80, 242, 1); } catch (e) {}
   C4.t = t; return c.toDataURL();
 }
 
@@ -443,7 +465,7 @@ function hsEditDraw() {
   const sw = (key, L, col) => `<div class="hsSw">${L.map(([k, n]) => `<button type="button" title="${n}" class="${E[key] === k ? 'on' : ''}" data-k="${key}" data-v="${k}" style="background:${col(k)}"></button>`).join('')}</div>`;
   const ticks = L => `<div class="hsTicks">${L.map(([k, n]) => `<label><input type="checkbox" data-like="${k}" ${E.likes.includes(k) ? 'checked' : ''}> ${n}</label>`).join('')}</div>`;
   const wife = E.role === 'vo';
-  B.innerHTML = `<div class="hsPrev"><img class="hsFig" alt=""><img class="hsPic" alt=""></div><p><button type="button" class="btn alt hsRnd">🎲 Đổi ngẫu nhiên</button></p>`
+  B.innerHTML = `<div class="hsPrev"><img class="hsFig" alt=""></div><p><button type="button" class="btn alt hsRnd">🎲 Đổi ngẫu nhiên</button></p>`
     + `<h4>Là</h4>${pills('role', HS_ROLES)}`
     + `<h4>Tên <small>(tối đa ${HS_NAME_MAX} chữ)</small></h4><input class="hsIn hsName" maxlength="${HS_NAME_MAX}" autocomplete="off" value="${p4Esc(E.name)}" placeholder="Ví dụ: Mận"><p class="sm hsWho"></p>`
     + `<h4>Tuổi</h4>${pills('age', HS_AGES)}`
@@ -457,7 +479,7 @@ function hsEditDraw() {
     + `<h4>Mô tả bản thân</h4><textarea class="hsIn hsDescT" maxlength="${HS_DESC_MAX}" rows="3" placeholder="Tính tình, nghề ngỗng, chuyện nhà…">${p4Esc(E.desc)}</textarea><p class="sm hsCnt"><span>${E.desc.length}</span>/${HS_DESC_MAX}</p>`
     + `<h4>Câu chuyện <small>(hiện trong bong bóng khi bạn đi chợ nhà người khác)</small></h4><div class="hsSts">${E.stories.map((s, i) => `<div class="hsStI"><textarea class="hsIn" data-story="${i}" maxlength="${HS_STORY_MAX}" rows="2" placeholder="Một chuyện muốn kể…">${p4Esc(s)}</textarea><button type="button" class="link" data-del="${i}">Xoá</button></div>`).join('')}</div>`
     + (E.stories.length < HS_STORIES ? `<button type="button" class="btn alt hsAdd">+ Thêm chuyện</button>` : '');
-  const prev = () => { const d = hsClean(E); B.querySelector('.hsFig').src = hsFigure(d); B.querySelector('.hsPic').src = hsFace(d, 'prev'); B.querySelector('.hsWho').textContent = d.name ? 'Người khác sẽ gọi bạn là: ' + hsName(d) : ''; };
+  const prev = () => { const d = hsClean(E); B.querySelector('.hsFig').src = hsFigure(d); B.querySelector('.hsWho').textContent = d.name ? 'Người khác sẽ gọi bạn là: ' + hsName(d) : ''; };
   B.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
     AU.tap(); E[b.dataset.k] = b.dataset.v;
     if (b.dataset.k === 'role') { E.top = hsClean(E).top; hsEditKeep(); return; }   // a wife and a husband have their own headwear and clothes

@@ -360,7 +360,7 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .hsR{border-bottom:1px dashed rgba(29,25,21,.35);padding:6px 0}
 .hsR p{margin:4px 0}
 .hsPrev{display:flex;justify-content:center;align-items:flex-end;gap:10px}
-.hsPrev .hsFig{width:110px;height:154px}
+.hsPrev .hsFig{width:150px;height:208px}
 .hsPrev .hsPic{width:76px;height:76px}
 .hsPills{display:flex;flex-wrap:wrap;gap:6px}
 .hsPills button{font:inherit;font-size:14px;padding:4px 10px;border:2px solid var(--ink);background:#fffaf0;cursor:pointer}
