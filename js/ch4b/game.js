@@ -246,6 +246,7 @@ function p4Hud() {
   $('#p4Money').innerHTML = c4Money(Math.round(p4Purse()));
   $('#p4Stock').textContent = `Trầu ${SAVE4B.stock}`; $('#p4Stock').hidden = !SAVE4B.house;
   $('#p4Buy').hidden = !!SAVE4B.house; $('#p4Buy').classList.toggle('off', p4Purse() < P4_HOUSE_PRICE);
+  for (const id of ['p4Note', 'p4Ups']) { $('#' + id).disabled = !SAVE4B.house; $('#' + id).classList.toggle('off', !SAVE4B.house); }   // greyed until the house is bought
 }
 // buying the house: 500 quan out of the purse
 function p4BuySheet() {
@@ -271,7 +272,7 @@ function p4HomeDraw() {
 }
 {
   const hud = document.createElement('div'); hud.id = 'p4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="p4Name">Phố Huyện</button><div class="mid"><div class="tag" id="p4Time"></div></div><div class="right"><div class="tag" id="p4Money"></div><div class="tag" id="p4Stock"></div></div><div class="bar"><button class="tag" id="p4Back">Về chợ quê</button><button class="tag" id="p4Rank">Tổng sắp</button><button class="tag" id="p4Hoso">Hồ sơ</button><button class="tag buy" id="p4Buy" hidden>Mua nhà · 500 quan</button></div>';
+  hud.innerHTML = '<button class="tag" id="p4Name">Phố Huyện</button><div class="mid"><div class="tag" id="p4Time"></div></div><div class="right"><div class="tag" id="p4Money"></div><div class="tag" id="p4Stock"></div></div><div class="bar"><button class="tag ic" id="p4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic up" id="p4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag pho" id="p4Back">Về chợ quê</button><button class="tag buy" id="p4Buy" hidden>Mua nhà · 500 quan</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet p4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('p4buy', '<h3>Lên Phố Huyện</h3><div id="p4buyB"></div><div class="row"><button class="btn" id="p4buyGo">Mua nhà</button><button class="btn alt" id="p4buyX">Thôi</button></div>'),
@@ -280,8 +281,10 @@ function p4HomeDraw() {
     sheet('p4day', '<h3 id="p4dayT"></h3><div id="p4dayB"></div><div class="row"><button class="btn" id="p4dayGo">Sang ngày mới</button></div>'));
   $('#p4Name').addEventListener('click', () => showChapters());
   $('#p4Buy').addEventListener('click', () => { AU.tap(); p4BuySheet(); });
-  $('#p4Rank').addEventListener('click', () => { AU.tap(); c4RankOpen(); });   // the board of the richest (js/ch4/xephang.js)
-  $('#p4Hoso').addEventListener('click', () => { AU.tap(); hsOpen(); });   // my profile and the far-away guests (js/ch4/hoso.js)
+  // the bar is the village's (owner, 2026-10-17: "các control cũng giống y như ở làng, chỉ là chưa mua nhà thì chưa ấn đc"): the book (here: Khách quen,
+  // Hồ sơ, Tổng sắp: hsOpen in js/ch4/hoso.js), Nâng cấp (the house's sheet), the way back; book and upgrades wait for the house (p4Hud)
+  $('#p4Note').addEventListener('click', () => { if (!SAVE4B.house) return; AU.tap(); hsOpen('quen'); });
+  $('#p4Ups').addEventListener('click', () => { if (!SAVE4B.house) return; AU.tap(); p4HomeOpen(); });
   $('#p4Back').addEventListener('click', () => { AU.tap(); p4Hide(); startC4(); });
   $('#p4buyX').addEventListener('click', () => p4Sheets(null));
   $('#p4buyGo').addEventListener('click', () => {

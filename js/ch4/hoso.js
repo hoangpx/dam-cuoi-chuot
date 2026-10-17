@@ -327,7 +327,7 @@ function hsServed(w, place) {
   if (!f.seen) { f.seen = day; fx(nm); }
   else if (!f.k) {
     f.k = day; f.a = 45; fx('★ ' + nm);
-    toast(`${nm} (người chơi phương xa) đã thành khách quen. ${place === 'pho' ? 'Xem ở nút Hồ sơ.' : 'Xem trong Sổ tay › Khách quen.'}`, 3.6);
+    toast(`${nm} (người chơi phương xa) đã thành khách quen. Xem trong Sổ tay › Khách quen.`, 3.6);
     if (place !== 'pho') C4.noteNew = true;
     p4Rpc('dcc_regular_add', { p_device: p4Device(), p_target: +id }).catch(() => {});
   } else f.a = Math.min(100, (f.a || 0) + 5);
@@ -505,15 +505,24 @@ function hsEditSave() {
 }
 function hsEditClose() { const b = HS.editBack; HS.editBack = null; HS.edit = null; if (b) b(); else hsShow(null); }
 
-/* ---------- the town has no book: a sheet with my profile and the far-away guests ---------- */
+/* ---------- the town's book (owner, 2026-10-17: the town's controls as the village's): the HUD's 📖 opens it with the village book's
+   tabs that the town has: Khách quen (the townsfolk you know or have seen, then the far-away guests), Hồ sơ, Tổng sắp ---------- */
 function hsOpen(tab) {
-  HS.tab = tab || HS.tab || 'ho';
-  const B = $('#hsB'), n = hsGuests().length;
-  B.innerHTML = `<div class="c4tabs"><button class="${HS.tab === 'ho' ? 'on' : ''}" data-hs="ho">Hồ sơ của tôi</button><button class="${HS.tab === 'xa' ? 'on' : ''}" data-hs="xa">Khách phương xa${n ? ' (' + n + ')' : ''}</button></div><div class="hsTab"></div>`;
+  HS.tab = ['quen', 'ho', 'rank'].includes(tab) ? tab : ['quen', 'ho', 'rank'].includes(HS.tab) ? HS.tab : 'quen';
+  const B = $('#hsB'), tabs = [['quen', 'Khách quen'], ['ho', 'Hồ sơ'], ['rank', 'Tổng sắp']];
+  B.innerHTML = `<h3>Sổ tay</h3><div class="c4tabs">${tabs.map(([k, n]) => `<button class="${HS.tab === k ? 'on' : ''}" data-hs="${k}">${n}</button>`).join('')}</div><div class="hsTab"></div>`;
   B.querySelectorAll('[data-hs]').forEach(b => b.addEventListener('click', () => { AU.tap(); hsOpen(b.dataset.hs); }));
   const T = B.querySelector('.hsTab'), back = () => hsOpen(HS.tab);
   if (HS.tab === 'ho') hsProfileInto(T, back);
-  else { T.innerHTML = hsBookHtml() || '<p>Chưa có khách phương xa nào ghé. Mỗi ngày vài người chơi khác đi chợ ở đây; ai mua hai lần sẽ thành khách quen.</p>'; hsBookWire(T, back); }
+  else if (HS.tab === 'rank') { T.innerHTML = '<h4>Bảng tổng sắp nhà giàu</h4><div class="hsRank"></div>'; c4RankInto(T.querySelector('.hsRank')); }
+  else {
+    const F = id => SAVE4B.folk[id], seen = p4People().filter(p => p4Seen(p.id)), known = seen.filter(p => p4Known(p.id)).sort((a, b) => (F(b.id).a || 0) - (F(a.id).a || 0)), face = seen.filter(p => !p4Known(p.id));
+    T.innerHTML = `<p class="cnt">${known.length} người quen · ${face.length} người biết mặt</p>`
+      + (known.length ? `<div class="folk">${known.map(p => `<div class="fk"><img src="${p4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(F(p.id).a || 0)}<span>ghé ${F(p.id).v || 0} lần</span></div>`).join('')}</div>` : '<p>Chưa quen ai trên phố. Khách ghé mua lần thứ hai mới thành quen.</p>')
+      + (face.length ? `<h4>Biết mặt</h4><div class="folk">${face.map(p => `<div class="fk unk2"><img src="${p4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>` : '')
+      + hsBookHtml();
+    hsBookWire(T, back);
+  }
   hsShow('hs');
 }
 

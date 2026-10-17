@@ -69,3 +69,17 @@ body.p4holding #cv{cursor:none}
 #p4temHud button.tag.more:disabled{background:#6f665c;cursor:default}
 /* phones: the bottom bar wraps onto two rows instead of running off both edges (a Hồ sơ button joined it, js/ch4/hoso.js) */
 @media (max-width:520px){#p4hud .bar{flex-wrap:wrap;justify-content:center;width:calc(100% - 24px)}#p4hud .bar .tag{font-size:14px;padding:7px 10px}}
+/* the town's bar is the village's (owner, 2026-10-17): 📖 Sổ tay, ⬆️ Nâng cấp, the red way back; greyed until the house is bought */
+#p4hud .bar .tag.ic{font-size:24px;padding:6px 14px;line-height:1.2}
+#p4hud .bar .tag .ic4{width:28px;height:28px;vertical-align:middle}
+#p4hud .bar .tag.up{background:#f2ecde;color:var(--ink)}
+#p4hud .bar .tag.pho{background:#a3332a;color:var(--diep)}
+#p4hud .bar .tag.off,#p4hud .bar .tag:disabled{opacity:.4;cursor:default;box-shadow:none}
+#p4hud .bar .tag.buy.off{opacity:1}
+/* and on a phone the top reads like the village's: the clock under the name, money and betel in a column at the right */
+@media (max-width:520px){
+  #p4hud{flex-wrap:nowrap}
+  #p4hud .right{width:auto;align-items:flex-end}
+  #p4hud .mid,body.touch #p4hud .mid{position:absolute;left:16px;top:calc(56px + env(safe-area-inset-top,0px));transform:none;width:auto;order:0;display:block}
+  #p4hud .bar .tag.ic{padding:6px 12px}
+}
