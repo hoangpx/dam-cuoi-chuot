@@ -21,7 +21,9 @@ function p4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y =
   if (carry) dp(g, carry, hx + 4, hyy + 6, 0, .9, .9);
   g.restore();
 }
+let P4_SHAPED = false;
 function p4Folk(g, w, x, y, s) {
+  if (w.sx && !P4_SHAPED) { P4_SHAPED = true; g.save(); g.translate(x, y); g.scale(w.sx, w.sy || 1); try { p4Folk(g, w, 0, 0, s); } finally { P4_SHAPED = false; g.restore(); } return; }   // a far-away guest's build (js/ch4/hoso.js)
   const sort = C4_MOUSE_SORTS[w.sort], k = s * .92 * (sort.role === 'child' ? .68 : 1), L = w.look || {}, f = w.face;
   const moving = w.st === 'walk' || w.st === 'leave' || w.st === 'go' || ((w.st === 'queue' || w.st === 'fgo' || w.st === 'fq') && w.moving);
   const busy = L.tool && L.tool !== 'o' ? L.tool : (w.umb && !p4OnBridge(w.x) ? 'o' : null);

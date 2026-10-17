@@ -4,7 +4,7 @@ function buildMouse(o) {
   const P = {};
   P.tail = part([-96, -66, 12, 22], a => { a.key(smooth([[0, 0], [-28, 10], [-58, -2], [-78, -28], [-70, -54]], false), 3.2); });
   P.leg = part([-18, -8, 24, 50], a => {
-    a.fk('lilac', ell(0, 6, 8, 11), 2);
+    a.fk(o.leg || 'lilac', ell(0, 6, 8, 11), 2);                          // o.leg: trousers of that colour (chương IV profiles: a husband's quần)
     a.key(smooth([[1, 14], [3, 28], [-1, 40]], false), 3);
     a.key(lines([[-1, 40, 12, 44], [-1, 40, 5, 47], [-1, 40, -10, 44]]), 2);
   });

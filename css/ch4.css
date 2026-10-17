@@ -381,3 +381,14 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .hsTk .hsChip{cursor:pointer;background:#fffaf0;font:inherit;font-size:12px}
 .hsTk .hsIn{margin:4px 0;font-size:15px}
 .hsR .fav{color:#c0567a;font-style:normal}
+/* the HUD on a phone (owner, 2026-10-17): money, debt and the wares stand in a column at the right edge, one ware a line; the clock goes under the name at the left */
+#c4hud #c4Stock .w{white-space:nowrap}
+#c4hud #c4Stock .w+.w{margin-left:.5em}
+@media (max-width:520px){
+  #c4hud{flex-wrap:nowrap}
+  #c4hud .right{width:auto;align-items:flex-end}
+  #c4hud #c4Stock{text-align:right;font-size:13px;line-height:1.4;max-width:none}
+  #c4hud #c4Stock .w{display:block}
+  #c4hud #c4Stock .w+.w{margin-left:0}
+  #c4hud .mid,body.touch #c4hud .mid{position:absolute;left:16px;top:calc(56px + env(safe-area-inset-top,0px));transform:none;width:auto;order:0;display:block}
+}

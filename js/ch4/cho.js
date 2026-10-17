@@ -947,7 +947,7 @@ function c4Hud() {
   $('#c4Money').innerHTML = c4Money(SAVE4.money);
   $('#c4Time').textContent = `Ngày ${SAVE4.day}  ${C4_ZOD[c4Hour(C4.mins)] || ''} ${c4Clock(C4.mins)}  ${C4_WXI[c4Wx()]}`;
   $('#c4Time').title = `giờ ${c4Hour(C4.mins)}`;
-  $('#c4Stock').innerHTML = c4Owned().map(g => `${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}`).join(' &nbsp;');
+  $('#c4Stock').innerHTML = c4Owned().map(g => `<span class="w">${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}</span>`).join(' ');   // one line per ware on a phone (css/ch4.css)
   $('#c4Debt').innerHTML = SAVE4.debt > 0.5 ? 'Nợ ' + c4Money(SAVE4.debt) : '';
   $('#c4Debt').hidden = !(SAVE4.debt > 0.5);
   $('#c4Note').classList.toggle('new', !!C4.noteNew);
