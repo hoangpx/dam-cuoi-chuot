@@ -106,7 +106,7 @@ function hsExtras(d, face) {
   if (face && d.top === 'quai') X.quai = true;
   if (d.top === 'van' || d.top === 'xep') { X.wrap = d.top; X.wrapCol = d.role === 'vo' ? '#3a2a5a' : '#2a2320'; }
   if (d.top === 'hoa') X.flower = '#c0567a';
-  if (d.age === 'gia') { X.glasses = true; if (d.role === 'chong') X.beard = true; }
+  if (d.age === 'gia') { X.glasses = true; if (d.role === 'chong' && face) X.beard = true; }   // the beard only in the round portrait: on a whole figure it read as a white fang (owner)
   return X;
 }
 // w.sx / w.sy (the build) and w.hx (the head's things) for c4Critter and p4Folk, which hand w.hx back to hsHeadOn
