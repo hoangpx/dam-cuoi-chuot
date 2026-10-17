@@ -1308,8 +1308,11 @@ function c4Up(e) {
   for (const v of C4.vendors) { const vz = v.z || .05, s2 = c4S(vz), vy = c4Y(vz);
     if (x > v.x - 60 * s2 && x < v.x + 90 * s2 && y > vy - 130 * s2 && y < vy + 14) { AU.tap(); if (c4VendorMine(v)) c4OpenUp(C4_VENDOR_G[v.ware]); else c4BuyOpen(v); return; } }
 }
+// the mouse wheel (or a trackpad) looks along the lane, as in the town (owner, 2026-10-17: "chợ quê ko scroll đc chuột giống phố huyện")
+cv.addEventListener('wheel', e => { if (S.mode !== 'c4play' || C4.sheet || C4.phase === 'story') return; e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; C4.camX += d * 1.5 * (e.deltaMode === 1 ? 30 : 1) / c4View().s; }, { passive: false });
 function c4Key(e) {
   if (C4.phase === 'story' && ['Space', 'Enter', 'ArrowRight'].includes(e.code)) { e.preventDefault(); c4StoryNext(); return; }
+  if (!C4.sheet && C4.phase !== 'story') { if (e.code === 'ArrowLeft') C4.camX -= 60; if (e.code === 'ArrowRight') C4.camX += 60; }   // look along the lane, as in the town (owner, 2026-10-17)
   if (e.code === 'Escape') { if (!$('#c4up').hidden || !$('#c4note').hidden) c4Sheets(null); else showChapters(); }
 }
 
