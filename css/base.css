@@ -150,3 +150,7 @@ html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow
 #bSound.muted .on{display:none}
 #bSound.muted .off{display:inline}
 @media (max-width:640px){#bSound{top:12px;right:64px}}
+
+/* iPhone notch and the status icons beside it (owner, 2026-10-17: the flag and sound buttons could not be tapped): overlays keep clear of every safe area */
+.ov{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
+#toast{top:max(20%,calc(12px + env(safe-area-inset-top,0px)));left:calc(16px + env(safe-area-inset-left,0px));right:calc(16px + env(safe-area-inset-right,0px))}

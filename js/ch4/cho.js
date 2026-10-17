@@ -999,7 +999,7 @@ function c4Hud() {
   $('#c4Debt').hidden = !(SAVE4.debt > 0.5);
   $('#c4Note').classList.toggle('new', !!C4.noteNew);
   $('#c4Home').hidden = !(C4_HOUSE_ON && c4HasHome());
-  $('#c4Task').innerHTML = c4TasksHud(); $('#c4Task').hidden = !SAVE4.tasks || !SAVE4.tasks.length;   // some days have no tasks
+  $('#c4Task').innerHTML = c4TasksHud(); $('#c4Task').hidden = true;   // owner, 2026-10-17: no Việc button on the market, the tasks are in the book (Việc tab)
 }
 
 /* ---------- stall sheets: more goods, a bigger betel stall, renting a plot, hiring a helper ---------- */
