@@ -849,12 +849,13 @@ function c4ChatStart(a, b) {
   const others = [...C4.walkers.filter(w => w !== a && w !== b).map(w => w.name), ...C4.vendors.map(v => v.name)].filter(n => n !== a.name && n !== b.name);
   const fill = s => s.replace(/\{A\}/g, a.name).replace(/\{B\}/g, b.name).replace(/\{X\}/g, () => c4Pick(others.length ? others : ['cụ Lý']));
   let news = null, pick = C4_CHATS;
-  if (R() < .38 && SAVE4.next) {
+  const hunt = SAVE4.day >= 1 && (c4Tasks() || []).some(t => t.k === 'news' && !t.done);   // the task asks for news: whispers come more often
+  if (R() < (hunt ? .75 : .38) && SAVE4.next) {
     const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : !!SAVE4.next[k];
     C4.said = C4.said || {};
     const kinds = Object.keys(C4_NEWS).filter(k => !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === k) && (C4.said[k] || 0) < 2);
     const yes = kinds.filter(truth), no = kinds.filter(k => !truth(k));
-    if (kinds.length && Object.values(C4.said).reduce((x, y) => x + y, 0) < 3) { news = (yes.length && (R() < .5 || !no.length)) ? c4Pick(yes) : c4Pick(no.length ? no : kinds); C4.said[news] = (C4.said[news] || 0) + 1; pick = C4_NEWS[news]; }
+    if (kinds.length && ((C4.today && C4.today.news) || 0) < 3) { news = (yes.length && (R() < .5 || !no.length)) ? c4Pick(yes) : c4Pick(no.length ? no : kinds); pick = C4_NEWS[news]; }   // the cap counts whispers heard (c4Listen), not said
   }
   let bad = null;   // a sharp tongue who does not like us bad-mouths the stalls (owner)
   if (!news && SAVE4.day >= C4_BOOK_DAY) for (const w of [a, b]) { if (w.pid === undefined) continue; const p = c4People().list[w.pid], T = C4_TRAITS[p.trait], f = SAVE4.folk[p.id];
@@ -882,7 +883,7 @@ function c4ChatStep(c, dt) {
   who.talk = true; const life = 1.5 + s.length * .05; c4Say(who, s, life); who.say.whisper = c.news && !c.heard; c.t = life + .25;
 }
 function c4Listen(c) {
-  if (c.heard) return; c.heard = true; AU.tap(); if (C4.today) C4.today.news = (C4.today.news || 0) + 1;
+  if (c.heard) return; c.heard = true; AU.tap(); if (C4.today) C4.today.news = (C4.today.news || 0) + 1; if (c.news) { C4.said = C4.said || {}; C4.said[c.news] = (C4.said[c.news] || 0) + 1; }
   for (const w of [c.a, c.b]) if (w.say) w.say.whisper = false;
   c.i = -1; c.t = 0;
 }

@@ -388,7 +388,8 @@ function c4BuyItem(id) {
 // (a stall of level 1 counts 1, level 2 counts 2…; bought neighbour stalls count 1)
 const c4Stalls = () => Math.max(1, c4Owned().length);
 const c4LossMult = () => c4Owned().reduce((n, g) => n + (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g)) + 1, 0);   // each stall counts its level (1 for the first): 2 stalls of level 1 = 2, level 1 + level 2 = 3, two of level 2 = 4
-const c4LossRange = (lo, hi, min = 20) => { const m = Math.max(0, SAVE4.money), k = c4LossMult(); return [Math.min(m, Math.max(min * k, Math.round(1000 * lo * k))), Math.min(m, Math.max(min * k, Math.round(1000 * hi * k)))]; };   // lo, hi: the base amount ÷ 1000 (a share of 1000 đồng)
+const C4_LOSS_CAP = .2;                                                    // one misfortune takes at most a fifth of the purse (owner, 2026-10-17: a gale ate nearly all of 3 quan)
+const c4LossRange = (lo, hi, min = 20) => { const m = Math.max(0, SAVE4.money), k = c4LossMult(), cap = Math.min(m, Math.max(min, Math.round(m * C4_LOSS_CAP))); return [Math.min(cap, Math.max(min * k, Math.round(1000 * lo * k))), Math.min(cap, Math.max(min * k, Math.round(1000 * hi * k)))]; };   // lo, hi: the base amount ÷ 1000 (a share of 1000 đồng)
 const c4Loss = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return Math.min(SAVE4.money, a + Math.round(R() * (b - a))); };
 const c4LossText = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return a === b ? c4Money(a) : `từ ${c4Money(a)} đến ${c4Money(b)}`; };
 const C4_EXTRA_EV = {
