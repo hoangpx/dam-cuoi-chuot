@@ -17,7 +17,7 @@ const p4Reported = () => { try { return new Set(JSON.parse(localStorage.getItem(
 // send a wish when its lantern is set down
 function p4HoaSend(h) {
   P4.sent = P4.sent || new Set();
-  p4Rpc('dcc_hoa_add', { p_wish: h.wish, p_shop: SAVE4B.name || 'TRẦU CAU', p_device: p4Device() })
+  p4Rpc('dcc_hoa_add', { p_wish: h.wish, p_shop: p4HoaFrom(), p_device: p4Device() })
     .then(id => { if (id) { P4.sent.add(id); h.netId = id; } })
     .catch(e => { if (/bad words/.test(e.message)) toast('Lời chúc có chữ không đẹp nên không trôi tới người khác.', 3); });
 }
