@@ -36,7 +36,8 @@ const HS_LANGS = ['làng Đông Hồ', 'làng Kim Liên', 'làng Đình Bảng',
 const HS_FOOD_LANG = [['trau', 'Trầu cau'], ['che', 'Chè xanh'], ['xoi', 'Xôi'], ['bun', 'Bún riêu'], ['banhcuon', 'Bánh cuốn'], ['ruou', 'Rượu nếp']];
 const HS_FOOD_PHO = P4_FOOD_NAMES.map(n => ['pho:' + n, c4Cap1(n.toLowerCase())]);
 const HS_FOOD_NAME = Object.fromEntries([...HS_FOOD_LANG, ...HS_FOOD_PHO]);
-const HS_DEF = { name: '', role: 'vo', age: 'tre', body: 'vua', fur: 'brown', robe: 'red', skirt: 'blue', pants: 'dark', top: 'van', xom: C4_XOM[0], lang: HS_LANGS[0], likes: [], desc: '', stories: [] };
+const HS_ADDR_MAX = 40;                                                    // "Ở đâu", typed freely (owner, 2026-10-17)
+const HS_DEF = { name: '', role: 'vo', age: 'tre', body: 'vua', fur: 'brown', robe: 'red', skirt: 'blue', pants: 'dark', top: 'van', addr: '', likes: [], desc: '', stories: [] };
 // a profile is there from the start, every field drawn at random (owner, 2026-10-17: "hồ sơ có sẵn ... đều được random, câu chuyện cũng
 // được gắn sẵn 1 câu chuyện random"); the player changes what they like. All lines original.
 const HS_RAND_DESC = ['Hiền lành, chăm chỉ, sáng nào cũng dậy từ gà gáy.', 'Tính hay cười, ai nhờ gì cũng giúp.', 'Mê hát chèo, tối nào cũng ra đình nghe hát.',
@@ -53,7 +54,7 @@ function hsRandom() {
   const names = [...(C4_GIVEN[g] || []), ...(C4_GIVEN2[g] || [])].filter(n => n.length <= HS_NAME_MAX);
   const foods = [...HS_FOOD_LANG, ...HS_FOOD_PHO].map(o => o[0]).sort(() => Math.random() - .5);
   return { name: r(names), role, age: r(['tre', 'tre', 'tre', 'trung', 'trung', 'gia']), body: r(['vua', 'vua', 'beo', 'gay', 'cao']), fur: r(HS_FURS)[0], robe: r(HS_ROBES)[0],
-    skirt: r(HS_SKIRTS)[0], pants: r(HS_PANTS)[0], top: r(HS_TOPS_OF[role]), xom: r(C4_XOM), lang: r(HS_LANGS), likes: foods.slice(0, 2 + ((Math.random() * 3) | 0)),
+    skirt: r(HS_SKIRTS)[0], pants: r(HS_PANTS)[0], top: r(HS_TOPS_OF[role]), addr: `${r(C4_XOM)}, ${r(HS_LANGS)}`, likes: foods.slice(0, 2 + ((Math.random() * 3) | 0)),
     desc: r(HS_RAND_DESC), stories: [r(HS_RAND_STORY)] };
 }
 const HS = { pool: new Map(), poolAt: 0, loading: false, me: null, revs: null, back: null, tab: 'ho', edit: null };
@@ -81,14 +82,14 @@ function hsClean(d) {
   const st = d.stats && typeof d.stats === 'object' ? d.stats : {};
   const role = one(HS_ROLES, d.role), tops = HS_TOPS_OF[role];
   return { name: str(d.name, HS_NAME_MAX), role, age: one(HS_AGES, d.age), body: one(HS_BODIES, d.body), fur: one(HS_FURS, d.fur), robe: one(HS_ROBES, d.robe), skirt: one(HS_SKIRTS, d.skirt),
-    pants: one(HS_PANTS, d.pants), top: tops.includes(d.top) ? d.top : tops[1], xom: C4_XOM.includes(d.xom) ? d.xom : '', lang: HS_LANGS.includes(d.lang) ? d.lang : '',
+    pants: one(HS_PANTS, d.pants), top: tops.includes(d.top) ? d.top : tops[1], addr: str(d.addr, HS_ADDR_MAX) || [C4_XOM.includes(d.xom) ? d.xom : '', HS_LANGS.includes(d.lang) ? d.lang : ''].filter(Boolean).join(', '),   // older profiles had two picks
     likes: (Array.isArray(d.likes) ? d.likes : []).filter(k => HS_FOOD_NAME[k]).slice(0, 40), desc: str(d.desc, HS_DESC_MAX),
     stories: (Array.isArray(d.stories) ? d.stories : []).map(s => str(s, HS_STORY_MAX)).filter(Boolean).slice(0, HS_STORIES),
     shop: str(d.shop, 24), stats: { day: Math.max(1, +st.day || 1), known: Math.max(0, +st.known || 0), fame: Math.max(0, Math.min(100, +st.fame || 0)) } };
 }
 // the name exactly as the player wrote it, nothing added (owner, 2026-10-17: "ko thêm cô hay cái j cả")
 const hsName = d => (d && d.name ? d.name : 'khách phương xa');
-const hsAddr = d => [d.xom, d.lang].filter(Boolean).join(', ');
+const hsAddr = d => d.addr || '';
 
 /* ---------- looks: a rig of their own colours, a portrait ---------- */
 const HS_RIGS = new Map();
@@ -469,7 +470,7 @@ function hsEditDraw() {
     + `<h4>Tên <small>(tối đa ${HS_NAME_MAX} chữ)</small></h4><input class="hsIn hsName" maxlength="${HS_NAME_MAX}" autocomplete="off" value="${p4Esc(E.name)}" placeholder="Ví dụ: Mận">`
     + `<h4>Tuổi</h4>${pills('age', HS_AGES)}`
     + `<h4>Dáng người</h4>${pills('body', HS_BODIES)}`
-    + `<h4>Ở đâu</h4>${pills('xom', C4_XOM.map(x => [x, x]))}<div style="height:6px"></div>${pills('lang', HS_LANGS.map(x => [x, x]))}`
+    + `<h4>Ở đâu <small>(tối đa ${HS_ADDR_MAX} chữ)</small></h4><input class="hsIn hsAddrI" maxlength="${HS_ADDR_MAX}" autocomplete="off" value="${p4Esc(E.addr)}" placeholder="Ví dụ: xóm Chùa, làng Đông Hồ">`
     + `<h4>Màu lông</h4>${sw('fur', HS_FURS, hsCol)}`
     + `<h4>Tóc, đội đầu</h4>${pills('top', hsTops(E.role))}`
     + `<h4>Màu áo</h4>${sw('robe', HS_ROBES, hsCol)}`
@@ -487,6 +488,7 @@ function hsEditDraw() {
   B.querySelector('.hsRnd').addEventListener('click', () => { AU.tap(); Object.assign(E, hsRandom()); hsEditKeep(); });
   B.querySelectorAll('[data-like]').forEach(c => c.addEventListener('change', () => { const k = c.dataset.like; E.likes = c.checked ? [...new Set([...E.likes, k])] : E.likes.filter(x => x !== k); }));
   B.querySelector('.hsName').addEventListener('input', e => { E.name = e.target.value; prev(); });
+  B.querySelector('.hsAddrI').addEventListener('input', e => { E.addr = e.target.value; });
   B.querySelector('.hsDescT').addEventListener('input', e => { E.desc = e.target.value; B.querySelector('.hsCnt span').textContent = e.target.value.length; });
   B.querySelectorAll('[data-story]').forEach(t => t.addEventListener('input', () => { E.stories[+t.dataset.story] = t.value; }));
   B.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { E.stories.splice(+b.dataset.del, 1); if (!E.stories.length) E.stories.push(''); hsEditKeep(); }));
@@ -497,7 +499,7 @@ const hsEditKeep = () => { const c = $('#hsEdit .card4'), y = c.scrollTop; hsEdi
 function hsEditSave() {
   const E = HS.edit, d = hsClean(E), old = hsGet('dcc.hoso', {}) || {};
   if (!d.name) { toast('Đặt một cái tên đã.', 2.2); return; }
-  if ([d.name, d.desc, ...d.stories].some(p4HoaBad)) { toast('Có chữ không đẹp trong tên, mô tả hay chuyện kể. Sửa lại nhé.', 3); return; }
+  if ([d.name, d.addr, d.desc, ...d.stories].some(p4HoaBad)) { toast('Có chữ không đẹp trong tên, nơi ở, mô tả hay chuyện kể. Sửa lại nhé.', 3); return; }
   hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); HS_FACE.clear();
   AU.tap(); toast('Đã lưu hồ sơ.', 2);
   hsPush().catch(e => { if (/bad words/.test(e.message || '')) toast('Máy chủ không nhận vì có chữ không đẹp.', 3); });
