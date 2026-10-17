@@ -897,7 +897,8 @@ function c4NewDay() {
 }
 // near closing with much left over that will not keep: invite people you know to come and take it, half price or free
 const c4Leftover = () => c4Owned().filter(g => C4_GOODS[g].keep !== 'ever').reduce((a, g) => a + c4Stock(g), 0);
-const c4CanInvite = () => C4.phase === 'open' && SAVE4.day >= C4_BOOK_DAY && C4.mins >= 15 * 60 && c4Leftover() >= 5 && c4Guests().length > 0;
+const C4_INVITE_ON = false;   // the afternoon "Mời khách quen" (half price / free for the leftovers) is off (owner, 2026-10-17: the treats on each stall's "Mời khách" tab do the same); the code stays
+const c4CanInvite = () => C4_INVITE_ON && C4.phase === 'open' && SAVE4.day >= C4_BOOK_DAY && C4.mins >= 15 * 60 && c4Leftover() >= 5 && c4Guests().length > 0;
 function c4Guests() {
   const here = new Set(C4.walkers.map(w => w.pid));
   return c4People().list.filter(p => c4Known(p.id) && !here.has(p.id) && SAVE4.folk[p.id].called !== SAVE4.day);

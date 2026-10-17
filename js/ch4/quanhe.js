@@ -315,7 +315,7 @@ function qhCardHtml(id) {
         <button class="act b" data-act="ask" ${f.ask === day || !unknownTies || f.a < 35 ? 'disabled' : ''}><b>Hỏi chuyện nhà</b><span>${!unknownTies ? 'đã biết hết' : f.a < 35 ? 'chưa đủ thân' : f.ask === day ? 'mai hỏi tiếp' : `còn ${unknownTies} người chưa biết`}</span></button>
       </div>
       ${c4TreatHtml(p, f)}
-      <div class="row col"><button class="btn alt" data-act="half" ${!buy || f.deal ? 'disabled' : ''}>Lần tới giảm nửa giá</button><button class="btn alt" data-act="free" ${!buy || f.deal ? 'disabled' : ''}>Lần tới mời miễn phí</button></div></div>`;
+      </div>`;
   }
   // not met yet: how they are tied to the folk you know, and who could bring them along
   const via = p.links.filter(l => c4Known(l.to)).map(l => [l, P.list[l.to]]);
