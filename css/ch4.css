@@ -376,3 +376,8 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .hsBox>.btn{margin-top:8px}
 .hsCard .link,.hsBox .link{background:none;border:0;padding:0;font:inherit;font-size:13px;text-decoration:underline;color:inherit;opacity:.75;cursor:pointer}
 .hsCard p.sm{text-align:left}
+.hsTrH{margin:12px 0 4px;text-align:left;font-size:14px}
+.hsTk{margin:4px 0 2px}
+.hsTk .hsChip{cursor:pointer;background:#fffaf0;font:inherit;font-size:12px}
+.hsTk .hsIn{margin:4px 0;font-size:15px}
+.hsR .fav{color:#c0567a;font-style:normal}

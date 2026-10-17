@@ -100,7 +100,7 @@ function hsKnownCount() {
 // how much one counts for in the world: grows with the days played, then the folk you know, the markets that count you a regular, the reviews
 function hsFame() {
   const me = HS.me || {}, day = Math.max(1, SAVE4.day || 1);
-  return Math.min(100, Math.round(6 * Math.sqrt(day) + .35 * hsKnownCount() + 3 * (me.nreg || 0) + 1.5 * (me.nrev || 0)));
+  return Math.min(100, Math.round(6 * Math.sqrt(day) + .35 * hsKnownCount() + 3 * (me.nreg || 0) + 1.5 * (me.nrev || 0) + .5 * (me.ngift || 0)));
 }
 const HS_FAME = [[10, 'Mới ra chợ'], [25, 'Có người biết mặt'], [45, 'Có tiếng trong xóm'], [65, 'Có tiếng cả làng'], [85, 'Nổi tiếng phố huyện'], [101, 'Danh gia vọng tộc']];
 const hsFameWord = f => HS_FAME.find(([n]) => f < n)[1];
@@ -128,6 +128,11 @@ function hsMeLoad() {
     const me = Array.isArray(r) && r[0]; if (!me) return; HS.me = { id: +me.id, stars: me.stars === null ? null : +me.stars, nrev: +me.nrev || 0, nreg: +me.nreg || 0, hidden: !!me.hidden };
     const seen = +hsGet('dcc.hsRevSeen', 0) || 0;
     if (HS.me.nrev > seen && !HS.told) { HS.told = true; toast(`Có ${HS.me.nrev - seen} đánh giá mới về bạn từ người chơi khác. Xem trong Sổ tay › Hồ sơ.`, 3.6); if (typeof C4 !== 'undefined') C4.noteNew = true; }
+    return p4Rpc('dcc_gift_count', { p_device: p4Device() }).then(c => {
+      const n = Array.isArray(c) && c[0]; if (!n) return; HS.me.ngift = +n.ngift || 0;
+      const g = HS.me.ngift - (+hsGet('dcc.hsGiftSeen', 0) || 0), t = (+n.nthank || 0) - (+hsGet('dcc.hsThankSeen', 0) || 0);
+      if ((g > 0 || t > 0) && !HS.toldGift) { HS.toldGift = true; toast([g > 0 ? `${g} lời mời ăn thử mới` : '', t > 0 ? `${t} lời cảm ơn mới` : ''].filter(Boolean).join(' và ') + ' từ người chơi khác. Xem trong Sổ tay › Hồ sơ.', 3.6); if (typeof C4 !== 'undefined') C4.noteNew = true; }
+    }).catch(() => {});
   }).catch(() => {});
 }
 const hsProf = id => { const P = HS.pool.get(+id); if (P) return P; const f = hsKhach()[id]; return f && f.p ? { id: +id, d: hsClean(f.p), stars: null, nrev: 0, nreg: 0 } : null; };
@@ -166,7 +171,7 @@ function hsTalk(list, say, dt) {
 function hsVillageTick(dt) {
   if (C4.phase !== 'open') return;
   const P = hsDue('lang', C4.mins); if (P) hsSpawnLang(P);
-  hsTalk(C4.walkers, c4Say, dt);
+  hsInvTick('lang', dt); hsTalk(C4.walkers, c4Say, dt);
 }
 function hsSpawnLang(P) {
   const d = P.d, V = c4View(), fromRight = Math.random() < .6;
@@ -183,7 +188,7 @@ function hsSpawnLang(P) {
 function hsTownTick(dt) {
   if (P4.phase !== 'open' || P4.paused) return;
   const P = hsDue('pho', P4.mins); if (P) hsSpawnPho(P);
-  hsTalk(P4.walkers, p4Say, dt);
+  hsInvTick('pho', dt); hsTalk(P4.walkers, p4Say, dt);
 }
 function hsSpawnPho(P) {
   const d = P.d, who = { id: undefined, name: hsName(d), sort: hsSort(d), seed: Math.random() * 6, old: d.age === 'gia', g: d.role === 'chong' ? 'm' : 'f', look: { skirt: true, hat: d.top === 'quai' ? 'quai' : null } };
@@ -195,8 +200,72 @@ function hsSpawnPho(P) {
   Object.assign(w, { M: hsRig(d), net: P.id, hsT: 2 + Math.random() * 2 }); w.look = { ...w.look, silk: hsCol(d.robe), hat: d.top === 'quai' ? 'quai' : null };
 }
 
+/* ---------- inviting a far-away guest to try a dish (owner, 2026-10-17: "mời món ... người được mời nhận lời cảm ơn hoặc món quà
+   trong sổ tay"): on a stall's / an eating house's "Mời khách" tab, as for the village folk: word is sent (once a guest a day), they may
+   not come (.15 a regular, .3 a face), else 8–30 s later they eat one portion free and like it more if it is among their liked dishes.
+   Once eaten, a gift is written on the server (rpc dcc_gift_add, docs/supabase-qua-moi.sql); its owner reads it in the book and can send
+   one thank-you back (dcc_gift_thank), which the inviter reads in theirs (dcc_gift_sent). ---------- */
+const HS_THANKS = ['Cảm ơn nhé, ngon lắm!', 'Đúng món tôi thích, quý hoá quá!', 'Lần sau tôi lại ghé ủng hộ!', 'Hôm nào sang chợ tôi, tôi mời lại!'];
+// the dish a sheet offers: the village ware's key, 'trau' at the town's house, 'pho:NAME' at an eating house we run
+const hsDish = (place, kind) => (place === 'pho' ? (kind === 'trau' ? 'trau' : 'pho:' + p4Shops()[kind].food) : kind);
+const hsDishWord = k => (k.startsWith('pho:') ? 'bát ' + HS_FOOD_NAME[k].toLowerCase() : k === 'trau' ? 'miếng trầu' : C4_FAV_WORD[k] || C4_GOODS[k].name.toLowerCase());
+// the rows for the far-away guests under the "Mời khách" list (null when there are none); redraw() draws the sheet again
+function hsTreatRows(place, kind, has, redraw) {
+  const ids = hsGuests(); if (!ids.length) return null;
+  const K = hsKhach(), day = SAVE4.day, dish = hsDish(place, kind), d = document.createElement('div');
+  d.innerHTML = `<h5 class="hsTrH">Khách phương xa</h5><div class="trl">${ids.map(i => { const p = hsProf(i).d, f = K[i], done = f.treat === day, fav = p.likes.includes(dish);
+    return `<div class="tr"><img src="${hsFace(p, i)}" alt=""><b>${p4Esc(hsName(p))}${fav ? ' <i class="fav">♥</i>' : ''}${f.k ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-hst="${i}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
+  d.querySelectorAll('[data-hst]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); hsInvite(+b.dataset.hst, place, kind); redraw(); }));
+  return d;
+}
+function hsInvite(id, place, kind) {
+  const f = hsK(id), P = hsProf(id); if (!P || f.treat === SAVE4.day) return;
+  f.treat = SAVE4.day; hsSaveK();
+  (HS.invQ = HS.invQ || []).push({ id, place, kind, left: 8 + Math.random() * 22, no: Math.random() < (f.k ? .15 : .3), late: Math.random() < .4 });
+  toast(`Đã nhắn ${hsName(P.d)} ra ${place === 'pho' && kind !== 'trau' ? 'quán' : 'hàng'} ăn thử ${hsDishWord(hsDish(place, kind))}. Người ta có đến không thì chưa biết.`, 3.4); AU.tap();
+}
+// every frame of that market: the invited come (or send word they cannot)
+function hsInvTick(place, dt) {
+  const Q = HS.invQ; if (!Q || !Q.length) return;
+  for (const e of Q.filter(e => e.place === place)) {
+    if ((e.left -= dt) > 0) continue;
+    Q.splice(Q.indexOf(e), 1);
+    const P = hsProf(e.id); if (!P) continue; const d = P.d, nm = c4Cap1(hsName(d));
+    if (e.no) { toast(c4Pick([`Chờ mãi chẳng thấy ${hsName(d)} đâu. Đường xa quá chăng?`, `${nm} nhắn ra: "Hôm nay bận quá, hẹn dịp khác nhé!"`]), 3); continue; }
+    const say = w => setTimeout(() => { if (!w.say) (place === 'pho' ? p4Say : c4Say)(w, c4Pick(e.late ? ['Đường xa, giờ tôi mới tới!', 'Xin lỗi, tôi đến muộn!'] : ['Được mời là tôi đến ngay!', 'Nghe mời là tôi sang liền!'])); }, 900);
+    if (place === 'lang') {
+      if (c4Stock(e.kind) < 1 || !c4Open(e.kind)) { toast(`${nm} ra đến nơi thì quán hết hàng, đành về.`, 3); continue; }
+      c4Spawn(undefined, { p: { id: undefined, kind: 'mouse', sort: hsSort(d), role: d.age === 'gia' ? 'old' : 'adult', name: hsName(d), look: hsLook(d), nope: [] }, shop: e.kind, treat: true });
+      const w = C4.walkers[C4.walkers.length - 1]; if (!w) continue; Object.assign(w, { M: hsRig(d), net: e.id, hsT: 6 }); say(w);
+    } else {
+      const who = { id: undefined, sort: hsSort(d), seed: Math.random() * 6, old: d.age === 'gia', look: { skirt: true, hat: d.top === 'quai' ? 'quai' : null } }, before = P4.walkers.length;
+      if (e.kind === 'trau') { if (SAVE4B.stock < 1) { toast(`${nm} tới nơi thì hiệu hết trầu, đành về.`, 3); continue; } p4Spawn(undefined, who, { buy: true, treat: true, n: 1 }); }
+      else if (p4Shops()[e.kind]) p4FoodCustomer(+e.kind, e.kind, who, { treat: true, n: 1 }); else continue;
+      const w = P4.walkers[before]; if (!w) continue; Object.assign(w, { M: hsRig(d), net: e.id, hsT: 6 }); w.look = { ...w.look, silk: hsCol(d.robe) }; say(w);
+    }
+  }
+}
+// they have eaten the free portion: pleased or polite, and a gift for the profile's owner
+function hsTreatDone(w, place) {
+  const id = w.net, P = hsProf(id); if (!P) return; const d = P.d, f = hsK(id), day = SAVE4.day, nm = c4Cap1(hsName(d));
+  const dish = place === 'pho' ? (w.food ? 'pho:' + ((p4Shops()[w.food] || {}).food || '') : 'trau') : w.shop, liked = d.likes.includes(dish);
+  f.p = d; f.last = Date.now(); const was = !!f.k; let line;
+  if (liked) {
+    if (f.k) f.a = Math.min(100, (f.a || 0) + 16);
+    else { f.seen = f.seen || day; f.v = (f.v || 0) + 2; if (f.v >= 2) { f.k = day; f.a = 50; p4Rpc('dcc_regular_add', { p_device: p4Device(), p_target: +id }).catch(() => {}); } }
+    line = `${nm} sáng mắt lên: "Đúng món tôi thích! Cảm ơn nhà mình nhé."${!was && f.k ? ' Từ nay đã thành khách quen.' : ''}`;
+  } else {
+    if (f.k) f.a = Math.min(100, (f.a || 0) + 4); else { f.seen = f.seen || day; f.v = (f.v || 0) + 1; }
+    line = `${nm} ăn xong cảm ơn, vui vẻ ra về.`;
+  }
+  hsSaveK(); toast(line + ' Người ấy sẽ thấy lời mời này trong sổ tay.', 3.8);
+  const mine = hsMine();
+  p4Rpc('dcc_gift_add', { p_device: p4Device(), p_target: +id, p_what: hsDishWord(dish), p_liked: liked, p_from: mine ? hsName(mine) : c4RankName(), p_shop: place === 'pho' ? hsShopName() : 'chợ quê' }).catch(() => {});
+}
+
 /* ---------- served or let down (both markets) ---------- */
 function hsServed(w, place) {
+  if (w.treat) { hsTreatDone(w, place); return; }                          // an invited guest: the free portion (above)
   const id = w.net, P = hsProf(id), d = P && P.d, f = hsK(id), day = SAVE4.day, nm = hsName(d);
   if (d) f.p = d; f.last = Date.now(); f.v = (f.v || 0) + 1;
   const fx = s => (place === 'pho' ? P4.fx.push({ x: w.x, y: p4Y(w.z) - 200, s, t: 0 }) : C4.fx.push({ x: w.x, y: c4Y(w.z) - 200, t: 0, s }));
@@ -289,7 +358,10 @@ async function hsProfileInto(box, back) {
     + (p.desc ? `<p class="hsDesc">“${p4Esc(p.desc)}”</p>` : '')
     + `<p class="hsChips">${p.likes.map(k => `<span class="hsChip">${p4Esc(HS_FOOD_NAME[k])}</span>`).join('')}</p>`
     + `<p class="sm">${p.stories.length} câu chuyện</p><button class="btn alt hsEditB">Sửa hồ sơ</button>`
-    + `<h4>Đánh giá từ khách hàng</h4><div class="hsRevs"><p class="sm">Đang tải…</p></div>`;
+    + `<h4>Đánh giá từ khách hàng</h4><div class="hsRevs"><p class="sm">Đang tải…</p></div>`
+    + `<h4>Quà mời nhận được</h4><div class="hsGifts"><p class="sm">Đang tải…</p></div>`
+    + `<h4>Lời cảm ơn nhận được</h4><div class="hsThx"><p class="sm">Đang tải…</p></div>`;
+  hsGiftsInto(box);
   box.querySelector('.hsEditB').addEventListener('click', () => { AU.tap(); hsEditOpen(back); });
   const R = box.querySelector('.hsRevs');
   try {
@@ -302,6 +374,33 @@ async function hsProfileInto(box, back) {
       : '<p class="sm">Chưa ai đánh giá. Khi hồ sơ của bạn thành khách quen ở chợ nhà người khác, họ có thể để lại vài lời.</p>';
     R.querySelectorAll('[data-rr]').forEach(b => b.addEventListener('click', () => { p4Rpc('dcc_review_report', { p_id: +b.dataset.rr }).catch(() => {}); b.closest('.hsR').remove(); toast('Đã báo. Cảm ơn bạn.', 2); }));
   } catch (e) { R.innerHTML = '<p class="sm">Chưa kết nối được máy chủ. Hồ sơ vẫn lưu trên máy này; lát nữa thử lại nhé.</p>'; }
+}
+
+// the gifts others sent me (each can be thanked once) and the thanks I got for mine
+async function hsGiftsInto(box) {
+  const G = box.querySelector('.hsGifts'), T = box.querySelector('.hsThx');
+  try {
+    const [mine, sent] = await Promise.all([p4Rpc('dcc_gift_mine', { p_device: p4Device() }), p4Rpc('dcc_gift_sent', { p_device: p4Device() })]);
+    const L = Array.isArray(mine) ? mine : [], S2 = (Array.isArray(sent) ? sent : []).filter(g => g.thanks);
+    hsSet('dcc.hsGiftSeen', L.length); hsSet('dcc.hsThankSeen', S2.length);
+    G.innerHTML = L.length ? `<div class="hsRl">${L.map(g => `<div class="hsR" data-g="${g.id}"><p><b>${p4Esc(c4Cap1(g.from_name || 'một nhà buôn'))}</b>${g.shop ? ` (${p4Esc(g.shop)})` : ''} mời bạn ăn thử ${p4Esc(g.what)}${g.liked ? ' <i class="fav">♥ đúng món bạn thích</i>' : ''} <small>· ${hsAgo(g.created_at)}</small></p>`
+      + (g.thanks ? `<p class="sm">Bạn đã cảm ơn: “${p4Esc(g.thanks)}”</p>`
+        : `<div class="hsTk"><p class="hsChips">${HS_THANKS.map(t => `<button type="button" class="hsChip" data-tk="${p4Esc(t)}">${p4Esc(t)}</button>`).join('')}</p><input class="hsIn" maxlength="80" placeholder="Hoặc tự viết lời cảm ơn…"><button class="btn alt hsTkGo">Gửi lời cảm ơn</button></div>`) + '</div>').join('')}</div>`
+      : '<p class="sm">Chưa ai mời. Khi hồ sơ của bạn đi chợ nhà người khác, chủ hàng có thể mời bạn ăn thử; lời mời sẽ hiện ở đây.</p>';
+    G.querySelectorAll('.hsR[data-g]').forEach(r => {
+      const tk = r.querySelector('.hsTk'); if (!tk) return; const inp = tk.querySelector('input');
+      tk.querySelectorAll('[data-tk]').forEach(c => c.addEventListener('click', () => { AU.tap(); inp.value = c.dataset.tk; }));
+      tk.querySelector('.hsTkGo').addEventListener('click', e => {
+        const t = inp.value.replace(/\s+/g, ' ').trim().slice(0, 80); if (!t) { toast('Chọn hoặc viết một lời cảm ơn đã.', 2); return; }
+        if (p4HoaBad(t)) { toast('Lời cảm ơn có chữ không đẹp, sửa lại nhé.', 2.6); return; }
+        e.target.disabled = true;
+        p4Rpc('dcc_gift_thank', { p_device: p4Device(), p_id: +r.dataset.g, p_text: t }).then(() => { AU.tap(); tk.outerHTML = `<p class="sm">Bạn đã cảm ơn: “${p4Esc(t)}”</p>`; toast('Đã gửi lời cảm ơn.', 2); })
+          .catch(() => { e.target.disabled = false; toast('Chưa gửi được (mất kết nối?). Thử lại sau nhé.', 3); });
+      });
+    });
+    T.innerHTML = S2.length ? `<div class="hsRl">${S2.map(g => { const who = hsClean(g.who || {}); return `<div class="hsR"><p><b>${p4Esc(c4Cap1(hsName(who)))}</b> cảm ơn bạn vì ${p4Esc(g.what)}:</p><p><i>“${p4Esc(g.thanks)}”</i> <small>· ${hsAgo(g.thanked_at || g.created_at)}</small></p></div>`; }).join('')}</div>`
+      : '<p class="sm">Mời khách phương xa ăn thử ở tab "Mời khách" của từng hàng; họ cảm ơn thì lời cảm ơn hiện ở đây.</p>';
+  } catch (e) { G.innerHTML = T.innerHTML = '<p class="sm">Chưa kết nối được máy chủ. Lát nữa thử lại nhé.</p>'; }
 }
 
 /* ---------- the editor ---------- */
