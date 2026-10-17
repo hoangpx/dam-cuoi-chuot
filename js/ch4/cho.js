@@ -259,6 +259,7 @@ function c4Spawn(atX, guest = null) {
     const wants = c4Owned().map(g => [g, c4Want(g) * .56 * (P && P.fav === g ? 1.8 : 1) * (P && P.nope && P.nope.includes(g) ? 0 : 1)]), sum = wants.reduce((a, [, w]) => a + w, 0);
     const sum0 = c4Owned().reduce((a, g) => a + c4Want(g, true) * .56 * (P && P.fav === g ? 1.8 : 1) * (P && P.nope && P.nope.includes(g) ? 0 : 1), 0);   // the same without the weather: a cap on busy stalls used to swallow the weather's effect (owner: a cold day sold less chè than a hot one)
     if (R() < Math.min(1, Math.min(.9, sum0 * c4Keen(P)) * (sum0 > 0 ? sum / sum0 : 1))) { let k = R() * sum; for (const [g, w] of wants) { if ((k -= w) <= 0) { shop = g; break; } } }
+    if (shop && c4SaleHoldBack(P, shop)) shop = null;                       // a regular used to sales waits for the next one (giamgia.js)
   }
   // what they bring: a buffalo to lead (then they are only passing, on the way to the fields), an umbrella in the rain, too much wine
   const look = kid ? {} : P.look || {}, buf = !guest && look.tool === 'buf' && R() < .7 && C4.walkers.filter(q => q.buf).length < 2, drunk = !guest && !!look.drinker && C4.mins > 11 * 60 && R() < .3;
@@ -267,7 +268,7 @@ function c4Spawn(atX, guest = null) {
   if (buf || smokeX !== undefined) shop = null;
   if (shop && fromRight && atX === undefined) x = Math.max(x, C4_GOODS[shop].x + 260);         // buyers come from a side that takes them past their stall
   C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, smokeX, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, guest: !!guest, sp: guest ? 120 : buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
-    buy: !!shop, shop, st: 'walk', n: guest ? 3 + ((R() * 4) | 0) : c4BuyN(P), carry: null, cd: 3 + R() * 6, say: null });
+    buy: !!shop, shop, st: 'walk', n: guest ? (guest.treat ? 1 : guest.sale ? c4BuyN(P) : 3 + ((R() * 4) | 0)) : c4BuyN(P), treat: !!(guest && guest.treat), carry: null, cd: 3 + R() * 6, say: null });
   if (kind === 'mouse' && role === 'child' && atX === undefined && R() < .5) {             // a gang of children chasing each other
     const lead = C4.walkers[C4.walkers.length - 1]; lead.sp = 150; lead.cd = 99;
     for (let i = 1; i <= 1 + ((R() * 2) | 0); i++) { const s2 = 11 + ((R() * 3) | 0); C4.walkers.push({ ...lead, pid: undefined, sort: s2, M: c4MouseRig(s2), seed: R() * 6, name: c4Pick(C4_NAMES.child), x: lead.x - lead.face * 60 * i, z: Math.min(.98, lead.z + (R() - .5) * .2), ph: R() * 6, say: null }); }
@@ -711,7 +712,7 @@ function updateC4(dt) {
       else { AU.snort(); toast(`Không đủ ${W.n} miếng trầu, nhà ${W.who} giận dỗi bỏ đi.`, 3.4); }
       c4Hud();
     }
-    c4NvUpdate(dt); c4DelivUpdate(); c4ExtraUpdate(); c4StreetUpdate(dt); c4CoupleTalk(dt); c4Ambience(dt); c4FlowerSeller(dt); c4VisitorsUpdate(dt); c4RivalUpdate(dt); c4RivalWalk(dt); c4HusbTout(dt); c4TripsUpdate(dt); c4AutoUpdate(dt);
+    c4NvUpdate(dt); c4SaleTick(dt); c4DelivUpdate(); c4ExtraUpdate(); c4StreetUpdate(dt); c4CoupleTalk(dt); c4Ambience(dt); c4FlowerSeller(dt); c4VisitorsUpdate(dt); c4RivalUpdate(dt); c4RivalWalk(dt); c4HusbTout(dt); c4TripsUpdate(dt); c4AutoUpdate(dt);
     if (C4.mins >= C4_CLOSE) { C4.mins = C4_CLOSE - 1; c4EndDay(); }
   }
   // the cat: on the roof, a leap down, the decision; fed it goes back over the roof; refused it sits, then takes betel
@@ -763,8 +764,12 @@ function updateC4(dt) {
   if (C4.guestQ && C4.guestQ.length) {
     C4.guestT += dt;
     while (C4.guestQ.length && C4.guestQ[0].at <= C4.guestT) {
-      const { p, no, late } = C4.guestQ.shift(), gs = C4.guestGoods();
+      const { p, no, late, shop: gShop, treat } = C4.guestQ.shift(), gs = C4.guestGoods();
       if (no) { toast(c4Pick([`Chờ mãi chẳng thấy ${p.name} đâu. Hẹn rồi lại quên!`, `${c4Cap1(p.name)} nhắn ra: "Bận việc nhà, hôm khác nhé!"`, `${c4Cap1(p.name)} hẹn mà không đến.`]), 3); continue; }
+      if (gShop) {                                                                  // invited to try one stall's ware (giamgia.js)
+        if (c4Stock(gShop) < 1 || !c4Open(gShop)) { toast(`${c4Cap1(p.name)} ra đến nơi thì quán hết hàng, đành về.`, 3); continue; }
+        c4Spawn(undefined, { p, shop: gShop, treat }); const w = C4.walkers[C4.walkers.length - 1]; if (w && w.pid === p.id) setTimeout(() => { if (S.mode === 'c4play' && !w.say) c4Say(w, c4Pick(late ? ['Xin lỗi, giờ tôi mới ra được!', 'Bận tí việc, giờ mới đến!'] : ['Nghe nói cô mời, tôi ra đây!', 'Cô mời thì tôi đến ngay!'])); }, 900); continue;
+      }
       const ok = gs.filter(g => !(p.nope || []).includes(g)), gp = ok.includes(p.fav) ? [p.fav] : ok;   // a guest goes for what they eat, their favourite first
       if (gp.length) { c4Spawn(undefined, { p, shop: gp[(R() * Math.min(2, gp.length)) | 0] }); const w = C4.walkers[C4.walkers.length - 1]; if (late && w && w.pid === p.id) setTimeout(() => { if (S.mode === 'c4play' && !w.say) c4Say(w, c4Pick(['Xin lỗi, tôi đến muộn!', 'Còn hàng không cô? Tôi chạy ra đây!', 'Bận tí việc, giờ mới ra được!'])); }, 900); }
     }
@@ -836,6 +841,7 @@ function c4Listen(c) {
 }
 function c4Leave(w, bought) { const q = w.shop && C4.Q[w.shop], i = q ? q.indexOf(w) : -1; if (i >= 0) q.splice(i, 1); w.st = 'leave'; w.face = bought ? (R() < .5 ? 1 : -1) : 1; w.sp = (w.kind === 'mouse' ? 70 : w.sp) + R() * 20; }
 function c4EndDay() {
+  c4SaleDayEnd();                                                            // sales in a row teach the regulars to wait (giamgia.js)
   AU.ambient({});
   C4.phase = 'night'; SAVE4.openDay = 0;
   for (const w of C4.walkers) if (w.st !== 'leave') { w.st = 'leave'; w.face = w.x < C4_STALL ? -1 : 1; w.chat = null; w.talk = false; }
@@ -972,6 +978,7 @@ function c4OpenUp(g = 'trau') {
     box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
+  box.appendChild(c4SaleBlock(g));                                          // a sale: how much, from when to when, every day or today (giamgia.js)
   box.appendChild(c4HandsBlock(g));                                          // always there (a player could not find the hire button when only the betel stall was open)
   box.appendChild(c4TreatBlock(g));                                         // treat the folk you know to this stall's ware (dan.js); last and folded (owner, 2026-10-16: on a phone the list pushed the auto-fetch far down)
                                         // who sells here: the couple, or hired helpers (nguoiban.js)
@@ -1019,11 +1026,12 @@ const c4CanUp = () => { const nx = C4_LV[SAVE4.lv + 1]; return nx && c4UpAllowed
 /* ---------- drawing ---------- */
 // the stall's sign (owner): a board hung on two posts above the stall; tapping the board opens the stall, nothing else does
 const C4_SIGN_Y = -205;
-function c4SignDraw(g, x, y, s, name) {
+function c4SignDraw(g, x, y, s, name, ware) {
   g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = INK; g.lineWidth = 2;
   g.fillStyle = '#7a4a22'; g.fillRect(-52, C4_SIGN_Y + 12, 5, -C4_SIGN_Y - 12); g.fillRect(47, C4_SIGN_Y + 12, 5, -C4_SIGN_Y - 12);
   g.fillStyle = '#f2d27a'; g.beginPath(); g.rect(-62, C4_SIGN_Y - 14, 124, 28); g.fill(); g.stroke();
   g.fillStyle = INK; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, 0, C4_SIGN_Y + 1);
+  if (ware) c4SaleTag(g, ware);                                              // GIẢM n% while a sale runs
   g.restore();
 }
 const c4SignHit = (x, y, sx, sy, s) => Math.abs(x - sx) < 66 * s && y > sy + (C4_SIGN_Y - 18) * s && y < sy + (C4_SIGN_Y + 42) * s;   // (owner: a little lower than the board)
@@ -1083,7 +1091,7 @@ function renderC4() {
       c4HandItems(items, sh, head);
       c4TableItems(items, g, vis, sh);
       items.push({ z: C4_STALL_Z, f: () => { c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = c4Open(sh) && !(C4.shut > 0) ? 1 : .45; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
-        c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase());
+        c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase(), sh);
         if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } } });
     } else {
       items.push({ z: C4_STALL_Z, f: () => { dp(g, A.lot, sx, sy, 0, ss, ss); g.save(); g.translate(sx, sy); g.scale(ss, ss); g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK;
@@ -1097,7 +1105,7 @@ function renderC4() {
     items.push({ z: C4_STALL_Z, f: () => { const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
       if (lv >= 3) c4DrawShopLv(g, sx, sy, ss, lv, 'trau');                       // the house behind it
       g.globalAlpha = C4.shut > 0 ? .45 : 1; dp(g, c4StallArt(Math.min(2, lv)), sx, sy, 0, ss, ss); g.globalAlpha = 1;
-      if (lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU');
+      if (lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU', 'trau'); else if (c4SalePct('trau')) { g.save(); g.translate(sx, sy); g.scale(ss, ss); c4SaleTag(g, 'trau'); g.restore(); }
       if (SAVE4.cauDoi) for (const d of [-1, 1]) { const px = sx + d * (lv ? 120 : 112) * ss, py = sy - (lv ? 150 : 80) * ss; g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(px - 7, py - 40 * ss, 14, 60 * ss); g.strokeRect(px - 7, py - 40 * ss, 14, 60 * ss); g.fillStyle = '#f2c640'; for (let k = 0; k < 3; k++) g.fillRect(px - 3, py - 32 * ss + k * 18 * ss, 6, 8 * ss); }
     } });
   }

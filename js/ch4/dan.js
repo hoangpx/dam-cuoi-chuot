@@ -241,6 +241,8 @@ function c4Keen(p) {
 }
 // what a served buyer pays (a promised discount or a free treat is used up)
 function c4Pay(w, full) {
+  if (w.treat) return 0;                                                     // an invited guest eats the portion for free (giamgia.js)
+  if (w.shop && typeof c4SalePct === 'function') { const s = c4SalePct(w.shop); if (s) full = Math.round(full * (1 - s / 100)); }   // a sale on that stall
   if (w.pid === undefined) return full;
   const f = SAVE4.folk[w.pid]; if (!f || !f.deal) return full;
   return f.deal === 'free' ? 0 : Math.round(full / 2);
@@ -407,12 +409,12 @@ function c4TreatBlock(g) {
   if (C4.phase !== 'open') { d.innerHTML = '<p class="sm">Mời khách quen ăn thử được lúc chợ họp.</p>'; return d; }
   const has = c4Stock(g) > 0;
   const open = !!C4.treatOpen;   // folded until tapped open (owner: too long on a phone); stays open for the rest of the session once opened
-  d.innerHTML = `<button class="trh" type="button">${open ? '▾' : '▸'} Mời khách quen ${g === 'trau' ? 'miếng trầu' : 'ăn ' + G.name.toLowerCase()} <small>(${known.length} người)</small></button><div class="trb"${open ? '' : ' hidden'}><p class="sm">Mỗi người một lần một ngày, mất 1 ${G.unit}. Mời đúng món họ thích mới thân${has ? '' : '. <b>Hết hàng rồi.</b>'}</p>`
+  d.innerHTML = `<button class="trh" type="button">${open ? '▾' : '▸'} Mời khách quen ${g === 'trau' ? 'miếng trầu' : 'ăn ' + G.name.toLowerCase()} <small>(${known.length} người)</small></button><div class="trb"${open ? '' : ' hidden'}><p class="sm">Nhắn người ta ra quán ăn thử, mỗi người một lần một ngày. Chưa chắc người ta đến; có đến thì cũng phải một lúc sau. Mời đúng món họ thích mới thân${has ? '' : '. <b>Hết hàng rồi.</b>'}</p>`
     + `<div class="trl">${known.sort((a, b) => (c4Known(b.id) - c4Known(a.id)) || (SAVE4.folk[b.id].a || 0) - (SAVE4.folk[a.id].a || 0)).map(p => { const f = SAVE4.folk[p.id], done = f.treat === day, fav = f.favK && p.fav === g, no = (f.nopeK || []).includes(g);
-      return `<div class="tr"><img src="${c4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}${c4Known(p.id) ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã mời' : 'Mời'}</button></div>`; }).join('')}</div></div>`;
+      return `<div class="tr"><img src="${c4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}${c4Known(p.id) ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div></div>`;
   d.querySelector('.trh').addEventListener('click', () => { AU.tap(); C4.treatOpen = !C4.treatOpen; const b = d.querySelector('.trb'); b.hidden = !C4.treatOpen; d.querySelector('.trh').firstChild.textContent = (C4.treatOpen ? '▾' : '▸') + d.querySelector('.trh').firstChild.textContent.slice(1); });
   d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', () => {
-    c4Treat(+b.dataset.tr, g, () => { C4.keepTab = true; c4OpenUp(g); });   // c4OpenUp keeps the scrolls itself
+    c4TreatInvite(+b.dataset.tr, g); C4.keepTab = true; c4OpenUp(g);   // an invitation now (giamgia.js); c4OpenUp keeps the scrolls itself
   }));
   return d;
 }

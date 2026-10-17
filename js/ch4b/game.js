@@ -63,7 +63,7 @@ function p4Spawn(atX) {
   const x = atX !== undefined ? atX : fromRight ? P4.camX + V.vw + 120 + Math.random() * 200 : P4.camX - 120 - Math.random() * 200;
   const look = kid ? {} : p4TownLook({ skirt: Math.random() < .5, hat: Math.random() < .25 ? 'quai' : null }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
-  const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass();
+  const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4SaleK('home');   // a sale brings more, a habit of sales makes buyers wait (giamgia.js)
   P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o' || (p4Wx() === 'mua' && Math.random() < .75), x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
     sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: 1 + ((Math.random() * 3) | 0), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
@@ -112,7 +112,7 @@ function p4Hide() { P4.talk = null; if (P4T.on) { P4T.on = false; if (P4T.fetch 
 function p4EndDay(silent) {
   P4.phase = 'night';
   if (!SAVE4B.house) { $('#p4dayT').textContent = `Khuya rồi, ngày ${p4DayNo()} đã hết`; $('#p4dayB').innerHTML = '<p>Phố huyện đã lên đèn hết, hàng quán đóng cửa.</p>' + w4VillageLine(); if (!silent) p4Sheets('p4day'); return; }
-  SAVE4B.settled = SAVE4.day;
+  SAVE4B.settled = SAVE4.day; p4SaleDayEnd();                             // sale days in a row (giamgia.js)
   const wilt = SAVE4B.stock; SAVE4B.stock = 0; SAVE4B.weekTake = (SAVE4B.weekTake || 0) + P4.today.take; p4Persist();   // the week's takings, for the street master's tax                // betel does not keep overnight
   $('#p4dayB').innerHTML = `<p>Bán được <b>${P4.today.sold}</b> miếng trầu: <b>${c4Money(P4.today.take)}</b></p><p>Chi: ${c4Money(P4.today.spent)}</p>`
     + (wilt ? `<p class="bad">Trầu thừa héo mất ${wilt} miếng.</p>` : '') + (P4.today.lost ? `<p>${P4.today.lost} khách đến mà hết trầu.</p>` : '')
@@ -251,12 +251,16 @@ function p4BuySheet() {
 }
 function p4HomeOpen() {
   if (!SAVE4B.house) { p4BuySheet(); return; }
+  p4KeepScroll('p4home', p4HomeDraw);                                     // a redraw keeps the scroll (giamgia.js)
+}
+function p4HomeDraw() {
   const G = SAVE4B, cost = 3;
   $('#p4homeB').innerHTML = `<div class="row"><button class="btn tem" data-tem="1">Têm trầu</button></div><p class="p4name">Hiệu <b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b> <button class="btn alt" data-rename="1">Đổi tên</button></p><p>Trầu trong nhà: <b>${G.stock}</b> miếng · giá bán <b>${G.price}</b> đồng một miếng</p><p>Nhập trầu: ${cost} đồng một miếng. Trầu không để được qua đêm.</p>`
     + `<div class="row"><button class="btn" data-n="20">Nhập 20</button><button class="btn" data-n="50">Nhập 50</button></div>`
     + `<div class="row"><button class="btn alt" data-p="-1">Giảm giá</button><button class="btn alt" data-p="1">Tăng giá</button></div>`
     + (SAVE4B.sign ? '' : `<div class="row"><button class="btn" data-homesign="1"${p4Purse() < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${c4Money(P4_SIGN_PRICE)} (+10% khách)</button></div>`)
     + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>` + p4HandsHtml();
+  $('#p4homeB').appendChild(p4SaleBlock('home', p4HomeOpen));               // a sale at the betel house (giamgia.js)
   p4Sheets('p4home');
 }
 {

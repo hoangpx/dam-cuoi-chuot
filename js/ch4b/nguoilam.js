@@ -49,7 +49,7 @@ function p4SellersUpdate(dt) {
   }
 }
 function p4Sale(m, n, fx, fy) {
-  const got = n * SAVE4B.price;
+  const got = p4SalePrice('home', n * SAVE4B.price);                        // a sale lowers the price (giamgia.js)
   SAVE4B.stock -= n; SAVE4B.sold = (SAVE4B.sold || 0) + n; P4.today.sold += n; p4Earn(got); m.take += got;
   P4.fx.push({ x: fx, y: fy, s: '+' + got, t: 0 });
 }

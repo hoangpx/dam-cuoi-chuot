@@ -333,6 +333,7 @@ function p4TownFront(g, hx, hy, s, v, label) {
   if (txt && txt !== 'CHO THUÊ' && txt !== 'NHÀ BÁN') p4TownInterior(g, hx, hy, s, v, R ? R.food : txt, label === 'home' ? 'betel' : lamp ? 'lamp' : null);   // the shop is open: its goods show inside (owner)
   if (lamp) P4.glowW = .45; p4TownLanterns(g, hx, hy, s, v, lamp); P4.glowW = 0;
   if (lamp) p4LanternShop(g, hx, hy, s, v);
+  if (label === 'home' ? SAVE4B.house : R) p4SaleTag(g, hx, hy, s, label === 'home' ? 'home' : p4ShopKey(hx));   // GIẢM n% (giamgia.js)
 }
 function p4TownLanterns(g, hx, hy, s, v, bright = false) {
   const o = P4_TOWN_V[((v | 0) % P4_TOWN_V.length + P4_TOWN_V.length) % P4_TOWN_V.length], w = o.w;

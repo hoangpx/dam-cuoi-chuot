@@ -23,7 +23,7 @@ function p4ShopsUpdate(dt) {
   if (P4.phase !== 'open') return;
   const S = p4Shops(), h = P4.mins / 60, dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);   // game minutes this frame
   for (const key in S) {
-    const R = S[key], x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R) * p4Harass();   // customers a game minute
+    const R = S[key], x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * p4SaleK(key);   // customers a game minute (a sale: giamgia.js)
     R.acc = (R.acc || 0) + rate * dm;
     while (R.acc >= 1) { R.acc -= 1; p4FoodCustomer(x, key); }
     // the cook serves the first in the queue
@@ -33,7 +33,7 @@ function p4ShopsUpdate(dt) {
     if (C.say) { C.say.t += dt; if (C.say.t > C.say.life) C.say = null; }
     if (!C.w) { const w = Q.find(q => q.st === 'fq'); if (w) { C.w = w; C.t = P4_FOOD.serve; } }
     else if ((C.t -= dt) <= 0) {
-      const w = C.w, got = w.n * P4_FOOD.price, cost = w.n * P4_FOOD.cost;
+      const w = C.w, got = p4SalePrice(key, w.n * P4_FOOD.price), cost = w.n * P4_FOOD.cost;
       SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost; persist4();
       const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 }); T.n += w.n; T.take += got; T.cost += cost;
       if (Math.abs(x - P4.camX - p4View().vw / 2) < p4View().vw) { P4.fx.push({ x, y: p4Y(.12) - 120, s: '+' + (got - cost), t: 0 }); if (Math.random() < .3) p4Say(C, p4Pick(['Mời bác ngồi!', 'Nóng hổi đây!', 'Ăn ngon lại ghé nhé!'])); }
@@ -97,6 +97,7 @@ function p4ShopSheet() {
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
   }
   $('#p4shopB').innerHTML = h + `<div class="row"><button class="btn alt" data-shopx="1">Đóng</button></div>`;
+  { const rr = $('#p4shopB > .row:last-child'); if (R && rr) rr.before(p4SaleBlock(key, p4ShopSheet)); }   // a sale at a shop we run (giamgia.js)
   p4Sheets('p4shop');
 }
 function p4ShopClick(b) {

@@ -200,9 +200,9 @@ const C4_TASKS = [
   { k: 'help', make: () => ({ n: 1, text: 'Giúp một người (cho bà cụ ăn xin, trông con hộ, cho vay, đi dập lửa…)', prize: 10 }), done: (t, d) => (d.help || 0) >= 1, from: () => (C4.events || []).some(e => ['xin', 'trong', 'vay', 'chiu', 'lua', 'omdau', 'caicau'].includes(e.kind)) },
   { k: 'visit', make: () => ({ n: 1, text: 'Tiếp chuyện một người ghé gánh (có dấu !)', prize: 6 }), done: (t, d) => (d.visit || 0) >= 1, from: () => (C4.events || []).some(e => C4_VISIT.has(e.kind)) },
   { k: 'met', make: () => ({ n: 1, text: 'Quen thêm một khách mới', prize: 10 }), done: (t, d) => (d.met || 0) >= 1, from: () => SAVE4.day >= C4_BOOK_DAY && c4Strangers() > 0 },   // (a player knew the whole village and still had it)
-  { k: 'tea', make: () => ({ n: 2, text: 'Mời nước hai người quen', prize: 8 }), done: (t, d) => (d.tea || 0) >= 2, from: () => SAVE4.day >= C4_BOOK_DAY && c4People().list.filter(p => c4Known(p.id)).length >= 2 },
+  { k: 'tea', make: () => ({ n: 2, text: 'Mời nước hai người quen', prize: 8 }), done: (t, d) => (d.tea || 0) >= 2, from: () => false && SAVE4.day >= C4_BOOK_DAY && c4People().list.filter(p => c4Known(p.id)).length >= 2 },
   { k: 'ws', make: () => ({ n: 1, text: 'Giao một đơn hàng sỉ', prize: 15 }), done: (t, d) => (d.ws || 0) >= 1, from: () => (SAVE4.ws || []).some(o => o.day === SAVE4.day) },
-  { k: 'ruot', make: () => ({ n: 1, text: 'Mời một mối ruột ghé quán', prize: 10 }), done: (t, d) => (d.invRuot || 0) >= 1, from: () => c4People().list.some(p => c4Ruot(p.id)) },
+  { k: 'ruot', make: () => ({ n: 1, text: 'Nhắn một mối ruột ra quán ăn thử', prize: 10 }), done: (t, d) => (d.invRuot || 0) >= 1, from: () => c4People().list.some(p => c4Ruot(p.id)) },
 ];
 function c4Tasks() {
   if (SAVE4.taskDay !== SAVE4.day) {
