@@ -181,10 +181,10 @@ function c4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y =
   const hy = -45 + bob, armN = arm === null ? sw * .4 : arm;
   dp(g, M.tail, -18, hy + 2, Math.sin(C4.t * 2.4 + seed) * .12);
   dp(g, M.leg, 6, hy, C4_SIT ? -1.25 : sw * .55);
-  dp(g, M.arm, 2, hy - 50, -sw * .4);
+  if (!M.skirt) dp(g, M.arm, 2, hy - 50, -sw * .4);                         // (a skirted mouse wears it in front of the skirt, below)
   dp(g, M.body, 0, hy, .04);
   dp(g, M.leg, -2, hy, C4_SIT ? -1.1 : -sw * .55);
-  if (M.skirt) dp(g, M.skirt, 0, hy, .04 + sw * .03);                       // a skirt drawn as part of the mouse (buildMouse o.skirt)
+  if (M.skirt) { dp(g, M.skirt, 0, hy, .04 + sw * .03); dp(g, M.arm, 2, hy - 50, -sw * .4); }   // a skirt drawn as part of the mouse (buildMouse o.skirt), the arm hanging over it (owner: the hand looked to be inside the skirt)
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04);
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (carry) dp(g, carry, hx + 4, hyy + (carry === WP.basket ? -16 : 6), 0, carry === WP.basket ? 1.1 : .9, carry === WP.basket ? 1.1 : .9);
