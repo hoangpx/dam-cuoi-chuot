@@ -222,6 +222,11 @@ function c4MarketStart() {
 }
 function c4Hide() { AU.ambient({}); C4.away = C4.sheet; $('#c4hud').hidden = true; c4Sheets(null); document.body.classList.remove('c4'); }
 // one sheet at a time: morning plan, stall, event, notebook, tally
+// re-drawing the sheet that is already open keeps every scroll where it was: the sheet, its card and each list box (owner, 2026-10-17:
+// pressing "Mời" at the bottom of a list jumped back to the top). Used by c4OpenUp and c4OpenNotes when they draw the same thing again.
+const C4_SCROLLERS = '.trl,.folk,.rk';
+function c4ScrollGet(id) { const s = $('#' + id); if (!s || C4.sheet !== id) return null; const c = s.querySelector('.card4'); return { s: s.scrollTop, c: c ? c.scrollTop : 0, l: [...s.querySelectorAll(C4_SCROLLERS)].map(e => e.scrollTop) }; }
+function c4ScrollSet(id, k) { if (!k) return; const s = $('#' + id), c = s.querySelector('.card4'); s.scrollTop = k.s; if (c) c.scrollTop = k.c; [...s.querySelectorAll(C4_SCROLLERS)].forEach((e, i) => { if (k.l[i] != null) e.scrollTop = k.l[i]; }); }
 function c4Sheets(id) { const up = $('#c4up'); if (up) up.classList.remove('tab-moi');   // the stall sheet's "Mời khách" tab (c4UpTabs) is set again after each opening
  if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 // a sheet opened by a tap on the market (a visitor, a stall) appears under the finger, and some phones (an Oppo) then send that tap's click
@@ -945,6 +950,7 @@ function c4Hud() {
 
 /* ---------- stall sheets: more goods, a bigger betel stall, renting a plot, hiring a helper ---------- */
 function c4OpenUp(g = 'trau') {
+  const keep = C4.sheet === 'c4up' && C4.upG === g ? c4ScrollGet('c4up') : null; C4.upG = g;   // the same stall drawn again: scrolls stay
   const G = C4_GOODS[g], P = C4.porter, box = $('#c4upO');
   $('#c4upGo').hidden = true; $('#c4upB').innerHTML = '';
   if (g !== 'trau' && !c4Own(g)) {                                         // an empty plot
@@ -976,7 +982,7 @@ function c4OpenUp(g = 'trau') {
     else if (!nx) $('#c4upB').innerHTML = '<p>Gian hàng trầu khang trang nhất phiên chợ.</p>';
     else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${nx.house === 'own' ? c4HouseNote(nx.up) : ''}<p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(c4UpPrice(nx, nx.up))}`; $('#c4upGo').onclick = () => { const price = c4UpPrice(nx, nx.up); if (SAVE4.money < price || C4.build) return; if (!nx.house) { c4DoUp(); return; } const L = c4Landlord('trau'); c4Khe({ title: nx.house === 'own' ? 'Mua nhà mặt chợ' : 'Thuê nhà mặt chợ', a: [nx.house === 'own' ? 'Bên bán' : 'Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ nhà'], what: (nx.house === 'own' ? 'Bán đứt ' : 'Cho thuê ') + nx.name.toLowerCase() + ' bán trầu', money: price }, c4DoUp); }; }
   }
-  c4Sheets('c4up'); c4UpTabs();
+  c4Sheets('c4up'); c4UpTabs(); c4ScrollSet('c4up', keep);
 }
 // the stall sheet in two tabs (owner, 2026-10-16: "cho 1 tab riêng"): "Hàng quán" (more goods, fetching by itself, hands, upgrades) and
 // "Mời khách" (c4TreatBlock, unfolded). A treat keeps the tab (C4.keepTab); any other opening starts on "Hàng quán". CSS #c4up.tab-moi hides the rest.

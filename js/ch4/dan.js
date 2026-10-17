@@ -322,6 +322,7 @@ function c4Face(p) {
 let C4_TAB = 'tin', C4_WHO = null;
 let C4_PICK = null;                                                         // { deal, sel }: choosing whom to invite to take the leftovers
 function c4OpenNotes(tab) {
+  const keep = C4.sheet === 'c4note' && (tab || C4_TAB) === C4_TAB && C4.noteWho === C4_WHO ? c4ScrollGet('c4note') : null;   // the same page drawn again (an action on it): scrolls stay
   C4.noteNew = false; c4Hud();
   if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY && C4_TAB !== 'viec' && C4_TAB !== 'rank') C4_TAB = 'tin';
   const P = c4People(), known = P.list.filter(p => c4Known(p.id)), open = SAVE4.day >= C4_BOOK_DAY;
@@ -366,7 +367,7 @@ function c4OpenNotes(tab) {
   { const b = $('#c4noteB [data-pickx]'); if (b) b.addEventListener('click', () => { C4_PICK = null; c4Sheets(null); }); }
   $('#c4noteB').querySelectorAll('[data-who]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = +b.dataset.who; c4OpenNotes('quen'); $('#c4note').scrollTop = 0; }));
   if (C4_TAB === 'quen' && C4_WHO !== null) qhCardWire();
-  c4Sheets('c4note');
+  c4Sheets('c4note'); C4.noteWho = C4_WHO; c4ScrollSet('c4note', keep);
   if (C4_TAB === 'web') c4WebOpened(!wasWeb && QH.focus === null);
   if (C4_TAB === 'nha') c4HousesWire();
 }
@@ -411,8 +412,7 @@ function c4TreatBlock(g) {
       return `<div class="tr"><img src="${c4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}${c4Known(p.id) ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã mời' : 'Mời'}</button></div>`; }).join('')}</div></div>`;
   d.querySelector('.trh').addEventListener('click', () => { AU.tap(); C4.treatOpen = !C4.treatOpen; const b = d.querySelector('.trb'); b.hidden = !C4.treatOpen; d.querySelector('.trh').firstChild.textContent = (C4.treatOpen ? '▾' : '▸') + d.querySelector('.trh').firstChild.textContent.slice(1); });
   d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', () => {
-    const sc = $('#c4up'), y = sc.scrollTop, card = sc.querySelector('.card4'), y2 = card ? card.scrollTop : 0;
-    c4Treat(+b.dataset.tr, g, () => { C4.keepTab = true; c4OpenUp(g); sc.scrollTop = y; const c = sc.querySelector('.card4'); if (c) c.scrollTop = y2; });
+    c4Treat(+b.dataset.tr, g, () => { C4.keepTab = true; c4OpenUp(g); });   // c4OpenUp keeps the scrolls itself
   }));
   return d;
 }
