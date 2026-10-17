@@ -73,7 +73,9 @@ async function cloudPush(keepalive) {
   try { await cloudRpc('dcc_save', { p_code: code, p_data: cloudSnapshot() }, keepalive); localStorage.setItem('dcc.cloudT', String(Date.now())); cloudStatus(); return true; }
   catch (e) { cloudStatus(lg('Chưa lưu được lên mạng (mất kết nối?). Game sẽ thử lại lần sau.', 'Could not save online (no connection?). The game will try again later.')); return false; }
 }
-// every save the game makes on this device goes up a few seconds later (a whole run of saves makes one trip)
+// every save the game makes on this device goes up later: at most one trip a CLOUD_EVERY (chương IV saves all the time; owner, 2026-10-17:
+// Supabase logs every request), and at once when the page is hidden or left
+const CLOUD_EVERY = 90000, CLOUD_FOCUS = 5 * 60000;
 {
   const set = Storage.prototype.setItem;
   Storage.prototype.setItem = function (k, v) {
@@ -82,12 +84,13 @@ async function cloudPush(keepalive) {
     if (tracked) { try { was = this.getItem(k); } catch (e) {} }
     set.call(this, k, v);
     if (tracked && was !== String(v)) { const m = cloudMtGet(); m[k] = Date.now(); set.call(this, CLOUD_MT, JSON.stringify(m)); }   // when this key last changed here
-    if (this === window.localStorage && typeof k === 'string' && k.startsWith('dcc.') && !CLOUD.skip.includes(k) && cloudCode()) { clearTimeout(CLOUD.timer); CLOUD.timer = setTimeout(() => cloudPush(), 4000); }
+    if (this === window.localStorage && typeof k === 'string' && k.startsWith('dcc.') && !CLOUD.skip.includes(k) && cloudCode()) { if (!CLOUD.timer) CLOUD.timer = setTimeout(() => cloudPush(), CLOUD_EVERY); }
   };
   addEventListener('visibilitychange', () => {
     if (document.hidden) { if (CLOUD.timer) cloudPush(true); return; }                                          // leaving with a save still waiting
-    if (cloudCode() && Date.now() - CLOUD.lastCheck > 30000) cloudSync('focus');                                // back again: has the other device moved on?
+    if (cloudCode() && Date.now() - CLOUD.lastCheck > CLOUD_FOCUS) cloudSync('focus');                          // back again after a while: has the other device moved on?
   });
+  addEventListener('pagehide', () => { if (CLOUD.timer) cloudPush(true); });
 }
 function cloudStatus(msg) {
   const st = $('#cloudSt'); if (!st) return;

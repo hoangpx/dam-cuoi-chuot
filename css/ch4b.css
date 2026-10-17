@@ -83,3 +83,5 @@ body.p4holding #cv{cursor:none}
   #p4hud .mid,body.touch #p4hud .mid{position:absolute;left:16px;top:calc(56px + env(safe-area-inset-top,0px));transform:none;width:auto;order:0;display:block}
   #p4hud .bar .tag.ic{padding:6px 12px}
 }
+/* notch (owner, 2026-10-17): the town HUD keeps clear of the side safe areas too */
+#p4hud{padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px))}

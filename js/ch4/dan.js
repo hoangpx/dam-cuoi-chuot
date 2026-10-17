@@ -333,7 +333,7 @@ function c4OpenNotes(tab) {
   const tabs = [['tin', 'Tin đồn'], ['viec', 'Việc'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['thanh', 'Thành tựu']] : []), ['hoso', 'Hồ sơ'], ['rank', 'Tổng sắp']];   // Tổng sắp: the board of the richest (xephang.js); Hồ sơ: my profile and the reviews I got (hoso.js)
   let h = `<div class="c4tabs">${tabs.map(([k, n]) => `<button class="${k === C4_TAB ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
   const seen = P.list.filter(p => !c4Known(p.id) && SAVE4.folk[p.id] && SAVE4.folk[p.id].seen);
-  if (open) h += `<p class="cnt">${known.length} người quen · ${seen.length} người biết mặt</p>`;
+  if (open) h += `<p class="cnt">${known.length + seen.length} khách</p>`;
   if (C4_TAB === 'tin') {
     const days = [SAVE4.day, SAVE4.day + 1].filter(d => SAVE4.notes.some(n => n.day === d));   // owner: only today and tomorrow, past days only confuse
     const now = (t, d) => d !== SAVE4.day ? t : t.replace(/^Mai /, 'Hôm nay ').replace(/ mai /, ' hôm nay ');   // news heard yesterday about "tomorrow" is about today now
@@ -350,10 +350,10 @@ function c4OpenNotes(tab) {
   }
   else if (C4_TAB === 'quen' && C4_WHO !== null) { h += `<div id="qhCard">${qhCardHtml(C4_WHO)}</div>`; }   // one person: their card, with their ties drawn (owner)
   else if (C4_TAB === 'quen') {
-    h += known.length ? `<div class="folk">${known.sort((a, b) => SAVE4.folk[b.id].a - SAVE4.folk[a.id].a).map(p => { const f = SAVE4.folk[p.id];
-      return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}</div>`
-      : '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
-    if (seen.length) h += `<h4>Biết mặt</h4><div class="folk">${seen.map(p => `<div class="fk unk2"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>`;
+    h += known.length || seen.length ? `<div class="folk">${known.sort((a, b) => SAVE4.folk[b.id].a - SAVE4.folk[a.id].a).map(p => { const f = SAVE4.folk[p.id];
+      return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}`
+      + seen.map(p => `<button class="fk unk2" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>ghé ${SAVE4.folk[p.id].v || 1} lần</span></button>`).join('') + '</div>'   // known by sight: the same list, faded
+      : '<p>Chưa có khách nào.</p>';
     h += hsBookHtml();                                                       // other players' profiles that came to this market (hoso.js)
   } else if (C4_TAB === 'don') h += c4OrdersTab();
   else if (C4_TAB === 'hoso') h += '<div id="c4hsTab"></div>';
@@ -418,7 +418,7 @@ function c4TreatBlock(g) {
   const open = !!C4.treatOpen;   // folded until tapped open (owner: too long on a phone); stays open for the rest of the session once opened
   d.innerHTML = `<button class="trh" type="button">${open ? '▾' : '▸'} Mời khách quen ${g === 'trau' ? 'miếng trầu' : 'ăn ' + G.name.toLowerCase()} <small>(${known.length + far} người)</small></button><div class="trb"${open ? '' : ' hidden'}><p class="sm">Nhắn người ta ra quán ăn thử, mỗi người một lần một ngày. Chưa chắc người ta đến; có đến thì cũng phải một lúc sau. Mời đúng món họ thích mới thân${has ? '' : '. <b>Hết hàng rồi.</b>'}</p>`
     + `<div class="trl">${known.sort((a, b) => (c4Known(b.id) - c4Known(a.id)) || (SAVE4.folk[b.id].a || 0) - (SAVE4.folk[a.id].a || 0)).map(p => { const f = SAVE4.folk[p.id], done = f.treat === day, fav = f.favK && p.fav === g, no = (f.nopeK || []).includes(g);
-      return `<div class="tr"><img src="${c4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}${c4Known(p.id) ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div></div>`;
+      return `<div class="tr${c4Known(p.id) ? '' : ' unk2'}"><img src="${c4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div></div>`;
   d.querySelector('.trh').addEventListener('click', () => { AU.tap(); C4.treatOpen = !C4.treatOpen; const b = d.querySelector('.trb'); b.hidden = !C4.treatOpen; d.querySelector('.trh').firstChild.textContent = (C4.treatOpen ? '▾' : '▸') + d.querySelector('.trh').firstChild.textContent.slice(1); });
   d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', () => {
     c4TreatInvite(+b.dataset.tr, g); C4.keepTab = true; c4OpenUp(g);   // an invitation now (giamgia.js); c4OpenUp keeps the scrolls itself

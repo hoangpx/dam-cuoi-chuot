@@ -849,12 +849,13 @@ function c4ChatStart(a, b) {
   const others = [...C4.walkers.filter(w => w !== a && w !== b).map(w => w.name), ...C4.vendors.map(v => v.name)].filter(n => n !== a.name && n !== b.name);
   const fill = s => s.replace(/\{A\}/g, a.name).replace(/\{B\}/g, b.name).replace(/\{X\}/g, () => c4Pick(others.length ? others : ['cụ Lý']));
   let news = null, pick = C4_CHATS;
-  if (R() < .38 && SAVE4.next) {
+  const hunt = SAVE4.day >= 1 && (c4Tasks() || []).some(t => t.k === 'news' && !t.done);   // the task asks for news: whispers come more often
+  if (R() < (hunt ? .75 : .38) && SAVE4.next) {
     const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : !!SAVE4.next[k];
     C4.said = C4.said || {};
     const kinds = Object.keys(C4_NEWS).filter(k => !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === k) && (C4.said[k] || 0) < 2);
     const yes = kinds.filter(truth), no = kinds.filter(k => !truth(k));
-    if (kinds.length && Object.values(C4.said).reduce((x, y) => x + y, 0) < 3) { news = (yes.length && (R() < .5 || !no.length)) ? c4Pick(yes) : c4Pick(no.length ? no : kinds); C4.said[news] = (C4.said[news] || 0) + 1; pick = C4_NEWS[news]; }
+    if (kinds.length && ((C4.today && C4.today.news) || 0) < 3) { news = (yes.length && (R() < .5 || !no.length)) ? c4Pick(yes) : c4Pick(no.length ? no : kinds); pick = C4_NEWS[news]; }   // the cap counts whispers heard (c4Listen), not said
   }
   let bad = null;   // a sharp tongue who does not like us bad-mouths the stalls (owner)
   if (!news && SAVE4.day >= C4_BOOK_DAY) for (const w of [a, b]) { if (w.pid === undefined) continue; const p = c4People().list[w.pid], T = C4_TRAITS[p.trait], f = SAVE4.folk[p.id];
@@ -882,7 +883,7 @@ function c4ChatStep(c, dt) {
   who.talk = true; const life = 1.5 + s.length * .05; c4Say(who, s, life); who.say.whisper = c.news && !c.heard; c.t = life + .25;
 }
 function c4Listen(c) {
-  if (c.heard) return; c.heard = true; AU.tap(); if (C4.today) C4.today.news = (C4.today.news || 0) + 1;
+  if (c.heard) return; c.heard = true; AU.tap(); if (C4.today) C4.today.news = (C4.today.news || 0) + 1; if (c.news) { C4.said = C4.said || {}; C4.said[c.news] = (C4.said[c.news] || 0) + 1; }
   for (const w of [c.a, c.b]) if (w.say) w.say.whisper = false;
   c.i = -1; c.t = 0;
 }
@@ -999,7 +1000,7 @@ function c4Hud() {
   $('#c4Debt').hidden = !(SAVE4.debt > 0.5);
   $('#c4Note').classList.toggle('new', !!C4.noteNew);
   $('#c4Home').hidden = !(C4_HOUSE_ON && c4HasHome());
-  $('#c4Task').innerHTML = c4TasksHud(); $('#c4Task').hidden = !SAVE4.tasks || !SAVE4.tasks.length;   // some days have no tasks
+  $('#c4Task').innerHTML = c4TasksHud(); $('#c4Task').hidden = true;   // owner, 2026-10-17: no Việc button on the market, the tasks are in the book (Việc tab)
 }
 
 /* ---------- stall sheets: more goods, a bigger betel stall, renting a plot, hiring a helper ---------- */
@@ -1307,8 +1308,11 @@ function c4Up(e) {
   for (const v of C4.vendors) { const vz = v.z || .05, s2 = c4S(vz), vy = c4Y(vz);
     if (x > v.x - 60 * s2 && x < v.x + 90 * s2 && y > vy - 130 * s2 && y < vy + 14) { AU.tap(); if (c4VendorMine(v)) c4OpenUp(C4_VENDOR_G[v.ware]); else c4BuyOpen(v); return; } }
 }
+// the mouse wheel (or a trackpad) looks along the lane, as in the town (owner, 2026-10-17: "chợ quê ko scroll đc chuột giống phố huyện")
+cv.addEventListener('wheel', e => { if (S.mode !== 'c4play' || C4.sheet || C4.phase === 'story') return; e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; C4.camX += d * 1.5 * (e.deltaMode === 1 ? 30 : 1) / c4View().s; }, { passive: false });
 function c4Key(e) {
   if (C4.phase === 'story' && ['Space', 'Enter', 'ArrowRight'].includes(e.code)) { e.preventDefault(); c4StoryNext(); return; }
+  if (!C4.sheet && C4.phase !== 'story') { if (e.code === 'ArrowLeft') C4.camX -= 60; if (e.code === 'ArrowRight') C4.camX += 60; }   // look along the lane, as in the town (owner, 2026-10-17)
   if (e.code === 'Escape') { if (!$('#c4up').hidden || !$('#c4note').hidden) c4Sheets(null); else showChapters(); }
 }
 

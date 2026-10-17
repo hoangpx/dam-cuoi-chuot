@@ -3,7 +3,8 @@
    cloud save; table dcc_hoadang, only through the rpc dcc_hoa_add / dcc_hoa_list / dcc_hoa_report, docs/supabase-hoa-dang.sql). In the
    town the latest P4_HOA_NET wishes of everyone come down and each drifts on the river as a lantern of its own at night; a tap reads it
    (signed with the sender's shop name) and can report it (3 reports hide it). Bad words are refused here and again on the server. */
-const P4_HOA_NET = 250, P4_HOA_RELOAD = 120;                                // how many shared lanterns, how often to fetch them again (s)
+const P4_HOA_NET = 250, P4_HOA_RELOAD = 900;                                // how many shared lanterns, how often to fetch them again (s; was 120, owner 2026-10-17: fewer requests)
+let P4_HOA_AT = 0;                                                           // when they were last fetched (Date.now, kept across visits to the town)
 const P4_RPC = 'https://mamafzllyhbmzyystivo.supabase.co/rest/v1/rpc/', P4_RPC_KEY = 'sb_publishable_aY82m4E4mmc0AN2_n0Gcdw_2Kl31gCd';   // the same public key as js/core/cloud.js
 async function p4Rpc(fn, body) {
   const r = await fetch(P4_RPC + fn, { method: 'POST', headers: { apikey: P4_RPC_KEY, 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -23,7 +24,7 @@ function p4HoaSend(h) {
 }
 // fetch everyone's latest wishes (now, and again every few minutes while in the town)
 function p4HoaLoad() {
-  P4.hoaLoadT = P4.t;
+  P4.hoaLoadT = P4.t; P4_HOA_AT = Date.now();
   p4Rpc('dcc_hoa_list', { p_limit: P4_HOA_NET }).then(list => {
     if (!Array.isArray(list)) return;
     const rep = p4Reported();

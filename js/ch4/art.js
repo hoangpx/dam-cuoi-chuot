@@ -360,7 +360,7 @@ function c4Critter(g, w, x, y, s) {
     g.save(); g.scale(f * k, k); c4Deco(g, w, k, moving); g.restore();
     if (sort.role === 'old' && !sit) { g.strokeStyle = INK; g.lineWidth = 6 * k; g.lineCap = 'round'; g.beginPath(); g.moveTo(f * 32 * k, -92 * k); g.lineTo(f * 44 * k, 0); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 3.4 * k; g.stroke(); }
     const wet = c4Rain();
-    if ((sort.non || (wet && !w.umb && L.hat !== 'quai')) && !(w.umb && (L.tool === 'o' || wet))) { g.scale(f * k, k); c4Non(g); }   // a conical hat; in the rain with the straw cape
+    if ((sort.non || (wet && !w.umb)) && L.hat !== 'quai' && !(w.umb && (L.tool === 'o' || wet))) { g.scale(f * k, k); c4Non(g); }   // a conical hat; in the rain with the straw cape; never over a quai thao hat (owner, 2026-10-17: a sort that wears the nón lá got both)
     g.restore();
     if (muzzle) { const hx = x + f * -13 * k, hy = y - 71 * k; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(hx, hy); g.quadraticCurveTo((hx + muzzle[0]) / 2, Math.max(hy, muzzle[1]) + 22 * s, muzzle[0], muzzle[1]); g.stroke(); }
     return;

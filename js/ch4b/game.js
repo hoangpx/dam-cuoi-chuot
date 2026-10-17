@@ -127,7 +127,7 @@ function p4EndDay(silent) {
 function updateP4(dt) {
   P4.t += dt;
   if (P4T.on) { if (!P4.sheet) p4TemUpdate(dt); return; }                 // têm trầu by hand: the street waits (temtrau.js)
-  if (P4.t - (P4.hoaLoadT ?? -1e9) > P4_HOA_RELOAD) p4HoaLoad();
+  if (P4.mins >= 16.5 * 60 && !document.hidden && Date.now() - P4_HOA_AT > P4_HOA_RELOAD * 1000 && P4.t - (P4.hoaLoadT ?? -1e9) > P4_HOA_RELOAD) p4HoaLoad();   // the shared wishes: only towards night (fewer requests, owner 2026-10-17)
   if (P4.talk) p4TalkUpdate(dt);                                           // the couple talking before buying the house (muanha.js)
   if (P4.paused) return;
   if (P4.phase === 'open') {

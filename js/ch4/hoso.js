@@ -14,7 +14,7 @@
    Máy chủ chưa dựng thì mọi rpc lặng lẽ hỏng: không có khách phương xa, hồ sơ chỉ lưu trên máy. */
 const HS_NAME_MAX = 12, HS_DESC_MAX = 200, HS_STORY_MAX = 120, HS_STORIES = 8, HS_REVIEW_MAX = 200;
 const HS_PER_DAY = 2;                                                      // far-away guests a day at each market (owner: "đừng để chợ quá đông")
-const HS_POOL_EVERY = 10 * 60 * 1000;                                      // fetch other players' profiles again every 10 minutes
+const HS_POOL_EVERY = 60 * 60 * 1000;                                      // fetch other players' profiles again every hour (was 10 min; owner 2026-10-17: fewer requests)
 const HS_ROLES = [['chong', 'Chuột chồng'], ['vo', 'Chuột vợ']];
 const HS_AGES = [['tre', 'Trẻ'], ['trung', 'Trung niên'], ['gia', 'Già']];
 const HS_FURS = [['brown', 'Nâu'], ['dark', 'Đen'], ['grey', 'Xám'], ['tan', 'Vàng đất'], ['ash', 'Tro'], ['cream', 'Kem'], ['white', 'Trắng']];
@@ -36,7 +36,8 @@ const HS_LANGS = ['làng Đông Hồ', 'làng Kim Liên', 'làng Đình Bảng',
 const HS_FOOD_LANG = [['trau', 'Trầu cau'], ['che', 'Chè xanh'], ['xoi', 'Xôi'], ['bun', 'Bún riêu'], ['banhcuon', 'Bánh cuốn'], ['ruou', 'Rượu nếp']];
 const HS_FOOD_PHO = P4_FOOD_NAMES.map(n => ['pho:' + n, c4Cap1(n.toLowerCase())]);
 const HS_FOOD_NAME = Object.fromEntries([...HS_FOOD_LANG, ...HS_FOOD_PHO]);
-const HS_DEF = { name: '', role: 'vo', age: 'tre', body: 'vua', fur: 'brown', robe: 'red', skirt: 'blue', pants: 'dark', top: 'van', xom: C4_XOM[0], lang: HS_LANGS[0], likes: [], desc: '', stories: [] };
+const HS_ADDR_MAX = 40;                                                    // "Ở đâu", typed freely (owner, 2026-10-17)
+const HS_DEF = { name: '', role: 'vo', age: 'tre', body: 'vua', fur: 'brown', robe: 'red', skirt: 'blue', pants: 'dark', top: 'van', addr: '', likes: [], desc: '', stories: [] };
 // a profile is there from the start, every field drawn at random (owner, 2026-10-17: "hồ sơ có sẵn ... đều được random, câu chuyện cũng
 // được gắn sẵn 1 câu chuyện random"); the player changes what they like. All lines original.
 const HS_RAND_DESC = ['Hiền lành, chăm chỉ, sáng nào cũng dậy từ gà gáy.', 'Tính hay cười, ai nhờ gì cũng giúp.', 'Mê hát chèo, tối nào cũng ra đình nghe hát.',
@@ -53,7 +54,7 @@ function hsRandom() {
   const names = [...(C4_GIVEN[g] || []), ...(C4_GIVEN2[g] || [])].filter(n => n.length <= HS_NAME_MAX);
   const foods = [...HS_FOOD_LANG, ...HS_FOOD_PHO].map(o => o[0]).sort(() => Math.random() - .5);
   return { name: r(names), role, age: r(['tre', 'tre', 'tre', 'trung', 'trung', 'gia']), body: r(['vua', 'vua', 'beo', 'gay', 'cao']), fur: r(HS_FURS)[0], robe: r(HS_ROBES)[0],
-    skirt: r(HS_SKIRTS)[0], pants: r(HS_PANTS)[0], top: r(HS_TOPS_OF[role]), xom: r(C4_XOM), lang: r(HS_LANGS), likes: foods.slice(0, 2 + ((Math.random() * 3) | 0)),
+    skirt: r(HS_SKIRTS)[0], pants: r(HS_PANTS)[0], top: r(HS_TOPS_OF[role]), addr: `${r(C4_XOM)}, ${r(HS_LANGS)}`, likes: foods.slice(0, 2 + ((Math.random() * 3) | 0)),
     desc: r(HS_RAND_DESC), stories: [r(HS_RAND_STORY)] };
 }
 const HS = { pool: new Map(), poolAt: 0, loading: false, me: null, revs: null, back: null, tab: 'ho', edit: null };
@@ -81,14 +82,14 @@ function hsClean(d) {
   const st = d.stats && typeof d.stats === 'object' ? d.stats : {};
   const role = one(HS_ROLES, d.role), tops = HS_TOPS_OF[role];
   return { name: str(d.name, HS_NAME_MAX), role, age: one(HS_AGES, d.age), body: one(HS_BODIES, d.body), fur: one(HS_FURS, d.fur), robe: one(HS_ROBES, d.robe), skirt: one(HS_SKIRTS, d.skirt),
-    pants: one(HS_PANTS, d.pants), top: tops.includes(d.top) ? d.top : tops[1], xom: C4_XOM.includes(d.xom) ? d.xom : '', lang: HS_LANGS.includes(d.lang) ? d.lang : '',
+    pants: one(HS_PANTS, d.pants), top: tops.includes(d.top) ? d.top : tops[1], addr: str(d.addr, HS_ADDR_MAX) || [C4_XOM.includes(d.xom) ? d.xom : '', HS_LANGS.includes(d.lang) ? d.lang : ''].filter(Boolean).join(', '),   // older profiles had two picks
     likes: (Array.isArray(d.likes) ? d.likes : []).filter(k => HS_FOOD_NAME[k]).slice(0, 40), desc: str(d.desc, HS_DESC_MAX),
     stories: (Array.isArray(d.stories) ? d.stories : []).map(s => str(s, HS_STORY_MAX)).filter(Boolean).slice(0, HS_STORIES),
     shop: str(d.shop, 24), stats: { day: Math.max(1, +st.day || 1), known: Math.max(0, +st.known || 0), fame: Math.max(0, Math.min(100, +st.fame || 0)) } };
 }
 // the name exactly as the player wrote it, nothing added (owner, 2026-10-17: "ko thêm cô hay cái j cả")
 const hsName = d => (d && d.name ? d.name : 'khách phương xa');
-const hsAddr = d => [d.xom, d.lang].filter(Boolean).join(', ');
+const hsAddr = d => d.addr || '';
 
 /* ---------- looks: a rig of their own colours, a portrait ---------- */
 const HS_RIGS = new Map();
@@ -170,11 +171,13 @@ function hsPush() {
 }
 // other players' profiles: a random handful, plus every one already met here (so regulars keep coming)
 function hsPoolEnsure() {
-  if (HS.loading || Date.now() - HS.poolAt < HS_POOL_EVERY) return;
+  if (HS.loading || document.hidden || Date.now() - HS.poolAt < HS_POOL_EVERY) return;
   HS.loading = true; HS.poolAt = Date.now();
-  const K = hsKhach(), mine = (hsGet('dcc.hoso', {}) || {}).id, met = Object.keys(K).filter(i => K[i].seen || K[i].k).map(Number).slice(0, 200);
+  const K = hsKhach(), mine = (hsGet('dcc.hoso', {}) || {}).id, full = Date.now() - (+localStorage.getItem('hsGetAt') || 0) > 6 * 3600e3,   // the guests met: their profiles are kept here (K[i].p); fetched again in full every 6 hours, else only those missing
+    met = Object.keys(K).filter(i => (K[i].seen || K[i].k) && (full || !K[i].p)).map(Number).slice(0, 200);
+  if (full) try { localStorage.setItem('hsGetAt', String(Date.now())); } catch (e) {}
   const put = list => { if (Array.isArray(list)) for (const r of list) if (r && r.id && r.id !== mine && r.data) { const d = hsClean(r.data); if (!d.name) continue; HS.pool.set(+r.id, { id: +r.id, d, stars: r.stars === null ? null : +r.stars, nrev: +r.nrev || 0, nreg: +r.nreg || 0 }); if (K[r.id]) K[r.id].p = d; } };
-  Promise.all([p4Rpc('dcc_prof_pick', { p_device: p4Device(), p_limit: 40 }).then(put).catch(() => {}), met.length ? p4Rpc('dcc_prof_get', { p_ids: met }).then(put).catch(() => {}) : null, hsMeLoad()])
+  Promise.all([p4Rpc('dcc_prof_pick', { p_device: p4Device(), p_limit: 12 }).then(put).catch(() => {}), met.length ? p4Rpc('dcc_prof_get', { p_ids: met }).then(put).catch(() => {}) : null, hsMeLoad()])
     .finally(() => { HS.loading = false; hsSaveK(); });
 }
 // my own numbers on the server, and a word when new reviews have come in
@@ -269,7 +272,7 @@ function hsTreatRows(place, kind, has, redraw) {
   const ids = hsGuests(); if (!ids.length) return null;
   const K = hsKhach(), day = SAVE4.day, dish = hsDish(place, kind), d = document.createElement('div');
   d.innerHTML = `<h5 class="hsTrH">Khách phương xa</h5><div class="trl">${ids.map(i => { const p = hsProf(i).d, f = K[i], done = f.treat === day, fav = p.likes.includes(dish);
-    return `<div class="tr"><img src="${hsFace(p, i)}" alt=""><b>${p4Esc(hsName(p))}${fav ? ' <i class="fav">♥</i>' : ''}${f.k ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-hst="${i}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
+    return `<div class="tr${f.k ? '' : ' unk2'}"><img src="${hsFace(p, i)}" alt=""><b>${p4Esc(hsName(p))}${fav ? ' <i class="fav">♥</i>' : ''}</b>${c4Bar(f.a || 0)}<button data-hst="${i}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
   d.querySelectorAll('[data-hst]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); hsInvite(+b.dataset.hst, place, kind); redraw(); }));
   return d;
 }
@@ -469,7 +472,7 @@ function hsEditDraw() {
     + `<h4>Tên <small>(tối đa ${HS_NAME_MAX} chữ)</small></h4><input class="hsIn hsName" maxlength="${HS_NAME_MAX}" autocomplete="off" value="${p4Esc(E.name)}" placeholder="Ví dụ: Mận">`
     + `<h4>Tuổi</h4>${pills('age', HS_AGES)}`
     + `<h4>Dáng người</h4>${pills('body', HS_BODIES)}`
-    + `<h4>Ở đâu</h4>${pills('xom', C4_XOM.map(x => [x, x]))}<div style="height:6px"></div>${pills('lang', HS_LANGS.map(x => [x, x]))}`
+    + `<h4>Ở đâu <small>(tối đa ${HS_ADDR_MAX} chữ)</small></h4><input class="hsIn hsAddrI" maxlength="${HS_ADDR_MAX}" autocomplete="off" value="${p4Esc(E.addr)}" placeholder="Ví dụ: xóm Chùa, làng Đông Hồ">`
     + `<h4>Màu lông</h4>${sw('fur', HS_FURS, hsCol)}`
     + `<h4>Tóc, đội đầu</h4>${pills('top', hsTops(E.role))}`
     + `<h4>Màu áo</h4>${sw('robe', HS_ROBES, hsCol)}`
@@ -487,6 +490,7 @@ function hsEditDraw() {
   B.querySelector('.hsRnd').addEventListener('click', () => { AU.tap(); Object.assign(E, hsRandom()); hsEditKeep(); });
   B.querySelectorAll('[data-like]').forEach(c => c.addEventListener('change', () => { const k = c.dataset.like; E.likes = c.checked ? [...new Set([...E.likes, k])] : E.likes.filter(x => x !== k); }));
   B.querySelector('.hsName').addEventListener('input', e => { E.name = e.target.value; prev(); });
+  B.querySelector('.hsAddrI').addEventListener('input', e => { E.addr = e.target.value; });
   B.querySelector('.hsDescT').addEventListener('input', e => { E.desc = e.target.value; B.querySelector('.hsCnt span').textContent = e.target.value.length; });
   B.querySelectorAll('[data-story]').forEach(t => t.addEventListener('input', () => { E.stories[+t.dataset.story] = t.value; }));
   B.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { E.stories.splice(+b.dataset.del, 1); if (!E.stories.length) E.stories.push(''); hsEditKeep(); }));
@@ -497,7 +501,7 @@ const hsEditKeep = () => { const c = $('#hsEdit .card4'), y = c.scrollTop; hsEdi
 function hsEditSave() {
   const E = HS.edit, d = hsClean(E), old = hsGet('dcc.hoso', {}) || {};
   if (!d.name) { toast('Đặt một cái tên đã.', 2.2); return; }
-  if ([d.name, d.desc, ...d.stories].some(p4HoaBad)) { toast('Có chữ không đẹp trong tên, mô tả hay chuyện kể. Sửa lại nhé.', 3); return; }
+  if ([d.name, d.addr, d.desc, ...d.stories].some(p4HoaBad)) { toast('Có chữ không đẹp trong tên, nơi ở, mô tả hay chuyện kể. Sửa lại nhé.', 3); return; }
   hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); HS_FACE.clear();
   AU.tap(); toast('Đã lưu hồ sơ.', 2);
   hsPush().catch(e => { if (/bad words/.test(e.message || '')) toast('Máy chủ không nhận vì có chữ không đẹp.', 3); });
@@ -517,9 +521,8 @@ function hsOpen(tab) {
   else if (HS.tab === 'rank') { T.innerHTML = '<h4>Bảng tổng sắp nhà giàu</h4><div class="hsRank"></div>'; c4RankInto(T.querySelector('.hsRank')); }
   else {
     const F = id => SAVE4B.folk[id], seen = p4People().filter(p => p4Seen(p.id)), known = seen.filter(p => p4Known(p.id)).sort((a, b) => (F(b.id).a || 0) - (F(a.id).a || 0)), face = seen.filter(p => !p4Known(p.id));
-    T.innerHTML = `<p class="cnt">${known.length} người quen · ${face.length} người biết mặt</p>`
-      + (known.length ? `<div class="folk">${known.map(p => `<div class="fk"><img src="${p4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(F(p.id).a || 0)}<span>ghé ${F(p.id).v || 0} lần</span></div>`).join('')}</div>` : '<p>Chưa quen ai trên phố. Khách ghé mua lần thứ hai mới thành quen.</p>')
-      + (face.length ? `<h4>Biết mặt</h4><div class="folk">${face.map(p => `<div class="fk unk2"><img src="${p4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>` : '')
+    T.innerHTML = `<p class="cnt">${seen.length} khách</p>`
+      + (seen.length ? `<div class="folk">${known.map(p => `<div class="fk"><img src="${p4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(F(p.id).a || 0)}<span>ghé ${F(p.id).v || 0} lần</span></div>`).join('')}${face.map(p => `<div class="fk unk2"><img src="${p4Face(p)}" alt=""><b>${p.name}</b><span>ghé ${F(p.id).v || 1} lần</span></div>`).join('')}</div>` : '<p>Chưa có khách nào trên phố.</p>')
       + hsBookHtml();
     hsBookWire(T, back);
   }

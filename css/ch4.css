@@ -115,7 +115,8 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .card4 .pick .btn{font-size:15px;padding:6px 12px}
 .card4 .fk.sel{border-color:#2f6a4c;background:#d6e6c4;box-shadow:inset 0 0 0 2px #2f6a4c}
 .card4 .fk[disabled]{opacity:.45;cursor:default}
-.card4 .fk.unk2{cursor:default;opacity:.65}
+.card4 .fk.unk2{opacity:.55}
+.card4 .tr.unk2>img,.card4 .tr.unk2>b,.card4 .tr.unk2>.bar{opacity:.5}   /* known by sight: faded in the same list (owner, 2026-10-17) */
 .card4 .loan .pays{display:flex;gap:6px}
 .card4 .loan .btn{white-space:nowrap}
 /* the book's web of bubbles (quanhe.js) and family trees */
@@ -406,3 +407,12 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 #c4amO .tot{margin-top:8px}
 #c4amO .go{position:sticky;bottom:4px;z-index:3}
 .ordH{margin:0 0 4px;text-align:center}
+
+/* notch (owner, 2026-10-17): sheets and the HUD keep clear of every safe area, both parts */
+.c4sheet{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
+.c4sheet .card4{max-height:calc(100vh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+#c4hud,#p4hud{padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px))}
+/* a sheet with tabs keeps one size whatever the tab (owner, 2026-10-17: no jumping big and small): the book, a stall with its Mời khách tab, the profile; the town house and eating houses */
+#c4note .card4,#hs .card4,#c4up:has(.uptabs) .card4,#p4home:has(.uptabs) .card4,#p4shop:has(.uptabs) .card4{height:min(760px,calc(100vh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));height:min(760px,calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));display:flex;flex-direction:column}
+#c4note .card4>.row:last-child,#hs .card4>.row:last-child,#c4up:has(.uptabs) .card4>.row:last-child,#p4home:has(.uptabs) .card4>.row:last-child,#p4shop:has(.uptabs) .card4>.row:last-child{margin-top:auto}
+#c4note .card4>*,#hs .card4>*,#c4up:has(.uptabs) .card4>*,#p4home:has(.uptabs) .card4>*,#p4shop:has(.uptabs) .card4>*{flex-shrink:0}

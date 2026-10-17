@@ -107,7 +107,7 @@ function p4TreatBlock(kind) {
   const has = kind === 'trau' ? SAVE4B.stock > 0 : true, day = SAVE4.day, F = id => SAVE4B.folk[id];
   d.innerHTML = `<p class="sm">Nhắn người ta ra ${kind === 'trau' ? 'hiệu' : 'quán'} ăn thử, mỗi người một lần một ngày. Chưa chắc người ta đến; có đến thì cũng phải một lúc sau. Mời đúng thứ họ thích mới thân${has ? '' : '. <b>Hết trầu rồi.</b>'}</p>`
     + `<div class="trl">${known.sort((a, b) => (p4Known(b.id) - p4Known(a.id)) || (F(b.id).a || 0) - (F(a.id).a || 0)).map(p => { const f = F(p.id), done = f.treat === day, fav = kind === 'trau' && f.favK && p.fav === 'trau', no = kind === 'trau' && f.nopeK;
-      return `<div class="tr"><img src="${p4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}${p4Known(p.id) ? '' : ' <small>biết mặt</small>'}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
+      return `<div class="tr${p4Known(p.id) ? '' : ' unk2'}"><img src="${p4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
   const redraw = () => { P4.keepTab = true; if (kind === 'trau') p4HomeOpen(); else p4KeepScroll('p4shop', p4ShopSheet); };
   d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); p4Invite(+b.dataset.tr, kind); redraw(); }));
   const rows = hsTreatRows('pho', kind, has, redraw); if (rows) d.appendChild(rows);
