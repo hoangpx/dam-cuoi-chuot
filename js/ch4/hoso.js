@@ -129,7 +129,7 @@ function hsFace(d, id) {
   g.fillStyle = C4_FACE_BG[(Number.isFinite(+id) ? Math.abs(+id) : 3) % C4_FACE_BG.length]; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.fill();
   g.save(); g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.clip();
   const t = C4.t; C4.t = 0;
-  try { c4Critter(g, { kind: 'mouse', sort: hsSort(d), M: hsRig(d), seed: 0, ph: 0, st: 'idle', face: 1 }, 44, 150, 1.05); } catch (e) {}
+  try { c4NoWx(() => c4Critter(g, { kind: 'mouse', sort: hsSort(d), M: hsRig(d), seed: 0, ph: 0, st: 'idle', face: 1 }, 44, 150, 1.05)); } catch (e) {}
   C4.t = t;
   const X = hsExtras(d, true);
   if (d.age === 'gia') { g.translate(44, 150); g.rotate(.1); g.translate(-44, -150); }   // with the old one's stoop, as hsHeadOn
@@ -140,7 +140,7 @@ function hsFace(d, id) {
 // the whole figure for the editor's preview (the market's own drawing)
 function hsFigure(d) {
   const c = mk(180, 250), g = c.getContext('2d'), t = C4.t; C4.t = 0;
-  try { c4Critter(g, { kind: 'mouse', sort: hsSort(d), M: hsRig(d), seed: 0, ph: 0, st: 'idle', face: 1, look: hsLook(d), ...hsShape(d) }, 80, 242, 1); } catch (e) {}
+  try { c4NoWx(() => c4Critter(g, { kind: 'mouse', sort: hsSort(d), M: hsRig(d), seed: 0, ph: 0, st: 'idle', face: 1, look: hsLook(d), ...hsShape(d) }, 80, 242, 1)); } catch (e) {}
   C4.t = t; return c.toDataURL();
 }
 

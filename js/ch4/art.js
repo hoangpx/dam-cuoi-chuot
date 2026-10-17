@@ -271,8 +271,12 @@ function c4DecoBack(g, w) {
   }
 }
 // over the mouse: skirt, rain cape, hat, the things held in front
+// portraits and previews are drawn without the weather (owner, 2026-10-17: the book's pictures wore rain capes on a rainy day): c4NoWx(fn)
+let C4_NOWX = false;
+const c4Rain = () => !C4_NOWX && typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story';
+const c4NoWx = fn => { const was = C4_NOWX; C4_NOWX = true; try { return fn(); } finally { C4_NOWX = was; } };
 function c4Deco(g, w, k, moving = false) {
-  const L = w.look || {}, rain = typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story', t = L.tool;
+  const L = w.look || {}, rain = c4Rain(), t = L.tool;
   if (L.skirt && !(w.M && w.M.skirt)) {                                  // (a rig with its own skirt, buildMouse o.skirt, needs none laid over it)
     const b = moving ? -Math.abs(Math.sin(w.ph)) * 3.5 : 0, sw = moving ? Math.sin(w.ph) * 5 : 0;
     c4Shape(g, L.skirt, [[-20, -50 + b], [20, -50 + b], [26 + sw, -12 + b], [0 + sw * .6, -9 + b], [-26 + sw, -12 + b]]);
@@ -339,7 +343,7 @@ function c4Critter(g, w, x, y, s) {
   const ph = w.ph, moving = w.st === 'walk' || w.st === 'leave' || ((w.st === 'queue' || w.st === 'toseat') && w.moving), f = w.face;
   if (w.kind === 'mouse') {
     const sort = C4_MOUSE_SORTS[w.sort], k = s * .92 * (sort.role === 'child' ? .68 : 1), L = w.look || {};
-    const busy = w.st === 'eat' ? null : w.buf ? 'buf' : w.drunk ? 'drunk' : L.tool === 'dieu' ? (w.st === 'sit' ? 'dieu' : null) : (L.tool && L.tool !== 'o') ? L.tool : w.umb && (L.tool === 'o' || (typeof c4Wx === 'function' && c4Wx() === 'mua')) ? 'o' : null;
+    const busy = w.st === 'eat' ? null : w.buf ? 'buf' : w.drunk ? 'drunk' : L.tool === 'dieu' ? (w.st === 'sit' ? 'dieu' : null) : (L.tool && L.tool !== 'o') ? L.tool : w.umb && (L.tool === 'o' || (!C4_NOWX && typeof c4Wx === 'function' && c4Wx() === 'mua')) ? 'o' : null;
     const arm = busy && (busy !== 'thung' || !w.carry) ? C4_TOOL_ARM[busy] : w.carry ? .4 : (w.talk ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null);
     let muzzle = null;
     if (w.buf) muzzle = c4Buffalo(g, x - f * 205 * s, y, s * 1.3, f, ph, moving);   // the buffalo plods behind on its rope
@@ -355,7 +359,7 @@ function c4Critter(g, w, x, y, s) {
     C4_SIT = sit; c4Mouse(g, w.M, 0, f, ph, moving, sort.role === 'old' && !w.talk && !busy ? -.15 : arm, w.carry, k, sit ? -8 * k : 0, w.seed); C4_SIT = false;
     g.save(); g.scale(f * k, k); c4Deco(g, w, k, moving); g.restore();
     if (sort.role === 'old' && !sit) { g.strokeStyle = INK; g.lineWidth = 6 * k; g.lineCap = 'round'; g.beginPath(); g.moveTo(f * 32 * k, -92 * k); g.lineTo(f * 44 * k, 0); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 3.4 * k; g.stroke(); }
-    const wet = typeof c4Wx === 'function' && c4Wx() === 'mua' && C4.phase !== 'story';
+    const wet = c4Rain();
     if ((sort.non || (wet && !w.umb && L.hat !== 'quai')) && !(w.umb && (L.tool === 'o' || wet))) { g.scale(f * k, k); c4Non(g); }   // a conical hat; in the rain with the straw cape
     g.restore();
     if (muzzle) { const hx = x + f * -13 * k, hy = y - 71 * k; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(hx, hy); g.quadraticCurveTo((hx + muzzle[0]) / 2, Math.max(hy, muzzle[1]) + 22 * s, muzzle[0], muzzle[1]); g.stroke(); }
