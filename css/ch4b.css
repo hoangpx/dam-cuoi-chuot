@@ -67,3 +67,5 @@ body.p4holding #cv{cursor:none}
 .p4sheet .btn.tem{font-size:18px;padding:10px 26px;background:#2f6a4c}
 #p4temHud button.tag.more{background:#2f6a4c;flex-basis:100%;max-width:520px;white-space:normal}
 #p4temHud button.tag.more:disabled{background:#6f665c;cursor:default}
+/* phones: the bottom bar wraps onto two rows instead of running off both edges (a Hồ sơ button joined it, js/ch4/hoso.js) */
+@media (max-width:520px){#p4hud .bar{flex-wrap:wrap;justify-content:center;width:calc(100% - 24px)}#p4hud .bar .tag{font-size:14px;padding:7px 10px}}

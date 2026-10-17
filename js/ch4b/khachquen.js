@@ -40,6 +40,7 @@ function p4KeenK(P) {
 const p4HoldBack = (P, k) => !!(P && p4Known(P.id) && !p4SaleNow(k) && Math.random() < p4SaleWait(k));
 // served (at the house: kind 'trau'; at an eating house: its key): known by sight, then a regular; liking; a sale's bonus; an invited guest's verdict
 function p4Served(w, kind) {
+  if (w.net !== undefined) { hsServed(w, 'pho'); return; }               // a far-away guest: another player's profile (js/ch4/hoso.js)
   if (w.pid === undefined || w.pid === null) return;
   const p = p4People()[w.pid], T = C4_TRAITS[p.trait] || {}, f = p4F(p.id), day = SAVE4.day;
   if (w.treat) { toast(p4TreatEffect(p, kind), 3.6); }

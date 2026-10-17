@@ -249,6 +249,7 @@ function c4Pay(w, full) {
 }
 // served: met (from the book's day on), liked a little more, maybe tells kin and friends
 function c4Served(w) {
+  if (w.net !== undefined) { hsServed(w, 'lang'); return; }               // a far-away guest: another player's profile (hoso.js)
   if (w.pid === undefined || SAVE4.day < C4_BOOK_DAY) return;
   const P = c4People(), p = P.list[w.pid], T = C4_TRAITS[p.trait], f = c4F(p.id), day = SAVE4.day;
   // the first purchase: she knows the face; the second: they get talking, and the buyer goes into the book
@@ -275,6 +276,7 @@ function c4Served(w) {
 }
 // left without being served: a known buyer likes the stall less (a lot less when it had run out)
 function c4Snubbed(w, empty) {
+  if (w.net !== undefined) { hsSnubbed(w, empty); return; }
   if (w.pid === undefined || SAVE4.day < C4_BOOK_DAY) return;
   const p = c4People().list[w.pid], T = C4_TRAITS[p.trait], f = c4F(p.id);
   if (f.k) {
@@ -326,9 +328,9 @@ let C4_PICK = null;                                                         // {
 function c4OpenNotes(tab) {
   const keep = C4.sheet === 'c4note' && (tab || C4_TAB) === C4_TAB && C4.noteWho === C4_WHO ? c4ScrollGet('c4note') : null;   // the same page drawn again (an action on it): scrolls stay
   C4.noteNew = false; c4Hud();
-  if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY && C4_TAB !== 'viec' && C4_TAB !== 'rank') C4_TAB = 'tin';
+  if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY && C4_TAB !== 'viec' && C4_TAB !== 'rank' && C4_TAB !== 'hoso') C4_TAB = 'tin';
   const P = c4People(), known = P.list.filter(p => c4Known(p.id)), open = SAVE4.day >= C4_BOOK_DAY;
-  const tabs = [['tin', 'Tin đồn'], ['viec', 'Việc'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['thanh', 'Thành tựu']] : []), ['rank', 'Tổng sắp']];   // Tổng sắp: the board of the richest (xephang.js)
+  const tabs = [['tin', 'Tin đồn'], ['viec', 'Việc'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['thanh', 'Thành tựu']] : []), ['hoso', 'Hồ sơ'], ['rank', 'Tổng sắp']];   // Tổng sắp: the board of the richest (xephang.js); Hồ sơ: my profile and the reviews I got (hoso.js)
   let h = `<div class="c4tabs">${tabs.map(([k, n]) => `<button class="${k === C4_TAB ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
   const seen = P.list.filter(p => !c4Known(p.id) && SAVE4.folk[p.id] && SAVE4.folk[p.id].seen);
   if (open) h += `<p class="cnt">${known.length} người quen · ${seen.length} người biết mặt</p>`;
@@ -352,7 +354,9 @@ function c4OpenNotes(tab) {
       return `<button class="fk" data-who="${p.id}"><img src="${c4Face(p)}" alt=""><b>${p.name}</b>${c4Bar(f.a)}<span>ghé ${f.v} lần${f.deal ? ' · đã hẹn' : ''}</span></button>`; }).join('')}</div>`
       : '<p>Chưa quen ai. Khách ghé mua lần thứ hai mới thành quen.</p>';
     if (seen.length) h += `<h4>Biết mặt</h4><div class="folk">${seen.map(p => `<div class="fk unk2"><img src="${c4Face(p)}" alt=""><b>${p.name}</b><span>mới ghé 1 lần</span></div>`).join('')}</div>`;
+    h += hsBookHtml();                                                       // other players' profiles that came to this market (hoso.js)
   } else if (C4_TAB === 'don') h += c4OrdersTab();
+  else if (C4_TAB === 'hoso') h += '<div id="c4hsTab"></div>';
   else if (C4_TAB === 'web') h += c4WebTab();
   else if (C4_TAB === 'viec') h += c4TasksTab();
   else if (C4_TAB === 'thanh') h += c4AchHtml();
@@ -361,6 +365,8 @@ function c4OpenNotes(tab) {
   const wasWeb = !!$('#qhCv');
   $('#c4noteB').innerHTML = h;
   if (C4_TAB === 'rank') c4RankInto($('#c4rankTab'));
+  if (C4_TAB === 'hoso') hsProfileInto($('#c4hsTab'), () => c4OpenNotes('hoso'));
+  if (C4_TAB === 'quen' && C4_WHO === null && !C4_PICK) hsBookWire($('#c4noteB'), () => c4OpenNotes('quen'));
   $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha');
   $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
   $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));

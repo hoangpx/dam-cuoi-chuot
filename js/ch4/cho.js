@@ -228,7 +228,7 @@ const C4_SCROLLERS = '.trl,.folk,.rk';
 function c4ScrollGet(id) { const s = $('#' + id); if (!s || C4.sheet !== id) return null; const c = s.querySelector('.card4'); return { s: s.scrollTop, c: c ? c.scrollTop : 0, l: [...s.querySelectorAll(C4_SCROLLERS)].map(e => e.scrollTop) }; }
 function c4ScrollSet(id, k) { if (!k) return; const s = $('#' + id), c = s.querySelector('.card4'); s.scrollTop = k.s; if (c) c.scrollTop = k.c; [...s.querySelectorAll(C4_SCROLLERS)].forEach((e, i) => { if (k.l[i] != null) e.scrollTop = k.l[i]; }); }
 function c4Sheets(id) { const up = $('#c4up'); if (up) up.classList.remove('tab-moi');   // the stall sheet's "Mời khách" tab (c4UpTabs) is set again after each opening
- if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
+ if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 // a sheet opened by a tap on the market (a visitor, a stall) appears under the finger, and some phones (an Oppo) then send that tap's click
 // to the button now there, e.g. the refusal (a player): clicks inside a sheet in its first .45 s are dropped
 addEventListener('click', e => { if (S.mode === 'c4play' && C4.sheet && performance.now() - (C4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + C4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
@@ -695,6 +695,7 @@ function updateC4(dt) {
   if (C4.phase === 'open') {
     const was = C4.mins; C4.mins += dt * C4_MPS;
     if (typeof w4VillageTick === 'function') w4VillageTick();   // the village's hour, where the town opens its day (js/ch4b/dongho.js)
+    if (typeof hsVillageTick === 'function') hsVillageTick(dt);   // far-away guests: other players' profiles (hoso.js)
     if (Math.floor(was / 30) !== Math.floor(C4.mins / 30)) { SAVE4.openMins = C4.mins; persist4(); }   // every half hour of the market
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
@@ -895,7 +896,7 @@ function c4LedgerHtml(d) {
 }
 const c4Talk2Due = () => SAVE4.day === C4_BOOK_DAY && !SAVE4.talk2;
 function c4Talk2() { c4StoryStart(C4_TALK2, () => { SAVE4.talk2 = true; persist4(); c4MarketStart(); }); }
-function c4DayAdvance() { if (typeof w4BeforeDay === 'function') w4BeforeDay(); trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4(); if (typeof c4RankSend === 'function') c4RankSend(); }
+function c4DayAdvance() { if (typeof w4BeforeDay === 'function') w4BeforeDay(); trackSend(`xong/chuong-4/ngay-${SAVE4.day}`); SAVE4.day++; SAVE4.plan = SAVE4.next; SAVE4.next = c4Roll(SAVE4.day + 1); persist4(); if (typeof c4RankSend === 'function') c4RankSend(); if (typeof hsPush === 'function') hsPush().catch(() => {}); }
 function c4NewDay() {
   c4DayAdvance();
   if (c4Talk2Due()) { c4Sheets(null); c4Talk2(); return; }
