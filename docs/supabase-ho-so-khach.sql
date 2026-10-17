@@ -105,7 +105,7 @@ language sql stable security definer set search_path = public as $$
          (select count(*)::int from dcc_regular g where g.target = p.id),
          p.updated_at
   from dcc_prof p
-  where p.id = any (coalesce(p_ids, '{}')[1:200]) and p.pub and not p.hidden
+  where p.id = any ((coalesce(p_ids, '{}'::bigint[]))[1:200]) and p.pub and not p.hidden
 $$;
 
 -- số liệu của chính mình: id hồ sơ, sao trung bình, số đánh giá, số chợ coi mình là khách quen
