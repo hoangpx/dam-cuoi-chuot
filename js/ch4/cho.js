@@ -1316,15 +1316,15 @@ let C4_STK = (() => { try { return localStorage.getItem('c4stk') || 'col'; } cat
 const c4StkProp = m => (m === 'col' ? 'maxHeight' : 'maxWidth');
 function c4StkFold(done) {
   const ws = $('#c4Stock .ws'); if (!ws || C4_STK === 'off') { done(); return; }
-  const p = c4StkProp(C4_STK); ws.style[p] = (C4_STK === 'col' ? ws.scrollHeight : ws.scrollWidth) + 'px'; void ws.offsetWidth; ws.style[p] = '0px'; setTimeout(done, 200);
+  const p = c4StkProp(C4_STK); ws.style[p] = (C4_STK === 'col' ? ws.offsetHeight : ws.offsetWidth) + 'px'; void ws.offsetWidth; ws.style[p] = '0px'; setTimeout(done, 200);
 }
 function c4StkSet(m, now) {
   const el = $('#c4Stock'), ws = el && el.querySelector('.ws'); if (!el) return;
   const open = m2 => { C4_STK = m2; try { localStorage.setItem('c4stk', m2); } catch (e) {} el.classList.remove('col', 'row', 'off'); el.classList.add(m2);
-    el.querySelector('.sl').textContent = m2 === 'row' ? '▶' : '◀'; el.querySelector('.sd').textContent = m2 === 'col' ? '▲' : '▼';
+    el.querySelector('.sl i').className = 'tri ' + (m2 === 'row' ? 'r' : 'l'); el.querySelector('.sd i').className = 'tri ' + (m2 === 'col' ? 'u' : 'd');
     el.querySelector('.sl').setAttribute('aria-label', m2 === 'row' ? 'Thu lại' : 'Xổ ngang'); el.querySelector('.sd').setAttribute('aria-label', m2 === 'col' ? 'Thu lại' : 'Xổ dọc');
     ws.style.maxHeight = ws.style.maxWidth = ''; if (m2 === 'off' || now) return;
-    const p = c4StkProp(m2); ws.style[p] = '0px'; void ws.offsetWidth; ws.style[p] = (m2 === 'col' ? ws.scrollHeight : ws.scrollWidth) + 'px';
+    const p = c4StkProp(m2), full = m2 === 'col' ? ws.offsetHeight : ws.offsetWidth; ws.style[p] = '0px'; void ws.offsetWidth; ws.style[p] = full + 'px';
     setTimeout(() => { if (C4_STK === m2) ws.style[p] = ''; }, 220); };
   if (now) { open(m); return; }
   c4StkFold(() => open(m));
@@ -1339,7 +1339,7 @@ function c4Key(e) {
 /* ---------- HUD, sheets, registration ---------- */
 {
   const hud = document.createElement('div'); hud.id = 'c4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"><button type="button" class="sa sl" aria-label="Xổ ngang">◀</button><span class="lb">Hàng</span><span class="ws"></span><button type="button" class="sa sd" aria-label="Xổ dọc">▼</button></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
+  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"><button type="button" class="sa sl" aria-label="Xổ ngang"><i class="tri l"></i></button><span class="lb">Hàng</span><span class="ws"></span><button type="button" class="sa sd" aria-label="Xổ dọc"><i class="tri d"></i></button></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'),
