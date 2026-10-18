@@ -160,6 +160,9 @@ L.push({ name: 'Tảng Băng', en: 'Iceberg', map: [
   g.set(1, 6, 'P'); g.set(18, 1, 'G');
   L.push({ name: 'Hố Lửa', en: 'Fiery Pit', map: g.map(), plan: [{ swipe: [[5, 8], [6, 8], [6, 7], [5, 7], [5, 6]] }, { until: [[7, 5, 'r']] }, { until: [[6, 6, 'r']] }, { swipe: [[5, 8], [5, 7], [6, 7]] }, { until: [[9, 7, 'r']] }, { until: [[12, 8, 'r']] }] }); }
 
+// 20. Desolate Boulder (owner's picture 2026-10-18; exit guessed at the end of the corridor; the plan is the abstract solver's road, checked in the engine: tools/c8-boulder.js, c8-boulder-check.js)
+{ const B = require('./c8-boulder.js'); L.push({ name: 'Tảng Đá Hoang', en: 'Desolate Boulder', map: B.map, plan: JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'c8-mini/boulder-plan.json'), 'utf8')).plan }); }
+
 // the first three levels, from the owner's pictures of 2026-10-09 (maps in tools/c8-new2.js): Explorer's Trail, Collapsed Alley (the untitled one: gather the top 3 spirals of the left column, stand on its clods, then the top 3 of the middle column), Floating Earth (the lowest 3 of the 5 spirals)
 { const N = require('./c8-new2.js');
   L.unshift(
