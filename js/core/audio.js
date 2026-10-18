@@ -73,9 +73,11 @@ const AU = (() => {
   const cur = () => SONGS[song] || SONGS[0];
   const SP = () => 60 / cur().bpm / 2;
   function init() {
-    if (c) { if (c.state !== 'running') c.resume(); blip(); return; }
+    // iOS (e.g. inside Instagram, during a call) may refuse the audio device: resume() then rejects with "Failed to start the audio device".
+    // That must never stop the game (it showed as a fatal start error, 2026-10-17): play on silently and try again on the next tap
+    if (c) { if (c.state !== 'running') { try { const p = c.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) {} } blip(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    c = new AC(); master = c.createGain(); master.gain.value = muted ? 0 : LOUD;
+    try { c = new AC(); } catch (e) { c = null; return; } master = c.createGain(); master.gain.value = muted ? 0 : LOUD;
     const comp = c.createDynamicsCompressor(); master.connect(comp); comp.connect(c.destination);
     music = c.createGain(); music.gain.value = .75; music.connect(master);
     sfx = c.createGain(); sfx.gain.value = 1; sfx.connect(master);
