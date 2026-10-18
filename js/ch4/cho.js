@@ -379,7 +379,7 @@ function c4Stepper(box, g, on, mid = false) {
 }
 /* ---------- the morning order (owner, 2026-10-17: "bảng buổi sáng nhập bao nhiêu cần làm thông minh 1 chút, đang phải scroll và ấn quá
    nhiều nút cho từng hàng"): every ware starts filled with a suggestion (what sold lately), so a plain day is one tap on Họp chợ; quick
-   buttons set every ware at once (Gợi ý / Như hôm qua / Vừa túi tiền / Bỏ hết); one short line a ware, the number can be typed. ---------- */
+   buttons set every ware at once (Gợi ý / Như hôm qua / Vừa túi tiền / Tối đa / Bỏ hết); one short line a ware, the number can be typed. ---------- */
 const C4_SALES_DAYS = 3;
 // each evening: what every ware sold and how many buyers left for want of it (the last C4_SALES_DAYS days, newest first)
 function c4SalesKeep() {
@@ -398,7 +398,7 @@ function c4Suggest(g) {
 function c4OrderRows(box, orders) {
   const H0 = (SAVE4.salesHist || [])[0], last = SAVE4.lastOrder, rows = {}, w = document.createElement('div'); w.className = 'ordW';
   w.innerHTML = `<div class="ordQ"><button class="btn alt" data-all="goi">Gợi ý</button><button class="btn alt" data-all="qua"${last ? '' : ' disabled'}>Như hôm qua</button>`
-    + `<button class="btn alt" data-all="vua">Vừa túi tiền</button><button class="btn alt" data-all="0">Bỏ hết</button></div><p class="sm ordH"></p><div class="ordL"></div>`;
+    + `<button class="btn alt" data-all="vua">Vừa túi tiền</button><button class="btn alt" data-all="max">Tối đa</button><button class="btn alt" data-all="0">Bỏ hết</button></div><p class="sm ordH"></p><div class="ordL"></div>`;
   box.appendChild(w);
   for (const g of c4Owned()) {
     const G = C4_GOODS[g], closed = g !== 'trau' && !c4Open(g), max = closed ? 0 : Math.max(0, c4Cap(g) - c4Stock(g)), s = H0 && H0.by[g], r1 = v => Math.round(v * 10) / 10;
@@ -421,9 +421,9 @@ function c4OrderRows(box, orders) {
     const sum = Object.entries(orders).reduce((a, [g, q]) => a + q * c4Cost(g), 0); if (sum <= can) return false;
     const k = Math.max(0, can) / sum; for (const g in rows) rows[g](Math.floor(orders[g] * k / 5) * 5); return true;
   };
-  const H = { goi: SAVE4.salesHist && SAVE4.salesHist.length ? 'Đã điền sẵn theo số bán mấy hôm trước và thời tiết hôm nay' : 'Chưa biết bán được bao nhiêu: điền tạm một phần ba sức chứa mỗi hàng', qua: 'Như số nhập sáng hôm qua', vua: 'Giữ số đang có', 0: 'Không nhập gì' };
+  const H = { max: 'Nhập đầy sức chứa mọi hàng', goi: SAVE4.salesHist && SAVE4.salesHist.length ? 'Đã điền sẵn theo số bán mấy hôm trước và thời tiết hôm nay' : 'Chưa biết bán được bao nhiêu: điền tạm một phần ba sức chứa mỗi hàng', qua: 'Như số nhập sáng hôm qua', vua: 'Giữ số đang có', 0: 'Không nhập gì' };
   const fill = how => {
-    for (const g in rows) rows[g](how === 'goi' ? c4Suggest(g) : how === 'qua' ? (last && last[g]) || 0 : how === 'vua' ? orders[g] : 0);
+    for (const g in rows) rows[g](how === 'goi' ? c4Suggest(g) : how === 'qua' ? (last && last[g]) || 0 : how === 'vua' ? orders[g] : how === 'max' ? 1e9 : 0);   // Tối đa: every stall filled to its room (owner, 2026-10-17), then cut to the money
     const cut = how !== '0' && fit(); w.querySelector('.ordH').textContent = H[how] + (cut ? ', đã bớt cho vừa tiền.' : '.'); c4AmTotal(orders);
   };
   w.querySelectorAll('[data-all]').forEach(b => b.addEventListener('click', () => { AU.tap(); fill(b.dataset.all); }));
