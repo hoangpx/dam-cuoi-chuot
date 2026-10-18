@@ -1,7 +1,7 @@
 /* Chơi không cần mạng (owner, 2026-10-14: the Android app must play offline and update itself when online).
    A service worker keeps the whole game (~4 MB) in the phone:
    - the page (index.html): network first (4 s), else the kept copy, so a new VERSION is picked up whenever there is a connection;
-   - game scripts (loaded as file?v=VERSION): kept for good once fetched; whenever a page with a new VERSION comes in, every script
+   - game scripts and our stylesheets (loaded as file?v=VERSION; the loader re-points the css links): kept for good once fetched; whenever a page with a new VERSION comes in, every script
      of its GAME_FILES is fetched in the background, so the whole new version is there before the next time offline, and scripts of
      older versions are dropped;
    - everything else of ours (css, images, sounds, fonts: listed in offline.json, made by tools/offline-list.js) and Google Fonts:
@@ -15,9 +15,10 @@ const isPage = req => req.mode === 'navigate' || req.url === ROOT || req.url ===
 async function keepVersion(html) {
   const v = (html.match(/const VERSION = '([^']+)'/) || [])[1], files = (html.match(/const GAME_FILES = \[([\s\S]*?)\]/) || [])[1];
   if (!v || !files) return;
-  const c = await caches.open(CACHE), want = files.match(/'[^']+'/g).map(s => ROOT + s.slice(1, -1) + '?v=' + v);
+  const css = (html.match(/href="css\/[^"?]+\.css"/g) || []).map(m => m.slice(6, -1));   // our stylesheets, re-pointed to ?v= by the loader
+  const c = await caches.open(CACHE), want = [...files.match(/'[^']+'/g).map(s => s.slice(1, -1)), ...css].map(f => ROOT + f + '?v=' + v);
   await Promise.all(want.map(async u => { if (!(await c.match(u))) { try { const r = await fetch(u); if (r.ok) await c.put(u, r); } catch (e) {} } }));
-  for (const req of await c.keys()) { const m = req.url.match(/\?v=(.+)$/); if (m && decodeURIComponent(m[1]) !== v && req.url.startsWith(ROOT + 'js/')) await c.delete(req); }
+  for (const req of await c.keys()) { const m = req.url.match(/\?v=(.+)$/); if (m && decodeURIComponent(m[1]) !== v && (req.url.startsWith(ROOT + 'js/') || req.url.startsWith(ROOT + 'css/'))) await c.delete(req); }
 }
 async function keepStatic() {
   try {
