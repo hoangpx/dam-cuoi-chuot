@@ -38,6 +38,7 @@ function w4VillageEnter() {
   w4Load(); W4.villageShut = false;
   if (w4VillageLive()) w4CatchVillage(W4.mins);
   if (C4.day === SAVE4.day && C4.phase === 'night') c4Sheets('c4day');
+  if (C4.day === SAVE4.day && C4.phase === 'morning' && $('#c4amO .go')) { c4Sheets('c4am'); c4AmClock(); }   // the order not given yet: the sheet again, against the hour now (cho.js)
   w4DayButtons();
 }
 // the hour the village's market opens when the morning order is given: the world's

@@ -429,6 +429,9 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the name and the (now absolute) right column */
 @media (max-width:520px){#c4hud #c4Stock.row{margin-top:var(--stkTop,44px)}}   /* a phone: the unrolled row sits under the day and clock line, not over it (c4StkClear measures it) */
 #c4hud #c4Stock.col .sl{order:0}#c4hud #c4Stock.col .ws{order:1}#c4hud #c4Stock.col .sd{order:2}#c4hud #c4Stock.col .lb{display:none}
+/* the morning sheet once the village market is over for today (c4AmClock): no order rows, no Họp chợ */
+#c4amO.over>:not(.amLate){display:none}
+#c4amO .amLate p{margin:6px 0}
 /* notch (owner, 2026-10-17): sheets and the HUD keep clear of every safe area, both parts */
 .c4sheet{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
 .c4sheet .card4{max-height:calc(100vh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}

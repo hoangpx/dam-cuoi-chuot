@@ -326,7 +326,9 @@ function c4Morning() {
   const tot = document.createElement('div'); tot.className = 'tot'; box.appendChild(tot);
   const go = document.createElement('button'); go.className = 'btn go'; go.textContent = 'Họp chợ'; box.appendChild(go);
   C4.orders = orders; c4LoanUI();
+  const late = document.createElement('div'); late.className = 'amLate'; box.prepend(late);   // the hour now, when the world's clock has moved on (c4AmClock)
   go.addEventListener('click', () => {
+    if (c4AmClock()) return;                                                // too late today: nothing is bought (players 2026-10-18)
     C4.today.m0 = SAVE4.money;                                              // the purse before the morning's buying (for the evening ledger)
     SAVE4.lastOrder = { ...orders };                                         // "Như hôm qua" tomorrow (c4OrderRows)
     for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
@@ -335,7 +337,7 @@ function c4Morning() {
     SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
   });
   c4AmTotal(orders);
-  c4Sheets('c4am');
+  c4Sheets('c4am'); c4AmClock();
 }
 // the money box on the morning sheet: what is owed, borrow, pay back
 // (in the evening, on the tally: pay back only — the player decides when and how much; nothing is taken during the day)
@@ -371,6 +373,23 @@ function c4Borrow(k) {
   c4AfterMoney();
 }
 function c4AfterMoney() { persist4(); c4Hud(); c4LoanUI(); if (C4.orders) c4AmTotal(C4.orders); }
+// the morning sheet against the world's clock (one clock with the town, dongho.js): the hour now and the time left; returns true when
+// the village market is over for today (less than C4_LATE game minutes left): no order, a button to the next day instead
+const C4_LATE = 30;
+const c4AmNow = () => (typeof c4OpenAt === 'function' ? c4OpenAt() : C4_OPEN);
+const c4Hm = m => `${Math.floor(m / 60)}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
+function c4AmClock() {
+  const box = $('#c4amO'), el = box && box.querySelector('.amLate'); if (!el || C4.phase !== 'morning') return false;
+  const now = c4AmNow(), over = now >= C4_CLOSE - C4_LATE;
+  box.classList.toggle('over', over);
+  if (now <= C4_OPEN + 5) el.innerHTML = '';
+  else if (!over) el.innerHTML = `<p class="sm bad">Bây giờ đã ${c4Hm(now)}: chợ làng chỉ còn họp đến ${c4Hm(C4_CLOSE)} (khoảng ${Math.max(1, Math.round((C4_CLOSE - now) / 60))} tiếng), nhập ít thôi kẻo thừa.</p>`;
+  else {
+    el.innerHTML = `<p class="bad"><b>Đã ${c4Hm(now)}, chợ làng hôm nay tan rồi.</b> Không nhập hàng nữa.</p><div class="row"><button class="btn" data-amnext>Sang ngày mới</button></div>`;
+    el.querySelector('[data-amnext]').addEventListener('click', () => { AU.tap(); c4Sheets(null); c4NewDay(); });
+  }
+  return over;
+}
 function c4AmTotal(orders) {
   const el = $('#c4amO .tot'); if (!el) return;
   const sum = Object.entries(orders).reduce((a, [g, q]) => a + q * c4Cost(g) + (g === 'che' && q ? C4_GOODS.che.fuel : 0), 0);
@@ -407,6 +426,7 @@ function c4Suggest(g) {
   const G = C4_GOODS[g], H = (SAVE4.salesHist || []).filter(h => h.by[g]), p = SAVE4.plan || {}, room = Math.max(0, c4Cap(g) - c4Stock(g));
   let base = H.length ? H.reduce((a, h) => a + h.by[g].n + h.by[g].lost * 2, 0) / H.length : c4Cap(g) * .35;
   base *= ((G.wx && G.wx[p.wx]) || 1) * (p.hoi ? 1.3 : 1);
+  { const now = c4AmNow(); if (now > C4_OPEN + 5 && typeof w4VillageBusy === 'function') base *= Math.max(0, w4VillageBusy(now, C4_CLOSE) / w4VillageBusy(C4_OPEN, C4_CLOSE)); }   // a late start: only the hours left
   return Math.max(0, Math.min(room, Math.ceil((base * 1.15 - c4Stock(g)) / 5) * 5));
 }
 function c4OrderRows(box, orders) {
