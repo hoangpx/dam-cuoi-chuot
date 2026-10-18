@@ -85,3 +85,6 @@ body.p4holding #cv{cursor:none}
 }
 /* notch (owner, 2026-10-17): the town HUD keeps clear of the side safe areas too */
 #p4hud{padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px))}
+/* the village closed while the player was in the town: "Về chợ quê" blinks red (owner, 2026-10-18: the only notice) */
+@keyframes p4blink{0%,100%{background:#a3332a;box-shadow:3px 3px 0 rgba(29,25,21,.3)}50%{background:#e2483a;box-shadow:0 0 0 4px rgba(226,72,58,.45)}}
+#p4hud .bar .tag.pho.blink{animation:p4blink 1s ease-in-out infinite}

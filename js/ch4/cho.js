@@ -330,7 +330,8 @@ function c4Morning() {
     C4.today.m0 = SAVE4.money;                                              // the purse before the morning's buying (for the evening ledger)
     SAVE4.lastOrder = { ...orders };                                         // "Như hôm qua" tomorrow (c4OrderRows)
     for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
-    c4Sheets(null); C4.phase = 'open'; c4PlanEvents(); c4ShipOrders(); c4Hud();
+    c4Sheets(null); C4.phase = 'open'; if (typeof c4OpenAt === 'function') C4.mins = c4OpenAt();   // the market opens at the world's hour (the one clock with the town, dongho.js)
+    c4PlanEvents(); if (C4.mins > C4_OPEN) C4.events = C4.events.filter(e => e.at > C4.mins); c4ShipOrders(); c4Hud();
     SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
   });
   c4AmTotal(orders);
