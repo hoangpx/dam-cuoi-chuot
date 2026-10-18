@@ -959,7 +959,7 @@ function c4EndDay() {
     + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '')
     + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '') + c4LedgerHtml(d)
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
-    + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.slice(0, 4).join(', ')}${gossip.hurt.length > 4 ? ' và ' + (gossip.hurt.length - 4) + ' người nữa' : ''} bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
+    + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.length} người quen bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
     + (quits.length ? `<br><span class="bad">${quits.join(' ')}</span>` : '')
     + (extra.length ? `<br>${extra.join('<br>')}` : '')
     + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);
