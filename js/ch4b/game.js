@@ -299,7 +299,7 @@ function p4HomeDraw() {
     if (b.dataset.rename) { AU.tap(); p4NameSheet(false); return; }
     if (b.dataset.homesign) { if (!SAVE4B.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); SAVE4B.sign = true; p4Persist(); toast('Biển hiệu mới sơn son thếp vàng!', 2.4); } AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (p4HandsClick(b)) { AU.tap(); p4HomeOpen(); p4Hud(); return; }
-    if (b.dataset.n) { const n = +b.dataset.n, c = n * 3; if (p4Purse() < c) { toast('Không đủ tiền nhập trầu.', 2); return; } p4Spend(c); SAVE4B.stock += n; }
+    if (b.dataset.n) { const n = +b.dataset.n, c = n * 3; if (p4Purse() < c) { toast('Không đủ tiền nhập trầu.', 2); return; } p4Spend(c); SAVE4B.stock += n; p4BetelLog(n); }
     if (b.dataset.p) SAVE4B.price = Math.max(4, Math.min(20, SAVE4B.price + +b.dataset.p));
     p4Persist(); AU.tap(); p4HomeOpen(); p4Hud();
   });
