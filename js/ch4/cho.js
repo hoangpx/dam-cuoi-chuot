@@ -995,7 +995,7 @@ function c4Hud() {
   $('#c4Money').innerHTML = c4Money(SAVE4.money);
   $('#c4Time').textContent = `Ngày ${SAVE4.day}  ${C4_ZOD[c4Hour(C4.mins)] || ''} ${c4Clock(C4.mins)}  ${C4_WXI[c4Wx()]}`;
   $('#c4Time').title = `giờ ${c4Hour(C4.mins)}`;
-  $('#c4Stock').innerHTML = c4Owned().map(g => `<span class="w">${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}</span>`).join(' ');   // one line per ware on a phone (css/ch4.css)
+  { const ws = $('#c4Stock .ws'), h = c4Owned().map(g => `<span class="w">${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}</span>`).join(''); if (ws && ws.innerHTML !== h) { ws.innerHTML = h; c4StkFit(); } }   // the wares, folded down or across (c4StkSet)
   $('#c4Debt').innerHTML = SAVE4.debt > 0.5 ? 'Nợ ' + c4Money(SAVE4.debt) : '';
   $('#c4Debt').hidden = !(SAVE4.debt > 0.5);
   $('#c4Note').classList.toggle('new', !!C4.noteNew);
@@ -1310,6 +1310,26 @@ function c4Up(e) {
 }
 // the mouse wheel (or a trackpad) looks along the lane, as in the town (owner, 2026-10-17: "chợ quê ko scroll đc chuột giống phố huyện")
 cv.addEventListener('wheel', e => { if (S.mode !== 'c4play' || C4.sheet || C4.phase === 'story') return; e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; C4.camX += d * 1.5 * (e.deltaMode === 1 ? 30 : 1) / c4View().s; }, { passive: false });
+let C4_STK = (() => { try { return localStorage.getItem('c4stk') || 'col'; } catch (e) { return 'col'; } })();
+// open the HUD's wares as a column ('col'), a row ('row') or fold them ('off'); a switch between col and row folds first, then unrolls.
+// The size animates from 0 to the list's size and is then let free ('none'), so wares added later or a late font never get cut off
+const c4StkProp = m => (m === 'col' ? 'maxHeight' : 'maxWidth');
+function c4StkFold(done) {
+  const ws = $('#c4Stock .ws'); if (!ws || C4_STK === 'off') { done(); return; }
+  const p = c4StkProp(C4_STK); ws.style[p] = (C4_STK === 'col' ? ws.scrollHeight : ws.scrollWidth) + 'px'; void ws.offsetWidth; ws.style[p] = '0px'; setTimeout(done, 200);
+}
+function c4StkSet(m, now) {
+  const el = $('#c4Stock'), ws = el && el.querySelector('.ws'); if (!el) return;
+  const open = m2 => { C4_STK = m2; try { localStorage.setItem('c4stk', m2); } catch (e) {} el.classList.remove('col', 'row', 'off'); el.classList.add(m2);
+    el.querySelector('.sl').textContent = m2 === 'row' ? '▶' : '◀'; el.querySelector('.sd').textContent = m2 === 'col' ? '▲' : '▼';
+    el.querySelector('.sl').setAttribute('aria-label', m2 === 'row' ? 'Thu lại' : 'Xổ ngang'); el.querySelector('.sd').setAttribute('aria-label', m2 === 'col' ? 'Thu lại' : 'Xổ dọc');
+    ws.style.maxHeight = ws.style.maxWidth = ''; if (m2 === 'off' || now) return;
+    const p = c4StkProp(m2); ws.style[p] = '0px'; void ws.offsetWidth; ws.style[p] = (m2 === 'col' ? ws.scrollHeight : ws.scrollWidth) + 'px';
+    setTimeout(() => { if (C4_STK === m2) ws.style[p] = ''; }, 220); };
+  if (now) { open(m); return; }
+  c4StkFold(() => open(m));
+}
+const c4StkFit = () => {};   // (sizes are free once open)
 function c4Key(e) {
   if (C4.phase === 'story' && ['Space', 'Enter', 'ArrowRight'].includes(e.code)) { e.preventDefault(); c4StoryNext(); return; }
   if (!C4.sheet && C4.phase !== 'story') { if (e.code === 'ArrowLeft') C4.camX -= 60; if (e.code === 'ArrowRight') C4.camX += 60; }   // look along the lane, as in the town (owner, 2026-10-17)
@@ -1319,7 +1339,7 @@ function c4Key(e) {
 /* ---------- HUD, sheets, registration ---------- */
 {
   const hud = document.createElement('div'); hud.id = 'c4hud'; hud.hidden = true;
-  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
+  hud.innerHTML = '<button class="tag" id="c4Name">Vợ Chồng Khởi Nghiệp</button><div class="mid"><div class="tag" id="c4Time"></div></div><div class="right"><div class="tag" id="c4Money"></div><div class="tag" id="c4Stock"><button type="button" class="sa sl" aria-label="Xổ ngang">◀</button><span class="lb">Hàng</span><span class="ws"></span><button type="button" class="sa sd" aria-label="Xổ dọc">▼</button></div><div class="tag debt" id="c4Debt" hidden></div></div><div class="bar"><button class="tag ic" id="c4Note" title="Sổ tay" aria-label="Sổ tay"><i class="ic4 book"></i></button><button class="tag ic" id="c4Task" title="Việc hôm nay">Việc</button><button class="tag" id="c4Home" hidden>Nhà riêng</button><button class="tag ic up" id="c4Ups" title="Nâng cấp" aria-label="Nâng cấp"><i class="ic4 up"></i></button><button class="tag pho" id="c4Pho" hidden>Lên Phố Huyện</button><button class="tag" id="c4Invite" hidden>Mời khách quen</button></div>';
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('c4am', '<h3 id="c4amT"></h3><div id="c4amB"></div><h4>Sáng nay nhập bao nhiêu hàng?</h4><p class="hint">Hàng tươi không để qua đêm được: tan chợ còn thừa là hỏng, mất vốn.</p><div id="c4amO"></div><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'),
@@ -1334,6 +1354,9 @@ function c4Key(e) {
   $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
   $('#c4Pho').addEventListener('click', () => { AU.tap(); p4Enter(); });
   $('#c4dayPho').addEventListener('click', () => { AU.tap(); p4Enter(); });   // after closing, the town is still open (dongho.js)   // part 2 · Phố Huyện (js/ch4b/game.js)
+  $('#c4Stock .sl').addEventListener('click', e => { e.stopPropagation(); AU.tap(); c4StkSet(C4_STK === 'row' ? 'off' : 'row'); });
+  $('#c4Stock .sd').addEventListener('click', e => { e.stopPropagation(); AU.tap(); c4StkSet(C4_STK === 'col' ? 'off' : 'col'); });
+  c4StkSet(C4_STK, true);
   $('#c4Ups').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); c4OpenUps(); } });
   $('#c4Home').addEventListener('click', () => { AU.tap(); $('#c4homeB').innerHTML = c4HomeHtml(); c4Sheets('c4home'); });
   $('#c4homeShop').addEventListener('click', () => { AU.tap(); $('#c4shopB').innerHTML = c4ShopHtml(); c4Sheets('c4shop'); });

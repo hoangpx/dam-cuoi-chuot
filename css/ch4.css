@@ -408,6 +408,21 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 #c4amO .go{position:sticky;bottom:4px;z-index:3}
 .ordH{margin:0 0 4px;text-align:center}
 
+/* the HUD's wares: one pill with ◀ and ▼ (owner, 2026-10-17); cho.js c4StkSet */
+#c4hud .right{position:absolute;right:calc(16px + env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));width:auto}   /* the right column never pushes the name aside; an unrolled row of wares grows to the left */
+#c4hud #c4Stock{display:flex;flex-wrap:nowrap;align-items:center;gap:2px;pointer-events:auto;max-width:calc(100vw - 32px);text-align:right;line-height:1.4}
+#c4hud #c4Stock.col{flex-direction:column;align-items:flex-end}
+#c4hud #c4Stock .ws{overflow:hidden;transition:max-height .2s ease,max-width .2s ease}
+#c4hud #c4Stock.off .ws{display:none}
+#c4hud #c4Stock.col .ws{display:flex;flex-direction:column;align-items:flex-end}
+#c4hud #c4Stock.row .ws{display:flex;flex-direction:row;gap:.7em;white-space:nowrap}
+#c4hud #c4Stock .ws .w{display:block;margin:0;white-space:nowrap}
+#c4hud #c4Stock .lb{display:none;padding:0 2px}
+#c4hud #c4Stock.off .lb{display:inline}
+#c4hud #c4Stock .sa{border:0;background:none;color:var(--son,#a3332a);font:900 13px/1 var(--display);padding:4px 6px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the name and the (now absolute) right column */
+@media (max-width:520px){#c4hud #c4Stock.row{margin-top:34px}}   /* a phone: the unrolled row sits under the day and clock line, not over it */
+#c4hud #c4Stock.col .sl{order:0}#c4hud #c4Stock.col .ws{order:1}#c4hud #c4Stock.col .sd{order:2}#c4hud #c4Stock.col .lb{display:none}
 /* notch (owner, 2026-10-17): sheets and the HUD keep clear of every safe area, both parts */
 .c4sheet{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
 .c4sheet .card4{max-height:calc(100vh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
