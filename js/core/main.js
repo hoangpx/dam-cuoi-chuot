@@ -6,6 +6,7 @@ function tick(dt) {
   AU.update();
   for (const f of S.fx) f.t += dt;
   S.fx = S.fx.filter(f => f.t < (f.life || 1.4));
+  if (typeof CLOUD !== 'undefined' && CLOUD.wait) return;                    // back from away with a cloud code: wait for the cloud check (cloud.js)
   activeChapter().update(dt);
 }
 function draw() { activeChapter().render(); }

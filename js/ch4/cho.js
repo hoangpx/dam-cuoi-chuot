@@ -64,7 +64,20 @@ const C4_DEBT = 300;                                                      // the
 const C4_NEW = () => ({ day: 1, money: 60, stock: 0, debt: 0, lv: 0, started: false, best: 0, intro: false, plan: null, next: null, notes: [], owed: [], favor: 0, dues: 0, shops: {}, loans: [], goal: false, seed: (Math.random() * 1e9) | 0, folk: {} });
 let SAVE4 = C4_NEW();
 try { const s = JSON.parse(localStorage.getItem('dcc.c4') || 'null'); if (s && s.day) SAVE4 = Object.assign(SAVE4, s); } catch (e) {}
-const persist4 = () => { try { localStorage.setItem('dcc.c4', JSON.stringify(SAVE4)); } catch (e) {} };
+const c4Rev = s => { const m = /"_rev":(\d+)/.exec(s || ''); return m ? +m[1] : 0; };
+// a copy of the game that is not the newest (another tab, the app and the browser, another device) must never write over the newest save
+function c4Stale() {
+  if (c4Stale.on) return; c4Stale.on = true; C4.paused = true;
+  try { toast('Game vừa được chơi ở cửa sổ hoặc máy khác. Đang tải lại tiến trình mới nhất…', 3); } catch (e) {}
+  const go = () => location.reload();
+  if (document.hidden) addEventListener('visibilitychange', () => { if (!document.hidden) go(); }); else setTimeout(go, 1200);
+}
+const persist4 = () => { try {
+  if (c4Stale.on) return;
+  if (c4Rev(localStorage.getItem('dcc.c4')) > (SAVE4._rev || 0)) { c4Stale(); return; }
+  SAVE4._rev = (SAVE4._rev || 0) + 1; localStorage.setItem('dcc.c4', JSON.stringify(SAVE4)); } catch (e) {} };
+// another tab saved chương IV (village or town): this copy is out of date
+addEventListener('storage', e => { if (e.key === 'dcc.c4' || e.key === 'dcc.c4b') c4Stale(); });
 const c4Hour = m => C4_HOURS[Math.floor(((m / 60 + 1) % 24) / 2)];
 // the old double-hours mean little to players today: show the clock too ("7:40"), and a double-hour's span ("15–17 giờ")
 // the double-hours' animals (Mão is the cat in Vietnam), the weather and the wares as pictures (owner: fewer words)
@@ -709,7 +722,7 @@ function c4Bankrupt(why) {
   box.appendChild(b); C4.phase = 'morning'; c4Sheets('c4ev');
 }
 // back to day one with empty hands (bankrupt, or the player's own choice); the record and a reached goal (chương V) are kept
-function c4StartOver() { const keep = { best: SAVE4.best, goal: SAVE4.goal }; SAVE4 = C4_NEW(); Object.assign(SAVE4, { intro: true, started: true }, keep); persist4(); c4Sheets(null); c4MarketStart(); }
+function c4StartOver() { const keep = { best: SAVE4.best, goal: SAVE4.goal, _rev: SAVE4._rev }; SAVE4 = C4_NEW(); Object.assign(SAVE4, { intro: true, started: true }, keep); persist4(); c4Sheets(null); c4MarketStart(); }
 // owner: a "start over" button (small, at the foot of the morning and evening sheets) asks first, in plain words, what is lost
 function c4AskStartOver() {
   const back = C4.sheet; AU.tap(); C4.ev = null;
@@ -721,13 +734,13 @@ function c4AskStartOver() {
   box.append(no, yes); c4Sheets('c4ev');
 }
 // the goal reached: she is with child, and in time a brood of mice is born — chương V opens
-function c4GoalReached() {
+function c4GoalReached(sleep) {
   SAVE4.goal = true; persist4(); AU.kenCall(); setTimeout(() => AU.drumHit(), 600);
   $('#c4evT').textContent = 'Đạt mục tiêu!';
   $('#c4evB').innerHTML = `Hai vợ chồng đã để dành được <b>${c4Money(c4Net())}</b>.<br><br>Tối ấy, vợ thẹn thùng: "Mình ơi… em có mang rồi."<br>Chồng mừng quýnh: "Trời ơi, mình sắp làm cha!"<br><br>Chín tháng mười ngày sau, cả một bầy chuột con ra đời, đứa nào cũng tinh nghịch…<br><br><b>Đã mở Chương V · Bầy Chuột Phiêu Lưu.</b> Vợ chồng vẫn có thể buôn bán tiếp, mở thêm cửa hàng.`;
   const box = $('#c4evO'); box.innerHTML = '';
   const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Buôn bán tiếp';
-  b.addEventListener('click', () => { c4Sheets(null); c4NewDay(); });
+  b.addEventListener('click', () => { c4Sheets(null); if (sleep) { c4DayAdvance(); showChapters(); } else c4NewDay(); });
   box.appendChild(b); c4Sheets('c4ev');
 }
 
@@ -1373,7 +1386,7 @@ function c4Key(e) {
   $('#c4Task').addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes('viec'); });
   $('#c4dayGo').addEventListener('click', () => { c4Sheets(null); if (!SAVE4.goal && c4Net() >= C4_GOAL) c4GoalReached(); else c4NewDay(); });
   // owner: end the day and leave for the chapter list; coming back starts the next morning
-  $('#c4daySleep').addEventListener('click', () => { c4Sheets(null); if (!SAVE4.goal && c4Net() >= C4_GOAL) { c4GoalReached(); return; } c4DayAdvance(); showChapters(); });
+  $('#c4daySleep').addEventListener('click', () => { c4Sheets(null); if (!SAVE4.goal && c4Net() >= C4_GOAL) { c4GoalReached(true); return; } c4DayAdvance(); showChapters(); });
   document.querySelectorAll('[data-restart]').forEach(b => b.addEventListener('click', c4AskStartOver));
   $('#c4upX').addEventListener('click', () => c4Sheets(null));
   $('#c4noteX').addEventListener('click', () => { C4_WHO = null; C4_PICK = null; c4Sheets(null); });

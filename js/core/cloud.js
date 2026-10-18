@@ -87,8 +87,10 @@ const CLOUD_EVERY = 90000, CLOUD_FOCUS = 5 * 60000;
     if (this === window.localStorage && typeof k === 'string' && k.startsWith('dcc.') && !CLOUD.skip.includes(k) && cloudCode()) { if (!CLOUD.timer) CLOUD.timer = setTimeout(() => cloudPush(), CLOUD_EVERY); }
   };
   addEventListener('visibilitychange', () => {
-    if (document.hidden) { if (CLOUD.timer) cloudPush(true); return; }                                          // leaving with a save still waiting
-    if (cloudCode() && Date.now() - CLOUD.lastCheck > CLOUD_FOCUS) cloudSync('focus');                          // back again after a while: has the other device moved on?
+    if (document.hidden) { CLOUD.hiddenAt = Date.now(); if (CLOUD.timer) cloudPush(true); return; }            // leaving with a save still waiting
+    if (cloudCode() && (Date.now() - (CLOUD.hiddenAt || Date.now()) > 60000 || Date.now() - CLOUD.lastCheck > CLOUD_FOCUS)) {   // back again after a while: has the other device moved on?
+      CLOUD.wait = true; cloudSync('focus').finally(() => { CLOUD.wait = false; });                              // (main.js holds the game meanwhile)
+    }
   });
   addEventListener('pagehide', () => { if (CLOUD.timer) cloudPush(true); });
 }

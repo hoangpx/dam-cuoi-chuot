@@ -50,6 +50,6 @@ function p4TalkDraw(g) {
 function p4DoBuy() {
   if (p4Purse() < P4_HOUSE_PRICE || SAVE4B.house) { p4Hud(); return; }
   SAVE4.money -= P4_HOUSE_PRICE; persist4();
-  SAVE4B = { house: true, day: 1, dayOf: SAVE4.day, stock: 30, price: 8, sold: 0 }; p4Persist();
+  SAVE4B = { house: true, day: 1, dayOf: SAVE4.day, stock: 30, price: 8, sold: 0, _rev: SAVE4B._rev }; p4Persist();
   p4Sheets(null); P4.day = 0; startP4(); toast('Vợ chồng chuột đã có nhà trên phố huyện!', 3); p4NameSheet(true);
 }

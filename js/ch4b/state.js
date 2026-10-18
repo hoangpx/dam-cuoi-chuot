@@ -16,7 +16,10 @@ function p4View() {
 const P4_SAVE_KEY = 'dcc.c4b';
 let SAVE4B = (() => { try { return JSON.parse(localStorage.getItem(P4_SAVE_KEY)) || null; } catch (e) { return null; } })() || { house: false, day: 1, stock: 0, price: 8, sold: 0 };
 const P4_SAVE = () => SAVE4B;
-const p4Persist = () => { try { localStorage.setItem(P4_SAVE_KEY, JSON.stringify(SAVE4B)); } catch (e) {} };
+const p4Persist = () => { try {   // the town's save carries its own counter: an out-of-date copy reloads instead of writing (cho.js c4Stale)
+  if (c4Stale.on) return;
+  if (c4Rev(localStorage.getItem(P4_SAVE_KEY)) > (SAVE4B._rev || 0)) { c4Stale(); return; }
+  SAVE4B._rev = (SAVE4B._rev || 0) + 1; localStorage.setItem(P4_SAVE_KEY, JSON.stringify(SAVE4B)); } catch (e) {} };
 // the couple's purse (shared with part 1)
 const p4Purse = () => SAVE4.money;
 const p4Spend = d => { SAVE4.money -= d; P4.today.spent += d; persist4(); };
