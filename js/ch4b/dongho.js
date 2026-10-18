@@ -105,6 +105,7 @@ function w4TownTick() {
 // entering the town: today's town, caught up to the world's hour (it may close meanwhile)
 function w4TownEnter() {
   p4EnsureDay(); w4Load();
+  if (SAVE4B.house) SAVE4B.autoDay = SAVE4.day;                             // the player is here today: they buy the betel themselves (no w4TownAutoBuy, not even at the day's end)
   if (w4TownLive()) w4CatchTown(W4.mins);
   else if (P4.phase === 'open') P4.mins = Math.max(P4.mins, Math.min(P4_CLOSE, W4.mins));
   if (P4.phase === 'night') p4Sheets('p4day');                              // the evening sheet again (already reckoned)
