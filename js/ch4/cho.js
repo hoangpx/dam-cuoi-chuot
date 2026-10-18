@@ -995,7 +995,7 @@ function c4Hud() {
   $('#c4Money').innerHTML = c4Money(SAVE4.money);
   $('#c4Time').textContent = `Ngày ${SAVE4.day}  ${C4_ZOD[c4Hour(C4.mins)] || ''} ${c4Clock(C4.mins)}  ${C4_WXI[c4Wx()]}`;
   $('#c4Time').title = `giờ ${c4Hour(C4.mins)}`;
-  { const ws = $('#c4Stock .ws'), h = c4Owned().map(g => `<span class="w">${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}</span>`).join(''); if (ws && ws.innerHTML !== h) { ws.innerHTML = h; c4StkFit(); } }   // the wares, folded down or across (c4StkSet)
+  { const ws = $('#c4Stock .ws'), h = c4Owned().map(g => `<span class="w">${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}</span>`).join(''); if (ws && ws.innerHTML !== h) { ws.innerHTML = h; c4StkClear(); } }   // the wares, folded down or across (c4StkSet)
   $('#c4Debt').innerHTML = SAVE4.debt > 0.5 ? 'Nợ ' + c4Money(SAVE4.debt) : '';
   $('#c4Debt').hidden = !(SAVE4.debt > 0.5);
   $('#c4Note').classList.toggle('new', !!C4.noteNew);
@@ -1323,13 +1323,20 @@ function c4StkSet(m, now) {
   const open = m2 => { C4_STK = m2; try { localStorage.setItem('c4stk', m2); } catch (e) {} el.classList.remove('col', 'row', 'off'); el.classList.add(m2);
     el.querySelector('.sl i').className = 'tri ' + (m2 === 'row' ? 'r' : 'l'); el.querySelector('.sd i').className = 'tri ' + (m2 === 'col' ? 'u' : 'd');
     el.querySelector('.sl').setAttribute('aria-label', m2 === 'row' ? 'Thu lại' : 'Xổ ngang'); el.querySelector('.sd').setAttribute('aria-label', m2 === 'col' ? 'Thu lại' : 'Xổ dọc');
-    ws.style.maxHeight = ws.style.maxWidth = ''; if (m2 === 'off' || now) return;
+    ws.style.maxHeight = ws.style.maxWidth = ''; c4StkClear(); if (m2 === 'off' || now) return;
     const p = c4StkProp(m2), full = m2 === 'col' ? ws.offsetHeight : ws.offsetWidth; ws.style[p] = '0px'; void ws.offsetWidth; ws.style[p] = full + 'px';
     setTimeout(() => { if (C4_STK === m2) ws.style[p] = ''; }, 220); };
   if (now) { open(m); return; }
   c4StkFold(() => open(m));
 }
 const c4StkFit = () => {};   // (sizes are free once open)
+// a phone: the unrolled row starts below the day/clock tag whatever the fonts and the notch make of the heights (owner, 2026-10-17: it overlapped)
+function c4StkClear() {
+  const el = $('#c4Stock'), mid = $('#c4hud .mid'), money = $('#c4Money'); if (!el || !mid || !money) return;
+  const need = Math.max(0, Math.ceil(mid.getBoundingClientRect().bottom + 6 - money.getBoundingClientRect().bottom - 6));
+  el.style.setProperty('--stkTop', need + 'px');
+}
+addEventListener('resize', () => c4StkClear());
 function c4Key(e) {
   if (C4.phase === 'story' && ['Space', 'Enter', 'ArrowRight'].includes(e.code)) { e.preventDefault(); c4StoryNext(); return; }
   if (!C4.sheet && C4.phase !== 'story') { if (e.code === 'ArrowLeft') C4.camX -= 60; if (e.code === 'ArrowRight') C4.camX += 60; }   // look along the lane, as in the town (owner, 2026-10-17)
@@ -1356,7 +1363,7 @@ function c4Key(e) {
   $('#c4dayPho').addEventListener('click', () => { AU.tap(); p4Enter(); });   // after closing, the town is still open (dongho.js)   // part 2 · Phố Huyện (js/ch4b/game.js)
   $('#c4Stock .sl').addEventListener('click', e => { e.stopPropagation(); AU.tap(); c4StkSet(C4_STK === 'row' ? 'off' : 'row'); });
   $('#c4Stock .sd').addEventListener('click', e => { e.stopPropagation(); AU.tap(); c4StkSet(C4_STK === 'col' ? 'off' : 'col'); });
-  c4StkSet(C4_STK, true);
+  c4StkSet(C4_STK, true); setTimeout(c4StkClear, 500); setTimeout(c4StkClear, 2500);   // once the fonts are in
   $('#c4Ups').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); c4OpenUps(); } });
   $('#c4Home').addEventListener('click', () => { AU.tap(); $('#c4homeB').innerHTML = c4HomeHtml(); c4Sheets('c4home'); });
   $('#c4homeShop').addEventListener('click', () => { AU.tap(); $('#c4shopB').innerHTML = c4ShopHtml(); c4Sheets('c4shop'); });
