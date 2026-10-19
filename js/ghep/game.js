@@ -141,7 +141,7 @@ function c9Key(e) {
 }
 
 registerChapter({
-  id: 9, modes: ['c9play'],
+  id: 9, modes: ['c9play'], hidden: () => true,   // owner, 2026-10-20: Ghép Tranh is hidden from the chapter list (code kept)
   card: { num: lg('Chương IX', 'Chapter IX'), han: '拼圖', name: lg('Ghép Tranh', 'Print Puzzles'), desc: lg('Ghép lại những bức tranh Đông Hồ thật, từng mảnh một. Mảnh nằm lẫn lộn, xoay đủ mọi góc, ghép ở đâu cũng được. Chạm để nhấc mảnh, cuộn chuột hoặc vuốt lên xuống để xoay.', 'Put the real Đông Hồ prints back together, piece by piece. The pieces lie any way up and you can join them anywhere. Tap to lift one; wheel or flick up and down to turn it.'), bg: '#e8d9c0' },
   progress: () => `${Object.values(SAVE9.done).filter(Boolean).length}/${C9_LEVELS.length} ${lg('tranh', 'prints')}`,
   hasProgress: () => Object.values(SAVE9.done).some(Boolean),
