@@ -12,7 +12,7 @@ let HL_SAVE = { r: 0, w: 0, net: 0 };
 try { const s = JSON.parse(localStorage.getItem('dcc.hl2') || 'null'); if (s && typeof s.r === 'number') HL_SAVE = Object.assign(HL_SAVE, s); } catch (e) {}
 const hlPersist = () => { try { localStorage.setItem('dcc.hl2', JSON.stringify(HL_SAVE)); } catch (e) {} };
 
-const HL = { chat: new Map(), pos: new Map(), chatOff: false, id: null, players: [], round: null, wait: false, conn: 'connecting', stake: 10, stat: null, board: null, ui: null, tab: 'top', per: 'd', idle: false, fig: new Map(), t: 0, win: null, fw: [], btns: [], held: null, tapAcc: 0, tapSent: 0, myTaps: 0, paid: 0, okSent: null, flash: null, myPick: 0, myHole: null, drumFlash: null };
+const HL = { emo: new Map(), tray: false, trayBtns: [], emoAt: 0, chat: new Map(), pos: new Map(), chatOff: false, id: null, players: [], round: null, wait: false, conn: 'connecting', stake: 10, stat: null, board: null, ui: null, tab: 'top', per: 'd', idle: false, fig: new Map(), t: 0, win: null, fw: [], btns: [], held: null, tapAcc: 0, tapSent: 0, myTaps: 0, paid: 0, okSent: null, flash: null, myPick: 0, myHole: null, drumFlash: null };
 const HL_INK = '#1d1915';
 const hlSans = "'Be Vietnam Pro', system-ui, sans-serif";
 
@@ -23,7 +23,7 @@ function startHL() {
   PAPER = getPaper('sage'); document.documentElement.style.setProperty('--paper', PAPERS.sage.css);
   const me = hsMine();
   Object.assign(HL, { id: null, players: [], round: null, wait: false, conn: 'connecting', stat: null, board: null, ui: null, idle: true, joined: false, bscroll: 0, drag: null, win: null, fw: [], held: null, tapAcc: 0, paid: 0, okSent: null, flash: null });
-  HL.fig.clear(); HL.chat.clear(); HL.pos.clear(); hlChatClose();
+  HL.fig.clear(); HL.chat.clear(); HL.emo.clear(); HL.tray = false; HL.pos.clear(); hlChatClose();
   const look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
   HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk(), cap: 2 }, hlMsg, s => { HL.conn = s; });
 }
@@ -46,6 +46,7 @@ function hlMsg(m) {
   else if (m.t === 'go') { if (r && r.n === m.n) { r.go = true; AU.pluck(98); } }
   else if (m.t === 'flip') { if (r && r.n === m.n) hlFlip(m); }
   else if (m.t === 'chat') { if (!HL.chatOff && typeof m.s === 'string') HL.chat.set(m.id, { s: m.s.slice(0, 40), t0: HL.t }); }
+  else if (m.t === 'emote') { if (typeof m.k === 'number' && m.k >= 0 && m.k < 6) { HL.emo.set(m.id, { k: m.k, t0: HL.t }); if (m.id !== HL.id) AU.tap(); } }
   else if (m.t === 'hole') { if (r && r.n === m.n) { r.holes.push(m); AU.thump(); } }
   else if (m.t === 'result') hlResult(m);
   else if (m.t === 'stat') { HL.stat = m.stat; HL_SAVE.r = m.stat.r; HL_SAVE.w = m.stat.w; HL_SAVE.net = m.stat.won - m.stat.lost; hlPersist(); }
@@ -88,7 +89,7 @@ function hlIn(r, e, replay) {
 }
 function hlResult(m) {
   const r = HL.round; if (!r || r.n !== m.n) return;
-  r.state = 'result'; r.result = m; r.next = m.next; r.rank = new Map(m.rows.map(x => [x.id, x])); r.extra = m.extra || {};
+  r.tres = HL.t; r.state = 'result'; r.result = m; r.next = m.next; r.rank = new Map(m.rows.map(x => [x.id, x])); r.extra = m.extra || {};
   const net = m.net ? m.net[HL.id] : undefined;
   if (net !== undefined && HL.paid !== m.n) {
     HL.paid = m.n; SAVE4.money = Math.max(0, SAVE4.money + net); try { persist4(); } catch (e) {}
@@ -160,6 +161,7 @@ function hlDown(e) {
   if (S.mode !== 'hlplay') return;
   const rc = cv.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top, b0 = hlBack();
   if (x > b0.x && x < b0.x + b0.w && y > b0.y && y < b0.y + b0.h) { if (HL.ui) HL.ui = null; else hlLeave(); return; }
+  if (HL.tray) { const tb = HL.trayBtns.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h); HL.tray = false; if (tb) tb.down(e); return; }   // the emote tray swallows the tap
   for (const b of HL.btns) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h && !b.off) { if (b.down) b.down(e); if (b.up) HL.held = b; return; }
   if (HL.ui === 'board' && HL.barea && x >= HL.barea.x && x <= HL.barea.x + HL.barea.w && y >= HL.barea.y && y <= HL.barea.y + HL.barea.h) { HL.drag = { y, s: HL.bscroll }; return; }   // a drag over the list scrolls it
   if (HL.ui) { HL.ui = null; return; }
@@ -229,11 +231,12 @@ function renderHL() {
   hlInfo(g, r, gm, now, W, top, ipH, seatedMe);
   const gy = top + ipH + 6, gh = H - gy - footH - 6, list = hlOrder(r), G = hlGrid(Math.max(1, list.length), 6, gy, W - 12, gh);
   list.forEach((p, i) => hlCell(g, r, gm, p, i, G, now, t));
-  hlChatBubbles(g, W, H);
+  hlChatBubbles(g, W, H); hlEmoteBubbles(g, W);
   hlButtons(g, ctl, W, H);
   hlCountdown(g, r, now, W, H);
   hlWinDraw(g, W, H);
   if (HL.flash && HL.t - HL.flash.t0 < 3.5) hlFlashDraw(g, W, H);
+  hlTrayDraw(g, W, st);
   if (HL.ui) hlOverlay(g, W, H);
 }
 // 3 · 2 · 1 big in the middle of the screen before a game starts, then a short "BẮT ĐẦU!"
@@ -324,11 +327,55 @@ function hlChatClose() {
   if (HL_CHAT_EL._vv && window.visualViewport) { window.visualViewport.removeEventListener('resize', HL_CHAT_EL._vv); window.visualViewport.removeEventListener('scroll', HL_CHAT_EL._vv); }
   HL_CHAT_EL.remove(); HL_CHAT_EL = null;
 }
+/* ---------- emotes (owner, 2026-10-19): six little faces; the mouse acts them out, winners jump, a loser fumes ---------- */
+const HL_EMO_SEC = 2.8, HL_EMO_NAME = ['Khóc', 'Tức', 'Nhảy', 'Vỗ tay', 'Cười', 'Thương'];
+function hlHeart(g, x, y, r, col) { g.beginPath(); g.moveTo(x, y + r * .9); g.bezierCurveTo(x - r * 1.6, y - r * .2, x - r * .7, y - r * 1.3, x, y - r * .4); g.bezierCurveTo(x + r * .7, y - r * 1.3, x + r * 1.6, y - r * .2, x, y + r * .9); g.fillStyle = col; g.fill(); }
+function hlEmoteFace(g, k, cx, cy, r) {
+  const ink = HL_INK, fills = ['#f2c640', '#d9503f', '#cdd9b4', '#cdd9b4', '#f2c640', '#f3d6d6'];
+  g.beginPath(); g.arc(cx, cy, r, 0, 6.283); g.fillStyle = fills[k]; g.fill(); g.lineWidth = Math.max(1.6, r * .12); g.strokeStyle = ink; g.stroke(); g.lineCap = 'round';
+  const arc = (x, y, rr, a0, a1) => { g.beginPath(); g.arc(x, y, rr, a0, a1); g.stroke(); };
+  if (k === 0) { arc(cx - r * .4, cy - r * .12, r * .2, Math.PI, 0); arc(cx + r * .4, cy - r * .12, r * .2, Math.PI, 0); g.strokeStyle = '#3a86d8'; g.lineWidth = r * .22; g.beginPath(); g.moveTo(cx - r * .55, cy); g.lineTo(cx - r * .6, cy + r * .5); g.moveTo(cx + r * .55, cy); g.lineTo(cx + r * .6, cy + r * .5); g.stroke(); g.strokeStyle = ink; g.lineWidth = Math.max(1.6, r * .12); arc(cx, cy + r * .78, r * .3, Math.PI * 1.15, Math.PI * 1.85); }
+  else if (k === 1) { g.beginPath(); g.moveTo(cx - r * .7, cy - r * .5); g.lineTo(cx - r * .15, cy - r * .22); g.moveTo(cx + r * .7, cy - r * .5); g.lineTo(cx + r * .15, cy - r * .22); g.lineWidth = r * .18; g.stroke(); g.fillStyle = ink; g.beginPath(); g.arc(cx - r * .38, cy, r * .1, 0, 6.283); g.arc(cx + r * .38, cy, r * .1, 0, 6.283); g.fill(); g.lineWidth = Math.max(1.6, r * .12); arc(cx, cy + r * .78, r * .34, Math.PI * 1.15, Math.PI * 1.85); }
+  else if (k === 2) { hlText(g, '♪', cx, cy + r * .06, r * 1.35, { w: 900, o: false, c: '#2f6a4c' }); }
+  else if (k === 3) { for (const sg of [-1, 1]) { g.save(); g.translate(cx + sg * r * .1, cy + r * .2); g.rotate(sg * .55); g.beginPath(); g.ellipse(0, -r * .2, r * .27, r * .56, 0, 0, 6.283); g.fillStyle = '#f2c640'; g.fill(); g.stroke(); g.restore(); } g.lineWidth = r * .14; g.beginPath(); g.moveTo(cx - r * .75, cy - r * .5); g.lineTo(cx - r * .5, cy - r * .35); g.moveTo(cx + r * .75, cy - r * .5); g.lineTo(cx + r * .5, cy - r * .35); g.moveTo(cx, cy - r * .85); g.lineTo(cx, cy - r * .62); g.stroke(); }
+  else if (k === 4) { arc(cx - r * .38, cy - r * .12, r * .18, Math.PI, 0); arc(cx + r * .38, cy - r * .12, r * .18, Math.PI, 0); g.beginPath(); g.moveTo(cx - r * .55, cy + r * .18); g.lineTo(cx + r * .55, cy + r * .18); g.quadraticCurveTo(cx + r * .4, cy + r * .78, cx, cy + r * .78); g.quadraticCurveTo(cx - r * .4, cy + r * .78, cx - r * .55, cy + r * .18); g.closePath(); g.fillStyle = '#fff'; g.fill(); g.stroke(); }
+  else { hlHeart(g, cx, cy, r * .55, '#d9503f'); g.lineWidth = Math.max(1.4, r * .1); g.strokeStyle = ink; g.stroke(); }
+  g.lineCap = 'butt';
+}
+// what the mouse itself shows: tears, hearts, an angry mark, a winner's sparks
+function hlCellFx(g, C, win, k, ea, lostNow) {
+  const { cx, headTop, s, t } = C, hs = Math.max(6, 11 * s / .34 * .34);
+  if (k === 0) { for (let i = 0; i < 2; i++) { const ph = (ea * 1.4 + i * .5) % 1, x = cx + (i ? 9 : -2) * s * 3, y = headTop + 34 * s + ph * 26 * s; g.globalAlpha *= 1 - ph * .6; g.beginPath(); g.ellipse(x, y, 2.2, 3.4, 0, 0, 6.283); g.fillStyle = '#3a86d8'; g.fill(); g.globalAlpha = 1; } }
+  if (k === 5) { for (let i = 0; i < 3; i++) { const ph = (ea * .7 + i / 3) % 1, x = cx + Math.sin(ph * 6 + i * 2) * 10 + (i - 1) * 8, y = headTop + 12 * s - ph * 30; g.globalAlpha = 1 - ph; hlHeart(g, x, y, 4, '#d9503f'); g.globalAlpha = 1; } }
+  if (k === 1 || lostNow) { const x = cx + 16 * s * 3, y = headTop - 2 * s, q = 7 + Math.sin(t * 20) * 1.2; g.strokeStyle = '#d9503f'; g.lineWidth = 2.8; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - q, y - 2); g.quadraticCurveTo(x - 1, y - 2, x - 1, y - q); g.moveTo(x + q, y - 2); g.quadraticCurveTo(x + 1, y - 2, x + 1, y - q); g.moveTo(x - q, y + 2); g.quadraticCurveTo(x - 1, y + 2, x - 1, y + q); g.moveTo(x + q, y + 2); g.quadraticCurveTo(x + 1, y + 2, x + 1, y + q); g.stroke(); g.lineCap = 'butt'; }
+  if (win) { for (let i = 0; i < 3; i++) { const a = HL.t * 3 + i * 2.1, x = cx + Math.cos(a) * 18, y = headTop - 4 + Math.sin(a) * 6; g.fillStyle = '#f2c640'; g.beginPath(); for (let j = 0; j < 8; j++) { const rr = j % 2 ? 2 : 5, aa = j * Math.PI / 4; g.lineTo(x + Math.cos(aa) * rr, y + Math.sin(aa) * rr); } g.closePath(); g.fill(); g.lineWidth = 1; g.strokeStyle = HL_INK; g.stroke(); } }
+}
+function hlEmoteBubbles(g, W) {
+  for (const [id, e] of HL.emo) {
+    const age = HL.t - e.t0; if (age > HL_EMO_SEC) { HL.emo.delete(id); continue; }
+    const pos = HL.pos.get(id); if (!pos || !HL.players.some(p => p.id === id)) continue;
+    const pop = Math.min(1, age * 8), cx = Math.max(22, Math.min(W - 22, pos.cx + 22)), cy = Math.max(86 + safeTop(), pos.top - 22), r = 17 * (.6 + .4 * pop);
+    g.globalAlpha = Math.min(1, (HL_EMO_SEC - age) * 2);
+    g.beginPath(); g.arc(cx, cy, r + 3, 0, 6.283); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2; g.strokeStyle = HL_INK; g.stroke();
+    hlEmoteFace(g, e.k, cx, cy, r - 1); g.globalAlpha = 1;
+  }
+}
+function hlTrayDraw(g, W, st) {
+  HL.trayBtns = []; if (!HL.tray) return;
+  const n = 6, gap = 7, bs = Math.min(48, (W - 36 - gap * (n - 1)) / n), tw = bs * n + gap * (n - 1), x0 = (W - tw) / 2, y = 56 + st, wait = performance.now() - HL.emoAt < 2200;
+  hlPlate(g, x0 - 10, y - 4, tw + 20, bs + 30, '#f2ecde', HL_INK, 14);
+  for (let k = 0; k < n; k++) {
+    const x = x0 + k * (bs + gap); g.globalAlpha = wait ? .5 : 1; hlEmoteFace(g, k, x + bs / 2, y + bs / 2 - 2, bs / 2 - 3); g.globalAlpha = 1;
+    hlText(g, HL_EMO_NAME[k], x + bs / 2, y + bs + 10, 10.5, { f: hlSans, w: 600, o: false });
+    HL.trayBtns.push({ x: x - 2, y: y - 2, w: bs + 4, h: bs + 26, down: () => { if (performance.now() - HL.emoAt < 2200) return; HL.emoAt = performance.now(); HL_NET.send({ t: 'emote', k }); AU.pluck(88); } });
+  }
+}
 function hlHeader(g, W, st) {
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
   hlText(g, 'Hội Làng', 46, 22 + st, 21, { w: 900, a: 'left' });
   hlText(g, HL.round && HL.round.solo ? 'Chơi thử · không cược' : `${HL.players.filter(p => !p.bot).length} người · cược ${HL.stake} đ`, 46, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75, a: 'left' });
   hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 13, { a: 'right', f: hlSans, w: 700 });
+  if (HL.conn === 'up') { HL.btns.push({ id: 'emo', x: 146, y: 6 + st, w: 44, h: 36, down: () => { HL.tray = !HL.tray; } }); hlEmoteFace(g, 4, 168, 24 + st, 15); }
   if (HL.conn === 'up') { HL.btns.push({ id: 'chat', x: W - 202, y: 32 + st, w: 44, h: 36, down: () => hlChatOpen() }); hlChatIcon(g, W - 180, 50 + st, HL.chatOff); }
   if (!HL.idle && HL.conn === 'up') { HL.btns.push({ id: 'rest', x: W - 152, y: 36 + st, w: 86, h: 22, down: () => { HL.idle = true; HL_NET.send({ t: 'rest' }); } }); hlPlate(g, W - 152, 38 + st, 82, 18, '#e6dec9', HL_INK, 6); hlText(g, 'Tạm nghỉ', W - 111, 47 + st, 11.5, { a: 'center', f: hlSans, w: 700, o: false }); }
   HL.btns.push({ id: 'board', x: W - 58, y: 32 + st, w: 50, h: 36, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
@@ -368,7 +415,15 @@ function hlCell(g, r, gm, p, i, G, now, t) {
   g.fillStyle = win ? 'rgba(242,198,64,.55)' : me ? 'rgba(242,236,222,.55)' : 'rgba(242,236,222,.28)'; g.fillRect(x + 3, y + 3, w - 6, h - 6);
   g.lineWidth = me || win ? 3 : 1.4; g.strokeStyle = win ? '#b57a22' : HL_INK; g.globalAlpha *= me || win ? 1 : .5; g.strokeRect(x + 3, y + 3, w - 6, h - 6); g.globalAlpha = seated ? 1 : .45;
   const pose = seated && gm.pose ? gm.pose(r, p, now) : null, face = col < G.c / 2 ? 1 : -1;
-  hlDrawFig(g, p, cx, base, s, face, pose && pose.run, t, pose && pose.dim ? .4 : 1);
+  const em = HL.emo.get(p.id), ea = em ? HL.t - em.t0 : 99, emOn = !!em && ea < HL_EMO_SEC, jam = Math.min(14, h * .09);
+  const lostNow = me && r.state === 'result' && r.result && r.result.net && r.result.net[HL.id] < 0 && r.tres !== undefined && HL.t - r.tres < 3.4;
+  let ox = 0, oy = 0;   // winners jump for joy; a dance, a clap or a laugh makes the mouse hop; anger or losing makes it shake
+  if (win || (emOn && em.k === 2)) oy = -Math.abs(Math.sin(HL.t * 8)) * jam;
+  else if (emOn && em.k === 3) oy = -Math.abs(Math.sin(HL.t * 12)) * jam * .6;
+  else if (emOn && em.k === 4) oy = -Math.abs(Math.sin(HL.t * 6)) * jam * .4;
+  if ((emOn && em.k === 1) || lostNow) ox = Math.sin(HL.t * 38) * 2;
+  hlDrawFig(g, p, cx + ox, base + oy, s, face, pose && pose.run, t, pose && pose.dim ? .4 : 1);
+  hlCellFx(g, C, win, emOn ? em.k : -1, ea, lostNow);
   if (seated) gm.cell(g, r, p, C, res, win);
   if (res && res.rank) { g.globalAlpha = 1; hlText(g, win ? '♛ 1' : String(res.rank), x + 14, y + 16, win ? 18 : 14, { w: 900, c: win ? '#a3332a' : HL_INK }); }
   g.globalAlpha = seated ? 1 : .6;
