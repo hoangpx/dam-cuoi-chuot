@@ -267,17 +267,29 @@ function hlChatIcon(g, cx, cy, off) {
 function hlChatBubbles(g, W, H) {
   if (HL.chatOff) return;
   const live = [];
-  for (const [id, c] of HL.chat) { const age = HL.t - c.t0; if (age > HL_CHAT_SEC) { HL.chat.delete(id); continue; } const pos = HL.pos.get(id); if (pos && HL.players.some(p => p.id === id)) live.push([c, pos, age]); }
-  live.sort((a, b) => b[2] - a[2]);   // the oldest first, so the newest lies on top
-  for (const [c, pos, age] of live) {
-    const size = 12, maxW = Math.min(150, W - 16); g.font = `600 ${size}px ${hlSans}`;
-    let lines = hlWrap(g, c.s, maxW - 14, size, 600); if (lines.length > 3) lines = lines.slice(0, 3);
-    const w = Math.min(maxW, Math.max(...lines.map(l => g.measureText(l).width)) + 14), h = lines.length * (size + 3) + 10;
-    let x = Math.max(6, Math.min(W - w - 6, pos.cx - w / 2)), y = Math.max(66 + safeTop(), pos.top - h - 8);
-    const fade = Math.min(1, (HL_CHAT_SEC - age) * 2, age * 6 + .2);
-    g.globalAlpha = fade; hlPlate(g, x, y, w, h, '#ffffff', HL_INK, 8);
-    g.beginPath(); g.moveTo(Math.max(x + 8, Math.min(x + w - 8, pos.cx)) - 5, y + h - 1); g.lineTo(Math.max(x + 8, Math.min(x + w - 8, pos.cx)), y + h + 7); g.lineTo(Math.max(x + 8, Math.min(x + w - 8, pos.cx)) + 5, y + h - 1); g.fillStyle = '#ffffff'; g.fill();
-    lines.forEach((l, i) => hlText(g, l, x + w / 2, y + 5 + size / 2 + i * (size + 3) + 1, size, { f: hlSans, w: 600, o: false }));
+  for (const [id, c] of HL.chat) { const age = HL.t - c.t0; if (age > HL_CHAT_SEC) { HL.chat.delete(id); continue; } const pos = HL.pos.get(id); if (pos && HL.players.some(p => p.id === id)) live.push({ c, pos, age }); }
+  if (!live.length) return;
+  const size = 12, maxW = Math.min(132, W - 16), top0 = 66 + safeTop(); g.font = `600 ${size}px ${hlSans}`;
+  for (const o of live) {
+    let lines = hlWrap(g, o.c.s, maxW - 14, size, 600); if (lines.length > 3) lines = lines.slice(0, 3);
+    o.lines = lines; o.w = Math.min(maxW, Math.max(...lines.map(l => g.measureText(l).width)) + 14); o.h = lines.length * (size + 3) + 10;
+    o.x = Math.max(6, Math.min(W - o.w - 6, o.pos.cx - o.w / 2)); o.y = Math.max(top0, o.pos.top - o.h - 8);
+  }
+  // bubbles that would lie on top of each other are lifted one above the other (left to right), a thin line still points at the mouse
+  const placed = [];
+  for (const o of live.slice().sort((p, q) => p.pos.cx - q.pos.cx)) {
+    for (let k = 0; k < 6; k++) { const hit = placed.find(p => o.x < p.x + p.w + 3 && p.x < o.x + o.w + 3 && o.y < p.y + p.h + 3 && p.y < o.y + o.h + 3); if (!hit) break; o.y = hit.y - o.h - 4; }
+    if (o.y < top0) o.y = top0;
+    placed.push(o);
+  }
+  live.sort((p, q) => q.age - p.age);   // the oldest first, so the newest lies on top
+  for (const o of live) {
+    const { x, y, w, h, pos, age } = o, tx = Math.max(x + 9, Math.min(x + w - 9, pos.cx)), fade = Math.min(1, (HL_CHAT_SEC - age) * 2, age * 6 + .2);
+    g.globalAlpha = fade;
+    if (pos.top - (y + h) > 12) { g.beginPath(); g.moveTo(tx, y + h + 6); g.lineTo(pos.cx, pos.top - 2); g.lineWidth = 1.4; g.setLineDash([3, 3]); g.strokeStyle = HL_INK; g.stroke(); g.setLineDash([]); }
+    hlPlate(g, x, y, w, h, '#ffffff', HL_INK, 8);
+    g.beginPath(); g.moveTo(tx - 5, y + h - 1); g.lineTo(tx, y + h + 7); g.lineTo(tx + 5, y + h - 1); g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 2; g.strokeStyle = HL_INK; g.beginPath(); g.moveTo(tx - 5, y + h); g.lineTo(tx, y + h + 7); g.lineTo(tx + 5, y + h); g.stroke();
+    o.lines.forEach((l, i) => hlText(g, l, x + w / 2, y + 5 + size / 2 + i * (size + 3) + 1, size, { f: hlSans, w: 600, o: false }));
     g.globalAlpha = 1;
   }
 }
