@@ -370,20 +370,25 @@ function hlTrayDraw(g, W, st) {
     HL.trayBtns.push({ x: x - 2, y: y - 2, w: bs + 4, h: bs + 26, down: () => { if (performance.now() - HL.emoAt < 2200) return; HL.emoAt = performance.now(); HL_NET.send({ t: 'emote', k }); AU.pluck(88); } });
   }
 }
+function hlPauseIcon(g, cx, cy, off) {   // the rest button: a round plate with two bars (dim while you are already resting)
+  g.beginPath(); g.arc(cx, cy, 16, 0, 6.283); g.fillStyle = off ? '#d9d4c4' : '#e6dec9'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = HL_INK; g.stroke();
+  g.globalAlpha = off ? .45 : 1; g.fillStyle = HL_INK; g.fillRect(cx - 6, cy - 7, 4.5, 14); g.fillRect(cx + 1.5, cy - 7, 4.5, 14); g.globalAlpha = 1;
+}
 function hlHeader(g, W, st) {
-  // row 1: the back arrow, the title and three round buttons on one line (smile, chat, cup); row 2: the count, rest and the purse
+  // row 1: the back arrow, the title and four round buttons on one line (rest, smile, chat, cup); row 2: the count and the purse
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
   hlText(g, 'Hội Làng', 46, 22 + st, 21, { w: 900, a: 'left' });
   hlText(g, HL.round && HL.round.solo ? 'Chơi thử' : `${HL.players.filter(p => !p.bot).length} người · cược ${HL.stake} đ`, 46, 46 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75, a: 'left' });
   hlText(g, hlMoney(SAVE4.money), W - 10, 47 + st, 11.5, { a: 'right', f: hlSans, w: 700 });
-  const cy = 24 + st;
-  if (HL.conn === 'up') {
-    HL.btns.push({ id: 'emo', x: 150, y: cy - 19, w: 37, h: 38, down: () => { HL.tray = !HL.tray; } }); hlEmoteFace(g, 4, 168, cy, 16);
-    HL.btns.push({ id: 'chat', x: 188, y: cy - 19, w: 37, h: 38, down: () => hlChatOpen() }); hlChatIcon(g, 206, cy, HL.chatOff);
+  const cy = 24 + st, up = HL.conn === 'up';
+  if (up) {
+    if (!HL.idle) HL.btns.push({ id: 'rest', x: 150, y: cy - 19, w: 37, h: 38, down: () => { HL.idle = true; HL_NET.send({ t: 'rest' }); } });
+    hlPauseIcon(g, 168, cy, HL.idle);
+    HL.btns.push({ id: 'emo', x: 188, y: cy - 19, w: 37, h: 38, down: () => { HL.tray = !HL.tray; } }); hlEmoteFace(g, 4, 206, cy, 16);
+    HL.btns.push({ id: 'chat', x: 226, y: cy - 19, w: 37, h: 38, down: () => hlChatOpen() }); hlChatIcon(g, 244, cy, HL.chatOff);
   }
-  HL.btns.push({ id: 'board', x: 226, y: cy - 19, w: 37, h: 38, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
-  hlTrophy(g, 244, cy);
-  if (!HL.idle && HL.conn === 'up') { HL.btns.push({ id: 'rest', x: 168, y: 36 + st, w: 76, h: 22, down: () => { HL.idle = true; HL_NET.send({ t: 'rest' }); } }); hlPlate(g, 168, 38 + st, 72, 18, '#e6dec9', HL_INK, 6); hlText(g, 'Tạm nghỉ', 204, 47 + st, 11.5, { a: 'center', f: hlSans, w: 700, o: false }); }
+  HL.btns.push({ id: 'board', x: 264, y: cy - 19, w: 37, h: 38, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
+  hlTrophy(g, 282, cy);
 }
 // the panel above the grid: the game's title, its rule and countdown before, its live picture during, the winner after
 function hlInfo(g, r, gm, now, W, y, h, mine) {
