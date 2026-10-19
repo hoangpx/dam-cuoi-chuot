@@ -52,7 +52,7 @@ function hlMsg(m) {
 }
 function hlMeFlags() { const me = HL.players.find(p => p.id === HL.id); if (me) HL.idle = !!me.idle; }
 function hlRound(m) {
-  const r = { n: m.n, game: m.game, announce: m.announce, t0: m.t0, state: m.state, cfg: m.cfg || {}, seated: new Set(m.seated), inp: new Map(), ev: new Map(), bal: new Map(), picked: new Set(), hp: new Map(), prog: null, nho: new Map(), holes: m.holes || [], go: !!m.go, result: null, bots: m.bots || [] };
+  const r = { solo: !!m.solo, n: m.n, game: m.game, announce: m.announce, t0: m.t0, state: m.state, cfg: m.cfg || {}, seated: new Set(m.seated), inp: new Map(), ev: new Map(), bal: new Map(), picked: new Set(), hp: new Map(), prog: null, nho: new Map(), holes: m.holes || [], go: !!m.go, result: null, bots: m.bots || [] };
   for (const e of m.live || []) hlIn(r, e, true);
   if (m.result) { r.state = 'result'; r.result = m.result; r.rank = new Map(m.result.rows.map(x => [x.id, x])); r.next = Date.now(); r.extra = {}; }
   return r;
@@ -212,7 +212,7 @@ function renderHL() {
 function hlHeader(g, W, st) {
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
   hlText(g, 'Hội Làng', W / 2, 22 + st, 22, { w: 900 });
-  hlText(g, `${HL.players.filter(p => !p.bot).length} người trong phòng · cược ${HL.stake} đ`, W / 2, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75 });
+  hlText(g, HL.round && HL.round.solo ? 'Chơi một mình · tập chơi, không cược, không tính xếp hạng' : `${HL.players.filter(p => !p.bot).length} người trong phòng · cược ${HL.stake} đ`, W / 2, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75 });
   hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 14, { a: 'right', f: hlSans, w: 700 });
   HL.btns.push({ id: 'board', x: W - 92, y: 36 + st, w: 84, h: 22, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
   hlText(g, 'Xếp hạng ›', W - 12, 47 + st, 12, { a: 'right', f: hlSans, w: 700, o: false, c: '#a3332a' });
@@ -226,7 +226,7 @@ function hlInfo(g, r, gm, now, W, y, h, mine) {
     const s = Math.max(0, Math.ceil((r.t0 - now) / 1000)), lines = hlWrap(g, gm.rule, w - 24, 13);
     lines.slice(0, 3).forEach((l, i) => hlText(g, l, W / 2, y + 40 + i * 16, 13, sub));
     hlText(g, mine ? `Bắt đầu sau ${s}` : hlWhyNot(), W / 2, y + h - 30, mine ? 24 : 13, mine ? { w: 900 } : sub);
-    hlText(g, `Hũ ${HL.stake * N} đồng, một người ăn hết`, W / 2, y + h - 10, 12, sub);
+    hlText(g, r.solo ? 'Chưa có ai khác trong phòng, chơi thử cho vui' : `Hũ ${HL.stake * N} đồng, một người ăn hết`, W / 2, y + h - 10, 12, sub);
   } else if (r.state === 'run') gm.info(g, r, now, { x, y: y + 28, w, h: h - 28, W }, mine);
   else {
     const res = r.result, win = res.winner && HL.players.find(p => p.id === res.winner), wr = win && res.rows.find(x => x.id === res.winner), s = Math.max(0, Math.ceil((r.next - now) / 1000));

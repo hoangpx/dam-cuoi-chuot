@@ -143,7 +143,7 @@ export class Room extends DurableObject {
   }
   pubRound() {
     const r = this.round; if (!r || r.state === 'wait') return null;
-    return { n: r.n, game: r.game, announce: r.announce, t0: r.t0, state: r.state, seated: [...r.seated.keys()], cfg: r.cfg, live: r.live, holes: r.holes, go: !!r.sent, result: r.state === 'result' ? r.result : undefined };
+    return { solo: !!r.solo, n: r.n, game: r.game, announce: r.announce, t0: r.t0, state: r.state, seated: [...r.seated.keys()], cfg: r.cfg, live: r.live, holes: r.holes, go: !!r.sent, result: r.state === 'result' ? r.result : undefined };
   }
 
   /* ---- stats and the board ---- */
@@ -187,8 +187,10 @@ export class Room extends DurableObject {
     } else if (r.state === 'result' && now >= r.next) this.startRound(now + 200);
   }
   startRound(at) {
-    const hs = this.eligible(); if (!this.humans().length) { this.stop(); return; }
-    if (hs.length < T.MINP) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
+    const hs0 = this.eligible(); if (!this.humans().length) { this.stop(); return; }
+    // one person alone: a practice round, no stake, nothing on the board
+    const lone = this.humans().filter(c => !c.idle), solo = hs0.length < T.MINP && lone.length === 1, hs = solo ? lone : hs0;
+    if (!solo && hs.length < T.MINP) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
     // a shuffled bag: every game once in random order, then a new shuffle (the first of a new bag is never the last played)
     if (!this.bag || !this.bag.length) { const b = [...GAMES]; for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } if (b[0] === this.lastGame) b.push(b.shift()); this.bag = b; }
     const game = this.bag.shift(); this.lastGame = game;
@@ -196,7 +198,7 @@ export class Room extends DurableObject {
     const order = hs.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
     const seated = new Map(); for (const c of order.slice(0, T.MAXP)) { seated.set(c.id, c); c.last = this.n + 1; }
     const bots = new Map(); for (let i = seated.size, k = 0; i < T.MINP; i++, k++) { const id = 'b' + (k + 1); bots.set(id, { id, name: BOT_NAMES[(this.n * 3 + k * 7) % BOT_NAMES.length], sort: (this.n + k * 7) % 27, skill: rnd(0, 1) }); }
-    const r = { n: ++this.n, game, announce: at, t0: at + T.ANNOUNCE, state: 'announce', seated, bots, cfg: {}, live: [], plan: [], inp: new Map(), ev: new Map(), sub: 0 };
+    const r = { solo, n: ++this.n, game, announce: at, t0: at + T.ANNOUNCE, state: 'announce', seated, bots, cfg: {}, live: [], plan: [], inp: new Map(), ev: new Map(), sub: 0 };
     this.setup(r);
     this.round = r;
     for (const c of seated.values()) c.inRound = false;
@@ -405,7 +407,7 @@ export class Room extends DurableObject {
     return rows;
   }
   finish(r) {
-    const rows = this.rows(r), N = r.seated.size + r.bots.size, pot = T.STAKE * N, g = r.game;
+    const rows = this.rows(r), N = r.seated.size + r.bots.size, pot = r.solo ? 0 : T.STAKE * N, g = r.game;
     let winner = null;
     if (g === 'hang') { const al = rows.filter(x => x.alive); winner = al.length ? pick(al).id : null; if (winner) { const w = rows.splice(rows.findIndex(x => x.id === winner), 1)[0]; rows.unshift(w); rows.forEach((x, i) => { x.rank = i + 1; }); } }
     else if (g === 'minnum') { const w = rows.find(x => x.rank === 1 && !x.dup && x.v !== null); winner = w ? w.id : null; }
@@ -413,6 +415,7 @@ export class Room extends DurableObject {
     else if (g === 'tuong') { const w = rows.find(x => x.rank === 1); winner = w ? w.id : null; }
     else if (g === 'boat') { const w = rows.find(x => x.rank === 1 && x.v > 0); winner = w ? w.id : null; }
     else if (g === 'nho') { const w = rows.find(x => x.rank === 1 && x.v > 0); winner = w ? w.id : null; }
+    if (r.solo) winner = null;
     const net = {}, stat = [];
     for (const c of r.seated.values()) {
       if (winner) net[c.id] = c.id === winner ? pot - T.STAKE : -T.STAKE;
@@ -423,7 +426,7 @@ export class Room extends DurableObject {
     r.state = 'result'; r.next = Date.now() + T.RESULT;
     r.result = { rows, winner, pot, N, net };
     this.all({ t: 'result', n: r.n, game: g, rows, winner, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : undefined });
-    this.record(r, stat, winner, net);
+    if (!r.solo) this.record(r, stat, winner, net);
     this.all({ t: 'players', players: this.playerList() });
   }
   async record(r, cs, winner, net) {
