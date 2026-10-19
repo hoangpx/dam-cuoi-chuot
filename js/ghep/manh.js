@@ -1,19 +1,20 @@
-/* Chương IX · Ghép Tranh — the jigsaw engine (pieces, their shapes, pointer rules, drawing). The shell (album, saves, buttons) is
-   in game.js. The pictures are the real Đông Hồ prints of chương III (img/ch3/…); each is cut into jigsaw pieces with tabs and
-   blanks, scattered and (from the second tier) turned at random.
-   POINTER RULES (owner: "chạm vào 1 mảnh là nhấc lên, chuột phải xoay; trên điện thoại vuốt lên vuốt xuống để xoay"):
-     computer: press on a piece lifts it; drag, or just click and the piece follows the mouse until the next click; right click
-               (or the wheel, or R) turns it a quarter, clockwise.
-     phone:    touch a piece lifts it; drag it with a finger, or tap somewhere else to put it there; a quick flick up or down
-               ON the piece turns it a quarter (down = clockwise, up = anticlockwise); a little ↻ button next to the lifted piece
-               does the same.
-   A piece dropped near its place with the right way up snaps in and stays. */
+/* Chương IX · Ghép Tranh — the jigsaw engine. The pictures are the real Đông Hồ prints of chương III (img/ch3/…) cut into jigsaw
+   pieces with tabs and blanks. There is NO board and no guide picture: the pieces lie on the table at any angle (0–360°), and the
+   player joins them wherever they like. Pieces live in GROUPS: a group is a rigid piece of the finished print with one pose (where
+   its lattice origin is on the screen and its angle); a loose piece is a group of one. Two groups join when, dropped, they touch
+   (some piece of one is next to some piece of the other in the print) and their angle and position agree closely enough: the
+   smaller one snaps onto the bigger, and the two pieces that met flash once. The print is done when everything is one group.
+   Pieces look like thick cardboard: a stack of kraft-coloured copies of the outline under the printed face, and a shadow.
+   POINTER RULES (owner, 2026-10-20):
+     computer: press lifts a piece (its whole group); drag, or just click and it follows the mouse until the next click;
+               the mouse WHEEL turns it round the pointer, any angle (right click or R: a step of 15°).
+     phone:    touching lifts; drag it, or tap elsewhere to put it there; a quick vertical flick ON it turns it (the longer the flick the
+               bigger the turn; down = clockwise); a little round arrow beside the lifted piece turns it 15°. */
 
-const C9_DRAG_PX = 7;          // a press that moves less than this is a click / tap
-const C9_FLICK_MS = 260, C9_FLICK_PX = 26;   // a vertical flick this quick and long turns the piece
+const C9_DRAG_PX = 7, C9_FLICK_MS = 260, C9_FLICK_PX = 26;
+const C9_ANG_TOL = 14 * Math.PI / 180, C9_POS_TOL = .38;   // an angle in radians, a position as a fraction of the smaller cell side
+const C9_STEP = 15 * Math.PI / 180;
 
-// a jigsaw edge from (x0,y0) to (x1,y1); (nx,ny) points out of the piece; e = +1 tab out, -1 tab in, 0 flat; jit = { c, s } of
-// the shared edge; rev = the edge is walked against the canonical direction (so the tab sits at 1 - c)
 function c9Edge(p, x0, y0, x1, y1, nx, ny, e, jit, rev) {
   if (!e) { p.lineTo(x1, y1); return; }
   const L = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / L, uy = (y1 - y0) / L;
@@ -28,47 +29,42 @@ function c9Edge(p, x0, y0, x1, y1, nx, ny, e, jit, rev) {
   p.lineTo(x1, y1);
 }
 const c9Rng = seed => { let s = seed >>> 0 || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; };
+const c9Wrap = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.PI; return a - Math.PI; };
+const c9Rot = (a, x, y) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
 
 function c9MakeGame(L, img, W, H, seedNum) {
-  const R = c9Rng(seedNum * 7919 + 13), G = { hitCtx: document.createElement('canvas').getContext('2d'), L, img, cols: L.cols, rows: L.rows, rot: L.rot, pieces: [], held: null, drag: null, t: 0, done: false, win: 0, peek: 0, lw: 0, lh: 0, seed: seedNum, flash: [] };
-  // the edges: H[i][j] between row i-1 and i, V[i][j] between col j-1 and j (+1: the tab belongs to the upper / left piece)
+  const R = c9Rng(seedNum * 7919 + 13), G = { hitCtx: document.createElement('canvas').getContext('2d'), L, img, cols: L.cols, rows: L.rows, pieces: [], groups: [], held: null, drag: null, hl: [0, 0], t: 0, done: false, win: 0, peek: 0, lw: 0, lh: 0, seed: seedNum, flash: [], zTop: 0 };
   const HE = [], VE = [], JH = [], JV = [];
   for (let i = 0; i <= G.rows; i++) { HE[i] = []; JH[i] = []; for (let j = 0; j < G.cols; j++) { HE[i][j] = R() < .5 ? 1 : -1; JH[i][j] = { c: (R() - .5) * .1, s: (R() - .5) * .2 }; } }
   for (let i = 0; i < G.rows; i++) { VE[i] = []; JV[i] = []; for (let j = 0; j <= G.cols; j++) { VE[i][j] = R() < .5 ? 1 : -1; JV[i][j] = { c: (R() - .5) * .1, s: (R() - .5) * .2 }; } }
   G.H = HE; G.V = VE; G.JH = JH; G.JV = JV;
   let id = 0;
-  for (let i = 0; i < G.rows; i++) for (let j = 0; j < G.cols; j++) G.pieces.push({ id: id++, i, j, x: 0, y: 0, ux: 0, uy: 0, rot: 0, ang: 0, placed: false, z: 0, key: '', cv: null, path: null, lift: 0 });
-  // random start: spread over the table, turned at random when the level asks for it
-  G.pieces.forEach(p => { p.ux = R(); p.uy = R(); p.rot = G.rot ? Math.floor(R() * 4) : 0; p.ang = p.rot * Math.PI / 2; p.z = Math.floor(R() * 1000); });
-  G.pieces.sort((a, b) => a.z - b.z).forEach((p, k) => { p.z = k; });
-  c9Layout(G, W, H);
-  // spread the loose pieces over the table in a shuffled grid with a little jitter, so few of them hide others
-  const n = G.pieces.length; let nx = Math.max(1, Math.floor(G.tw / (G.cw * .95))), ny = Math.max(1, Math.floor(G.th / (G.ch * .95)));
-  while (nx * ny < n) { nx++; ny++; }
+  for (let i = 0; i < G.rows; i++) for (let j = 0; j < G.cols; j++) { const p = { id: id++, i, j, grp: null, key: '', cvTop: null, cvSide: null, path: null, flash: 0, _G: G }; G.pieces.push(p); const grp = { id: p.id, x: 0, y: 0, a: R() * 2 * Math.PI, pcs: [p], z: id, lift: 0, ux: R(), uy: R() }; G.groups.push(grp); p.grp = grp; }
+  c9Layout(G, W, H, true);
+  // spread the loose pieces over the table in a shuffled grid with a little jitter
+  const n = G.groups.length, aw = W - G.cw, ah = H - 56 - G.ch; const nx = Math.max(1, Math.round(Math.sqrt(n * aw / Math.max(1, ah)))), ny = Math.max(1, Math.ceil(n / nx));
   const slots = []; for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) slots.push([a, b]);
   for (let k = slots.length - 1; k > 0; k--) { const m = Math.floor(R() * (k + 1)); [slots[k], slots[m]] = [slots[m], slots[k]]; }
-  G.pieces.forEach((p, k) => { const [a, b] = slots[k]; p.ux = Math.max(0, Math.min(1, (nx > 1 ? a / (nx - 1) : .5) + (R() - .5) * .5 / nx)); p.uy = Math.max(0, Math.min(1, (ny > 1 ? b / (ny - 1) : .5) + (R() - .5) * .5 / ny)); });
-  c9Layout(G, W, H);
+  G.groups.forEach((g, k) => { const [a, b] = slots[k]; g.ux = Math.max(0, Math.min(1, (nx > 1 ? a / (nx - 1) : .5) + (R() - .5) * .5 / nx)); g.uy = Math.max(0, Math.min(1, (ny > 1 ? b / (ny - 1) : .5) + (R() - .5) * .5 / ny)); c9Place(G, g); });
   return G;
 }
-
-// where the board and the table are; positions of loose pieces are kept as fractions of the table so a resize keeps them
-function c9Layout(G, W, H) {
-  const top = 56, aspect = G.img.naturalWidth / G.img.naturalHeight, wide = W > H * 1.15;
-  let bx, by, bw, bh, tx, ty, tw, th;
-  if (wide) { const aw = W * .52 - 24, ah = H - top - 20; bw = Math.min(aw, ah * aspect); bh = bw / aspect; bx = 16 + (aw - bw) / 2; by = top + (ah - bh) / 2; tx = W * .55; ty = top + 8; tw = W * .43; th = H - top - 28; }
-  else { const aw = W - 24, ah = (H - top) * .5 - 10; bw = Math.min(aw, ah * aspect); bh = bw / aspect; bx = (W - bw) / 2; by = top + 4; tx = 8; ty = by + bh + 14; tw = W - 16; th = H - ty - 8; }
-  const old = G.lw ? { bw: G.bw } : null;
-  Object.assign(G, { bx, by, bw, bh, cw: bw / G.cols, ch: bh / G.rows, tx, ty, tw, th, lw: W, lh: H });
-  G.t_ = .27 * Math.max(G.cw, G.ch);
-  for (const p of G.pieces) {
-    if (p.placed) { p.x = bx + (p.j + .5) * G.cw; p.y = by + (p.i + .5) * G.ch; }
-    else if (!G.held || G.held !== p) { p.x = tx + G.cw * .5 + p.ux * Math.max(0, tw - G.cw); p.y = ty + G.ch * .5 + p.uy * Math.max(0, th - G.ch); }
-    p.key = ''; p.cv = null;
-  }
+// the cell size: the finished print would fill about 75 % of the free area; a resize keeps the groups where they were, in proportion
+function c9Layout(G, W, H, first) {
+  const top = 56, aw = W - 20, ah = H - top - 16, asp = G.img.naturalWidth / G.img.naturalHeight, fit = .75;
+  const bw = Math.min(aw * fit, ah * fit * asp), bh = bw / asp, old = { W: G.lw, H: G.lh };
+  G.bw = bw; G.bh = bh; G.cw = bw / G.cols; G.ch = bh / G.rows; G.t_ = .27 * Math.max(G.cw, G.ch); G.depth = Math.max(3, Math.min(G.cw, G.ch) * .075);
+  G.lw = W; G.lh = H; G.top = top;
+  if (!first && old.W) for (const g of G.groups) { g.x *= W / old.W; g.y = top + (g.y - top) * (H - top) / Math.max(1, old.H - top); }
+  for (const p of G.pieces) { p.key = ''; p.cvTop = null; p.cvSide = null; }
 }
+// a loose piece's place from its fractions (the centre of the piece)
+function c9Place(G, g) {
+  const cx = G.cw * .5 + g.ux * (G.lw - G.cw), cy = G.top + G.ch * .5 + g.uy * (G.lh - G.top - G.ch), o = c9Rot(g.a, (g.pcs[0].j + .5) * G.cw, (g.pcs[0].i + .5) * G.ch);
+  g.x = cx - o[0]; g.y = cy - o[1];
+}
+const c9Center = (G, g, p) => { const o = c9Rot(g.a, (p.j + .5) * G.cw, (p.i + .5) * G.ch); return [g.x + o[0], g.y + o[1]]; };
+function c9Centroid(G, g) { let sx = 0, sy = 0; for (const p of g.pcs) { const c = c9Center(G, g, p); sx += c[0]; sy += c[1]; } return [sx / g.pcs.length, sy / g.pcs.length]; }
 
-// one piece's own path in its local frame (origin = top-left of its cell rectangle)
 function c9PiecePath(G, pc) {
   const { cw, ch } = G, i = pc.i, j = pc.j, p = new Path2D();
   const eT = i === 0 ? 0 : -G.H[i][j], eB = i === G.rows - 1 ? 0 : G.H[i + 1][j], eL = j === 0 ? 0 : -G.V[i][j], eR = j === G.cols - 1 ? 0 : G.V[i][j + 1];
@@ -79,23 +75,27 @@ function c9PiecePath(G, pc) {
   c9Edge(p, 0, ch, 0, 0, -1, 0, eL, G.JV[i][j], true);
   p.closePath(); return p;
 }
-// the picture cut to this piece, drawn once into its own canvas
+// the printed face and the cardboard silhouette of a piece, each drawn once into its own canvas
 function c9Bake(G, pc) {
-  const key = Math.round(G.cw) + 'x' + Math.round(G.ch) + '@' + DPR; if (pc.key === key && pc.cv) return pc.cv;
-  const t = G.t_, S = DPR, c = document.createElement('canvas'); c.width = Math.ceil((G.cw + 2 * t) * S); c.height = Math.ceil((G.ch + 2 * t) * S);
-  const g = c.getContext('2d'); g.setTransform(S, 0, 0, S, t * S, t * S);
+  const key = Math.round(G.cw) + 'x' + Math.round(G.ch) + '@' + DPR; if (pc.key === key && pc.cvTop) return;
+  const t = G.t_, S = DPR, mk = () => { const c = document.createElement('canvas'); c.width = Math.ceil((G.cw + 2 * t) * S); c.height = Math.ceil((G.ch + 2 * t) * S); const g = c.getContext('2d'); g.setTransform(S, 0, 0, S, t * S, t * S); return [c, g]; };
   pc.path = c9PiecePath(G, pc);
+  const [c1, g] = mk();
   g.save(); g.clip(pc.path);
   g.drawImage(G.img, 0, 0, G.img.naturalWidth, G.img.naturalHeight, -pc.j * G.cw, -pc.i * G.ch, G.bw, G.bh);
+  g.lineJoin = 'round'; g.lineWidth = 7; g.strokeStyle = 'rgba(30,18,6,.20)'; g.stroke(pc.path);   // the face darkens a little towards the cut, like a bevel
   g.restore();
-  g.lineJoin = 'round'; g.lineWidth = 3.2; g.strokeStyle = 'rgba(255,250,235,.28)'; g.stroke(pc.path);   // a pale edge, like the cut of the cardboard
-  g.lineWidth = 1.3; g.strokeStyle = 'rgba(35,22,10,.7)'; g.stroke(pc.path);
-  pc.cv = c; pc.key = key; return c;
+  g.lineJoin = 'round'; g.lineWidth = 1.6; g.strokeStyle = 'rgba(255,248,230,.55)'; g.stroke(pc.path);   // the pale edge of the printed paper
+  g.lineWidth = .8; g.strokeStyle = 'rgba(40,26,12,.75)'; g.stroke(pc.path);
+  const [c2, h] = mk();
+  h.fillStyle = '#b8996a'; h.fill(pc.path); h.lineJoin = 'round'; h.lineWidth = 1.4; h.strokeStyle = '#6c5232'; h.stroke(pc.path);
+  pc.cvTop = c1; pc.cvSide = c2; pc.key = key;
 }
 
 function c9Tick(G, dt) {
   if (!G.done) G.t += dt;
-  for (const p of G.pieces) { const to = p.rot * Math.PI / 2, d = to - p.ang; p.ang = Math.abs(d) < .01 ? to : p.ang + d * Math.min(1, dt * 16); p.lift += ((G.held === p ? 1 : 0) - p.lift) * Math.min(1, dt * 14); }
+  for (const g of G.groups) g.lift += ((G.held === g ? 1 : 0) - g.lift) * Math.min(1, dt * 14);
+  for (const p of G.pieces) if (p.flash > 0) p.flash = Math.max(0, p.flash - dt / .45);
   G.peek = Math.max(0, G.peek - dt);
   G.flash = G.flash.filter(f => (f.t += dt) < f.life);
   if (G.done) G.win += dt;
@@ -103,89 +103,119 @@ function c9Tick(G, dt) {
 
 function c9Draw(G, g, W, H) {
   if (G.lw !== W || G.lh !== H) c9Layout(G, W, H);
-  const { bx, by, bw, bh, cw, ch } = G;
   if (G.done) {   // the finished print, big, in the middle of the free space above the result box
     const aw = W - 28, ah = H - 56 - 190, k = Math.min(aw / G.img.naturalWidth, ah / G.img.naturalHeight), w = G.img.naturalWidth * k, h = G.img.naturalHeight * k, x = (W - w) / 2, y = 60 + (ah - h) / 2;
     g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 7, y - 7, w + 14, h + 14); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); return;
   }
-  // the board: a pale ghost of the picture and the faint cut lines, in a frame
-  g.save(); g.fillStyle = 'rgba(255,250,235,.55)'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(bx - 5, by - 5, bw + 10, bh + 10); g.fill(); g.stroke(); g.restore();
-  g.globalAlpha = G.done ? 1 : (G.peek > 0 ? .9 : .13); g.drawImage(G.img, bx, by, bw, bh); g.globalAlpha = 1;
-  if (!G.done && G.peek <= 0) { g.strokeStyle = 'rgba(29,25,21,.16)'; g.lineWidth = 1; g.beginPath(); for (let j = 1; j < G.cols; j++) { g.moveTo(bx + j * cw, by); g.lineTo(bx + j * cw, by + bh); } for (let i = 1; i < G.rows; i++) { g.moveTo(bx, by + i * ch); g.lineTo(bx + bw, by + i * ch); } g.stroke(); }
-  // the table
-  if (!G.done) { g.fillStyle = 'rgba(120,90,50,.10)'; g.strokeStyle = 'rgba(29,25,21,.25)'; g.lineWidth = 1.4; g.beginPath(); g.roundRect(G.tx, G.ty, G.tw, G.th, 12); g.fill(); g.setLineDash([6, 6]); g.stroke(); g.setLineDash([]); }
-  const list = G.pieces.slice().sort((a, b) => (a.placed === b.placed ? a.z - b.z : a.placed ? -1 : 1));
-  if (!G.done) for (const p of list) c9DrawPiece(G, g, p);
-  for (const f of G.flash) { const k = f.t / f.life; g.globalAlpha = 1 - k; g.strokeStyle = '#f2c640'; g.lineWidth = 3; g.beginPath(); g.arc(f.x, f.y, Math.max(cw, ch) * (.4 + k * .6), 0, 6.283); g.stroke(); g.globalAlpha = 1; }
+  for (const grp of G.groups.slice().sort((a, b) => a.z - b.z)) c9DrawGroup(G, g, grp);
+  for (const f of G.flash) { const k = f.t / f.life; g.globalAlpha = 1 - k; g.strokeStyle = '#fff6c8'; g.lineWidth = 4; g.beginPath(); g.arc(f.x, f.y, Math.max(G.cw, G.ch) * (.3 + k * .5), 0, 6.283); g.stroke(); g.globalAlpha = 1; }
+  if (G.peek > 0) {   // the sample print, over everything (the eye button)
+    const aw = W - 40, ah = H - 56 - 40, k = Math.min(aw / G.img.naturalWidth, ah / G.img.naturalHeight), w = G.img.naturalWidth * k, h = G.img.naturalHeight * k, x = (W - w) / 2, y = 56 + (H - 56 - h) / 2;
+    g.globalAlpha = Math.min(1, G.peek * 4) * .96; g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 8, y - 8, w + 16, h + 16); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); g.globalAlpha = 1;
+  }
 }
-function c9DrawPiece(G, g, p) {
-  const c = c9Bake(G, p), t = G.t_;
-  g.save(); g.translate(p.x, p.y); g.rotate(p.ang);
-  const sc = 1 + p.lift * .07;
-  if (p.lift > .05) { g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 14 * p.lift; g.shadowOffsetY = 6 * p.lift; }
-  g.scale(sc, sc); g.drawImage(c, -G.cw / 2 - t, -G.ch / 2 - t, G.cw + 2 * t, G.ch + 2 * t);
-  g.restore();
+// a group: its shadow and cardboard sides first (so they hide under the printed faces of its neighbours), then the faces
+function c9DrawGroup(G, g, grp) {
+  for (const p of grp.pcs) c9Bake(G, p);
+  const lift = grp.lift, depth = G.depth * (1 + lift * .9), layers = Math.max(3, Math.ceil(depth / .9)), t = G.t_, sc = 1 + lift * .035;
+  const dx = .62, dy = .92;   // the thickness shows on the lower right (the light comes from the upper left), in screen space
+  const draw = (cv, c, ox, oy) => { g.save(); g.translate(c[0] + ox, c[1] + oy); g.rotate(grp.a); g.scale(sc, sc); g.drawImage(cv, -G.cw / 2 - t, -G.ch / 2 - t, G.cw + 2 * t, G.ch + 2 * t); g.restore(); };
+  const cs = grp.pcs.map(p => c9Center(G, grp, p));
+  g.globalAlpha = .26; grp.pcs.forEach((p, k) => draw(p.cvSide, cs[k], depth * .9 + 4 + lift * 7, depth * 1.3 + 6 + lift * 10)); g.globalAlpha = 1;   // the shadow on the table
+  for (let l = layers; l >= 1; l--) grp.pcs.forEach((p, k) => draw(p.cvSide, cs[k], dx * l * depth / layers * 1.4, dy * l * depth / layers * 1.4));
+  grp.pcs.forEach((p, k) => {
+    draw(p.cvTop, cs[k], 0, 0);
+    if (p.flash > 0) { g.save(); g.globalAlpha = p.flash * .75; g.translate(cs[k][0], cs[k][1]); g.rotate(grp.a); g.scale(sc, sc); g.translate(-G.cw / 2, -G.ch / 2); g.fillStyle = '#fffbe0'; g.fill(p.path); g.restore(); }
+  });
 }
-// the little turn button beside the lifted piece (for a finger)
-function c9TurnBtn(G) { const p = G.held; if (!p || p.placed || !G.touch) return null; const r = 20, x = Math.min(G.lw - r - 6, Math.max(r + 6, p.x + G.cw * .62 + 14)), y = Math.max(r + 60, p.y - G.ch * .62 - 8); return { x, y, r }; }
+
+// the little turn button beside the lifted group (for a finger)
+function c9TurnBtn(G) { const grp = G.held; if (!grp || !G.touch) return null; const c = c9Centroid(G, grp), r = 20; return { x: Math.min(G.lw - r - 6, Math.max(r + 6, c[0] + G.cw * .9 + 18)), y: Math.max(r + 62, Math.min(G.lh - r - 8, c[1] - G.ch * .9 - 10)), r }; }
 function c9DrawTurnBtn(G, g) { const b = c9TurnBtn(G); if (!b) return; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.stroke(); g.lineWidth = 2.6; g.beginPath(); g.arc(b.x, b.y, 8, -2.4, 1.9); g.stroke(); g.fillStyle = '#1d1915'; g.beginPath(); g.moveTo(b.x + 5, b.y + 9); g.lineTo(b.x + 12, b.y + 3); g.lineTo(b.x + 2, b.y + 2); g.closePath(); g.fill(); }
 
+// the piece (and so its group) under a point; the topmost group first
 function c9Hit(G, x, y) {
-  const list = G.pieces.filter(p => !p.placed).sort((a, b) => b.z - a.z);
-  for (const p of list) {
-    const dx = x - p.x, dy = y - p.y, c = Math.cos(-p.ang), s = Math.sin(-p.ang), lx = dx * c - dy * s + G.cw / 2, ly = dx * s + dy * c + G.ch / 2;
+  for (const grp of G.groups.slice().sort((a, b) => b.z - a.z)) for (const p of grp.pcs) {
+    const c = c9Center(G, grp, p), d = c9Rot(-grp.a, x - c[0], y - c[1]), lx = d[0] + G.cw / 2, ly = d[1] + G.ch / 2;
     if (lx < -G.t_ || ly < -G.t_ || lx > G.cw + G.t_ || ly > G.ch + G.t_) continue;
     if (!p.path) p.path = c9PiecePath(G, p);
-    if (G.hitCtx.isPointInPath(p.path, lx, ly)) return p;
+    if (G.hitCtx.isPointInPath(p.path, lx, ly)) return { grp, p };
   }
   return null;
 }
-const c9Up = p => ((p.rot % 4) + 4) % 4 === 0;
-function c9Turn(G, p, dir) { if (!p || p.placed || !G.rot) return; p.rot += dir; AU.tap(); }
-function c9Drop(G, p) {
-  // snap into the right cell, the right way up
-  const tx = G.bx + (p.j + .5) * G.cw, ty = G.by + (p.i + .5) * G.ch, near = Math.hypot(p.x - tx, p.y - ty) < Math.min(G.cw, G.ch) * .45;
-  if (near && c9Up(p)) { p.x = tx; p.y = ty; p.placed = true; p.rot = 0; p.ang = 0; G.flash.push({ x: tx, y: ty, t: 0, life: .5 }); AU.pluck(92); if (G.pieces.every(q => q.placed)) { G.done = true; G.win = 0; return 'win'; } }
-  else {
-    // keep it on the screen; remember where, as a fraction of the table
-    p.x = Math.max(G.cw * .3, Math.min(G.lw - G.cw * .3, p.x)); p.y = Math.max(G.ch * .3 + 52, Math.min(G.lh - G.ch * .3, p.y));
-    p.ux = (p.x - G.tx - G.cw / 2) / Math.max(1, G.tw - G.cw); p.uy = (p.y - G.ty - G.ch / 2) / Math.max(1, G.th - G.ch);
+// put the group so that the grabbed point (G.hl, in the group's frame) is under (x, y)
+function c9Hold(G, grp, x, y) { const o = c9Rot(grp.a, G.hl[0], G.hl[1]); grp.x = x - o[0]; grp.y = y - o[1]; }
+// turn a group by da radians round the point (x, y)
+function c9Turn(G, grp, da, x, y) {
+  const d = c9Rot(-grp.a, x - grp.x, y - grp.y); grp.a += da; const o = c9Rot(grp.a, d[0], d[1]); grp.x = x - o[0]; grp.y = y - o[1];
+  if (G.held === grp) G.hl = d;
+}
+function c9Clamp(G, grp) {
+  const c = c9Centroid(G, grp); let dx = 0, dy = 0; const m = Math.min(G.cw, G.ch) * .3;
+  if (c[0] < m) dx = m - c[0]; if (c[0] > G.lw - m) dx = G.lw - m - c[0]; if (c[1] < G.top + m) dy = G.top + m - c[1]; if (c[1] > G.lh - m) dy = G.lh - m - c[1];
+  grp.x += dx; grp.y += dy;
+}
+// two groups meet when a piece of one is next to a piece of the other (in the print) and their angle and place agree
+function c9TryJoin(G, grp) {
+  let joined = false;
+  for (let guard = 0; guard < 40; guard++) {
+    let hit = null;
+    for (const other of G.groups) {
+      if (other === grp) continue;
+      if (Math.abs(c9Wrap(grp.a - other.a)) > C9_ANG_TOL) continue;
+      if (Math.hypot(grp.x - other.x, grp.y - other.y) > C9_POS_TOL * Math.min(G.cw, G.ch)) continue;
+      let pair = null; for (const a of grp.pcs) { for (const b of other.pcs) if (Math.abs(a.i - b.i) + Math.abs(a.j - b.j) === 1) { pair = [a, b]; break; } if (pair) break; }
+      if (pair) { hit = { other, pair }; break; }
+    }
+    if (!hit) break;
+    // the bigger group keeps its pose, the smaller moves onto it
+    const big = hit.other.pcs.length >= grp.pcs.length ? hit.other : grp, small = big === grp ? hit.other : grp;
+    for (const p of small.pcs) { p.grp = big; big.pcs.push(p); }
+    G.groups.splice(G.groups.indexOf(small), 1);
+    hit.pair.forEach(p => { p.flash = 1; }); const c = c9Center(G, big, hit.pair[0]), c2 = c9Center(G, big, hit.pair[1]); G.flash.push({ x: (c[0] + c2[0]) / 2, y: (c[1] + c2[1]) / 2, t: 0, life: .5 });
+    AU.pluck(92); joined = true; if (G.held === small) G.held = big; grp = big;
   }
+  return joined;
+}
+function c9Drop(G, grp) {
+  c9Clamp(G, grp); c9TryJoin(G, grp);
+  if (G.groups.length === 1) { G.done = true; G.win = 0; G.held = null; return 'win'; }
   return null;
 }
-function c9Lift(G, p) { G.held = p; p.z = Math.max(...G.pieces.map(q => q.z)) + 1; AU.tap(); }
+function c9Lift(G, grp, x, y) { G.held = grp; grp.z = ++G.zTop + 1000; G.hl = c9Rot(-grp.a, x - grp.x, y - grp.y); AU.tap(); }
 
 // ---- pointer ----
 function c9Down(G, x, y, e, done) {
   if (G.done) return;
   G.touch = e.pointerType !== 'mouse';
-  if (e.button === 2) { const p = G.held || c9Hit(G, x, y); if (p) c9Turn(G, p, 1); return; }
-  const tb = c9TurnBtn(G); if (tb && Math.hypot(x - tb.x, y - tb.y) < tb.r + 6) { c9Turn(G, G.held, 1); G.drag = null; return; }
+  const fin = r => { if (r === 'win') done('win'); };
+  if (e.button === 2) { const h = G.held ? { grp: G.held } : c9Hit(G, x, y); if (h) c9Turn(G, h.grp, C9_STEP, x, y); return; }
+  const tb = c9TurnBtn(G); if (tb && Math.hypot(x - tb.x, y - tb.y) < tb.r + 6) { const c = c9Centroid(G, G.held); c9Turn(G, G.held, C9_STEP, c[0], c[1]); G.drag = null; return; }
   const hit = c9Hit(G, x, y);
-  const lift = p => { if (G.held !== p) c9Lift(G, p); G.hold = [x - p.x, y - p.y]; G.drag = { id: e.pointerId, x0: x, y0: y, px: p.x, py: p.y, t0: performance.now(), moved: false }; };
-  if (!G.touch) {   // mouse: a click lifts; the piece then follows the mouse until the next click puts it down
-    if (G.held) { G.held.x = x - G.hold[0]; G.held.y = y - G.hold[1]; const r = c9Drop(G, G.held); G.held = null; G.drag = null; if (r === 'win') done('win'); return; }
+  const lift = h => { if (G.held !== h.grp) c9Lift(G, h.grp, x, y); else G.hl = c9Rot(-h.grp.a, x - h.grp.x, y - h.grp.y); G.drag = { id: e.pointerId, x0: x, y0: y, gx: h.grp.x, gy: h.grp.y, ga: h.grp.a, t0: performance.now(), moved: false }; };
+  if (!G.touch) {   // mouse: a click lifts; the group then follows the mouse until the next click puts it down
+    if (G.held) { c9Hold(G, G.held, x, y); const g0 = G.held; G.held = null; G.drag = null; fin(c9Drop(G, g0)); return; }
     if (hit) lift(hit); return;
   }
-  // finger: touching a piece lifts it (drag it, flick it, or tap elsewhere to put it there)
-  if (hit) { lift(hit); return; }
-  if (G.held) { G.held.x = x; G.held.y = y; const r = c9Drop(G, G.held); G.held = null; G.drag = null; if (r === 'win') done('win'); }
+  if (hit) { lift(hit); return; }   // finger: touching a piece lifts it (drag it, flick it, or tap elsewhere to put it there)
+  if (G.held) { const c = c9Centroid(G, G.held); G.held.x += x - c[0]; G.held.y += y - c[1]; const g0 = G.held; G.held = null; G.drag = null; fin(c9Drop(G, g0)); }
 }
 function c9Move(G, x, y, e) {
-  G.hover = null;
+  G.hover = null; G.px = x; G.py = y;
   if (G.drag && G.held) {
     const d = G.drag; if (!d.moved && Math.hypot(x - d.x0, y - d.y0) > C9_DRAG_PX) d.moved = true;
-    if (d.moved) { G.held.x = x - G.hold[0]; G.held.y = y - G.hold[1]; }
-  } else if (G.held && e.pointerType === 'mouse') { G.held.x = x - G.hold[0]; G.held.y = y - G.hold[1]; }   // clicked up: it follows the mouse
-  else if (e.pointerType === 'mouse') G.hover = c9Hit(G, x, y);
+    if (d.moved) c9Hold(G, G.held, x, y);
+  } else if (G.held && e.pointerType === 'mouse') c9Hold(G, G.held, x, y);   // clicked up: it follows the mouse
+  else if (e.pointerType === 'mouse') { const h = c9Hit(G, x, y); G.hover = h ? h.grp : null; }
 }
 function c9PtrUp(G, x, y, e, done) {
   const d = G.drag; G.drag = null; if (!d || !G.held) return;
-  const p = G.held, dt = performance.now() - d.t0, dy = y - d.y0, dx = x - d.x0;
-  if (d.moved && G.rot && e.pointerType !== 'mouse' && dt < C9_FLICK_MS && Math.abs(dy) >= C9_FLICK_PX && Math.abs(dx) < Math.abs(dy) * .6) {   // a quick vertical flick: turn, do not move
-    p.x = d.px; p.y = d.py; c9Turn(G, p, dy > 0 ? 1 : -1); return;
+  const grp = G.held, dt = performance.now() - d.t0, dy = y - d.y0, dx = x - d.x0;
+  if (d.moved && e.pointerType !== 'mouse' && dt < C9_FLICK_MS && Math.abs(dy) >= C9_FLICK_PX && Math.abs(dx) < Math.abs(dy) * .6) {   // a quick vertical flick: turn, do not move
+    grp.x = d.gx; grp.y = d.gy; grp.a = d.ga; const c = c9Centroid(G, grp); c9Turn(G, grp, dy * .016, c[0], c[1]); return;   // about 1° for every 3.5 px
   }
-  if (d.moved) { const r = c9Drop(G, p); G.held = null; if (r === 'win') done('win'); return; }   // dragged and let go: dropped
+  if (d.moved) { const g0 = grp; G.held = null; if (c9Drop(G, g0) === 'win') done('win'); return; }   // dragged and let go: dropped
   // a click or tap: it stays lifted (a mouse carries it, a finger waits for a tap elsewhere)
-  if (e.pointerType === 'mouse') { /* follows the mouse until the next click */ }
 }
+// the wheel turns the lifted group, or the one under the pointer, round the pointer
+function c9Wheel(G, delta, x, y) { const grp = G.held || G.hover; if (!grp) return false; c9Turn(G, grp, delta * .0018, x, y); return true; }

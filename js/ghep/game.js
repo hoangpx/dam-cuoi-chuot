@@ -36,7 +36,7 @@ function buildAlbum9() {
   const box = $('#cards'); box.textContent = '';
   let tier = -1;
   C9_LEVELS.forEach((L, i) => {
-    if (L.tier !== tier) { tier = L.tier; const h = document.createElement('div'); h.className = 'sec'; h.textContent = `${lg(C9_TIERS[tier].vi, C9_TIERS[tier].en)} · ${lg('khoảng', 'about')} ${C9_TIERS[tier].n} ${lg('mảnh', 'pieces')}${C9_TIERS[tier].rot ? lg(' · có xoay mảnh', ' · pieces turn') : ''}`; box.appendChild(h); }
+    if (L.tier !== tier) { tier = L.tier; const h = document.createElement('div'); h.className = 'sec'; h.textContent = `${lg(C9_TIERS[tier].vi, C9_TIERS[tier].en)} · ${lg('khoảng', 'about')} ${C9_TIERS[tier].n} ${lg('mảnh', 'pieces')}`; box.appendChild(h); }
     const open = i === 0 || SAVE9.done[i - 1] || SAVE9.done[i];
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = ['#ecdcbf', '#d9e6c9', '#e6d3c9'][L.tier]; b.disabled = !open;
@@ -74,7 +74,7 @@ function renderC9() {
   // the top bar
   g.fillStyle = '#1d1915'; g.font = "800 34px 'Playfair Display', Georgia, serif"; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('‹', 28, 28);
   g.font = "800 17px 'Playfair Display', Georgia, serif"; g.fillText(lg(L.pic.vi, L.pic.en), W / 2, 20);
-  g.font = "600 12px 'Inter', system-ui, sans-serif"; g.globalAlpha = .75; g.fillText(`${lg('Màn', 'Level')} ${C9.i + 1} · ${L.cols * L.rows} ${lg('mảnh', 'pieces')}${L.rot ? lg(' · xoay: chuột phải / vuốt lên xuống', ' · turn: right click / swipe up or down') : ''}`, W / 2, 40); g.globalAlpha = 1;
+  g.font = "600 12px 'Inter', system-ui, sans-serif"; g.globalAlpha = .75; g.fillText(`${lg('Màn', 'Level')} ${C9.i + 1} · ${L.cols * L.rows} ${lg('mảnh', 'pieces')}${C9.touch ? lg(' · chạm nhấc · vuốt lên xuống để xoay', ' · tap to lift · flick up or down to turn') : lg(' · click nhấc · cuộn chuột để xoay', ' · click to lift · wheel to turn')}`, W / 2, 40); g.globalAlpha = 1;
   if (C9.G) {
     const G = C9.G; g.font = "700 15px 'Inter', system-ui, sans-serif"; g.textAlign = 'right'; g.fillText(c9Time(G.t), W - 56, 28);
     g.beginPath(); g.arc(W - 28, 28, 16, 0, 6.283); g.fillStyle = G.peek > 0 ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = '#1d1915'; g.stroke();   // the eye: a peek at the whole picture
@@ -96,31 +96,35 @@ function renderC9() {
 }
 function c9Pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - C9.st]; }
 function c9PDown(e) {
-  if (S.mode !== 'c9play') return; const [x, y] = c9Pos(e), G = C9.G;
+  if (S.mode !== 'c9play') return; C9.touch = e.pointerType !== 'mouse'; const [x, y] = c9Pos(e), G = C9.G;
   if (x < 56 && y < 56) { showAlbum(9); return; }
   if (!G) return;
-  if (x > G.lw - 52 && y < 52 && !G.done) { G.peek = 1.6; return; }
+  if (x > G.lw - 52 && y < 52 && !G.done) { G.peek = G.peek > 0 ? 0 : 4; return; }
   if (G.done) { const b = c9WinBox(G); if (y >= b.by && y <= b.by + 40) { if (x < b.x + 12 + b.bw + 6) showAlbum(9); else if (C9.i + 1 < C9_LEVELS.length) startC9(C9.i + 1); else showAlbum(9); } return; }
   capturePointer(e); C9.ptr = e.pointerId; c9Down(G, x, y, e, c9Done);
 }
 function c9PMove(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9Move(C9.G, x, y, e); cv.style.cursor = C9.G.held ? 'grabbing' : C9.G.hover ? 'grab' : ''; }
 function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G || C9.ptr !== e.pointerId) return; C9.ptr = null; const [x, y] = c9Pos(e); c9PtrUp(C9.G, x, y, e, c9Done); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'c9play') e.preventDefault(); });
-cv.addEventListener('wheel', e => { if (S.mode !== 'c9play' || !C9.G || C9.G.done) return; const G = C9.G, p = G.held || G.hover; if (p) { e.preventDefault(); c9Turn(G, p, e.deltaY > 0 ? 1 : -1); } }, { passive: false });
+cv.addEventListener('wheel', e => {
+  if (S.mode !== 'c9play' || !C9.G || C9.G.done) return;
+  const G = C9.G, [x, y] = c9Pos(e), d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+  if (!G.held) { const h = c9Hit(G, x, y); G.hover = h ? h.grp : null; }
+  if (c9Wheel(G, d, x, y)) e.preventDefault();
+}, { passive: false });
 function c9Key(e) {
   if (S.mode !== 'c9play') return;
   if (e.code === 'Escape') { showAlbum(9); return; }
-  const G = C9.G; if (!G || G.done) return; const p = G.held || G.hover;
-  if (p && (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'Space')) { e.preventDefault(); c9Turn(G, p, e.shiftKey ? -1 : 1); }
-  else if (p && e.code === 'ArrowUp') { e.preventDefault(); c9Turn(G, p, -1); }
+  const G = C9.G; if (!G || G.done) return; const grp = G.held || G.hover; if (!grp) return;
+  if (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); const c = c9Centroid(G, grp); c9Turn(G, grp, (e.shiftKey || e.code === 'ArrowUp' ? -1 : 1) * C9_STEP, G.px === undefined ? c[0] : G.px, G.py === undefined ? c[1] : G.py); }
 }
 
 registerChapter({
   id: 9, modes: ['c9play'],
-  card: { num: lg('Chương IX', 'Chapter IX'), han: '拼圖', name: lg('Ghép Tranh', 'Print Puzzles'), desc: lg('Ghép lại những bức tranh Đông Hồ thật, từng mảnh một. Chạm để nhấc mảnh lên, bấm chuột phải hoặc vuốt lên xuống để xoay.', 'Put the real Đông Hồ prints back together, piece by piece. Tap to lift a piece; right click or flick up and down to turn it.'), bg: '#e8d9c0' },
+  card: { num: lg('Chương IX', 'Chapter IX'), han: '拼圖', name: lg('Ghép Tranh', 'Print Puzzles'), desc: lg('Ghép lại những bức tranh Đông Hồ thật, từng mảnh một. Mảnh nằm lẫn lộn, xoay đủ mọi góc, ghép ở đâu cũng được. Chạm để nhấc mảnh, cuộn chuột hoặc vuốt lên xuống để xoay.', 'Put the real Đông Hồ prints back together, piece by piece. The pieces lie any way up and you can join them anywhere. Tap to lift one; wheel or flick up and down to turn it.'), bg: '#e8d9c0' },
   progress: () => `${Object.values(SAVE9.done).filter(Boolean).length}/${C9_LEVELS.length} ${lg('tranh', 'prints')}`,
   hasProgress: () => Object.values(SAVE9.done).some(Boolean),
-  album() { buildAlbum9(); $('#albumTitle').textContent = lg('Chương IX · Ghép Tranh', 'Chapter IX · Print Puzzles'); $('#albumDesc').textContent = lg('Những bức tranh Đông Hồ bị xáo thành từng mảnh. Chạm vào mảnh để nhấc lên, kéo về đúng chỗ. Từ mức Vừa, các mảnh còn bị xoay: bấm chuột phải (hoặc vuốt lên xuống) để xoay.', 'The Đông Hồ prints have been broken into pieces. Tap a piece to lift it and drag it home. From Medium up, pieces are turned too: right click (or flick up and down) to turn them.'); },
+  album() { buildAlbum9(); $('#albumTitle').textContent = lg('Chương IX · Ghép Tranh', 'Chapter IX · Print Puzzles'); $('#albumDesc').textContent = lg('Những bức tranh Đông Hồ bị xáo thành từng mảnh nằm lẫn lộn mọi góc. Chạm vào mảnh để nhấc lên, cuộn chuột (hoặc vuốt lên xuống) để xoay, ghép hai mảnh sát nhau đúng góc là chúng dính lại; ghép ở chỗ nào cũng được và cả mảng tranh dời, xoay được như một mảnh. Nút con mắt cho xem tranh mẫu.', 'The Đông Hồ prints lie broken in pieces, every which way up. Lift a piece, turn it with the wheel (or by flicking up and down) and bring two neighbours together at the right angle: they stick. Join them anywhere; a joined part moves and turns like one piece. The eye shows the sample.'); },
   hide() { cv.style.cursor = ''; },
   update: updateC9, render: renderC9, key: c9Key,
   pointer: { down: c9PDown, move: c9PMove, up: c9PUp },
