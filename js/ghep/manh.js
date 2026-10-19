@@ -4,7 +4,7 @@
    its lattice origin is on the screen and its angle); a loose piece is a group of one. Two groups join when, dropped, they touch
    (some piece of one is next to some piece of the other in the print) and their angle and position agree closely enough: the
    smaller one snaps onto the bigger, and the two pieces that met flash once. The print is done when everything is one group.
-   Pieces look like thick cardboard: a stack of kraft-coloured copies of the outline under the printed face, and a shadow.
+   Pieces look like thick cardboard: a stack of kraft-coloured copies of the outline under the printed face (no drop shadow: it made the pieces hard to see).
    POINTER RULES (owner, 2026-10-20):
      computer: press lifts a piece (its whole group); drag, or just click and it follows the mouse until the next click;
                the mouse WHEEL turns it round the pointer, any angle (right click or R: a step of 15°).
@@ -114,14 +114,13 @@ function c9Draw(G, g, W, H) {
     g.globalAlpha = Math.min(1, G.peek * 4) * .96; g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 8, y - 8, w + 16, h + 16); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); g.globalAlpha = 1;
   }
 }
-// a group: its shadow and cardboard sides first (so they hide under the printed faces of its neighbours), then the faces
+// a group: its cardboard sides first (so they hide under the printed faces of its neighbours), then the faces
 function c9DrawGroup(G, g, grp) {
   for (const p of grp.pcs) c9Bake(G, p);
   const lift = grp.lift, depth = G.depth * (1 + lift * .9), layers = Math.max(3, Math.ceil(depth / .9)), t = G.t_, sc = 1 + lift * .035;
   const dx = .62, dy = .92;   // the thickness shows on the lower right (the light comes from the upper left), in screen space
   const draw = (cv, c, ox, oy) => { g.save(); g.translate(c[0] + ox, c[1] + oy); g.rotate(grp.a); g.scale(sc, sc); g.drawImage(cv, -G.cw / 2 - t, -G.ch / 2 - t, G.cw + 2 * t, G.ch + 2 * t); g.restore(); };
   const cs = grp.pcs.map(p => c9Center(G, grp, p));
-  g.globalAlpha = .26; grp.pcs.forEach((p, k) => draw(p.cvSide, cs[k], depth * .9 + 4 + lift * 7, depth * 1.3 + 6 + lift * 10)); g.globalAlpha = 1;   // the shadow on the table
   for (let l = layers; l >= 1; l--) grp.pcs.forEach((p, k) => draw(p.cvSide, cs[k], dx * l * depth / layers * 1.4, dy * l * depth / layers * 1.4));
   grp.pcs.forEach((p, k) => {
     draw(p.cvTop, cs[k], 0, 0);
