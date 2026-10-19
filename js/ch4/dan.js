@@ -252,6 +252,7 @@ function c4Served(w) {
   if (w.net !== undefined) { hsServed(w, 'lang'); return; }               // a far-away guest: another player's profile (hoso.js)
   if (w.pid === undefined || SAVE4.day < C4_BOOK_DAY) return;
   const P = c4People(), p = P.list[w.pid], T = C4_TRAITS[p.trait], f = c4F(p.id), day = SAVE4.day;
+  if (w.shop && !w.treat) { const b = f.buy || (f.buy = {}); b[w.shop] = (b[w.shop] || 0) + 1; }   // what they buy here (orders the Mời list, c4TreatBlock)
   // the first purchase: she knows the face; the second: they get talking, and the buyer goes into the book
   if (!f.k && !f.seen) { f.seen = day; f.v = 1; C4.fx.push({ x: w.x, y: c4Y(w.z) - 200, t: 0, s: p.name }); return; }
   if (!f.k && f.v + 1 < (T.meet || 2)) { f.v++; C4.fx.push({ x: w.x, y: c4Y(w.z) - 200, t: 0, s: `${p.name} · ${f.v}/${T.meet}` }); if (R() < .5) c4Say(w, c4Pick(['…', 'Ừ.', 'Gói lại đi.', 'Nhanh lên cô.'])); return; }
@@ -408,6 +409,9 @@ function c4Treat(id, g, back) {
 }
 // (owner, 2026-10-16: "cái vụ mời này move ra từng quán riêng"): a stall's sheet lists the folk you know with "Mời" to give them one of
 // that stall's ware (c4Treat: once a person a day, the right dish makes friends, a dish they will not eat sours them); ♥ marks a known favourite
+// the order of a stall's Mời list (owner, 2026-10-18): known to love this ware first, known not to eat it last; then who buys it most here
+const c4TreatRank = (p, g) => { const f = SAVE4.folk[p.id] || {}; return f.favK && p.fav === g ? 0 : (f.nopeK || []).includes(g) ? 2 : 1; };
+const c4Bought = (p, g) => ((SAVE4.folk[p.id] || {}).buy || {})[g] || 0;
 function c4TreatBlock(g) {
   const d = document.createElement('div'); d.className = 'treat';
   const G = C4_GOODS[g], day = SAVE4.day, known = c4People().list.filter(p => c4Known(p.id) || (SAVE4.folk[p.id] && SAVE4.folk[p.id].seen));   // the known, and those seen once (a treat helps them come round)
@@ -417,7 +421,7 @@ function c4TreatBlock(g) {
   const has = c4Stock(g) > 0;
   const open = !!C4.treatOpen;   // folded until tapped open (owner: too long on a phone); stays open for the rest of the session once opened
   d.innerHTML = `<button class="trh" type="button">${open ? '▾' : '▸'} Mời khách quen ${g === 'trau' ? 'miếng trầu' : 'ăn ' + G.name.toLowerCase()} <small>(${known.length + far} người)</small></button><div class="trb"${open ? '' : ' hidden'}><p class="sm">Nhắn người ta ra quán ăn thử, mỗi người một lần một ngày. Chưa chắc người ta đến; có đến thì cũng phải một lúc sau. Mời đúng món họ thích mới thân${has ? '' : '. <b>Hết hàng rồi.</b>'}</p>`
-    + `<div class="trl">${known.sort((a, b) => (c4Known(b.id) - c4Known(a.id)) || (SAVE4.folk[b.id].a || 0) - (SAVE4.folk[a.id].a || 0)).map(p => { const f = SAVE4.folk[p.id], done = f.treat === day, fav = f.favK && p.fav === g, no = (f.nopeK || []).includes(g);
+    + `<div class="trl">${known.sort((a, b) => c4TreatRank(a, g) - c4TreatRank(b, g) || c4Bought(b, g) - c4Bought(a, g) || (c4Known(b.id) - c4Known(a.id)) || (SAVE4.folk[b.id].a || 0) - (SAVE4.folk[a.id].a || 0)).map(p => { const f = SAVE4.folk[p.id], done = f.treat === day, fav = f.favK && p.fav === g, no = (f.nopeK || []).includes(g);
       return `<div class="tr${c4Known(p.id) ? '' : ' unk2'}"><img src="${c4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div></div>`;
   d.querySelector('.trh').addEventListener('click', () => { AU.tap(); C4.treatOpen = !C4.treatOpen; const b = d.querySelector('.trb'); b.hidden = !C4.treatOpen; d.querySelector('.trh').firstChild.textContent = (C4.treatOpen ? '▾' : '▸') + d.querySelector('.trh').firstChild.textContent.slice(1); });
   d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', () => {
