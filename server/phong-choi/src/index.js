@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v16'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v17'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -48,8 +48,10 @@ const BOT_NAMES = ['Tí', 'Tèo', 'Mít', 'Bơ', 'Nhím', 'Sóc', 'Cốm', 'Bố
 const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
 const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua', 'beo', 'gay', 'cao'], fur: 16, robe: 16, skirt: 16, pants: 16, top: 16 };   // looks are only forwarded, the browser cleans them again
 
-const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen']);
+const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'dodan']);   // dodan (folk-lore quiz) is not in the bag: it is dealt now and then, see startRound
+const needCap = game => game === 'dodan' ? 3 : 2;   // the page version that knows the game
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz)/;   // devices used by test.mjs: never written to the board
+import { QUIZ, QUIZ_GROUPS } from './quiz.js';
 const T = {
   MINP: 2, MAXP: 30, STAKE: 10,
   ANNOUNCE: 4000, RESULT: 9000, FIRST: 3000, WAIT: 2500,
@@ -69,7 +71,7 @@ const T = {
   HPB_LEN: 10000, KHAC_LEN: 15000, KHAC_N: 6, KHAC_LOCK: 2000,
   DEM_SHOW: 2200, DEM_LEN: 12000, XEP_LEN: 25000, XEP_PEN: 1000,
   MAU_LEN: 20000, MAU_N: 5, TINH_LEN: 15000, TINH_LOCK: 2000,
-  LAT_LEN: 25000, CHEN_SHOW: 1800, CHEN_SWAP: 450, CHEN_SWAPS: 8, CHEN_PICK: 6000,
+  DODAN_LEN: 22000, LAT_LEN: 25000, CHEN_SHOW: 1800, CHEN_SWAP: 450, CHEN_SWAPS: 8, CHEN_PICK: 6000,
 };
 // board periods (Vietnam time, UTC+7): d day, w week (Monday first), m month, a all time
 const pkey = (per, t = Date.now()) => { const v = new Date(t + 7 * 36e5), day = Math.floor((t + 7 * 36e5) / 864e5); return per === 'd' ? day : per === 'w' ? Math.floor((day + 3) / 7) : v.getUTCFullYear() * 12 + v.getUTCMonth(); };
@@ -99,17 +101,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v16')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v17')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v16')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v17')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v16')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v17')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -156,7 +158,7 @@ export class Room extends DurableObject {
       c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok; c.cap = +m.cap || 1;   // cap 2 = knows the newer games
       const st = await this.getStats(c.dev); st.n = name;
       c.joined = true; this.noteJoin(c);
-      this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: (this.round && NEWG.has(this.round.game) && !(c.cap >= 2)) ? null : this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
+      this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: (this.round && NEWG.has(this.round.game) && !(c.cap >= needCap(this.round.game))) ? null : this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
       this.all({ t: 'players', players: this.playerList() });
       this.wake();
     } else if (m.t === 'sync') this.send(c, { t: 'sync', c: m.c, s: Date.now() });
@@ -268,7 +270,10 @@ export class Room extends DurableObject {
     // a shuffled bag: every game once in random order, then a new shuffle (the first of a new bag is never the last played)
     if (!this.bag || !this.bag.length) { const b = [...GAMES]; for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } if (b[0] === this.lastGame) b.push(b.shift()); this.bag = b; }
     let game = (this.env && GAMES.includes(this.env.ONLY_GAME)) ? this.env.ONLY_GAME : this.bag.shift();   // ONLY_GAME: a local test switch (wrangler dev --var), not set in production
-    const newOk = c => c.cap >= 2;   // a page that says cap 2 knows the newer games
+    this.sinceQuiz = (this.sinceQuiz || 0) + 1;   // the quiz now and then (about one round in fourteen, never twice within eight rounds)
+    if (!(this.env && this.env.ONLY_GAME) && this.sinceQuiz >= 8 && Math.random() < .12 && hs.some(c => c.cap >= 3)) { this.bag.unshift(game); game = 'dodan'; this.sinceQuiz = 0; }
+    if (this.env && this.env.ONLY_GAME === 'dodan') game = 'dodan';
+    const newOk = c => c.cap >= needCap(game);   // a page that says cap 2 / 3 knows the newer games
     if (NEWG.has(game) && !hs.some(newOk)) { const bi = this.bag.findIndex(x => !NEWG.has(x)); game = bi >= 0 ? this.bag.splice(bi, 1)[0] : pick(GAMES.filter(x => !NEWG.has(x))); }
     this.lastGame = game;
     const pool = NEWG.has(game) ? hs.filter(newOk) : hs, solo2 = solo || pool.length < T.MINP;
@@ -365,6 +370,11 @@ export class Room extends DurableObject {
       const set = new Set([ans]); const cand = [ans + 1, ans - 1, ans + 2, ans - 2, ans + 10, ans - 10, ans + 3, ans - 3, ans + 5, ans - 5, ans + 4, ans - 4]; for (const x of cand) { if (set.size >= 6) break; if (x > 0) set.add(x); }
       const opts = [...set]; for (let i = opts.length - 1; i > 0; i--) { const j = ri(0, i); [opts[i], opts[j]] = [opts[j], opts[i]]; }
       cfg.expr = expr; cfg.opts = opts; cfg.lock = T.TINH_LOCK; r.ans = opts.indexOf(ans); r.deadline = t0 + T.TINH_LEN;
+    } else if (g === 'dodan') {   // a multiple-choice question about đồng hồ pictures, craft villages or folk tales: first right answer wins
+      if (!this.quizBag || !this.quizBag.length) { this.quizBag = QUIZ.map((_, i) => i); for (let i = this.quizBag.length - 1; i > 0; i--) { const j = ri(0, i); [this.quizBag[i], this.quizBag[j]] = [this.quizBag[j], this.quizBag[i]]; } }
+      const row = QUIZ[this.quizBag.pop()], opts = row.slice(3).concat(row[2]).map(x => ({ x, ok: x === row[2] }));
+      for (let i = opts.length - 1; i > 0; i--) { const j = ri(0, i); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+      cfg.q = row[1]; cfg.cat = QUIZ_GROUPS[row[0]] || ''; cfg.opts = opts.map(o => o.x); cfg.lock = T.TINH_LOCK; r.ans = opts.findIndex(o => o.ok); r.deadline = t0 + T.DODAN_LEN;
     } else if (g === 'lat') {
       const cards = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5]; for (let i = 11; i > 0; i--) { const j = ri(0, i); [cards[i], cards[j]] = [cards[j], cards[i]]; }
       r.cards = cards; cfg.n = 12; r.deadline = t0 + T.LAT_LEN; r.prog = new Map(ids.map(id => [id, { open: [], matched: new Set(), pairs: 0, at: 0 }]));
@@ -430,10 +440,10 @@ export class Room extends DurableObject {
   // the nine newer games
   actNew(r, id, a, p, lat) {
     const g = r.game, cfg = r.cfg, inp = r.inp;
-    if (g === 'chuot' || g === 'khac' || g === 'tinh') {   // first right answer wins; a wrong tap locks you for a moment
+    if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'dodan') {   // first right answer wins; a wrong tap locks you for a moment
       if (a.k !== 'p') return; const st = inp.get(id) || {}; if (st.rt !== undefined) return; if (st.lock !== undefined && p < st.lock) return;
       const start = g === 'chuot' ? r.s - r.t0 : 0, v = a.v | 0;
-      const right = g === 'chuot' ? (v === cfg.hole && p >= start) : g === 'khac' ? v === cfg.odd : v === r.ans;
+      const right = g === 'chuot' ? (v === cfg.hole && p >= start) : g === 'khac' ? v === cfg.odd : v === r.ans;   // tinh and dodan: the index of the right option
       if (right) { inp.set(id, { ...st, rt: Math.max(0, Math.round(p - start - lat)) }); this.live(r, { id, k: 'p' }); }
       else { const lk = g === 'chuot' ? T.CHUOT_LOCK : g === 'khac' ? T.KHAC_LOCK : T.TINH_LOCK; inp.set(id, { ...st, lock: p + lk, wrong: (st.wrong || 0) + 1 }); this.live(r, { id, k: 'w', lock: p + lk }); }
     } else if (g === 'hpb') {
@@ -494,7 +504,7 @@ export class Room extends DurableObject {
     if (g === 'nho') return ids.every(id => { const p = r.prog.get(id); return p.bad || p.c >= r.cfg.seq.length; });
     if (g === 'hang') return false;   // ends at its deadline (after the last reveal)
     if (g === 'chuot') return r.sent && ids.every(id => { const s = r.inp.get(id); return s && s.rt !== undefined; });
-    if (g === 'khac' || g === 'tinh') return ids.every(id => { const s = r.inp.get(id); return s && s.rt !== undefined; });
+    if (g === 'khac' || g === 'tinh' || g === 'dodan') return ids.every(id => { const s = r.inp.get(id); return s && s.rt !== undefined; });
     if (g === 'dem' || g === 'chen') return ids.every(id => r.inp.has(id));
     if (g === 'xep') return ids.every(id => r.prog.get(id).fin !== null);
     if (g === 'mau') return ids.every(id => r.prog.get(id).fin);
@@ -550,7 +560,7 @@ export class Room extends DurableObject {
     if (g === 'nho') {
       const l = ids.map(id => { const p = r.prog.get(id); return { id, v: p.c, bad: p.bad, at: p.at }; }); rank(l, (a, b) => (b.v - a.v) || (a.at - b.at)); return l;
     }
-    if (g === 'chuot' || g === 'khac' || g === 'tinh') {
+    if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'dodan') {
       const ok = [], no = [];
       for (const id of ids) { const s = r.inp.get(id); if (s && s.rt !== undefined) ok.push({ id, v: s.rt }); else no.push({ id, v: null, wrong: s ? s.wrong || 0 : 0 }); }
       return [...rank(ok, (a, b) => a.v - b.v), ...no];
@@ -603,7 +613,7 @@ export class Room extends DurableObject {
     if (g === 'mau' || g === 'lat') return first.v > 0 ? rows.filter(x => x.v === first.v && x.at === first.at).map(x => x.id) : [];
     if (g === 'hpb' || g === 'dem') return first.v === null ? [] : rows.filter(x => x.v !== null && eq(x.d, first.d)).map(x => x.id);
     if (g === 'xep') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
-    if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'lantern') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'dodan' || g === 'lantern') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
     return rows.filter(x => x.rank === 1 && x.v !== null && eq(x.v, first.v)).map(x => x.id);   // pomelo, giua, balloon
   }
   finish(r) {
@@ -621,7 +631,7 @@ export class Room extends DurableObject {
     this.noteRound(r);
     r.state = 'result'; r.next = Date.now() + T.RESULT;
     r.result = { rows, winner, winners, share, pot, N, net };
-    this.all({ t: 'result', n: r.n, game: g, rows, winner, winners, share, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : g === 'chen' ? { final: r.final } : g === 'hpb' || g === 'dem' ? r.xtra : undefined });
+    this.all({ t: 'result', n: r.n, game: g, rows, winner, winners, share, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : g === 'chen' ? { final: r.final } : g === 'dodan' ? { a: r.ans } : g === 'hpb' || g === 'dem' ? r.xtra : undefined });
     if (!r.solo) this.record(r, stat, winners, net);
     this.all({ t: 'players', players: this.playerList() });
   }

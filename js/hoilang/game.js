@@ -25,7 +25,7 @@ function startHL() {
   Object.assign(HL, { id: null, players: [], round: null, wait: false, conn: 'connecting', stat: null, board: null, ui: null, idle: true, joined: false, bscroll: 0, drag: null, win: null, fw: [], held: null, tapAcc: 0, paid: 0, okSent: null, flash: null });
   HL.fig.clear(); HL.chat.clear(); HL.emo.clear(); HL.tray = false; HL.pos.clear(); hlChatClose();
   const look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
-  HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk(), cap: 2 }, hlMsg, s => { HL.conn = s; });
+  HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk(), cap: 3 }, hlMsg, s => { HL.conn = s; });
 }
 function hlLeave() { hlChatClose(); HL_NET.close(); showChapters(); }
 const hlOk = () => SAVE4.money >= HL.stake;
@@ -77,7 +77,7 @@ function hlIn(r, e, replay) {
   else if (g === 'minnum') r.picked.add(id);
   else if (g === 'hang') { const s = r.hp.get(e.i) || new Set(); r.hp.set(e.i, s); s.add(id); }
   else if (g === 'nho') r.nho.set(id, { c: e.c, bad: e.bad });
-  else if (g === 'chuot' || g === 'khac' || g === 'tinh') {
+  else if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'dodan') {
     const old = r.inp.get(id) || {};
     if (e.k === 'p') { r.inp.set(id, { ...old, done: true }); if (me) hlMy().done = true; }
     else if (e.k === 'w') { r.inp.set(id, { ...old, wrong: true }); if (me) { hlMy().lock = e.lock; if (!replay) AU.thump(); } }
@@ -538,7 +538,7 @@ function updateHL(dt) {
   const r = HL.round;   // the boat's taps travel a few at a time
   if (r && r.game === 'boat' && r.state === 'run' && HL.tapAcc > 0 && (HL.tapSent += dt) > .3) { HL.tapSent = 0; const c = Math.min(8, HL.tapAcc); HL.tapAcc -= c; hlSend(r, { k: 't', c }); }
 }
-const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
+const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'dodan', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
 
 // how many people are in the room, shown on the chapter card (asked at most every 20 s while the list is up)
 const HLON = { n: null, at: 0, busy: false };

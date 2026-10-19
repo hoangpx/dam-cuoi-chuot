@@ -230,3 +230,28 @@ HL_G.chen = {
   val: (r, row) => row.right ? 'chọn đúng' : 'chọn sai', win: (r, row) => `chọn đúng chén có hạt lúc ${hlTime(row.p)}`,
   mine: (r, row) => row.v === null ? 'Bạn không chọn kịp' : row.right ? `Bạn chọn đúng chén ${row.v + 1} · hạng ${row.rank}/${r.result.rows.length}` : `Bạn chọn sai (hạt ở chén ${r.extra.final + 1})`,
 };
+
+/* ---------- 10. the folk-lore quiz (now and then) ---------- */
+const HL_QCOL = { 'Tranh dân gian': '#a3332a', 'Làng nghề miền Bắc': '#2f6a4c', 'Làng nghề miền Nam': '#3f8a86', 'Chuyện dân gian': '#7b4aa8' };
+HL_G.dodan = {
+  name: 'Đố vui dân gian', rule: 'Một câu hỏi về tranh dân gian, làng nghề hay chuyện cổ tích, 5 đáp án. Chạm đáp án đúng nhanh nhất thắng! Chạm sai bị khóa 2 giây.', ctl: 'choices', ipH: (W, H) => Math.max(300, Math.min(H * .54, 360)),
+  controls: (r, W, H, b) => ({ btns: b, h: 30 }),
+  info(g, r, now, b) {
+    const m = hlMy(), lock = hlLocked(r, now), off = !!m.done || lock, cfg = r.cfg, col = HL_QCOL[cfg.cat] || HL_INK;
+    // the group badge, then the question, then five answers
+    g.font = `700 11px ${hlSans}`; const bw = g.measureText(cfg.cat || '').width + 16; hlPlate(g, b.W / 2 - bw / 2, b.y, bw, 18, col, HL_INK, 8); hlText(g, cfg.cat || '', b.W / 2, b.y + 9, 11, { f: hlSans, w: 700, o: false, c: '#f2ecde' });
+    const qs = hlWrap(g, cfg.q, b.w - 24, 16, 700).slice(0, 3); qs.forEach((l, i) => hlText(g, l, b.W / 2, b.y + 32 + i * 20, 16, { f: hlSans, w: 700, o: false }));
+    const top = b.y + 32 + qs.length * 20 + 6, free = b.y + b.h - 20 - top, th = Math.max(30, Math.min(46, (free - 4 * 6) / 5));
+    cfg.opts.forEach((t, i) => {
+      const y = top + i * (th + 6), x = b.x + 8, w = b.w - 16; HL.btns.push({ id: 'qo' + i, x, y, w, h: th, down: e => { if (!off) hlAct2({ k: 'p', v: i }, e.timeStamp); }, off });
+      g.globalAlpha = off ? .55 : 1; hlPlate(g, x, y, w, th, '#f6e9c6', HL_INK, 9); g.globalAlpha = 1;
+      let fs = 15; g.font = `700 ${fs}px ${hlSans}`; while (fs > 10 && g.measureText(t).width > w - 40) { fs -= .5; g.font = `700 ${fs}px ${hlSans}`; }
+      hlText(g, String.fromCharCode(65 + i), x + 16, y + th / 2, 13, { f: hlSans, w: 800, o: false, c: col });
+      hlText(g, t, x + 30, y + th / 2 + 1, fs, { f: hlSans, w: 700, o: false, a: 'left' });
+    });
+    hlText(g, m.done ? 'Bạn trả lời đúng ✓' : lock ? 'Sai rồi, bị khóa 2 giây…' : 'Chạm đáp án đúng!', b.W / 2, b.y + b.h - 8, 13, { w: 800, c: m.done ? '#2f6a4c' : lock ? '#a3332a' : HL_INK, o: false, f: hlSans });
+  },
+  cell: (g, r, p, C, res, win) => HL_G.chuot.cell(g, r, p, C, res, win),
+  val: (r, row) => hlTime(row.v), win: (r, row) => `đúng sau ${hlTime(row.v)} · đáp án: ${r.cfg.opts[r.extra.a]}`,
+  mine: (r, row) => row.v === null ? `Bạn không trả lời kịp · đáp án: ${r.cfg.opts[r.extra.a]}` : `Bạn hạng ${row.rank}/${r.result.rows.length} · ${hlTime(row.v)}`,
+};
