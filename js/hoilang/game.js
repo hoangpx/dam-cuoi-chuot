@@ -11,7 +11,7 @@ let HL_SAVE = { sort: -1, rounds: 0, wins: 0, earned: 0 };
 try { const s = JSON.parse(localStorage.getItem('dcc.hl') || 'null'); if (s && typeof s.rounds === 'number') HL_SAVE = Object.assign(HL_SAVE, s); } catch (e) {}
 const hlPersist = () => { try { localStorage.setItem('dcc.hl', JSON.stringify(HL_SAVE)); } catch (e) {} };
 
-const HL = { id: null, players: [], round: null, conn: 'connecting', paid: 0, flash: null, press: null, t: 0, hit: [] };
+const HL = { win: null, fw: [], id: null, players: [], round: null, conn: 'connecting', paid: 0, flash: null, press: null, t: 0, hit: [] };
 
 function startHL() {
   trackEnter('chuong-9'); AU.init(); AU.setSong(10); AU.setQuiet(false); hideChapterHuds();
@@ -30,7 +30,7 @@ function hlLeave() { HL_NET.close(); showChapters(); }
 function hlMsg(m) {
   if (m.t === 'welcome') { HL.id = m.id; HL.players = m.players; HL.round = m.round ? hlRound(m.round) : null; }
   else if (m.t === 'players') HL.players = m.players;
-  else if (m.t === 'round') { HL.round = hlRound(m); HL.press = null; HL.flash = null; AU.pluck(84); }
+  else if (m.t === 'round') { HL.round = hlRound(m); HL.press = null; HL.flash = null; HL.win = null; HL.fw = []; AU.pluck(84); }
   else if (m.t === 'press') { const r = HL.round; if (r && r.n === m.n) { r.press.set(m.id, { p: m.p, hit: !!m.hit }); if (m.id !== HL.id) AU.tap(); } }
   else if (m.t === 'result') hlResult(m);
 }
@@ -51,7 +51,46 @@ function hlResult(m) {
     HL.paid = m.n; SAVE4.money += m.prize; try { persist4(); } catch (e) {}
     toast(`Bạn thắng ván này! +${m.prize} đồng vào túi`, 3.2); AU.drumHit(); trackWin();
   } else if (m.winner) AU.plop();
-  HL.hit = [];
+  HL.hit = []; hlWinStart(m, r);
+}
+
+/* ---------- the winner's fireworks (owner, 2026-10-19): bursts over the grid and a banner with the name, the result and the prize ---------- */
+const HL_FW_COL = ['#a3332a', '#f2c640', '#2f6a4c', '#f2ecde', '#d98a7c', '#3f8a86'];
+const HL_FW_SHOW = 5.2;   // seconds the banner stays
+function hlWinStart(m, r) {
+  const win = HL.players.find(p => p.id === m.winner), row = m.rows.find(x => x.id === m.winner);
+  if (!win || !row) { HL.win = null; return; }
+  const ten = r.game === 'ten', mine = m.winner === HL.id;
+  HL.win = { t0: HL.t, name: win.name + (win.bot ? ' (máy)' : ''), mine, bot: win.bot, text: ten ? `bấm lúc ${hlTime(T_TARGET + row.v)}` : `cách đầu ${hlMm(row.v)}`, prize: 10 * m.N, got: m.prize > 0, bursts: mine ? [0, .25, .6, 1, 1.4, 1.9, 2.5, 3.2] : [0, .5, 1.1, 1.8, 2.6], next: 0 };
+  HL.fw = [];
+}
+function hlFireworks(dt) {
+  const w = HL.win; if (!w) return;
+  const e = HL.t - w.t0;
+  while (w.next < w.bursts.length && e >= w.bursts[w.next]) {   // a rocket goes off
+    w.next++; const W = innerWidth, H = innerHeight, x = W * (.15 + Math.random() * .7), y = H * (.18 + Math.random() * .3), col = HL_FW_COL[(Math.random() * HL_FW_COL.length) | 0], col2 = HL_FW_COL[(Math.random() * HL_FW_COL.length) | 0], n = 34;
+    for (let i = 0; i < n; i++) { const a = i / n * 6.283 + Math.random() * .2, sp = 90 + Math.random() * 130; HL.fw.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1 + Math.random() * .7, t: 0, c: i % 3 ? col : col2, r: 3 + Math.random() * 2.4 }); }
+    AU.tap(); if (w.next % 2) AU.pluck(88 + w.next * 2);
+  }
+  for (const p of HL.fw) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; p.vx *= .985; }
+  HL.fw = HL.fw.filter(p => p.t < p.life);
+  if (e > HL_FW_SHOW && !HL.fw.length) HL.win = null;
+}
+function hlWinDraw(g, W, H) {
+  const w = HL.win; if (!w) return;
+  const e = HL.t - w.t0;
+  for (const p of HL.fw) { const a = 1 - p.t / p.life; g.globalAlpha = Math.min(1, a * 1.8); g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, p.r * (.6 + a * .6), 0, 6.283); g.fill(); g.globalAlpha = Math.min(1, a * 1.8) * .8; g.strokeStyle = HL_INK; g.lineWidth = .8; g.stroke(); }
+  g.globalAlpha = 1;
+  if (e > HL_FW_SHOW) return;
+  const fade = Math.min(1, e * 4, (HL_FW_SHOW - e) * 2.5), bw = Math.min(380, W - 28), bh = w.mine ? 150 : 132, bx = (W - bw) / 2, by = H * .31 - bh / 2 + (1 - fade) * 20;
+  g.globalAlpha = fade; hlPlate(g, bx, by, bw, bh, w.mine ? '#f6e3a0' : '#f2ecde', w.mine ? '#a3332a' : HL_INK, 16);
+  g.strokeStyle = w.mine ? '#b57a22' : HL_INK; g.lineWidth = 1.2; g.strokeRect(bx + 7, by + 7, bw - 14, bh - 14);
+  const sub = { f: "'Be Vietnam Pro', system-ui, sans-serif", w: 700, o: false };
+  hlText(g, w.mine ? 'BẠN THẮNG!' : 'NGƯỜI THẮNG', W / 2, by + 24, 13, { ...sub, c: '#a3332a' });
+  hlText(g, w.name, W / 2, by + 56, Math.min(34, bw / Math.max(5, w.name.length) * 1.5), { w: 900, o: false });
+  hlText(g, w.text, W / 2, by + 88, 17, { ...sub, c: HL_INK });
+  hlText(g, w.got ? `+${w.prize} đồng` : `Thưởng ${w.prize} đồng, người máy giữ`, W / 2, by + bh - 24, w.got ? 26 : 14, { w: 900, o: false, c: w.got ? '#2f6a4c' : HL_INK });
+  g.globalAlpha = 1;
 }
 
 /* ---------- input ---------- */
@@ -112,7 +151,7 @@ function renderHL() {
   hlInfo(g, r, now, W, top, ipH, mine);
   const gy = top + ipH + 6, gh = H - gy - footH - 6, list = hlOrder(r), G = hlGrid(Math.max(1, list.length), 6, gy, W - 12, gh);
   list.forEach((p, i) => hlCell(g, r, p, i, G, now, t));
-  hlFoot(g, r, now, W, H, mine);
+  hlFoot(g, r, now, W, H, mine); hlWinDraw(g, W, H);
 }
 const c4MoneyPlain = d => String(c4Money(d)).replace(/<[^>]+>/g, '');
 // everyone, those seated in this round first (in the room's order), the others waiting for the next
@@ -202,7 +241,7 @@ function hlFoot(g, r, now, W, H, mine) {
     hlText(g, can ? (r.game === 'ten' ? 'BẤM!' : 'DỪNG!') : 'Đã bấm ✓', W / 2, y + 27, 26, { w: 900, c: can ? '#f2ecde' : HL_INK, os: can ? '#5a1a14' : 'rgba(242,236,222,.7)' });
   } else hlText(g, 'Space / chạm màn hình để bấm', W / 2, H - 22, 12, { f: "'Be Vietnam Pro', system-ui, sans-serif", w: 600, o: false, al: .6 });
 }
-function updateHL(dt) { HL.t += dt; hlSync(HL.round); }
+function updateHL(dt) { HL.t += dt; hlSync(HL.round); hlFireworks(dt); }
 
 registerChapter({
   id: 9, modes: ['hlplay'],
