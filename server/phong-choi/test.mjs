@@ -11,7 +11,7 @@ function mk(i) {
   const act = (r, o) => send({ t: 'act', n: r.n, at: srv(), ...o });
   c.ws.onopen = () => {
     send({ t: 'hello', dev: (process.env.DEVPFX || 'testdev') + String(i).padStart(3, '0') + 'abcdefgh', name: c.name, look: { role: i % 2 ? 'vo' : 'chong', fur: 'brown', robe: 'red' }, ok: true });
-    for (let k = 0; k < 5; k++) setTimeout(() => send({ t: 'sync', c: performance.now() }), k * 200);
+    send({ t: 'join' }); for (let k = 0; k < 5; k++) setTimeout(() => send({ t: 'sync', c: performance.now() }), k * 200);
   };
   c.ws.onerror = e => errs.push('ws error ' + i);
   c.ws.onmessage = e => {

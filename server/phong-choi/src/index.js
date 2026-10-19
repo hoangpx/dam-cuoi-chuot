@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v7'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v8'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -75,17 +75,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v7')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v8')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v7')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v8')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v7')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v8')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -108,7 +108,7 @@ export class Room extends DurableObject {
     }
     const pair = new WebSocketPair(), [client, server] = Object.values(pair);
     server.accept();
-    const c = { ws: server, id: 'p' + (this.nextId++), dev: '', name: '', look: null, joined: false, ok: false, idle: false, miss: 0, rtt: 150, seen: Date.now(), win: 0, cnt: 0 };
+    const c = { ws: server, id: 'p' + (this.nextId++), dev: '', name: '', look: null, joined: false, ok: false, idle: true, miss: 0, rtt: 150, seen: Date.now(), win: 0, cnt: 0 };
     this.conns.set(c.id, c);
     server.addEventListener('message', e => this.onMsg(c, e.data));
     server.addEventListener('close', () => this.onClose(c));
@@ -139,6 +139,7 @@ export class Room extends DurableObject {
     else if (m.t === 'pong') { const r = Date.now() - (+m.s || 0); if (r >= 0 && r < 5000) c.rtt = c.rtt * .6 + r * .4; }
     else if (!c.joined) return;
     else if (m.t === 'bal') { const ok = !!m.ok; if (ok !== c.ok) { c.ok = ok; this.all({ t: 'players', players: this.playerList() }); } }
+    else if (m.t === 'rest') { if (!c.idle) { c.idle = true; this.all({ t: 'players', players: this.playerList() }); } }   // "Tạm nghỉ": only watch
     else if (m.t === 'join') { if (c.idle) { c.idle = false; c.miss = 0; this.all({ t: 'players', players: this.playerList() }); } }
     else if (m.t === 'act') this.onAct(c, m);
     else if (m.t === 'board') this.sendBoard(c, m.per);
@@ -206,7 +207,7 @@ export class Room extends DurableObject {
       cur = this.tops[per] = { rows, at: now };
     }
     const top = cur.rows, me = top.findIndex(x => x.dev === c.dev);
-    this.send(c, { t: 'board', per, total: top.length, top: top.slice(0, 30).map(x => ({ n: x.n, r: x.r, w: x.w, won: x.won, lost: x.lost, net: x.net, me: x.dev === c.dev })), me: me >= 0 ? { pos: me + 1, ...top[me], dev: undefined } : null });
+    this.send(c, { t: 'board', per, total: top.length, top: top.slice(0, 100).map(x => ({ n: x.n, r: x.r, w: x.w, won: x.won, lost: x.lost, net: x.net, me: x.dev === c.dev })), me: me >= 0 ? { pos: me + 1, ...top[me], dev: undefined } : null });
   }
 
   /* ---- the schedule ---- */

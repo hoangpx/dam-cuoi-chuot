@@ -22,7 +22,7 @@ function startHL() {
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
   PAPER = getPaper('sage'); document.documentElement.style.setProperty('--paper', PAPERS.sage.css);
   const me = hsMine();
-  Object.assign(HL, { id: null, players: [], round: null, wait: false, conn: 'connecting', stat: null, board: null, ui: null, idle: false, win: null, fw: [], held: null, tapAcc: 0, paid: 0, okSent: null, flash: null });
+  Object.assign(HL, { id: null, players: [], round: null, wait: false, conn: 'connecting', stat: null, board: null, ui: null, idle: true, joined: false, bscroll: 0, drag: null, win: null, fw: [], held: null, tapAcc: 0, paid: 0, okSent: null, flash: null });
   HL.fig.clear();
   const look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
   HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk() }, hlMsg, s => { HL.conn = s; });
@@ -35,7 +35,7 @@ setInterval(() => { if (S.mode === 'hlplay' && HL_NET.up) { const ok = hlOk(); i
 /* ---------- messages from the room ---------- */
 function hlMsg(m) {
   const r = HL.round;
-  if (m.t === 'welcome') { HL.id = m.id; HL.stake = m.stake || 10; HL.players = m.players; HL.stat = m.stat; HL.okSent = hlOk(); HL.round = m.round ? hlRound(m.round) : null; hlMeFlags(); }
+  if (m.t === 'welcome') { HL.id = m.id; HL.stake = m.stake || 10; HL.players = m.players; HL.stat = m.stat; HL.okSent = hlOk(); HL.round = m.round ? hlRound(m.round) : null; hlMeFlags(); if (HL.joined) HL_NET.send({ t: 'join' }); }
   else if (m.t === 'players') { HL.players = m.players; hlMeFlags(); }
   else if (m.t === 'round') {
     if (m.wait) { HL.wait = true; HL.round = null; }
@@ -104,7 +104,7 @@ function hlSync(r) {
   return r;
 }
 const hlSeatedMe = r => !!(r && HL.id && r.seated.has(HL.id));
-const hlCanAct = r => !!(r && hlSeatedMe(r) && r.state === 'run' && HL_NET.now() >= r.t0 && !HL.idle);
+const hlCanAct = r => !!(r && hlSeatedMe(r) && r.state === 'run' && HL_NET.now() >= r.t0);
 const hlEnd = r => r.state === 'result' ? 1e9 : Math.max(0, HL_NET.now() - r.t0);
 
 /* ---------- actions ---------- */
@@ -146,10 +146,13 @@ function hlDown(e) {
   const rc = cv.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top, b0 = hlBack();
   if (x > b0.x && x < b0.x + b0.w && y > b0.y && y < b0.y + b0.h) { if (HL.ui) HL.ui = null; else hlLeave(); return; }
   for (const b of HL.btns) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h && !b.off) { if (b.down) b.down(e); if (b.up) HL.held = b; return; }
+  if (HL.ui === 'board' && HL.tab === 'top' && HL.barea && x >= HL.barea.x && x <= HL.barea.x + HL.barea.w && y >= HL.barea.y && y <= HL.barea.y + HL.barea.h) { HL.drag = { y, s: HL.bscroll }; return; }   // a drag over the list scrolls it
   if (HL.ui) { HL.ui = null; return; }
   const r = HL.round; if (r && r.game && HL_G[r.game].ctl === 'press') hlPressAct(e.timeStamp);
 }
-function hlUp() { const b = HL.held; HL.held = null; if (b && b.up) b.up(); }
+function hlMove(e) { if (!HL.drag) return; const rc = cv.getBoundingClientRect(); HL.bscroll = HL.drag.s - ((e.clientY - rc.top) - HL.drag.y); }
+cv.addEventListener('wheel', e => { if (S.mode !== 'hlplay' || HL.ui !== 'board') return; e.preventDefault(); HL.bscroll += e.deltaY; }, { passive: false });
+function hlUp() { HL.drag = null; const b = HL.held; HL.held = null; if (b && b.up) b.up(); }
 function hlKey(e) {
   if (S.mode !== 'hlplay') return;
   if (e.code === 'Escape') { if (HL.ui) HL.ui = null; else hlLeave(); return; }
@@ -212,8 +215,9 @@ function renderHL() {
 function hlHeader(g, W, st) {
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
   hlText(g, 'Hội Làng', 46, 22 + st, 21, { w: 900, a: 'left' });
-  hlText(g, HL.round && HL.round.solo ? 'Chơi thử một mình · không cược' : `${HL.players.filter(p => !p.bot).length} người · cược ${HL.stake} đ`, 46, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75, a: 'left' });
+  hlText(g, HL.round && HL.round.solo ? 'Chơi thử · không cược' : `${HL.players.filter(p => !p.bot).length} người · cược ${HL.stake} đ`, 46, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75, a: 'left' });
   hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 13, { a: 'right', f: hlSans, w: 700 });
+  if (!HL.idle && HL.conn === 'up') { HL.btns.push({ id: 'rest', x: W - 186, y: 36 + st, w: 86, h: 22, down: () => { HL.idle = true; HL_NET.send({ t: 'rest' }); } }); hlPlate(g, W - 186, 38 + st, 82, 18, '#e6dec9', HL_INK, 6); hlText(g, 'Tạm nghỉ', W - 145, 47 + st, 11.5, { a: 'center', f: hlSans, w: 700, o: false }); }
   HL.btns.push({ id: 'board', x: W - 92, y: 36 + st, w: 84, h: 22, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
   hlText(g, 'Xếp hạng ›', W - 12, 47 + st, 12, { a: 'right', f: hlSans, w: 700, o: false, c: '#a3332a' });
 }
@@ -239,7 +243,7 @@ function hlInfo(g, r, gm, now, W, y, h, mine) {
     hlText(g, `Ván tiếp theo sau ${s} giây`, W / 2, y + h - 9, 12, sub);
   }
 }
-function hlWhyNot() { const me = HL.players.find(p => p.id === HL.id); return !hlOk() ? 'Bạn hết tiền cược, về buôn bán nhé' : HL.idle ? 'Bạn đang nghỉ, bấm "Chơi tiếp"' : me && me.seat ? '' : 'Bạn đang xem, ván sau sẽ có chỗ cho bạn'; }
+function hlWhyNot() { const me = HL.players.find(p => p.id === HL.id); return !hlOk() ? 'Bạn hết tiền cược, về buôn bán nhé' : HL.idle ? (HL.joined ? 'Bạn đang nghỉ, bấm "Chơi tiếp"' : 'Bạn đang ngồi xem, bấm "Tham gia chơi" để vào ván sau') : me && me.seat ? '' : 'Bạn đang xem, ván sau sẽ có chỗ cho bạn'; }
 
 function hlCell(g, r, gm, p, i, G, now, t) {
   const col = i % G.c, row = (i / G.c) | 0, x = G.x + col * G.cw, y = G.y + row * G.ch, w = G.cw, h = G.ch, cx = x + w / 2;
@@ -257,14 +261,14 @@ function hlCell(g, r, gm, p, i, G, now, t) {
   g.globalAlpha = seated ? 1 : .6;
   { const label = p.name + (p.bot ? ' (máy)' : ''); let ns = nameH; g.font = `700 ${ns}px ${hlSans}`; while (ns > 8 && g.measureText(label).width > w - 8) { ns -= .5; g.font = `700 ${ns}px ${hlSans}`; }   // a long name shrinks to fit its cell
     hlText(g, label, cx, y + h - nameH * .9, ns, { w: me ? 900 : 700, f: hlSans }); }
-  if (!seated) { const msg = !p.ok ? 'hết tiền' : p.idle ? 'đang nghỉ' : 'chờ ván sau'; let fs = 11; g.font = `600 ${fs}px ${hlSans}`; while (fs > 7 && g.measureText(msg).width > w - 10) { fs -= .5; g.font = `600 ${fs}px ${hlSans}`; } hlText(g, msg, cx, y + 13, fs, { w: 600, f: hlSans, al: .9 }); }
+  if (!seated) { const msg = !p.ok ? 'hết tiền' : p.idle ? 'đang xem' : 'chờ ván sau'; let fs = 11; g.font = `600 ${fs}px ${hlSans}`; while (fs > 7 && g.measureText(msg).width > w - 10) { fs -= .5; g.font = `600 ${fs}px ${hlSans}`; } hlText(g, msg, cx, y + 13, fs, { w: 600, f: hlSans, al: .9 }); }
   g.restore(); g.globalAlpha = 1;
 }
 // the controls under the grid: a list of buttons and the height they take
 function hlControls(r, W, H, seated) {
   const btns = [], gm = HL_G[r.game];
   if (!hlOk() && !seated) { btns.push({ id: 'trade', label: 'Về chợ buôn bán', x: (W - 240) / 2, y: H - 54, w: 240, h: 44, fill: '#a3332a', ink: '#f2ecde', down: hlLeave }); return { btns, h: 62 }; }
-  if (HL.idle) { btns.push({ id: 'again', label: 'Chơi tiếp', x: (W - 240) / 2, y: H - 54, w: 240, h: 44, fill: '#2f6a4c', ink: '#f2ecde', down: () => { HL.idle = false; HL_NET.send({ t: 'join' }); } }); return { btns, h: 62 }; }
+  if (HL.idle) { btns.push({ id: 'again', label: HL.joined ? 'Chơi tiếp' : 'Tham gia chơi', sub: HL.joined ? '' : 'không bấm thì chỉ ngồi xem', x: (W - 240) / 2, y: H - 58, w: 240, h: 48, fill: '#2f6a4c', ink: '#f2ecde', down: () => { HL.idle = false; HL.joined = true; HL_NET.send({ t: 'join' }); } }); return { btns, h: 62 }; }
   if (!seated || r.state !== 'run') return { btns, h: 30, note: seated && r.state === 'announce' ? 'Chuẩn bị…' : '' };
   return gm.controls(r, W, H, btns);
 }
@@ -337,9 +341,13 @@ function hlOverlay(g, W, H) {
     pers.forEach(([k, l], i) => { const px = x + 12 + i * pw; hlPlate(g, px, y + 46, pw - 4, 24, HL.per === k ? '#2f6a4c' : '#e6dec9', HL_INK, 7); hlText(g, l, px + pw / 2 - 2, y + 59, 12, { f: hlSans, w: 800, c: HL.per === k ? '#f2ecde' : HL_INK, o: false }); HL.btns.push({ id: 'per' + k, x: px, y: y + 46, w: pw - 4, h: 24, down: () => { HL.per = k; HL_NET.send({ t: 'board', per: k }); } }); });
     const b = HL.board && HL.board.per === HL.per ? HL.board : null; if (!b) { hlText(g, 'Đang tải…', W / 2, y + 110, 14, sub); return; }
     const hy = y + 90; hlText(g, 'Hạng', x + 14, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Tên', x + 52, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Ván', x + w - 170, hy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Thắng', x + w - 118, hy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Lời ròng', x + w - 14, hy, 11, { ...sub, a: 'right', w: 800 });
-    const maxRows = Math.max(3, Math.floor((h - 90 - 40 - rowH) / rowH));
-    b.top.slice(0, maxRows).forEach((u, i) => { const ry = hy + 20 + i * rowH; if (u.me) { g.fillStyle = 'rgba(242,198,64,.5)'; g.fillRect(x + 6, ry - 11, w - 12, rowH - 2); } hlBoardRow(g, x, w, ry, i + 1, u, sub); });
-    if (b.me && !b.top.slice(0, maxRows).some(u => u.me)) { const ry = hy + 20 + maxRows * rowH + 6; g.fillStyle = 'rgba(242,198,64,.5)'; g.fillRect(x + 6, ry - 11, w - 12, rowH - 2); hlBoardRow(g, x, w, ry, b.me.pos || '–', { n: 'Bạn', r: b.me.r, w: b.me.w, net: b.me.net }, sub); }
+    const ly0 = hy + 12, ly1 = y + h - 58, maxScroll = Math.max(0, b.top.length * rowH - (ly1 - ly0)); HL.bscroll = Math.max(0, Math.min(maxScroll, HL.bscroll)); HL.bmax = maxScroll; HL.barea = { x, y: ly0, w, h: ly1 - ly0 };
+    g.save(); g.beginPath(); g.rect(x + 2, ly0, w - 4, ly1 - ly0); g.clip();
+    b.top.forEach((u, i) => { const ry = hy + 20 + i * rowH - HL.bscroll; if (ry < ly0 - 4 || ry > ly1 + 14) return; if (u.me) { g.fillStyle = 'rgba(242,198,64,.5)'; g.fillRect(x + 6, ry - 11, w - 12, rowH - 2); } hlBoardRow(g, x, w, ry, i + 1, u, sub); });
+    g.restore();
+    if (maxScroll > 0) { const th = Math.max(24, (ly1 - ly0) * (ly1 - ly0) / (b.top.length * rowH)), ty = ly0 + (ly1 - ly0 - th) * HL.bscroll / maxScroll; g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(x + w - 6, ty, 3, th); }
+    const mi = b.top.findIndex(u => u.me), myRow = mi >= 0 ? hy + 20 + mi * rowH - HL.bscroll : null, hidden = mi >= 0 ? (myRow < ly0 || myRow > ly1) : !!b.me;
+    if (hidden && b.me) { const ry = ly1 + 14; g.fillStyle = 'rgba(242,198,64,.5)'; g.fillRect(x + 6, ry - 11, w - 12, rowH - 2); hlBoardRow(g, x, w, ry, b.me.pos || '–', { n: 'Bạn', r: b.me.r, w: b.me.w, net: b.me.net }, sub); }
     hlText(g, `${b.total} người ${b.per === 'a' ? 'đã chơi' : b.per === 'd' ? 'chơi hôm nay' : b.per === 'w' ? 'chơi tuần này' : 'chơi tháng này'} · xếp theo lời ròng (ăn − mất)`, W / 2, y + h - 48, 11, { ...sub, al: .7 });
   } else {
     const s = HL.stat; if (!s) { hlText(g, 'Chưa có số liệu', W / 2, y + 90, 14, sub); return; }
@@ -381,6 +389,6 @@ registerChapter({
   album() {},
   hide() { if (HL_NET.wantOn) HL_NET.close(); },
   update: updateHL, render: renderHL, key: hlKey,
-  pointer: { down: hlDown, move() {}, up() {} },
+  pointer: { down: hlDown, move: hlMove, up: hlUp },
   next() { showChapters(); }, retry() { startHL(); },
 });
