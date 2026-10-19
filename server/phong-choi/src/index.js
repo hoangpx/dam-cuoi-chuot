@@ -30,6 +30,7 @@ const BOT_NAMES = ['Tí', 'Tèo', 'Mít', 'Bơ', 'Nhím', 'Sóc', 'Cốm', 'Bố
 const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho'];
 const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua', 'beo', 'gay', 'cao'], fur: 16, robe: 16, skirt: 16, pants: 16, top: 16 };   // looks are only forwarded, the browser cleans them again
 
+const TESTDEV = /^(testdev|boardreader|dbgdev)/;   // devices used by test.mjs: never written to the board
 const T = {
   MINP: 6, MAXP: 30, STAKE: 10,
   ANNOUNCE: 4000, RESULT: 9000, FIRST: 3000, WAIT: 2500,
@@ -153,7 +154,8 @@ export class Room extends DurableObject {
     const now = Date.now();
     if (!this.top || now - this.topAt > 30000) {
       const all = await this.ctx.storage.list({ prefix: 'u:', limit: 3000 }), rows = [];
-      for (const [k, v] of all) if (v.r > 0) rows.push({ dev: k.slice(2), n: v.n, r: v.r, w: v.w, won: v.won, lost: v.lost, net: v.won - v.lost });
+      const junk = []; for (const [k, v] of all) { if (TESTDEV.test(k.slice(2))) { junk.push(k); continue; } if (v.r > 0) rows.push({ dev: k.slice(2), n: v.n, r: v.r, w: v.w, won: v.won, lost: v.lost, net: v.won - v.lost }); }
+      if (junk.length) try { await this.ctx.storage.delete(junk); } catch (e) {}   // the test clients (test.mjs) are not players
       rows.sort((a, b) => b.net - a.net || b.w - a.w || a.dev.localeCompare(b.dev));
       this.top = rows; this.topAt = now;
     }
@@ -183,7 +185,9 @@ export class Room extends DurableObject {
     const hs = this.eligible(); if (!this.humans().length) { this.stop(); return; }
     if (!hs.length) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
     let game; do { game = pick(GAMES); } while (this.recent.includes(game)); this.recent.push(game); if (this.recent.length > 3) this.recent.shift();
-    const seated = new Map(); for (const c of hs.slice(0, T.MAXP)) seated.set(c.id, c);
+    // more people than seats: those who sat out the most recent rounds go first
+    const order = hs.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
+    const seated = new Map(); for (const c of order.slice(0, T.MAXP)) { seated.set(c.id, c); c.last = this.n + 1; }
     const bots = new Map(); for (let i = seated.size, k = 0; i < T.MINP; i++, k++) { const id = 'b' + (k + 1); bots.set(id, { id, name: BOT_NAMES[(this.n * 3 + k * 7) % BOT_NAMES.length], sort: (this.n + k * 7) % 27, skill: rnd(0, 1) }); }
     const r = { n: ++this.n, game, announce: at, t0: at + T.ANNOUNCE, state: 'announce', seated, bots, cfg: {}, live: [], plan: [], inp: new Map(), ev: new Map(), sub: 0 };
     this.setup(r);
@@ -424,6 +428,7 @@ export class Room extends DurableObject {
       if (winner) { if (c.id === winner) { s.w++; gg[1]++; s.won += net[c.id]; gg[2] += net[c.id]; } else { s.lost += T.STAKE; gg[3] += T.STAKE; } }
       keys['u:' + c.dev] = s; this.send(c, { t: 'stat', stat: this.pubStat(s) });
     }
+    for (const k of Object.keys(keys)) if (TESTDEV.test(k.slice(2))) delete keys[k];
     try { if (Object.keys(keys).length) await this.ctx.storage.put(keys); } catch (e) {}
     this.top = null;
   }
