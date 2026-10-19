@@ -87,7 +87,8 @@ function hlPomelo(g, r, p, C) {
   const hit = fr >= 1 && (!pr || pr.hit);
   if (hit) for (let i = 0; i < 3; i++) { const a = C.t * 6 + i * 2.1; hlText(g, '★', C.cx + Math.cos(a) * rad * 1.4, C.headTop - rad * 1.1 + Math.sin(a) * rad * .5, 12, { c: '#d98a2a', o: false }); }
   else if (pr && pr.p !== undefined && r.state === 'run') hlText(g, 'dừng!', C.cx + rad * 1.5, py, 11, { w: 800, c: '#2f6a4c' });
-  if (pr && pr.p !== undefined) { const gp = hit ? null : 1 - fr; hlText(g, gp === null ? 'trúng đầu!' : hlMm(gp), C.cx, C.y + C.h - C.nameH * 3.1, Math.max(10, Math.min(15, C.w * .12)), { w: 800, c: gp === null ? '#a3332a' : '#2f6a4c' }); }
+  if (pr && pr.p !== undefined) { const gp = hit ? null : 1 - fr; const msg = gp === null ? 'trúng đầu!' : hlMm(gp), fs = Math.max(9, Math.min(14, C.w * .105)), ty = C.y + C.h - C.nameH * 2.9; g.font = `800 ${fs}px ${hlSans}`; const tw = g.measureText(msg).width + 6; g.fillStyle = 'rgba(242,236,222,.92)'; g.fillRect(C.cx - tw / 2, ty - fs * .7, tw, fs * 1.4);   // a paper chip so the number reads over the figure
+    hlText(g, msg, C.cx, ty, fs, { w: 800, f: hlSans, o: false, c: gp === null ? '#a3332a' : '#2f6a4c' }); }
 }
 function hlPomGap(r, id) { const pr = r.inp.get(id), tf = r.cfg.tf[id]; if (!pr || pr.p === undefined || pr.hit || !tf) return null; const f = pr.p / tf; return f >= 1 ? null : 1 - f * f; }
 HL_G.pomelo = {
@@ -276,7 +277,7 @@ HL_G.nho = {
     hlText(g, showing ? `Nhớ thứ tự… (${r.cfg.seq.length} trống)` : p && p.bad ? `Bạn sai ở trống thứ ${c + 1}` : `Bấm lại! Bạn đúng ${c}/${r.cfg.seq.length}`, b.W / 2, b.y + b.h - 10, 13, hlSub);
   },
   cell(g, r, p, C, res, win) {
-    const n = r.cfg.seq.length, st = r.nho.get(p.id), c = st ? st.c : 0, rad = Math.max(2.5, Math.min(5, C.w / (n * 2.6))), x0 = C.cx - (n - 1) * rad * 1.3;
+    const n = r.cfg.seq.length, st = r.nho.get(p.id), c = st ? st.c : 0, rad = Math.max(1.8, Math.min(5, (C.w - 14) / (n * 2.6))), x0 = C.cx - (n - 1) * rad * 1.3;
     for (let i = 0; i < n; i++) { g.beginPath(); g.arc(x0 + i * rad * 2.6, C.y + C.h * .2, rad, 0, 6.283); g.fillStyle = i < c ? '#2f6a4c' : (st && st.bad && i === c ? '#a3332a' : 'rgba(29,25,21,.12)'); g.fill(); g.lineWidth = 1; g.strokeStyle = HL_INK; g.stroke(); }
     if (res) hlResText(g, C, `đúng ${res.v}/${n}`, win);
   },

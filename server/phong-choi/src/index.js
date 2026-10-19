@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v5'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v7'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -75,11 +75,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v5')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v7')).fetch(req);
+    }
+    if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
+      const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
+      if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
+      const r = await env.ROOM.get(env.ROOM.idFromName('v7')).fetch(new Request(req.url.replace('/online', '/count')));
+      return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v5')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v7')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -94,6 +100,7 @@ export class Room extends DurableObject {
   }
 
   async fetch(req) {
+    if (req && new URL(req.url).pathname === '/count') return new Response(JSON.stringify({ n: this.humans().filter(c => !TESTDEV.test(c.dev)).length }));
     if (req && new URL(req.url).pathname === '/days') {
       const all = await this.ctx.storage.list({ prefix: 'd:', reverse: true, limit: 90 }), out = [];
       for (const [k, v] of all) out.push({ day: k.slice(2), players: v.players, peak: v.peak, peakAt: v.peakAt, rounds: v.rounds, maxSeat: v.maxSeat });
@@ -231,7 +238,7 @@ export class Room extends DurableObject {
     // more people than seats: those who sat out the most recent rounds go first
     const order = hs.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
     const seated = new Map(); for (const c of order.slice(0, T.MAXP)) { seated.set(c.id, c); c.last = this.n + 1; }
-    const bots = new Map(); for (let i = seated.size, k = 0; i < T.MINP; i++, k++) { const id = 'b' + (k + 1); bots.set(id, { id, name: BOT_NAMES[(this.n * 3 + k * 7) % BOT_NAMES.length], sort: (this.n + k * 7) % 27, skill: rnd(0, 1) }); }
+    const bots = new Map();   // no bots any more: a lone player just practises { const id = 'b' + (k + 1); bots.set(id, { id, name: BOT_NAMES[(this.n * 3 + k * 7) % BOT_NAMES.length], sort: (this.n + k * 7) % 27, skill: rnd(0, 1) }); }
     const r = { solo, n: ++this.n, game, announce: at, t0: at + T.ANNOUNCE, state: 'announce', seated, bots, cfg: {}, live: [], plan: [], inp: new Map(), ev: new Map(), sub: 0 };
     this.setup(r);
     this.round = r;

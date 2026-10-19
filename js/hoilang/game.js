@@ -211,9 +211,9 @@ function renderHL() {
 }
 function hlHeader(g, W, st) {
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
-  hlText(g, 'Hội Làng', W / 2, 22 + st, 22, { w: 900 });
-  hlText(g, HL.round && HL.round.solo ? 'Chơi một mình · tập chơi, không cược, không tính xếp hạng' : `${HL.players.filter(p => !p.bot).length} người trong phòng · cược ${HL.stake} đ`, W / 2, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75 });
-  hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 14, { a: 'right', f: hlSans, w: 700 });
+  hlText(g, 'Hội Làng', 46, 22 + st, 21, { w: 900, a: 'left' });
+  hlText(g, HL.round && HL.round.solo ? 'Chơi thử một mình · không cược' : `${HL.players.filter(p => !p.bot).length} người · cược ${HL.stake} đ`, 46, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75, a: 'left' });
+  hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 13, { a: 'right', f: hlSans, w: 700 });
   HL.btns.push({ id: 'board', x: W - 92, y: 36 + st, w: 84, h: 22, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
   hlText(g, 'Xếp hạng ›', W - 12, 47 + st, 12, { a: 'right', f: hlSans, w: 700, o: false, c: '#a3332a' });
 }
@@ -230,13 +230,13 @@ function hlInfo(g, r, gm, now, W, y, h, mine) {
   } else if (r.state === 'run') gm.info(g, r, now, { x, y: y + 28, w, h: h - 28, W }, mine);
   else {
     const res = r.result, win = res.winner && HL.players.find(p => p.id === res.winner), wr = win && res.rows.find(x => x.id === res.winner), s = Math.max(0, Math.ceil((r.next - now) / 1000));
-    hlText(g, win ? `${win.name}${win.bot ? ' (máy)' : ''} thắng!` : 'Không ai thắng, không ai mất tiền', W / 2, y + 44, win ? 22 : 15, { w: 900, c: '#a3332a' });
+    hlText(g, win ? `${win.name}${win.bot ? ' (máy)' : ''} thắng!` : r.solo ? 'Chơi thử xong rồi!' : 'Không ai thắng, không ai mất tiền', W / 2, y + 44, win ? 22 : 15, { w: 900, c: '#a3332a' });
     if (win && wr) hlText(g, gm.win(r, wr), W / 2, y + 64, 13, sub);
     const row = res.rows.find(x => x.id === HL.id), net = res.net ? res.net[HL.id] : undefined;
-    hlText(g, row ? (gm.mine ? gm.mine(r, row) : `Bạn hạng ${row.rank || '–'}/${res.rows.length}`) : 'Bạn đang xem', W / 2, y + 84, 13, sub);
+    if (row) hlText(g, gm.mine ? gm.mine(r, row) : `Bạn hạng ${row.rank || '–'}/${res.rows.length}`, W / 2, y + 84, 13, sub);
     if (net !== undefined) hlText(g, net > 0 ? `Bạn ăn hũ: +${net} đồng` : net < 0 ? `Bạn mất ${-net} đồng` : '', W / 2, y + h - 28, 17, { w: 900, c: net > 0 ? '#2f6a4c' : '#a3332a' });
     else hlText(g, hlWhyNot(), W / 2, y + h - 28, 12, sub);
-    hlText(g, `Ván sau sau ${s} giây`, W / 2, y + h - 9, 12, sub);
+    hlText(g, `Ván tiếp theo sau ${s} giây`, W / 2, y + h - 9, 12, sub);
   }
 }
 function hlWhyNot() { const me = HL.players.find(p => p.id === HL.id); return !hlOk() ? 'Bạn hết tiền cược, về buôn bán nhé' : HL.idle ? 'Bạn đang nghỉ, bấm "Chơi tiếp"' : me && me.seat ? '' : 'Bạn đang xem, ván sau sẽ có chỗ cho bạn'; }
@@ -257,7 +257,7 @@ function hlCell(g, r, gm, p, i, G, now, t) {
   g.globalAlpha = seated ? 1 : .6;
   { const label = p.name + (p.bot ? ' (máy)' : ''); let ns = nameH; g.font = `700 ${ns}px ${hlSans}`; while (ns > 8 && g.measureText(label).width > w - 8) { ns -= .5; g.font = `700 ${ns}px ${hlSans}`; }   // a long name shrinks to fit its cell
     hlText(g, label, cx, y + h - nameH * .9, ns, { w: me ? 900 : 700, f: hlSans }); }
-  if (!seated) hlText(g, !p.ok ? 'hết tiền' : p.idle ? 'đang nghỉ' : 'chờ ván sau', cx, y + h * .3, 11, { w: 600, f: hlSans, al: .9 });
+  if (!seated) { const msg = !p.ok ? 'hết tiền' : p.idle ? 'đang nghỉ' : 'chờ ván sau'; let fs = 11; g.font = `600 ${fs}px ${hlSans}`; while (fs > 7 && g.measureText(msg).width > w - 10) { fs -= .5; g.font = `600 ${fs}px ${hlSans}`; } hlText(g, msg, cx, y + 13, fs, { w: 600, f: hlSans, al: .9 }); }
   g.restore(); g.globalAlpha = 1;
 }
 // the controls under the grid: a list of buttons and the height they take
@@ -308,19 +308,20 @@ function hlWinDraw(g, W, H) {
   for (const p of HL.fw) { const a = 1 - p.t / p.life; g.globalAlpha = Math.min(1, a * 1.8); g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, p.r * (.6 + a * .6), 0, 6.283); g.fill(); g.globalAlpha = Math.min(1, a * 1.8) * .8; g.strokeStyle = HL_INK; g.lineWidth = .8; g.stroke(); }
   g.globalAlpha = 1;
   if (e > HL_FW_SHOW) return;
-  const fade = Math.min(1, e * 4, (HL_FW_SHOW - e) * 2.5), bw = Math.min(380, W - 28), bh = w.mine ? 150 : 132, bx = (W - bw) / 2, by = H * .31 - bh / 2 + (1 - fade) * 20;
+  const fade = Math.min(1, e * 4, (HL_FW_SHOW - e) * 2.5), bw = Math.min(380, W - 28), bh = w.mine ? 150 : 132, bx = (W - bw) / 2, by = 62 + safeTop() + Math.max(96, Math.min(150, H * .19)) + 8 + (1 - fade) * 20;   // just under the info panel, over the grid
   g.globalAlpha = fade; hlPlate(g, bx, by, bw, bh, w.mine ? '#f6e3a0' : '#f2ecde', w.mine ? '#a3332a' : HL_INK, 16);
   g.strokeStyle = w.mine ? '#b57a22' : HL_INK; g.lineWidth = 1.2; g.strokeRect(bx + 7, by + 7, bw - 14, bh - 14);
   const sub = { f: hlSans, w: 700, o: false };
   hlText(g, w.mine ? 'BẠN THẮNG!' : 'NGƯỜI THẮNG', W / 2, by + 24, 13, { ...sub, c: '#a3332a' });
   hlText(g, w.name, W / 2, by + 56, Math.min(34, bw / Math.max(5, w.name.length) * 1.5), { w: 900, o: false });
-  hlText(g, w.text, W / 2, by + 88, 17, { ...sub, c: HL_INK });
+  { let ts = 17; g.font = `700 ${ts}px ${hlSans}`; while (ts > 10 && g.measureText(w.text).width > bw - 28) { ts -= .5; g.font = `700 ${ts}px ${hlSans}`; }   // a long result line shrinks to fit the banner
+    hlText(g, w.text, W / 2, by + 88, ts, { ...sub, c: HL_INK }); }
   hlText(g, w.got ? `ăn hũ ${w.pot} đồng (lời ${w.net})` : `Hũ ${w.pot} đồng, người máy ăn`, W / 2, by + bh - 24, w.got ? 20 : 14, { w: 900, o: false, c: w.got ? '#2f6a4c' : HL_INK });
   g.globalAlpha = 1;
 }
 function hlFlashDraw(g, W, H) {   // "+50" / "−10" rising from the purse
   const f = HL.flash, e = HL.t - f.t0; if (!f.net) return;
-  g.globalAlpha = Math.max(0, 1 - e / 3.5); hlText(g, `${f.net > 0 ? '+' : '−'}${Math.abs(f.net)}`, W - 40, 70 + safeTop() + e * 18, 22, { w: 900, c: f.net > 0 ? '#2f6a4c' : '#a3332a' }); g.globalAlpha = 1;
+  g.globalAlpha = Math.max(0, 1 - e / 3.5); hlText(g, `${f.net > 0 ? '+' : '−'}${Math.abs(f.net)}`, W - 112, 46 + safeTop(), 20, { w: 900, c: f.net > 0 ? '#2f6a4c' : '#a3332a' }); g.globalAlpha = 1;
 }
 
 /* ---------- the board and my own numbers ---------- */
@@ -360,10 +361,21 @@ function updateHL(dt) {
 }
 const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho'];
 
+// how many people are in the room, shown on the chapter card (asked at most every 20 s while the list is up)
+const HLON = { n: null, at: 0, busy: false };
+function hlOnlineText() { return HLON.n === null ? lg('Đang xem phòng…', 'Checking the room…') : HLON.n === 0 ? lg('Chưa có ai trong phòng', 'Nobody in the room yet') : lgf('{n} người đang chơi', '{n} playing now', { n: HLON.n }); }
+function hlOnlineAsk() {
+  if (HLON.busy || Date.now() - HLON.at < 20000) return; HLON.busy = true; HLON.at = Date.now();
+  fetch(HL_ONLINE_URL).then(r => r.json()).then(j => {
+    HLON.n = Math.max(0, +j.n || 0);
+    const card = [...document.querySelectorAll('#chapCards .card')].find(b => (b.querySelector('.ch') || {}).textContent === '會村'), st = card && card.querySelector('.st');
+    if (st) st.textContent = hlOnlineText();
+  }).catch(() => {}).then(() => { HLON.busy = false; });
+}
 registerChapter({
   id: 5, modes: ['hlplay'],
   card: { num: lg('Chương V', 'Chapter V'), han: '會村', name: lg('Hội Làng', 'Village Fair'), desc: lg('Ngày hội chung của làng: cùng vào chơi cho vui, thắng sẽ có phần thưởng.', 'The village fair: join in for fun, and winners get a prize.'), bg: '#cdd9b4' },
-  progress: () => HL_SAVE.r ? lgf('{w} thắng / {r} ván', '{w} wins / {r} rounds', { w: HL_SAVE.w, r: HL_SAVE.r }) : lg('Chưa chơi', 'Not played'),
+  progress: () => { hlOnlineAsk(); return hlOnlineText(); },
   hasProgress: () => HL_SAVE.r > 0,
   direct: startHL,
   album() {},

@@ -3,7 +3,9 @@
    = the server's clock, from the lowest-latency of the last few ping samples), reconnects by itself, and hands every message
    to HL_NET.on(msg). Nothing here touches the game's saves. */
 
-const HL_URL = 'wss://dcc-phong-choi.dcc-phong-choi.workers.dev/ws';
+// ?hlws=ws://localhost:8787/ws points a local page at a local test server (never anywhere else)
+const HL_URL = (new URLSearchParams(location.search).get('hlws') || '').replace(/^(?!ws:\/\/localhost:\d+\/ws$).*$/, '') || 'wss://dcc-phong-choi.dcc-phong-choi.workers.dev/ws';
+const HL_ONLINE_URL = 'https://dcc-phong-choi.dcc-phong-choi.workers.dev/online';
 const HL_NET = {
   ws: null, up: false, tries: 0, off: 0, rtt: 1e9, samples: [], id: null, on: () => {}, status: () => {}, hello: null, wantOn: false, timer: 0,
   // the server's clock now (ms since 1970), as best we can tell
