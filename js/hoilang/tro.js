@@ -233,7 +233,7 @@ HL_G.boat = {
 };
 
 HL_G.hang = {
-  name: 'Chọn hang', rule: 'Mỗi vòng chọn 1 trong 3 hang để trốn. Mèo vồ một hang, hay vồ hang đông nhất! Ai ở hang bị vồ thì bị loại. 5 vòng, người sống sót thắng.', ctl: 'holes',
+  name: 'Chọn hang', rule: 'Mỗi vòng chọn 1 trong 3 hang để trốn. Mèo vồ một hang, hay vồ hang đông nhất! Ai ở hang bị vồ thì bị loại. 5 vòng, những người sống sót chia nhau hũ.', ctl: 'holes',
   controls(r, W, H, btns) {
     const alive = hlAlive(r, HL.id), gap = 8, bw = (W - 20 - gap * 2) / 3;
     for (let v = 0; v < 3; v++) { const sel = HL.myHole && HL.myHole.i === r.sub && HL.myHole.v === v; btns.push(hlBtn({ id: 'h' + v, key: String(v + 1), label: `Hang ${v + 1}`, size: 18, x: 10 + v * (bw + gap), y: H - 66, w: bw, h: 52, fill: sel ? '#f2c640' : '#c9a062', ink: HL_INK, off: !r.picking || !alive, down: () => hlHole(v) })); }
@@ -257,13 +257,13 @@ HL_G.hang = {
     if (r.state === 'run') { if (!alive) hlText(g, '✗', C.cx, C.y + C.h * .3, Math.min(30, C.w * .28), { w: 900, c: '#a3332a' }); else if (r.picking && picked) hlTick(g, C); else if (lastH && !r.picking && lastH.picks[p.id] >= 0) hlText(g, `hang ${lastH.picks[p.id] + 1}`, C.cx, C.y + C.h * .3, Math.max(10, Math.min(15, C.w * .12)), { w: 800, o: false }); }
     if (res) hlResText(g, C, res.alive ? 'sống sót' : `sống ${res.v} vòng`, win, res.alive ? '#2f6a4c' : '#777');
   },
-  val: (r, row) => row.alive ? 'sống sót' : `sống ${row.v} vòng`, win: (r, row) => `sống sót qua ${r.cfg.rounds} vòng (bốc thăm nếu còn nhiều)`,
-  mine: (r, row) => row.alive ? `Bạn sống sót${r.result.winner === HL.id ? ' và được bốc thăm trúng!' : ' nhưng bốc thăm không trúng'}` : `Bạn bị loại sau ${row.v} vòng`,
+  val: (r, row) => row.alive ? 'sống sót' : `sống ${row.v} vòng`, win: (r, row) => `sống sót qua ${r.cfg.rounds} vòng`,
+  mine: (r, row) => row.alive ? 'Bạn sống sót, chia hũ cùng những người sống sót!' : `Bạn bị loại sau ${row.v} vòng`,
 };
 
 let HL_NHO_LIT = -1;
 HL_G.nho = {
-  name: 'Nhớ trống', rule: 'Các trống sáng lên lần lượt, hãy nhớ thứ tự. Khi trống tắt, bấm lại đúng thứ tự. Ai đúng nhiều nhất, nhanh nhất thắng; bấm sai là dừng.', ctl: 'drums',
+  name: 'Nhớ trống', rule: 'Các trống sáng lên lần lượt, hãy nhớ thứ tự. Khi trống tắt, bấm lại đúng thứ tự. Ai đúng nhiều nhất thắng, đúng bằng nhau thì chia hũ; bấm sai là dừng.', ctl: 'drums',
   controls(r, W, H, btns) {
     const gap = 8, bw = (W - 20 - gap * 3) / 4, showing = hlEnd(r) < r.cfg.showEnd - 100;
     for (let v = 0; v < 4; v++) btns.push(hlBtn({ id: 'd' + v, key: String(v + 1), label: String(v + 1), size: 22, x: 10 + v * (bw + gap), y: H - 66, w: bw, h: 52, fill: HL.drumFlash && HL.drumFlash.v === v && HL.t - HL.drumFlash.t < .2 ? '#fff' : HL_DRUM[v], ink: '#f2ecde', off: showing, down: () => hlDrum(v) }));

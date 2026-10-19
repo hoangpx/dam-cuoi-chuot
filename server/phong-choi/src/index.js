@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v9'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v11'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -27,10 +27,11 @@ import { DurableObject } from 'cloudflare:workers';
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
 const BAD = /(địt|đụ|lồn|buồi|cặc|đéo|đĩ |đỉ |fuck|shit|bitch|óc chó|chó đẻ|mẹ mày|con mẹ mày|bố mày)/i;
 const BOT_NAMES = ['Tí', 'Tèo', 'Mít', 'Bơ', 'Nhím', 'Sóc', 'Cốm', 'Bống', 'Tũn', 'Xíu', 'Na', 'Bin', 'Đậu', 'Lạc', 'Gạo', 'Nếp', 'Ngô', 'Khoai', 'Sen', 'Cải'];
-const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho'];
+const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
 const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua', 'beo', 'gay', 'cao'], fur: 16, robe: 16, skirt: 16, pants: 16, top: 16 };   // looks are only forwarded, the browser cleans them again
 
-const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer)/;   // devices used by test.mjs: never written to the board
+const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen']);
+const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz)/;   // devices used by test.mjs: never written to the board
 const T = {
   MINP: 2, MAXP: 30, STAKE: 10,
   ANNOUNCE: 4000, RESULT: 9000, FIRST: 3000, WAIT: 2500,
@@ -46,6 +47,11 @@ const T = {
   GIUA_LEN: 8000,
   TRONG_BEATS: 4, TRONG_N: 8, TRONG_GRACE: 2500,
   NHO_STEP: 700, NHO_WAIT: 11000,
+  CHUOT_MIN: 2500, CHUOT_SPAN: 3500, CHUOT_LOCK: 1000, CHUOT_AFTER: 6000,
+  HPB_LEN: 10000, KHAC_LEN: 15000, KHAC_N: 6, KHAC_LOCK: 2000,
+  DEM_SHOW: 2200, DEM_LEN: 12000, XEP_LEN: 25000, XEP_PEN: 1000,
+  MAU_LEN: 20000, MAU_N: 5, TINH_LEN: 15000, TINH_LOCK: 2000,
+  LAT_LEN: 25000, CHEN_SHOW: 1800, CHEN_SWAP: 450, CHEN_SWAPS: 8, CHEN_PICK: 6000,
 };
 // board periods (Vietnam time, UTC+7): d day, w week (Monday first), m month, a all time
 const pkey = (per, t = Date.now()) => { const v = new Date(t + 7 * 36e5), day = Math.floor((t + 7 * 36e5) / 864e5); return per === 'd' ? day : per === 'w' ? Math.floor((day + 3) / 7) : v.getUTCFullYear() * 12 + v.getUTCMonth(); };
@@ -75,17 +81,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v9')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v11')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v9')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v11')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v9')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v11')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -235,7 +241,7 @@ export class Room extends DurableObject {
     if (!solo && hs.length < T.MINP) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
     // a shuffled bag: every game once in random order, then a new shuffle (the first of a new bag is never the last played)
     if (!this.bag || !this.bag.length) { const b = [...GAMES]; for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } if (b[0] === this.lastGame) b.push(b.shift()); this.bag = b; }
-    const game = this.bag.shift(); this.lastGame = game;
+    const game = (this.env && GAMES.includes(this.env.ONLY_GAME)) ? this.env.ONLY_GAME : this.bag.shift(); this.lastGame = game;   // ONLY_GAME: a local test switch (wrangler dev --var), not set in production
     // more people than seats: those who sat out the most recent rounds go first
     const order = hs.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
     const seated = new Map(); for (const c of order.slice(0, T.MAXP)) { seated.set(c.id, c); c.last = this.n + 1; }
@@ -253,6 +259,7 @@ export class Room extends DurableObject {
   /* ---- per game: set up (including what the bots will do) ---- */
   setup(r) {
     const g = r.game, ids = this.ids(r), t0 = r.t0, cfg = r.cfg, bots = [...r.bots.values()];
+    if (NEWG.has(g)) return this.setupNew(r, g, ids, t0, cfg);
     if (g === 'ten') {
       cfg.target = T.TEN_TARGET; cfg.show = T.TEN_SHOW; r.deadline = t0 + cfg.target + T.TEN_GRACE;
       for (const b of bots) this.push(r, b.id, cfg.target + gauss() * (70 + b.skill * 230), { k: 'p' });
@@ -305,6 +312,36 @@ export class Room extends DurableObject {
       for (const b of bots) { const good = .84 + b.skill * .15; let p = cfg.showEnd + rnd(500, 1500); for (let i = 0; i < len; i++) { p += rnd(380, 900); const ok = Math.random() < good; this.push(r, b.id, p, { k: 'm', v: ok ? cfg.seq[i] : (cfg.seq[i] + 1 + ri(0, 2)) % 4 }); if (!ok) break; } }
     }
   }
+  setupNew(r, g, ids, t0, cfg) {
+    if (g === 'chuot') {
+      r.s = t0 + T.CHUOT_MIN + Math.random() * T.CHUOT_SPAN; cfg.hole = ri(0, 8); cfg.min = T.CHUOT_MIN; cfg.max = T.CHUOT_MIN + T.CHUOT_SPAN; r.deadline = r.s + T.CHUOT_AFTER; r.sent = false;
+    } else if (g === 'hpb') {
+      cfg.len = T.HPB_LEN; r.deadline = t0 + T.HPB_LEN;
+    } else if (g === 'khac') {
+      cfg.n = T.KHAC_N; cfg.odd = ri(0, T.KHAC_N * T.KHAC_N - 1); cfg.hue = ri(0, 359); cfg.dl = 6; cfg.lock = T.KHAC_LOCK; r.deadline = t0 + T.KHAC_LEN;
+    } else if (g === 'dem') {
+      const n = ri(9, 26), items = []; for (let i = 0; i < n; i++) items.push([+Math.random().toFixed(3), +Math.random().toFixed(3), ri(0, 2)]);
+      cfg.items = items; cfg.show = T.DEM_SHOW; r.deadline = t0 + T.DEM_SHOW + T.DEM_LEN;
+    } else if (g === 'xep') {
+      const perm = [1, 2, 3, 4, 5, 6, 7, 8, 9]; for (let i = 8; i > 0; i--) { const j = ri(0, i); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+      cfg.perm = perm; cfg.pen = T.XEP_PEN; r.deadline = t0 + T.XEP_LEN; r.prog = new Map(ids.map(id => [id, { c: 0, pen: 0, fin: null }]));
+    } else if (g === 'mau') {
+      cfg.rounds = Array.from({ length: T.MAU_N }, () => { const c = ri(0, 3); let w = ri(0, 3); if (w === c) w = (w + 1 + ri(0, 2)) % 4; return { w, c }; }); r.deadline = t0 + T.MAU_LEN;
+      r.prog = new Map(ids.map(id => [id, { c: 0, ok: 0, at: 0, fin: false }]));
+    } else if (g === 'tinh') {
+      const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9), k = ri(0, 2); let expr, ans;
+      if (k === 0) { expr = a + ' + ' + b + ' × ' + c; ans = a + b * c; } else if (k === 1) { expr = a + ' × ' + b + ' − ' + c; ans = a * b - c; } else { expr = '(' + a + ' + ' + b + ') × ' + c; ans = (a + b) * c; }
+      const set = new Set([ans]); const cand = [ans + 1, ans - 1, ans + 2, ans - 2, ans + 10, ans - 10, ans + 3, ans - 3, ans + 5, ans - 5, ans + 4, ans - 4]; for (const x of cand) { if (set.size >= 6) break; if (x > 0) set.add(x); }
+      const opts = [...set]; for (let i = opts.length - 1; i > 0; i--) { const j = ri(0, i); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+      cfg.expr = expr; cfg.opts = opts; cfg.lock = T.TINH_LOCK; r.ans = opts.indexOf(ans); r.deadline = t0 + T.TINH_LEN;
+    } else if (g === 'lat') {
+      const cards = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5]; for (let i = 11; i > 0; i--) { const j = ri(0, i); [cards[i], cards[j]] = [cards[j], cards[i]]; }
+      r.cards = cards; cfg.n = 12; r.deadline = t0 + T.LAT_LEN; r.prog = new Map(ids.map(id => [id, { open: [], matched: new Set(), pairs: 0, at: 0 }]));
+    } else if (g === 'chen') {
+      const ball = ri(0, 2), swaps = []; let pos = ball; for (let i = 0; i < T.CHEN_SWAPS; i++) { const a = ri(0, 2); let b = ri(0, 2); if (b === a) b = (a + 1 + ri(0, 1)) % 3; swaps.push([a, b]); if (pos === a) pos = b; else if (pos === b) pos = a; }
+      cfg.ball = ball; cfg.swaps = swaps; cfg.show = T.CHEN_SHOW; cfg.swap = T.CHEN_SWAP; cfg.end = T.CHEN_SHOW + T.CHEN_SWAPS * T.CHEN_SWAP + 300; r.final = pos; r.deadline = t0 + cfg.end + T.CHEN_PICK;
+    }
+  }
   giuaX(cfg, id, p) { const u = ((p / cfg.T[id] + cfg.phi[id]) % 2 + 2) % 2; return u < 1 ? u : 2 - u; }
 
   /* ---- input ---- */
@@ -321,6 +358,7 @@ export class Room extends DurableObject {
   // one action by a person (validated above) or a bot, p = ms after t0
   act(r, id, a, p, now, bot, lat = 0) {
     const g = r.game, cfg = r.cfg, inp = r.inp; if (p < 0 && g !== 'minnum' && g !== 'boat' && g !== 'hang' && g !== 'nho') return;
+    if (NEWG.has(g)) return this.actNew(r, id, a, p, lat);
     if (g === 'ten' || g === 'trong') {
       if (a.k !== 'p' || inp.has(id)) return; inp.set(id, { p }); this.live(r, { id, k: 'p' });
     } else if (g === 'pomelo') {
@@ -358,12 +396,41 @@ export class Room extends DurableObject {
       this.live(r, { id, k: 'm', c: pr.c, bad: pr.bad });
     }
   }
+  // the nine newer games
+  actNew(r, id, a, p, lat) {
+    const g = r.game, cfg = r.cfg, inp = r.inp;
+    if (g === 'chuot' || g === 'khac' || g === 'tinh') {   // first right answer wins; a wrong tap locks you for a moment
+      if (a.k !== 'p') return; const st = inp.get(id) || {}; if (st.rt !== undefined) return; if (st.lock !== undefined && p < st.lock) return;
+      const start = g === 'chuot' ? r.s - r.t0 : 0, v = a.v | 0;
+      const right = g === 'chuot' ? (v === cfg.hole && p >= start) : g === 'khac' ? v === cfg.odd : v === r.ans;
+      if (right) { inp.set(id, { ...st, rt: Math.max(0, Math.round(p - start - lat)) }); this.live(r, { id, k: 'p' }); }
+      else { const lk = g === 'chuot' ? T.CHUOT_LOCK : g === 'khac' ? T.KHAC_LOCK : T.TINH_LOCK; inp.set(id, { ...st, lock: p + lk, wrong: (st.wrong || 0) + 1 }); this.live(r, { id, k: 'w', lock: p + lk }); }
+    } else if (g === 'hpb') {
+      if (a.k !== 'v') return; const v = Math.max(0, Math.min(100, a.v | 0)), first = !inp.has(id); inp.set(id, { v, p }); if (first) this.live(r, { id, k: 'v' });
+    } else if (g === 'dem') {
+      if (a.k !== 'v' || inp.has(id) || p < cfg.show - 100) return; inp.set(id, { v: Math.max(0, Math.min(99, a.v | 0)), p }); this.live(r, { id, k: 'v' });
+    } else if (g === 'xep') {
+      if (a.k !== 't') return; const pr = r.prog.get(id); if (!pr || pr.fin !== null) return;
+      if ((a.v | 0) === pr.c + 1) { pr.c++; if (pr.c === 9) pr.fin = p; } else pr.pen++;
+      this.live(r, { id, k: 'm', c: pr.c, pen: pr.pen, fin: pr.fin !== null });
+    } else if (g === 'mau') {
+      if (a.k !== 'a') return; const pr = r.prog.get(id); if (!pr || pr.fin || (a.i | 0) !== pr.c) return;
+      if ((a.v | 0) === cfg.rounds[pr.c].c) pr.ok++; pr.c++; pr.at = p; if (pr.c >= cfg.rounds.length) pr.fin = true;
+      this.live(r, { id, k: 'm', c: pr.c });
+    } else if (g === 'lat') {
+      if (a.k !== 'f') return; const pr = r.prog.get(id), i = a.i | 0, c = this.conns.get(id); if (!pr || !c || i < 0 || i > 11 || pr.matched.has(i) || pr.open.includes(i) || pr.open.length >= 2 || pr.pairs >= 6) return;
+      if (pr.open.length === 0) { pr.open = [i]; this.send(c, { t: 'flip', n: r.n, i, v: r.cards[i] }); }
+      else { const j = pr.open[0]; if (r.cards[j] === r.cards[i]) { pr.matched.add(i); pr.matched.add(j); pr.pairs++; pr.at = p; pr.open = []; this.send(c, { t: 'flip', n: r.n, i, v: r.cards[i], m: j }); this.live(r, { id, k: 'm', c: pr.pairs }); } else { pr.open = []; this.send(c, { t: 'flip', n: r.n, i, v: r.cards[i], bad: j }); } }
+    } else if (g === 'chen') {
+      if (a.k !== 'p' || inp.has(id) || p < cfg.end - 100) return; inp.set(id, { v: Math.max(0, Math.min(2, a.v | 0)), p }); this.live(r, { id, k: 'p' });
+    }
+  }
   gameTick(r, now) {
     const g = r.game, p = now - r.t0;
     if (g === 'balloon') {
       for (const [id, s] of r.inp) if (s.d !== undefined && s.u === undefined && !s.pop && p >= s.d + r.thr[id] + (this.conns.get(id) ? Math.min(600, this.conns.get(id).rtt / 2) + 150 : 120)) { s.pop = s.d + r.thr[id]; this.live(r, { id, k: 'pop', p: s.pop }); }
-    } else if (g === 'lantern') {
-      if (!r.sent && now >= r.s) { r.sent = true; this.all({ t: 'go', n: r.n }); }
+    } else if (g === 'lantern' || g === 'chuot') {
+      if (!r.sent && now >= r.s) { r.sent = true; this.all({ t: 'go', n: r.n, hole: g === 'chuot' ? r.cfg.hole : undefined }); }
     } else if (g === 'boat') {
       if (now - r.progAt >= 500 && p > 0) { r.progAt = now; const o = {}; for (const [id, s] of r.inp) o[id] = s.c; this.all({ t: 'prog', n: r.n, p: o }); }
     } else if (g === 'hang') this.hangTick(r, p);
@@ -395,6 +462,12 @@ export class Room extends DurableObject {
     if (g === 'tuong') { const e = Math.min(T.TUONG_LEN, Date.now() - r.t0); return ids.every(id => { const s = tuongSim(r.cfg, r.ev.get(id) || [], e); return s.caught !== null || s.fin !== null; }); }
     if (g === 'nho') return ids.every(id => { const p = r.prog.get(id); return p.bad || p.c >= r.cfg.seq.length; });
     if (g === 'hang') return false;   // ends at its deadline (after the last reveal)
+    if (g === 'chuot') return r.sent && ids.every(id => { const s = r.inp.get(id); return s && s.rt !== undefined; });
+    if (g === 'khac' || g === 'tinh') return ids.every(id => { const s = r.inp.get(id); return s && s.rt !== undefined; });
+    if (g === 'dem' || g === 'chen') return ids.every(id => r.inp.has(id));
+    if (g === 'xep') return ids.every(id => r.prog.get(id).fin !== null);
+    if (g === 'mau') return ids.every(id => r.prog.get(id).fin);
+    if (g === 'lat') return ids.every(id => r.prog.get(id).pairs >= 6);
     return false;
   }
   rows(r) {
@@ -446,40 +519,89 @@ export class Room extends DurableObject {
     if (g === 'nho') {
       const l = ids.map(id => { const p = r.prog.get(id); return { id, v: p.c, bad: p.bad, at: p.at }; }); rank(l, (a, b) => (b.v - a.v) || (a.at - b.at)); return l;
     }
+    if (g === 'chuot' || g === 'khac' || g === 'tinh') {
+      const ok = [], no = [];
+      for (const id of ids) { const s = r.inp.get(id); if (s && s.rt !== undefined) ok.push({ id, v: s.rt }); else no.push({ id, v: null, wrong: s ? s.wrong || 0 : 0 }); }
+      return [...rank(ok, (a, b) => a.v - b.v), ...no];
+    }
+    if (g === 'hpb') {
+      const list = ids.filter(id => r.inp.has(id)), avg = list.length ? list.reduce((a, id) => a + r.inp.get(id).v, 0) / list.length : 0, target = avg * 2 / 3;
+      r.xtra = { avg: +avg.toFixed(2), target: +target.toFixed(2) };
+      const ok = [], no = [];
+      for (const id of ids) { const s = r.inp.get(id); if (s) ok.push({ id, v: s.v, d: Math.abs(s.v - target) }); else no.push({ id, v: null }); }
+      return [...rank(ok, (a, b) => a.d - b.d), ...no];
+    }
+    if (g === 'dem') {
+      const n = r.cfg.items.length; r.xtra = { n };
+      const ok = [], no = [];
+      for (const id of ids) { const s = r.inp.get(id); if (s) ok.push({ id, v: s.v, d: Math.abs(s.v - n), p: s.p }); else no.push({ id, v: null }); }
+      return [...rank(ok, (a, b) => a.d - b.d || a.p - b.p), ...no];
+    }
+    if (g === 'xep') {
+      const fin = [], rest = [];
+      for (const id of ids) { const pr = r.prog.get(id); if (pr.fin !== null) fin.push({ id, v: pr.fin + pr.pen * T.XEP_PEN, pen: pr.pen }); else rest.push({ id, v: null, c: pr.c, pen: pr.pen }); }
+      rank(fin, (a, b) => a.v - b.v); const rr = rank(rest, (a, b) => b.c - a.c || a.pen - b.pen); rr.forEach(x => { x.rank += fin.length; });
+      return [...fin, ...rr];
+    }
+    if (g === 'mau') {
+      const l = ids.map(id => { const pr = r.prog.get(id); return { id, v: pr.ok, at: pr.fin ? pr.at : T.MAU_LEN + (r.cfg.rounds.length - pr.c) * 5000, done: pr.c }; });
+      return rank(l, (a, b) => b.v - a.v || a.at - b.at);
+    }
+    if (g === 'lat') {
+      const l = ids.map(id => { const pr = r.prog.get(id); return { id, v: pr.pairs, at: pr.at }; });
+      return rank(l, (a, b) => b.v - a.v || a.at - b.at);
+    }
+    if (g === 'chen') {
+      const ok = [], bad = [], no = [];
+      for (const id of ids) { const s = r.inp.get(id); if (!s) no.push({ id, v: null }); else if (s.v === r.final) ok.push({ id, v: s.v, p: s.p, right: true }); else bad.push({ id, v: s.v, wrong: true }); }
+      return [...rank(ok, (a, b) => a.p - b.p), ...bad, ...no];
+    }
     return rows;
+  }
+  // who shares the pot: everybody with the same winning result (owner, 2026-10-19: "có thể share tiền nếu cùng kết quả đúng")
+  winnersOf(r, rows) {
+    const g = r.game, first = rows.find(x => x.rank === 1); if (!first) return [];
+    const eq = (a, b) => Math.abs(a - b) < 1e-9;
+    if (g === 'hang') return rows.filter(x => x.alive).map(x => x.id);
+    if (g === 'minnum') return rows.filter(x => x.rank === 1 && !x.dup && x.v !== null).map(x => x.id);
+    if (g === 'ten' || g === 'trong') return first.v === null ? [] : rows.filter(x => x.v !== null && eq(Math.abs(x.v), Math.abs(first.v))).map(x => x.id);
+    if (g === 'nho') return first.v > 0 ? rows.filter(x => x.v === first.v).map(x => x.id) : [];   // the same number right shares, time only orders the list
+    if (g === 'chen') return rows.filter(x => x.right).map(x => x.id);   // everybody who followed the ball shares
+    if (g === 'boat') return first.v > 0 ? rows.filter(x => x.v === first.v).map(x => x.id) : [];
+    if (g === 'tuong') return first.fin ? rows.filter(x => x.fin && x.v === first.v).map(x => x.id) : [first.id];
+    if (g === 'mau' || g === 'lat') return first.v > 0 ? rows.filter(x => x.v === first.v && x.at === first.at).map(x => x.id) : [];
+    if (g === 'hpb' || g === 'dem') return first.v === null ? [] : rows.filter(x => x.v !== null && eq(x.d, first.d)).map(x => x.id);
+    if (g === 'xep') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'lantern') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    return rows.filter(x => x.rank === 1 && x.v !== null && eq(x.v, first.v)).map(x => x.id);   // pomelo, giua, balloon
   }
   finish(r) {
     const rows = this.rows(r), N = r.seated.size + r.bots.size, pot = r.solo ? 0 : T.STAKE * N, g = r.game;
-    let winner = null;
-    if (g === 'hang') { const al = rows.filter(x => x.alive); winner = al.length ? pick(al).id : null; if (winner) { const w = rows.splice(rows.findIndex(x => x.id === winner), 1)[0]; rows.unshift(w); rows.forEach((x, i) => { x.rank = i + 1; }); } }
-    else if (g === 'minnum') { const w = rows.find(x => x.rank === 1 && !x.dup && x.v !== null); winner = w ? w.id : null; }
-    else if (g === 'lantern' || g === 'ten' || g === 'trong' || g === 'pomelo' || g === 'giua' || g === 'balloon') { const w = rows.find(x => x.rank === 1); winner = w ? w.id : null; }
-    else if (g === 'tuong') { const w = rows.find(x => x.rank === 1); winner = w ? w.id : null; }
-    else if (g === 'boat') { const w = rows.find(x => x.rank === 1 && x.v > 0); winner = w ? w.id : null; }
-    else if (g === 'nho') { const w = rows.find(x => x.rank === 1 && x.v > 0); winner = w ? w.id : null; }
-    if (r.solo) winner = null;
+    let winners = this.winnersOf(r, rows);
+    if (r.solo) winners = [];
+    const winner = winners[0] || null, share = winners.length ? Math.floor(pot / winners.length) : 0;
     const net = {}, stat = [];
     for (const c of r.seated.values()) {
-      if (winner) net[c.id] = c.id === winner ? pot - T.STAKE : -T.STAKE;
+      if (winners.length) net[c.id] = winners.includes(c.id) ? share - T.STAKE : -T.STAKE;
       // idle people are rested after two empty rounds, so nobody keeps paying a stake for sitting still
       if (c.inRound) c.miss = 0; else if (++c.miss >= 2) { c.idle = true; this.send(c, { t: 'idle' }); }
       stat.push(c);
     }
     this.noteRound(r);
     r.state = 'result'; r.next = Date.now() + T.RESULT;
-    r.result = { rows, winner, pot, N, net };
-    this.all({ t: 'result', n: r.n, game: g, rows, winner, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : undefined });
-    if (!r.solo) this.record(r, stat, winner, net);
+    r.result = { rows, winner, winners, share, pot, N, net };
+    this.all({ t: 'result', n: r.n, game: g, rows, winner, winners, share, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : g === 'chen' ? { final: r.final } : g === 'hpb' || g === 'dem' ? r.xtra : undefined });
+    if (!r.solo) this.record(r, stat, winners, net);
     this.all({ t: 'players', players: this.playerList() });
   }
-  async record(r, cs, winner, net) {
+  async record(r, cs, winners, net) {
     const keys = {};
     for (const c of cs) {
       const s = await this.getStats(c.dev); s.n = c.name; s.r++;
       const pb = {}; s.p = s.p || {}; for (const per of PERS) { const k = pkey(per); if (!s.p[per] || s.p[per].k !== k) s.p[per] = { k, r: 0, w: 0, won: 0, lost: 0 }; pb[per] = s.p[per]; pb[per].r++; }
       const gg = s.g[r.game] || (s.g[r.game] = [0, 0, 0, 0]);   // rounds, wins, won, lost in this game
       gg[0]++;
-      if (winner) { if (c.id === winner) { s.w++; gg[1]++; s.won += net[c.id]; gg[2] += net[c.id]; for (const per of PERS) { pb[per].w++; pb[per].won += net[c.id]; } } else { s.lost += T.STAKE; gg[3] += T.STAKE; for (const per of PERS) pb[per].lost += T.STAKE; } }
+      if (winners.length) { if (winners.includes(c.id)) { s.w++; gg[1]++; s.won += net[c.id]; gg[2] += net[c.id]; for (const per of PERS) { pb[per].w++; pb[per].won += net[c.id]; } } else { s.lost += T.STAKE; gg[3] += T.STAKE; for (const per of PERS) pb[per].lost += T.STAKE; } }
       keys['u:' + c.dev] = s; this.send(c, { t: 'stat', stat: this.pubStat(s) });
     }
     for (const k of Object.keys(keys)) if (TESTDEV.test(k.slice(2))) delete keys[k];

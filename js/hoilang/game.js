@@ -35,20 +35,26 @@ setInterval(() => { if (S.mode === 'hlplay' && HL_NET.up) { const ok = hlOk(); i
 /* ---------- messages from the room ---------- */
 function hlMsg(m) {
   const r = HL.round;
-  if (m.t === 'welcome') { HL.id = m.id; HL.stake = m.stake || 10; HL.players = m.players; HL.stat = m.stat; HL.okSent = hlOk(); HL.round = m.round ? hlRound(m.round) : null; hlMeFlags(); if (HL.joined) HL_NET.send({ t: 'join' }); }
+  if (m.t === 'welcome') { HL.id = m.id; HL.stake = m.stake || 10; HL.players = m.players; HL.stat = m.stat; HL.okSent = hlOk(); HL.my = {}; HL.round = m.round ? hlRound(m.round) : null; hlMeFlags(); if (HL.joined) HL_NET.send({ t: 'join' }); }
   else if (m.t === 'players') { HL.players = m.players; hlMeFlags(); }
   else if (m.t === 'round') {
     if (m.wait) { HL.wait = true; HL.round = null; }
-    else { HL.wait = false; HL.round = hlRound(m); HL.win = null; HL.fw = []; HL.held = null; HL.tapAcc = 0; HL.myTaps = 0; HL.flash = null; HL.myPick = 0; HL.myHole = null; HL.drumFlash = null; AU.pluck(84); }
+    else { HL.wait = false; HL.my = {}; HL.round = hlRound(m); HL.win = null; HL.fw = []; HL.held = null; HL.tapAcc = 0; HL.myTaps = 0; HL.flash = null; HL.myPick = 0; HL.myHole = null; HL.drumFlash = null; AU.pluck(84); }
   }
   else if (m.t === 'in') { if (r && r.n === m.n) hlIn(r, m, false); }
   else if (m.t === 'prog') { if (r && r.n === m.n) r.prog = m.p; }
   else if (m.t === 'go') { if (r && r.n === m.n) { r.go = true; AU.pluck(98); } }
+  else if (m.t === 'flip') { if (r && r.n === m.n) hlFlip(m); }
   else if (m.t === 'hole') { if (r && r.n === m.n) { r.holes.push(m); AU.thump(); } }
   else if (m.t === 'result') hlResult(m);
   else if (m.t === 'stat') { HL.stat = m.stat; HL_SAVE.r = m.stat.r; HL_SAVE.w = m.stat.w; HL_SAVE.net = m.stat.won - m.stat.lost; hlPersist(); }
   else if (m.t === 'idle') HL.idle = true;
   else if (m.t === 'board') HL.board = m;
+}
+function hlFlip(m) {   // a card of the pairs game turned over (told to its player only)
+  const t = hlMy(); t.face = t.face || {}; t.done = t.done || new Set(); t.face[m.i] = m.v;
+  if (m.m !== undefined) { t.done.add(m.i); t.done.add(m.m); delete t.face[m.i]; delete t.face[m.m]; AU.drumHit(); }
+  else if (m.bad !== undefined) { t.hideAt = HL.t + .7; t.hidePair = [m.i, m.bad]; }
 }
 function hlMeFlags() { const me = HL.players.find(p => p.id === HL.id); if (me) HL.idle = !!me.idle; }
 function hlRound(m) {
@@ -69,6 +75,14 @@ function hlIn(r, e, replay) {
   else if (g === 'minnum') r.picked.add(id);
   else if (g === 'hang') { const s = r.hp.get(e.i) || new Set(); r.hp.set(e.i, s); s.add(id); }
   else if (g === 'nho') r.nho.set(id, { c: e.c, bad: e.bad });
+  else if (g === 'chuot' || g === 'khac' || g === 'tinh') {
+    const old = r.inp.get(id) || {};
+    if (e.k === 'p') { r.inp.set(id, { ...old, done: true }); if (me) hlMy().done = true; }
+    else if (e.k === 'w') { r.inp.set(id, { ...old, wrong: true }); if (me) { hlMy().lock = e.lock; if (!replay) AU.thump(); } }
+  }
+  else if (g === 'hpb' || g === 'dem' || g === 'chen') r.picked.add(id);
+  else if (g === 'xep') r.nho.set(id, { c: e.c, pen: e.pen, fin: e.fin });
+  else if (g === 'mau' || g === 'lat') r.nho.set(id, { c: e.c });
   if (!replay && !me && (g === 'pomelo' || g === 'giua' || g === 'ten' || g === 'trong' || g === 'lantern')) AU.tap();
 }
 function hlResult(m) {
@@ -146,7 +160,7 @@ function hlDown(e) {
   const rc = cv.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top, b0 = hlBack();
   if (x > b0.x && x < b0.x + b0.w && y > b0.y && y < b0.y + b0.h) { if (HL.ui) HL.ui = null; else hlLeave(); return; }
   for (const b of HL.btns) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h && !b.off) { if (b.down) b.down(e); if (b.up) HL.held = b; return; }
-  if (HL.ui === 'board' && HL.tab === 'top' && HL.barea && x >= HL.barea.x && x <= HL.barea.x + HL.barea.w && y >= HL.barea.y && y <= HL.barea.y + HL.barea.h) { HL.drag = { y, s: HL.bscroll }; return; }   // a drag over the list scrolls it
+  if (HL.ui === 'board' && HL.barea && x >= HL.barea.x && x <= HL.barea.x + HL.barea.w && y >= HL.barea.y && y <= HL.barea.y + HL.barea.h) { HL.drag = { y, s: HL.bscroll }; return; }   // a drag over the list scrolls it
   if (HL.ui) { HL.ui = null; return; }
   const r = HL.round; if (r && r.game && HL_G[r.game].ctl === 'press') hlPressAct(e.timeStamp);
 }
@@ -206,7 +220,7 @@ function renderHL() {
     if (HL.idle) hlText(g, HL.joined ? 'Bạn đang nghỉ' : 'Bấm "Tham gia chơi" bên dưới, không bấm thì chỉ ngồi xem', W / 2, H / 2 + 14, 13, { f: hlSans, w: 600, o: false, al: .75 });
     hlButtons(g, hlControls({ game: null, state: 'wait' }, W, H, false), W, H); if (HL.ui) hlOverlay(g, W, H); return; }
   const seatedMe = hlSeatedMe(r), gm = HL_G[r.game], ctl = hlControls(r, W, H, seatedMe);
-  const ipH = Math.max(96, Math.min(150, H * .19)), top = 62 + st, footH = ctl.h;
+  const gmH = gm.ipH && r.state === 'run' ? gm.ipH(W, H) : 0, ipH = gmH || Math.max(96, Math.min(150, H * .19)), top = 62 + st, footH = ctl.h;
   hlInfo(g, r, gm, now, W, top, ipH, seatedMe);
   const gy = top + ipH + 6, gh = H - gy - footH - 6, list = hlOrder(r), G = hlGrid(Math.max(1, list.length), 6, gy, W - 12, gh);
   list.forEach((p, i) => hlCell(g, r, gm, p, i, G, now, t));
@@ -245,12 +259,12 @@ function hlInfo(g, r, gm, now, W, y, h, mine) {
     const s = Math.max(0, Math.ceil((r.t0 - now) / 1000)), lines = hlWrap(g, gm.rule, w - 24, 13);
     lines.slice(0, 3).forEach((l, i) => hlText(g, l, W / 2, y + 40 + i * 16, 13, sub));
     hlText(g, mine ? `Bắt đầu sau ${s}` : hlWhyNot(), W / 2, y + h - 30, mine ? 24 : 13, mine ? { w: 900 } : sub);
-    hlText(g, r.solo ? 'Chưa có ai khác trong phòng, chơi thử cho vui' : `Hũ ${HL.stake * N} đồng, một người ăn hết`, W / 2, y + h - 10, 12, sub);
+    hlText(g, r.solo ? 'Chưa có ai khác trong phòng, chơi thử cho vui' : `Hũ ${HL.stake * N} đồng · cùng kết quả thì chia hũ`, W / 2, y + h - 10, 12, sub);
   } else if (r.state === 'run') gm.info(g, r, now, { x, y: y + 28, w, h: h - 28, W }, mine);
   else {
-    const res = r.result, win = res.winner && HL.players.find(p => p.id === res.winner), wr = win && res.rows.find(x => x.id === res.winner), s = Math.max(0, Math.ceil((r.next - now) / 1000));
-    hlText(g, win ? `${win.name}${win.bot ? ' (máy)' : ''} thắng!` : r.solo ? 'Chơi thử xong rồi!' : 'Không ai thắng, không ai mất tiền', W / 2, y + 44, win ? 22 : 15, { w: 900, c: '#a3332a' });
-    if (win && wr) hlText(g, gm.win(r, wr), W / 2, y + 64, 13, sub);
+    const res = r.result, ws = res.winners || (res.winner ? [res.winner] : []), win = ws.length && HL.players.find(p => p.id === ws[0]), wr = win && res.rows.find(x => x.id === ws[0]), s = Math.max(0, Math.ceil((r.next - now) / 1000));
+    hlText(g, win ? (ws.length > 1 ? `${ws.length} người thắng chung!` : `${win.name}${win.bot ? ' (máy)' : ''} thắng!`) : r.solo ? 'Chơi thử xong rồi!' : 'Không ai thắng, không ai mất tiền', W / 2, y + 44, win ? 22 : 15, { w: 900, c: '#a3332a' });
+    if (win && wr) hlText(g, ws.length > 1 ? `chia hũ, mỗi người ${res.share} đồng` : gm.win(r, wr), W / 2, y + 64, 13, sub);
     const row = res.rows.find(x => x.id === HL.id), net = res.net ? res.net[HL.id] : undefined;
     if (row) hlText(g, gm.mine ? gm.mine(r, row) : `Bạn hạng ${row.rank || '–'}/${res.rows.length}`, W / 2, y + 84, 13, sub);
     if (net !== undefined) hlText(g, net > 0 ? `Bạn ăn hũ: +${net} đồng` : net < 0 ? `Bạn mất ${-net} đồng` : '', W / 2, y + h - 28, 17, { w: 900, c: net > 0 ? '#2f6a4c' : '#a3332a' });
@@ -262,7 +276,7 @@ function hlWhyNot() { const me = HL.players.find(p => p.id === HL.id); return !h
 
 function hlCell(g, r, gm, p, i, G, now, t) {
   const col = i % G.c, row = (i / G.c) | 0, x = G.x + col * G.cw, y = G.y + row * G.ch, w = G.cw, h = G.ch, cx = x + w / 2;
-  const seated = hlSeated(r, p), me = p.id === HL.id, res = r.state === 'result' && r.rank ? r.rank.get(p.id) : null, win = r.state === 'result' && r.result.winner === p.id;
+  const seated = hlSeated(r, p), me = p.id === HL.id, res = r.state === 'result' && r.rank ? r.rank.get(p.id) : null, win = r.state === 'result' && !!(r.result.winners ? r.result.winners.includes(p.id) : r.result.winner === p.id);
   const nameH = Math.max(11, Math.min(15, h * .11)), base = y + h - nameH * 2.1, s = Math.min(h * .0034, w * .0042), headTop = base - 132 * s;
   const C = { x, y, w, h, cx, base, s, headTop, nameH, t, now };
   g.save(); g.beginPath(); g.rect(x + 2, y + 2, w - 4, h - 4); g.clip();
@@ -303,10 +317,10 @@ function hlFoot(g, W, H) { if (!hlOk()) hlButtons(g, { btns: [{ id: 'trade', lab
 const HL_FW_COL = ['#a3332a', '#f2c640', '#2f6a4c', '#f2ecde', '#d98a7c', '#3f8a86'];
 const HL_FW_SHOW = 5.2;
 function hlWinStart(m, r) {
-  const win = HL.players.find(p => p.id === m.winner), row = m.rows.find(x => x.id === m.winner);
-  if (!win || !row) { HL.win = null; return; }
-  const mine = m.winner === HL.id;
-  HL.win = { t0: HL.t, name: win.name + (win.bot ? ' (máy)' : ''), mine, bot: win.bot, text: HL_G[r.game].win(r, row), pot: m.pot, got: !win.bot, net: m.pot - HL.stake, bursts: mine ? [0, .25, .6, 1, 1.4, 1.9, 2.5, 3.2] : [0, .5, 1.1, 1.8, 2.6], next: 0 };
+  const ws = (m.winners && m.winners.length ? m.winners : m.winner ? [m.winner] : []).map(id => HL.players.find(p => p.id === id)).filter(Boolean), row = ws.length && m.rows.find(x => x.id === ws[0].id);
+  if (!ws.length || !row) { HL.win = null; return; }
+  const mine = ws.some(p => p.id === HL.id), many = ws.length > 1, share = m.share === undefined ? m.pot : m.share;
+  HL.win = { t0: HL.t, many, count: ws.length, name: many ? (ws.length <= 2 ? ws.map(p => p.name).join(' & ') : ws.length + ' người') : ws[0].name, mine, text: many ? HL_G[r.game].win(r, row).replace(/^/, 'cùng ') : HL_G[r.game].win(r, row), pot: m.pot, share, got: true, net: share - HL.stake, bursts: mine ? [0, .25, .6, 1, 1.4, 1.9, 2.5, 3.2] : [0, .5, 1.1, 1.8, 2.6], next: 0 };
   HL.fw = [];
 }
 function hlFireworks(dt) {
@@ -331,16 +345,16 @@ function hlWinDraw(g, W, H) {
   g.globalAlpha = fade; hlPlate(g, bx, by, bw, bh, w.mine ? '#f6e3a0' : '#f2ecde', w.mine ? '#a3332a' : HL_INK, 16);
   g.strokeStyle = w.mine ? '#b57a22' : HL_INK; g.lineWidth = 1.2; g.strokeRect(bx + 7, by + 7, bw - 14, bh - 14);
   const sub = { f: hlSans, w: 700, o: false };
-  hlText(g, w.mine ? 'BẠN THẮNG!' : 'NGƯỜI THẮNG', W / 2, by + 24, 13, { ...sub, c: '#a3332a' });
+  hlText(g, w.many ? (w.mine ? 'BẠN CÙNG THẮNG, CHIA HŨ!' : 'CÙNG THẮNG, CHIA HŨ') : w.mine ? 'BẠN THẮNG!' : 'NGƯỜI THẮNG', W / 2, by + 24, 13, { ...sub, c: '#a3332a' });
   hlText(g, w.name, W / 2, by + 56, Math.min(34, bw / Math.max(5, w.name.length) * 1.5), { w: 900, o: false });
   { let ts = 17; g.font = `700 ${ts}px ${hlSans}`; while (ts > 10 && g.measureText(w.text).width > bw - 28) { ts -= .5; g.font = `700 ${ts}px ${hlSans}`; }   // a long result line shrinks to fit the banner
     hlText(g, w.text, W / 2, by + 88, ts, { ...sub, c: HL_INK }); }
-  hlText(g, w.got ? `ăn hũ ${w.pot} đồng (lời ${w.net})` : `Hũ ${w.pot} đồng, người máy ăn`, W / 2, by + bh - 24, w.got ? 20 : 14, { w: 900, o: false, c: w.got ? '#2f6a4c' : HL_INK });
+  hlText(g, w.many ? `chia hũ ${w.pot}: mỗi người ${w.share} (lời ${w.net})` : w.got ? `ăn hũ ${w.pot} đồng (lời ${w.net})` : `Hũ ${w.pot} đồng, người máy ăn`, W / 2, by + bh - 24, w.got ? 20 : 14, { w: 900, o: false, c: w.got ? '#2f6a4c' : HL_INK });
   g.globalAlpha = 1;
 }
 function hlFlashDraw(g, W, H) {   // "+50" / "−10" rising from the purse
   const f = HL.flash, e = HL.t - f.t0; if (!f.net) return;
-  g.globalAlpha = Math.max(0, 1 - e / 3.5); hlText(g, `${f.net > 0 ? '+' : '−'}${Math.abs(f.net)}`, W - 112, 46 + safeTop(), 20, { w: 900, c: f.net > 0 ? '#2f6a4c' : '#a3332a' }); g.globalAlpha = 1;
+  g.globalAlpha = Math.max(0, 1 - e / 3.5); g.fillStyle = PAPERS.sage.base; g.fillRect(40, 36 + safeTop(), 120, 20); hlText(g, `${f.net > 0 ? '+' : '−'}${Math.abs(f.net)} đồng`, 46, 46 + safeTop(), 15, { a: 'left', w: 900, c: f.net > 0 ? '#2f6a4c' : '#a3332a' }); g.globalAlpha = 1;
 }
 
 /* ---------- the board and my own numbers ---------- */
@@ -348,7 +362,7 @@ function hlOverlay(g, W, H) {
   const x = 10, y = 60 + safeTop(), w = W - 20, h = H - y - 14;
   g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(0, 0, W, H); hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 14);
   const tabs = [['top', 'Xếp hạng'], ['me', 'Của tôi']], tw = (w - 24) / 2;
-  tabs.forEach(([k, l], i) => { const tx = x + 12 + i * tw; hlPlate(g, tx, y + 10, tw - 4, 30, HL.tab === k ? '#a3332a' : '#e6dec9', HL_INK, 8); hlText(g, l, tx + tw / 2 - 2, y + 26, 14, { w: 800, c: HL.tab === k ? '#f2ecde' : HL_INK, o: false }); HL.btns.push({ id: 'tab' + k, x: tx, y: y + 10, w: tw - 4, h: 30, down: () => { HL.tab = k; if (k === 'top') HL_NET.send({ t: 'board', per: HL.per }); } }); });
+  tabs.forEach(([k, l], i) => { const tx = x + 12 + i * tw; hlPlate(g, tx, y + 10, tw - 4, 30, HL.tab === k ? '#a3332a' : '#e6dec9', HL_INK, 8); hlText(g, l, tx + tw / 2 - 2, y + 26, 14, { w: 800, c: HL.tab === k ? '#f2ecde' : HL_INK, o: false }); HL.btns.push({ id: 'tab' + k, x: tx, y: y + 10, w: tw - 4, h: 30, down: () => { HL.tab = k; HL.bscroll = 0; if (k === 'top') HL_NET.send({ t: 'board', per: HL.per }); } }); });
   hlText(g, '‹ đóng', x + w - 44, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a' }); HL.btns.push({ id: 'close', x: x + w - 90, y: y + h - 30, w: 90, h: 30, down: () => { HL.ui = null; } });
   const rowH = 22, sub = { f: hlSans, w: 600, o: false };
   if (HL.tab === 'top') {
@@ -368,7 +382,10 @@ function hlOverlay(g, W, H) {
     const s = HL.stat; if (!s) { hlText(g, 'Chưa có số liệu', W / 2, y + 90, 14, sub); return; }
     const hy = y + 58; hlText(g, `Tổng: ${s.r} ván · thắng ${s.w} · ăn ${s.won} đ · mất ${s.lost} đ · lời ròng ${s.won - s.lost >= 0 ? '+' : '−'}${Math.abs(s.won - s.lost)} đ`, W / 2, hy, 12, { f: hlSans, w: 700, o: false });
     const gy = hy + 22; hlText(g, 'Trò', x + 14, gy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Ván', x + w - 150, gy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Thắng', x + w - 104, gy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Ăn', x + w - 58, gy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Mất', x + w - 14, gy, 11, { ...sub, a: 'right', w: 800 });
-    HL_GAMES.forEach((k, i) => { const a = s.g[k] || [0, 0, 0, 0], ry = gy + 22 + i * rowH; hlText(g, HL_G[k].name, x + 14, ry, 12, { ...sub, a: 'left' }); hlText(g, String(a[0]), x + w - 150, ry, 12, { ...sub, a: 'right' }); hlText(g, String(a[1]), x + w - 104, ry, 12, { ...sub, a: 'right' }); hlText(g, String(a[2]), x + w - 58, ry, 12, { ...sub, a: 'right', c: '#2f6a4c' }); hlText(g, String(a[3]), x + w - 14, ry, 12, { ...sub, a: 'right', c: '#a3332a' }); });
+    const ly0 = gy + 10, ly1 = y + h - 40, maxS = Math.max(0, HL_GAMES.length * rowH - (ly1 - ly0 - 14)); HL.bscroll = Math.max(0, Math.min(maxS, HL.bscroll)); HL.bmax = maxS; HL.barea = { x, y: ly0, w, h: ly1 - ly0 };
+    g.save(); g.beginPath(); g.rect(x + 2, ly0, w - 4, ly1 - ly0); g.clip();
+    HL_GAMES.forEach((k, i) => { const a = s.g[k] || [0, 0, 0, 0], ry = gy + 22 + i * rowH - HL.bscroll; hlText(g, HL_G[k].name, x + 14, ry, 12, { ...sub, a: 'left' }); hlText(g, String(a[0]), x + w - 150, ry, 12, { ...sub, a: 'right' }); hlText(g, String(a[1]), x + w - 104, ry, 12, { ...sub, a: 'right' }); hlText(g, String(a[2]), x + w - 58, ry, 12, { ...sub, a: 'right', c: '#2f6a4c' }); hlText(g, String(a[3]), x + w - 14, ry, 12, { ...sub, a: 'right', c: '#a3332a' }); });
+    g.restore();
   }
 }
 function hlBoardRow(g, x, w, ry, pos, u, sub) {
@@ -382,7 +399,7 @@ function updateHL(dt) {
   const r = HL.round;   // the boat's taps travel a few at a time
   if (r && r.game === 'boat' && r.state === 'run' && HL.tapAcc > 0 && (HL.tapSent += dt) > .3) { HL.tapSent = 0; const c = Math.min(8, HL.tapAcc); HL.tapAcc -= c; hlSend(r, { k: 't', c }); }
 }
-const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho'];
+const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
 
 // how many people are in the room, shown on the chapter card (asked at most every 20 s while the list is up)
 const HLON = { n: null, at: 0, busy: false };

@@ -36,10 +36,19 @@ function mk(i) {
     else if (g === 'lantern') c.waitGo = r;
     else if (g === 'boat') { for (let k = 1; k <= 19; k++) at(rel(k * 500), () => act(r, { k: 't', c: 3 + ((Math.random() * 3) | 0) })); }
     else if (g === 'hang') { for (let k = 0; k < cfg.rounds; k++) at(rel(k * cfg.slot + rnd(900, 3300)), () => act(r, { k: 'h', v: (Math.random() * 3) | 0, i: k })); }
+    else if (g === 'chuot') c.waitGo = r;
+    else if (g === 'hpb') at(rel(rnd(1500, 6000)), () => act(r, { k: 'v', v: Math.round(rnd(10, 60)) }));
+    else if (g === 'khac') { if (Math.random() < .3) at(rel(rnd(300, 900)), () => act(r, { k: 'p', v: 0 })); at(rel(rnd(1500, 5000)), () => act(r, { k: 'p', v: cfg.odd })); }
+    else if (g === 'dem') at(rel(cfg.show + rnd(1500, 6000)), () => act(r, { k: 'v', v: Math.max(0, cfg.items.length + Math.round(rnd(-3, 3))) }));
+    else if (g === 'xep') { let p = rnd(500, 1500); for (let v = 1; v <= 9; v++) { p += rnd(250, 700); at(rel(p), () => act(r, { k: 't', v })); } }
+    else if (g === 'mau') { let p = rnd(500, 1200); cfg.rounds.forEach((q, i) => { p += rnd(600, 1500); at(rel(p), () => act(r, { k: 'a', i, v: Math.random() < .85 ? q.c : (q.c + 1) % 4 })); }); }
+    else if (g === 'tinh') { const ans = eval(cfg.expr.replace(/×/g, '*').replace(/−/g, '-')); at(rel(rnd(900, 5000)), () => act(r, { k: 'p', v: cfg.opts.indexOf(ans) })); }
+    else if (g === 'lat') { let p = rnd(500, 1200); const order = [...Array(12).keys()].sort(() => Math.random() - .5); for (const i of order) { p += rnd(500, 900); at(rel(p), () => act(r, { k: 'f', i })); } }
+    else if (g === 'chen') at(rel(cfg.end + rnd(300, 3500)), () => act(r, { k: 'p', v: Math.floor(Math.random() * 3) }));
     else if (g === 'nho') { let p = cfg.showEnd + rnd(600, 1500); cfg.seq.forEach((v, k) => { p += rnd(450, 800); at(rel(p), () => act(r, { k: 'm', v: Math.random() < .93 ? v : (v + 1) % 4 })); }); }
   };
   const prev = c.ws.onmessage;
-  c.ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.t === 'go' && c.waitGo && c.waitGo.n === m.n) { const r = c.waitGo; c.waitGo = null; at(rnd(220, 420), () => act(r, { k: 'p' })); } });
+  c.ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.t === 'go' && c.waitGo && c.waitGo.n === m.n) { const r = c.waitGo; c.waitGo = null; at(rnd(220, 420), () => act(r, { k: 'p', v: r.cfg.hole })); } });
   return c;
 }
 const cs = Array.from({ length: N }, (_, i) => mk(i));
