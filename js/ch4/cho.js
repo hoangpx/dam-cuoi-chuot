@@ -1423,9 +1423,3 @@ registerChapter({
   pointer: { down: c4Down, move: c4Move, up: c4Up },
   next() { startC4(); }, retry() { startC4(); },
 });
-// chương V (the brood's adventures) is not made yet: its card shows once chương IV's goal is reached
-registerChapter({
-  id: 5, modes: [], locked: () => true, hidden: () => !SAVE4.goal,
-  card: { num: lg('Chương V', 'Chapter V'), han: '冒險', name: lg('Bầy Chuột Phiêu Lưu', 'The Little Mice\'s Adventures'), desc: lg('Bầy chuột con nhà trầu cau lớn lên, rủ nhau đi phiêu lưu khắp làng.', 'The betel sellers\' children grow up and set off on adventures all over the village.'), bg: '#cfcbd0' },
-  lockText: lg('Đang khắc ván', 'Being carved'), progress: () => lg('Đang khắc ván', 'Being carved'),
-});

@@ -1,4 +1,4 @@
-/* Chương IX · Hội Làng 會村 (owner, 2026-10-19): one shared room that runs all day; whoever opens the chapter sits in one grid with
+/* Chương V · Hội Làng 會村 (owner; it took the place of the unmade "Bầy Chuột Phiêu Lưu", 2026-10-19)(owner, 2026-10-19): one shared room that runs all day; whoever opens the chapter sits in one grid with
    everyone else, sees them play live, plays the round in progress or waits for the next. The server (server/phong-choi, a Cloudflare
    Durable Object) keeps the clock, the schedule, the bots, the stakes, the results and the board; this file draws the grid, the
    controls and the board, and tro.js holds the 11 games (HL_G). Animations run from the server clock (HL_NET.now()) and the
@@ -17,8 +17,8 @@ const HL_INK = '#1d1915';
 const hlSans = "'Be Vietnam Pro', system-ui, sans-serif";
 
 function startHL() {
-  trackEnter('chuong-9'); AU.init(); AU.setSong(10); AU.setQuiet(false); hideChapterHuds();
-  S.chapter = 9; S.mode = 'hlplay';
+  trackEnter('chuong-5'); AU.init(); AU.setSong(10); AU.setQuiet(false); hideChapterHuds();
+  S.chapter = 5; S.mode = 'hlplay';
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
   PAPER = getPaper('sage'); document.documentElement.style.setProperty('--paper', PAPERS.sage.css);
   const me = hsMine();
@@ -359,8 +359,8 @@ function updateHL(dt) {
 const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho'];
 
 registerChapter({
-  id: 9, modes: ['hlplay'],
-  card: { num: lg('Chương IX', 'Chapter IX'), han: '會村', name: lg('Hội Làng', 'Village Fair'), desc: lg('Phòng chơi chung mở cả ngày: ai vào cũng ngồi cùng một hàng, thấy nhau chơi trực tiếp. Mười một trò nhanh tay nhanh mắt, mỗi ván cược 10 đồng từ túi, một người thắng ăn hết hũ. Có bảng xếp hạng.', 'A shared room open all day: everyone sits in one row and watches each other play live. Eleven quick games, a 10 đồng stake from your purse each round, one winner takes the pot. There is a leaderboard.'), bg: '#cdd9b4' },
+  id: 5, modes: ['hlplay'],
+  card: { num: lg('Chương V', 'Chapter V'), han: '會村', name: lg('Hội Làng', 'Village Fair'), desc: lg('Phòng chơi chung mở cả ngày: ai vào cũng ngồi cùng một hàng, thấy nhau chơi trực tiếp. Mười một trò nhanh tay nhanh mắt, mỗi ván cược 10 đồng từ túi, một người thắng ăn hết hũ. Có bảng xếp hạng.', 'A shared room open all day: everyone sits in one row and watches each other play live. Eleven quick games, a 10 đồng stake from your purse each round, one winner takes the pot. There is a leaderboard.'), bg: '#cdd9b4' },
   progress: () => HL_SAVE.r ? lgf('{w} thắng / {r} ván', '{w} wins / {r} rounds', { w: HL_SAVE.w, r: HL_SAVE.r }) : lg('Chưa chơi', 'Not played'),
   hasProgress: () => HL_SAVE.r > 0,
   direct: startHL,
