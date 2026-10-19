@@ -263,7 +263,7 @@ HL_G.hang = {
 
 let HL_NHO_LIT = -1;
 HL_G.nho = {
-  name: 'Nhớ trống', rule: 'Các trống sáng lên lần lượt, hãy nhớ thứ tự. Khi trống tắt, bấm lại đúng thứ tự. Ai đúng nhiều nhất thắng, đúng bằng nhau thì chia hũ; bấm sai là dừng.', ctl: 'drums',
+  name: 'Nhớ trống', rule: 'Các trống sáng lên lần lượt, hãy nhớ thứ tự. Khi trống tắt, bấm lại đúng thứ tự. Ai đúng nhiều nhất, nhanh nhất thắng; bấm sai là dừng.', ctl: 'drums',
   controls(r, W, H, btns) {
     const gap = 8, bw = (W - 20 - gap * 3) / 4, showing = hlEnd(r) < r.cfg.showEnd - 100;
     for (let v = 0; v < 4; v++) btns.push(hlBtn({ id: 'd' + v, key: String(v + 1), label: String(v + 1), size: 22, x: 10 + v * (bw + gap), y: H - 66, w: bw, h: 52, fill: HL.drumFlash && HL.drumFlash.v === v && HL.t - HL.drumFlash.t < .2 ? '#fff' : HL_DRUM[v], ink: '#f2ecde', off: showing, down: () => hlDrum(v) }));

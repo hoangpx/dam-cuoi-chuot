@@ -45,7 +45,7 @@ HL_G.chuot = {
 
 /* ---------- 2. two thirds of the average ---------- */
 HL_G.hpb = {
-  name: 'Hai phần ba', rule: 'Chọn một số từ 0 đến 100. Số nào gần nhất 2/3 trung bình các số của cả phòng thì thắng. Nhiều người cùng gần như nhau thì chia hũ.', ctl: 'step',
+  name: 'Hai phần ba', rule: 'Chọn một số từ 0 đến 100. Số nào gần nhất 2/3 trung bình các số của cả phòng thì thắng. Ai cùng sát mốc bằng nhau thì chia hũ.', ctl: 'step',
   controls(r, W, H, b) {
     const m = hlMy();   // two minus buttons, the value, two plus buttons
     const gap = 6, bw = (W - 20 - gap * 4) / 5, y = H - 126;
@@ -92,7 +92,7 @@ function hlShape(g, t, x, y, s) {
   g.fill(); g.stroke();
 }
 HL_G.dem = {
-  name: 'Đếm nhanh', rule: 'Một đàn hình hiện ra trong 2 giây rồi biến mất. Đếm tất cả rồi đoán số lượng. Ai đoán gần đúng nhất thắng, cùng gần như nhau thì chia hũ.', ctl: 'step', ipH: hlTall(.34),
+  name: 'Đếm nhanh', rule: 'Một đàn hình hiện ra trong 2 giây rồi biến mất. Đếm tất cả rồi đoán số lượng. Ai đoán gần đúng nhất thắng, bằng nhau thì chia hũ.', ctl: 'step', ipH: hlTall(.34),
   controls(r, W, H, b) {
     const m = hlMy(), showing = hlEnd(r) < r.cfg.show - 50, gap = 6, bw = (W - 20 - gap * 4) / 5, y = H - 126, off = showing || !!m.sent;
     const mk = (i, st) => hlBtn({ id: 'ds' + st, label: (st > 0 ? '+' : '−') + Math.abs(st), size: 18, x: 10 + i * (bw + gap), y, w: bw, h: 46, fill: '#c9a062', ink: HL_INK, off, down: () => { m.v = Math.max(0, Math.min(99, (m.v ?? 15) + st)); } });
@@ -211,7 +211,7 @@ function hlCupPos(cfg, e) {
   return { pos: out, lift: false };
 }
 HL_G.chen = {
-  name: 'Đoán chén có hạt', rule: 'Hạt đậu nằm dưới một chén, rồi các chén đổi chỗ nhau. Theo dõi thật kỹ rồi chọn chén có hạt. Ai chọn đúng thì chia nhau hũ.', ctl: 'cups',
+  name: 'Đoán chén có hạt', rule: 'Hạt đậu nằm dưới một chén, rồi các chén đổi chỗ nhau. Theo dõi thật kỹ rồi chọn chén có hạt. Ai chọn đúng và nhanh nhất thắng.', ctl: 'cups',
   controls(r, W, H, btns) {
     const m = hlMy(), e = hlEnd(r), ready = e >= r.cfg.end - 100, gap = 8, bw = (W - 20 - gap * 2) / 3;
     for (let v = 0; v < 3; v++) btns.push(hlBtn({ id: 'cp' + v, key: String(v + 1), label: `Chén ${v + 1}`, size: 18, x: 10 + v * (bw + gap), y: H - 66, w: bw, h: 52, fill: m.pick === v ? '#f2c640' : '#c9a062', ink: HL_INK, off: !ready || m.pick !== undefined, down: e => { if (hlAct2({ k: 'p', v }, e.timeStamp)) { m.pick = v; r.picked.add(HL.id); AU.pluck(90); } } }));
@@ -227,6 +227,6 @@ HL_G.chen = {
     hlText(g, e < cfg.show ? 'Nhớ hạt nằm dưới chén nào…' : e < cfg.end - 100 ? 'Theo dõi chén có hạt!' : hlMy().pick !== undefined ? `Bạn chọn chén ${hlMy().pick + 1} · chờ mọi người` : 'Chọn chén có hạt!', b.W / 2, b.y + b.h - 8, 13, hlSub);
   },
   cell(g, r, p, C, res, win) { if (res) { if (res.v === null) hlResText(g, C, 'không chọn', false, '#777'); else hlTick(g, C, !!res.right); } else if (r.picked.has(p.id)) hlTick(g, C); },
-  val: (r, row) => row.right ? 'chọn đúng' : 'chọn sai', win: (r, row) => 'chọn đúng chén có hạt',
-  mine: (r, row) => row.v === null ? 'Bạn không chọn kịp' : row.right ? `Bạn chọn đúng chén ${row.v + 1}!` : `Bạn chọn sai (hạt ở chén ${r.extra.final + 1})`,
+  val: (r, row) => row.right ? 'chọn đúng' : 'chọn sai', win: (r, row) => `chọn đúng chén có hạt lúc ${hlTime(row.p)}`,
+  mine: (r, row) => row.v === null ? 'Bạn không chọn kịp' : row.right ? `Bạn chọn đúng chén ${row.v + 1} · hạng ${row.rank}/${r.result.rows.length}` : `Bạn chọn sai (hạt ở chén ${r.extra.final + 1})`,
 };
