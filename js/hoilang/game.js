@@ -217,7 +217,8 @@ function hlCell(g, r, p, i, G, now, t) {
   if (res && res.rank) { g.globalAlpha = 1; hlText(g, win ? '♛ 1' : String(res.rank), x + 14, y + 16, win ? 18 : 14, { w: 900, c: win ? '#a3332a' : HL_INK }); }
   // the name
   g.globalAlpha = seated ? 1 : .6;
-  hlText(g, p.name + (p.bot ? ' (máy)' : ''), cx, y + h - nameH * .9, nameH, { w: me ? 900 : 700, f: "'Be Vietnam Pro', system-ui, sans-serif" });
+  { const label = p.name + (p.bot ? ' (máy)' : ''); let ns = nameH; g.font = `700 ${ns}px 'Be Vietnam Pro', system-ui, sans-serif`; while (ns > 8 && g.measureText(label).width > w - 8) { ns -= .5; g.font = `700 ${ns}px 'Be Vietnam Pro', system-ui, sans-serif`; }   // a long name shrinks to fit its cell
+    hlText(g, label, cx, y + h - nameH * .9, ns, { w: me ? 900 : 700, f: "'Be Vietnam Pro', system-ui, sans-serif" }); }
   if (seated && r.game === 'pomelo' && pr) { const gp = hlPomGap(r, p.id); hlText(g, gp === null ? 'trúng đầu!' : hlMm(gp), cx, y + h - nameH * 3.1, Math.max(10, Math.min(15, w * .12)), { w: 800, c: gp === null ? '#a3332a' : '#2f6a4c' }); }   // live: how far from the head it stopped
   if (!seated) hlText(g, 'chờ ván sau', cx, y + h * .3, 11, { w: 600, f: "'Be Vietnam Pro', system-ui, sans-serif", al: .9 });
   g.restore(); g.globalAlpha = 1;
