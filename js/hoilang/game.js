@@ -25,7 +25,7 @@ function startHL() {
   Object.assign(HL, { id: null, players: [], round: null, wait: false, conn: 'connecting', stat: null, board: null, ui: null, idle: true, joined: false, bscroll: 0, drag: null, win: null, fw: [], held: null, tapAcc: 0, paid: 0, okSent: null, flash: null });
   HL.fig.clear();
   const look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
-  HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk() }, hlMsg, s => { HL.conn = s; });
+  HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk(), cap: 2 }, hlMsg, s => { HL.conn = s; });
 }
 function hlLeave() { HL_NET.close(); showChapters(); }
 const hlOk = () => SAVE4.money >= HL.stake;
@@ -219,6 +219,10 @@ function renderHL() {
     hlText(g, HL.idle ? (HL.joined ? 'Bấm "Chơi tiếp" để vào ván' : 'Một mình cũng chơi được') : 'Đang chờ ván đầu…', W / 2, H / 2 - 14, 20);
     if (HL.idle) hlText(g, HL.joined ? 'Bạn đang nghỉ' : 'Bấm "Tham gia chơi" bên dưới, không bấm thì chỉ ngồi xem', W / 2, H / 2 + 14, 13, { f: hlSans, w: 600, o: false, al: .75 });
     hlButtons(g, hlControls({ game: null, state: 'wait' }, W, H, false), W, H); if (HL.ui) hlOverlay(g, W, H); return; }
+  if (!HL_G[r.game]) {   // a game this page does not know (an old copy of the page): ask for a reload instead of failing
+    hlText(g, 'Có trò mới rồi!', W / 2, H / 2 - 20, 22); hlText(g, 'Tải lại trang để chơi tiếp', W / 2, H / 2 + 10, 14, { f: hlSans, w: 600, o: false });
+    hlButtons(g, { btns: [{ id: 'reload', label: 'Tải lại trang', x: (W - 240) / 2, y: H - 58, w: 240, h: 48, fill: '#2f6a4c', ink: '#f2ecde', down: () => location.reload() }], h: 62 }, W, H); return;
+  }
   const seatedMe = hlSeatedMe(r), gm = HL_G[r.game], ctl = hlControls(r, W, H, seatedMe);
   const gmH = gm.ipH && r.state === 'run' ? gm.ipH(W, H) : 0, ipH = gmH || Math.max(96, Math.min(150, H * .19)), top = 62 + st, footH = ctl.h;
   hlInfo(g, r, gm, now, W, top, ipH, seatedMe);

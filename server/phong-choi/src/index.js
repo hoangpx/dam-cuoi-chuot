@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v11'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v12'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -81,17 +81,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v11')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v12')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v11')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v12')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v11')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v12')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -135,7 +135,7 @@ export class Room extends DurableObject {
     if (m.t === 'hello' && !c.joined) {
       let name = String(m.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
       if (!name || BAD.test(name)) name = 'Chuột ' + c.id.slice(1);
-      c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok;
+      c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok; c.cap = +m.cap || 1;   // cap 2 = knows the newer games
       const st = await this.getStats(c.dev); st.n = name;
       c.joined = true; this.noteJoin(c);
       this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
@@ -241,7 +241,8 @@ export class Room extends DurableObject {
     if (!solo && hs.length < T.MINP) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
     // a shuffled bag: every game once in random order, then a new shuffle (the first of a new bag is never the last played)
     if (!this.bag || !this.bag.length) { const b = [...GAMES]; for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } if (b[0] === this.lastGame) b.push(b.shift()); this.bag = b; }
-    const game = (this.env && GAMES.includes(this.env.ONLY_GAME)) ? this.env.ONLY_GAME : this.bag.shift(); this.lastGame = game;   // ONLY_GAME: a local test switch (wrangler dev --var), not set in production
+    const capable = this.humans().every(c => c.cap >= 2), okGame = x => capable || !NEWG.has(x), bi = this.bag.findIndex(okGame);
+    const game = (this.env && GAMES.includes(this.env.ONLY_GAME)) ? this.env.ONLY_GAME : bi >= 0 ? this.bag.splice(bi, 1)[0] : pick(GAMES.filter(okGame)); this.lastGame = game;   // ONLY_GAME: a local test switch (wrangler dev --var), not set in production
     // more people than seats: those who sat out the most recent rounds go first
     const order = hs.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
     const seated = new Map(); for (const c of order.slice(0, T.MAXP)) { seated.set(c.id, c); c.last = this.n + 1; }
