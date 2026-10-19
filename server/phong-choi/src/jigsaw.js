@@ -13,7 +13,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
 
-const COLS = 40, ROWS = 25, N = COLS * ROWS, PW = 1431, PH = 933, CW = 44;
+const COLS = 40, ROWS = 25, N = COLS * ROWS, PW = 3200, PH = 2204, PIC = 'dcm1', CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
 const ANG_TOL = 14 * Math.PI / 180, POS_TOL = .38 * Math.min(CW, CH), NEXT_AFTER = 120000, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
@@ -32,7 +32,7 @@ export class Jigsaw extends DurableObject {
     this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0;
     ctx.blockConcurrencyWhile(async () => {
       const st = await ctx.storage.get('pz');
-      if (st && Array.isArray(st.g) && st.g.length) this.load(st); else this.fresh(1);
+      if (st && st.pic === PIC && Array.isArray(st.g) && st.g.length) this.load(st); /* another picture (other proportions) = a fresh puzzle */ else this.fresh(1);
       this.total = (await ctx.storage.get('total')) || 0;
       if (this.done && Date.now() - this.doneAt >= NEXT_AFTER) this.fresh(this.n + 1);
       else if (this.done) this.scheduleNext();
@@ -65,7 +65,7 @@ export class Jigsaw extends DurableObject {
     if (!this.saveT) this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 1500);
   }
   flush() {
-    const put = { pz: { n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() }, total: this.total };
+    const put = { pz: { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() }, total: this.total };
     for (const dev of this.dirtyUsers) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
     try { this.ctx.storage.put(put); } catch (e) {}
   }

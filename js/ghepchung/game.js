@@ -9,7 +9,7 @@ try { const s = JSON.parse(localStorage.getItem('dcc.jg') || 'null'); if (s && t
 const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG_SAVE)); } catch (e) {} };
 
 const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0 };
-const JG_LEVEL = { pic: C9_PICS[0], tier: 3, cols: 40, rows: 25, big: true };
+const JG_LEVEL = { pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, tier: 3, cols: 40, rows: 25, big: true };
 const JG_STRIP = 50, JG_COIN = 10;
 
 function startJG() {
@@ -157,7 +157,7 @@ function renderJG() {
   if (G) { c9Draw(G, g, W, hh); c9DrawTurnBtn(G, g); }
   // the top bar: back, the title and how far the print is, then four round buttons (sample, face, chat, cup)
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
-  hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Chung', 'Shared Puzzle'), 56, 20, 16, { w: 900, a: 'left' });
+  hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Tranh', 'Print Puzzle'), 56, 20, 16, { w: 900, a: 'left' });
   hlText(g, G ? `${JG.joinedN}/${L.cols * L.rows} ${lg('mảnh', 'pieces')} · ${JG.players.length} ${lg('người', 'people')}` : '', 56, 41, 11, { f: hlSans, w: 600, o: false, al: .8, a: 'left' });
   const cy = 28, X = [W - 22, W - 60, W - 98, W - 136];
   if (G) { jgEye(g, X[3], cy, G.peek > 0); JG.btns.push({ x: X[3] - 19, y: cy - 19, w: 38, h: 38, down: () => { G.peek = G.peek > 0 ? 0 : 4; } }); }
@@ -220,7 +220,7 @@ function jgKey(e) {
 
 // the chapter card shows how far the shared print is and who is in it (asked at most every 20 s while the list is up)
 const JGON = { n: null, joined: 0, at: 0, busy: false };
-function jgOnlineText() { return JGON.n === null ? lg('Đang xem bức tranh…', 'Checking the print…') : lgf('{j}/1000 mảnh · {n} người đang ghép', '{j}/1000 pieces · {n} joining now', { j: JGON.joined, n: JGON.n }); }
+function jgOnlineText() { return JGON.n === null ? lg('Đang xem bức tranh…', 'Checking the print…') : lgf('Ghép tranh chung · {n} người đang ghép', 'Shared puzzle · {n} joining now', { n: JGON.n }); }
 function jgOnlineAsk() {
   if (JGON.busy || Date.now() - JGON.at < 20000) return; JGON.busy = true; JGON.at = Date.now();
   fetch(JG_ONLINE_URL).then(r => r.json()).then(j => {
@@ -231,7 +231,7 @@ function jgOnlineAsk() {
 }
 registerChapter({
   id: 10, modes: ['jgplay'],
-  card: { num: lg('Chương X', 'Chapter X'), han: '共拼', name: lg('Ghép Chung', 'Shared Puzzle'), desc: lg('Cả làng cùng ghép một bức tranh một nghìn mảnh. Ai cũng vào ghép được, thấy người khác nhấc mảnh nào, ghép xong mảnh nào. Mỗi mảnh ghép thành công được 10 đồng.', 'The whole village puts one thousand-piece print together. Anyone can join, you see the pieces others lift and join, and every piece you join earns 10 đồng.'), bg: '#e0d6bd' },
+  card: { num: lg('Chương X', 'Chapter X'), han: '共拼', name: lg('Ghép Tranh', 'Print Puzzle'), desc: lg('Cả làng cùng ghép bức tranh Đám cưới chuột một nghìn mảnh. Ai cũng vào ghép được, thấy người khác nhấc mảnh nào, ghép xong mảnh nào. Mỗi mảnh ghép thành công được 10 đồng.', 'The whole village puts one thousand-piece print together. Anyone can join, you see the pieces others lift and join, and every piece you join earns 10 đồng.'), bg: '#e0d6bd' },
   progress: () => { jgOnlineAsk(); return jgOnlineText(); },
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,

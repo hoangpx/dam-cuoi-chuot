@@ -687,3 +687,5 @@ Chương X · Ghép Chung 共拼 (owner, 2026-10-20: "làm giống Hội Làng: 
 - Deployed 2026-10-20 (npx wrangler deploy; the Hội Làng Room name stays v18). Not pushed to GitHub yet (owner decides); VERSION 2026-10-28h.
 
 Chương IX (Ghép Tranh) hidden from the chapter list (owner, 2026-10-20: "ẩn ghép tranh đi"): hidden: () => true in js/ghep/game.js, code kept; chương X (Ghép Chung) still shows. VERSION 2026-10-28i.
+
+Chương X renamed Ghép Tranh and now cuts the owner's high-quality picture Đám cưới chuột (img/ch10/dam-cuoi-chuot.jpg, 3200 x 2204 from the 7972 x 5492 original; owner 2026-10-20): the chapter card reads "Ghép tranh chung · N người đang ghép". The server keeps PIC = 'dcm1' in its saved state; a different PIC (other proportions) starts a fresh puzzle, so change PIC together with PW/PH whenever the picture changes. Deployed; VERSION 2026-10-28j.
