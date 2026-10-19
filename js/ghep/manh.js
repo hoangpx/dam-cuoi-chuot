@@ -161,9 +161,15 @@ function c9Draw(G, g, W, H) {
 // the little turn button beside the lifted group (for a finger), in screen pixels
 function c9TurnBtn(G) {
   const grp = G.held; if (!grp || !G.touch) return null; const c = c9Centroid(G, grp), s = c9W2S(G, c[0], c[1]), r = 20, off = Math.min(110, G.cw * G.cam.z * .9 + 18);
-  return { x: c9Clip(s[0] + off, r + 6, G.lw - r - 6), y: c9Clip(s[1] - off, G.top + r + 6, G.lh - r - 8), r };
+  return { x: c9Clip(s[0] + off, r + 6, G.lw - r - 6 - (G.big ? 48 : 0)), y: c9Clip(s[1] - off, G.top + r + 6, G.lh - r - 8 - (G.net ? 52 : 0)), r };   // clear of the zoom buttons and the player strip
 }
-function c9DrawTurnBtn(G, g) { const b = c9TurnBtn(G); if (!b) return; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.stroke(); g.lineWidth = 2.6; g.beginPath(); g.arc(b.x, b.y, 8, -2.4, 1.9); g.stroke(); g.fillStyle = '#1d1915'; g.beginPath(); g.moveTo(b.x + 5, b.y + 9); g.lineTo(b.x + 12, b.y + 3); g.lineTo(b.x + 2, b.y + 2); g.closePath(); g.fill(); }
+function c9DrawTurnBtn(G, g) {
+  const b = c9TurnBtn(G); if (!b) return; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.stroke();
+  // a clockwise arc with its arrowhead exactly at the end of the line, pointing along it
+  const R = 9, a0 = -2.3, a1 = 1.7, ex = b.x + R * Math.cos(a1), ey = b.y + R * Math.sin(a1), tx = -Math.sin(a1), ty = Math.cos(a1), nx = Math.cos(a1), ny = Math.sin(a1);
+  g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath(); g.arc(b.x, b.y, R, a0, a1 - .12); g.stroke();
+  g.fillStyle = '#1d1915'; g.beginPath(); g.moveTo(ex + tx * 6, ey + ty * 6); g.lineTo(ex + nx * 5, ey + ny * 5); g.lineTo(ex - nx * 5, ey - ny * 5); g.closePath(); g.fill(); g.lineCap = 'butt';
+}
 
 // the piece (and so its group) under a world point; the topmost group first
 function c9Hit(G, x, y) {
