@@ -245,14 +245,22 @@ function hlCountdown(g, r, now, W, H) {
   g.save(); g.globalAlpha = a * .92; g.fillStyle = 'rgba(242,236,222,.55)'; g.beginPath(); g.arc(W / 2, H / 2, big ? size * .62 : size * 1.5, 0, 6.283); g.fill(); g.restore();
   g.globalAlpha = a; hlText(g, txt, W / 2, H / 2 + (big ? size * .04 : 0), size, { w: 900, c: big ? '#a3332a' : '#2f6a4c', os: 'rgba(242,236,222,.95)' }); g.globalAlpha = 1;
 }
+// the ranking button: a little gold cup in a round plate (opens the board)
+function hlTrophy(g, cx, cy) {
+  g.beginPath(); g.arc(cx, cy, 16, 0, 6.283); g.fillStyle = '#f6e3a0'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = HL_INK; g.stroke();
+  g.lineWidth = 1.8; g.strokeStyle = HL_INK; g.fillStyle = '#e0a81c';
+  g.beginPath(); g.moveTo(cx - 6, cy - 8); g.lineTo(cx + 6, cy - 8); g.lineTo(cx + 5, cy + 1); g.quadraticCurveTo(cx, cy + 6, cx - 5, cy + 1); g.closePath(); g.fill(); g.stroke();   // the cup
+  g.beginPath(); g.moveTo(cx - 6, cy - 6); g.quadraticCurveTo(cx - 11, cy - 6, cx - 9, cy - 1); g.moveTo(cx + 6, cy - 6); g.quadraticCurveTo(cx + 11, cy - 6, cx + 9, cy - 1); g.stroke();   // the handles
+  g.beginPath(); g.moveTo(cx, cy + 4); g.lineTo(cx, cy + 8); g.moveTo(cx - 5, cy + 9); g.lineTo(cx + 5, cy + 9); g.stroke();   // the stem and the foot
+}
 function hlHeader(g, W, st) {
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
   hlText(g, 'Hội Làng', 46, 22 + st, 21, { w: 900, a: 'left' });
   hlText(g, HL.round && HL.round.solo ? 'Chơi thử · không cược' : `${HL.players.filter(p => !p.bot).length} người · cược ${HL.stake} đ`, 46, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75, a: 'left' });
   hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 13, { a: 'right', f: hlSans, w: 700 });
-  if (!HL.idle && HL.conn === 'up') { HL.btns.push({ id: 'rest', x: W - 186, y: 36 + st, w: 86, h: 22, down: () => { HL.idle = true; HL_NET.send({ t: 'rest' }); } }); hlPlate(g, W - 186, 38 + st, 82, 18, '#e6dec9', HL_INK, 6); hlText(g, 'Tạm nghỉ', W - 145, 47 + st, 11.5, { a: 'center', f: hlSans, w: 700, o: false }); }
-  HL.btns.push({ id: 'board', x: W - 92, y: 36 + st, w: 84, h: 22, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
-  hlText(g, 'Xếp hạng ›', W - 12, 47 + st, 12, { a: 'right', f: hlSans, w: 700, o: false, c: '#a3332a' });
+  if (!HL.idle && HL.conn === 'up') { HL.btns.push({ id: 'rest', x: W - 152, y: 36 + st, w: 86, h: 22, down: () => { HL.idle = true; HL_NET.send({ t: 'rest' }); } }); hlPlate(g, W - 152, 38 + st, 82, 18, '#e6dec9', HL_INK, 6); hlText(g, 'Tạm nghỉ', W - 111, 47 + st, 11.5, { a: 'center', f: hlSans, w: 700, o: false }); }
+  HL.btns.push({ id: 'board', x: W - 58, y: 32 + st, w: 50, h: 36, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
+  hlTrophy(g, W - 33, 50 + st);
 }
 // the panel above the grid: the game's title, its rule and countdown before, its live picture during, the winner after
 function hlInfo(g, r, gm, now, W, y, h, mine) {
