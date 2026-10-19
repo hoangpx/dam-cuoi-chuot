@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v17'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v18'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -101,25 +101,34 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v17')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v18')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v17')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v18')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v17')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v18')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
 };
 
+// the players' numbers, the board and the day records: kept here under one fixed name (the room itself may be renamed on a deploy)
+export class Store extends DurableObject {
+  get(k) { return this.ctx.storage.get(k); }
+  put(a, b) { return b === undefined ? this.ctx.storage.put(a) : this.ctx.storage.put(a, b); }
+  async list(o) { return [...(await this.ctx.storage.list(o))]; }
+  delete(k) { return this.ctx.storage.delete(k); }
+}
+
 export class Room extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
+    this.kv = env.STORE.get(env.STORE.idFromName('main'));
     this.conns = new Map(); this.round = null; this.n = 0; this.recent = []; this.timer = null; this.nextId = 1;
     this.stats = new Map();    // dev → { n, r, w, won, lost, g: { game: [rounds, wins] } }, loaded when a player says hello, saved after every result
     this.top = null; this.topAt = 0; this.dirty = new Set();
@@ -128,7 +137,7 @@ export class Room extends DurableObject {
   async fetch(req) {
     if (req && new URL(req.url).pathname === '/count') return new Response(JSON.stringify({ n: this.humans().filter(c => !TESTDEV.test(c.dev)).length }));
     if (req && new URL(req.url).pathname === '/days') {
-      const all = await this.ctx.storage.list({ prefix: 'd:', reverse: true, limit: 90 }), out = [];
+      const all = await this.kv.list({ prefix: 'd:', reverse: true, limit: 90 }), out = [];
       for (const [k, v] of all) out.push({ day: k.slice(2), players: v.players, peak: v.peak, peakAt: v.peakAt, rounds: v.rounds, maxSeat: v.maxSeat });
       return new Response(JSON.stringify(out, null, 1), { headers: { 'content-type': 'application/json' } });
     }
@@ -200,11 +209,11 @@ export class Room extends DurableObject {
   /* ---- the day's numbers for the owner: different players, most online at once, rounds, the fullest round (Vietnam date) ---- */
   async dayDoc() {
     const k = 'd:' + new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
-    if (!this.day || this.day.k !== k) this.day = { k, v: (await this.ctx.storage.get(k)) || { players: 0, peak: 0, peakAt: 0, rounds: 0, maxSeat: 0, devs: {} } };
+    if (!this.day || this.day.k !== k) this.day = { k, v: (await this.kv.get(k)) || { players: 0, peak: 0, peakAt: 0, rounds: 0, maxSeat: 0, devs: {} } };
     return this.day;
   }
   async noteDay(fn) {
-    const d = await this.dayDoc(); if (fn(d.v) !== false) { try { await this.ctx.storage.put(d.k, d.v); } catch (e) {} }
+    const d = await this.dayDoc(); if (fn(d.v) !== false) { try { await this.kv.put(d.k, d.v); } catch (e) {} }
   }
   noteJoin(c) {
     if (TESTDEV.test(c.dev)) return;
@@ -225,7 +234,7 @@ export class Room extends DurableObject {
   /* ---- stats and the board ---- */
   async getStats(dev) {
     let s = this.stats.get(dev);
-    if (!s) { s = (await this.ctx.storage.get('u:' + dev)) || { n: '', r: 0, w: 0, won: 0, lost: 0, g: {} }; this.stats.set(dev, s); }
+    if (!s) { s = (await this.kv.get('u:' + dev)) || { n: '', r: 0, w: 0, won: 0, lost: 0, g: {} }; this.stats.set(dev, s); }
     return s;
   }
   pubStat(s) { return { r: s.r, w: s.w, won: s.won, lost: s.lost, g: s.g }; }
@@ -234,9 +243,9 @@ export class Room extends DurableObject {
     const now = Date.now(); this.tops = this.tops || {};
     let cur = this.tops[per];
     if (!cur || now - cur.at > 30000) {
-      const all = await this.ctx.storage.list({ prefix: 'u:', limit: 3000 }), rows = [];
+      const all = await this.kv.list({ prefix: 'u:', limit: 3000 }), rows = [];
       const junk = []; for (const [k, v] of all) { if (TESTDEV.test(k.slice(2))) { junk.push(k); continue; } const x = per === 'a' ? v : (v.p && v.p[per] && v.p[per].k === pkey(per) ? v.p[per] : null); if (x && x.r > 0) rows.push({ dev: k.slice(2), n: v.n, r: x.r, w: x.w, won: x.won, lost: x.lost, net: x.won - x.lost }); }
-      if (junk.length) try { await this.ctx.storage.delete(junk); } catch (e) {}   // the test clients (test.mjs) are not players
+      if (junk.length) try { await this.kv.delete(junk); } catch (e) {}   // the test clients (test.mjs) are not players
       rows.sort((a, b) => b.net - a.net || b.w - a.w || a.dev.localeCompare(b.dev));
       cur = this.tops[per] = { rows, at: now };
     }
@@ -646,7 +655,7 @@ export class Room extends DurableObject {
       keys['u:' + c.dev] = s; this.send(c, { t: 'stat', stat: this.pubStat(s) });
     }
     for (const k of Object.keys(keys)) if (TESTDEV.test(k.slice(2))) delete keys[k];
-    try { if (Object.keys(keys).length) await this.ctx.storage.put(keys); } catch (e) {}
+    try { if (Object.keys(keys).length) await this.kv.put(keys); } catch (e) {}
     this.tops = null;
   }
 }

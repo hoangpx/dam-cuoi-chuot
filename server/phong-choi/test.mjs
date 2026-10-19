@@ -16,7 +16,7 @@ function mk(i) {
   c.ws.onerror = e => errs.push('ws error ' + i);
   c.ws.onmessage = e => {
     const m = JSON.parse(e.data);
-    if (m.t === 'welcome') { c.id = m.id; }
+    if (m.t === 'welcome') { c.id = m.id; send({ t: 'join' }); }
     else if (m.t === 'ping') send({ t: 'pong', s: m.s });
     else if (m.t === 'sync') { const t = performance.now(), rtt = t - m.c, off = m.s + rtt / 2 - Date.now(); if (rtt < c.rtt) { c.rtt = rtt; c.off = off; } }
     else if (m.t === 'idle') send({ t: 'join' });
