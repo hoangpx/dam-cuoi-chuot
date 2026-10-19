@@ -47,6 +47,9 @@ const T = {
   TRONG_BEATS: 4, TRONG_N: 8, TRONG_GRACE: 2500,
   NHO_STEP: 700, NHO_WAIT: 11000,
 };
+// board periods (Vietnam time, UTC+7): d day, w week (Monday first), m month, a all time
+const pkey = (per, t = Date.now()) => { const v = new Date(t + 7 * 36e5), day = Math.floor((t + 7 * 36e5) / 864e5); return per === 'd' ? day : per === 'w' ? Math.floor((day + 3) / 7) : v.getUTCFullYear() * 12 + v.getUTCMonth(); };
+const PERS = ['d', 'w', 'm'];
 const rnd = (a, b) => a + Math.random() * (b - a);
 const ri = (a, b) => Math.floor(rnd(a, b + 1));
 const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
@@ -122,7 +125,7 @@ export class Room extends DurableObject {
     else if (m.t === 'bal') { const ok = !!m.ok; if (ok !== c.ok) { c.ok = ok; this.all({ t: 'players', players: this.playerList() }); } }
     else if (m.t === 'join') { if (c.idle) { c.idle = false; c.miss = 0; this.all({ t: 'players', players: this.playerList() }); } }
     else if (m.t === 'act') this.onAct(c, m);
-    else if (m.t === 'board') this.sendBoard(c);
+    else if (m.t === 'board') this.sendBoard(c, m.per);
   }
   cleanLook(l) {
     if (!l || typeof l !== 'object') return null;
@@ -150,17 +153,19 @@ export class Room extends DurableObject {
     return s;
   }
   pubStat(s) { return { r: s.r, w: s.w, won: s.won, lost: s.lost, g: s.g }; }
-  async sendBoard(c) {
-    const now = Date.now();
-    if (!this.top || now - this.topAt > 30000) {
+  async sendBoard(c, per) {
+    per = per === 'd' || per === 'w' || per === 'm' ? per : 'a';
+    const now = Date.now(); this.tops = this.tops || {};
+    let cur = this.tops[per];
+    if (!cur || now - cur.at > 30000) {
       const all = await this.ctx.storage.list({ prefix: 'u:', limit: 3000 }), rows = [];
-      const junk = []; for (const [k, v] of all) { if (TESTDEV.test(k.slice(2))) { junk.push(k); continue; } if (v.r > 0) rows.push({ dev: k.slice(2), n: v.n, r: v.r, w: v.w, won: v.won, lost: v.lost, net: v.won - v.lost }); }
+      const junk = []; for (const [k, v] of all) { if (TESTDEV.test(k.slice(2))) { junk.push(k); continue; } const x = per === 'a' ? v : (v.p && v.p[per] && v.p[per].k === pkey(per) ? v.p[per] : null); if (x && x.r > 0) rows.push({ dev: k.slice(2), n: v.n, r: x.r, w: x.w, won: x.won, lost: x.lost, net: x.won - x.lost }); }
       if (junk.length) try { await this.ctx.storage.delete(junk); } catch (e) {}   // the test clients (test.mjs) are not players
       rows.sort((a, b) => b.net - a.net || b.w - a.w || a.dev.localeCompare(b.dev));
-      this.top = rows; this.topAt = now;
+      cur = this.tops[per] = { rows, at: now };
     }
-    const me = this.top.findIndex(x => x.dev === c.dev), my = this.stats.get(c.dev);
-    this.send(c, { t: 'board', total: this.top.length, top: this.top.slice(0, 30).map(x => ({ n: x.n, r: x.r, w: x.w, won: x.won, lost: x.lost, net: x.net, me: x.dev === c.dev })), me: me >= 0 ? { pos: me + 1, ...this.top[me], dev: undefined } : (my && my.r ? { pos: null, r: my.r, w: my.w, won: my.won, lost: my.lost, net: my.won - my.lost } : null) });
+    const top = cur.rows, me = top.findIndex(x => x.dev === c.dev);
+    this.send(c, { t: 'board', per, total: top.length, top: top.slice(0, 30).map(x => ({ n: x.n, r: x.r, w: x.w, won: x.won, lost: x.lost, net: x.net, me: x.dev === c.dev })), me: me >= 0 ? { pos: me + 1, ...top[me], dev: undefined } : null });
   }
 
   /* ---- the schedule ---- */
@@ -423,13 +428,14 @@ export class Room extends DurableObject {
     const keys = {};
     for (const c of cs) {
       const s = await this.getStats(c.dev); s.n = c.name; s.r++;
+      const pb = {}; s.p = s.p || {}; for (const per of PERS) { const k = pkey(per); if (!s.p[per] || s.p[per].k !== k) s.p[per] = { k, r: 0, w: 0, won: 0, lost: 0 }; pb[per] = s.p[per]; pb[per].r++; }
       const gg = s.g[r.game] || (s.g[r.game] = [0, 0, 0, 0]);   // rounds, wins, won, lost in this game
       gg[0]++;
-      if (winner) { if (c.id === winner) { s.w++; gg[1]++; s.won += net[c.id]; gg[2] += net[c.id]; } else { s.lost += T.STAKE; gg[3] += T.STAKE; } }
+      if (winner) { if (c.id === winner) { s.w++; gg[1]++; s.won += net[c.id]; gg[2] += net[c.id]; for (const per of PERS) { pb[per].w++; pb[per].won += net[c.id]; } } else { s.lost += T.STAKE; gg[3] += T.STAKE; for (const per of PERS) pb[per].lost += T.STAKE; } }
       keys['u:' + c.dev] = s; this.send(c, { t: 'stat', stat: this.pubStat(s) });
     }
     for (const k of Object.keys(keys)) if (TESTDEV.test(k.slice(2))) delete keys[k];
     try { if (Object.keys(keys).length) await this.ctx.storage.put(keys); } catch (e) {}
-    this.top = null;
+    this.tops = null;
   }
 }

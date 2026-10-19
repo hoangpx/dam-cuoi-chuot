@@ -10,7 +10,7 @@ function mk(i) {
   const at = (ms, f) => setTimeout(f, Math.max(0, ms));
   const act = (r, o) => send({ t: 'act', n: r.n, at: srv(), ...o });
   c.ws.onopen = () => {
-    send({ t: 'hello', dev: 'testdev' + String(i).padStart(3, '0') + 'abcdefgh', name: c.name, look: { role: i % 2 ? 'vo' : 'chong', fur: 'brown', robe: 'red' }, ok: true });
+    send({ t: 'hello', dev: (process.env.DEVPFX || 'testdev') + String(i).padStart(3, '0') + 'abcdefgh', name: c.name, look: { role: i % 2 ? 'vo' : 'chong', fur: 'brown', robe: 'red' }, ok: true });
     for (let k = 0; k < 5; k++) setTimeout(() => send({ t: 'sync', c: performance.now() }), k * 200);
   };
   c.ws.onerror = e => errs.push('ws error ' + i);
@@ -47,6 +47,6 @@ const t0 = Date.now();
 await new Promise(res => { const iv = setInterval(() => { if (summary.length >= ROUNDS || Date.now() - t0 > 40000 * ROUNDS + 20000) { clearInterval(iv); res(); } }, 1000); });
 console.log('--- trò đã thấy:', [...seen].join(','), '| lỗi:', errs.length);
 // bảng xếp hạng
-const b = new WebSocket(URL); b.onopen = () => { b.send(JSON.stringify({ t: 'hello', dev: 'boardreader0000000', name: 'Xem', ok: true })); setTimeout(() => b.send(JSON.stringify({ t: 'board' })), 600); };
-b.onmessage = e => { const m = JSON.parse(e.data); if (m.t === 'board') { console.log('bảng:', m.total, 'người; top3', JSON.stringify(m.top.slice(0, 3))); process.exit(0); } };
+const b = new WebSocket(URL); b.onopen = () => { b.send(JSON.stringify({ t: 'hello', dev: 'boardreader0000000', name: 'Xem', ok: true })); setTimeout(() => b.send(JSON.stringify({ t: 'board', per: process.env.PER || 'a' })), 600); };
+b.onmessage = e => { const m = JSON.parse(e.data); if (m.t === 'board') { console.log('bảng', m.per, ':', m.total, 'người; top3', JSON.stringify(m.top.slice(0, 3))); process.exit(0); } };
 setTimeout(() => process.exit(0), 6000);

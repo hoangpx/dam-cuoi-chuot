@@ -12,7 +12,7 @@ let HL_SAVE = { r: 0, w: 0, net: 0 };
 try { const s = JSON.parse(localStorage.getItem('dcc.hl2') || 'null'); if (s && typeof s.r === 'number') HL_SAVE = Object.assign(HL_SAVE, s); } catch (e) {}
 const hlPersist = () => { try { localStorage.setItem('dcc.hl2', JSON.stringify(HL_SAVE)); } catch (e) {} };
 
-const HL = { id: null, players: [], round: null, wait: false, conn: 'connecting', stake: 10, stat: null, board: null, ui: null, tab: 'top', idle: false, fig: new Map(), t: 0, win: null, fw: [], btns: [], held: null, tapAcc: 0, tapSent: 0, myTaps: 0, paid: 0, okSent: null, flash: null, myPick: 0, myHole: null, drumFlash: null };
+const HL = { id: null, players: [], round: null, wait: false, conn: 'connecting', stake: 10, stat: null, board: null, ui: null, tab: 'top', per: 'd', idle: false, fig: new Map(), t: 0, win: null, fw: [], btns: [], held: null, tapAcc: 0, tapSent: 0, myTaps: 0, paid: 0, okSent: null, flash: null, myPick: 0, myHole: null, drumFlash: null };
 const HL_INK = '#1d1915';
 const hlSans = "'Be Vietnam Pro', system-ui, sans-serif";
 
@@ -214,7 +214,7 @@ function hlHeader(g, W, st) {
   hlText(g, 'Hội Làng', W / 2, 22 + st, 22, { w: 900 });
   hlText(g, `${HL.players.filter(p => !p.bot).length} người trong phòng · cược ${HL.stake} đ`, W / 2, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75 });
   hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 14, { a: 'right', f: hlSans, w: 700 });
-  HL.btns.push({ id: 'board', x: W - 92, y: 36 + st, w: 84, h: 22, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board' }); } });
+  HL.btns.push({ id: 'board', x: W - 92, y: 36 + st, w: 84, h: 22, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
   hlText(g, 'Xếp hạng ›', W - 12, 47 + st, 12, { a: 'right', f: hlSans, w: 700, o: false, c: '#a3332a' });
 }
 // the panel above the grid: the game's title, its rule and countdown before, its live picture during, the winner after
@@ -328,16 +328,18 @@ function hlOverlay(g, W, H) {
   const x = 10, y = 60 + safeTop(), w = W - 20, h = H - y - 14;
   g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(0, 0, W, H); hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 14);
   const tabs = [['top', 'Xếp hạng'], ['me', 'Của tôi']], tw = (w - 24) / 2;
-  tabs.forEach(([k, l], i) => { const tx = x + 12 + i * tw; hlPlate(g, tx, y + 10, tw - 4, 30, HL.tab === k ? '#a3332a' : '#e6dec9', HL_INK, 8); hlText(g, l, tx + tw / 2 - 2, y + 26, 14, { w: 800, c: HL.tab === k ? '#f2ecde' : HL_INK, o: false }); HL.btns.push({ id: 'tab' + k, x: tx, y: y + 10, w: tw - 4, h: 30, down: () => { HL.tab = k; if (k === 'top') HL_NET.send({ t: 'board' }); } }); });
+  tabs.forEach(([k, l], i) => { const tx = x + 12 + i * tw; hlPlate(g, tx, y + 10, tw - 4, 30, HL.tab === k ? '#a3332a' : '#e6dec9', HL_INK, 8); hlText(g, l, tx + tw / 2 - 2, y + 26, 14, { w: 800, c: HL.tab === k ? '#f2ecde' : HL_INK, o: false }); HL.btns.push({ id: 'tab' + k, x: tx, y: y + 10, w: tw - 4, h: 30, down: () => { HL.tab = k; if (k === 'top') HL_NET.send({ t: 'board', per: HL.per }); } }); });
   hlText(g, '‹ đóng', x + w - 44, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a' }); HL.btns.push({ id: 'close', x: x + w - 90, y: y + h - 30, w: 90, h: 30, down: () => { HL.ui = null; } });
   const rowH = 22, sub = { f: hlSans, w: 600, o: false };
   if (HL.tab === 'top') {
-    const b = HL.board; if (!b) { hlText(g, 'Đang tải…', W / 2, y + 90, 14, sub); return; }
-    const hy = y + 56; hlText(g, 'Hạng', x + 14, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Tên', x + 52, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Ván', x + w - 170, hy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Thắng', x + w - 118, hy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Lời ròng', x + w - 14, hy, 11, { ...sub, a: 'right', w: 800 });
-    const maxRows = Math.max(3, Math.floor((h - 56 - 40 - rowH) / rowH));
+    const pers = [['d', 'Ngày'], ['w', 'Tuần'], ['m', 'Tháng'], ['a', 'Mọi lúc']], pw = (w - 24) / 4;
+    pers.forEach(([k, l], i) => { const px = x + 12 + i * pw; hlPlate(g, px, y + 46, pw - 4, 24, HL.per === k ? '#2f6a4c' : '#e6dec9', HL_INK, 7); hlText(g, l, px + pw / 2 - 2, y + 59, 12, { f: hlSans, w: 800, c: HL.per === k ? '#f2ecde' : HL_INK, o: false }); HL.btns.push({ id: 'per' + k, x: px, y: y + 46, w: pw - 4, h: 24, down: () => { HL.per = k; HL_NET.send({ t: 'board', per: k }); } }); });
+    const b = HL.board && HL.board.per === HL.per ? HL.board : null; if (!b) { hlText(g, 'Đang tải…', W / 2, y + 110, 14, sub); return; }
+    const hy = y + 90; hlText(g, 'Hạng', x + 14, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Tên', x + 52, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Ván', x + w - 170, hy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Thắng', x + w - 118, hy, 11, { ...sub, a: 'right', w: 800 }); hlText(g, 'Lời ròng', x + w - 14, hy, 11, { ...sub, a: 'right', w: 800 });
+    const maxRows = Math.max(3, Math.floor((h - 90 - 40 - rowH) / rowH));
     b.top.slice(0, maxRows).forEach((u, i) => { const ry = hy + 20 + i * rowH; if (u.me) { g.fillStyle = 'rgba(242,198,64,.5)'; g.fillRect(x + 6, ry - 11, w - 12, rowH - 2); } hlBoardRow(g, x, w, ry, i + 1, u, sub); });
     if (b.me && !b.top.slice(0, maxRows).some(u => u.me)) { const ry = hy + 20 + maxRows * rowH + 6; g.fillStyle = 'rgba(242,198,64,.5)'; g.fillRect(x + 6, ry - 11, w - 12, rowH - 2); hlBoardRow(g, x, w, ry, b.me.pos || '–', { n: 'Bạn', r: b.me.r, w: b.me.w, net: b.me.net }, sub); }
-    hlText(g, `${b.total} người đã chơi · xếp theo lời ròng (tiền ăn − tiền mất)`, W / 2, y + h - 48, 11, { ...sub, al: .7 });
+    hlText(g, `${b.total} người ${b.per === 'a' ? 'đã chơi' : b.per === 'd' ? 'chơi hôm nay' : b.per === 'w' ? 'chơi tuần này' : 'chơi tháng này'} · xếp theo lời ròng (ăn − mất)`, W / 2, y + h - 48, 11, { ...sub, al: .7 });
   } else {
     const s = HL.stat; if (!s) { hlText(g, 'Chưa có số liệu', W / 2, y + 90, 14, sub); return; }
     const hy = y + 58; hlText(g, `Tổng: ${s.r} ván · thắng ${s.w} · ăn ${s.won} đ · mất ${s.lost} đ · lời ròng ${s.won - s.lost >= 0 ? '+' : '−'}${Math.abs(s.won - s.lost)} đ`, W / 2, hy, 12, { f: hlSans, w: 700, o: false });
