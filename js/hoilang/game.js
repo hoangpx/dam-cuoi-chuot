@@ -201,7 +201,10 @@ function renderHL() {
   const r = hlSync(HL.round), now = HL_NET.now(), t = S.t;
   hlHeader(g, W, st);
   if (HL.conn !== 'up' || !HL.id) { hlText(g, HL.conn === 'down' ? 'Mất kết nối, đang nối lại…' : 'Đang vào phòng…', W / 2, H / 2, 20); return; }
-  if (!r) { hlText(g, HL.wait ? 'Đang chờ thêm người chơi cùng…' : 'Đang chờ ván đầu…', W / 2, H / 2, 20); hlFoot(g, W, H); if (HL.ui) hlOverlay(g, W, H); return; }
+  if (!r) {   // no round yet: a watcher can still press join (one person alone plays a practice round)
+    hlText(g, HL.idle ? (HL.joined ? 'Bấm "Chơi tiếp" để vào ván' : 'Một mình cũng chơi được') : 'Đang chờ ván đầu…', W / 2, H / 2 - 14, 20);
+    if (HL.idle) hlText(g, HL.joined ? 'Bạn đang nghỉ' : 'Bấm "Tham gia chơi" bên dưới, không bấm thì chỉ ngồi xem', W / 2, H / 2 + 14, 13, { f: hlSans, w: 600, o: false, al: .75 });
+    hlButtons(g, hlControls({ game: null, state: 'wait' }, W, H, false), W, H); if (HL.ui) hlOverlay(g, W, H); return; }
   const seatedMe = hlSeatedMe(r), gm = HL_G[r.game], ctl = hlControls(r, W, H, seatedMe);
   const ipH = Math.max(96, Math.min(150, H * .19)), top = 62 + st, footH = ctl.h;
   hlInfo(g, r, gm, now, W, top, ipH, seatedMe);

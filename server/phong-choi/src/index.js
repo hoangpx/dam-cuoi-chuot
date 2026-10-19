@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v8'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v9'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -75,17 +75,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v8')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v9')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v8')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v9')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v8')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v9')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -231,7 +231,7 @@ export class Room extends DurableObject {
   startRound(at) {
     const hs0 = this.eligible(); if (!this.humans().length) { this.stop(); return; }
     // one person alone: a practice round, no stake, nothing on the board
-    const lone = this.humans().filter(c => !c.idle), solo = hs0.length < T.MINP && lone.length === 1, hs = solo ? lone : hs0;
+    const lone = this.humans().filter(c => !c.idle), solo = hs0.length < T.MINP && lone.length >= 1, hs = solo ? lone : hs0;
     if (!solo && hs.length < T.MINP) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
     // a shuffled bag: every game once in random order, then a new shuffle (the first of a new bag is never the last played)
     if (!this.bag || !this.bag.length) { const b = [...GAMES]; for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } if (b[0] === this.lastGame) b.push(b.shift()); this.bag = b; }
