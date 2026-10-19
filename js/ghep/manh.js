@@ -4,7 +4,7 @@
    its lattice origin is on the screen and its angle); a loose piece is a group of one. Two groups join when, dropped, they touch
    (some piece of one is next to some piece of the other in the print) and their angle and position agree closely enough: the
    smaller one snaps onto the bigger, and the two pieces that met flash once. The print is done when everything is one group.
-   Pieces look like thick cardboard: an even kraft-coloured rim round the printed face; NO shadow of any kind (owner: it was hard to see).
+   Pieces are flat: flat printed faces with a hairline outline: NO shadow, no rim, no side (owner, three times: it was hard to see).
    POINTER RULES (owner, 2026-10-20):
      computer: press lifts a piece (its whole group); drag, or just click and it follows the mouse until the next click;
                the mouse WHEEL turns it round the pointer, any angle (right click or R: a step of 15°).
@@ -81,12 +81,11 @@ function c9Bake(G, pc) {
   const t = G.t_, S = DPR, mk = () => { const c = document.createElement('canvas'); c.width = Math.ceil((G.cw + 2 * t) * S); c.height = Math.ceil((G.ch + 2 * t) * S); const g = c.getContext('2d'); g.setTransform(S, 0, 0, S, t * S, t * S); return [c, g]; };
   pc.path = c9PiecePath(G, pc);
   const [c1, g] = mk();
-  g.lineJoin = 'round'; g.lineWidth = 6; g.strokeStyle = '#6c5232'; g.stroke(pc.path);   // the thickness of the cardboard seen from above: an even rim, no side and no shadow
-  g.lineWidth = 4.4; g.strokeStyle = '#c4a674'; g.stroke(pc.path);
+  g.lineJoin = 'round';
   g.save(); g.clip(pc.path);
   g.drawImage(G.img, 0, 0, G.img.naturalWidth, G.img.naturalHeight, -pc.j * G.cw, -pc.i * G.ch, G.bw, G.bh);
   g.restore();
-  g.lineWidth = .9; g.strokeStyle = 'rgba(40,26,12,.8)'; g.stroke(pc.path);
+  g.lineWidth = .9; g.strokeStyle = 'rgba(40,26,12,.7)'; g.stroke(pc.path);   // only a hairline so the pieces can be told apart
   pc.cvTop = c1; pc.cvSide = null; pc.key = key;
 }
 
