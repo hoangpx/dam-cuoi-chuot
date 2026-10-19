@@ -198,7 +198,7 @@ function renderHL() {
   const r = hlSync(HL.round), now = HL_NET.now(), t = S.t;
   hlHeader(g, W, st);
   if (HL.conn !== 'up' || !HL.id) { hlText(g, HL.conn === 'down' ? 'Mất kết nối, đang nối lại…' : 'Đang vào phòng…', W / 2, H / 2, 20); return; }
-  if (!r) { hlText(g, HL.wait ? 'Phòng đang chờ người đủ tiền cược…' : 'Đang chờ ván đầu…', W / 2, H / 2, 20); hlFoot(g, W, H); if (HL.ui) hlOverlay(g, W, H); return; }
+  if (!r) { hlText(g, HL.wait ? 'Đang chờ thêm người chơi cùng…' : 'Đang chờ ván đầu…', W / 2, H / 2, 20); hlFoot(g, W, H); if (HL.ui) hlOverlay(g, W, H); return; }
   const seatedMe = hlSeatedMe(r), gm = HL_G[r.game], ctl = hlControls(r, W, H, seatedMe);
   const ipH = Math.max(96, Math.min(150, H * .19)), top = 62 + st, footH = ctl.h;
   hlInfo(g, r, gm, now, W, top, ipH, seatedMe);

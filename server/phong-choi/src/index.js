@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v2'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v3'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -18,7 +18,7 @@
      giua     thanh trượt chạy qua lại, bấm dừng đúng vạch giữa.
      trong    nghe 4 nhịp trống rồi tự giữ nhịp, bấm đúng nhịp thứ 9.
      nho      nhớ chuỗi trống sáng lên rồi bấm lại đúng thứ tự; đúng nhiều nhất, nhanh nhất thắng.
-   Người vào giữa ván chỉ xem. Ít hơn MINP người thì có người máy chơi cùng (hiện rõ là máy).
+   Người vào giữa ván chỉ xem. Cần ít nhất MINP (2) người thật đủ tiền cược, không có người máy; chưa đủ thì phòng chờ.
 
    Giao thức JSON qua WebSocket. client → server: hello {dev, name, look, ok}, bal {ok}, join, sync {c}, pong {s}, act {n, k, …}, board.
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
@@ -32,7 +32,7 @@ const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua'
 
 const TESTDEV = /^(testdev|boardreader|dbgdev)/;   // devices used by test.mjs: never written to the board
 const T = {
-  MINP: 6, MAXP: 30, STAKE: 10,
+  MINP: 2, MAXP: 30, STAKE: 10,
   ANNOUNCE: 4000, RESULT: 9000, FIRST: 3000, WAIT: 2500,
   MAXMSG: 40,
   TEN_TARGET: 10000, TEN_SHOW: 3000, TEN_GRACE: 3200,
@@ -75,7 +75,7 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v2')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v3')).fetch(req);
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -188,8 +188,10 @@ export class Room extends DurableObject {
   }
   startRound(at) {
     const hs = this.eligible(); if (!this.humans().length) { this.stop(); return; }
-    if (!hs.length) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
-    let game; do { game = pick(GAMES); } while (this.recent.includes(game)); this.recent.push(game); if (this.recent.length > 3) this.recent.shift();
+    if (hs.length < T.MINP) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
+    // a shuffled bag: every game once in random order, then a new shuffle (the first of a new bag is never the last played)
+    if (!this.bag || !this.bag.length) { const b = [...GAMES]; for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } if (b[0] === this.lastGame) b.push(b.shift()); this.bag = b; }
+    const game = this.bag.shift(); this.lastGame = game;
     // more people than seats: those who sat out the most recent rounds go first
     const order = hs.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
     const seated = new Map(); for (const c of order.slice(0, T.MAXP)) { seated.set(c.id, c); c.last = this.n + 1; }
