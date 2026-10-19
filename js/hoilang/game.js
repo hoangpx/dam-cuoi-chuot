@@ -23,7 +23,7 @@ function startHL() {
   PAPER = getPaper('sage'); document.documentElement.style.setProperty('--paper', PAPERS.sage.css);
   const me = hsMine();
   Object.assign(HL, { id: null, players: [], round: null, wait: false, conn: 'connecting', stat: null, board: null, ui: null, idle: true, joined: false, bscroll: 0, drag: null, win: null, fw: [], held: null, tapAcc: 0, paid: 0, okSent: null, flash: null });
-  HL.fig.clear(); HL.chat.clear(); HL.emo.clear(); HL.tray = false; HL.pos.clear(); hlChatClose();
+  HL.fig.clear(); HL.chat.clear(); HL.emo.clear(); HL.tray = false; HL.pos.clear(); hlChatClose(); HL_CHAT_NET = null;
   const look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
   HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk(), cap: 3 }, hlMsg, s => { HL.conn = s; });
 }
@@ -297,7 +297,7 @@ function hlChatBubbles(g, W, H) {
   }
 }
 // the typing bar is a real <input> (the phone keyboard needs one) lifted above the keyboard
-let HL_CHAT_EL = null, HL_CHAT_AT = 0;
+let HL_CHAT_EL = null, HL_CHAT_AT = 0, HL_CHAT_NET = null;   // HL_CHAT_NET: another chapter's connection (Ghép Chung) that takes the messages instead of the room's
 function hlChatOpen() {
   if (HL_CHAT_EL) { hlChatClose(); return; }
   const el = document.createElement('div');
@@ -313,7 +313,7 @@ function hlChatOpen() {
   const send = () => {
     const t = inp.value.replace(/\s+/g, ' ').trim(); if (!t) return;
     if (performance.now() - HL_CHAT_AT < 2600) { n.textContent = 'Chờ chút…'; return; }
-    HL_CHAT_AT = performance.now(); HL_NET.send({ t: 'chat', s: t }); hlChatClose();
+    HL_CHAT_AT = performance.now(); (HL_CHAT_NET || HL_NET).send({ t: 'chat', s: t }); hlChatClose();
   };
   el.querySelector('#hlChatGo').addEventListener('click', send);
   inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); send(); } else if (e.key === 'Escape') hlChatClose(); });

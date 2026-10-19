@@ -114,7 +114,9 @@ function c9Bake(G, pc) {
 
 function c9Tick(G, dt) {
   if (!G.done) G.t += dt;
-  for (const g of G.groups) if (g.lift > .001 || G.held === g) g.lift += ((G.held === g ? 1 : 0) - g.lift) * Math.min(1, dt * 14);
+  for (const g of G.groups) { const up = G.held === g || g.by; if (g.lift > .001 || up) g.lift += ((up ? 1 : 0) - g.lift) * Math.min(1, dt * 14);
+    if (g.tx !== undefined && G.held !== g) { const k = Math.min(1, dt * 12); g.x += (g.tx - g.x) * k; g.y += (g.ty - g.y) * k; g.a += c9Wrap(g.ta - g.a) * k; if (Math.abs(g.tx - g.x) + Math.abs(g.ty - g.y) < .05 && Math.abs(c9Wrap(g.ta - g.a)) < .002) { g.x = g.tx; g.y = g.ty; g.a = g.ta; g.tx = undefined; } } }
+  if (G.net) G.net.tick(G, dt);
   for (const p of G.pieces) if (p.flash > 0) p.flash = Math.max(0, p.flash - dt / .45);
   G.peek = Math.max(0, G.peek - dt);
   G.flash = G.flash.filter(f => (f.t += dt) < f.life);
@@ -149,6 +151,7 @@ function c9Draw(G, g, W, H) {
   }
   for (const f of G.flash) { const k = f.t / f.life; g.globalAlpha = 1 - k; g.strokeStyle = '#fff6c8'; g.lineWidth = 4 / z; g.beginPath(); g.arc(f.x, f.y, Math.max(G.cw, G.ch) * (.3 + k * .5), 0, 6.283); g.stroke(); g.globalAlpha = 1; }
   g.restore();
+  if (G.net) for (const grp of G.groups) if (grp.by) { const c = c9Centroid(G, grp), s = c9W2S(G, c[0], c[1]); if (s[0] < -40 || s[0] > W + 40 || s[1] < G.top - 40 || s[1] > H + 40) continue; G.net.tag(g, grp.by, s[0], s[1] - Math.max(14, G.ch * z * .7)); }
   if (G.peek > 0) {   // the sample print, over everything (the eye button)
     const aw = W - 40, ah = H - 56 - 40, k = Math.min(aw / G.img.naturalWidth, ah / G.img.naturalHeight), w = G.img.naturalWidth * k, h = G.img.naturalHeight * k, x = (W - w) / 2, y = 56 + (H - 56 - h) / 2;
     g.globalAlpha = Math.min(1, G.peek * 4) * .96; g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 8, y - 8, w + 16, h + 16); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); g.globalAlpha = 1;
@@ -165,7 +168,7 @@ function c9DrawTurnBtn(G, g) { const b = c9TurnBtn(G); if (!b) return; g.beginPa
 // the piece (and so its group) under a world point; the topmost group first
 function c9Hit(G, x, y) {
   for (let k = G.order.length - 1; k >= 0; k--) {
-    const grp = G.order[k];
+    const grp = G.order[k]; if (grp.by) continue;
     for (const p of grp.pcs) {
       const c = c9Center(G, grp, p), d = c9Rot(-grp.a, x - c[0], y - c[1]), lx = d[0] + G.cw / 2, ly = d[1] + G.ch / 2;
       if (lx < -G.t_ || ly < -G.t_ || lx > G.cw + G.t_ || ly > G.ch + G.t_) continue;
@@ -210,11 +213,11 @@ function c9TryJoin(G, grp) {
   return joined;
 }
 function c9Drop(G, grp) {
-  c9Clamp(G, grp); c9TryJoin(G, grp);
+  c9Clamp(G, grp); if (G.net) { G.net.drop(grp); return null; } c9TryJoin(G, grp);
   if (G.groups.length === 1) { G.done = true; G.win = 0; G.held = null; return 'win'; }
   return null;
 }
-function c9Lift(G, grp, x, y) { G.held = grp; grp.z = ++G.zTop; const i = G.order.indexOf(grp); if (i >= 0) G.order.splice(i, 1); G.order.push(grp); G.hl = c9Rot(-grp.a, x - grp.x, y - grp.y); AU.tap(); }
+function c9Lift(G, grp, x, y) { G.held = grp; grp.z = ++G.zTop; const i = G.order.indexOf(grp); if (i >= 0) G.order.splice(i, 1); G.order.push(grp); G.hl = c9Rot(-grp.a, x - grp.x, y - grp.y); AU.tap(); if (G.net) G.net.lift(grp); }
 
 // ---- pointer (sx, sy: canvas pixels below the notch; the world point is worked out here) ----
 function c9PinchStart(G) {
@@ -300,4 +303,37 @@ function c9Restore(G, st) {
   if (st.cam) { G.cam.z = c9Clip(+st.cam.z || 1, G.zmin, G.zmax); G.cam.x = +st.cam.x || 0; G.cam.y = +st.cam.y || 0; c9ClampCam(G); }
   if (G.groups.length === 1) G.done = false;
   return true;
+}
+
+// ---- the shared puzzle (chương X): the server owns the groups; these apply what it tells us ----
+function c9NetRestore(G, rows, holds, done) {
+  const groups = [], seen = new Set();
+  for (const r of rows) {
+    const pcs = String(r[4]).split(',').map(i => G.pieces[+i]); if (pcs.some(p => !p || seen.has(p.id))) return false; pcs.forEach(p => seen.add(p.id));
+    const g = { id: r[0], x: +r[1], y: +r[2], a: +r[3], pcs, z: 0, lift: 0, ux: 0, uy: 0, by: null, tx: undefined }; pcs.forEach(p => { p.grp = g; }); groups.push(g);
+  }
+  if (seen.size !== G.pieces.length) return false;
+  G.groups = groups; G.order = groups.slice(); G.gm = new Map(groups.map(g => [g.id, g])); G.held = null; G.drag = null; G.done = false; G.win = 0; G.flash = [];
+  for (const h of holds || []) { const g = G.gm.get(h[0]); if (g) { g.by = h[1]; g.lift = 1; } }
+  if (done) { G.done = true; } return true;
+}
+function c9NetLift(G, gid, by) {
+  const g = G.gm.get(gid); if (!g) return; g.by = by; g.tx = undefined; if (G.held === g) { G.held = null; G.drag = null; }
+  const i = G.order.indexOf(g); if (i >= 0) { G.order.splice(i, 1); G.order.push(g); }
+}
+function c9NetPoses(G, rows) { for (const r of rows) { const g = G.gm.get(r[0]); if (g && G.held !== g) { g.tx = r[1]; g.ty = r[2]; g.ta = g.a + c9Wrap(r[3] - g.a); } } }
+function c9NetDrop(G, gid, x, y, a) {
+  const g = G.gm.get(gid); if (!g) return; g.by = null; if (G.held === g) { G.held = null; G.drag = null; }
+  g.tx = x; g.ty = y; g.ta = g.a + c9Wrap(a - g.a);
+}
+function c9NetDeny(G, gid) { const g = G.gm.get(gid); if (g && G.held === g) { G.held = null; G.drag = null; } }
+function c9NetJoin(G, m) {
+  const big = G.gm.get(m.keep), small = G.gm.get(m.gone); if (!big || !small) return;
+  if (G.held === small) { G.held = null; G.drag = null; }
+  big.by = null; big.tx = m.x; big.ty = m.y; big.ta = big.a + c9Wrap(m.a - big.a);
+  for (const p of small.pcs) { p.grp = big; big.pcs.push(p); }
+  G.groups.splice(G.groups.indexOf(small), 1); const oi = G.order.indexOf(small); if (oi >= 0) G.order.splice(oi, 1); G.gm.delete(small.id);
+  const pa = G.pieces[m.pair[0]], pb = G.pieces[m.pair[1]]; pa.flash = 1; pb.flash = 1;
+  const c = c9Center(G, big, pa), c2 = c9Center(G, big, pb); G.flash.push({ x: (c[0] + c2[0]) / 2, y: (c[1] + c2[1]) / 2, t: 0, life: .5 });
+  AU.pluck(92);
 }

@@ -10,6 +10,10 @@ class_name = "Room"
 name = "STORE"
 class_name = "Store"
 
+[[durable_objects.bindings]]
+name = "JIGSAW"
+class_name = "Jigsaw"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
@@ -17,3 +21,7 @@ new_sqlite_classes = ["Room"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["Store"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["Jigsaw"]
