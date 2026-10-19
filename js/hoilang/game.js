@@ -129,25 +129,32 @@ function hlInfo(g, r, now, W, y, h, mine) {
     hlText(g, `Thưởng người thắng: ${10 * N} đồng`, W / 2, y + h - 10, 12, sub);
   } else if (r.state === 'run' && ten) {
     const e = now - r.t0, shown = e < 3000;
-    hlText(g, shown ? (Math.max(0, e) / 1000).toFixed(2) : '?.??', W / 2, y + h / 2 + 6, Math.min(56, h * .42), { w: 900, c: shown ? HL_INK : '#a3332a' });
-    hlText(g, shown ? 'Nhìn kỹ nhịp đếm…' : (HL.press || r.press.has(HL.id) ? 'Đã bấm, chờ mọi người' : 'Đồng hồ đã bị che, tự đếm tiếp!'), W / 2, y + h - 12, 13, sub);
+    const mp = HL.press || r.press.get(HL.id), done = !!mp;
+    hlText(g, done ? (mp.p / 1000).toFixed(3) : shown ? (Math.max(0, e) / 1000).toFixed(2) : '?.??', W / 2, y + h / 2 + 6, Math.min(56, h * .42), { w: 900, c: done ? '#2f6a4c' : shown ? HL_INK : '#a3332a' });
+    hlText(g, done ? 'Bạn bấm lúc này · chờ mọi người' : shown ? 'Nhìn kỹ nhịp đếm…' : 'Đồng hồ đã bị che, tự đếm tiếp!', W / 2, y + h - 12, 13, sub);
   } else if (r.state === 'run') {
-    hlText(g, HL.press || r.press.has(HL.id) ? 'Đã dừng, chờ mọi người' : mine ? 'Bưởi đang rơi, bấm dừng!' : 'Bạn đang xem', W / 2, y + h / 2 + 4, 20, { w: 900 });
-    hlText(g, 'Rơi càng lúc càng nhanh, bấm trễ là trúng đầu', W / 2, y + h - 14, 13, sub);
+    const mp = HL.press || r.press.get(HL.id), gp = mp ? hlPomGap(r, HL.id) : null;
+    hlText(g, mp ? (gp === null ? 'Trúng đầu rồi!' : `Cách đầu ${hlMm(gp)}`) : mine ? 'Bưởi đang rơi, bấm dừng!' : 'Bạn đang xem', W / 2, y + h / 2 + 4, mp ? 26 : 20, { w: 900, c: mp ? (gp === null ? '#a3332a' : '#2f6a4c') : HL_INK });
+    hlText(g, mp ? 'Chờ mọi người dừng' : 'Rơi càng lúc càng nhanh, bấm trễ là trúng đầu', W / 2, y + h - 14, 13, sub);
   } else {
     const res = r.result, win = res.winner && HL.players.find(p => p.id === res.winner), s = Math.max(0, Math.ceil((r.next - now) / 1000));
-    hlText(g, win ? `${win.name}${win.bot ? ' (máy)' : ''} thắng!` : 'Không ai thắng', W / 2, y + 48, 22, { w: 900, c: '#a3332a' });
+    const wrow = win && res.rows.find(x => x.id === res.winner), wv = wrow ? (ten ? hlTime(T_TARGET + wrow.v) : hlMm(wrow.v)) : '';
+    hlText(g, win ? `${win.name}${win.bot ? ' (máy)' : ''} thắng!` : 'Không ai thắng', W / 2, y + 44, 22, { w: 900, c: '#a3332a' });
+    if (win) hlText(g, ten ? `bấm lúc ${wv}` : `cách đầu ${wv}`, W / 2, y + 64, 14, sub);
     const row = res.rows.find(x => x.id === HL.id);
     let mine2 = '';
-    if (row) mine2 = row.v === null ? (ten ? 'Bạn không bấm kịp' : 'Quả bưởi trúng đầu bạn!') : `Bạn hạng ${row.rank}/${res.rows.length} · ${ten ? hlErr(row.v) : hlGap(row.v)}`;
+    if (row) mine2 = row.v === null ? (ten ? 'Bạn không bấm kịp' : 'Quả bưởi trúng đầu bạn!') : `Bạn hạng ${row.rank}/${res.rows.length} · ${ten ? 'bấm lúc ' + hlTime(T_TARGET + row.v) : 'cách đầu ' + hlMm(row.v)}`;
     else mine2 = 'Bạn đang xem';
-    hlText(g, mine2, W / 2, y + 74, 14, sub);
+    hlText(g, mine2, W / 2, y + 86, 14, sub);
     if (res.winner === HL.id) hlText(g, `+${res.prize} đồng`, W / 2, y + h - 30, 18, { w: 900, c: '#2f6a4c' });
     hlText(g, `Ván sau sau ${s} giây`, W / 2, y + h - 10, 12, sub);
   }
 }
-const hlErr = v => `${v >= 0 ? '+' : '−'}${(Math.abs(v) / 1000).toFixed(3)} s`;
-const hlGap = v => `cách đầu ${(v * 40).toFixed(1)} cm`;
+const T_TARGET = 10000;   // the 'ten' game's mark, in ms from its start
+const hlTime = ms => `${(ms / 1000).toFixed(3)} giây`;   // the time a player pressed at, e.g. 10.123 giây
+const hlMm = v => `${(v * 400).toFixed(1)} mm`;       // the pomelo falls 400 mm to the head
+// how far from the head a pressed pomelo stopped (0..1 of the fall), null if it was a hit or not pressed
+function hlPomGap(r, id) { const pr = r.press.get(id), tf = r.tf[id]; if (!pr || pr.hit || !tf) return null; const f = pr.p / tf; return f >= 1 ? null : 1 - f * f; }
 function hlCell(g, r, p, i, G, now, t) {
   const col = i % G.c, row = (i / G.c) | 0, x = G.x + col * G.cw, y = G.y + row * G.ch, w = G.cw, h = G.ch, cx = x + w / 2;
   const seated = hlSeated(r, p), me = p.id === HL.id, pr = r.press.get(p.id), res = r.state === 'result' && r.rank ? r.rank.get(p.id) : null, win = r.state === 'result' && r.result.winner === p.id;
@@ -165,13 +172,14 @@ function hlCell(g, r, p, i, G, now, t) {
   if (seated && r.game === 'pomelo') hlPomelo(g, r, p, x, y, w, cx, headTop, s, now, t);
   if (seated && r.game === 'ten') {
     if (r.state === 'run' && pr) { hlText(g, '✓', cx, y + h * .3, Math.min(34, w * .3), { w: 900, c: '#2f6a4c' }); }
-    if (res && res.v !== null) hlText(g, hlErr(res.v), cx, y + h * .26, Math.max(11, Math.min(18, w * .15)), { w: 800, c: win ? '#a3332a' : HL_INK });
+    if (res && res.v !== null) hlText(g, hlTime(T_TARGET + res.v), cx, y + h * .26, Math.max(10, Math.min(16, w * .12)), { w: 800, c: win ? '#a3332a' : HL_INK });
     else if (res) hlText(g, 'không bấm', cx, y + h * .26, 12, { w: 600, al: .7 });
   }
   if (res && res.rank) { g.globalAlpha = 1; hlText(g, win ? '♛ 1' : String(res.rank), x + 14, y + 16, win ? 18 : 14, { w: 900, c: win ? '#a3332a' : HL_INK }); }
   // the name
   g.globalAlpha = seated ? 1 : .6;
   hlText(g, p.name + (p.bot ? ' (máy)' : ''), cx, y + h - nameH * .9, nameH, { w: me ? 900 : 700, f: "'Be Vietnam Pro', system-ui, sans-serif" });
+  if (seated && r.game === 'pomelo' && pr) { const gp = hlPomGap(r, p.id); hlText(g, gp === null ? 'trúng đầu!' : hlMm(gp), cx, y + h - nameH * 3.1, Math.max(10, Math.min(15, w * .12)), { w: 800, c: gp === null ? '#a3332a' : '#2f6a4c' }); }   // live: how far from the head it stopped
   if (!seated) hlText(g, 'chờ ván sau', cx, y + h * .3, 11, { w: 600, f: "'Be Vietnam Pro', system-ui, sans-serif", al: .9 });
   g.restore(); g.globalAlpha = 1;
 }
