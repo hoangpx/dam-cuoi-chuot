@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v12'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v13'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -81,17 +81,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v12')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v13')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v12')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v13')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v12')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v13')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -138,7 +138,7 @@ export class Room extends DurableObject {
       c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok; c.cap = +m.cap || 1;   // cap 2 = knows the newer games
       const st = await this.getStats(c.dev); st.n = name;
       c.joined = true; this.noteJoin(c);
-      this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
+      this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: (this.round && NEWG.has(this.round.game) && !(c.cap >= 2)) ? null : this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
       this.all({ t: 'players', players: this.playerList() });
       this.wake();
     } else if (m.t === 'sync') this.send(c, { t: 'sync', c: m.c, s: Date.now() });
@@ -241,18 +241,22 @@ export class Room extends DurableObject {
     if (!solo && hs.length < T.MINP) { this.round = { state: 'wait', next: Date.now() + T.WAIT, n: this.n, seated: new Map(), bots: new Map(), plan: [] }; this.all({ t: 'round', n: this.n, wait: true }); this.all({ t: 'players', players: this.playerList() }); return; }
     // a shuffled bag: every game once in random order, then a new shuffle (the first of a new bag is never the last played)
     if (!this.bag || !this.bag.length) { const b = [...GAMES]; for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } if (b[0] === this.lastGame) b.push(b.shift()); this.bag = b; }
-    const capable = this.humans().every(c => c.cap >= 2), okGame = x => capable || !NEWG.has(x), bi = this.bag.findIndex(okGame);
-    const game = (this.env && GAMES.includes(this.env.ONLY_GAME)) ? this.env.ONLY_GAME : bi >= 0 ? this.bag.splice(bi, 1)[0] : pick(GAMES.filter(okGame)); this.lastGame = game;   // ONLY_GAME: a local test switch (wrangler dev --var), not set in production
+    let game = (this.env && GAMES.includes(this.env.ONLY_GAME)) ? this.env.ONLY_GAME : this.bag.shift();   // ONLY_GAME: a local test switch (wrangler dev --var), not set in production
+    const newOk = c => c.cap >= 2;   // a page that says cap 2 knows the newer games
+    if (NEWG.has(game) && !hs.some(newOk)) { const bi = this.bag.findIndex(x => !NEWG.has(x)); game = bi >= 0 ? this.bag.splice(bi, 1)[0] : pick(GAMES.filter(x => !NEWG.has(x))); }
+    this.lastGame = game;
+    const pool = NEWG.has(game) ? hs.filter(newOk) : hs, solo2 = solo || pool.length < T.MINP;
     // more people than seats: those who sat out the most recent rounds go first
-    const order = hs.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
+    const order = pool.map((c, i) => [c, i]).sort((a, b) => ((a[0].last || 0) - (b[0].last || 0)) || a[1] - b[1]).map(x => x[0]);
     const seated = new Map(); for (const c of order.slice(0, T.MAXP)) { seated.set(c.id, c); c.last = this.n + 1; }
     const bots = new Map();   // no bots any more: a lone player just practises { const id = 'b' + (k + 1); bots.set(id, { id, name: BOT_NAMES[(this.n * 3 + k * 7) % BOT_NAMES.length], sort: (this.n + k * 7) % 27, skill: rnd(0, 1) }); }
-    const r = { solo, n: ++this.n, game, announce: at, t0: at + T.ANNOUNCE, state: 'announce', seated, bots, cfg: {}, live: [], plan: [], inp: new Map(), ev: new Map(), sub: 0 };
+    const r = { solo: solo2, n: ++this.n, game, announce: at, t0: at + T.ANNOUNCE, state: 'announce', seated, bots, cfg: {}, live: [], plan: [], inp: new Map(), ev: new Map(), sub: 0 };
     this.setup(r);
     this.round = r;
     for (const c of seated.values()) c.inRound = false;
     this.all({ t: 'players', players: this.playerList() });
-    this.all({ t: 'round', ...this.pubRound(), bots: [...bots.values()].map(b => ({ id: b.id, name: b.name, sort: b.sort })) });
+    const full = { t: 'round', ...this.pubRound(), bots: [...bots.values()].map(b => ({ id: b.id, name: b.name, sort: b.sort })) };
+    for (const c of this.conns.values()) this.send(c, NEWG.has(game) && !newOk(c) ? { t: 'round', n: r.n, wait: true } : full);   // an old page is told to wait out a game it cannot draw
   }
   ids(r) { return [...r.seated.keys(), ...r.bots.keys()]; }
   push(r, id, p, a) { r.plan.push({ id, p: Math.max(1, Math.round(p)), a, done: false }); }
