@@ -12,7 +12,7 @@ let HL_SAVE = { r: 0, w: 0, net: 0 };
 try { const s = JSON.parse(localStorage.getItem('dcc.hl2') || 'null'); if (s && typeof s.r === 'number') HL_SAVE = Object.assign(HL_SAVE, s); } catch (e) {}
 const hlPersist = () => { try { localStorage.setItem('dcc.hl2', JSON.stringify(HL_SAVE)); } catch (e) {} };
 
-const HL = { id: null, players: [], round: null, wait: false, conn: 'connecting', stake: 10, stat: null, board: null, ui: null, tab: 'top', per: 'd', idle: false, fig: new Map(), t: 0, win: null, fw: [], btns: [], held: null, tapAcc: 0, tapSent: 0, myTaps: 0, paid: 0, okSent: null, flash: null, myPick: 0, myHole: null, drumFlash: null };
+const HL = { chat: new Map(), pos: new Map(), chatOff: false, id: null, players: [], round: null, wait: false, conn: 'connecting', stake: 10, stat: null, board: null, ui: null, tab: 'top', per: 'd', idle: false, fig: new Map(), t: 0, win: null, fw: [], btns: [], held: null, tapAcc: 0, tapSent: 0, myTaps: 0, paid: 0, okSent: null, flash: null, myPick: 0, myHole: null, drumFlash: null };
 const HL_INK = '#1d1915';
 const hlSans = "'Be Vietnam Pro', system-ui, sans-serif";
 
@@ -23,11 +23,11 @@ function startHL() {
   PAPER = getPaper('sage'); document.documentElement.style.setProperty('--paper', PAPERS.sage.css);
   const me = hsMine();
   Object.assign(HL, { id: null, players: [], round: null, wait: false, conn: 'connecting', stat: null, board: null, ui: null, idle: true, joined: false, bscroll: 0, drag: null, win: null, fw: [], held: null, tapAcc: 0, paid: 0, okSent: null, flash: null });
-  HL.fig.clear();
+  HL.fig.clear(); HL.chat.clear(); HL.pos.clear(); hlChatClose();
   const look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
   HL_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ok: hlOk(), cap: 2 }, hlMsg, s => { HL.conn = s; });
 }
-function hlLeave() { HL_NET.close(); showChapters(); }
+function hlLeave() { hlChatClose(); HL_NET.close(); showChapters(); }
 const hlOk = () => SAVE4.money >= HL.stake;
 // the room is told when the purse crosses the stake; the ending of each round moves the money
 setInterval(() => { if (S.mode === 'hlplay' && HL_NET.up) { const ok = hlOk(); if (ok !== HL.okSent) { HL.okSent = ok; HL_NET.send({ t: 'bal', ok }); } } }, 700);
@@ -45,6 +45,7 @@ function hlMsg(m) {
   else if (m.t === 'prog') { if (r && r.n === m.n) r.prog = m.p; }
   else if (m.t === 'go') { if (r && r.n === m.n) { r.go = true; AU.pluck(98); } }
   else if (m.t === 'flip') { if (r && r.n === m.n) hlFlip(m); }
+  else if (m.t === 'chat') { if (!HL.chatOff && typeof m.s === 'string') HL.chat.set(m.id, { s: m.s.slice(0, 40), t0: HL.t }); }
   else if (m.t === 'hole') { if (r && r.n === m.n) { r.holes.push(m); AU.thump(); } }
   else if (m.t === 'result') hlResult(m);
   else if (m.t === 'stat') { HL.stat = m.stat; HL_SAVE.r = m.stat.r; HL_SAVE.w = m.stat.w; HL_SAVE.net = m.stat.won - m.stat.lost; hlPersist(); }
@@ -228,6 +229,7 @@ function renderHL() {
   hlInfo(g, r, gm, now, W, top, ipH, seatedMe);
   const gy = top + ipH + 6, gh = H - gy - footH - 6, list = hlOrder(r), G = hlGrid(Math.max(1, list.length), 6, gy, W - 12, gh);
   list.forEach((p, i) => hlCell(g, r, gm, p, i, G, now, t));
+  hlChatBubbles(g, W, H);
   hlButtons(g, ctl, W, H);
   hlCountdown(g, r, now, W, H);
   hlWinDraw(g, W, H);
@@ -253,11 +255,69 @@ function hlTrophy(g, cx, cy) {
   g.beginPath(); g.moveTo(cx - 6, cy - 6); g.quadraticCurveTo(cx - 11, cy - 6, cx - 9, cy - 1); g.moveTo(cx + 6, cy - 6); g.quadraticCurveTo(cx + 11, cy - 6, cx + 9, cy - 1); g.stroke();   // the handles
   g.beginPath(); g.moveTo(cx, cy + 4); g.lineTo(cx, cy + 8); g.moveTo(cx - 5, cy + 9); g.lineTo(cx + 5, cy + 9); g.stroke();   // the stem and the foot
 }
+/* ---------- chat (owner, 2026-10-19): free text up to 40 letters, bubbles beside the mice; the server stars out rude words ---------- */
+const HL_CHAT_SEC = 5.5;
+function hlChatIcon(g, cx, cy, off) {
+  g.beginPath(); g.arc(cx, cy, 16, 0, 6.283); g.fillStyle = off ? '#d9d4c4' : '#fff'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = HL_INK; g.stroke();
+  g.beginPath(); g.roundRect(cx - 9, cy - 8, 18, 12, 4); g.fillStyle = off ? '#bdb7a6' : '#cdd9b4'; g.fill(); g.lineWidth = 1.8; g.stroke();
+  g.beginPath(); g.moveTo(cx - 3, cy + 4); g.lineTo(cx - 6, cy + 9); g.lineTo(cx + 2, cy + 4); g.fill(); g.stroke();
+  g.fillStyle = HL_INK; for (let i = -1; i <= 1; i++) { g.beginPath(); g.arc(cx + i * 5, cy - 2, 1.3, 0, 6.283); g.fill(); }
+  if (off) { g.beginPath(); g.moveTo(cx - 10, cy + 10); g.lineTo(cx + 10, cy - 10); g.lineWidth = 2.4; g.strokeStyle = '#a3332a'; g.stroke(); }
+}
+function hlChatBubbles(g, W, H) {
+  if (HL.chatOff) return;
+  const live = [];
+  for (const [id, c] of HL.chat) { const age = HL.t - c.t0; if (age > HL_CHAT_SEC) { HL.chat.delete(id); continue; } const pos = HL.pos.get(id); if (pos && HL.players.some(p => p.id === id)) live.push([c, pos, age]); }
+  live.sort((a, b) => b[2] - a[2]);   // the oldest first, so the newest lies on top
+  for (const [c, pos, age] of live) {
+    const size = 12, maxW = Math.min(150, W - 16); g.font = `600 ${size}px ${hlSans}`;
+    let lines = hlWrap(g, c.s, maxW - 14, size, 600); if (lines.length > 3) lines = lines.slice(0, 3);
+    const w = Math.min(maxW, Math.max(...lines.map(l => g.measureText(l).width)) + 14), h = lines.length * (size + 3) + 10;
+    let x = Math.max(6, Math.min(W - w - 6, pos.cx - w / 2)), y = Math.max(66 + safeTop(), pos.top - h - 8);
+    const fade = Math.min(1, (HL_CHAT_SEC - age) * 2, age * 6 + .2);
+    g.globalAlpha = fade; hlPlate(g, x, y, w, h, '#ffffff', HL_INK, 8);
+    g.beginPath(); g.moveTo(Math.max(x + 8, Math.min(x + w - 8, pos.cx)) - 5, y + h - 1); g.lineTo(Math.max(x + 8, Math.min(x + w - 8, pos.cx)), y + h + 7); g.lineTo(Math.max(x + 8, Math.min(x + w - 8, pos.cx)) + 5, y + h - 1); g.fillStyle = '#ffffff'; g.fill();
+    lines.forEach((l, i) => hlText(g, l, x + w / 2, y + 5 + size / 2 + i * (size + 3) + 1, size, { f: hlSans, w: 600, o: false }));
+    g.globalAlpha = 1;
+  }
+}
+// the typing bar is a real <input> (the phone keyboard needs one) lifted above the keyboard
+let HL_CHAT_EL = null, HL_CHAT_AT = 0;
+function hlChatOpen() {
+  if (HL_CHAT_EL) { hlChatClose(); return; }
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;left:0;right:0;z-index:60;background:#f2ecde;border-top:2px solid #1d1915;padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center;font-family:' + hlSans;
+  el.innerHTML = '<input id="hlChatIn" type="text" maxlength="40" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" placeholder="Nói gì đó… (tối đa 40 chữ)" style="flex:1;min-width:0;font-size:16px;padding:9px 11px;border:2px solid #1d1915;border-radius:10px;background:#fff;color:#1d1915"><span id="hlChatN" style="font-size:12px;color:#777;min-width:34px;text-align:right">0/40</span><button id="hlChatGo" style="font-size:15px;font-weight:700;padding:9px 14px;border:2px solid #1d1915;border-radius:10px;background:#2f6a4c;color:#f2ecde">Gửi</button><button id="hlChatOff" aria-label="Tắt hoặc bật chat" style="font-size:12px;padding:9px 8px;border:2px solid #1d1915;border-radius:10px;background:#e6dec9;color:#1d1915"></button>';
+  document.body.appendChild(el); HL_CHAT_EL = el;
+  const inp = el.querySelector('#hlChatIn'), n = el.querySelector('#hlChatN'), off = el.querySelector('#hlChatOff');
+  const place = () => { const v = window.visualViewport; el.style.top = ''; el.style.bottom = v ? (window.innerHeight - v.height - v.offsetTop) + 'px' : '0'; };
+  const label = () => { off.textContent = HL.chatOff ? 'Bật chat' : 'Tắt chat'; };
+  label(); place();
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', place); window.visualViewport.addEventListener('scroll', place); el._vv = place; }
+  inp.addEventListener('input', () => { n.textContent = Array.from(inp.value).length + '/40'; });
+  const send = () => {
+    const t = inp.value.replace(/\s+/g, ' ').trim(); if (!t) return;
+    if (performance.now() - HL_CHAT_AT < 2600) { n.textContent = 'Chờ chút…'; return; }
+    HL_CHAT_AT = performance.now(); HL_NET.send({ t: 'chat', s: t }); hlChatClose();
+  };
+  el.querySelector('#hlChatGo').addEventListener('click', send);
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); send(); } else if (e.key === 'Escape') hlChatClose(); });
+  inp.addEventListener('keyup', e => e.stopPropagation());
+  off.addEventListener('click', () => { HL.chatOff = !HL.chatOff; if (HL.chatOff) HL.chat.clear(); label(); });
+  el.addEventListener('pointerdown', e => e.stopPropagation());
+  setTimeout(() => inp.focus(), 30);
+}
+function hlChatClose() {
+  if (!HL_CHAT_EL) return;
+  if (HL_CHAT_EL._vv && window.visualViewport) { window.visualViewport.removeEventListener('resize', HL_CHAT_EL._vv); window.visualViewport.removeEventListener('scroll', HL_CHAT_EL._vv); }
+  HL_CHAT_EL.remove(); HL_CHAT_EL = null;
+}
 function hlHeader(g, W, st) {
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
   hlText(g, 'Hội Làng', 46, 22 + st, 21, { w: 900, a: 'left' });
   hlText(g, HL.round && HL.round.solo ? 'Chơi thử · không cược' : `${HL.players.filter(p => !p.bot).length} người · cược ${HL.stake} đ`, 46, 44 + st, 11.5, { f: hlSans, w: 600, o: false, al: .75, a: 'left' });
   hlText(g, hlMoney(SAVE4.money), W - 12, 22 + st, 13, { a: 'right', f: hlSans, w: 700 });
+  if (HL.conn === 'up') { HL.btns.push({ id: 'chat', x: W - 202, y: 32 + st, w: 44, h: 36, down: () => hlChatOpen() }); hlChatIcon(g, W - 180, 50 + st, HL.chatOff); }
   if (!HL.idle && HL.conn === 'up') { HL.btns.push({ id: 'rest', x: W - 152, y: 36 + st, w: 86, h: 22, down: () => { HL.idle = true; HL_NET.send({ t: 'rest' }); } }); hlPlate(g, W - 152, 38 + st, 82, 18, '#e6dec9', HL_INK, 6); hlText(g, 'Tạm nghỉ', W - 111, 47 + st, 11.5, { a: 'center', f: hlSans, w: 700, o: false }); }
   HL.btns.push({ id: 'board', x: W - 58, y: 32 + st, w: 50, h: 36, down: () => { HL.ui = 'board'; HL.tab = 'top'; HL_NET.send({ t: 'board', per: HL.per }); } });
   hlTrophy(g, W - 33, 50 + st);
@@ -290,7 +350,7 @@ function hlCell(g, r, gm, p, i, G, now, t) {
   const col = i % G.c, row = (i / G.c) | 0, x = G.x + col * G.cw, y = G.y + row * G.ch, w = G.cw, h = G.ch, cx = x + w / 2;
   const seated = hlSeated(r, p), me = p.id === HL.id, res = r.state === 'result' && r.rank ? r.rank.get(p.id) : null, win = r.state === 'result' && !!(r.result.winners ? r.result.winners.includes(p.id) : r.result.winner === p.id);
   const nameH = Math.max(11, Math.min(15, h * .11)), base = y + h - nameH * 2.1, s = Math.min(h * .0034, w * .0042), headTop = base - 132 * s;
-  const C = { x, y, w, h, cx, base, s, headTop, nameH, t, now };
+  const C = { x, y, w, h, cx, base, s, headTop, nameH, t, now }; HL.pos.set(p.id, { cx, top: headTop, y, x, w });
   g.save(); g.beginPath(); g.rect(x + 2, y + 2, w - 4, h - 4); g.clip();
   g.globalAlpha = seated ? 1 : .45;
   g.fillStyle = win ? 'rgba(242,198,64,.55)' : me ? 'rgba(242,236,222,.55)' : 'rgba(242,236,222,.28)'; g.fillRect(x + 3, y + 3, w - 6, h - 6);

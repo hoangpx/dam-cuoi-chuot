@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v14'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v15'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -25,6 +25,24 @@
 import { DurableObject } from 'cloudflare:workers';
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
+// chat (owner, 2026-10-19: free chat, bad words filtered): at most 40 letters, links cut, rude words starred out
+const CHAT_MAX = 40, CHAT_GAP = 2500;
+const stripV = ch => { const d = ch.normalize('NFD')[0] || ch; return d === 'đ' ? 'd' : d; };
+const NB = '(?<![\\p{L}\\p{N}])', NA = '(?![\\p{L}\\p{N}])';
+const sep = w => Array.from(w).join('[\\s.\\-_*,]*');
+const RAW_BAD = ['địt', 'đụ', 'lồn', 'buồi', 'cặc', 'đéo', 'đĩ', 'đỉ', 'cứt', 'khốn nạn', 'chó đẻ', 'óc chó', 'mẹ mày', 'bố mày', 'thằng chó', 'đồ chó', 'ngu', 'đần', 'fuck', 'shit', 'bitch', 'dick', 'pussy', 'cunt', 'asshole', 'nigg', 'fag'];
+const STR_BAD = ['dit', 'dit me', 'dit con', 'du ma', 'du me', 'dmm', 'dm', 'dcm', 'dkm', 'vcl', 'vkl', 'vl', 'clgt', 'cmm', 'cl', 'loz'];
+const RAW_RE = new RegExp(NB + '(' + RAW_BAD.map(sep).join('|') + ')' + NA, 'giu');
+const STR_RE = new RegExp(NB + '(' + STR_BAD.map(sep).join('|') + ')' + NA, 'giu');
+function cleanChat(raw) {
+  let t = String(raw || '').normalize('NFC').replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim();
+  t = t.replace(/(https?:\/\/|www\.)\S+/gi, '***').replace(/\S+@\S+\.\S+/g, '***').replace(/\b[\w-]+\.(com|net|org|vn|io|me|xyz|info|co)\b\S*/gi, '***');
+  t = Array.from(t).slice(0, CHAT_MAX).join('').trim();
+  if (!t) return '';
+  const low = t.toLowerCase(), st = Array.from(low).map(stripV).join(''), mask = new Array(t.length).fill(false);
+  if (st.length === t.length) { for (const re of [RAW_RE, STR_RE]) { const src = re === RAW_RE ? low : st; re.lastIndex = 0; let m; while ((m = re.exec(src))) { for (let i = m.index; i < m.index + m[0].length; i++) mask[i] = true; if (m.index === re.lastIndex) re.lastIndex++; } } }
+  return Array.from(t).map((ch, i) => mask[i] && ch !== ' ' ? '*' : ch).join('');
+}
 const BAD = /(địt|đụ|lồn|buồi|cặc|đéo|đĩ |đỉ |fuck|shit|bitch|óc chó|chó đẻ|mẹ mày|con mẹ mày|bố mày)/i;
 const BOT_NAMES = ['Tí', 'Tèo', 'Mít', 'Bơ', 'Nhím', 'Sóc', 'Cốm', 'Bống', 'Tũn', 'Xíu', 'Na', 'Bin', 'Đậu', 'Lạc', 'Gạo', 'Nếp', 'Ngô', 'Khoai', 'Sen', 'Cải'];
 const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
@@ -81,17 +99,17 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v14')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v15')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v14')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v15')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v14')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v15')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -145,6 +163,10 @@ export class Room extends DurableObject {
     else if (m.t === 'pong') { const r = Date.now() - (+m.s || 0); if (r >= 0 && r < 5000) c.rtt = c.rtt * .6 + r * .4; }
     else if (!c.joined) return;
     else if (m.t === 'bal') { const ok = !!m.ok; if (ok !== c.ok) { c.ok = ok; this.all({ t: 'players', players: this.playerList() }); } }
+    else if (m.t === 'chat') {
+      const now2 = Date.now(); if (now2 - (c.chatAt || 0) < CHAT_GAP) return; const text = cleanChat(m.s); if (!text) return; c.chatAt = now2;
+      this.all({ t: 'chat', id: c.id, s: text });
+    }
     else if (m.t === 'rest') { if (!c.idle) { c.idle = true; this.all({ t: 'players', players: this.playerList() }); } }   // "Tạm nghỉ": only watch
     else if (m.t === 'join') { if (c.idle) { c.idle = false; c.miss = 0; this.all({ t: 'players', players: this.playerList() }); } }
     else if (m.t === 'act') this.onAct(c, m);
