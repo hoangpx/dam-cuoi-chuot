@@ -9,7 +9,7 @@
    merged key by key: whatever is newer wins (cloudDiff), so progress made on either device survives. Newer cloud keys are
    applied and the page reloads; mid-play the player is asked first. A stale device never overwrites the cloud blindly. */
 const CLOUD = { url: 'https://mamafzllyhbmzyystivo.supabase.co/rest/v1/rpc/', key: 'sb_publishable_aY82m4E4mmc0AN2_n0Gcdw_2Kl31gCd',
-  abc: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', skip: ['dcc.cloud', 'dcc.cloudT', 'dcc.instLater', 'dcc.lang'], timer: 0, busy: false, checked: false, lastCheck: 0 };
+  abc: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', skip: ['dcc.cloud', 'dcc.cloudT', 'dcc.instLater', 'dcc.lang', 'dcc.c9s'], timer: 0, busy: false, checked: false, lastCheck: 0 };
 const CLOUD_MT = 'dcc.mt';
 const cloudMtGet = () => { try { return JSON.parse(cloudGet(CLOUD_MT) || '{}') || {}; } catch (e) { return {}; } };
 const cloudRaw = Storage.prototype.setItem;   // writes that must not count as a change made on this device

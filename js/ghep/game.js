@@ -14,7 +14,7 @@ const C9_PICS = [
   { id: 'du',   src: 'img/ch3/danh-du.jpg',       w: 529,  h: 378, vi: 'Đánh đu',       en: 'On the swing' },
 ];
 // three tiers: about 12 pieces all upright, about 24 pieces turned at random, about 40 pieces turned at random
-const C9_TIERS = [{ n: 12, rot: false, vi: 'Dễ', en: 'Easy' }, { n: 24, rot: true, vi: 'Vừa', en: 'Medium' }, { n: 40, rot: true, vi: 'Khó', en: 'Hard' }];
+const C9_TIERS = [{ n: 12, rot: false, vi: 'Dễ', en: 'Easy' }, { n: 24, rot: true, vi: 'Vừa', en: 'Medium' }, { n: 40, rot: true, vi: 'Khó', en: 'Hard' }, { n: 1000, rot: true, vi: 'Một nghìn mảnh', en: 'A thousand pieces' }];
 function c9Grid(w, h, n) {   // columns × rows near n pieces with cells close to square
   let best = null;
   for (let c = 2; c <= 14; c++) for (let r = 2; r <= 14; r++) { const sc = Math.abs(c * r - n) / n + Math.abs(Math.log((w / c) / (h / r))) * 1.2; if (!best || sc < best.sc) best = { c, r, sc }; }
@@ -23,6 +23,9 @@ function c9Grid(w, h, n) {   // columns × rows near n pieces with cells close t
 const C9_LEVELS = [];
 C9_TIERS.forEach((t, ti) => C9_PICS.forEach(p => { const g = c9Grid(p.w, p.h, t.n); C9_LEVELS.push({ pic: p, tier: ti, cols: g.c, rows: g.r, rot: t.rot }); }));
 
+// the one big puzzle: the largest print, 40 × 25 = 1000 pieces (the other prints are too small to be cut so fine)
+C9_LEVELS.push({ pic: C9_PICS[0], tier: 3, cols: 40, rows: 25, big: true });
+const C9_SAVEKEY = 'dcc.c9s';   // the big puzzle's unfinished state, kept on this device only (not in the cloud save)
 const C9 = { i: 0, G: null, imgs: {}, loading: false, ptr: null, st: 0, conf: [] };
 function c9Img(pic, cb) {
   let im = C9.imgs[pic.id];
@@ -36,10 +39,10 @@ function buildAlbum9() {
   const box = $('#cards'); box.textContent = '';
   let tier = -1;
   C9_LEVELS.forEach((L, i) => {
-    if (L.tier !== tier) { tier = L.tier; const h = document.createElement('div'); h.className = 'sec'; h.textContent = `${lg(C9_TIERS[tier].vi, C9_TIERS[tier].en)} · ${lg('khoảng', 'about')} ${C9_TIERS[tier].n} ${lg('mảnh', 'pieces')}`; box.appendChild(h); }
-    const open = i === 0 || SAVE9.done[i - 1] || SAVE9.done[i];
+    if (L.tier !== tier) { tier = L.tier; const h = document.createElement('div'); h.className = 'sec'; h.textContent = tier === 3 ? `${lg(C9_TIERS[3].vi, C9_TIERS[3].en)} · ${lg('phóng to bằng cuộn chuột hoặc hai ngón tay', 'zoom with the wheel or two fingers')}` : `${lg(C9_TIERS[tier].vi, C9_TIERS[tier].en)} · ${lg('khoảng', 'about')} ${C9_TIERS[tier].n} ${lg('mảnh', 'pieces')}`; box.appendChild(h); }
+    const open = i === 0 || SAVE9.done[i - 1] || SAVE9.done[i] || (L.tier === 3 && C9_LEVELS.some((q, k) => q.tier === 2 && SAVE9.done[k]));   // the thousand opens after any Hard print
     const b = document.createElement('button');
-    b.className = 'card'; b.style.background = ['#ecdcbf', '#d9e6c9', '#e6d3c9'][L.tier]; b.disabled = !open;
+    b.className = 'card'; b.style.background = ['#ecdcbf', '#d9e6c9', '#e6d3c9', '#d9d3ec'][L.tier]; b.disabled = !open;
     b.innerHTML = `<div class="num">${lg('Màn', 'Level')} ${i + 1}</div><div style="width:100%;height:78px;margin:4px 0;background:#f2ecde url('${L.pic.src}') center/cover;border:2px solid #1d1915;border-radius:6px;${open ? '' : 'filter:grayscale(1) brightness(.8);'}"></div><b>${lg(L.pic.vi, L.pic.en)}</b><span class="st${SAVE9.done[i] ? ' done' : ''}">${SAVE9.done[i] ? `${lg('Xong', 'Done')} · ${c9Time(SAVE9.best[i] || 0)}` : `${L.cols}×${L.rows} ${lg('mảnh', 'pieces')}`}</span>`;
     b.addEventListener('click', () => { if (open) startC9(i); });
     box.appendChild(b);
@@ -51,16 +54,22 @@ function startC9(i) {
   S.chapter = 9; S.mode = 'c9play'; C9.i = i; C9.G = null; C9.loading = true; C9.conf = [];
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
-  c9Img(C9_LEVELS[i].pic, im => { if (C9.i !== i || S.mode !== 'c9play') return; const W = cv.width / DPR, H = cv.height / DPR - C9.st; C9.G = c9MakeGame(C9_LEVELS[i], im, W, H, i + 1 + Math.floor(Math.random() * 1e6)); C9.loading = false; });
+  c9Img(C9_LEVELS[i].pic, im => { if (C9.i !== i || S.mode !== 'c9play') return; const W = cv.width / DPR, H = cv.height / DPR - C9.st; let seed = i + 1 + Math.floor(Math.random() * 1e6), st = null; if (C9_LEVELS[i].big) { try { const r = JSON.parse(localStorage.getItem(C9_SAVEKEY) || 'null'); if (r && r.i === i && r.state) { seed = r.seed; st = r.state; } } catch (e) {} } C9.G = c9MakeGame(C9_LEVELS[i], im, W, H, seed); C9.G.resumed = !!(st && c9Restore(C9.G, st)); C9.lastSave = performance.now(); C9.loading = false; });
 }
 function c9Done() {
-  const i = C9.i, G = C9.G; trackWin();
+  const i = C9.i, G = C9.G; trackWin(); try { localStorage.removeItem(C9_SAVEKEY); } catch (e) {}
   SAVE9.done[i] = true; if (!SAVE9.best[i] || G.t < SAVE9.best[i]) SAVE9.best[i] = Math.round(G.t); persist9();
   AU.plop();
   for (let k = 0; k < 70; k++) C9.conf.push({ x: Math.random() * G.lw, y: -20 - Math.random() * 200, vx: (Math.random() - .5) * 60, vy: 60 + Math.random() * 120, c: ['#a3332a', '#f2c640', '#2f6a4c', '#3f8a86', '#7b4aa8'][k % 5], r: 3 + Math.random() * 4, ph: Math.random() * 6 });
 }
 
-function updateC9(dt) { C9.st = safeTop(); if (C9.G) { c9Tick(C9.G, dt); for (const p of C9.conf) { p.x += (p.vx + Math.sin(S.t * 3 + p.ph) * 24) * dt; p.y += p.vy * dt; } C9.conf = C9.conf.filter(p => p.y < (C9.G ? C9.G.lh : 800) + 30); } }
+function c9Save() {
+  const G = C9.G; if (!G || !G.big || G.done || S.mode !== 'c9play') return;
+  try { localStorage.setItem(C9_SAVEKEY, JSON.stringify({ i: C9.i, seed: G.seed, state: c9Snapshot(G) })); } catch (e) {}
+}
+addEventListener('visibilitychange', () => { if (document.hidden) c9Save(); }); addEventListener('pagehide', c9Save);
+function updateC9(dt) {
+  if (C9.G && C9.G.big && !C9.G.done && performance.now() - C9.lastSave > 12000) { C9.lastSave = performance.now(); c9Save(); } C9.st = safeTop(); if (C9.G) { c9Tick(C9.G, dt); for (const p of C9.conf) { p.x += (p.vx + Math.sin(S.t * 3 + p.ph) * 24) * dt; p.y += p.vy * dt; } C9.conf = C9.conf.filter(p => p.y < (C9.G ? C9.G.lh : 800) + 30); } }
 function c9Btn(g, x, y, w, h, label, fill, ink) { g.beginPath(); g.roundRect(x, y, w, h, 12); g.fillStyle = fill; g.fill(); g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.stroke(); g.fillStyle = ink || '#f2ecde'; g.font = `800 ${Math.min(20, h * .42)}px 'Playfair Display', Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, x + w / 2, y + h / 2 + 1); }
 function c9WinBox(G) { const w = Math.min(340, G.lw - 28), x = (G.lw - w) / 2, h = 150, y = G.lh - h - 10; return { x, y, w, h, bw: (w - 36) / 2, by: y + h - 54 }; }
 
@@ -74,13 +83,17 @@ function renderC9() {
   // the top bar
   g.fillStyle = '#1d1915'; g.font = "800 34px 'Playfair Display', Georgia, serif"; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('‹', 28, 28);
   g.font = "800 17px 'Playfair Display', Georgia, serif"; g.fillText(lg(L.pic.vi, L.pic.en), W / 2, 20);
-  g.font = "600 12px 'Inter', system-ui, sans-serif"; g.globalAlpha = .75; g.fillText(`${lg('Màn', 'Level')} ${C9.i + 1} · ${L.cols * L.rows} ${lg('mảnh', 'pieces')}${C9.touch ? lg(' · chạm nhấc · vuốt lên xuống để xoay', ' · tap to lift · flick up or down to turn') : lg(' · click nhấc · cuộn chuột để xoay', ' · click to lift · wheel to turn')}`, W / 2, 40); g.globalAlpha = 1;
+  g.font = "600 12px 'Inter', system-ui, sans-serif"; g.globalAlpha = .75; g.fillText(`${C9.G && C9.G.big ? `${C9.G.groups.length} ${lg('mảng', 'parts')}` : `${lg('Màn', 'Level')} ${C9.i + 1}`} · ${L.cols * L.rows} ${lg('mảnh', 'pieces')}${C9.touch ? lg(' · vuốt xoay · 2 ngón zoom', ' · flick turns · pinch zooms') : lg(' · cuộn: xoay / zoom', ' · wheel: turn / zoom')}`, W / 2, 40, W - 160); g.globalAlpha = 1;
   if (C9.G) {
     const G = C9.G; g.font = "700 15px 'Inter', system-ui, sans-serif"; g.textAlign = 'right'; g.fillText(c9Time(G.t), W - 56, 28);
     g.beginPath(); g.arc(W - 28, 28, 16, 0, 6.283); g.fillStyle = G.peek > 0 ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = '#1d1915'; g.stroke();   // the eye: a peek at the whole picture
     g.beginPath(); g.ellipse(W - 28, 28, 9, 5.5, 0, 0, 6.283); g.stroke(); g.beginPath(); g.arc(W - 28, 28, 2.6, 0, 6.283); g.fillStyle = '#1d1915'; g.fill();
     c9Draw(G, g, W, hh);
     c9DrawTurnBtn(G, g);
+    if (G.big && !G.done) {   // the buttons of the big puzzle: zoom in, zoom out, the whole table, start again
+      const bs = c9ZoomBtns(G); g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      for (const b of bs) { g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); g.fillStyle = '#1d1915'; g.font = "800 " + (b.k === 'fit' ? 15 : 22) + "px 'Inter', system-ui, sans-serif"; g.fillText(b.t, b.x, b.y + 1); }
+    }
     if (G.done) {
       const b = c9WinBox(G), a = Math.min(1, G.win * 2);
       g.globalAlpha = a; g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.roundRect(b.x, b.y, b.w, b.h, 16); g.fill(); g.stroke();
@@ -94,6 +107,7 @@ function renderC9() {
   } else { g.fillStyle = '#1d1915'; g.font = "700 18px 'Playfair Display', Georgia, serif"; g.textAlign = 'center'; g.fillText(lg('Đang mở tranh…', 'Opening the print…'), W / 2, hh / 2); }
   g.restore();
 }
+function c9ZoomBtns(G) { const r = 20, x = G.lw - 30; return [{ k: 'in', t: '+', x, y: G.lh - 3 * 52 - 8 - r, r }, { k: 'out', t: '−', x, y: G.lh - 2 * 52 - 8 - r, r }, { k: 'fit', t: '⤢', x, y: G.lh - 52 - 8 - r, r }, { k: 'again', t: '↻', x: G.lw - 112, y: 28, r: 16 }]; }
 function c9Pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - C9.st]; }
 function c9PDown(e) {
   if (S.mode !== 'c9play') return; C9.touch = e.pointerType !== 'mouse'; const [x, y] = c9Pos(e), G = C9.G;
@@ -101,21 +115,28 @@ function c9PDown(e) {
   if (!G) return;
   if (x > G.lw - 52 && y < 52 && !G.done) { G.peek = G.peek > 0 ? 0 : 4; return; }
   if (G.done) { const b = c9WinBox(G); if (y >= b.by && y <= b.by + 40) { if (x < b.x + 12 + b.bw + 6) showAlbum(9); else if (C9.i + 1 < C9_LEVELS.length) startC9(C9.i + 1); else showAlbum(9); } return; }
-  capturePointer(e); C9.ptr = e.pointerId; c9Down(G, x, y, e, c9Done);
+  if (G.big) for (const b of c9ZoomBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 6) {
+    if (b.k === 'in') c9Zoom(G, 1.5, G.lw / 2, (G.lh + G.top) / 2); else if (b.k === 'out') c9Zoom(G, 1 / 1.5, G.lw / 2, (G.lh + G.top) / 2);
+    else if (b.k === 'fit') { const c = G.cam; c.z = G.zmin; c9ClampCam(G); }
+    else if (b.k === 'again' && confirm(lg('Xếp lại từ đầu? Phần đã ghép sẽ mất.', 'Start again? What you have joined will be lost.'))) { try { localStorage.removeItem(C9_SAVEKEY); } catch (er) {} startC9(C9.i); }
+    return;
+  }
+  capturePointer(e); c9Down(G, x, y, e, c9Done);
 }
 function c9PMove(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9Move(C9.G, x, y, e); cv.style.cursor = C9.G.held ? 'grabbing' : C9.G.hover ? 'grab' : ''; }
-function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G || C9.ptr !== e.pointerId) return; C9.ptr = null; const [x, y] = c9Pos(e); c9PtrUp(C9.G, x, y, e, c9Done); }
+function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9PtrUp(C9.G, x, y, e, c9Done); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'c9play') e.preventDefault(); });
 cv.addEventListener('wheel', e => {
   if (S.mode !== 'c9play' || !C9.G || C9.G.done) return;
   const G = C9.G, [x, y] = c9Pos(e), d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
-  if (!G.held) { const h = c9Hit(G, x, y); G.hover = h ? h.grp : null; }
-  if (c9Wheel(G, d, x, y)) e.preventDefault();
+  c9Wheel(G, d, x, y, e.ctrlKey); e.preventDefault();
 }, { passive: false });
 function c9Key(e) {
   if (S.mode !== 'c9play') return;
   if (e.code === 'Escape') { showAlbum(9); return; }
-  const G = C9.G; if (!G || G.done) return; const grp = G.held || G.hover; if (!grp) return;
+  const G = C9.G; if (!G || G.done) return;
+  if (e.code === 'Equal' || e.code === 'NumpadAdd') { c9Zoom(G, 1.25, G.lw / 2, (G.lh + G.top) / 2); return; } if (e.code === 'Minus' || e.code === 'NumpadSubtract') { c9Zoom(G, .8, G.lw / 2, (G.lh + G.top) / 2); return; }
+  const grp = G.held; if (!grp) return;
   if (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); const c = c9Centroid(G, grp); c9Turn(G, grp, (e.shiftKey || e.code === 'ArrowUp' ? -1 : 1) * C9_STEP, G.px === undefined ? c[0] : G.px, G.py === undefined ? c[1] : G.py); }
 }
 
@@ -125,7 +146,7 @@ registerChapter({
   progress: () => `${Object.values(SAVE9.done).filter(Boolean).length}/${C9_LEVELS.length} ${lg('tranh', 'prints')}`,
   hasProgress: () => Object.values(SAVE9.done).some(Boolean),
   album() { buildAlbum9(); $('#albumTitle').textContent = lg('Chương IX · Ghép Tranh', 'Chapter IX · Print Puzzles'); $('#albumDesc').textContent = lg('Những bức tranh Đông Hồ bị xáo thành từng mảnh nằm lẫn lộn mọi góc. Chạm vào mảnh để nhấc lên, cuộn chuột (hoặc vuốt lên xuống) để xoay, ghép hai mảnh sát nhau đúng góc là chúng dính lại; ghép ở chỗ nào cũng được và cả mảng tranh dời, xoay được như một mảnh. Nút con mắt cho xem tranh mẫu.', 'The Đông Hồ prints lie broken in pieces, every which way up. Lift a piece, turn it with the wheel (or by flicking up and down) and bring two neighbours together at the right angle: they stick. Join them anywhere; a joined part moves and turns like one piece. The eye shows the sample.'); },
-  hide() { cv.style.cursor = ''; },
+  hide() { c9Save(); cv.style.cursor = ''; },
   update: updateC9, render: renderC9, key: c9Key,
   pointer: { down: c9PDown, move: c9PMove, up: c9PUp },
   next() { showAlbum(9); }, retry() { startC9(C9.i); },
