@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v3'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v5'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -30,7 +30,7 @@ const BOT_NAMES = ['Tí', 'Tèo', 'Mít', 'Bơ', 'Nhím', 'Sóc', 'Cốm', 'Bố
 const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho'];
 const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua', 'beo', 'gay', 'cao'], fur: 16, robe: 16, skirt: 16, pants: 16, top: 16 };   // looks are only forwarded, the browser cleans them again
 
-const TESTDEV = /^(testdev|boardreader|dbgdev)/;   // devices used by test.mjs: never written to the board
+const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer)/;   // devices used by test.mjs: never written to the board
 const T = {
   MINP: 2, MAXP: 30, STAKE: 10,
   ANNOUNCE: 4000, RESULT: 9000, FIRST: 3000, WAIT: 2500,
@@ -75,7 +75,11 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v3')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v5')).fetch(req);
+    }
+    if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
+      if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
+      return env.ROOM.get(env.ROOM.idFromName('v5')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -89,7 +93,12 @@ export class Room extends DurableObject {
     this.top = null; this.topAt = 0; this.dirty = new Set();
   }
 
-  async fetch() {
+  async fetch(req) {
+    if (req && new URL(req.url).pathname === '/days') {
+      const all = await this.ctx.storage.list({ prefix: 'd:', reverse: true, limit: 90 }), out = [];
+      for (const [k, v] of all) out.push({ day: k.slice(2), players: v.players, peak: v.peak, peakAt: v.peakAt, rounds: v.rounds, maxSeat: v.maxSeat });
+      return new Response(JSON.stringify(out, null, 1), { headers: { 'content-type': 'application/json' } });
+    }
     const pair = new WebSocketPair(), [client, server] = Object.values(pair);
     server.accept();
     const c = { ws: server, id: 'p' + (this.nextId++), dev: '', name: '', look: null, joined: false, ok: false, idle: false, miss: 0, rtt: 150, seen: Date.now(), win: 0, cnt: 0 };
@@ -115,7 +124,7 @@ export class Room extends DurableObject {
       if (!name || BAD.test(name)) name = 'Chuột ' + c.id.slice(1);
       c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok;
       const st = await this.getStats(c.dev); st.n = name;
-      c.joined = true;
+      c.joined = true; this.noteJoin(c);
       this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
       this.all({ t: 'players', players: this.playerList() });
       this.wake();
@@ -144,6 +153,31 @@ export class Room extends DurableObject {
   pubRound() {
     const r = this.round; if (!r || r.state === 'wait') return null;
     return { solo: !!r.solo, n: r.n, game: r.game, announce: r.announce, t0: r.t0, state: r.state, seated: [...r.seated.keys()], cfg: r.cfg, live: r.live, holes: r.holes, go: !!r.sent, result: r.state === 'result' ? r.result : undefined };
+  }
+
+  /* ---- the day's numbers for the owner: different players, most online at once, rounds, the fullest round (Vietnam date) ---- */
+  async dayDoc() {
+    const k = 'd:' + new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
+    if (!this.day || this.day.k !== k) this.day = { k, v: (await this.ctx.storage.get(k)) || { players: 0, peak: 0, peakAt: 0, rounds: 0, maxSeat: 0, devs: {} } };
+    return this.day;
+  }
+  async noteDay(fn) {
+    const d = await this.dayDoc(); if (fn(d.v) !== false) { try { await this.ctx.storage.put(d.k, d.v); } catch (e) {} }
+  }
+  noteJoin(c) {
+    if (TESTDEV.test(c.dev)) return;
+    const online = this.humans().filter(x => !TESTDEV.test(x.dev)).length;
+    this.noteDay(v => {
+      let ch = false;
+      if (!v.devs[c.dev.slice(0, 12)]) { v.devs[c.dev.slice(0, 12)] = 1; v.players = Object.keys(v.devs).length; ch = true; }
+      if (online > v.peak) { v.peak = online; v.peakAt = Date.now(); ch = true; }
+      return ch;
+    });
+  }
+  noteRound(r) {
+    if (r.solo) return;
+    const n = [...r.seated.values()].filter(c => !TESTDEV.test(c.dev)).length; if (!n) return;
+    this.noteDay(v => { v.rounds++; if (n > v.maxSeat) v.maxSeat = n; });
   }
 
   /* ---- stats and the board ---- */
@@ -423,6 +457,7 @@ export class Room extends DurableObject {
       if (c.inRound) c.miss = 0; else if (++c.miss >= 2) { c.idle = true; this.send(c, { t: 'idle' }); }
       stat.push(c);
     }
+    this.noteRound(r);
     r.state = 'result'; r.next = Date.now() + T.RESULT;
     r.result = { rows, winner, pot, N, net };
     this.all({ t: 'result', n: r.n, game: g, rows, winner, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : undefined });
