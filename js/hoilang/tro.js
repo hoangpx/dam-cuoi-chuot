@@ -151,7 +151,7 @@ HL_G.tuong = {
 
 const hlBalCm = ms => (5 + ms / 1000 * 4).toFixed(1) + ' cm';
 HL_G.balloon = {
-  name: 'Thổi bóng', rule: 'Giữ nút để thổi bóng to dần, thả ra để chốt. Quả nào to nhất mà chưa nổ thì thắng. Cả phòng chung một ngưỡng nổ bí mật: ai chốt sát mốc nhất mà chưa nổ thì thắng, đừng tham!', ctl: 'hold',
+  name: 'Thổi bóng', rule: 'Giữ nút để thổi bóng, thả ra để chốt. Cả phòng chung một mốc nổ bí mật: ai chốt to nhất mà chưa nổ thì thắng.', ctl: 'hold',
   controls: (r, W, H, b) => hlHoldCtl(r, W, H, b, 'GIỮ ĐỂ THỔI'),
   info(g, r, now, b) {
     const bl = r.bal.get(HL.id), e = now - r.t0, held = bl && bl.d !== undefined ? (bl.pop !== undefined ? bl.pop - bl.d : (bl.u !== undefined ? bl.u : e) - bl.d) : 0;

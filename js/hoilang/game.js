@@ -211,9 +211,21 @@ function renderHL() {
   const gy = top + ipH + 6, gh = H - gy - footH - 6, list = hlOrder(r), G = hlGrid(Math.max(1, list.length), 6, gy, W - 12, gh);
   list.forEach((p, i) => hlCell(g, r, gm, p, i, G, now, t));
   hlButtons(g, ctl, W, H);
+  hlCountdown(g, r, now, W, H);
   hlWinDraw(g, W, H);
   if (HL.flash && HL.t - HL.flash.t0 < 3.5) hlFlashDraw(g, W, H);
   if (HL.ui) hlOverlay(g, W, H);
+}
+// 3 · 2 · 1 big in the middle of the screen before a game starts, then a short "BẮT ĐẦU!"
+function hlCountdown(g, r, now, W, H) {
+  const left = (r.t0 - now) / 1000;
+  let txt = null, frac = 0;
+  if (r.state === 'announce' && left > 0 && left <= 3) { txt = String(Math.ceil(left)); frac = left % 1 || 1; }
+  else if (left <= 0 && left > -.8 && r.state !== 'result') { txt = 'BẮT ĐẦU!'; frac = 1 + left / .8; }
+  if (!txt) return;
+  const big = txt.length === 1, size = big ? Math.min(W, H) * .5 * (.8 + .3 * frac) : Math.min(W * .18, 70) * (.9 + .2 * frac), a = big ? Math.min(1, .35 + frac) : Math.min(1, frac * 2);
+  g.save(); g.globalAlpha = a * .92; g.fillStyle = 'rgba(242,236,222,.55)'; g.beginPath(); g.arc(W / 2, H / 2, big ? size * .62 : size * 1.5, 0, 6.283); g.fill(); g.restore();
+  g.globalAlpha = a; hlText(g, txt, W / 2, H / 2 + (big ? size * .04 : 0), size, { w: 900, c: big ? '#a3332a' : '#2f6a4c', os: 'rgba(242,236,222,.95)' }); g.globalAlpha = 1;
 }
 function hlHeader(g, W, st) {
   const b = hlBack(); hlText(g, '‹', b.x + 20, b.y + 20, 34, { w: 900 });
