@@ -360,7 +360,7 @@ const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boa
 
 registerChapter({
   id: 5, modes: ['hlplay'],
-  card: { num: lg('Chương V', 'Chapter V'), han: '會村', name: lg('Hội Làng', 'Village Fair'), desc: lg('Phòng chơi chung mở cả ngày: ai vào cũng ngồi cùng một hàng, thấy nhau chơi trực tiếp. Mười một trò nhanh tay nhanh mắt, mỗi ván cược 10 đồng từ túi, một người thắng ăn hết hũ. Có bảng xếp hạng.', 'A shared room open all day: everyone sits in one row and watches each other play live. Eleven quick games, a 10 đồng stake from your purse each round, one winner takes the pot. There is a leaderboard.'), bg: '#cdd9b4' },
+  card: { num: lg('Chương V', 'Chapter V'), han: '會村', name: lg('Hội Làng', 'Village Fair'), desc: lg('Ngày hội chung của làng: cùng vào chơi cho vui, thắng sẽ có phần thưởng.', 'The village fair: join in for fun, and winners get a prize.'), bg: '#cdd9b4' },
   progress: () => HL_SAVE.r ? lgf('{w} thắng / {r} ván', '{w} wins / {r} rounds', { w: HL_SAVE.w, r: HL_SAVE.r }) : lg('Chưa chơi', 'Not played'),
   hasProgress: () => HL_SAVE.r > 0,
   direct: startHL,

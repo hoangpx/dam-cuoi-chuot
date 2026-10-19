@@ -150,12 +150,12 @@ HL_G.tuong = {
 
 const hlBalCm = ms => (5 + ms / 1000 * 4).toFixed(1) + ' cm';
 HL_G.balloon = {
-  name: 'Thổi bóng', rule: 'Giữ nút để thổi bóng to dần, thả ra để chốt. Quả nào to nhất mà chưa nổ thì thắng. Mỗi quả có một ngưỡng nổ bí mật, đừng tham!', ctl: 'hold',
+  name: 'Thổi bóng', rule: 'Giữ nút để thổi bóng to dần, thả ra để chốt. Quả nào to nhất mà chưa nổ thì thắng. Cả phòng chung một ngưỡng nổ bí mật: ai chốt sát mốc nhất mà chưa nổ thì thắng, đừng tham!', ctl: 'hold',
   controls: (r, W, H, b) => hlHoldCtl(r, W, H, b, 'GIỮ ĐỂ THỔI'),
   info(g, r, now, b) {
     const bl = r.bal.get(HL.id), e = now - r.t0, held = bl && bl.d !== undefined ? (bl.pop !== undefined ? bl.pop - bl.d : (bl.u !== undefined ? bl.u : e) - bl.d) : 0;
     hlText(g, bl && bl.pop !== undefined ? 'BÙM! Bóng nổ rồi' : bl && bl.u !== undefined ? `Bạn chốt: ${hlBalCm(held)}` : bl && bl.d !== undefined ? `Đang thổi: ${hlBalCm(Math.max(0, held))}` : 'Giữ nút để bắt đầu thổi', b.W / 2, b.y + b.h / 2, 22, { w: 900, c: bl && bl.pop !== undefined ? '#a3332a' : HL_INK });
-    hlText(g, 'Nổ lúc nào là bí mật, ai chốt quả to nhất thắng', b.W / 2, b.y + b.h - 10, 13, hlSub);
+    hlText(g, 'Mốc nổ là bí mật nhưng chung cho cả phòng', b.W / 2, b.y + b.h - 10, 13, hlSub);
   },
   cell(g, r, p, C, res, win) {
     const bl = r.bal.get(p.id), e = hlEnd(r); let held = 0, pop = false;

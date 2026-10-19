@@ -10,7 +10,7 @@
      ten      đồng hồ chạy 0..3 s rồi bị che; bấm gần mốc 10,000 s nhất thắng.
      pomelo   quả bưởi treo dây rơi nhanh dần xuống đầu; bấm dừng gần đầu nhất mà chưa trúng thì thắng.
      tuong    "tượng gỗ": giữ để chạy khi mèo quay lưng, mèo quay lại thì thả ra; ai tới đích trước (không bị bắt) thắng.
-     balloon  giữ để thổi bóng, thả ra để chốt; quả nào to nhất mà chưa nổ (mỗi quả một ngưỡng bí mật) thắng.
+     balloon  giữ để thổi bóng, thả ra để chốt; quả nào to nhất mà chưa nổ (cả phòng chung một ngưỡng nổ bí mật) thắng.
      minnum   mỗi người chọn một số, số trùng bị gạch, số nhỏ nhất không trùng thắng.
      lantern  đèn lồng đổi màu lúc bất ngờ; bấm nhanh nhất thắng, bấm sớm thì loại.
      boat     đua thuyền: bấm liên tục 10 s, nhiều lượt nhất thắng.
@@ -233,7 +233,7 @@ export class Room extends DurableObject {
         }
       }
     } else if (g === 'balloon') {
-      cfg.len = T.BAL_LEN; r.deadline = t0 + T.BAL_LEN; r.thr = {}; for (const id of ids) r.thr[id] = ri(T.BAL_MIN, T.BAL_MIN + T.BAL_SPAN);
+      cfg.len = T.BAL_LEN; r.deadline = t0 + T.BAL_LEN; r.thr = {}; const th = ri(T.BAL_MIN, T.BAL_MIN + T.BAL_SPAN); for (const id of ids) r.thr[id] = th;   // one mark for the whole room
       for (const b of bots) { const d = rnd(300, 1800), hold = r.thr[b.id] * (.45 + b.skill * .6 + gauss() * .08); this.push(r, b.id, d, { k: 'd' }); this.push(r, b.id, d + hold, { k: 'u' }); }
     } else if (g === 'minnum') {
       cfg.max = Math.max(5, Math.min(15, Math.ceil(ids.length / 2) + 1)); r.deadline = t0 + T.MIN_LEN; cfg.len = T.MIN_LEN;
