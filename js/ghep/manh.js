@@ -20,6 +20,7 @@
 const C9_DRAG_PX = 7, C9_FLICK_MS = 260, C9_FLICK_PX = 26;
 const C9_ANG_TOL = 14 * Math.PI / 180, C9_POS_TOL = .38;   // an angle in radians, a position as a fraction of the smaller cell side
 const C9_STEP = 15 * Math.PI / 180;
+const C9_ANG_TOL_NET = 22 * Math.PI / 180, C9_POS_TOL_NET = .6;   // the shared puzzle (chương X) is more forgiving: a thousand small pieces on a phone (a join still needs a neighbouring pair, so nothing joins by mistake); the server uses the same numbers
 
 function c9Edge(p, x0, y0, x1, y1, nx, ny, e, jit, rev) {
   if (!e) { p.lineTo(x1, y1); return; }
@@ -198,13 +199,15 @@ function c9Clamp(G, grp) {
 }
 // two groups meet when a piece of one is next to a piece of the other (in the print) and their angle and place agree
 function c9TryJoin(G, grp) {
-  let joined = false; const tol = C9_POS_TOL * Math.min(G.cw, G.ch);
+  let joined = false; const net = !!G.net, tol = (net ? C9_POS_TOL_NET : C9_POS_TOL) * Math.min(G.cw, G.ch), angTol = net ? C9_ANG_TOL_NET : C9_ANG_TOL;
   for (let guard = 0; guard < 60; guard++) {
     let hit = null;
     for (const other of G.groups) {
       if (other === grp) continue;
-      if (Math.abs(other.x - grp.x) > tol || Math.abs(other.y - grp.y) > tol) continue;
-      if (Math.abs(c9Wrap(grp.a - other.a)) > C9_ANG_TOL || Math.hypot(grp.x - other.x, grp.y - other.y) > tol) continue;
+      if (other.by) continue;
+      const ox = other.tx !== undefined ? other.tx : other.x, oy = other.tx !== undefined ? other.ty : other.y, oa = other.tx !== undefined ? other.ta : other.a;   // where it is heading, when it is still gliding
+      if (Math.abs(ox - grp.x) > tol || Math.abs(oy - grp.y) > tol) continue;
+      if (Math.abs(c9Wrap(grp.a - oa)) > angTol || Math.hypot(grp.x - ox, grp.y - oy) > tol) continue;
       let pair = null; for (const a of grp.pcs) { for (const b of other.pcs) if (Math.abs(a.i - b.i) + Math.abs(a.j - b.j) === 1) { pair = [a, b]; break; } if (pair) break; }
       if (pair) { hit = { other, pair }; break; }
     }
@@ -212,14 +215,14 @@ function c9TryJoin(G, grp) {
     // the bigger group keeps its pose, the smaller moves onto it
     const big = hit.other.pcs.length >= grp.pcs.length ? hit.other : grp, small = big === grp ? hit.other : grp;
     for (const p of small.pcs) { p.grp = big; big.pcs.push(p); }
-    G.groups.splice(G.groups.indexOf(small), 1); const oi = G.order.indexOf(small); if (oi >= 0) G.order.splice(oi, 1);
+    G.groups.splice(G.groups.indexOf(small), 1); const oi = G.order.indexOf(small); if (oi >= 0) G.order.splice(oi, 1); if (G.gm) G.gm.delete(small.id);
     hit.pair.forEach(p => { p.flash = 1; }); const c = c9Center(G, big, hit.pair[0]), c2 = c9Center(G, big, hit.pair[1]); G.flash.push({ x: (c[0] + c2[0]) / 2, y: (c[1] + c2[1]) / 2, t: 0, life: .5 });
     AU.pluck(92); joined = true; if (G.held === small) G.held = big; grp = big;
   }
   return joined;
 }
 function c9Drop(G, grp) {
-  c9Clamp(G, grp); if (G.net) { G.net.drop(grp); return null; } c9TryJoin(G, grp);
+  c9Clamp(G, grp); if (G.net) { c9TryJoin(G, grp); G.net.drop(grp); return null; } c9TryJoin(G, grp);
   if (G.groups.length === 1) { G.done = true; G.win = 0; G.held = null; return 'win'; }
   return null;
 }

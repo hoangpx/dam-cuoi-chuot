@@ -59,7 +59,7 @@ function jgMsg(m) {
   else if (m.t === 'lift') { if (m.by !== JG.id) c9NetLift(G, m.g, m.by); }
   else if (m.t === 'deny') c9NetDeny(G, m.g);
   else if (m.t === 'poses') c9NetPoses(G, m.p);
-  else if (m.t === 'drop') c9NetDrop(G, m.g, m.x, m.y, m.a);
+  else if (m.t === 'drop') { const g = G.gm.get(m.g); if (!g || (m.n && g.pcs.length !== m.n)) { JG_NET.lost(); return; } c9NetDrop(G, m.g, m.x, m.y, m.a); }   // this screen joined differently from the server: reconnect and take the server's picture
   else if (m.t === 'join') {
     c9NetJoin(G, m);
     if (m.by === JG.id && m.paid) {

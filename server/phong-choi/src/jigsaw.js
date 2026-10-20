@@ -15,7 +15,7 @@ import { cleanChat, CHAT_GAP } from './chat.js';
 
 const COLS = 40, ROWS = 25, N = COLS * ROWS, PW = 3200, PH = 2204, PIC = 'dcm1', CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
-const ANG_TOL = 14 * Math.PI / 180, POS_TOL = .38 * Math.min(CW, CH), NEXT_AFTER = 120000, HOLD_IDLE = 40000;
+const ANG_TOL = 22 * Math.PI / 180, POS_TOL = .6 * Math.min(CW, CH), NEXT_AFTER = 120000, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz|jgtest)/;
 const LOOK = ['role', 'age', 'body', 'fur', 'robe', 'skirt', 'pants', 'top'];   // a look is only forwarded; every browser cleans it again
@@ -148,14 +148,14 @@ export class Jigsaw extends DurableObject {
   }
   release(gid) {
     const g = this.groups.get(gid); if (!g) return; const holder = this.conns.get(g.by); if (holder) holder.holding = null; g.by = null; this.clamp(g);
-    this.all({ t: 'drop', g: gid, x: r1(g.x), y: r1(g.y), a: r3(g.a) }); this.save();
+    this.all({ t: 'drop', g: gid, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save();
   }
   drop(c, m, now) {
     const g = this.groups.get(m.g | 0); if (!g || g.by !== c.id) return;
     const x = +m.x, y = +m.y, a = +m.a; if (isFinite(x) && isFinite(y) && isFinite(a)) { g.x = x; g.y = y; g.a = a; }
     g.by = null; c.holding = null; this.clamp(g); this.dirty.delete(g.id);
     const joins = this.tryJoin(g);
-    if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a) }); this.save(); return; }
+    if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
     const u = this.users.get(c.dev); const paid = TESTDEV.test(c.dev) ? 0 : this.award(c, joins.length, now);
     if (u && paid) { u.m += paid; this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
