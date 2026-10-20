@@ -15,6 +15,7 @@ import { cleanChat, CHAT_GAP } from './chat.js';
 
 const COLS = 40, ROWS = 25, N = COLS * ROWS, PW = 3200, PH = 2204, PIC = 'dcm1', CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
+const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 const ANG_TOL = 22 * Math.PI / 180, POS_TOL = .6 * Math.min(CW, CH), NEXT_AFTER = 120000, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz|jgtest)/;
@@ -77,14 +78,14 @@ export class Jigsaw extends DurableObject {
   full(c) { return { n: this.n, seed: this.seed, cols: COLS, rows: ROWS, groups: this.rows(), holds: [...this.groups.values()].filter(g => g.by).map(g => [g.id, g.by]), done: this.done, players: this.playerList() }; }
   save(now) {
     if (now) { clearTimeout(this.saveT); this.saveT = null; this.flush(); return; }
-    if (!this.saveT) this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 300);
+    if (!this.saveT) this.saveT = setTimeout(() => { this.saveT = null; this.flush(true); }, SAVE_EVERY);   // poses only (a drop): rare, and a lost drop costs nothing but a position
   }
   // every write is retried until it sticks; a Durable Object holds its replies until the write is stored, so a join the players see is a join that is saved
-  flush() {
+  flush(soft) {
     const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() }, put = { pz, total: this.total };
     if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
     const users = [...this.dirtyUsers]; for (const dev of users) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
-    this.ctx.storage.put(put).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 1000); });
+    return this.ctx.storage.put(put, soft ? { allowUnconfirmed: true } : undefined).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 5000); });
   }
   scheduleNext() { clearTimeout(this.nextT); this.nextT = setTimeout(() => { if (this.done) { this.fresh(this.n + 1); this.all({ t: 'reset', ...this.full() }); } }, Math.max(1000, NEXT_AFTER - (Date.now() - this.doneAt))); }
 
@@ -117,8 +118,12 @@ export class Jigsaw extends DurableObject {
     if (m.t === 'hello' && !c.joined) {
       let name = String(m.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12); if (!name) name = 'Chuột ' + c.id.slice(1);
       c.name = cleanChat(name) || name; c.look = cleanLook(m.look); c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10);
-      const u = await this.user(c.dev); u.n = c.name; c.joined = true;
+      // the player's record is read from storage, but the welcome never waits for it longer than 1.5 s (a slow or stuck read once left new players on "opening the picture" for good): without it they get 0 pieces now and the record catches up
+      const known = this.users.get(c.dev); let u = known || { n: '', m: 0 }, late = false;
+      if (!known) { const got = await Promise.race([this.user(c.dev), new Promise(r => setTimeout(() => r(null), 1500))]); if (got) u = got; else late = true; }
+      u.n = c.name; c.joined = true;
       this.send(c, { t: 'welcome', id: c.id, ...this.full(c), me: { m: u.m } });
+      if (late) this.user(c.dev).then(r => { r.n = c.name; }).catch(() => {});
       this.all({ t: 'players', players: this.playerList() }, c);
       return;
     }
@@ -161,9 +166,11 @@ export class Jigsaw extends DurableObject {
     if (u && paid) { u.m += paid; this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
     const finished = this.groups.size === 1; if (finished) { this.done = true; this.doneAt = Date.now(); }
-    this.save(true);   // stored first, then told: nobody ever sees a join that is not kept
-    joins.forEach((j, k) => this.all({ t: 'join', ...j, by: c.id, paid: k < paid ? 1 : 0, m: u ? u.m : 0 }));
-    if (finished) { this.all({ t: 'done', n: this.n }); this.scheduleNext(); }
+    // stored first, then told: nobody ever sees a join that is not kept. The write does not hold the output gate (allowUnconfirmed) and we wait for it
+    // ourselves, so a refused write (a storage limit) cannot break the whole object: the join is then told anyway and the write is retried
+    clearTimeout(this.saveT); this.saveT = null;
+    const told = () => { joins.forEach((j, k) => this.all({ t: 'join', ...j, by: c.id, paid: k < paid ? 1 : 0, m: u ? u.m : 0 })); if (finished) { this.all({ t: 'done', n: this.n }); this.scheduleNext(); } };
+    this.flush(true).then(told, told);
   }
   // at most 10 paid joins in any 10 seconds for one player (the economy is the client's purse)
   award(c, k, now) { c.awards = c.awards.filter(t => now - t < 10000); const room = Math.max(0, 10 - c.awards.length), paid = Math.min(k, room); for (let i = 0; i < paid; i++) c.awards.push(now); return paid; }

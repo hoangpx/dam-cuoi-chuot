@@ -209,7 +209,16 @@ export class Room extends DurableObject {
     return this.day;
   }
   async noteDay(fn) {
-    const d = await this.dayDoc(); if (fn(d.v) !== false) { try { await this.kv.put(d.k, d.v); } catch (e) {} }
+    const d = await this.dayDoc(); if (fn(d.v) !== false) this.later({ [d.k]: d.v });
+  }
+  // stats and the day's numbers are written at most once a minute (and when the room empties): see the note above Room's save rows
+  later(keys) {
+    this.pend = Object.assign(this.pend || {}, keys);
+    if (!this.pendT) this.pendT = setTimeout(() => { this.pendT = null; this.flushPend(); }, 60000);
+  }
+  async flushPend() {
+    const k = this.pend; this.pend = null; if (!k || !Object.keys(k).length) return;
+    try { await this.kv.put(k); } catch (e) { this.pend = Object.assign(k, this.pend || {}); }
   }
   noteJoin(c) {
     if (TESTDEV.test(c.dev)) return;
@@ -251,7 +260,7 @@ export class Room extends DurableObject {
 
   /* ---- the schedule ---- */
   wake() { if (!this.timer) { this.timer = setInterval(() => this.tick(), 100); if (!this.round) this.startRound(Date.now() + T.FIRST); } }
-  stop() { clearInterval(this.timer); this.timer = null; this.round = null; }
+  stop() { clearInterval(this.timer); this.timer = null; this.round = null; clearTimeout(this.pendT); this.pendT = null; this.flushPend(); }
   eligible() { return this.humans().filter(c => c.ok && !c.idle); }
   tick() {
     const now = Date.now();
@@ -651,7 +660,7 @@ export class Room extends DurableObject {
       keys['u:' + c.dev] = s; this.send(c, { t: 'stat', stat: this.pubStat(s) });
     }
     for (const k of Object.keys(keys)) if (TESTDEV.test(k.slice(2))) delete keys[k];
-    try { if (Object.keys(keys).length) await this.kv.put(keys); } catch (e) {}
+    if (Object.keys(keys).length) this.later(keys);
     this.tops = null;
   }
 }
