@@ -197,20 +197,28 @@ function c9Clamp(G, grp) {
   if (c[0] < m) dx = m - c[0]; if (c[0] > G.ww - m) dx = G.ww - m - c[0]; if (c[1] < m) dy = m - c[1]; if (c[1] > G.wh - m) dy = G.wh - m - c[1];
   grp.x += dx; grp.y += dy;
 }
-// two groups meet when a piece of one is next to a piece of the other (in the print) and their angle and place agree
+// two groups meet when a piece of one is next to a piece of the other (in the print) and their angle agrees and the two touching pieces
+// agree in place (measured at the contact, not at the corner of the print: a big group turned a few degrees off would otherwise never join)
+const C9_NB = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+// the neighbouring group this one fits best, measured at the contact (see the note above c9TryJoin): for every piece of grp and every lattice
+// neighbour of it in another group, the neighbour's place under grp's pose against its real place, and the same for the piece itself
+function c9Contact(G, grp, tol, angTol) {
+  let best = null;
+  for (const a of grp.pcs) for (const [di, dj] of C9_NB) {
+    const i = a.i + di, j = a.j + dj; if (i < 0 || j < 0 || i >= G.rows || j >= G.cols) continue;
+    const b = G.pieces[i * G.cols + j], other = b.grp; if (other === grp || other.by) continue;
+    const ox = other.tx !== undefined ? other.tx : other.x, oy = other.tx !== undefined ? other.ty : other.y, oa = other.tx !== undefined ? other.ta : other.a;   // where it is heading, when it is still gliding
+    if (Math.abs(c9Wrap(grp.a - oa)) > angTol) continue;
+    const op = { x: ox, y: oy, a: oa }, pb = c9Center(G, grp, b), qb = c9Center(G, op, b), pa = c9Center(G, grp, a), qa = c9Center(G, op, a);
+    const err = Math.max(Math.hypot(pb[0] - qb[0], pb[1] - qb[1]), Math.hypot(pa[0] - qa[0], pa[1] - qa[1]));
+    if (err <= tol && (!best || err < best.err)) best = { other, pair: [a, b], err };
+  }
+  return best;
+}
 function c9TryJoin(G, grp) {
   let joined = false; const net = !!G.net, tol = (net ? C9_POS_TOL_NET : C9_POS_TOL) * Math.min(G.cw, G.ch), angTol = net ? C9_ANG_TOL_NET : C9_ANG_TOL;
   for (let guard = 0; guard < 60; guard++) {
-    let hit = null;
-    for (const other of G.groups) {
-      if (other === grp) continue;
-      if (other.by) continue;
-      const ox = other.tx !== undefined ? other.tx : other.x, oy = other.tx !== undefined ? other.ty : other.y, oa = other.tx !== undefined ? other.ta : other.a;   // where it is heading, when it is still gliding
-      if (Math.abs(ox - grp.x) > tol || Math.abs(oy - grp.y) > tol) continue;
-      if (Math.abs(c9Wrap(grp.a - oa)) > angTol || Math.hypot(grp.x - ox, grp.y - oy) > tol) continue;
-      let pair = null; for (const a of grp.pcs) { for (const b of other.pcs) if (Math.abs(a.i - b.i) + Math.abs(a.j - b.j) === 1) { pair = [a, b]; break; } if (pair) break; }
-      if (pair) { hit = { other, pair }; break; }
-    }
+    const hit = c9Contact(G, grp, tol, angTol);
     if (!hit) break;
     // the bigger group keeps its pose, the smaller moves onto it
     const big = hit.other.pcs.length >= grp.pcs.length ? hit.other : grp, small = big === grp ? hit.other : grp;

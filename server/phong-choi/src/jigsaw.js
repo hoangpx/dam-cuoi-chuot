@@ -3,7 +3,7 @@
    loses it. The room name is fixed ('main'; never rename it).
    The server decides everything that matters: who holds which group (one holder at a time), where a dropped group lands, and
    whether it JOINS a neighbour (same rule as the single-player jigsaw: a piece of one next to a piece of the other in the print,
-   the angle within 14° and the lattice origins within .38 of the smaller cell side). Each successful join is one "piece" for the
+   the angle within 22° and the two touching pieces within .6 of the smaller cell side of where the other group's pose puts them). Each successful join is one "piece" for the
    player who dropped it: 10 đồng (paid by the client, which owns the purse) and one point on the all-time board.
    Messages:  client → server  hello{dev,name} · lift{g} · move{g,x,y,a} · drop{g,x,y,a} · chat{s} · emote{k} · board
               server → client  welcome{id,n,seed,groups,players,me} · players · lift{g,by} · deny{g} · poses{p} · drop{g,x,y,a} ·
@@ -20,6 +20,7 @@ const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz|jgtest)/;
 const LOOK = ['role', 'age', 'body', 'fur', 'robe', 'skirt', 'pants', 'top'];   // a look is only forwarded; every browser cleans it again
 const cleanLook = l => { if (!l || typeof l !== 'object') return null; const o = {}; for (const k of LOOK) { const v = String(l[k] ?? '').slice(0, 16); if (v) o[k] = v; } return o; };
+const NB = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 const rot = (a, x, y) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
 const wrap = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.PI; return a - Math.PI; };
 const r1 = v => Math.round(v * 10) / 10, r3 = v => Math.round(v * 1000) / 1000;
@@ -170,13 +171,20 @@ export class Jigsaw extends DurableObject {
   tryJoin(grp) {
     const out = [];
     for (let guard = 0; guard < 60; guard++) {
+      // the neighbour that fits best, measured AT THE CONTACT (same rule as js/ghep/manh.js c9Contact): the angle within ANG_TOL and the two
+      // touching pieces, each placed under the other group's pose, within POS_TOL (the corner of the print would need a fraction of a degree)
       let hit = null;
-      for (const o of this.groups.values()) {
-        if (o === grp || o.by) continue;
-        if (Math.abs(o.x - grp.x) > POS_TOL || Math.abs(o.y - grp.y) > POS_TOL || Math.abs(wrap(grp.a - o.a)) > ANG_TOL || Math.hypot(o.x - grp.x, o.y - grp.y) > POS_TOL) continue;
-        let pair = null;
-        for (const a of grp.ids) { const ai = Math.floor(a / COLS), aj = a % COLS; for (const b of o.ids) if (Math.abs(ai - Math.floor(b / COLS)) + Math.abs(aj - b % COLS) === 1) { pair = [a, b]; break; } if (pair) break; }
-        if (pair) { hit = { o, pair }; break; }
+      for (const a of grp.ids) {
+        const ai = Math.floor(a / COLS), aj = a % COLS;
+        for (const [di, dj] of NB) {
+          const i = ai + di, j = aj + dj; if (i < 0 || j < 0 || i >= ROWS || j >= COLS) continue;
+          const b = i * COLS + j, o = this.groups.get(this.pieceG[b]); if (!o || o === grp || o.by) continue;
+          if (Math.abs(wrap(grp.a - o.a)) > ANG_TOL) continue;
+          const at = (g, id) => { const p = rot(g.a, (id % COLS + .5) * CW, (Math.floor(id / COLS) + .5) * CH); return [g.x + p[0], g.y + p[1]]; };
+          const pb = at(grp, b), qb = at(o, b), pa = at(grp, a), qa = at(o, a);
+          const err = Math.max(Math.hypot(pb[0] - qb[0], pb[1] - qb[1]), Math.hypot(pa[0] - qa[0], pa[1] - qa[1]));
+          if (err <= POS_TOL && (!hit || err < hit.err)) hit = { o, pair: [a, b], err };
+        }
       }
       if (!hit) break;
       const big = hit.o.ids.length >= grp.ids.length ? hit.o : grp, small = big === grp ? hit.o : grp;
