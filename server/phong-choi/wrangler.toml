@@ -12,7 +12,7 @@ class_name = "Store"
 
 [[durable_objects.bindings]]
 name = "JIGSAW"
-class_name = "Jigsaw"
+class_name = "JigsawV2"
 
 [[migrations]]
 tag = "v1"
@@ -25,3 +25,9 @@ new_sqlite_classes = ["Store"]
 [[migrations]]
 tag = "v3"
 new_sqlite_classes = ["Jigsaw"]
+
+# 2026-10-20: a deploy never restarted the running object (players kept it busy for hours, so new code never ran). Renaming the class keeps
+# every stored row and the object named 'main', and starts it again on the new code.
+[[migrations]]
+tag = "v4"
+renamed_classes = [{ from = "Jigsaw", to = "JigsawV2" }]

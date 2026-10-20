@@ -24,7 +24,9 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { Jigsaw } from './jigsaw.js';
+export { JigsawV2 } from './jigsaw.js';
+import { frozenJg, FROZEN_COUNT } from './frozen.js';
+const FREEZE_JG = true;   // the shared jigsaw is stopped until the new print (owner, 2026-10-20): see frozen.js
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
 const BAD = /(địt|đụ|lồn|buồi|cặc|đéo|đĩ |đỉ |fuck|shit|bitch|óc chó|chó đẻ|mẹ mày|con mẹ mày|bố mày)/i;
@@ -97,11 +99,13 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
+      if (FREEZE_JG) return frozenJg();
       return env.JIGSAW.get(env.JIGSAW.idFromName('main')).fetch(req);
     }
     if (u.pathname === '/jg-online') {
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
+      if (FREEZE_JG) return new Response(FROZEN_COUNT, { headers: h });
       const r = await env.JIGSAW.get(env.JIGSAW.idFromName('main')).fetch(new Request(req.url.replace('/jg-online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
