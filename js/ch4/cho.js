@@ -514,8 +514,8 @@ function c4SlumpMorning(back) {
   }
   if (s && s.say) back.push(s.say.replace(/\(Còn khoảng \d+ ngày\)/, `(Còn khoảng ${s.until - SAVE4.day + 1} ngày)`));
 }
-// the district soldiers' levy never comes on a day cụ Lý collects (his dues day, the day he comes for what was deferred) nor within 3 days of the last one
-const c4LinhOk = p => !(p && p.thue) && !SAVE4.dues && !((SAVE4.linhDay || -9) > SAVE4.day - 4);
+// the district soldiers' levy never comes on a day cụ Lý collects (his dues day, the day he comes for what was deferred) nor within 6 days of the last one
+const c4LinhOk = p => !(p && p.thue) && !SAVE4.dues && !((SAVE4.linhDay || -9) > SAVE4.day - 7);
 function c4PlanEvents() {
   const p = SAVE4.plan, ev = [], at = (a, b) => (a + R() * (b - a)) * 60, own = c4Owned();
   if (SAVE4.feast && SAVE4.feast.day < SAVE4.day) SAVE4.feast = null;      // a feast whose day went by without being collected no longer blocks new ones (a player: no orders after ~day 30)
@@ -724,9 +724,9 @@ function c4Event(kind) {
     for (const g of own) C4.Q[g] = [];
   } else if (kind === 'linh') {                                             // the district's soldiers levy money for labour
     if (SAVE4.linhDay === SAVE4.day) return; SAVE4.linhDay = SAVE4.day;     // once a day
-    const d = c4Loss(.01, .02, 10);
+    const d = c4Loss(.005, .01, 5);                                          // half what it was (owner, 2026-10-19: "cho lính huyện thu ít lại")
     // owner: pleading poverty means they take goods worth what they asked, from whatever is on the stalls
-    Object.assign(E, { title: 'Lính huyện', text: `Lính huyện đi qua, đòi tiền phu cho ${own.length} gánh: có thể phải nộp ${c4LossText(.01, .02, 10)}. Kêu nghèo thì họ lấy hàng trị giá tương đương.`, opts: [
+    Object.assign(E, { title: 'Lính huyện', text: `Lính huyện đi qua, đòi tiền phu cho ${own.length} gánh: có thể phải nộp ${c4LossText(.005, .01, 5)}. Kêu nghèo thì họ lấy hàng trị giá tương đương.`, opts: [
       [`Nộp ${d} đồng`, () => sp(d), SAVE4.money >= d],
       ['Kêu nghèo, nộp hàng thay tiền', () => toast(c4Confiscate(d), 3.6)]] });
   } else if (C4_EXTRA_EV[kind]) { if (C4_EXTRA_EV[kind](E) === false) return; }   // kinhdoanh.js
