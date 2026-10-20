@@ -13,12 +13,14 @@
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
 
-const COLS = 40, ROWS = 25, N = COLS * ROWS, PW = 3200, PH = 2204, PIC = 'dcm1', CW = 44;
+// one class a picture: cfg = { pic: the name kept in the saved state, cols, rows, pw, ph: the print's size in pixels, freeze }
+export function makeJigsaw(cfg) {
+const COLS = cfg.cols, ROWS = cfg.rows, N = COLS * ROWS, PW = cfg.pw, PH = cfg.ph, PIC = cfg.pic, CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
 const MAX_SOCK_IP = 8, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKES_BAN = 10, PAID_MIN = 40, BAN_DEV = 6 * 3600000, BAN_IP = 20 * 60000, VER = '2026-10-20-freeze';
-const FREEZE = true;   // the finished print stays up until a new one is ready (owner, 2026-10-20)
+const FREEZE = !!cfg.freeze;   // a frozen picture is put together at once and nobody can lift anything (the first print, kept to be looked at)
 const ANG_TOL = 22 * Math.PI / 180, POS_TOL = .6 * Math.min(CW, CH), NEXT_AFTER = 120000, KEEP_DONE = true, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz|jgtest)/;
@@ -30,7 +32,7 @@ const wrap = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.
 const r1 = v => Math.round(v * 10) / 10, r3 = v => Math.round(v * 1000) / 1000;
 const rng = seed => { let s = seed >>> 0 || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; };
 
-export class JigsawV2 extends DurableObject {
+class Jigsaw extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0;
@@ -258,3 +260,10 @@ export class JigsawV2 extends DurableObject {
     this.send(c, { t: 'board', total: this.board.length, top: this.board.slice(0, 100).map(x => ({ n: x.n, m: x.m, me: x.dev === c.dev })), me: me >= 0 ? { pos: me + 1, m: this.board[me].m } : { pos: null, m: u ? u.m : 0 } });
   }
 }
+return Jigsaw;
+}
+
+// the first print: finished and kept (the Worker serves it, src/frozen.js); its object keeps the saved state
+export class JigsawV2 extends makeJigsaw({ pic: 'dcm1', cols: 40, rows: 25, pw: 3200, ph: 2204, freeze: true }) {}
+// the second print: Vinh quy bai to, img/ch10/vinh-quy-bai-to.jpg 4047 x 2493, 57 x 35 = 1995 pieces
+export class JigsawVQ extends makeJigsaw({ pic: 'vq1', cols: 57, rows: 35, pw: 4047, ph: 2493, freeze: false }) {}

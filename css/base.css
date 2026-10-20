@@ -17,7 +17,7 @@
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:var(--body);transition:background-color .6s}
 *{touch-action:manipulation;-webkit-touch-callout:none}
-#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:16px;box-sizing:border-box;text-align:center;z-index:5;overflow-y:auto}
 /* centred by auto margins, not by "safe center" (older iPhones, e.g. iOS 16 on an iPhone 8, ignore "safe" and a tall sheet then lost its top, out of reach of the scroll) */
 .ov>:first-child{margin-top:auto}.ov>:last-child{margin-bottom:auto}

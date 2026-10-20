@@ -126,6 +126,7 @@ function c9PDown(e) {
 function c9PMove(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9Move(C9.G, x, y, e); cv.style.cursor = C9.G.held ? 'grabbing' : C9.G.hover ? 'grab' : ''; }
 function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9PtrUp(C9.G, x, y, e, c9Done); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'c9play') e.preventDefault(); });
+cv.addEventListener('touchstart', e => { if (S.mode === 'c9play') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
   if (S.mode !== 'c9play' || !C9.G || C9.G.done) return;
   const G = C9.G, [x, y] = c9Pos(e), d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
@@ -137,7 +138,7 @@ function c9Key(e) {
   const G = C9.G; if (!G || G.done) return;
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { c9Zoom(G, 1.25, G.lw / 2, (G.lh + G.top) / 2); return; } if (e.code === 'Minus' || e.code === 'NumpadSubtract') { c9Zoom(G, .8, G.lw / 2, (G.lh + G.top) / 2); return; }
   const grp = G.held; if (!grp) return;
-  if (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); const c = c9Centroid(G, grp); c9Turn(G, grp, (e.shiftKey || e.code === 'ArrowUp' ? -1 : 1) * C9_STEP, G.px === undefined ? c[0] : G.px, G.py === undefined ? c[1] : G.py); }
+  if (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); c9TurnSmooth(G, grp, (e.shiftKey || e.code === 'ArrowUp' ? -1 : 1) * C9_STEP, null, null); }
 }
 
 registerChapter({
@@ -151,3 +152,10 @@ registerChapter({
   pointer: { down: c9PDown, move: c9PMove, up: c9PUp },
   next() { showAlbum(9); }, retry() { startC9(C9.i); },
 });
+
+// a test of a big print on this computer or over the home Wi-Fi (never on the real site): ?c9big=57x35 opens the print img/ch10/vinh-quy-bai-to.jpg cut that way, alone, as soon as the game has loaded
+(() => {
+  const m = /[?&]c9big=(\d+)x(\d+)/.exec(location.search); if (!m || !/^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname)) return;
+  C9_LEVELS.push({ pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, tier: 3, cols: +m[1], rows: +m[2], big: true });
+  const i = C9_LEVELS.length - 1, t = setInterval(() => { const L = document.getElementById('loading'); if (L && L.classList.contains('done')) { clearInterval(t); setTimeout(() => { try { localStorage.removeItem(C9_SAVEKEY); } catch (e) {} startC9(i); }, 800); } }, 400);
+})();

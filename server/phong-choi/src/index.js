@@ -24,9 +24,8 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { JigsawV2 } from './jigsaw.js';
+export { JigsawV2, JigsawVQ } from './jigsaw.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
-const FREEZE_JG = true;   // the shared jigsaw is stopped until the new print (owner, 2026-10-20): see frozen.js
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
 const BAD = /(địt|đụ|lồn|buồi|cặc|đéo|đĩ |đỉ |fuck|shit|bitch|óc chó|chó đẻ|mẹ mày|con mẹ mày|bố mày)/i;
@@ -95,23 +94,23 @@ export default {
       const r = await env.ROOM.get(env.ROOM.idFromName('v18')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
-    if (u.pathname === '/jg') {   // chương X: the one shared jigsaw (a fixed name: its picture lives in that object's storage for good)
+    if (u.pathname === '/jg') {   // chương X: one shared jigsaw a picture (?p=vq: Vinh quy bai to, played; anything else: the first print, finished, answered by the Worker itself)
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      if (FREEZE_JG) return frozenJg();
-      return env.JIGSAW.get(env.JIGSAW.idFromName('main')).fetch(req);
+      if (u.searchParams.get('p') === 'vq') return env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(req);
+      return frozenJg();
     }
-    if (u.pathname === '/jg-online') {
+    if (u.pathname === '/jg-online' || u.pathname === '/jg-list') {   // /jg-online?p=vq: that picture's numbers; /jg-list: every picture's, in one request
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      if (FREEZE_JG) return new Response(FROZEN_COUNT, { headers: h });
-      const r = await env.JIGSAW.get(env.JIGSAW.idFromName('main')).fetch(new Request(req.url.replace('/jg-online', '/count')));
-      return new Response(await r.text(), { headers: h });
+      const vq = async () => (await env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
+      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + '}}', { headers: h });
+      return new Response(u.searchParams.get('p') === 'vq' ? await vq() : FROZEN_COUNT, { headers: h });
     }
-    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban') {   // the owner's view of who is busy in the jigsaw, and the ban list: Bearer <ADMIN secret>
+    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban') {   // the owner's view of who is busy in the second jigsaw, and the ban list: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.JIGSAW.get(env.JIGSAW.idFromName('main')).fetch(new Request(req.url.replace('/jg-sus', '/sus').replace('/jg-ban', '/ban')));
+      return env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(new Request(req.url.replace('/jg-sus', '/sus').replace('/jg-ban', '/ban')));
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });

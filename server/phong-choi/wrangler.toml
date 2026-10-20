@@ -14,6 +14,10 @@ class_name = "Store"
 name = "JIGSAW"
 class_name = "JigsawV2"
 
+[[durable_objects.bindings]]
+name = "JIGSAW_VQ"
+class_name = "JigsawVQ"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
@@ -31,3 +35,8 @@ new_sqlite_classes = ["Jigsaw"]
 [[migrations]]
 tag = "v4"
 renamed_classes = [{ from = "Jigsaw", to = "JigsawV2" }]
+
+# 2026-10-20: the second print (Vinh quy bai to) is its own object with its own storage
+[[migrations]]
+tag = "v5"
+new_sqlite_classes = ["JigsawVQ"]

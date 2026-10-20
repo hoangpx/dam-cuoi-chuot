@@ -3,16 +3,16 @@
 
 // ?jgws=ws://localhost:8787/jg points a local page at a local test server (never anywhere else)
 const JG_URL = (new URLSearchParams(location.search).get('jgws') || '').replace(/^(?!ws:\/\/localhost:\d+\/jg$).*$/, '') || 'wss://dcc-phong-choi.dcc-phong-choi.workers.dev/jg';
-const JG_ONLINE_URL = 'https://dcc-phong-choi.dcc-phong-choi.workers.dev/jg-online';
+const JG_LIST_URL = (JG_URL.startsWith('ws://localhost') ? JG_URL.replace(/^ws:/, 'http:').replace(/\/jg$/, '') : 'https://dcc-phong-choi.dcc-phong-choi.workers.dev') + '/jg-list';   // every print's numbers in one request
 const JG_NET = {
-  ws: null, up: false, tries: 0, on: () => {}, status: () => {}, hello: null, wantOn: false, retry: 0,
+  ws: null, pz: 'vq', up: false, tries: 0, on: () => {}, status: () => {}, hello: null, wantOn: false, retry: 0,
   send(o) { if (this.up) try { this.ws.send(JSON.stringify(o)); } catch (e) {} },
-  open(hello, on, status) { this.hello = hello; this.on = on; this.status = status; this.wantOn = true; this.connect(); },
+  open(hello, on, status, pz) { this.pz = pz || 'vq'; this.hello = hello; this.on = on; this.status = status; this.wantOn = true; this.connect(); },
   close() { this.wantOn = false; clearTimeout(this.retry); this.up = false; const w = this.ws; this.ws = null; if (w) { w.onclose = w.onmessage = w.onerror = null; try { w.close(); } catch (e) {} } },
   connect() {
     if (!this.wantOn || this.ws) return;
     this.status('connecting');
-    let ws; try { ws = new WebSocket(JG_URL); } catch (e) { this.lost(); return; }
+    let ws; try { ws = new WebSocket(JG_URL + '?p=' + encodeURIComponent(this.pz)); } catch (e) { this.lost(); return; }
     this.ws = ws;
     ws.onopen = () => { this.up = true; this.tries = 0; this.send(this.hello); };
     ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } if (m.t === 'welcome') this.status('up'); this.on(m); };

@@ -64,7 +64,7 @@ function c9Layout(G, W, H, first) {
   let cw, ch;
   if (G.big) { cw = 44; ch = cw / (asp * G.rows / G.cols); } else { const bw = Math.min(aw * .75, ah * .75 * asp); cw = bw / G.cols; ch = (bw / asp) / G.rows; }
   G.cw = cw; G.ch = ch; G.bw = cw * G.cols; G.bh = ch * G.rows; G.t_ = .27 * Math.max(cw, ch);
-  if (G.big) { G.ww = G.bw * 1.5; G.wh = G.bh * 1.5; G.zmin = Math.min(vw / G.ww, vh / G.wh); G.zmax = 5; } else { G.ww = vw; G.wh = vh; G.zmin = .5; G.zmax = 3; }
+  if (G.big) { G.ww = G.bw * 1.5; G.wh = G.bh * 1.5; G.zmin = Math.max(Math.min(vw / G.ww, vh / G.wh), 11 / G.cw); G.zmax = 5; } else { G.ww = vw; G.wh = vh; G.zmin = .5; G.zmax = 3; }
   G.lw = W; G.lh = H; G.top = top;
   const N = G.cols * G.rows, cwt = cw + 2 * G.t_, cht = ch + 2 * G.t_;
   G.bs = Math.max(.5, Math.min(DPR * 2.5, G.img.naturalWidth / G.cols * 1.6 / cw, Math.sqrt(14e6 / (N * cwt * cht))));   // the baked pixels per world unit
@@ -98,11 +98,33 @@ function c9PiecePath(G, pc) {
   c9Edge(p, 0, ch, 0, 0, -1, 0, eL, G.JV[i][j], true);
   p.closePath(); return p;
 }
+// one colour per piece (the print shrunk to cols x rows), for the pieces too small to be worth baking and the ones not baked yet; null if the browser will not read the pixels
+function c9Avg(G) {
+  if (G.avg !== undefined) return G.avg;
+  try {
+    const c1 = document.createElement('canvas'); c1.width = G.cols * 4; c1.height = G.rows * 4; c1.getContext('2d').drawImage(G.img, 0, 0, c1.width, c1.height);
+    const c2 = document.createElement('canvas'); c2.width = G.cols; c2.height = G.rows; const x2 = c2.getContext('2d'); x2.drawImage(c1, 0, 0, G.cols, G.rows);
+    const d = x2.getImageData(0, 0, G.cols, G.rows).data; G.avg = true; G.avgK = new Uint16Array(G.cols * G.rows); G.avgC = {}; G.avgU = new Uint32Array(G.cols * G.rows);
+    for (let k = 0; k < G.avgK.length; k++) { const r = d[k * 4] >> 5, gg = d[k * 4 + 1] >> 5, b = d[k * 4 + 2] >> 5, key = (r << 6) | (gg << 3) | b; G.avgK[k] = key; G.avgU[k] = (255 << 24) | (d[k * 4 + 2] << 16) | (d[k * 4 + 1] << 8) | d[k * 4]; if (!G.avgC[key]) G.avgC[key] = 'rgb(' + (r * 32 + 16) + ',' + (gg * 32 + 16) + ',' + (b * 32 + 16) + ')'; }
+  } catch (e) { G.avg = null; }
+  return G.avg;
+}
+// the far view: every piece a square of its colour in a pixel buffer at half the screen's size, drawn over the camera's rectangle with one drawImage
+function c9FarLayer(G, g, W, H, z, fx) {
+  const s = .5, bw = Math.max(1, Math.ceil(W * s)), bh = Math.max(1, Math.ceil((H - G.top) * s));
+  if (!G.farCv || G.farCv.width !== bw || G.farCv.height !== bh) { G.farCv = document.createElement('canvas'); G.farCv.width = bw; G.farCv.height = bh; G.farCx = G.farCv.getContext('2d'); G.farImg = G.farCx.createImageData(bw, bh); G.farU = new Uint32Array(G.farImg.data.buffer); }
+  const u = G.farU, cam = G.cam, k = z * s, bx = Math.max(1, Math.round(G.cw * k * .9)), by = Math.max(1, Math.round(G.ch * k * .9)); u.fill(0);
+  for (let n = 0; n < fx.length; n += 3) {
+    const x0 = Math.round((fx[n + 1] - cam.x) * k - bx / 2), y0 = Math.round((fx[n + 2] - cam.y) * k - by / 2), col = G.avgU[fx[n]];
+    for (let yy = Math.max(0, y0); yy < Math.min(bh, y0 + by); yy++) for (let xx = Math.max(0, x0), e = Math.min(bw, x0 + bx); xx < e; xx++) u[yy * bw + xx] = col;
+  }
+  G.farCx.putImageData(G.farImg, 0, 0); g.drawImage(G.farCv, 0, 0, bw, bh, cam.x, cam.y, W / z, (H - G.top) / z);
+}
 // the printed face of a piece, drawn once into its own canvas
-function c9Bake(G, pc) {
-  const key = Math.round(G.cw * 10) + 'x' + Math.round(G.ch * 10) + '@' + G.bs.toFixed(2); if (pc.key === key && pc.cvTop) return true;
-  if (G.bakeLeft <= 0) return false; G.bakeLeft--;
-  const t = G.t_, S = G.bs, c = document.createElement('canvas'); c.width = Math.ceil((G.cw + 2 * t) * S); c.height = Math.ceil((G.ch + 2 * t) * S);
+function c9Bake(G, pc, S0) {
+  const S = S0 || G.bs, key = Math.round(G.cw * 10) + 'x' + Math.round(G.ch * 10) + '@' + S.toFixed(2); if (pc.key === key && pc.cvTop) return true;
+  if (G.bakeLeft <= 0 || performance.now() > G.bakeEnd) return false; G.bakeLeft--;
+  const t = G.t_, c = document.createElement('canvas'); c.width = Math.ceil((G.cw + 2 * t) * S); c.height = Math.ceil((G.ch + 2 * t) * S);
   const g = c.getContext('2d'); g.setTransform(c.width / (G.cw + 2 * t), 0, 0, c.height / (G.ch + 2 * t), t * c.width / (G.cw + 2 * t), t * c.height / (G.ch + 2 * t));
   pc.path = c9PiecePath(G, pc);
   g.lineJoin = 'round';
@@ -110,10 +132,15 @@ function c9Bake(G, pc) {
   g.drawImage(G.img, 0, 0, G.img.naturalWidth, G.img.naturalHeight, -pc.j * G.cw, -pc.i * G.ch, G.bw, G.bh);
   g.restore();
   g.lineWidth = .8; g.strokeStyle = 'rgba(40,26,12,.7)'; g.stroke(pc.path);   // only a hairline so the pieces can be told apart
-  pc.cvTop = c; pc.key = key; return true;
+  pc.cvTop = c; pc.key = key; pc.lvl = S; return true;
 }
 
 function c9Tick(G, dt) {
+  if (G.thold) {   // a finger kept on a turn button: after a tap's worth of time the piece keeps turning, faster and faster
+    const th = G.thold; if (!G.held || th.t > 12) G.thold = null;
+    else { th.t += dt; if (th.t > .4) { const k = Math.min(1, (th.t - .4) / 1.6), rate = (60 + 120 * k) * Math.PI / 180, c = c9Centroid(G, G.held); c9Turn(G, G.held, th.dir * rate * dt, c[0], c[1], false); } }
+  }
+  if (G.tgrp && G.tacc) { let da = G.tacc * Math.min(1, dt * 14); if (Math.abs(G.tacc) < .003) da = G.tacc; G.tacc -= da; c9TurnApply(G, da); if (!G.tacc) G.tgrp = null; }
   if (!G.done) G.t += dt;
   for (const g of G.groups) { const up = G.held === g || g.by; if (g.lift > .001 || up) g.lift += ((up ? 1 : 0) - g.lift) * Math.min(1, dt * 14);
     if (g.tx !== undefined && G.held !== g) { const k = Math.min(1, dt * 12); g.x += (g.tx - g.x) * k; g.y += (g.ty - g.y) * k; g.a += c9Wrap(g.ta - g.a) * k; if (Math.abs(g.tx - g.x) + Math.abs(g.ty - g.y) < .05 && Math.abs(c9Wrap(g.ta - g.a)) < .002) { g.x = g.tx; g.y = g.ty; g.a = g.ta; g.tx = undefined; } } }
@@ -137,19 +164,46 @@ function c9Draw(G, g, W, H) {
     g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 7, y - 7, w + 14, h + 14); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); return;
   }
   const cam = G.cam, z = cam.z; G.bakeLeft = G.big ? 70 : 1e9;
+  const avg = G.big ? c9Avg(G) : null, far = !!avg && G.pieces.length > 4500 && (W / z / G.cw) * ((H - G.top) / z / G.ch) > 4500; G.bakeEnd = G.big ? performance.now() + 6 : Infinity;
+  let L = G.bs;   // the sharpness the pieces in view are baked at (see c9Bake)
+  if (G.big) {
+    G.fr = (G.fr || 0) + 1;
+    const vis = Math.max(1, (W / z / G.cw) * ((H - G.top) / z / G.ch)), cwt = G.cw + 2 * G.t_, cht = G.ch + 2 * G.t_, raw = Math.min(DPR * z * 1.15, Math.sqrt(14e6 / (vis * cwt * cht)), 12);
+    if (raw > G.bs * 1.2) L = G.bs * Math.pow(1.4142, Math.floor(Math.log(raw / G.bs) / Math.log(1.4142)));
+    if (G.fr % 90 === 0) for (const p of G.pieces) if (p.cvTop && p.lvl > G.bs * 1.01 && G.fr - (p.seen || 0) > 90) { p.cvTop = null; p.key = ''; }
+  }
   g.save(); g.beginPath(); g.rect(0, G.top, W, H - G.top); g.clip(); g.translate(0, G.top); g.scale(z, z); g.translate(-cam.x, -cam.y);
   if (G.big) { g.fillStyle = 'rgba(120,90,50,.10)'; g.fillRect(0, 0, G.ww, G.wh); g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 3 / z; g.setLineDash([10 / z, 8 / z]); g.strokeRect(0, 0, G.ww, G.wh); g.setLineDash([]); }
   const vx0 = cam.x, vy0 = cam.y, vx1 = cam.x + W / z, vy1 = cam.y + (H - G.top) / z, rad = Math.hypot(G.cw, G.ch) * .75 + G.t_, t = G.t_;
+  const flat = G.flatL || (G.flatL = []), items = G.itemsL || (G.itemsL = []), fx = G.farL || (G.farL = []); flat.length = 0; items.length = 0; fx.length = 0;   // flat: key, x, y; items: group, piece, x, y
   for (const grp of G.order) {
-    const sc = 1 + grp.lift * .035;
     for (const p of grp.pcs) {
       const c = c9Center(G, grp, p); if (c[0] < vx0 - rad || c[0] > vx1 + rad || c[1] < vy0 - rad || c[1] > vy1 + rad) continue;
-      if (!c9Bake(G, p)) continue;
-      g.save(); g.translate(c[0], c[1]); g.rotate(grp.a); if (sc !== 1) g.scale(sc, sc); g.drawImage(p.cvTop, -G.cw / 2 - t, -G.ch / 2 - t, G.cw + 2 * t, G.ch + 2 * t);
-      if (p.flash > 0) { g.globalAlpha = p.flash * .75; g.translate(-G.cw / 2, -G.ch / 2); g.fillStyle = '#fffbe0'; g.fill(p.path); }
-      g.restore();
+      if (far) { fx.push(p.id, c[0], c[1]); continue; }
+      if (avg && (!c9Bake(G, p, L) && !p.cvTop)) { flat.push(G.avgK[p.id], c[0], c[1]); continue; }   // too small to bake, or not baked yet
+      if (!avg && !c9Bake(G, p, L) && !p.cvTop) continue;
+      p.seen = G.fr; items.push(grp, p, c[0], c[1]);
     }
   }
+  if (fx.length) c9FarLayer(G, g, W, H, z, fx);
+  if (flat.length) {   // one fillStyle for every colour (a path of thousands of squares is slower than the same squares one by one)
+    const bk = {}, fw = G.cw * .9, fh = G.ch * .9; for (let k = 0; k < flat.length; k += 3) (bk[flat[k]] || (bk[flat[k]] = [])).push(flat[k + 1], flat[k + 2]);
+    for (const key in bk) { const q = bk[key]; g.fillStyle = G.avgC[key]; for (let k = 0; k < q.length; k += 2) g.fillRect(q[k] - fw / 2, q[k + 1] - fh / 2, fw, fh); }
+  }
+  g.imageSmoothingQuality = Math.max(G.cw, G.ch) * z < 12 ? 'high' : 'low';
+  const M = g.getTransform(), hw = -G.cw / 2 - t, hh = -G.ch / 2 - t, dw = G.cw + 2 * t, dh = G.ch + 2 * t;
+  for (let k = 0; k < items.length; k += 4) {
+    const grp = items[k], p = items[k + 1], sc = 1 + grp.lift * .035, x = items[k + 2], y = items[k + 3];
+    if (sc === 1 && !(p.flash > 0)) {   // the usual piece: its matrix set directly (save/translate/rotate/restore were a third of the time)
+      if (grp.ca !== grp.a) { grp.ca = grp.a; grp.cc = Math.cos(grp.a); grp.cs = Math.sin(grp.a); }
+      g.setTransform(M.a * grp.cc + M.c * grp.cs, M.b * grp.cc + M.d * grp.cs, -M.a * grp.cs + M.c * grp.cc, -M.b * grp.cs + M.d * grp.cc, M.a * x + M.c * y + M.e, M.b * x + M.d * y + M.f);
+      g.drawImage(p.cvTop, hw, hh, dw, dh); continue;
+    }
+    g.setTransform(M); g.save(); g.translate(x, y); g.rotate(grp.a); if (sc !== 1) g.scale(sc, sc); g.drawImage(p.cvTop, hw, hh, dw, dh);
+    if (p.flash > 0) { g.globalAlpha = p.flash * .75; g.translate(-G.cw / 2, -G.ch / 2); g.fillStyle = '#fffbe0'; g.fill(p.path); }
+    g.restore();
+  }
+  g.setTransform(M); g.imageSmoothingQuality = 'low';
   for (const f of G.flash) { const k = f.t / f.life; g.globalAlpha = 1 - k; g.strokeStyle = '#fff6c8'; g.lineWidth = 4 / z; g.beginPath(); g.arc(f.x, f.y, Math.max(G.cw, G.ch) * (.3 + k * .5), 0, 6.283); g.stroke(); g.globalAlpha = 1; }
   g.restore();
   if (G.net) for (const grp of G.groups) if (grp.by) { const c = c9Centroid(G, grp), s = c9W2S(G, c[0], c[1]); if (s[0] < -40 || s[0] > W + 40 || s[1] < G.top - 40 || s[1] > H + 40) continue; G.net.tag(g, grp.by, s[0], s[1] - Math.max(14, G.ch * z * .7)); }
@@ -159,17 +213,23 @@ function c9Draw(G, g, W, H) {
   }
 }
 
-// the little turn button beside the lifted group (for a finger), in screen pixels
-function c9TurnBtn(G) {
-  const grp = G.held; if (!grp || !G.touch) return null; const c = c9Centroid(G, grp), s = c9W2S(G, c[0], c[1]), r = 20, off = Math.min(110, G.cw * G.cam.z * .9 + 18);
-  return { x: c9Clip(s[0] + off, r + 6, G.lw - r - 6 - (G.big ? 48 : 0)), y: c9Clip(s[1] - off, G.top + r + 6, G.lh - r - 8 - (G.net ? 52 : 0)), r };   // clear of the zoom buttons and the player strip
+// the two little turn buttons beside the lifted group (for a finger), in screen pixels: anticlockwise (dir -1) on the left, clockwise (dir 1) on the right
+function c9TurnBtns(G) {
+  const grp = G.held; if (!grp || !G.touch) return [];
+  const c = c9Centroid(G, grp), s = c9W2S(G, c[0], c[1]), r = 20, off = Math.min(110, G.cw * G.cam.z * .9 + 18), hi = G.lw - r - 6 - (G.big ? 48 : 0);   // clear of the zoom buttons and the player strip
+  const y = c9Clip(s[1] - off, G.top + r + 6, G.lh - r - 8 - (G.net ? 52 : 0)); let xr = c9Clip(s[0] + off, r + 6 + 2 * r + 8, hi), xl = c9Clip(s[0] - off, r + 6, hi); if (xr - xl < 2 * r + 8) xl = xr - 2 * r - 8;
+  return [{ x: xl, y, r, dir: -1 }, { x: xr, y, r, dir: 1 }];
 }
 function c9DrawTurnBtn(G, g) {
-  const b = c9TurnBtn(G); if (!b) return; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.stroke();
-  // a clockwise arc with its arrowhead exactly at the end of the line, pointing along it
-  const R = 9, a0 = -2.3, a1 = 1.7, ex = b.x + R * Math.cos(a1), ey = b.y + R * Math.sin(a1), tx = -Math.sin(a1), ty = Math.cos(a1), nx = Math.cos(a1), ny = Math.sin(a1);
-  g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath(); g.arc(b.x, b.y, R, a0, a1 - .12); g.stroke();
-  g.fillStyle = '#1d1915'; g.beginPath(); g.moveTo(ex + tx * 6, ey + ty * 6); g.lineTo(ex + nx * 5, ey + ny * 5); g.lineTo(ex - nx * 5, ey - ny * 5); g.closePath(); g.fill(); g.lineCap = 'butt';
+  for (const b of c9TurnBtns(G)) {
+    g.save(); g.translate(b.x, b.y); g.scale(b.dir, 1);   // drawn clockwise; the left one is its mirror image
+    g.beginPath(); g.arc(0, 0, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.stroke();
+    // a clockwise arc with its arrowhead exactly at the end of the line, pointing along it
+    const R = 9, a0 = -2.3, a1 = 1.7, ex = R * Math.cos(a1), ey = R * Math.sin(a1), tx = -Math.sin(a1), ty = Math.cos(a1), nx = Math.cos(a1), ny = Math.sin(a1);
+    g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath(); g.arc(0, 0, R, a0, a1 - .12); g.stroke();
+    g.fillStyle = '#1d1915'; g.beginPath(); g.moveTo(ex + tx * 6, ey + ty * 6); g.lineTo(ex + nx * 5, ey + ny * 5); g.lineTo(ex - nx * 5, ey - ny * 5); g.closePath(); g.fill(); g.lineCap = 'butt';
+    g.restore();
+  }
 }
 
 // the piece (and so its group) under a world point; the topmost group first
@@ -188,9 +248,15 @@ function c9Hit(G, x, y) {
 // put the group so that the grabbed point (G.hl, in the group's frame) is under the world point (x, y)
 function c9Hold(G, grp, x, y) { const o = c9Rot(grp.a, G.hl[0], G.hl[1]); grp.x = x - o[0]; grp.y = y - o[1]; }
 // turn a group by da radians round the world point (x, y)
-function c9Turn(G, grp, da, x, y) {
+// turns asked for by the wheel, the keys, the button and the right click glide to their angle (c9Tick); a drop or another lift finishes them at once
+function c9TurnSmooth(G, grp, da, x, y) { if (G.tgrp && G.tgrp !== grp) c9TurnFlush(G); G.tgrp = grp; G.tacc = (G.tacc || 0) + da; G.tpx = x; G.tpy = y; G.tmouse = G.held === grp && !G.touch; }   // x, y null: about the centroid at the moment it is applied
+function c9TurnApply(G, da) { const p = G.tpx == null ? c9Centroid(G, G.tgrp) : [G.tpx, G.tpy]; c9Turn(G, G.tgrp, da, p[0], p[1], G.tmouse); }
+function c9TurnFlush(G) { if (G.tgrp && G.tacc) c9TurnApply(G, G.tacc); G.tacc = 0; G.tgrp = null; }
+function c9Turn(G, grp, da, x, y, byMouse) {
+  const mouse = (byMouse !== undefined ? byMouse : G.held === grp && !G.touch) && G.hl;   // carried by the mouse: turn about the point it is held by, which stays under the pointer
+  if (mouse) { const h = c9Rot(grp.a, G.hl[0], G.hl[1]); x = grp.x + h[0]; y = grp.y + h[1]; }
   const d = c9Rot(-grp.a, x - grp.x, y - grp.y); grp.a += da; const o = c9Rot(grp.a, d[0], d[1]); grp.x = x - o[0]; grp.y = y - o[1];
-  if (G.held === grp) G.hl = d;
+  if (G.held === grp && !mouse) G.hl = d;
 }
 function c9Clamp(G, grp) {
   const c = c9Centroid(G, grp); let dx = 0, dy = 0; const m = Math.min(G.cw, G.ch) * .3;
@@ -230,14 +296,16 @@ function c9TryJoin(G, grp) {
   return joined;
 }
 function c9Drop(G, grp) {
+  G.thold = null; c9TurnFlush(G);
   c9Clamp(G, grp); if (G.net) { c9TryJoin(G, grp); G.net.drop(grp); return null; } c9TryJoin(G, grp);
   if (G.groups.length === 1) { G.done = true; G.win = 0; G.held = null; return 'win'; }
   return null;
 }
-function c9Lift(G, grp, x, y) { G.held = grp; grp.z = ++G.zTop; const i = G.order.indexOf(grp); if (i >= 0) G.order.splice(i, 1); G.order.push(grp); G.hl = c9Rot(-grp.a, x - grp.x, y - grp.y); AU.tap(); if (G.net) G.net.lift(grp); }
+function c9Lift(G, grp, x, y) { G.thold = null; c9TurnFlush(G); G.held = grp; grp.z = ++G.zTop; const i = G.order.indexOf(grp); if (i >= 0) G.order.splice(i, 1); G.order.push(grp); G.hl = c9Rot(-grp.a, x - grp.x, y - grp.y); AU.tap(); if (G.net) G.net.lift(grp); }
 
 // ---- pointer (sx, sy: canvas pixels below the notch; the world point is worked out here) ----
 function c9PinchStart(G) {
+  G.thold = null;
   const pts = [...G.tp.values()], a = pts[0], b = pts[1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
   G.drag = null; G.pan = null; G.pinch = { d0: Math.max(12, Math.hypot(a.x - b.x, a.y - b.y)), z0: G.cam.z, wp: c9S2W(G, mx, my) };
 }
@@ -251,8 +319,8 @@ function c9Down(G, sx, sy, e, done) {
   if (G.touch) { G.tp.set(e.pointerId, { x: sx, y: sy }); if (G.tp.size >= 2) { c9PinchStart(G); return; } }
   if (G.pinch) return;
   const [wx, wy] = c9S2W(G, sx, sy), fin = r => { if (r === 'win') done('win'); };
-  if (e.button === 2) { const h = G.held ? { grp: G.held } : c9Hit(G, wx, wy); if (h) c9Turn(G, h.grp, C9_STEP, wx, wy); return; }
-  const tb = c9TurnBtn(G); if (tb && Math.hypot(sx - tb.x, sy - tb.y) < tb.r + 6) { const c = c9Centroid(G, G.held); c9Turn(G, G.held, C9_STEP, c[0], c[1]); G.drag = null; return; }
+  if (e.button === 2) { const h = G.held ? { grp: G.held } : c9Hit(G, wx, wy); if (h) c9TurnSmooth(G, h.grp, C9_STEP, wx, wy); return; }
+  const tb = c9TurnBtns(G).find(b => Math.hypot(sx - b.x, sy - b.y) < b.r + 6); if (tb) { c9TurnSmooth(G, G.held, tb.dir * C9_STEP, null, null); G.thold = { id: e.pointerId, dir: tb.dir, t: 0 }; G.drag = null; return; }
   const hit = c9Hit(G, wx, wy);
   const lift = h => { if (G.held !== h.grp) c9Lift(G, h.grp, wx, wy); else G.hl = c9Rot(-h.grp.a, wx - h.grp.x, wy - h.grp.y); G.drag = { id: e.pointerId, x0: sx, y0: sy, gx: h.grp.x, gy: h.grp.y, ga: h.grp.a, t0: performance.now(), moved: false }; };
   const startPan = () => { G.pan = { id: e.pointerId, x0: sx, y0: sy, cx: G.cam.x, cy: G.cam.y, moved: false }; };
@@ -282,6 +350,7 @@ function c9Move(G, sx, sy, e) {
 }
 function c9PtrUp(G, sx, sy, e, done) {
   const wasTouch = e.pointerType !== 'mouse'; G.tp.delete(e.pointerId);
+  if (G.thold && G.thold.id === e.pointerId) { G.thold = null; return; }
   if (G.noDrag.delete(e.pointerId)) return;
   if (G.pinch) { if (G.tp.size < 2) { G.pinch = null; for (const id of G.tp.keys()) G.noDrag.add(id); } return; }
   if (G.pan && G.pan.id === e.pointerId) {
@@ -299,7 +368,7 @@ function c9PtrUp(G, sx, sy, e, done) {
 }
 // the wheel: turns the lifted group round the pointer; with nothing lifted (or with Ctrl, or a trackpad pinch) it zooms about the pointer
 function c9Wheel(G, delta, sx, sy, ctrl) {
-  if (G.held && !ctrl) { const [wx, wy] = c9S2W(G, sx, sy); c9Turn(G, G.held, delta * .0018, wx, wy); return true; }
+  if (G.held && !ctrl) { const [wx, wy] = c9S2W(G, sx, sy); c9TurnSmooth(G, G.held, delta * .0009, wx, wy); return true; }
   c9Zoom(G, Math.exp(-delta * (ctrl ? .01 : .0016)), sx, sy); return true;
 }
 

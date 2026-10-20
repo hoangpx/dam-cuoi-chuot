@@ -6,9 +6,9 @@ import board from './frozen-board.json';
 
 const COLS = 40, ROWS = 25, N = COLS * ROWS, PW = 3200, PH = 2204, CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
-const WELCOME = JSON.stringify({ t: 'welcome', id: 'j1', n: 3, seed: 1, cols: COLS, rows: ROWS, groups: [[0, (WW - BW) / 2, (WH - BH) / 2, 0, [...Array(N).keys()].join(',')]], holds: [], done: true, freeze: true, players: [], me: { m: 0 } });
+const WELCOME = JSON.stringify({ t: 'welcome', id: 'j1', n: 3, seed: 1, cols: COLS, rows: ROWS, groups: [[0, (WW - BW) / 2, (WH - BH) / 2, 0, [...Array(N).keys()].join(',')]], holds: [], done: true, freeze: true, archive: true, players: [], me: { m: 0 } });
 const BOARD = JSON.stringify({ t: 'board', total: board.total, top: board.top.map(x => ({ n: x.n, m: x.m, me: false })), me: { pos: null, m: 0 } });
-export const FROZEN_COUNT = JSON.stringify({ ver: 'frozen', freeze: true, n: 0, joined: N - 1, left: 0, puzzle: 3, total: 0 });
+export const FROZEN_COUNT = JSON.stringify({ ver: 'frozen', freeze: true, archive: true, done: true, n: 0, joined: N - 1, left: 0, puzzle: 3, total: 0 });
 
 export function frozenJg() {
   const pair = new WebSocketPair(), [client, server] = Object.values(pair); server.accept(); let joined = false;

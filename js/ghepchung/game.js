@@ -8,8 +8,13 @@ let JG_SAVE = { pieces: 0 };
 try { const s = JSON.parse(localStorage.getItem('dcc.jg') || 'null'); if (s && typeof s.pieces === 'number') JG_SAVE = Object.assign(JG_SAVE, s); } catch (e) {}
 const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG_SAVE)); } catch (e) {} };
 
-const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0 };
-const JG_LEVEL = { pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, tier: 3, cols: 40, rows: 25, big: true };
+const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0 };
+// the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
+const JG_PUZZLES = [
+  { id: 'vq', pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, thumb: 'img/ch10/thumb-vq.jpg', cols: 57, rows: 35 },
+  { id: 'dcm', pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, thumb: 'img/ch10/thumb-dcm.jpg', cols: 40, rows: 25 },
+];
+const jgLevel = pz => ({ pic: pz.pic, tier: 3, cols: pz.cols, rows: pz.rows, big: true });
 const JG_STRIP = 50, JG_COIN = 10;
 
 function startJG() {
@@ -17,13 +22,26 @@ function startJG() {
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
-  const me = hsMine(), look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
-  Object.assign(JG, { G: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false });
-  JG.chat.clear(); JG.emo.clear(); hlChatClose(); HL_CHAT_NET = JG_NET;
-  c9Img(JG_LEVEL.pic, im => { JG.im = im; jgBuild(); });
-  JG_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look }, jgMsg, s => { JG.conn = s; });
+  Object.assign(JG, { pz: null, L: null, G: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false, gscroll: 0 });
+  JG.chat.clear(); JG.emo.clear(); hlChatClose(); HL_CHAT_NET = null; JG_NET.close();
+  for (const pz of JG_PUZZLES) if (!JG.thumbs[pz.id]) { const im = new Image(); im.onload = () => { JG.thumbs[pz.id] = im; }; im.src = pz.thumb; }
+  jgListAsk(true);
 }
+// one print: its picture, then its own server object (?p=)
+function jgOpen(pz) {
+  const me = hsMine(), look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
+  Object.assign(JG, { pz, L: jgLevel(pz), G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false });
+  JG.chat.clear(); JG.emo.clear(); hlChatClose(); HL_CHAT_NET = JG_NET;
+  c9Img(pz.pic, im => { if (JG.pz === pz) { JG.im = im; jgBuild(); } });
+  JG_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look }, jgMsg, s => { JG.conn = s; }, pz.id);
+}
+// back to the list of prints
+function jgBack() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); Object.assign(JG, { pz: null, L: null, G: null, im: null, welcome: null, id: null, players: [], ui: null, board: null, tray: false, conf: [], bad: false }); JG.chat.clear(); JG.emo.clear(); jgListAsk(true); }
 function jgLeave() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); showChapters(); }
+function jgListAsk(force) {
+  if (JG.listBusy || (!force && Date.now() - JG.listAt < 15000)) return; JG.listBusy = true; JG.listAt = Date.now();
+  fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {}).then(() => { JG.listBusy = false; });
+}
 
 // the engine's view of the network: what to tell the server, the name tags
 const JG_API = {
@@ -44,7 +62,7 @@ const JG_API = {
 
 function jgBuild() {
   const w = JG.welcome; if (!JG.im || !w) return;
-  const old = JG.G, W = cv.width / DPR, H = cv.height / DPR - JG.st, G = c9MakeGame(JG_LEVEL, JG.im, W, H, w.seed);
+  const old = JG.G, W = cv.width / DPR, H = cv.height / DPR - JG.st, G = c9MakeGame(JG.L, JG.im, W, H, w.seed);
   G.net = JG_API; JG.bad = !c9NetRestore(G, w.groups, w.holds, w.done);
   if (old && old.seed === G.seed && !w.fresh) { G.cam.x = old.cam.x; G.cam.y = old.cam.y; G.cam.z = old.cam.z; c9ClampCam(G); }
   JG.G = G; JG.mvT = 0; JG.mvKey = '';
@@ -77,7 +95,8 @@ function jgMsg(m) {
 /* ---------- update and drawing ---------- */
 function updateJG(dt) {
   JG.t += dt; JG.st = safeTop();
-  if (JG.G) { c9Tick(JG.G, dt); JG.joinedN = JG.G.pieces.length - JG.G.groups.length; }
+  if (!JG.pz) jgListAsk(false);
+  if (JG.G) { c9Tick(JG.G, dt); JG.joinedN = JG.G.done ? JG.G.pieces.length : JG.G.pieces.length - JG.G.groups.length; }
   for (const p of JG.conf) { p.x += (p.vx + Math.sin(S.t * 3 + p.ph) * 24) * dt; p.y += p.vy * dt; } JG.conf = JG.conf.filter(p => p.y < (JG.G ? JG.G.lh : 800) + 30);
 }
 function jgZoomBtns(G) { const r = 20, x = G.lw - 30, b = G.lh - JG_STRIP - 10; return [{ k: 'in', t: '+' }, { k: 'out', t: '−' }, { k: 'fit', t: '⤢' }].map((q, i) => ({ ...q, x, y: b - r - (2 - i) * 52, r })); }
@@ -147,17 +166,46 @@ function jgBoard(g, W, hh) {
   hlText(g, `Mỗi mảnh ghép thành công +${JG_COIN} đồng`, W / 2, y + h - 40, 10.5, { ...sub, al: .75 });
 }
 
+// the list of prints: the picture, its name, how many pieces, how far it is and who is joining now (a tap opens it)
+function jgGallery(g, W, hh) {
+  g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
+  hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Tranh', 'Print Puzzles'), 56, 28, 18, { w: 900, a: 'left' });
+  const w = Math.min(W - 24, 540), x = (W - w) / 2, cardH = 132, gap = 14, y0 = 72, endY = y0 + JG_PUZZLES.length * (cardH + gap);
+  JG.gscroll = Math.max(0, Math.min(Math.max(0, endY - hh + 8), JG.gscroll));
+  g.save(); g.beginPath(); g.rect(0, 56, W, hh - 56); g.clip();
+  JG_PUZZLES.forEach((pz, i) => {
+    const y = y0 + i * (cardH + gap) - JG.gscroll, info = JG.list[pz.id], total = pz.cols * pz.rows, fin = !!(info && (info.done || info.archive));
+    if (y > hh || y + cardH < 56) return;
+    hlPlate(g, x, y, w, cardH, '#f2ecde', HL_INK, 14);
+    const im = JG.thumbs[pz.id], tw = Math.min(170, w * .42), th = tw * pz.pic.h / pz.pic.w, tx = x + 12, ty = y + (cardH - th) / 2;
+    if (im) g.drawImage(im, tx, ty, tw, th); else { g.fillStyle = 'rgba(29,25,21,.12)'; g.fillRect(tx, ty, tw, th); }
+    g.lineWidth = 2; g.strokeStyle = HL_INK; g.strokeRect(tx, ty, tw, th);
+    const lx = tx + tw + 14, lw = x + w - 14 - lx, sub = { f: hlSans, w: 700, o: false, a: 'left' };
+    hlText(g, lg(pz.pic.vi, pz.pic.en), lx, y + 30, lw < 170 ? 15.5 : 17, { w: 900, a: 'left' });
+    hlText(g, `${total} ${lg('mảnh', 'pieces')}`, lx, y + 54, 13, sub);
+    if (!info) hlText(g, lg('Đang tải…', 'Loading…'), lx, y + 78, 12.5, { ...sub, al: .7 });
+    else if (fin) hlText(g, lg('Đã ghép xong · vào xem lại', 'Finished · tap to look again'), lx, y + 78, 12.5, { ...sub, c: '#2f6a4c' });
+    else {
+      hlText(g, `${info.n || 0} ${lg('người đang ghép', 'joining now')}`, lx, y + 78, 12.5, { ...sub, c: '#a3332a' });
+      const bw = Math.max(40, lw), pct = Math.max(0, Math.min(1, (info.joined || 0) / total)); g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(lx, y + 92, bw, 8); g.fillStyle = '#2f6a4c'; g.fillRect(lx, y + 92, bw * pct, 8); g.lineWidth = 1.5; g.strokeStyle = HL_INK; g.strokeRect(lx, y + 92, bw, 8);
+      hlText(g, `${info.joined || 0}/${total}`, lx, y + 114, 11, { ...sub, al: .75 });
+    }
+    JG.btns.push({ x, y: Math.max(56, y), w, h: cardH, down: () => jgOpen(pz) });
+  });
+  g.restore();
+}
 function renderJG() {
   const W = cv.width / DPR, H = cv.height / DPR, st = JG.st = safeTop(), g = ctx, hh = H - st, G = JG.G;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = PAPERS.yellow.base; g.fillRect(0, 0, cv.width, cv.height);
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
   for (let px = 0; px < W; px += PAPER.width) g.drawImage(PAPER, px, 0, PAPER.width, Math.max(H, PAPER.height));
   g.save(); g.translate(0, st); JG.btns = [];
-  const L = JG_LEVEL, up = JG.conn === 'up';
+  if (!JG.pz) { jgGallery(g, W, hh); g.restore(); return; }
+  const L = JG.L, up = JG.conn === 'up';
   if (G) { c9Draw(G, g, W, hh); c9DrawTurnBtn(G, g); }
   // the top bar: back, the title and how far the print is, then four round buttons (sample, face, chat, cup)
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
-  hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Tranh', 'Print Puzzle'), 56, 20, 16, { w: 900, a: 'left' });
+  hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg(L.pic.vi, L.pic.en), 56, 20, 16, { w: 900, a: 'left' });
   hlText(g, G ? `${JG.joinedN}/${L.cols * L.rows} ${lg('mảnh', 'pieces')} · ${JG.players.length} ${lg('người', 'people')}` : '', 56, 41, 11, { f: hlSans, w: 600, o: false, al: .8, a: 'left' });
   const cy = 28, X = [W - 22, W - 60, W - 98, W - 136];
   if (G) { jgEye(g, X[3], cy, G.peek > 0); JG.btns.push({ x: X[3] - 19, y: cy - 19, w: 38, h: 38, down: () => { G.peek = G.peek > 0 ? 0 : 4; } }); }
@@ -168,10 +216,10 @@ function renderJG() {
   } else {
     if (!G.done) for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
     if (G.done) {
-      const frz = JG.welcome && JG.welcome.freeze, w = Math.min(340, W - 28), x = (W - w) / 2, h = frz ? 118 : 96, y = hh - JG_STRIP - h - 10, a = Math.min(1, G.win * 2), left = Math.max(0, Math.ceil(120 - (JG.t - JG.doneAt)));
+      const w = Math.min(340, W - 28), x = (W - w) / 2, h = 96, y = hh - JG_STRIP - h - 10, a = Math.min(1, G.win * 2);
       g.globalAlpha = a; hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 16);
-      hlText(g, lg('Cả làng ghép xong rồi!', 'Everyone finished it!'), W / 2, y + 30, 21, { w: 900, c: '#a3332a', o: false }); if (frz) { hlText(g, lg('Đang làm tranh mới 10.000 mảnh', 'A new print of 10,000 pieces is being made'), W / 2, y + 62, 13, { f: hlSans, w: 700, o: false }); hlText(g, lg('Hẹn bạn sớm nhé!', 'See you soon!'), W / 2, y + 86, 13, { f: hlSans, w: 600, o: false }); }
-      else hlText(g, `${lg('Bức tranh mới sau', 'A new print in')} ${left} ${lg('giây', 's')}`, W / 2, y + 62, 13, { f: hlSans, w: 600, o: false });
+      hlText(g, lg('Cả làng ghép xong rồi!', 'Everyone finished it!'), W / 2, y + 30, 21, { w: 900, c: '#a3332a', o: false });
+      hlText(g, lg('Bức tranh này đã hoàn thành', 'This print is finished'), W / 2, y + 62, 13, { f: hlSans, w: 600, o: false });
       g.globalAlpha = 1;
       for (const p of JG.conf) { g.fillStyle = p.c; g.fillRect(p.x, p.y, p.r, p.r * 1.6); }
     }
@@ -189,9 +237,10 @@ function jgPos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.
 const jgIn = (b, x, y) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 function jgDown(e) {
   if (S.mode !== 'jgplay') return; JG.touch = e.pointerType !== 'mouse'; const [x, y] = jgPos(e), G = JG.G;
-  if (x < 52 && y < 56) { if (JG.ui) JG.ui = null; else jgLeave(); return; }
+  if (x < 52 && y < 56) { if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
   if (JG.tray) { const tb = JG.trayBtns.find(b => jgIn(b, x, y)); JG.tray = false; if (tb) tb.down(e); return; }
   for (const b of JG.btns) if (jgIn(b, x, y)) { b.down(e); return; }
+  if (!JG.pz) { JG.drag = { y, s: JG.gscroll, gal: true }; return; }
   if (JG.ui === 'board') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, s: JG.bscroll }; else JG.ui = null; return; }
   if (!G || G.done) return;
   if (y > G.lh - JG_STRIP) return;
@@ -201,40 +250,31 @@ function jgDown(e) {
 }
 function jgMove(e) {
   if (S.mode !== 'jgplay') return; const [x, y] = jgPos(e);
-  if (JG.drag) { JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
+  if (JG.drag) { if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
   if (!JG.G || JG.ui) return; c9Move(JG.G, x, y, e); cv.style.cursor = JG.G.held ? 'grabbing' : JG.G.hover ? 'grab' : '';
 }
 function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { JG.drag = null; return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); c9PtrUp(JG.G, x, y, e, () => {}); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'jgplay') e.preventDefault(); });
+cv.addEventListener('touchstart', e => { if (S.mode === 'jgplay') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
   if (S.mode !== 'jgplay') return; const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+  if (!JG.pz) { JG.gscroll += d; e.preventDefault(); return; }
   if (JG.ui === 'board') { JG.bscroll += d; e.preventDefault(); return; }
   if (!JG.G || JG.G.done) return; const [x, y] = jgPos(e); c9Wheel(JG.G, d, x, y, e.ctrlKey); e.preventDefault();
 }, { passive: false });
 function jgKey(e) {
   if (S.mode !== 'jgplay') return;
-  if (e.code === 'Escape') { if (JG.ui) JG.ui = null; else jgLeave(); return; }
+  if (e.code === 'Escape') { if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
   const G = JG.G; if (!G || G.done) return;
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { c9Zoom(G, 1.25, G.lw / 2, (G.lh + G.top) / 2); return; } if (e.code === 'Minus' || e.code === 'NumpadSubtract') { c9Zoom(G, .8, G.lw / 2, (G.lh + G.top) / 2); return; }
   const grp = G.held; if (!grp) return;
-  if (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); const c = c9Centroid(G, grp); c9Turn(G, grp, (e.shiftKey || e.code === 'ArrowUp' ? -1 : 1) * C9_STEP, G.px === undefined ? c[0] : G.px, G.py === undefined ? c[1] : G.py); }
+  if (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); c9TurnSmooth(G, grp, (e.shiftKey || e.code === 'ArrowUp' ? -1 : 1) * C9_STEP, null, null); }
 }
 
-// the chapter card shows how far the shared print is and who is in it (asked at most every 20 s while the list is up)
-const JGON = { n: null, joined: 0, at: 0, busy: false, freeze: false };
-function jgOnlineText() { if (JGON.freeze) return lg('Ghép tranh chung · đang làm tranh mới 10.000 mảnh', 'Shared puzzle · a new 10,000-piece print is on its way'); return JGON.n === null ? lg('Đang xem bức tranh…', 'Checking the print…') : lgf('Ghép tranh chung · {n} người đang ghép', 'Shared puzzle · {n} joining now', { n: JGON.n }); }
-function jgOnlineAsk() {
-  if (JGON.busy || Date.now() - JGON.at < 20000) return; JGON.busy = true; JGON.at = Date.now();
-  fetch(JG_ONLINE_URL).then(r => r.json()).then(j => {
-    JGON.freeze = !!j.freeze; JGON.n = Math.max(0, +j.n || 0); JGON.joined = Math.max(0, +j.joined || 0);
-    const card = [...document.querySelectorAll('#chapCards .card')].find(b => (b.querySelector('.ch') || {}).textContent === '共拼'), st = card && card.querySelector('.st');
-    if (st) st.textContent = jgOnlineText();
-  }).catch(() => {}).then(() => { JGON.busy = false; });
-}
 registerChapter({
   id: 10, modes: ['jgplay'],
-  card: { num: lg('Chương X', 'Chapter X'), han: '共拼', name: lg('Ghép Tranh', 'Print Puzzle'), desc: lg('Cả làng cùng ghép bức tranh Đám cưới chuột một nghìn mảnh. Mỗi mảnh ghép thành công được 10 đồng.', 'The whole village puts one thousand-piece print together. Every piece you join earns 10 đồng.'), bg: '#e0d6bd' },
-  progress: () => { jgOnlineAsk(); return jgOnlineText(); },
+  card: { num: lg('Chương X', 'Chapter X'), han: '共拼', name: lg('Ghép Tranh', 'Print Puzzles'), desc: lg('Cả làng cùng ghép những bức tranh Đông Hồ. Mỗi mảnh ghép thành công được 10 đồng.', 'The whole village puts Đông Hồ prints together. Every piece you join earns 10 đồng.'), bg: '#e0d6bd' },
+  progress: () => '',
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,
   album() {},
