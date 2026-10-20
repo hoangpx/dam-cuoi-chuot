@@ -31,8 +31,15 @@ export class Jigsaw extends DurableObject {
     this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0;
     this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0;
     ctx.blockConcurrencyWhile(async () => {
-      const st = await ctx.storage.get('pz');
-      if (st && st.pic === PIC && Array.isArray(st.g) && st.g.length) this.load(st); /* another picture (other proportions) = a fresh puzzle */ else this.fresh(1);
+      // The picture must never be lost: the saved state is checked piece by piece, a damaged one falls back to the backup copy, and nothing is ever
+      // thrown away without being kept under another key first (a different picture = a fresh puzzle, the old one stays as 'old:<pic>').
+      const st = await ctx.storage.get('pz'), bak = await ctx.storage.get('bak');
+      if (this.valid(st)) this.load(st);
+      else if (this.valid(bak)) { this.load(bak); console.log('jigsaw: restored from the backup copy'); }
+      else {
+        if (st && st.g && st.g.length) await ctx.storage.put((st.pic === PIC ? 'corrupt:' + Date.now() : 'old:' + (st.pic || 'x')), st);
+        this.fresh(1);
+      }
       this.total = (await ctx.storage.get('total')) || 0;
       if (this.done && Date.now() - this.doneAt >= NEXT_AFTER) this.fresh(this.n + 1);
       else if (this.done) this.scheduleNext();
@@ -40,6 +47,13 @@ export class Jigsaw extends DurableObject {
   }
 
   /* ---- the puzzle ---- */
+  // a saved state is usable when it is of this picture and every piece is in exactly one group
+  valid(st) {
+    if (!st || st.pic !== PIC || !Array.isArray(st.g) || !st.g.length) return false;
+    const seen = new Uint8Array(N); let k = 0;
+    for (const r of st.g) { if (!Array.isArray(r) || r.length < 5) return false; for (const id of String(r[4]).split(',').map(Number)) { if (!(id >= 0 && id < N) || seen[id]) return false; seen[id] = 1; k++; } if (![r[1], r[2], r[3]].every(Number.isFinite)) return false; }
+    return k === N;
+  }
   load(st) {
     this.n = st.n || 1; this.seed = st.seed || 1; this.done = !!st.done; this.doneAt = st.doneAt || 0; this.groups = new Map();
     for (const row of st.g) { const ids = String(row[4]).split(',').map(Number); const g = { id: row[0], x: row[1], y: row[2], a: row[3], ids, by: null, heldAt: 0 }; this.groups.set(g.id, g); for (const id of ids) this.pieceG[id] = g.id; }
@@ -62,12 +76,14 @@ export class Jigsaw extends DurableObject {
   full(c) { return { n: this.n, seed: this.seed, cols: COLS, rows: ROWS, groups: this.rows(), holds: [...this.groups.values()].filter(g => g.by).map(g => [g.id, g.by]), done: this.done, players: this.playerList() }; }
   save(now) {
     if (now) { clearTimeout(this.saveT); this.saveT = null; this.flush(); return; }
-    if (!this.saveT) this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 1500);
+    if (!this.saveT) this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 300);
   }
+  // every write is retried until it sticks; a Durable Object holds its replies until the write is stored, so a join the players see is a join that is saved
   flush() {
-    const put = { pz: { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() }, total: this.total };
-    for (const dev of this.dirtyUsers) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
-    try { this.ctx.storage.put(put); } catch (e) {}
+    const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() }, put = { pz, total: this.total };
+    if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
+    const users = [...this.dirtyUsers]; for (const dev of users) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
+    this.ctx.storage.put(put).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 1000); });
   }
   scheduleNext() { clearTimeout(this.nextT); this.nextT = setTimeout(() => { if (this.done) { this.fresh(this.n + 1); this.all({ t: 'reset', ...this.full() }); } }, Math.max(1000, NEXT_AFTER - (Date.now() - this.doneAt))); }
 
@@ -143,8 +159,10 @@ export class Jigsaw extends DurableObject {
     const u = this.users.get(c.dev); const paid = TESTDEV.test(c.dev) ? 0 : this.award(c, joins.length, now);
     if (u && paid) { u.m += paid; this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
+    const finished = this.groups.size === 1; if (finished) { this.done = true; this.doneAt = Date.now(); }
+    this.save(true);   // stored first, then told: nobody ever sees a join that is not kept
     joins.forEach((j, k) => this.all({ t: 'join', ...j, by: c.id, paid: k < paid ? 1 : 0, m: u ? u.m : 0 }));
-    if (this.groups.size === 1) { this.done = true; this.doneAt = Date.now(); this.all({ t: 'done', n: this.n }); this.save(true); this.scheduleNext(); } else this.save();
+    if (finished) { this.all({ t: 'done', n: this.n }); this.scheduleNext(); }
   }
   // at most 10 paid joins in any 10 seconds for one player (the economy is the client's purse)
   award(c, k, now) { c.awards = c.awards.filter(t => now - t < 10000); const room = Math.max(0, 10 - c.awards.length), paid = Math.min(k, room); for (let i = 0; i < paid; i++) c.awards.push(now); return paid; }
