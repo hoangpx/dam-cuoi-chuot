@@ -128,7 +128,7 @@ function jgEye(g, cx, cy, on) {
   g.beginPath(); g.ellipse(cx, cy, 9, 5.5, 0, 0, 6.283); g.stroke(); g.beginPath(); g.arc(cx, cy, 2.6, 0, 6.283); g.fillStyle = HL_INK; g.fill();
 }
 function jgBoard(g, W, hh) {
-  const x = 10, y = 56, w = W - 20, h = hh - y - JG_STRIP - 10, rowH = 24;
+  const w = Math.min(W - 20, 560), x = (W - w) / 2, y = 56, h = hh - y - JG_STRIP - 10, rowH = 24;   // a tablet: the board stays a readable column in the middle, not the whole width (owner, 2026-10-20)
   g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(0, 0, W, hh); hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 14);
   hlText(g, lg('Bảng xếp hạng · mọi lúc', 'Leaderboard · all time'), W / 2, y + 22, 17, { w: 900 });
   hlText(g, '‹ đóng', x + w - 44, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a' }); JG.btns.push({ x: x + w - 90, y: y + h - 30, w: 90, h: 30, down: () => { JG.ui = null; } });

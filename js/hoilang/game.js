@@ -507,7 +507,7 @@ function hlFlashDraw(g, W, H) {   // "+50" / "−10" rising from the purse
 
 /* ---------- the board and my own numbers ---------- */
 function hlOverlay(g, W, H) {
-  const x = 10, y = 60 + safeTop(), w = W - 20, h = H - y - 14;
+  const w = Math.min(W - 20, 560), x = (W - w) / 2, y = 60 + safeTop(), h = H - y - 14;   // a tablet: a readable column in the middle
   g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(0, 0, W, H); hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 14);
   const tabs = [['top', 'Xếp hạng'], ['me', 'Của tôi']], tw = (w - 24) / 2;
   tabs.forEach(([k, l], i) => { const tx = x + 12 + i * tw; hlPlate(g, tx, y + 10, tw - 4, 30, HL.tab === k ? '#a3332a' : '#e6dec9', HL_INK, 8); hlText(g, l, tx + tw / 2 - 2, y + 26, 14, { w: 800, c: HL.tab === k ? '#f2ecde' : HL_INK, o: false }); HL.btns.push({ id: 'tab' + k, x: tx, y: y + 10, w: tw - 4, h: 30, down: () => { HL.tab = k; HL.bscroll = 0; if (k === 'top') HL_NET.send({ t: 'board', per: HL.per }); } }); });
