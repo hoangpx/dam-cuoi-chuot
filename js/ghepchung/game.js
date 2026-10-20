@@ -231,7 +231,7 @@ function jgOnlineAsk() {
 }
 registerChapter({
   id: 10, modes: ['jgplay'],
-  card: { num: lg('Chương X', 'Chapter X'), han: '共拼', name: lg('Ghép Tranh', 'Print Puzzle'), desc: lg('Cả làng cùng ghép bức tranh Đám cưới chuột một nghìn mảnh. Ai cũng vào ghép được, thấy người khác nhấc mảnh nào, ghép xong mảnh nào. Mỗi mảnh ghép thành công được 10 đồng.', 'The whole village puts one thousand-piece print together. Anyone can join, you see the pieces others lift and join, and every piece you join earns 10 đồng.'), bg: '#e0d6bd' },
+  card: { num: lg('Chương X', 'Chapter X'), han: '共拼', name: lg('Ghép Tranh', 'Print Puzzle'), desc: lg('Cả làng cùng ghép bức tranh Đám cưới chuột một nghìn mảnh. Mỗi mảnh ghép thành công được 10 đồng.', 'The whole village puts one thousand-piece print together. Every piece you join earns 10 đồng.'), bg: '#e0d6bd' },
   progress: () => { jgOnlineAsk(); return jgOnlineText(); },
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,
