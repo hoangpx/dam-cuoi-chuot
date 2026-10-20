@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v18'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v19'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -47,7 +47,7 @@ const T = {
   BAL_LEN: 9000, BAL_MIN: 1800, BAL_SPAN: 3400,
   MIN_LEN: 12000,
   LAN_MIN: 2500, LAN_SPAN: 5000, LAN_WAIT: 2500, LAN_FS: 90,
-  BOAT_LEN: 10000, BOAT_CPS: 11,
+  BOAT_LEN: 10000, BOAT_CPS: 14,
   HANG_HOLES: 3, HANG_ROUNDS: 5, HANG_PICK: 4000, HANG_REVEAL: 1800,
   GIUA_LEN: 8000,
   TRONG_BEATS: 4, TRONG_N: 8, TRONG_GRACE: 2500,
@@ -86,12 +86,12 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v18')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v19')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v18')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v19')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/jg') {   // chương X: one shared jigsaw a picture (?p=vq: Vinh quy bai to, played; anything else: the first print, finished, answered by the Worker itself)
@@ -114,7 +114,7 @@ export default {
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v18')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v19')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -357,7 +357,7 @@ export class Room extends DurableObject {
       r.s = t0 + T.LAN_MIN + Math.random() * T.LAN_SPAN; cfg.min = T.LAN_MIN; cfg.max = T.LAN_MIN + T.LAN_SPAN; r.deadline = r.s + T.LAN_WAIT; r.sent = false;
       for (const b of bots) { const early = Math.random() < .08; this.push(r, b.id, (r.s - t0) + (early ? -rnd(50, 800) : Math.max(150, 270 + gauss() * (50 + (1 - b.skill) * 60) - b.skill * 40)), { k: 'p', bot: true }); }
     } else if (g === 'boat') {
-      cfg.len = T.BOAT_LEN; r.deadline = t0 + T.BOAT_LEN + 200; r.tap = new Map(); r.progAt = 0;
+      cfg.len = T.BOAT_LEN; r.deadline = t0 + T.BOAT_LEN + 450; r.tap = new Map(); r.progAt = 0;
       for (const b of bots) { const cps = 5.2 + b.skill * 3.6; for (let k = 1; k <= 20; k++) this.push(r, b.id, k * 500 + rnd(-40, 40), { k: 't', c: Math.max(0, Math.round(cps * .5 + gauss())) }); }
     } else if (g === 'hang') {
       cfg.holes = T.HANG_HOLES; cfg.rounds = T.HANG_ROUNDS; cfg.pick = T.HANG_PICK; cfg.slot = T.HANG_PICK + T.HANG_REVEAL; r.deadline = t0 + cfg.rounds * cfg.slot + 200;
@@ -447,7 +447,7 @@ export class Room extends DurableObject {
       const adj = bot ? p - (r.s - r.t0) : p - (r.s - r.t0) - lat, fs = adj < T.LAN_FS;
       inp.set(id, { rt: Math.round(adj), fs }); this.live(r, { id, k: 'p', fs });
     } else if (g === 'boat') {
-      if (a.k !== 't' || p > T.BOAT_LEN + 100) return; const cur = inp.get(id) || { c: 0 }; inp.set(id, cur);
+      if (a.k !== 't' || p > T.BOAT_LEN + 350) return; const cur = inp.get(id) || { c: 0 }; inp.set(id, cur);
       const cap = Math.floor(T.BOAT_CPS * Math.max(0, p) / 1000) + 3; cur.c = Math.min(cap, cur.c + Math.max(0, Math.min(8, a.c | 0)));
     } else if (g === 'hang') {
       if (a.k !== 'h' || (a.i | 0) !== r.sub || !r.alive.has(id)) return; const phase = p - r.sub * cfg.slot; if (phase < 0 || phase > cfg.pick) return;

@@ -181,8 +181,8 @@ HL_G.lat = {
   name: 'Lật bài tìm cặp', rule: 'Mười hai lá bài úp, sáu cặp giống nhau. Lật hai lá giống nhau để ăn cặp. Ai được nhiều cặp nhất, nhanh nhất thắng.', ctl: 'tiles', ipH: hlTall(.4),
   controls: (r, W, H, b) => ({ btns: b, h: 30 }),
   info(g, r, now, b) {
-    const m = hlMy(); m.face = m.face || {}; m.done = m.done || new Set(); if (m.hideAt && HL.t >= m.hideAt) { for (const i of m.hidePair) delete m.face[i]; m.hideAt = 0; }
-    const cols = 4, rows = 3, s = Math.max(28, Math.min((b.w - 16) / cols, (b.h - 28) / rows)), x0 = b.W / 2 - s * cols / 2, y0 = b.y + 2, wait = m.hideAt > 0;
+    const m = hlMy(); m.face = m.face || {}; m.done = m.done || new Set(); m.hideQ = m.hideQ || []; while (m.hideQ.length && HL.t >= m.hideQ[0].at) for (const i of m.hideQ.shift().pair) delete m.face[i];
+    const cols = 4, rows = 3, s = Math.max(28, Math.min((b.w - 16) / cols, (b.h - 28) / rows)), x0 = b.W / 2 - s * cols / 2, y0 = b.y + 2, wait = m.hideQ.length > 0;
     for (let i = 0; i < 12; i++) {
       const x = x0 + (i % cols) * s, y = y0 + ((i / cols) | 0) * s, f = m.face[i], mt = m.done.has(i);
       hlTileBtn(g, 'lt' + i, x + 2, y + 2, s - 4, s - 4, mt ? '#bdd7b8' : f !== undefined ? '#f2ecde' : '#7f6a4a', e => { if (wait || mt || f !== undefined) return; hlAct2({ k: 'f', i }, e.timeStamp); AU.pluck(82); }, mt || wait && f === undefined);

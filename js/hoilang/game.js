@@ -56,7 +56,7 @@ function hlMsg(m) {
 function hlFlip(m) {   // a card of the pairs game turned over (told to its player only)
   const t = hlMy(); t.face = t.face || {}; t.done = t.done || new Set(); t.face[m.i] = m.v;
   if (m.m !== undefined) { t.done.add(m.i); t.done.add(m.m); delete t.face[m.i]; delete t.face[m.m]; AU.drumHit(); }
-  else if (m.bad !== undefined) { t.hideAt = HL.t + .7; t.hidePair = [m.i, m.bad]; }
+  else if (m.bad !== undefined) (t.hideQ = t.hideQ || []).push({ at: HL.t + .7, pair: [m.i, m.bad] });   // a queue: wrong pairs told close together are each hidden in turn
 }
 function hlMeFlags() { const me = HL.players.find(p => p.id === HL.id); if (me) HL.idle = !!me.idle; }
 function hlRound(m) {
@@ -146,7 +146,12 @@ function hlHold(down, ts) {   // tuong, balloon: hold and release
     else if (!down && b.d !== undefined && b.u === undefined && b.pop === undefined) { b.u = p; HL_NET.send({ t: 'act', n: r.n, k: 'u', at }); AU.pluck(94); }
   }
 }
-function hlTap() { const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'boat') return; HL.tapAcc++; HL.myTaps++; AU.tap(); }
+function hlTap() {
+  const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'boat' || hlEnd(r) >= r.cfg.len) return;   // time is up: the server takes no more
+  if (HL.myTaps >= Math.floor(HL_BOAT_CPS * hlEnd(r) / 1000) + 3) return;   // the server keeps no more than this: neither does the count shown
+  HL.tapAcc++; HL.myTaps++; AU.tap();
+}
+const HL_BOAT_CPS = 14;   // = T.BOAT_CPS on the server
 function hlPick(v) { const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'minnum') return; HL.myPick = v; r.picked.add(HL.id); hlSend(r, { k: 'v', v }); AU.pluck(90); }
 function hlHole(v) {
   const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'hang' || !r.picking || !hlAlive(r, HL.id)) return;
@@ -301,11 +306,12 @@ let HL_CHAT_EL = null, HL_CHAT_AT = 0, HL_CHAT_NET = null;   // HL_CHAT_NET: ano
 function hlChatOpen() {
   if (HL_CHAT_EL) { hlChatClose(); return; }
   const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;left:0;right:0;z-index:60;background:#f2ecde;border-top:2px solid #1d1915;padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center;font-family:' + hlSans;
-  el.innerHTML = '<input id="hlChatIn" type="text" maxlength="40" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" placeholder="Nói gì đó… (tối đa 40 chữ)" style="flex:1;min-width:0;font-size:16px;padding:9px 11px;border:2px solid #1d1915;border-radius:10px;background:#fff;color:#1d1915"><span id="hlChatN" style="font-size:12px;color:#777;min-width:34px;text-align:right">0/40</span><button id="hlChatGo" style="font-size:15px;font-weight:700;padding:9px 14px;border:2px solid #1d1915;border-radius:10px;background:#2f6a4c;color:#f2ecde">Gửi</button><button id="hlChatOff" aria-label="Tắt hoặc bật chat" style="font-size:12px;padding:9px 8px;border:2px solid #1d1915;border-radius:10px;background:#e6dec9;color:#1d1915"></button>';
+  const touch = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);   // a phone: the bar goes to the top, where no keyboard covers it
+  el.style.cssText = (touch ? 'position:fixed;left:0;right:0;top:0;z-index:60;background:#f2ecde;border-bottom:2px solid #1d1915;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;' : 'position:fixed;left:0;right:0;z-index:60;background:#f2ecde;border-top:2px solid #1d1915;padding:8px 10px calc(8px + env(safe-area-inset-bottom));') + 'display:flex;gap:8px;align-items:center;font-family:' + hlSans;
+  el.innerHTML = '<input id="hlChatIn" type="text" maxlength="40" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" placeholder="Nói gì đó… (tối đa 40 chữ)" style="flex:1;min-width:0;font-size:16px;padding:9px 11px;border:2px solid #1d1915;border-radius:10px;background:#fff;color:#1d1915;-webkit-user-select:text;user-select:text"><span id="hlChatN" style="font-size:12px;color:#777;min-width:34px;text-align:right">0/40</span><button id="hlChatGo" style="font-size:15px;font-weight:700;padding:9px 14px;border:2px solid #1d1915;border-radius:10px;background:#2f6a4c;color:#f2ecde">Gửi</button><button id="hlChatOff" aria-label="Tắt hoặc bật chat" style="font-size:12px;padding:9px 8px;border:2px solid #1d1915;border-radius:10px;background:#e6dec9;color:#1d1915"></button>';
   document.body.appendChild(el); HL_CHAT_EL = el;
   const inp = el.querySelector('#hlChatIn'), n = el.querySelector('#hlChatN'), off = el.querySelector('#hlChatOff');
-  const place = () => { const v = window.visualViewport; el.style.top = ''; el.style.bottom = v ? (window.innerHeight - v.height - v.offsetTop) + 'px' : '0'; };
+  const place = () => { if (touch) return; const v = window.visualViewport; el.style.top = ''; el.style.bottom = v ? (window.innerHeight - v.height - v.offsetTop) + 'px' : '0'; };
   const label = () => { off.textContent = HL.chatOff ? 'Bật chat' : 'Tắt chat'; };
   label(); place();
   if (window.visualViewport) { window.visualViewport.addEventListener('resize', place); window.visualViewport.addEventListener('scroll', place); el._vv = place; }
@@ -545,7 +551,7 @@ function hlBoardRow(g, x, w, ry, pos, u, sub) {
 function updateHL(dt) {
   HL.t += dt; hlSync(HL.round); hlFireworks(dt);
   const r = HL.round;   // the boat's taps travel a few at a time
-  if (r && r.game === 'boat' && r.state === 'run' && HL.tapAcc > 0 && (HL.tapSent += dt) > .3) { HL.tapSent = 0; const c = Math.min(8, HL.tapAcc); HL.tapAcc -= c; hlSend(r, { k: 't', c }); }
+  if (r && r.game === 'boat' && r.state === 'run' && HL.tapAcc > 0 && ((HL.tapSent += dt) > .1 || hlEnd(r) >= r.cfg.len)) { HL.tapSent = 0; while (HL.tapAcc > 0) { const c = Math.min(8, HL.tapAcc); HL.tapAcc -= c; hlSend(r, { k: 't', c }); } }   // every .1 s, and all that is left the moment time is up
 }
 const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'dodan', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
 
