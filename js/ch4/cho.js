@@ -514,6 +514,8 @@ function c4SlumpMorning(back) {
   }
   if (s && s.say) back.push(s.say.replace(/\(Còn khoảng \d+ ngày\)/, `(Còn khoảng ${s.until - SAVE4.day + 1} ngày)`));
 }
+// the district soldiers' levy never comes on a day cụ Lý collects (his dues day, the day he comes for what was deferred) nor within 3 days of the last one
+const c4LinhOk = p => !(p && p.thue) && !SAVE4.dues && !((SAVE4.linhDay || -9) > SAVE4.day - 4);
 function c4PlanEvents() {
   const p = SAVE4.plan, ev = [], at = (a, b) => (a + R() * (b - a)) * 60, own = c4Owned();
   if (SAVE4.feast && SAVE4.feast.day < SAVE4.day) SAVE4.feast = null;      // a feast whose day went by without being collected no longer blocks new ones (a player: no orders after ~day 30)
@@ -523,6 +525,7 @@ function c4PlanEvents() {
   if (SAVE4.dues) ev.push({ at: at(6, 7), kind: 'khat' });
   // the everyday ones (some only make sense with certain stalls); hard luck a little more often than good
   const pool = ['vay', 'chiu', 'boi', 'trom', 'ho', 'cau', 'tuan', 'xin', 'trong', 'sau', 'linh', 'gio', 'lua', 'rival', 'tangtien', ...c4ExtraPool(own)];
+  if (!c4LinhOk(p)) pool.splice(pool.indexOf('linh'), 1);   // not on cụ Lý's days (players: "the soldiers collect twice a day")
   if (!SAVE4.cauDoi) pool.push('do');
   if (['che', 'xoi', 'bun', 'banhcuon', 'ruou'].some(g => own.includes(g))) pool.push('do2', 'do2');
   if (own.length > 1) pool.push('om', 'om');                       // ('bot', the announced skimming, is gone: a hand's skimming is silent now, the player finds it in the tally)
@@ -720,6 +723,7 @@ function c4Event(kind) {
     for (const w of C4.walkers) if (w.st !== 'leave') { if (w.chat) w.chat = null; w.st = 'leave'; w.talk = false; w.sp = 160; }
     for (const g of own) C4.Q[g] = [];
   } else if (kind === 'linh') {                                             // the district's soldiers levy money for labour
+    if (SAVE4.linhDay === SAVE4.day) return; SAVE4.linhDay = SAVE4.day;     // once a day
     const d = c4Loss(.01, .02, 10);
     // owner: pleading poverty means they take goods worth what they asked, from whatever is on the stalls
     Object.assign(E, { title: 'Lính huyện', text: `Lính huyện đi qua, đòi tiền phu cho ${own.length} gánh: có thể phải nộp ${c4LossText(.01, .02, 10)}. Kêu nghèo thì họ lấy hàng trị giá tương đương.`, opts: [
