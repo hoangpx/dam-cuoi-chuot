@@ -168,9 +168,11 @@ function renderJG() {
   } else {
     if (!G.done) for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
     if (G.done) {
-      const w = Math.min(340, W - 28), x = (W - w) / 2, h = 96, y = hh - JG_STRIP - h - 10, a = Math.min(1, G.win * 2), left = Math.max(0, Math.ceil(120 - (JG.t - JG.doneAt)));
+      const frz = JG.welcome && JG.welcome.freeze, w = Math.min(340, W - 28), x = (W - w) / 2, h = frz ? 118 : 96, y = hh - JG_STRIP - h - 10, a = Math.min(1, G.win * 2), left = Math.max(0, Math.ceil(120 - (JG.t - JG.doneAt)));
       g.globalAlpha = a; hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 16);
-      hlText(g, lg('Cả làng ghép xong rồi!', 'Everyone finished it!'), W / 2, y + 30, 21, { w: 900, c: '#a3332a', o: false }); hlText(g, `${lg('Bức tranh mới sau', 'A new print in')} ${left} ${lg('giây', 's')}`, W / 2, y + 62, 13, { f: hlSans, w: 600, o: false }); g.globalAlpha = 1;
+      hlText(g, lg('Cả làng ghép xong rồi!', 'Everyone finished it!'), W / 2, y + 30, 21, { w: 900, c: '#a3332a', o: false }); if (frz) { hlText(g, lg('Đang làm tranh mới 10.000 mảnh', 'A new print of 10,000 pieces is being made'), W / 2, y + 62, 13, { f: hlSans, w: 700, o: false }); hlText(g, lg('Hẹn bạn sớm nhé!', 'See you soon!'), W / 2, y + 86, 13, { f: hlSans, w: 600, o: false }); }
+      else hlText(g, `${lg('Bức tranh mới sau', 'A new print in')} ${left} ${lg('giây', 's')}`, W / 2, y + 62, 13, { f: hlSans, w: 600, o: false });
+      g.globalAlpha = 1;
       for (const p of JG.conf) { g.fillStyle = p.c; g.fillRect(p.x, p.y, p.r, p.r * 1.6); }
     }
   }
@@ -219,12 +221,12 @@ function jgKey(e) {
 }
 
 // the chapter card shows how far the shared print is and who is in it (asked at most every 20 s while the list is up)
-const JGON = { n: null, joined: 0, at: 0, busy: false };
-function jgOnlineText() { return JGON.n === null ? lg('Đang xem bức tranh…', 'Checking the print…') : lgf('Ghép tranh chung · {n} người đang ghép', 'Shared puzzle · {n} joining now', { n: JGON.n }); }
+const JGON = { n: null, joined: 0, at: 0, busy: false, freeze: false };
+function jgOnlineText() { if (JGON.freeze) return lg('Ghép tranh chung · đang làm tranh mới 10.000 mảnh', 'Shared puzzle · a new 10,000-piece print is on its way'); return JGON.n === null ? lg('Đang xem bức tranh…', 'Checking the print…') : lgf('Ghép tranh chung · {n} người đang ghép', 'Shared puzzle · {n} joining now', { n: JGON.n }); }
 function jgOnlineAsk() {
   if (JGON.busy || Date.now() - JGON.at < 20000) return; JGON.busy = true; JGON.at = Date.now();
   fetch(JG_ONLINE_URL).then(r => r.json()).then(j => {
-    JGON.n = Math.max(0, +j.n || 0); JGON.joined = Math.max(0, +j.joined || 0);
+    JGON.freeze = !!j.freeze; JGON.n = Math.max(0, +j.n || 0); JGON.joined = Math.max(0, +j.joined || 0);
     const card = [...document.querySelectorAll('#chapCards .card')].find(b => (b.querySelector('.ch') || {}).textContent === '共拼'), st = card && card.querySelector('.st');
     if (st) st.textContent = jgOnlineText();
   }).catch(() => {}).then(() => { JGON.busy = false; });

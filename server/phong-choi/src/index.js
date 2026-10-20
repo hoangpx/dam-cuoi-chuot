@@ -105,6 +105,10 @@ export default {
       const r = await env.JIGSAW.get(env.JIGSAW.idFromName('main')).fetch(new Request(req.url.replace('/jg-online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
+    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban') {   // the owner's view of who is busy in the jigsaw, and the ban list: Bearer <ADMIN secret>
+      if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
+      return env.JIGSAW.get(env.JIGSAW.idFromName('main')).fetch(new Request(req.url.replace('/jg-sus', '/sus').replace('/jg-ban', '/ban')));
+    }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
       return env.ROOM.get(env.ROOM.idFromName('v18')).fetch(new Request(req.url.replace('/stats', '/days')));
