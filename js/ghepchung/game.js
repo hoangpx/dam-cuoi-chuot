@@ -11,7 +11,7 @@ const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG
 const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0 };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
-  { id: 'dg', pic: { id: 'dg', src: 'img/ch10/dan-ga-me-con.jpg', w: 4400, h: 2456, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' }, thumb: 'img/ch10/thumb-dg.jpg', cols: 100, rows: 56, hidden: true },   // hidden until the owner says so (remove `hidden`)
+  { id: 'dg', pic: { id: 'dg', src: 'img/ch10/dan-ga-me-con.jpg', w: 4400, h: 2456, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' }, thumb: 'img/ch10/thumb-dg.jpg', cols: 100, rows: 56 },
   { id: 'vq', pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, thumb: 'img/ch10/thumb-vq.jpg', cols: 57, rows: 35 },
   { id: 'dcm', pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, thumb: 'img/ch10/thumb-dcm.jpg', cols: 40, rows: 25 },
 ];
@@ -19,9 +19,20 @@ for (let k = JG_PUZZLES.length - 1; k >= 0; k--) if (JG_PUZZLES[k].hidden) JG_PU
 const jgLevel = pz => ({ pic: pz.pic, tier: 3, cols: pz.cols, rows: pz.rows, big: true });
 const JG_STRIP = 50, JG_COIN = 10;
 
+// background track of the prints (owner's own Suno song, 2026-10-22): a streamed <audio> element (an AudioBuffer of 4 minutes would take ~90 MB), 80 kbps, fetched only when chapter X opens
+const JG_MUSIC = { el: null, want: false };
+function jgMusic(on) {
+  const M = JG_MUSIC; M.want = on;
+  if (on && !M.el) { try { M.el = new Audio('audio/nhac-nen-ghep-tranh.mp3'); M.el.loop = true; M.el.preload = 'auto'; } catch (e) { M.el = null; } }
+  if (!M.el) return;
+  if (on) { M.el.volume = AU.isMuted() ? 0 : .45; const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } else M.el.pause();
+}
+document.addEventListener('visibilitychange', () => { const M = JG_MUSIC; if (!M.el) return; if (document.hidden) M.el.pause(); else if (M.want) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
+// a tap before the browser allows sound: try again on the first touch
+document.addEventListener('pointerdown', () => { const M = JG_MUSIC; if (M.want && M.el && M.el.paused && !document.hidden) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
 function startJG() {
-  trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // no music in the prints (owner, 2026-10-22)
-  hideChapterHuds();
+  trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // the game's own songs stay off in the prints; one looping track plays instead (jgMusic)
+  hideChapterHuds(); jgMusic(true);
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
@@ -110,6 +121,7 @@ function jgMsg(m) {
 
 /* ---------- update and drawing ---------- */
 function updateJG(dt) {
+  if (JG_MUSIC.el && JG_MUSIC.want) JG_MUSIC.el.volume = AU.isMuted() ? 0 : .45;
   JG.t += dt; JG.st = safeTop();
   if (!JG.pz) jgListAsk(false);
   if (JG.G) { c9Tick(JG.G, dt); JG.joinedN = JG.G.done ? JG.G.pieces.length : JG.G.pieces.length - JG.G.groups.length; }
@@ -310,7 +322,7 @@ registerChapter({
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,
   album() {},
-  hide() { if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
+  hide() { jgMusic(false); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
   update: updateJG, render: renderJG, key: jgKey,
   pointer: { down: jgDown, move: jgMove, up: jgUp },
   next() { showChapters(); }, retry() { startJG(); },
