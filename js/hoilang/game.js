@@ -43,6 +43,9 @@ function hlMsg(m) {
   }
   else if (m.t === 'in') { if (r && r.n === m.n) hlIn(r, m, false); }
   else if (m.t === 'prog') { if (r && r.n === m.n) r.prog = m.p; }
+  else if (m.t === 'mzp') { if (r && r.n === m.n) r.mzp = m.p; }
+  else if (m.t === 'mzv') { if (r && r.n === m.n) r.mzv = m; }
+  else if (m.t === 'onv') { if (r && r.n === m.n) r.onv = m; }
   else if (m.t === 'go') { if (r && r.n === m.n) { r.go = true; AU.pluck(98); } }
   else if (m.t === 'flip') { if (r && r.n === m.n) hlFlip(m); }
   else if (m.t === 'chat') { if (!HL.chatOff && typeof m.s === 'string') HL.chat.set(m.id, { s: m.s.slice(0, 40), t0: HL.t }); }
@@ -82,10 +85,10 @@ function hlIn(r, e, replay) {
     if (e.k === 'p') { r.inp.set(id, { ...old, done: true }); if (me) hlMy().done = true; }
     else if (e.k === 'w') { r.inp.set(id, { ...old, wrong: true }); if (me) { hlMy().lock = e.lock; if (!replay) AU.thump(); } }
   }
-  else if (g === 'hpb' || g === 'chen') r.picked.add(id);
+  else if (g === 'hpb' || g === 'chen' || g === 'dhang' || g === 'ngoay') r.picked.add(id);
   else if (g === 'dem') { const s = r.demProg || (r.demProg = new Map()); const a = s.get(id) || []; a[e.t] = 1; s.set(id, a); }
   else if (g === 'xep') r.nho.set(id, { c: e.c, pen: e.pen, fin: e.fin });
-  else if (g === 'mau' || g === 'lat') r.nho.set(id, { c: e.c });
+  else if (g === 'mau' || g === 'lat' || g === 'nhotranh') r.nho.set(id, { c: e.c });
   else if (g === 'keoco' && e.k === 'side') { const t = r.kteam || (r.kteam = new Map()); t.set(id, e.v | 0); if (!replay && !me) AU.tap(); }
   if (!replay && !me && (g === 'pomelo' || g === 'giua' || g === 'ten' || g === 'trong' || g === 'lantern')) AU.tap();
 }
@@ -146,7 +149,7 @@ function hlHold(down, ts) {   // tuong, balloon: hold and release
     const b = r.bal.get(HL.id) || {}; r.bal.set(HL.id, b);
     if (down && b.d === undefined) { b.d = p; HL_NET.send({ t: 'act', n: r.n, k: 'd', at }); }
     else if (!down && b.d !== undefined && b.u === undefined && b.pop === undefined) { b.u = p; HL_NET.send({ t: 'act', n: r.n, k: 'u', at }); AU.pluck(94); }
-  }
+  } else if (r.game === 'ngoay') hlNgoay(r, down, at, p);
 }
 function hlTap() {
   const r = hlSync(HL.round); if (!hlCanAct(r) || !HL_TAPGAMES.has(r.game) || hlEnd(r) >= hlTapEnd(r)) return;   // time is up: the server takes no more
@@ -189,14 +192,14 @@ function hlUp() { HL.drag = null; const b = HL.held; HL.held = null; if (b && b.
 function hlKey(e) {
   if (S.mode !== 'hlplay') return;
   if (e.code === 'Escape') { if (HL.ui) HL.ui = null; else hlLeave(); return; }
-  const k = e.code === 'Space' || e.code === 'Enter' ? ' ' : /^Digit[1-9]$/.test(e.code) ? e.code.slice(5) : '';
+  const k = e.code === 'Space' || e.code === 'Enter' ? ' ' : /^Digit[1-9]$/.test(e.code) ? e.code.slice(5) : /^Arrow(Up|Down|Left|Right)$/.test(e.code) ? e.code : '';
   if (!k) return; e.preventDefault();
   if (e.repeat) return;
   const b = HL.btns.find(b => b.key === k && !b.off);
   if (b) { if (b.down) b.down(e); if (b.up) HL.held = b; return; }
   const r = HL.round; if (k === ' ' && r && r.game && HL_G[r.game].ctl === 'press') hlPressAct(e.timeStamp);
 }
-function hlKeyUp(e) { if (S.mode === 'hlplay' && (e.code === 'Space' || e.code === 'Enter') && HL.held) hlUp(); }
+function hlKeyUp(e) { if (S.mode === 'hlplay' && (e.code === 'Space' || e.code === 'Enter' || (HL.held && HL.held.key === e.code)) && HL.held) hlUp(); }
 addEventListener('keyup', hlKeyUp); addEventListener('pointerup', hlUp); addEventListener('pointercancel', hlUp);
 const hlBack = () => ({ x: 10, y: 8 + safeTop(), w: 44, h: 40 });
 
@@ -470,7 +473,7 @@ function hlButtons(g, ctl, W, H) {
   for (const b of ctl.btns) {
     HL.btns.push(b); const down = HL.held === b;
     g.globalAlpha = b.off ? .5 : 1; hlPlate(g, b.x, b.y, b.w, b.h, down ? b.fillDown || b.fill : b.fill || '#bdb7a6', HL_INK, 12);
-    hlText(g, b.label, b.x + b.w / 2, b.y + b.h / 2 + (b.sub ? -6 : 1), b.size || Math.min(24, b.h * .5), { w: 900, c: b.ink || HL_INK, os: b.os || 'rgba(0,0,0,.25)' });
+    hlText(g, b.label, b.x + b.w / 2, b.y + b.h / 2 + (b.sub ? -6 : 1), b.size || Math.min(24, b.h * .5), { w: b.plain ? 800 : 900, c: b.ink || HL_INK, os: b.os || 'rgba(0,0,0,.25)', ...(b.plain ? { f: hlSans, o: false } : {}) });
     if (b.sub) hlText(g, b.sub, b.x + b.w / 2, b.y + b.h / 2 + 12, 11, { w: 600, f: hlSans, o: false, c: b.ink || HL_INK });
     g.globalAlpha = 1;
   }
@@ -562,9 +565,10 @@ function hlBoardRow(g, x, w, ry, pos, u, sub) {
 function updateHL(dt) {
   HL.t += dt; hlSync(HL.round); hlFireworks(dt);
   const r = HL.round;   // the boat's taps travel a few at a time
+  if (r && r.state === 'run' && hlCanAct(r) && HL_G[r.game] && HL_G[r.game].tick) HL_G[r.game].tick(r);   // a game that sends something by itself
   if (r && HL_TAPGAMES.has(r.game) && r.state === 'run' && HL.tapAcc > 0 && ((HL.tapSent += dt) > .1 || hlEnd(r) >= hlTapEnd(r))) { HL.tapSent = 0; while (HL.tapAcc > 0) { const c = Math.min(8, HL.tapAcc); HL.tapAcc -= c; hlSend(r, { k: 't', c }); } }   // every .1 s, and all that is left the moment time is up
 }
-const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'dodan', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'keoco'];
+const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'dodan', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'keoco', 'dhang', 'nhotranh', 'ngoay', 'mecung', 'thaihanh'];
 
 // how many people are in the room, shown on the chapter card (asked at most every 20 s while the list is up)
 const HLON = { n: null, at: 0, busy: false };
