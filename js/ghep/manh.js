@@ -116,6 +116,24 @@ function c9Avg(G) {
   } catch (e) { G.avg = null; }
   return G.avg;
 }
+// an atlas of every piece as a tiny real puzzle piece (its shape, a bit of the print, a hairline), 16 px a cell, baked a few ms a frame in id order (G.atlasN pieces so far):
+// pieces seen from far away are drawn from it, so they look like pieces and not squares
+const C9_ATL = 16, C9_TMP = [0, 0];
+function c9AtlasStep(G) {
+  if (!G.big || !c9Avg(G)) return;
+  const A = C9_ATL, t = G.t_, key = G.cw + 'x' + G.ch + 'x' + G.pieces.length;
+  if (G.atlasKey !== key) { G.atlasKey = key; G.atlasN = 0; const c = document.createElement('canvas'); c.width = G.cols * A; c.height = G.rows * A; G.atlas = c; G.atlasCx = c.getContext('2d'); }
+  if (G.atlasN >= G.pieces.length) return;
+  const x = G.atlasCx, end = performance.now() + 4, sx = A / (G.cw + 2 * t), sy = A / (G.ch + 2 * t), mc = G.midCv, T = C9_MID;
+  while (G.atlasN < G.pieces.length && performance.now() < end) {
+    const p = G.pieces[G.atlasN++], ox = p.j * A, oy = p.i * A;
+    x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.beginPath(); x.rect(ox, oy, A, A); x.clip();
+    x.setTransform(sx, 0, 0, sy, ox + t * sx, oy + t * sy);
+    const path = c9PiecePath(G, p); x.save(); x.clip(path);
+    x.drawImage(mc, p.j * T - t * T / G.cw, p.i * T - t * T / G.ch, T * (1 + 2 * t / G.cw), T * (1 + 2 * t / G.ch), -t, -t, G.cw + 2 * t, G.ch + 2 * t);
+    x.restore(); x.lineJoin = 'round'; x.lineWidth = .7 / Math.min(sx, sy); x.strokeStyle = 'rgba(40,26,12,.55)'; x.stroke(path); x.restore();
+  }
+}
 // the far view: every piece a bit of the print (turned with its group) in a pixel buffer at about the screen's size (half of it when the screen is huge), drawn over the camera's rectangle with one drawImage
 // fx: piece id, x, y, group angle
 function c9FarLayer(G, g, W, H, z, fx) {
@@ -178,11 +196,13 @@ function c9Tick(G, dt) {
 
 function c9Draw(G, g, W, H) {
   if (G.lw !== W || G.lh !== H) c9Layout(G, W, H);
-  if (G.done) {   // the finished print, big, in the middle of the free space above the result box
+  if (G.done && G.net && !G.fitted) { G.fitted = true; c9FitPrint(G, W, H); }
+  if (G.done && !G.net) {   // the finished print, big, in the middle of the free space above the result box
     const aw = W - 28, ah = H - 56 - 190, k = Math.min(aw / G.img.naturalWidth, ah / G.img.naturalHeight), w = G.img.naturalWidth * k, h = G.img.naturalHeight * k, x = (W - w) / 2, y = 60 + (ah - h) / 2;
     g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 7, y - 7, w + 14, h + 14); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); return;
   }
   const cam = G.cam, z = cam.z; G.bakeLeft = G.big ? 70 : 1e9;
+  if (G.big) c9AtlasStep(G);
   const avg = G.big ? c9Avg(G) : null, far = !!avg && G.pieces.length > 3000 && (W / z / G.cw) * ((H - G.top) / z / G.ch) > 3000; G.bakeEnd = G.big ? performance.now() + 6 : Infinity;
   let L = G.bs;   // the sharpness the pieces in view are baked at (see c9Bake)
   if (G.big) {
@@ -196,9 +216,10 @@ function c9Draw(G, g, W, H) {
   const vx0 = cam.x, vy0 = cam.y, vx1 = cam.x + W / z, vy1 = cam.y + (H - G.top) / z, rad = Math.hypot(G.cw, G.ch) * .75 + G.t_, t = G.t_;
   const flat = G.flatL || (G.flatL = []), items = G.itemsL || (G.itemsL = []), fx = G.farL || (G.farL = []); flat.length = 0; items.length = 0; fx.length = 0;   // flat: key, x, y; items: group, piece, x, y
   for (const grp of G.order) {
+    const ga = grp.a, gc = Math.cos(ga), gs = Math.sin(ga), gx = grp.x, gy = grp.y, c = C9_TMP;
     for (const p of grp.pcs) {
-      const c = c9Center(G, grp, p); if (c[0] < vx0 - rad || c[0] > vx1 + rad || c[1] < vy0 - rad || c[1] > vy1 + rad) continue;
-      if (far) { fx.push(p.id, c[0], c[1], grp.a); continue; }
+      const lx = (p.j + .5) * G.cw, ly = (p.i + .5) * G.ch; c[0] = gx + lx * gc - ly * gs; c[1] = gy + lx * gs + ly * gc; if (c[0] < vx0 - rad || c[0] > vx1 + rad || c[1] < vy0 - rad || c[1] > vy1 + rad) continue;
+      if (far) { if (p.id < G.atlasN) flat.push(grp, p, c[0], c[1]); else fx.push(p.id, c[0], c[1], grp.a); continue; }
       if (avg && (!c9Bake(G, p, L) && !p.cvTop)) { flat.push(grp, p, c[0], c[1]); continue; }   // not baked yet: a bit of the print for now
       if (!avg && !c9Bake(G, p, L) && !p.cvTop) continue;
       p.seen = G.fr; items.push(grp, p, c[0], c[1]);
@@ -206,11 +227,12 @@ function c9Draw(G, g, W, H) {
   }
   if (fx.length) c9FarLayer(G, g, W, H, z, fx);
   if (flat.length) {   // pieces not baked yet: their bit of the shrunk print, turned with the group
-    const M0 = g.getTransform(), T = C9_MID, fw = G.cw + .8, fh = G.ch + .8; g.imageSmoothingQuality = 'low';
+    const M0 = g.getTransform(), T = C9_MID, fw = G.cw + .8, fh = G.ch + .8; g.imageSmoothingQuality = 'medium';
     for (let k = 0; k < flat.length; k += 4) {
       const grp = flat[k], p = flat[k + 1], x = flat[k + 2], y = flat[k + 3], cc = Math.cos(grp.a), cs = Math.sin(grp.a);
       g.setTransform(M0.a * cc + M0.c * cs, M0.b * cc + M0.d * cs, -M0.a * cs + M0.c * cc, -M0.b * cs + M0.d * cc, M0.a * x + M0.c * y + M0.e, M0.b * x + M0.d * y + M0.f);
-      g.drawImage(G.midCv, p.j * T, p.i * T, T, T, -fw / 2, -fh / 2, fw, fh);
+      if (p.id < G.atlasN) g.drawImage(G.atlas, p.j * C9_ATL, p.i * C9_ATL, C9_ATL, C9_ATL, -G.cw / 2 - G.t_, -G.ch / 2 - G.t_, G.cw + 2 * G.t_, G.ch + 2 * G.t_);
+      else g.drawImage(G.midCv, p.j * T, p.i * T, T, T, -fw / 2, -fh / 2, fw, fh);
     }
     g.setTransform(M0);
   }
@@ -337,15 +359,21 @@ function c9PinchMove(G) {
   const pts = [...G.tp.values()], a = pts[0], b = pts[1], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, z = c9Clip(G.pinch.z0 * d / G.pinch.d0, G.zmin, G.zmax);
   G.cam.z = z; G.cam.x = G.pinch.wp[0] - mx / z; G.cam.y = G.pinch.wp[1] - (my - G.top) / z; c9ClampCam(G);
 }
+// a finished shared print is looked at as the real jigsaw (every piece with its cut lines): fit above the result box; pan and zoom only
+function c9FitPrint(G, W, H) {
+  const aw = W - 24, ah = H - G.top - 190, z = c9Clip(Math.min(aw / G.bw, ah / G.bh), G.zmin, G.zmax), c = [(G.ww - G.bw) / 2 + G.bw / 2, (G.wh - G.bh) / 2 + G.bh / 2];
+  G.cam.z = z; G.cam.x = c[0] - W / (2 * z); G.cam.y = c[1] - (ah / 2) / z; c9ClampCam(G);
+}
 function c9Down(G, sx, sy, e, done) {
-  if (G.done) return;
+  if (G.done && !G.net) return;
   G.touch = e.pointerType !== 'mouse'; G.psx = sx; G.psy = sy;
   if (G.touch) { G.tp.set(e.pointerId, { x: sx, y: sy }); if (G.tp.size >= 2) { c9PinchStart(G); return; } }
   if (G.pinch) return;
   const [wx, wy] = c9S2W(G, sx, sy), fin = r => { if (r === 'win') done('win'); };
-  if (e.button === 2) { const h = G.held ? { grp: G.held } : c9Hit(G, wx, wy); if (h) c9TurnSmooth(G, h.grp, C9_STEP, wx, wy); return; }
+  const view = G.done;   // finished shared print: nothing can be lifted, only panned
+  if (e.button === 2) { if (view) return; const h = G.held ? { grp: G.held } : c9Hit(G, wx, wy); if (h) c9TurnSmooth(G, h.grp, C9_STEP, wx, wy); return; }
   const tb = c9TurnBtns(G).find(b => Math.hypot(sx - b.x, sy - b.y) < b.r + 6); if (tb) { c9TurnSmooth(G, G.held, tb.dir * C9_STEP, null, null); G.thold = { id: e.pointerId, dir: tb.dir, t: 0 }; G.drag = null; return; }
-  const hit = c9Hit(G, wx, wy);
+  const hit = view ? null : c9Hit(G, wx, wy);
   const lift = h => { if (G.held !== h.grp) c9Lift(G, h.grp, wx, wy); else G.hl = c9Rot(-h.grp.a, wx - h.grp.x, wy - h.grp.y); G.drag = { id: e.pointerId, x0: sx, y0: sy, gx: h.grp.x, gy: h.grp.y, ga: h.grp.a, t0: performance.now(), moved: false }; };
   const startPan = () => { G.pan = { id: e.pointerId, x0: sx, y0: sy, cx: G.cam.x, cy: G.cam.y, moved: false }; };
   if (!G.touch) {   // mouse: a click lifts; the group then follows the mouse until the next click puts it down; empty table: drag to pan
@@ -409,7 +437,7 @@ function c9Restore(G, st) {
   }
   if (seen.size !== G.pieces.length) return false;
   for (const g of groups) g.pcs.forEach(p => { p.grp = g; });
-  G.groups = groups; G.order = groups.slice(); G.zTop = groups.length + 1; G.t = +st.t || 0;
+  G.fitted = false; G.groups = groups; G.order = groups.slice(); G.zTop = groups.length + 1; G.t = +st.t || 0;
   if (st.cam) { G.cam.z = c9Clip(+st.cam.z || 1, G.zmin, G.zmax); G.cam.x = +st.cam.x || 0; G.cam.y = +st.cam.y || 0; c9ClampCam(G); }
   if (G.groups.length === 1) G.done = false;
   return true;
@@ -423,7 +451,7 @@ function c9NetRestore(G, rows, holds, done) {
     const g = { id: r[0], x: +r[1], y: +r[2], a: +r[3], pcs, z: 0, lift: 0, ux: 0, uy: 0, by: null, tx: undefined }; pcs.forEach(p => { p.grp = g; }); groups.push(g);
   }
   if (seen.size !== G.pieces.length) return false;
-  G.groups = groups; G.order = groups.slice(); G.gm = new Map(groups.map(g => [g.id, g])); G.held = null; G.drag = null; G.done = false; G.win = 0; G.flash = [];
+  G.groups = groups; G.order = groups.slice(); G.gm = new Map(groups.map(g => [g.id, g])); G.held = null; G.drag = null; G.fitted = false; G.done = false; G.win = 0; G.flash = [];
   for (const h of holds || []) { const g = G.gm.get(h[0]); if (g) { g.by = h[1]; g.lift = 1; } }
   if (done) { G.done = true; } return true;
 }

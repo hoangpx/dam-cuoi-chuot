@@ -20,7 +20,8 @@ const jgLevel = pz => ({ pic: pz.pic, tier: 3, cols: pz.cols, rows: pz.rows, big
 const JG_STRIP = 50, JG_COIN = 10;
 
 function startJG() {
-  trackEnter('chuong-10'); AU.init(); AU.setSong(5); AU.setQuiet(false); hideChapterHuds();
+  trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // no music in the prints (owner, 2026-10-22)
+  hideChapterHuds();
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
@@ -185,7 +186,7 @@ function jgGallery(g, W, hh) {
   JG.gscroll = Math.max(0, Math.min(Math.max(0, endY - hh + 8), JG.gscroll));
   g.save(); g.beginPath(); g.rect(0, 56, W, hh - 56); g.clip();
   JG_PUZZLES.forEach((pz, i) => {
-    const y = y0 + i * (cardH + gap) - JG.gscroll, info = JG.list[pz.id], total = pz.cols * pz.rows, fin = !!(info && (info.done || info.archive));
+    const y = y0 + i * (cardH + gap) - JG.gscroll, info = JG.list[pz.id], total = pz.cols * pz.rows, fin = !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
     if (y > hh || y + cardH < 56) return;
     hlPlate(g, x, y, w, cardH, '#f2ecde', HL_INK, 14);
     const im = JG.thumbs[pz.id], tw = Math.min(170, w * .42), th = tw * pz.pic.h / pz.pic.w, tx = x + 12, ty = y + (cardH - th) / 2;
@@ -197,7 +198,7 @@ function jgGallery(g, W, hh) {
     if (!info) hlText(g, lg('Đang tải…', 'Loading…'), lx, y + 78, 12.5, { ...sub, al: .7 });
     else if (fin) {
       hlText(g, lg('Đã ghép xong · vào xem lại', 'Finished · tap to look again'), lx, y + 78, 12.5, { ...sub, c: '#2f6a4c' });
-      const st = jgStats(info, true); if (st) hlText(g, st, lx, y + 100, 12, { ...sub, al: .85 });
+      const st = jgStats(info, true); if (st) hlText(g, st, lx, y + 104, 14, { ...sub, c: HL_INK });
     }
     else {
       hlText(g, `${info.n || 0} ${lg('người đang ghép', 'joining now')}`, lx, y + 78, 12.5, { ...sub, c: '#a3332a' });
@@ -228,7 +229,7 @@ function renderJG() {
   if (!G) {
     hlText(g, JG.bad ? 'Bức tranh bị lỗi, hãy tải lại trang' : JG.conn === 'blocked' ? lg('Máy bạn tạm bị chặn vì bấm quá nhanh. Đợi ít phút rồi vào lại nhé.', 'Your device is blocked for a while for tapping too fast. Come back in a few minutes.') : JG.conn === 'crowded' ? lg('Có quá nhiều máy cùng mạng với bạn đang mở bức tranh. Đóng bớt rồi vào lại nhé.', 'Too many devices on your network have the print open. Close some and come back.') : JG.conn === 'replaced' ? lg('Bức tranh đang mở ở một cửa sổ khác của bạn. Đóng bên kia rồi vào lại.', 'The print is open in another window of yours. Close it and come back.') : JG.conn === 'down' ? lg('Mất kết nối, đang nối lại…', 'Connection lost, reconnecting…') : lg('Đang mở bức tranh chung…', 'Opening the shared print…'), W / 2, hh / 2, 18);
   } else {
-    if (!G.done) for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
+    for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
     if (G.done) {
       const w = Math.min(340, W - 28), x = (W - w) / 2, h = 96, y = hh - JG_STRIP - h - 10, a = Math.min(1, G.win * 2);
       g.globalAlpha = a; hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 16);
@@ -256,7 +257,7 @@ function jgDown(e) {
   for (const b of JG.btns) if (jgIn(b, x, y)) { b.down(e); return; }
   if (!JG.pz) { JG.drag = { y, s: JG.gscroll, gal: true }; return; }
   if (JG.ui === 'board') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, s: JG.bscroll }; else JG.ui = null; return; }
-  if (!G || G.done) return;
+  if (!G) return;
   if (y > G.lh - JG_STRIP) return;
   for (const b of jgZoomBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 6) { if (b.k === 'in') c9Zoom(G, 1.5, G.lw / 2, (G.lh + G.top) / 2); else if (b.k === 'out') c9Zoom(G, 1 / 1.5, G.lw / 2, (G.lh + G.top) / 2); else { G.cam.z = G.zmin; c9ClampCam(G); } return; }
   if (y < 56) return;
@@ -274,12 +275,12 @@ cv.addEventListener('wheel', e => {
   if (S.mode !== 'jgplay') return; const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
   if (!JG.pz) { JG.gscroll += d; e.preventDefault(); return; }
   if (JG.ui === 'board') { JG.bscroll += d; e.preventDefault(); return; }
-  if (!JG.G || JG.G.done) return; const [x, y] = jgPos(e); c9Wheel(JG.G, d, x, y, e.ctrlKey); e.preventDefault();
+  if (!JG.G) return; const [x, y] = jgPos(e); c9Wheel(JG.G, d, x, y, e.ctrlKey); e.preventDefault();
 }, { passive: false });
 function jgKey(e) {
   if (S.mode !== 'jgplay') return;
   if (e.code === 'Escape') { if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
-  const G = JG.G; if (!G || G.done) return;
+  const G = JG.G; if (!G) return;
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { c9Zoom(G, 1.25, G.lw / 2, (G.lh + G.top) / 2); return; } if (e.code === 'Minus' || e.code === 'NumpadSubtract') { c9Zoom(G, .8, G.lw / 2, (G.lh + G.top) / 2); return; }
   const grp = G.held; if (!grp) return;
   if (e.code === 'KeyR' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); c9TurnSmooth(G, grp, (e.shiftKey || e.code === 'ArrowUp' ? -1 : 1) * C9_STEP, null, null); }
