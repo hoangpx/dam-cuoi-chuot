@@ -22,6 +22,10 @@ class_name = "JigsawVQ"
 name = "JIGSAW_DG"
 class_name = "JigsawDG"
 
+[[durable_objects.bindings]]
+name = "JIGSAW_DG2"
+class_name = "JigsawDG2"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
@@ -49,3 +53,8 @@ new_sqlite_classes = ["JigsawVQ"]
 [[migrations]]
 tag = "v6"
 new_sqlite_classes = ["JigsawDG"]
+
+# 2026-10-22: Đàn gà mẹ con again, cropped and 2990 pieces (own object, own storage)
+[[migrations]]
+tag = "v7"
+new_sqlite_classes = ["JigsawDG2"]

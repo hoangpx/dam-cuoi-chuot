@@ -289,4 +289,6 @@ export class JigsawV2 extends makeJigsaw({ pic: 'dcm1', cols: 40, rows: 25, pw: 
 // the second print: Vinh quy bai to, img/ch10/vinh-quy-bai-to.jpg 4047 x 2493, 57 x 35 = 1995 pieces
 export class JigsawVQ extends makeJigsaw({ pic: 'vq1', cols: 57, rows: 35, pw: 4047, ph: 2493, freeze: false, startAt: Date.UTC(2026, 9, 20, 16, 15) }) {}
 // the third print: Đàn gà mẹ con, img/ch10/dan-ga-me-con.jpg 4400 x 2456, 100 x 56 = 5600 pieces
-export class JigsawDG extends makeJigsaw({ pic: 'dg1', cols: 100, rows: 56, pw: 4400, ph: 2456, freeze: false }) {}
+export class JigsawDG extends makeJigsaw({ pic: 'dg1', cols: 100, rows: 56, pw: 4400, ph: 2456, freeze: false }) {}   // dropped (too heavy), kept only because its migration exists
+// the same print cropped and cut in 65 x 46 = 2990 pieces (owner, 2026-10-22: less lag), img/ch10/dan-ga-me-con.jpg 3300 x 2324
+export class JigsawDG2 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false }) {}

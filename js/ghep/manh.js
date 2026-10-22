@@ -65,7 +65,7 @@ function c9Layout(G, W, H, first) {
   let cw, ch;
   if (G.big) { cw = 44; ch = cw / (asp * G.rows / G.cols); } else { const bw = Math.min(aw * .75, ah * .75 * asp); cw = bw / G.cols; ch = (bw / asp) / G.rows; }
   G.cw = cw; G.ch = ch; G.bw = cw * G.cols; G.bh = ch * G.rows; G.t_ = .27 * Math.max(cw, ch);
-  if (G.big) { G.ww = G.bw * 1.5; G.wh = G.bh * 1.5; G.zmin = Math.max(Math.min(vw / G.ww, vh / G.wh), (G.pieces.length > 3000 ? 3.5 : 11) / G.cw); G.zmax = 5; } else { G.ww = vw; G.wh = vh; G.zmin = .5; G.zmax = 3; }
+  if (G.big) { G.ww = G.bw * 1.5; G.wh = G.bh * 1.5; G.zmin = Math.max(Math.min(vw / G.ww, vh / G.wh), (G.pieces.length > 2500 ? 3.5 : 11) / G.cw); G.zmax = 5; } else { G.ww = vw; G.wh = vh; G.zmin = .5; G.zmax = 3; }
   G.lw = W; G.lh = H; G.top = top;
   const N = G.cols * G.rows, cwt = cw + 2 * G.t_, cht = ch + 2 * G.t_;
   G.bs = Math.max(.5, Math.min(DPR * 2.5, G.img.naturalWidth / G.cols * 1.6 / cw, Math.sqrt(14e6 / (N * cwt * cht))));   // the baked pixels per world unit
@@ -211,7 +211,7 @@ function c9Draw(G, g, W, H) {
   }
   const cam = G.cam, z = cam.z; G.bakeLeft = G.big ? 70 : 1e9;
   if (G.big) c9AtlasStep(G);
-  const avg = G.big ? c9Avg(G) : null, far = !!avg && G.pieces.length > 3000 && (W / z / G.cw) * ((H - G.top) / z / G.ch) > 3000; G.bakeEnd = G.big ? performance.now() + 6 : Infinity;
+  const avg = G.big ? c9Avg(G) : null, far = !!avg && G.pieces.length > 2500 && (W / z / G.cw) * ((H - G.top) / z / G.ch) > 2200; G.bakeEnd = G.big ? performance.now() + 6 : Infinity;
   let L = G.bs;   // the sharpness the pieces in view are baked at (see c9Bake)
   if (G.big) {
     G.fr = (G.fr || 0) + 1;
