@@ -116,6 +116,14 @@ function c9Avg(G) {
   } catch (e) { G.avg = null; }
   return G.avg;
 }
+// the cut lines of the whole print on one transparent canvas (half a world unit a pixel), for the finished print seen from far: the print itself is drawn sharp under it
+function c9Grooves(G) {
+  const S = .5, key = G.cw + 'x' + G.ch + 'x' + G.pieces.length; if (G.groovesKey === key && G.grooves) return G.grooves;
+  const c = document.createElement('canvas'); c.width = Math.ceil(G.bw * S); c.height = Math.ceil(G.bh * S); const x = c.getContext('2d');
+  x.lineJoin = 'round'; x.lineWidth = 1.6 / S; x.strokeStyle = 'rgba(40,26,12,.42)';
+  for (const p of G.pieces) { x.setTransform(S, 0, 0, S, p.j * G.cw * S, p.i * G.ch * S); x.stroke(c9PiecePath(G, p)); }
+  G.grooves = c; G.groovesKey = key; return c;
+}
 // an atlas of every piece as a tiny real puzzle piece (its shape, a bit of the print, a hairline), 16 px a cell, baked a few ms a frame in id order (G.atlasN pieces so far):
 // pieces seen from far away are drawn from it, so they look like pieces and not squares
 const C9_ATL = 16, C9_TMP = [0, 0];
@@ -215,7 +223,12 @@ function c9Draw(G, g, W, H) {
   if (G.big) { g.fillStyle = 'rgba(120,90,50,.10)'; g.fillRect(0, 0, G.ww, G.wh); g.strokeStyle = 'rgba(29,25,21,.35)'; g.lineWidth = 3 / z; g.setLineDash([10 / z, 8 / z]); g.strokeRect(0, 0, G.ww, G.wh); g.setLineDash([]); }
   const vx0 = cam.x, vy0 = cam.y, vx1 = cam.x + W / z, vy1 = cam.y + (H - G.top) / z, rad = Math.hypot(G.cw, G.ch) * .75 + G.t_, t = G.t_;
   const flat = G.flatL || (G.flatL = []), items = G.itemsL || (G.itemsL = []), fx = G.farL || (G.farL = []); flat.length = 0; items.length = 0; fx.length = 0;   // flat: key, x, y; items: group, piece, x, y
-  for (const grp of G.order) {
+  const still = G.done && G.net && z < .35 && G.groups.length === 1 && Math.abs(G.groups[0].a) < .01;   // finished print, seen small: the sharp print with its cut lines on top
+  if (still) {   // composed once for this zoom (a canvas as big as it shows on screen), then only blitted
+    const g0 = G.groups[0], k = Math.round(z * DPR * 1000); if (G.stillK !== k || !G.stillCv) { const c = G.stillCv || (G.stillCv = document.createElement('canvas')); c.width = Math.ceil(G.bw * z * DPR); c.height = Math.ceil(G.bh * z * DPR); const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(G.img, 0, 0, c.width, c.height); x.drawImage(c9Grooves(G), 0, 0, c.width, c.height); G.stillK = k; }
+    g.drawImage(G.stillCv, g0.x, g0.y, G.bw, G.bh);
+  }
+  for (const grp of (still ? [] : G.order)) {
     const ga = grp.a, gc = Math.cos(ga), gs = Math.sin(ga), gx = grp.x, gy = grp.y, c = C9_TMP;
     for (const p of grp.pcs) {
       const lx = (p.j + .5) * G.cw, ly = (p.i + .5) * G.ch; c[0] = gx + lx * gc - ly * gs; c[1] = gy + lx * gs + ly * gc; if (c[0] < vx0 - rad || c[0] > vx1 + rad || c[1] < vy0 - rad || c[1] > vy1 + rad) continue;
