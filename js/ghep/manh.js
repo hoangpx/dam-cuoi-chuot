@@ -110,17 +110,18 @@ function c9Avg(G) {
     while (w > G.cols * T * 2) { w = Math.max(G.cols * T, Math.floor(w / 2)); h = Math.max(G.rows * T, Math.floor(h / 2)); const c = mk(w, h), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, w, h); src = c; }
     const m0 = mk(G.cols * T, G.rows * T), x0 = m0.getContext('2d'); x0.imageSmoothingQuality = 'high'; x0.drawImage(src, 0, 0, m0.width, m0.height);
     const m1 = mk(G.cols * 4, G.rows * 4), x1 = m1.getContext('2d'); x1.imageSmoothingQuality = 'high'; x1.drawImage(m0, 0, 0, m1.width, m1.height);
-    const d0 = x0.getImageData(0, 0, m0.width, m0.height), d1 = x1.getImageData(0, 0, m1.width, m1.height);
-    G.midCv = m0; G.midU0 = new Uint32Array(d0.data.buffer); G.midU1 = new Uint32Array(d1.data.buffer); G.avg = true;
+    const m2 = mk(G.cols * 8, G.rows * 8), x2 = m2.getContext('2d'); x2.imageSmoothingQuality = 'high'; x2.drawImage(m0, 0, 0, m2.width, m2.height);
+    const d0 = x0.getImageData(0, 0, m0.width, m0.height), d1 = x1.getImageData(0, 0, m1.width, m1.height), d2 = x2.getImageData(0, 0, m2.width, m2.height);
+    G.midCv = m0; G.midU0 = new Uint32Array(d0.data.buffer); G.midU1 = new Uint32Array(d1.data.buffer); G.midU2 = new Uint32Array(d2.data.buffer); G.avg = true;
   } catch (e) { G.avg = null; }
   return G.avg;
 }
-// the far view: every piece a bit of the print (turned with its group) in a pixel buffer at half the screen's size, drawn over the camera's rectangle with one drawImage
+// the far view: every piece a bit of the print (turned with its group) in a pixel buffer at about the screen's size (half of it when the screen is huge), drawn over the camera's rectangle with one drawImage
 // fx: piece id, x, y, group angle
 function c9FarLayer(G, g, W, H, z, fx) {
-  const s = .5, bw = Math.max(1, Math.ceil(W * s)), bh = Math.max(1, Math.ceil((H - G.top) * s));
+  const s = Math.max(.5, Math.min(DPR, Math.sqrt(3e6 / (W * (H - G.top))))), bw = Math.max(1, Math.ceil(W * s)), bh = Math.max(1, Math.ceil((H - G.top) * s));
   if (!G.farCv || G.farCv.width !== bw || G.farCv.height !== bh) { G.farCv = document.createElement('canvas'); G.farCv.width = bw; G.farCv.height = bh; G.farCx = G.farCv.getContext('2d'); G.farImg = G.farCx.createImageData(bw, bh); G.farU = new Uint32Array(G.farImg.data.buffer); }
-  const u = G.farU, cam = G.cam, k = z * s, hx = G.cw * k / 2, hy = G.ch * k / 2, lv = hx < 3.5, T = lv ? 4 : C9_MID, M = lv ? G.midU1 : G.midU0, mw = G.cols * T, cols = G.cols; u.fill(0);
+  const u = G.farU, cam = G.cam, k = z * s, hx = G.cw * k / 2, hy = G.ch * k / 2, T = hx >= 5 ? C9_MID : hx >= 2 ? 8 : 4, M = T === C9_MID ? G.midU0 : T === 8 ? G.midU2 : G.midU1, mw = G.cols * T, cols = G.cols; u.fill(0);
   for (let n = 0; n < fx.length; n += 4) {
     const id = fx[n], cx = (fx[n + 1] - cam.x) * k, cy = (fx[n + 2] - cam.y) * k, a = fx[n + 3], c = Math.cos(a), sn = Math.sin(a);
     const ex = Math.ceil(Math.abs(c) * hx + Math.abs(sn) * hy), ey = Math.ceil(Math.abs(sn) * hx + Math.abs(c) * hy);
