@@ -1,7 +1,7 @@
 /* Chương V · Hội Làng — the nine newer games (HL_G, same shape as in tro.js). Rules live on the server (server/phong-choi/src/index.js);
    this only draws what it is told and sends the player's taps.
      chuot  tap the hole the mole comes out of      hpb   guess the number nearest 2/3 of the average
-     khac   find the tile of a different shade      dem   count the shapes that flash and hide
+     khac   find the tile of a different shade      dem   count the mice over 5 turns, closest total wins
      xep    tap 1..9 in order                        mau   tap the INK colour, not the word
      tinh   tap the right answer of a sum            lat   flip cards and find the pairs
      chen   follow the ball under the cups.
@@ -91,24 +91,88 @@ function hlShape(g, t, x, y, s) {
   else { g.beginPath(); g.moveTo(x, y - s * 1.1); g.lineTo(x + s * 1.1, y + s * .9); g.lineTo(x - s * 1.1, y + s * .9); g.closePath(); g.fillStyle = '#f2c640'; }
   g.fill(); g.stroke();
 }
+// mouse silhouettes: stand (chuot-bong) and run (chuot-chay) poses, black and white, all face left
+const demSilImgs = {};
+function demSilImg(white, run) {
+  const k = (white ? 'w' : 'b') + (run ? 'r' : 's');
+  if (!demSilImgs[k]) {
+    const im = new Image();
+    im.src = white ? (run ? 'img/chuot-chay-trang.png' : 'img/chuot-trang.png')
+                   : (run ? 'img/chuot-chay.png' : 'img/chuot-bong.png');
+    demSilImgs[k] = im;
+  }
+  return demSilImgs[k];
+}
+function demDrawSil(g, x, y, s, face, white, runFrame) {
+  const im = demSilImg(white, runFrame);
+  if (!im.complete || !im.naturalWidth) return;
+  const w = s, h = s * im.naturalHeight / im.naturalWidth;
+  g.save(); g.translate(x, y); g.scale(-face, 1);   // images face left; flip so face=1 looks right
+  g.drawImage(im, -w / 2, -h / 2, w, h);
+  g.restore();
+}
+// count the mice: which turn are we in? (server time, cumulative slots)
+const demTurn = r => {
+  const e = hlEnd(r);
+  for (let i = 0; i < r.cfg.turns.length; i++) if (e < r.cfg.turns[i].end) return i;
+  return r.cfg.turns.length - 1;
+};
+const demPE = (r, t) => hlEnd(r) - r.cfg.turns[t].start;   // time into this turn
 HL_G.dem = {
-  name: 'Đếm nhanh', rule: 'Một đàn hình hiện ra trong 2 giây rồi biến mất. Đếm tất cả rồi đoán số lượng. Ai đoán gần đúng nhất thắng, bằng nhau thì chia hũ.', ctl: 'step', ipH: hlTall(.34),
+  name: 'Đếm chuột', rule: '5 lượt đếm chuột, cộng dồn tổng. Mỗi lượt chuột hiện vài giây rồi biến mất, bạn có 3 giây để chốt số đếm được. Lượt 3 có chuột trắng. Tổng ai gần đúng nhất thắng, bằng nhau chia hũ.', ctl: 'step', ipH: hlTall(.34),
   controls(r, W, H, b) {
-    const m = hlMy(), showing = hlEnd(r) < r.cfg.show - 50, gap = 6, bw = (W - 20 - gap * 4) / 5, y = H - 126, off = showing || !!m.sent;
-    const mk = (i, st) => hlBtn({ id: 'ds' + st, label: (st > 0 ? '+' : '−') + Math.abs(st), size: 18, x: 10 + i * (bw + gap), y, w: bw, h: 46, fill: '#c9a062', ink: HL_INK, off, down: () => { m.v = Math.max(0, Math.min(99, (m.v ?? 15) + st)); } });
-    b.push(mk(0, -5), mk(1, -1)); b.push(hlBtn({ id: 'dsv', label: String(m.v ?? 15), size: 24, x: 10 + 2 * (bw + gap), y, w: bw, h: 46, fill: '#f2ecde', ink: HL_INK, off: true })); b.push(mk(3, 1), mk(4, 5));
-    b.push(hlWide(W, H, { id: 'dsok', key: ' ', label: m.sent !== undefined ? `Đã chốt ${m.sent} ✓` : 'CHỐT', size: 20, fill: m.sent !== undefined ? '#bdb7a6' : '#2f6a4c', fillDown: '#1f4a34', ink: m.sent !== undefined ? HL_INK : '#f2ecde', off, down: e => { m.sent = m.v ?? 15; if (hlAct2({ k: 'v', v: m.sent }, e.timeStamp)) { r.picked.add(HL.id); AU.pluck(90); } } }));
+    const m = hlMy(), t = demTurn(r), turn = r.cfg.turns[t], pe = demPE(r, t);
+    const done = m.demDone || [], inputPhase = pe >= turn.show - 50, sent = done[t] !== undefined;
+    const off = !inputPhase || sent, gap = 8, bw = (W - 20 - gap * 2) / 3, y = H - 126;
+    const mk = (i, st) => hlBtn({ id: 'dm' + st, label: (st > 0 ? '+' : '−') + Math.abs(st), size: 20, x: 10 + i * (bw + gap), y, w: bw, h: 46, fill: '#c9a062', ink: HL_INK, off, down: () => { m.v = Math.max(0, Math.min(30, (m.v ?? 5) + st)); } });
+    b.push(mk(0, -1)); b.push(hlBtn({ id: 'dmv', label: String(m.v ?? 5), size: 26, x: 10 + (bw + gap), y, w: bw, h: 46, fill: '#f2ecde', ink: HL_INK, off: true })); b.push(mk(2, 1));
+    b.push(hlWide(W, H, { id: 'dmok', key: ' ', label: sent ? `Đã chốt ${done[t]} ✓` : 'CHỐT', size: 20, fill: sent ? '#bdb7a6' : '#2f6a4c', fillDown: '#1f4a34', ink: sent ? HL_INK : '#f2ecde', off, down: e => {
+      if (sent) return; const v = m.v ?? 5;
+      if (hlAct2({ k: 'v', t, v }, e.timeStamp)) { done[t] = v; m.demDone = done; m.v = 5; AU.pluck(90); }
+    }}));
     return { btns: b, h: 134 };
   },
   info(g, r, now, b) {
-    const e = now - r.t0, showing = e < r.cfg.show;
-    if (showing) { const s = Math.min(9, b.h * .05); for (const it of r.cfg.items) hlShape(g, it[2], b.x + 14 + it[0] * (b.w - 28), b.y + 8 + it[1] * (b.h - 44), s); }
-    else hlText(g, '?', b.W / 2, b.y + b.h / 2 - 8, Math.min(60, b.h * .5), { w: 900, c: '#a3332a' });
-    hlText(g, showing ? 'Đếm thật nhanh tất cả các hình!' : (hlMy().sent !== undefined ? `Bạn đoán ${hlMy().sent} · chờ mọi người` : 'Có bao nhiêu hình? Chọn số rồi chốt'), b.W / 2, b.y + b.h - 8, 13, hlSub);
+    const t = demTurn(r), turn = r.cfg.turns[t], e = demPE(r, t), showing = e < turn.show;
+    const m = hlMy(), done = m.demDone || [];
+    hlText(g, `Lượt ${t + 1}/5`, b.W / 2, b.y + 16, 14, { w: 800, c: HL_INK, o: false });
+    if (showing) {
+      const s = turn.kind === 'run' ? Math.min(60, b.w * .16) : Math.min(85, b.w * .22);
+      for (let i = 0; i < turn.mice.length; i++) {
+        const mc = turn.mice[i]; let px = mc.x, py = mc.y;
+        if (turn.kind === 'chaos') {   // slight vibration only, so they never touch
+          px = mc.x + Math.sin(e / 280 + mc.ph * 9) * .02;
+          py = mc.y + Math.cos(e / 340 + mc.ph * 7) * .02;
+          px = Math.max(.08, Math.min(.92, px)); py = Math.max(.12, Math.min(.88, py));
+        } else if (turn.kind === 'run') {   // the whole herd runs across the screen, staggered
+          const sp = 1.35 + mc.vx * .2;
+          px = (mc.x0 || -.18) + (e / turn.show) * sp; py = mc.y + Math.sin(e / 90 + mc.ph * 9) * .02;
+        }
+        const face = 1;
+        // 2-frame run cycle: alternate stand/run poses ~8x per second
+        const runFrame = (turn.kind === 'run' || turn.kind === 'chaos') ? (Math.floor(HL.t / 120 + mc.ph * 5) % 2 === 1) : false;
+        // run turn uses full height for y so lanes don't compress
+        const yy = turn.kind === 'run' ? b.y + 20 + py * (b.h - 40) : b.y + 34 + py * (b.h - 78);
+        demDrawSil(g, b.x + 14 + px * (b.w - 28), yy, s, face, !!mc.w, runFrame);
+      }
+      hlText(g, 'Đếm nhanh lên!', b.W / 2, b.y + b.h - 8, 13, hlSub);
+    } else {
+      const left = Math.max(0, turn.show + turn.input - e), cd = Math.ceil(left / 1000);
+      hlText(g, String(cd), b.W / 2, b.y + b.h / 2 - 8, Math.min(60, b.h * .5), { w: 900, c: '#a3332a' });
+      hlText(g, done[t] !== undefined ? `Lượt này bạn chốt ${done[t]} · chờ lượt sau` : 'Được bao nhiêu con? Chọn số rồi chốt', b.W / 2, b.y + b.h - 8, 13, hlSub);
+    }
   },
-  cell(g, r, p, C, res, win) { if (res) { if (res.v !== null) hlResText(g, C, String(res.v), win); else hlResText(g, C, 'không đoán', false, '#777'); } else if (r.picked.has(p.id)) hlTick(g, C); },
-  val: (r, row) => `đoán ${row.v}`, win: (r, row) => `đoán ${row.v}, đúng là ${r.extra.n}`,
-  mine: (r, row) => row.v === null ? 'Bạn không đoán' : `Bạn đoán ${row.v} · đúng là ${r.extra.n} · hạng ${row.rank}/${r.result.rows.length}`,
+  cell(g, r, p, C, res, win) {
+    if (res) { if (res.v !== null) hlResText(g, C, String(res.v), win); else hlResText(g, C, 'không đoán', false, '#777'); }
+    else {
+      const t = demTurn(r), n = r.cfg.turns.length, rad = Math.max(2, Math.min(6, (C.w - 14) / (n * 2.6))), x0 = C.cx - (n - 1) * rad * 1.3;
+      const done = p.id === HL.id ? (hlMy().demDone || []) : (r.demProg && r.demProg.get(p.id)) || [];
+      for (let i = 0; i < n; i++) { g.beginPath(); g.arc(x0 + i * rad * 2.6, C.y + C.h * .2, rad, 0, 6.283); g.fillStyle = done[i] !== undefined ? '#2f6a4c' : 'rgba(29,25,21,.12)'; g.fill(); g.lineWidth = 1; g.strokeStyle = HL_INK; g.stroke(); }
+    }
+  },
+  val: (r, row) => `tổng ${row.v}`,
+  win: (r, row) => `tổng ${row.v}, đúng là ${r.extra.total}`,
+  mine: (r, row) => row.v === null ? 'Bạn không đoán lượt nào' : `Bạn tổng ${row.v} · đúng là ${r.extra.total} · hạng ${row.rank}/${r.result.rows.length}`,
 };
 
 /* ---------- 5. 1 to 9 in order ---------- */
@@ -254,4 +318,91 @@ HL_G.dodan = {
   cell: (g, r, p, C, res, win) => HL_G.chuot.cell(g, r, p, C, res, win),
   val: (r, row) => hlTime(row.v), win: (r, row) => `đúng sau ${hlTime(row.v)} · đáp án: ${r.cfg.opts[r.extra.a]}`,
   mine: (r, row) => row.v === null ? `Bạn không trả lời kịp · đáp án: ${r.cfg.opts[r.extra.a]}` : `Bạn hạng ${row.rank}/${r.result.rows.length} · ${hlTime(row.v)}`,
+};
+
+/* ---------- 11. tug of war ---------- */
+// team tap counts from the server's prog broadcast, teams from the side picks
+const hlKeocoN = (r, id) => id === HL.id ? Math.max(HL.myTaps, (r.prog && r.prog[id]) || 0) : ((r.prog && r.prog[id]) || 0);
+const hlKeocoTeams = r => {
+  let L = 0, R = 0; const kt = r.kteam || new Map(), seen = new Set();
+  const add = id => { if (seen.has(id)) return; seen.add(id); const s = kt.get(id); if (s === 0) L += hlKeocoN(r, id); else if (s === 1) R += hlKeocoN(r, id); };
+  for (const id in (r.prog || {})) add(id);
+  add(HL.id);
+  return [L, R];
+};
+const HL_KEOCO_COL = ['#3f8a86', '#a3332a'];   // TRÁI teal, PHẢI red
+const hlKeocoMembers = (r, side) => { const kt = r.kteam || new Map(), out = []; for (const p of HL.players) if (kt.get(p.id) === side) out.push(p); return out; };
+HL_G.keoco = {
+  name: 'Kéo co', rule: 'Chọn phe TRÁI hoặc PHẢI trong 3 giây (không chọn sẽ tự xếp vào phe ít người hơn), rồi bấm liên tục để kéo! Phe nào tổng lực mạnh hơn sẽ thắng và chia đều tiền cược của phe thua.',
+  ctl: 'tap',
+  ipH: (W, H) => Math.max(200, Math.min(250, H * .3)),
+  controls(r, W, H, b) {
+    const picking = hlEnd(r) < r.cfg.pick, side = hlMySide(r);
+    if (picking) {
+      const gap = 8, bw = (W - 20 - gap) / 2;
+      const mk = (v, x) => hlBtn({ id: 'k' + v, key: v ? '2' : '1', label: v ? 'PHE PHẢI' : 'PHE TRÁI', size: 18, x, y: H - 66, w: bw, h: 52, fill: side === v ? '#f2c640' : HL_KEOCO_COL[v], ink: side === v ? HL_INK : '#f2ecde', off: side !== -1, down: () => hlKeocoSide(v) });
+      b.push(mk(0, 10)); b.push(mk(1, 10 + bw + gap));
+      return { btns: b, h: 74, note: side === -1 ? 'Bấm chọn phe của bạn!' : 'Đã chọn phe, chờ giờ kéo…' };
+    }
+    b.push(hlWide(W, H, { id: 'main', key: ' ', label: side === -1 ? 'Bạn chưa chọn phe!' : 'KÉO!', size: 22, fill: side === -1 ? '#bdb7a6' : HL_KEOCO_COL[side], fillDown: '#1d1915', ink: side === -1 ? HL_INK : '#f2ecde', off: side === -1, down: () => hlTap() }));
+    return { btns: b, h: 74 };
+  },
+  info(g, r, now, b) {
+    const e = hlEnd(r), picking = e < r.cfg.pick;
+    if (picking) {
+      hlText(g, 'Chọn phe kéo co!', b.W / 2, b.y + b.h / 2 - 6, 24, { w: 900 });
+      hlText(g, `còn ${Math.ceil((r.cfg.pick - e) / 1000)} giây · bấm chọn phe, không bấm sẽ tự xếp`, b.W / 2, b.y + b.h - 8, 13, hlSub);
+      return;
+    }
+    const teams = hlKeocoTeams(r), L = teams[0], R = teams[1], tot = Math.max(1, L + R), off = (R - L) / tot;   // the knot slides toward the stronger side
+    const cx = b.W / 2, left = Math.max(0, r.cfg.pick + r.cfg.len - e);
+    // --- scoreboard: each side's total taps, facing each other ---
+    const sbY = b.y + 12;
+    hlText(g, 'TRÁI', cx - 64, sbY, 12, { w: 800, c: '#3f8a86', o: false, a: 'center' });
+    hlText(g, 'PHẢI', cx + 64, sbY, 12, { w: 800, c: '#a3332a', o: false, a: 'center' });
+    hlText(g, String(L), cx - 64, sbY + 30, 30, { w: 900, c: '#3f8a86', o: false, a: 'center' });
+    hlText(g, String(R), cx + 64, sbY + 30, 30, { w: 900, c: '#a3332a', o: false, a: 'center' });
+    hlText(g, '–', cx, sbY + 28, 22, { w: 900, o: false, a: 'center' });
+    // --- tug of war: the real players' mice in a single tight file, hands gripping the rope (up to 10 a side) ---
+    const shift = off * 16, x0 = b.x + 26, x1 = b.x + b.w - 26, halfW = (x1 - x0) / 2;
+    const perRow = Math.max(5, Math.min(10, Math.floor(halfW / 15))), maxShow = perRow;
+    const ms = Math.min(.30, halfW / perRow * .012), spacing = ms * 78;   // close together but distinct: slight touch, no heavy overlap
+    const memL = hlKeocoMembers(r, 0), memR = hlKeocoMembers(r, 1);
+    const baseY = sbY + 128, ropeY = baseY - 55 * ms;
+    const teamCX = side => side === 0 ? (x0 + cx) / 2 : (cx + x1) / 2;   // center of each half
+    const drawTeam = (mem, side) => {
+      const n = Math.min(maxShow, mem.length), startX = teamCX(side) - (n - 1) * spacing / 2;
+      for (let k = 0; k < n; k++) {
+        const x = startX + k * spacing + shift;
+        hlDrawFig(g, mem[k], x, baseY, ms, side === 0 ? 1 : -1, false, HL.t);   // feet and heads perfectly aligned, no bobbing
+      }
+      if (mem.length > n) hlText(g, `+${mem.length - n}`, side === 0 ? x1 - 60 + shift : x0 + 60 + shift, baseY - 44, 12, hlSub);
+    };
+    drawTeam(memL, 0); drawTeam(memR, 1);
+    g.strokeStyle = '#8a6b45'; g.lineWidth = 5; g.beginPath(); g.moveTo(x0 + shift, ropeY); g.lineTo(x1 + shift, ropeY); g.stroke();
+    const kx = cx + shift + off * ((x1 - x0) / 2 - 24);
+    g.fillStyle = '#a3332a'; g.beginPath(); g.arc(kx, ropeY, 9, 0, 6.283); g.fill(); g.lineWidth = 2; g.strokeStyle = HL_INK; g.stroke();
+    g.beginPath(); g.moveTo(kx - 6, ropeY + 9); g.lineTo(kx + 6, ropeY + 9); g.lineTo(kx, ropeY + 22); g.closePath(); g.fill(); g.stroke();
+    hlBar(g, b.x + 24, b.y + b.h - 20, b.w - 48, 7, left / r.cfg.len, '#8a6b45');
+    hlText(g, `${(left / 1000).toFixed(1)} giây`, b.W / 2, b.y + b.h - 6, 12, hlSub);
+  },
+  cell(g, r, p, C, res, win) {
+    const kt = r.kteam || new Map(), s = kt.has(p.id) ? kt.get(p.id) : -1, n = res ? res.v : hlKeocoN(r, p.id);
+    if (s === 0 || s === 1) {
+      g.font = `800 10px ${hlSans}`; const label = s ? 'PHẢI' : 'TRÁI', tw = g.measureText(label).width + 12;
+      g.fillStyle = HL_KEOCO_COL[s]; g.fillRect(C.cx - tw / 2, C.y + 4, tw, 15);
+      g.lineWidth = 1.2; g.strokeStyle = HL_INK; g.strokeRect(C.cx - tw / 2, C.y + 4, tw, 15);
+      hlText(g, label, C.cx, C.y + 11.5, 10, { w: 800, c: '#f2ecde', o: false });
+    }
+    hlText(g, String(n), C.cx, C.y + C.h * .38, Math.max(10, Math.min(16, C.w * .13)), { w: 800, c: win ? '#a3332a' : HL_INK, o: false });
+  },
+  val: (r, row) => `${row.v} lượt`,
+  win: (r, row) => `phe ${row.team === 0 ? 'TRÁI' : 'PHẢI'} thắng!`,
+  mine: (r, row) => {
+    if (row.team === -1) return 'Bạn không chọn phe nên mất cược';
+    const t = (r.extra && r.extra.teams) || [0, 0];
+    if (t[0] === t[1]) return `Hòa! Bạn kéo ${row.v} lượt, không mất gì`;
+    const won = row.team === (t[0] > t[1] ? 0 : 1), net = r.result.net ? r.result.net[HL.id] : 0;
+    return won ? `Phe bạn thắng! +${net} đồng · bạn kéo ${row.v} lượt` : `Phe bạn thua, mất 10 đồng · bạn kéo ${row.v} lượt`;
+  },
 };
