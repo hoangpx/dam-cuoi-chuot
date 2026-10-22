@@ -213,9 +213,10 @@ function jgGallery(g, W, hh) {
     hlText(g, lg(pz.pic.vi, pz.pic.en), lx, y + 30, lw < 170 ? 15.5 : 17, { w: 900, a: 'left' });
     hlText(g, `${total} ${lg('mảnh', 'pieces')}`, lx, y + 54, 13, sub);
     if (!info) hlText(g, lg('Đang tải…', 'Loading…'), lx, y + 78, 12.5, { ...sub, al: .7 });
-    else if (fin) {
-      hlText(g, lg('Đã ghép xong · vào xem lại', 'Finished · tap to look again'), lx, y + 78, 12.5, { ...sub, c: '#2f6a4c' });
-      const st = jgStats(info, true); if (st) hlText(g, st, lx, y + 104, 14, { ...sub, c: HL_INK });
+    else if (fin) {   // finished: who and how long, one line each (no "finished" text: it overflowed the card on a phone)
+      if (info.players) hlText(g, `${info.players} ${lg('người ghép', 'players')}`, lx, y + 82, 14, { ...sub, c: '#2f6a4c' });
+      if (info.took > 0) hlText(g, jgDur(info.took), lx, y + 106, 14, { ...sub, c: HL_INK });
+      else if (!info.players) hlText(g, lg('Đã ghép xong', 'Finished'), lx, y + 82, 13, { ...sub, c: '#2f6a4c' });
     }
     else {
       hlText(g, `${info.n || 0} ${lg('người đang ghép', 'joining now')}`, lx, y + 78, 12.5, { ...sub, c: '#a3332a' });
