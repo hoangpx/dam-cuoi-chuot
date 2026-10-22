@@ -26,11 +26,11 @@ function jgMusic(on) {
   const M = JG_MUSIC; M.want = on;
   if (on && !M.el) { try { M.el = new Audio('audio/nhac-nen-ghep-tranh.mp3'); M.el.loop = false; M.el.preload = 'auto'; M.el.addEventListener('ended', () => { M.want = false; }); } catch (e) { M.el = null; } }
   if (!M.el) return;
-  if (on) { if (M.el.ended) M.el.currentTime = 0; M.el.volume = AU.isMuted() ? 0 : .45; const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } else M.el.pause();
+  if (on) { if (M.el.ended) M.el.currentTime = 0; M.el.volume = .45; if (AU.isMuted()) { M.el.pause(); return; } const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } else M.el.pause();
 }
-document.addEventListener('visibilitychange', () => { const M = JG_MUSIC; if (!M.el) return; if (document.hidden) M.el.pause(); else if (M.want) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
+document.addEventListener('visibilitychange', () => { const M = JG_MUSIC; if (!M.el) return; if (document.hidden) M.el.pause(); else if (M.want && !AU.isMuted()) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
 // a tap before the browser allows sound: try again on the first touch
-document.addEventListener('pointerdown', () => { const M = JG_MUSIC; if (M.want && M.el && M.el.paused && !document.hidden) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
+document.addEventListener('pointerdown', () => { const M = JG_MUSIC; if (M.want && M.el && M.el.paused && !document.hidden && !AU.isMuted()) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
 function startJG() {
   trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // the game's own songs stay off in the prints; one looping track plays instead (jgMusic)
   hideChapterHuds(); jgMusic(true);
@@ -122,7 +122,10 @@ function jgMsg(m) {
 
 /* ---------- update and drawing ---------- */
 function updateJG(dt) {
-  if (JG_MUSIC.el && JG_MUSIC.want) JG_MUSIC.el.volume = AU.isMuted() ? 0 : .45;
+  if (JG_MUSIC.el && JG_MUSIC.want) {   // the global sound switch: muted = no track at all (paused), unmuted = it goes on
+    const m = AU.isMuted(), e = JG_MUSIC.el;
+    if (m && !e.paused) e.pause(); else if (!m && e.paused && !e.ended && !document.hidden) { const p = e.play(); if (p && p.catch) p.catch(() => {}); }
+  }
   JG.t += dt; JG.st = safeTop();
   if (!JG.pz) jgListAsk(false);
   if (JG.G) { c9Tick(JG.G, dt); JG.joinedN = JG.G.done ? JG.G.pieces.length : JG.G.pieces.length - JG.G.groups.length; }
