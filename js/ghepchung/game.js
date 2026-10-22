@@ -11,6 +11,7 @@ const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG
 const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0 };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
+  { id: 'dg', pic: { id: 'dg', src: 'img/ch10/dan-ga-me-con.jpg', w: 4400, h: 2456, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' }, thumb: 'img/ch10/thumb-dg.jpg', cols: 100, rows: 56 },
   { id: 'vq', pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, thumb: 'img/ch10/thumb-vq.jpg', cols: 57, rows: 35 },
   { id: 'dcm', pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, thumb: 'img/ch10/thumb-dcm.jpg', cols: 40, rows: 25 },
 ];
@@ -38,6 +39,15 @@ function jgOpen(pz) {
 // back to the list of prints
 function jgBack() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); Object.assign(JG, { pz: null, L: null, G: null, im: null, welcome: null, id: null, players: [], ui: null, board: null, tray: false, conf: [], bad: false }); JG.chat.clear(); JG.emo.clear(); jgListAsk(true); }
 function jgLeave() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); showChapters(); }
+// "106 người · 15 giờ 4 phút": how many people put the print together and how long it took
+function jgDur(ms) {
+  const m = Math.max(1, Math.round(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mi = m % 60;
+  return d ? `${d} ${lg('ngày', 'd')} ${h} ${lg('giờ', 'h')}` : h ? `${h} ${lg('giờ', 'h')} ${mi} ${lg('phút', 'min')}` : `${m} ${lg('phút', 'min')}`;
+}
+function jgStats(info, fin) {
+  const a = []; if (info.players) a.push(`${info.players} ${lg('người ghép', 'players')}`); if (fin && info.took > 0) a.push(jgDur(info.took));
+  return a.join(' · ');
+}
 function jgListAsk(force) {
   if (JG.listBusy || (!force && Date.now() - JG.listAt < 15000)) return; JG.listBusy = true; JG.listAt = Date.now();
   fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {}).then(() => { JG.listBusy = false; });
@@ -184,11 +194,14 @@ function jgGallery(g, W, hh) {
     hlText(g, lg(pz.pic.vi, pz.pic.en), lx, y + 30, lw < 170 ? 15.5 : 17, { w: 900, a: 'left' });
     hlText(g, `${total} ${lg('mảnh', 'pieces')}`, lx, y + 54, 13, sub);
     if (!info) hlText(g, lg('Đang tải…', 'Loading…'), lx, y + 78, 12.5, { ...sub, al: .7 });
-    else if (fin) hlText(g, lg('Đã ghép xong · vào xem lại', 'Finished · tap to look again'), lx, y + 78, 12.5, { ...sub, c: '#2f6a4c' });
+    else if (fin) {
+      hlText(g, lg('Đã ghép xong · vào xem lại', 'Finished · tap to look again'), lx, y + 78, 12.5, { ...sub, c: '#2f6a4c' });
+      const st = jgStats(info, true); if (st) hlText(g, st, lx, y + 100, 12, { ...sub, al: .85 });
+    }
     else {
       hlText(g, `${info.n || 0} ${lg('người đang ghép', 'joining now')}`, lx, y + 78, 12.5, { ...sub, c: '#a3332a' });
       const bw = Math.max(40, lw), pct = Math.max(0, Math.min(1, (info.joined || 0) / total)); g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(lx, y + 92, bw, 8); g.fillStyle = '#2f6a4c'; g.fillRect(lx, y + 92, bw * pct, 8); g.lineWidth = 1.5; g.strokeStyle = HL_INK; g.strokeRect(lx, y + 92, bw, 8);
-      hlText(g, `${info.joined || 0}/${total}`, lx, y + 114, 11, { ...sub, al: .75 });
+      hlText(g, `${info.joined || 0}/${total}` + (info.players ? ` · ${info.players} ${lg('người đã ghép', 'have joined in')}` : ''), lx, y + 114, 11, { ...sub, al: .75 });
     }
     JG.btns.push({ x, y: Math.max(56, y), w, h: cardH, down: () => jgOpen(pz) });
   });

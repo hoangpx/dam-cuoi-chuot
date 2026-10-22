@@ -35,7 +35,7 @@ const rng = seed => { let s = seed >>> 0 || 1; return () => (s = (s * 1664525 + 
 class Jigsaw extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0;
+    this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0; this.startAt = 0; this.ppl = new Set();
     this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map();
     ctx.blockConcurrencyWhile(async () => {
       // The picture must never be lost: the saved state is checked piece by piece, a damaged one falls back to the backup copy, and nothing is ever
@@ -48,6 +48,8 @@ class Jigsaw extends DurableObject {
         this.fresh(1);
       }
       this.total = (await ctx.storage.get('total')) || 0;
+      for (const [k, v] of await ctx.storage.list({ prefix: 'u:', limit: 5000 })) if (v && v.m >= 1) this.ppl.add(k);   // who has joined at least one piece (shown on the card)
+      if (!this.startAt) this.startAt = cfg.startAt || Date.now();
       const bn = await ctx.storage.get('bans'); if (bn) for (const [k, t] of Object.entries(bn)) if (t > Date.now()) this.bans.set(k, t);
       if (FREEZE && !(this.done && this.groups.size === 1)) {   // the run in progress is kept, then the whole print is put together in the middle of the table
         await ctx.storage.put('prev:' + Date.now(), { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() });
@@ -68,11 +70,11 @@ class Jigsaw extends DurableObject {
     return k === N;
   }
   load(st) {
-    this.n = st.n || 1; this.seed = st.seed || 1; this.done = !!st.done; this.doneAt = st.doneAt || 0; this.groups = new Map();
+    this.n = st.n || 1; this.seed = st.seed || 1; this.done = !!st.done; this.doneAt = st.doneAt || 0; this.startAt = st.startAt || cfg.startAt || 0; this.groups = new Map();
     for (const row of st.g) { const ids = String(row[4]).split(',').map(Number); const g = { id: row[0], x: row[1], y: row[2], a: row[3], ids, by: null, heldAt: 0 }; this.groups.set(g.id, g); for (const id of ids) this.pieceG[id] = g.id; }
   }
   fresh(n) {
-    this.n = n; this.seed = (Math.floor(Math.random() * 2e9) + n) >>> 0; this.done = false; this.doneAt = 0; this.groups = new Map();
+    this.n = n; this.seed = (Math.floor(Math.random() * 2e9) + n) >>> 0; this.done = false; this.doneAt = 0; this.startAt = Date.now(); this.groups = new Map();
     const R = rng(this.seed ^ 0x9e3779b9), nx = Math.max(1, Math.round(Math.sqrt(N * WW / WH))), ny = Math.ceil(N / nx), slots = [];
     for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) slots.push([a, b]);
     for (let k = slots.length - 1; k > 0; k--) { const m = Math.floor(R() * (k + 1)); [slots[k], slots[m]] = [slots[m], slots[k]]; }
@@ -97,7 +99,7 @@ class Jigsaw extends DurableObject {
   }
   // every write is retried until it sticks; a Durable Object holds its replies until the write is stored, so a join the players see is a join that is saved
   flush(soft) {
-    const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() }, put = { pz, total: this.total };
+    const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() }, put = { pz, total: this.total };
     if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
     const users = [...this.dirtyUsers]; for (const dev of users) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
     return this.ctx.storage.put(put, soft ? { allowUnconfirmed: true } : undefined).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 5000); });
@@ -113,7 +115,7 @@ class Jigsaw extends DurableObject {
     if (ip && (this.banned(ip) || [...this.conns.values()].filter(x => x.ip === ip).length >= MAX_SOCK_IP)) {   // accepted and closed with a code, so the page can say why (a plain 429 is only 'connection lost' to it)
       const pair = new WebSocketPair(), [cl, sv] = Object.values(pair); sv.accept(); sv.close(this.banned(ip) ? 4003 : 4005, 'busy'); return new Response(null, { status: 101, webSocket: cl });
     }
-    if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, n: [...this.conns.values()].filter(c => c.joined && !TESTDEV.test(c.dev)).length, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
+    if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, n: [...this.conns.values()].filter(c => c.joined && !TESTDEV.test(c.dev)).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
     const pair = new WebSocketPair(), [client, server] = Object.values(pair); server.accept();
     const c = { ws: server, id: 'j' + (this.nextId++), dev: '', name: '', look: null, joined: false, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], ip, at: Date.now(), liftAt: 0, joinT: [], jn: 0, strikes: 0 };
     this.conns.set(c.id, c);
@@ -192,7 +194,7 @@ class Jigsaw extends DurableObject {
     if (joins.length) { c.joinT.push(now); c.jn += joins.length; if (c.ip) { ipw.push(now); this.ipJ.set(c.ip, ipw); } }
     if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
     const u = this.users.get(c.dev); const paid = TESTDEV.test(c.dev) ? 0 : this.award(c, joins.length, now);
-    if (u && paid) { u.m += paid; this.dirtyUsers.add(c.dev); this.board = null; }
+    if (u && paid) { u.m += paid; this.ppl.add('u:' + c.dev); this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
     const finished = this.groups.size === 1; if (finished) { this.done = true; this.doneAt = Date.now(); }
     // stored first, then told: nobody ever sees a join that is not kept. The write does not hold the output gate (allowUnconfirmed) and we wait for it
@@ -267,6 +269,8 @@ return Jigsaw;
 }
 
 // the first print: finished and kept (the Worker serves it, src/frozen.js); its object keeps the saved state
-export class JigsawV2 extends makeJigsaw({ pic: 'dcm1', cols: 40, rows: 25, pw: 3200, ph: 2204, freeze: true }) {}
+export class JigsawV2 extends makeJigsaw({ pic: 'dcm1', cols: 40, rows: 25, pw: 3200, ph: 2204, freeze: true, startAt: Date.UTC(2026, 9, 19, 23, 43) }) {}
 // the second print: Vinh quy bai to, img/ch10/vinh-quy-bai-to.jpg 4047 x 2493, 57 x 35 = 1995 pieces
-export class JigsawVQ extends makeJigsaw({ pic: 'vq1', cols: 57, rows: 35, pw: 4047, ph: 2493, freeze: false }) {}
+export class JigsawVQ extends makeJigsaw({ pic: 'vq1', cols: 57, rows: 35, pw: 4047, ph: 2493, freeze: false, startAt: Date.UTC(2026, 9, 20, 16, 15) }) {}
+// the third print: Đàn gà mẹ con, img/ch10/dan-ga-me-con.jpg 4400 x 2456, 100 x 56 = 5600 pieces
+export class JigsawDG extends makeJigsaw({ pic: 'dg1', cols: 100, rows: 56, pw: 4400, ph: 2456, freeze: false }) {}

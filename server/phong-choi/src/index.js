@@ -24,7 +24,7 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { JigsawV2, JigsawVQ } from './jigsaw.js';
+export { JigsawV2, JigsawVQ, JigsawDG } from './jigsaw.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
@@ -99,14 +99,17 @@ export default {
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
       if (u.searchParams.get('p') === 'vq') return env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(req);
+      if (u.searchParams.get('p') === 'dg') return env.JIGSAW_DG.get(env.JIGSAW_DG.idFromName('main')).fetch(req);
       return frozenJg();
     }
     if (u.pathname === '/jg-online' || u.pathname === '/jg-list') {   // /jg-online?p=vq: that picture's numbers; /jg-list: every picture's, in one request
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
       const vq = async () => (await env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
-      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + '}}', { headers: h });
-      return new Response(u.searchParams.get('p') === 'vq' ? await vq() : FROZEN_COUNT, { headers: h });
+      const dg = async () => (await env.JIGSAW_DG.get(env.JIGSAW_DG.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
+      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + ',"dg":' + await dg() + '}}', { headers: h });
+      const pp = u.searchParams.get('p');
+      return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : FROZEN_COUNT, { headers: h });
     }
     if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban') {   // the owner's view of who is busy in the second jigsaw, and the ban list: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });

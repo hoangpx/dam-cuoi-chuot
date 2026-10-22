@@ -156,6 +156,7 @@ registerChapter({
 // a test of a big print on this computer or over the home Wi-Fi (never on the real site): ?c9big=57x35 opens the print img/ch10/vinh-quy-bai-to.jpg cut that way, alone, as soon as the game has loaded
 (() => {
   const m = /[?&]c9big=(\d+)x(\d+)/.exec(location.search); if (!m || !/^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname)) return;
-  C9_LEVELS.push({ pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, tier: 3, cols: +m[1], rows: +m[2], big: true });
+  const dg = /[?&]c9pic=dg/.test(location.search);   // ?c9pic=dg: the Đàn gà mẹ con print instead (?c9big=100x56)
+  C9_LEVELS.push({ pic: dg ? { id: 'dg', src: 'img/ch10/dan-ga-me-con.jpg', w: 4400, h: 2456, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' } : { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, tier: 3, cols: +m[1], rows: +m[2], big: true });
   const i = C9_LEVELS.length - 1, t = setInterval(() => { const L = document.getElementById('loading'); if (L && L.classList.contains('done')) { clearInterval(t); setTimeout(() => { try { localStorage.removeItem(C9_SAVEKEY); } catch (e) {} startC9(i); }, 800); } }, 400);
 })();

@@ -18,6 +18,10 @@ class_name = "JigsawV2"
 name = "JIGSAW_VQ"
 class_name = "JigsawVQ"
 
+[[durable_objects.bindings]]
+name = "JIGSAW_DG"
+class_name = "JigsawDG"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
@@ -40,3 +44,8 @@ renamed_classes = [{ from = "Jigsaw", to = "JigsawV2" }]
 [[migrations]]
 tag = "v5"
 new_sqlite_classes = ["JigsawVQ"]
+
+# 2026-10-22: the third print (Đàn gà mẹ con, 5600 pieces)
+[[migrations]]
+tag = "v6"
+new_sqlite_classes = ["JigsawDG"]

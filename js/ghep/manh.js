@@ -59,12 +59,13 @@ function c9MakeGame(L, img, W, H, seedNum) {
 }
 // the cell size and the world: small puzzles fill one screen (the finished print would take about 75 % of it); the big one has a fixed
 // cell and a table 1.5 times the finished print; a resize keeps the view centred
+// (a print of thousands of pieces can be seen whole, down to 3.5 px a piece: the far view draws the print itself)
 function c9Layout(G, W, H, first) {
   const top = 56, vw = W, vh = H - top, aw = W - 20, ah = vh - 16, asp = G.img.naturalWidth / G.img.naturalHeight, old = { W: G.lw, H: G.lh, z: G.cam.z, cx: G.cam.x + G.lw / (2 * G.cam.z), cy: G.cam.y + (G.lh - top) / (2 * G.cam.z), ww: G.ww, wh: G.wh };
   let cw, ch;
   if (G.big) { cw = 44; ch = cw / (asp * G.rows / G.cols); } else { const bw = Math.min(aw * .75, ah * .75 * asp); cw = bw / G.cols; ch = (bw / asp) / G.rows; }
   G.cw = cw; G.ch = ch; G.bw = cw * G.cols; G.bh = ch * G.rows; G.t_ = .27 * Math.max(cw, ch);
-  if (G.big) { G.ww = G.bw * 1.5; G.wh = G.bh * 1.5; G.zmin = Math.max(Math.min(vw / G.ww, vh / G.wh), 11 / G.cw); G.zmax = 5; } else { G.ww = vw; G.wh = vh; G.zmin = .5; G.zmax = 3; }
+  if (G.big) { G.ww = G.bw * 1.5; G.wh = G.bh * 1.5; G.zmin = Math.max(Math.min(vw / G.ww, vh / G.wh), (G.pieces.length > 3000 ? 3.5 : 11) / G.cw); G.zmax = 5; } else { G.ww = vw; G.wh = vh; G.zmin = .5; G.zmax = 3; }
   G.lw = W; G.lh = H; G.top = top;
   const N = G.cols * G.rows, cwt = cw + 2 * G.t_, cht = ch + 2 * G.t_;
   G.bs = Math.max(.5, Math.min(DPR * 2.5, G.img.naturalWidth / G.cols * 1.6 / cw, Math.sqrt(14e6 / (N * cwt * cht))));   // the baked pixels per world unit
@@ -98,25 +99,42 @@ function c9PiecePath(G, pc) {
   c9Edge(p, 0, ch, 0, 0, -1, 0, eL, G.JV[i][j], true);
   p.closePath(); return p;
 }
-// one colour per piece (the print shrunk to cols x rows), for the pieces too small to be worth baking and the ones not baked yet; null if the browser will not read the pixels
+// the print shrunk to a few pixels a piece, for the far view and for the pieces not baked yet: G.midCv (16 px a piece, a canvas) and the same as
+// pixels at 16 and at 4 px a piece (G.midU0, G.midU1) so a piece seen from far away is a bit of the real picture, not a flat square; null if the browser will not read the pixels
+const C9_MID = 16;
 function c9Avg(G) {
   if (G.avg !== undefined) return G.avg;
   try {
-    const c1 = document.createElement('canvas'); c1.width = G.cols * 4; c1.height = G.rows * 4; c1.getContext('2d').drawImage(G.img, 0, 0, c1.width, c1.height);
-    const c2 = document.createElement('canvas'); c2.width = G.cols; c2.height = G.rows; const x2 = c2.getContext('2d'); x2.drawImage(c1, 0, 0, G.cols, G.rows);
-    const d = x2.getImageData(0, 0, G.cols, G.rows).data; G.avg = true; G.avgK = new Uint16Array(G.cols * G.rows); G.avgC = {}; G.avgU = new Uint32Array(G.cols * G.rows);
-    for (let k = 0; k < G.avgK.length; k++) { const r = d[k * 4] >> 5, gg = d[k * 4 + 1] >> 5, b = d[k * 4 + 2] >> 5, key = (r << 6) | (gg << 3) | b; G.avgK[k] = key; G.avgU[k] = (255 << 24) | (d[k * 4 + 2] << 16) | (d[k * 4 + 1] << 8) | d[k * 4]; if (!G.avgC[key]) G.avgC[key] = 'rgb(' + (r * 32 + 16) + ',' + (gg * 32 + 16) + ',' + (b * 32 + 16) + ')'; }
+    const T = C9_MID, mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+    let src = G.img, w = G.img.naturalWidth, h = G.img.naturalHeight;
+    while (w > G.cols * T * 2) { w = Math.max(G.cols * T, Math.floor(w / 2)); h = Math.max(G.rows * T, Math.floor(h / 2)); const c = mk(w, h), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, w, h); src = c; }
+    const m0 = mk(G.cols * T, G.rows * T), x0 = m0.getContext('2d'); x0.imageSmoothingQuality = 'high'; x0.drawImage(src, 0, 0, m0.width, m0.height);
+    const m1 = mk(G.cols * 4, G.rows * 4), x1 = m1.getContext('2d'); x1.imageSmoothingQuality = 'high'; x1.drawImage(m0, 0, 0, m1.width, m1.height);
+    const d0 = x0.getImageData(0, 0, m0.width, m0.height), d1 = x1.getImageData(0, 0, m1.width, m1.height);
+    G.midCv = m0; G.midU0 = new Uint32Array(d0.data.buffer); G.midU1 = new Uint32Array(d1.data.buffer); G.avg = true;
   } catch (e) { G.avg = null; }
   return G.avg;
 }
-// the far view: every piece a square of its colour in a pixel buffer at half the screen's size, drawn over the camera's rectangle with one drawImage
+// the far view: every piece a bit of the print (turned with its group) in a pixel buffer at half the screen's size, drawn over the camera's rectangle with one drawImage
+// fx: piece id, x, y, group angle
 function c9FarLayer(G, g, W, H, z, fx) {
   const s = .5, bw = Math.max(1, Math.ceil(W * s)), bh = Math.max(1, Math.ceil((H - G.top) * s));
   if (!G.farCv || G.farCv.width !== bw || G.farCv.height !== bh) { G.farCv = document.createElement('canvas'); G.farCv.width = bw; G.farCv.height = bh; G.farCx = G.farCv.getContext('2d'); G.farImg = G.farCx.createImageData(bw, bh); G.farU = new Uint32Array(G.farImg.data.buffer); }
-  const u = G.farU, cam = G.cam, k = z * s, bx = Math.max(1, Math.round(G.cw * k * .9)), by = Math.max(1, Math.round(G.ch * k * .9)); u.fill(0);
-  for (let n = 0; n < fx.length; n += 3) {
-    const x0 = Math.round((fx[n + 1] - cam.x) * k - bx / 2), y0 = Math.round((fx[n + 2] - cam.y) * k - by / 2), col = G.avgU[fx[n]];
-    for (let yy = Math.max(0, y0); yy < Math.min(bh, y0 + by); yy++) for (let xx = Math.max(0, x0), e = Math.min(bw, x0 + bx); xx < e; xx++) u[yy * bw + xx] = col;
+  const u = G.farU, cam = G.cam, k = z * s, hx = G.cw * k / 2, hy = G.ch * k / 2, lv = hx < 3.5, T = lv ? 4 : C9_MID, M = lv ? G.midU1 : G.midU0, mw = G.cols * T, cols = G.cols; u.fill(0);
+  for (let n = 0; n < fx.length; n += 4) {
+    const id = fx[n], cx = (fx[n + 1] - cam.x) * k, cy = (fx[n + 2] - cam.y) * k, a = fx[n + 3], c = Math.cos(a), sn = Math.sin(a);
+    const ex = Math.ceil(Math.abs(c) * hx + Math.abs(sn) * hy), ey = Math.ceil(Math.abs(sn) * hx + Math.abs(c) * hy);
+    const xa = Math.max(0, Math.floor(cx - ex)), xb = Math.min(bw, Math.ceil(cx + ex)), ya = Math.max(0, Math.floor(cy - ey)), yb = Math.min(bh, Math.ceil(cy + ey));
+    const bi = Math.floor(id / cols) * T, bj = (id % cols) * T, kx = T / (2 * hx), ky = T / (2 * hy);
+    for (let yy = ya; yy < yb; yy++) {
+      const dy = yy + .5 - cy;
+      for (let xx = xa; xx < xb; xx++) {
+        const dx = xx + .5 - cx, uu = dx * c + dy * sn, vv = dy * c - dx * sn;
+        if (uu < -hx - .02 || uu > hx + .02 || vv < -hy - .02 || vv > hy + .02) continue;   // a hair wider than the piece, so two pieces never leave a pixel row between them
+        const tx = Math.min(T - 1, Math.max(0, ((uu + hx) * kx) | 0)), ty = Math.min(T - 1, Math.max(0, ((vv + hy) * ky) | 0));
+        u[yy * bw + xx] = M[(bi + ty) * mw + bj + tx];
+      }
+    }
   }
   G.farCx.putImageData(G.farImg, 0, 0); g.drawImage(G.farCv, 0, 0, bw, bh, cam.x, cam.y, W / z, (H - G.top) / z);
 }
@@ -164,7 +182,7 @@ function c9Draw(G, g, W, H) {
     g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 7, y - 7, w + 14, h + 14); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); return;
   }
   const cam = G.cam, z = cam.z; G.bakeLeft = G.big ? 70 : 1e9;
-  const avg = G.big ? c9Avg(G) : null, far = !!avg && G.pieces.length > 4500 && (W / z / G.cw) * ((H - G.top) / z / G.ch) > 4500; G.bakeEnd = G.big ? performance.now() + 6 : Infinity;
+  const avg = G.big ? c9Avg(G) : null, far = !!avg && G.pieces.length > 3000 && (W / z / G.cw) * ((H - G.top) / z / G.ch) > 3000; G.bakeEnd = G.big ? performance.now() + 6 : Infinity;
   let L = G.bs;   // the sharpness the pieces in view are baked at (see c9Bake)
   if (G.big) {
     G.fr = (G.fr || 0) + 1;
@@ -179,16 +197,21 @@ function c9Draw(G, g, W, H) {
   for (const grp of G.order) {
     for (const p of grp.pcs) {
       const c = c9Center(G, grp, p); if (c[0] < vx0 - rad || c[0] > vx1 + rad || c[1] < vy0 - rad || c[1] > vy1 + rad) continue;
-      if (far) { fx.push(p.id, c[0], c[1]); continue; }
-      if (avg && (!c9Bake(G, p, L) && !p.cvTop)) { flat.push(G.avgK[p.id], c[0], c[1]); continue; }   // too small to bake, or not baked yet
+      if (far) { fx.push(p.id, c[0], c[1], grp.a); continue; }
+      if (avg && (!c9Bake(G, p, L) && !p.cvTop)) { flat.push(grp, p, c[0], c[1]); continue; }   // not baked yet: a bit of the print for now
       if (!avg && !c9Bake(G, p, L) && !p.cvTop) continue;
       p.seen = G.fr; items.push(grp, p, c[0], c[1]);
     }
   }
   if (fx.length) c9FarLayer(G, g, W, H, z, fx);
-  if (flat.length) {   // one fillStyle for every colour (a path of thousands of squares is slower than the same squares one by one)
-    const bk = {}, fw = G.cw * .9, fh = G.ch * .9; for (let k = 0; k < flat.length; k += 3) (bk[flat[k]] || (bk[flat[k]] = [])).push(flat[k + 1], flat[k + 2]);
-    for (const key in bk) { const q = bk[key]; g.fillStyle = G.avgC[key]; for (let k = 0; k < q.length; k += 2) g.fillRect(q[k] - fw / 2, q[k + 1] - fh / 2, fw, fh); }
+  if (flat.length) {   // pieces not baked yet: their bit of the shrunk print, turned with the group
+    const M0 = g.getTransform(), T = C9_MID, fw = G.cw + .8, fh = G.ch + .8; g.imageSmoothingQuality = 'low';
+    for (let k = 0; k < flat.length; k += 4) {
+      const grp = flat[k], p = flat[k + 1], x = flat[k + 2], y = flat[k + 3], cc = Math.cos(grp.a), cs = Math.sin(grp.a);
+      g.setTransform(M0.a * cc + M0.c * cs, M0.b * cc + M0.d * cs, -M0.a * cs + M0.c * cc, -M0.b * cs + M0.d * cc, M0.a * x + M0.c * y + M0.e, M0.b * x + M0.d * y + M0.f);
+      g.drawImage(G.midCv, p.j * T, p.i * T, T, T, -fw / 2, -fh / 2, fw, fh);
+    }
+    g.setTransform(M0);
   }
   g.imageSmoothingQuality = Math.max(G.cw, G.ch) * z < 12 ? 'high' : 'low';
   const M = g.getTransform(), hw = -G.cw / 2 - t, hh = -G.ch / 2 - t, dw = G.cw + 2 * t, dh = G.ch + 2 * t;
