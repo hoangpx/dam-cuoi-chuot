@@ -19,13 +19,14 @@ for (let k = JG_PUZZLES.length - 1; k >= 0; k--) if (JG_PUZZLES[k].hidden) JG_PU
 const jgLevel = pz => ({ pic: pz.pic, tier: 3, cols: pz.cols, rows: pz.rows, big: true });
 const JG_STRIP = 50, JG_COIN = 10;
 
-// background track of the prints (owner's own Suno song, 2026-10-22): a streamed <audio> element (an AudioBuffer of 4 minutes would take ~90 MB), 80 kbps, fetched only when chapter X opens
+// background track of the prints (plays ONCE per visit, then stops) (owner's own Suno song, 2026-10-22): a streamed <audio> element (an AudioBuffer of 4 minutes would take ~90 MB), 80 kbps, fetched only when chapter X opens
 const JG_MUSIC = { el: null, want: false };
+// plays once per visit, then stops (owner, 2026-10-22)
 function jgMusic(on) {
   const M = JG_MUSIC; M.want = on;
-  if (on && !M.el) { try { M.el = new Audio('audio/nhac-nen-ghep-tranh.mp3'); M.el.loop = true; M.el.preload = 'auto'; } catch (e) { M.el = null; } }
+  if (on && !M.el) { try { M.el = new Audio('audio/nhac-nen-ghep-tranh.mp3'); M.el.loop = false; M.el.preload = 'auto'; M.el.addEventListener('ended', () => { M.want = false; }); } catch (e) { M.el = null; } }
   if (!M.el) return;
-  if (on) { M.el.volume = AU.isMuted() ? 0 : .45; const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } else M.el.pause();
+  if (on) { if (M.el.ended) M.el.currentTime = 0; M.el.volume = AU.isMuted() ? 0 : .45; const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } else M.el.pause();
 }
 document.addEventListener('visibilitychange', () => { const M = JG_MUSIC; if (!M.el) return; if (document.hidden) M.el.pause(); else if (M.want) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
 // a tap before the browser allows sound: try again on the first touch
