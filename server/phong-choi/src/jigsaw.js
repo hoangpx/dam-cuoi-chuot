@@ -20,6 +20,9 @@ const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * RO
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
 const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 30, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, VER = '2026-10-20-freeze';
+// HOLD RULE (owner, 2026-10-22): when someone clicks a group another player is carrying, the carrier is reminded not to hold it long and must put it down within
+// NUDGE_MS; once it is down (by themselves or by the server) they cannot pick up that group again for LOCK_MS
+const NUDGE_MS = 30000, LOCK_MS = 90000;
 const FREEZE = !!cfg.freeze;   // a frozen picture is put together at once and nobody can lift anything (the first print, kept to be looked at)
 const ANG_TOL = 22 * Math.PI / 180, POS_TOL = .6 * Math.min(CW, CH), NEXT_AFTER = 120000, KEEP_DONE = true, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
@@ -36,7 +39,7 @@ class Jigsaw extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0; this.startAt = 0; this.ppl = new Set();
-    this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map();
+    this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map(); this.locks = new Map();
     ctx.blockConcurrencyWhile(async () => {
       // The picture must never be lost: the saved state is checked piece by piece, a damaged one falls back to the backup copy, and nothing is ever
       // thrown away without being kept under another key first (a different picture = a fresh puzzle, the old one stays as 'old:<pic>').
@@ -154,6 +157,7 @@ class Jigsaw extends DurableObject {
     }
     if (!c.joined) return;
     if (m.t === 'lift') this.lift(c, m.g | 0);
+    else if (m.t === 'poke') this.poke(c, m.g | 0, now);
     else if (m.t === 'move') this.move(c, m);
     else if (m.t === 'drop') this.drop(c, m, now);
     else if (m.t === 'chat') { if (now - c.chatAt < CHAT_GAP) return; const s = cleanChat(m.s); if (!s) return; c.chatAt = now; this.all({ t: 'chat', id: c.id, s }); }
@@ -162,8 +166,18 @@ class Jigsaw extends DurableObject {
   }
 
   /* ---- holding and moving ---- */
+  // another player clicked a group this one carries: remind the carrier (once a hold), who then has NUDGE_MS to put it down
+  poke(c, gid, now) {
+    const g = this.groups.get(gid); if (!g || this.done || !g.by || g.by === c.id || now - (c.pokeAt || 0) < 1000) return; c.pokeAt = now;
+    if (g.nudgeAt) return; const h = this.conns.get(g.by); if (!h) return;
+    g.nudgeAt = now + NUDGE_MS; this.send(h, { t: 'nudge', g: gid, sec: NUDGE_MS / 1000, by: c.name || '' }); this.send(c, { t: 'poked', g: gid });
+  }
+  lockPieces(dev, ids) { if (!dev) return; let m = this.locks.get(dev); const now = Date.now(); if (!m) { m = new Map(); this.locks.set(dev, m); } for (const [k, t] of m) if (t < now) m.delete(k); for (const id of ids) m.set(id, now + LOCK_MS); }
+  lockLeft(dev, g) { const m = this.locks.get(dev); if (!m || !m.size) return 0; const now = Date.now(); let best = 0; for (const id of g.ids) { const t = m.get(id); if (t && t - now > best) best = t - now; } return best; }
   lift(c, gid) {
     const g = this.groups.get(gid); if (!g || this.done || (g.by && g.by !== c.id)) { this.send(c, { t: 'deny', g: gid }); return; }
+    const lk = this.lockLeft(c.dev, g); if (lk > 0) { this.send(c, { t: 'deny', g: gid, lock: Math.ceil(lk / 1000) }); return; }
+    g.nudgeAt = 0;
     if (c.holding && c.holding !== gid) this.release(c.holding);
     g.by = c.id; g.heldAt = c.liftAt = Date.now(); c.holding = gid; this.all({ t: 'lift', g: gid, by: c.id });
   }
@@ -178,11 +192,13 @@ class Jigsaw extends DurableObject {
     g.x += dx; g.y += dy;
   }
   release(gid) {
-    const g = this.groups.get(gid); if (!g) return; const holder = this.conns.get(g.by); if (holder) holder.holding = null; g.by = null; this.clamp(g);
+    const g = this.groups.get(gid); if (!g) return; const holder = this.conns.get(g.by); if (holder) holder.holding = null;
+    if (g.nudgeAt && holder) this.lockPieces(holder.dev, g.ids); g.nudgeAt = 0; g.by = null; this.clamp(g);
     this.all({ t: 'drop', g: gid, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save();
   }
   drop(c, m, now) {
     const g = this.groups.get(m.g | 0); if (!g || g.by !== c.id) return;
+    if (g.nudgeAt) { this.lockPieces(c.dev, g.ids); g.nudgeAt = 0; }   // it was asked for: this player cannot pick it up again for LOCK_MS
     const quick = now - c.liftAt < MIN_HOLD;   // lifted and dropped within 180 ms (a double click, or a program): dropped, but it does not join
     const x = +m.x, y = +m.y, a = +m.a; if (isFinite(x) && isFinite(y) && isFinite(a)) { g.x = x; g.y = y; g.a = a; }
     g.by = null; c.holding = null; this.clamp(g); this.dirty.delete(g.id);
@@ -250,7 +266,7 @@ class Jigsaw extends DurableObject {
   // every 100 ms: the poses of the groups people are carrying; and release holds nobody has touched for a while
   step() {
     if (this.dirty.size) { const p = []; for (const gid of this.dirty) { const g = this.groups.get(gid); if (g) p.push([gid, r1(g.x), r1(g.y), r3(g.a)]); } this.dirty.clear(); this.all({ t: 'poses', p }); }
-    const now = Date.now(); for (const g of this.groups.values()) if (g.by && now - g.heldAt > HOLD_IDLE) this.release(g.id);
+    const now = Date.now(); for (const g of this.groups.values()) if (g.by && (now - g.heldAt > HOLD_IDLE || (g.nudgeAt && now > g.nudgeAt))) { if (g.nudgeAt && now > g.nudgeAt) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: LOCK_MS / 1000 }); } this.release(g.id); }
   }
 
   /* ---- the board: all time only, and only people with at least one piece ---- */

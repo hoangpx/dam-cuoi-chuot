@@ -57,6 +57,7 @@ function jgListAsk(force) {
 
 // the engine's view of the network: what to tell the server, the name tags
 const JG_API = {
+  poke(grp) { if (JG.pokeAt && JG.t - JG.pokeAt < 2) return; JG.pokeAt = JG.t; JG_NET.send({ t: 'poke', g: grp.id }); },
   lift(grp) { JG_NET.send({ t: 'lift', g: grp.id }); JG.mvT = 0; JG.mvKey = ''; },
   drop(grp) { JG_NET.send({ t: 'drop', g: grp.id, x: c9R1(grp.x), y: c9R1(grp.y), a: Math.round(grp.a * 1000) / 1000 }); },
   tick(G, dt) {
@@ -87,7 +88,10 @@ function jgMsg(m) {
   else if (m.t === 'players') JG.players = m.players;
   else if (!G) return;
   else if (m.t === 'lift') { if (m.by !== JG.id) c9NetLift(G, m.g, m.by); }
-  else if (m.t === 'deny') c9NetDeny(G, m.g);
+  else if (m.t === 'deny') { c9NetDeny(G, m.g); if (m.lock) JG.note = { t0: JG.t, s: lg(`Mảnh này bạn vừa giữ lâu, nghỉ ${m.lock} giây nữa mới nhấc lại được`, `You held this one too long: wait ${m.lock} s to pick it up again`) }; }
+  else if (m.t === 'nudge') JG.nudge = { g: m.g, until: JG.t + (m.sec || 30) };
+  else if (m.t === 'timeup') { JG.nudge = null; JG.note = { t0: JG.t, s: lg(`Hết giờ, mảnh đã được đặt xuống. ${m.sec || 90} giây nữa mới nhấc lại được`, `Time is up, the piece was put down. ${m.sec || 90} s before you can lift it again`) }; }
+  else if (m.t === 'poked') JG.note = { t0: JG.t, s: lg('Đã nhắc bạn đó đặt mảnh xuống', 'Reminded them to put it down') };
   else if (m.t === 'poses') c9NetPoses(G, m.p);
   else if (m.t === 'drop') { const g = G.gm.get(m.g); if (!g || (m.n && g.pcs.length !== m.n)) { JG_NET.lost(); return; } c9NetDrop(G, m.g, m.x, m.y, m.a); }   // this screen joined differently from the server: reconnect and take the server's picture
   else if (m.t === 'join') {
@@ -209,6 +213,18 @@ function jgGallery(g, W, hh) {
   });
   g.restore();
 }
+// the reminder to a player who carries a group somebody wants, and short notes
+function jgHoldNote(g, W, G) {
+  let line = null, big = false;
+  if (JG.nudge) { if (!G || !G.held || G.held.id !== JG.nudge.g) JG.nudge = null; else { const left = Math.max(0, Math.ceil(JG.nudge.until - JG.t)); line = lg(`Có người đang chờ mảnh này, đừng giữ lâu quá nhé! Đặt xuống trong ${left} giây.`, `Someone is waiting for this piece: do not hold it long! Put it down within ${left} s.`); big = true; } }
+  if (!line && JG.note && JG.t - JG.note.t0 < 3.5) line = JG.note.s;
+  if (!line) return;
+  const w = Math.min(W - 24, 440), x = (W - w) / 2, y = 62, h = big ? 54 : 40;
+  hlPlate(g, x, y, w, h, big ? '#fbe3d2' : '#f2ecde', big ? '#a3332a' : HL_INK, 12);
+  const words = line.split(' '), lines = [''];
+  for (const wd of words) { const t = (lines[lines.length - 1] + ' ' + wd).trim(); if (t.length > (W < 420 ? 34 : 50) && lines[lines.length - 1]) lines.push(wd); else lines[lines.length - 1] = t; }
+  lines.slice(0, 2).forEach((s, k, a) => hlText(g, s, W / 2, y + h / 2 + (k - (a.length - 1) / 2) * 17, 13.5, { f: hlSans, w: 700, o: false, c: big ? '#a3332a' : HL_INK }));
+}
 function renderJG() {
   const W = cv.width / DPR, H = cv.height / DPR, st = JG.st = safeTop(), g = ctx, hh = H - st, G = JG.G;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = PAPERS.yellow.base; g.fillRect(0, 0, cv.width, cv.height);
@@ -241,6 +257,7 @@ function renderJG() {
   }
   if (up) jgStrip(g, W, hh);
   jgBubbles(g, W, hh);
+  jgHoldNote(g, W, G);
   if (JG.flash && JG.t - JG.flash.t0 < 1.6) { const k = (JG.t - JG.flash.t0) / 1.6; g.globalAlpha = Math.min(1, (1 - k) * 2); hlText(g, `+${JG.flash.n} đồng`, W / 2, hh - JG_STRIP - 18 - k * 40, 22, { w: 900, c: '#2f6a4c' }); g.globalAlpha = 1; }
   jgTray(g, W);
   if (JG.ui === 'board') jgBoard(g, W, hh);

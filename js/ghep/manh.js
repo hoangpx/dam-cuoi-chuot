@@ -279,6 +279,11 @@ function c9DrawTurnBtn(G, g) {
 }
 
 // the piece (and so its group) under a world point; the topmost group first
+// a group somebody else is carrying under the point (clicking it reminds the carrier to put it down)
+function c9HitHeld(G, x, y) {
+  for (let k = G.order.length - 1; k >= 0; k--) { const grp = G.order[k]; if (!grp.by) continue; for (const p of grp.pcs) { const c = c9Center(G, grp, p); if (Math.abs(x - c[0]) < G.cw * .6 && Math.abs(y - c[1]) < G.ch * .6) return grp; } }
+  return null;
+}
 function c9Hit(G, x, y) {
   for (let k = G.order.length - 1; k >= 0; k--) {
     const grp = G.order[k]; if (grp.by) continue;
@@ -374,6 +379,7 @@ function c9Down(G, sx, sy, e, done) {
   if (e.button === 2) { if (view) return; const h = G.held ? { grp: G.held } : c9Hit(G, wx, wy); if (h) c9TurnSmooth(G, h.grp, C9_STEP, wx, wy); return; }
   const tb = c9TurnBtns(G).find(b => Math.hypot(sx - b.x, sy - b.y) < b.r + 6); if (tb) { c9TurnSmooth(G, G.held, tb.dir * C9_STEP, null, null); G.thold = { id: e.pointerId, dir: tb.dir, t: 0 }; G.drag = null; return; }
   const hit = view ? null : c9Hit(G, wx, wy);
+  if (!hit && !view && G.net && G.net.poke) { const hg = c9HitHeld(G, wx, wy); if (hg) { G.net.poke(hg); return; } }
   const lift = h => { if (G.held !== h.grp) c9Lift(G, h.grp, wx, wy); else G.hl = c9Rot(-h.grp.a, wx - h.grp.x, wy - h.grp.y); G.drag = { id: e.pointerId, x0: sx, y0: sy, gx: h.grp.x, gy: h.grp.y, ga: h.grp.a, t0: performance.now(), moved: false }; };
   const startPan = () => { G.pan = { id: e.pointerId, x0: sx, y0: sy, cx: G.cam.x, cy: G.cam.y, moved: false }; };
   if (!G.touch) {   // mouse: a click lifts; the group then follows the mouse until the next click puts it down; empty table: drag to pan
