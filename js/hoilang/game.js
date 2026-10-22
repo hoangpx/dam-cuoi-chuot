@@ -82,9 +82,11 @@ function hlIn(r, e, replay) {
     if (e.k === 'p') { r.inp.set(id, { ...old, done: true }); if (me) hlMy().done = true; }
     else if (e.k === 'w') { r.inp.set(id, { ...old, wrong: true }); if (me) { hlMy().lock = e.lock; if (!replay) AU.thump(); } }
   }
-  else if (g === 'hpb' || g === 'dem' || g === 'chen') r.picked.add(id);
+  else if (g === 'hpb' || g === 'chen') r.picked.add(id);
+  else if (g === 'dem') { const s = r.demProg || (r.demProg = new Map()); const a = s.get(id) || []; a[e.t] = 1; s.set(id, a); }
   else if (g === 'xep') r.nho.set(id, { c: e.c, pen: e.pen, fin: e.fin });
   else if (g === 'mau' || g === 'lat') r.nho.set(id, { c: e.c });
+  else if (g === 'keoco' && e.k === 'side') { const t = r.kteam || (r.kteam = new Map()); t.set(id, e.v | 0); if (!replay && !me) AU.tap(); }
   if (!replay && !me && (g === 'pomelo' || g === 'giua' || g === 'ten' || g === 'trong' || g === 'lantern')) AU.tap();
 }
 function hlResult(m) {
@@ -147,11 +149,20 @@ function hlHold(down, ts) {   // tuong, balloon: hold and release
   }
 }
 function hlTap() {
-  const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'boat' || hlEnd(r) >= r.cfg.len) return;   // time is up: the server takes no more
-  if (HL.myTaps >= Math.floor(HL_BOAT_CPS * hlEnd(r) / 1000) + 3) return;   // the server keeps no more than this: neither does the count shown
+  const r = hlSync(HL.round); if (!hlCanAct(r) || !HL_TAPGAMES.has(r.game) || hlEnd(r) >= hlTapEnd(r)) return;   // time is up: the server takes no more
+  if (HL.myTaps >= Math.floor(HL_TAP_CPS * hlTapT(r) / 1000) + 3) return;   // the server keeps no more than this: neither does the count shown
   HL.tapAcc++; HL.myTaps++; AU.tap();
 }
-const HL_BOAT_CPS = 14;   // = T.BOAT_CPS on the server
+const HL_TAP_CPS = 14;   // = T.BOAT_CPS / T.KEOCO_CPS on the server
+const HL_TAPGAMES = new Set(['boat', 'keoco']);
+const hlTapEnd = r => r.game === 'keoco' ? r.cfg.pick + r.cfg.len : r.cfg.len;   // the moment the server stops counting taps
+const hlTapT = r => r.game === 'keoco' ? Math.max(0, hlEnd(r) - r.cfg.pick) : hlEnd(r);   // pull-phase time, for the anti-spam cap
+function hlKeocoSide(v) {   // tug of war: pick a side; the other button is gone afterwards
+  const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'keoco' || hlEnd(r) >= r.cfg.pick) return;
+  const t = r.kteam || (r.kteam = new Map()); if (t.has(HL.id)) return;
+  t.set(HL.id, v); hlSend(r, { k: 'side', v }); AU.pluck(90);
+}
+const hlMySide = r => { const t = r && r.kteam; return t && t.has(HL.id) ? t.get(HL.id) : -1; };
 function hlPick(v) { const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'minnum') return; HL.myPick = v; r.picked.add(HL.id); hlSend(r, { k: 'v', v }); AU.pluck(90); }
 function hlHole(v) {
   const r = hlSync(HL.round); if (!hlCanAct(r) || r.game !== 'hang' || !r.picking || !hlAlive(r, HL.id)) return;
@@ -551,9 +562,9 @@ function hlBoardRow(g, x, w, ry, pos, u, sub) {
 function updateHL(dt) {
   HL.t += dt; hlSync(HL.round); hlFireworks(dt);
   const r = HL.round;   // the boat's taps travel a few at a time
-  if (r && r.game === 'boat' && r.state === 'run' && HL.tapAcc > 0 && ((HL.tapSent += dt) > .1 || hlEnd(r) >= r.cfg.len)) { HL.tapSent = 0; while (HL.tapAcc > 0) { const c = Math.min(8, HL.tapAcc); HL.tapAcc -= c; hlSend(r, { k: 't', c }); } }   // every .1 s, and all that is left the moment time is up
+  if (r && HL_TAPGAMES.has(r.game) && r.state === 'run' && HL.tapAcc > 0 && ((HL.tapSent += dt) > .1 || hlEnd(r) >= hlTapEnd(r))) { HL.tapSent = 0; while (HL.tapAcc > 0) { const c = Math.min(8, HL.tapAcc); HL.tapAcc -= c; hlSend(r, { k: 't', c }); } }   // every .1 s, and all that is left the moment time is up
 }
-const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'dodan', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
+const HL_GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'dodan', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'keoco'];
 
 // how many people are in the room, shown on the chapter card (asked at most every 20 s while the list is up)
 const HLON = { n: null, at: 0, busy: false };
