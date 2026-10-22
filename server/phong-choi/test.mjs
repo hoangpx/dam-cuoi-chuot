@@ -35,6 +35,7 @@ function mk(i) {
     else if (g === 'minnum') at(rel(rnd(1500, 8000)), () => act(r, { k: 'v', v: 1 + ((Math.random() * cfg.max) | 0) }));
     else if (g === 'lantern') c.waitGo = r;
     else if (g === 'boat') { for (let k = 1; k <= 19; k++) at(rel(k * 500), () => act(r, { k: 't', c: 3 + ((Math.random() * 3) | 0) })); }
+    else if (g === 'keoco') { at(rel(rnd(500, cfg.pick - 500)), () => act(r, { k: 'side', v: Math.random() < .5 ? 0 : 1 })); for (let k = 1; k <= 23; k++) at(rel(cfg.pick + k * 500), () => act(r, { k: 't', c: 3 + ((Math.random() * 3) | 0) })); }
     else if (g === 'hang') { for (let k = 0; k < cfg.rounds; k++) at(rel(k * cfg.slot + rnd(900, 3300)), () => act(r, { k: 'h', v: (Math.random() * 3) | 0, i: k })); }
     else if (g === 'chuot') c.waitGo = r;
     else if (g === 'hpb') at(rel(rnd(1500, 6000)), () => act(r, { k: 'v', v: Math.round(rnd(10, 60)) }));
