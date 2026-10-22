@@ -30,10 +30,10 @@ import { frozenJg, FROZEN_COUNT } from './frozen.js';
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
 const BAD = /(địt|đụ|lồn|buồi|cặc|đéo|đĩ |đỉ |fuck|shit|bitch|óc chó|chó đẻ|mẹ mày|con mẹ mày|bố mày)/i;
 const BOT_NAMES = ['Tí', 'Tèo', 'Mít', 'Bơ', 'Nhím', 'Sóc', 'Cốm', 'Bống', 'Tũn', 'Xíu', 'Na', 'Bin', 'Đậu', 'Lạc', 'Gạo', 'Nếp', 'Ngô', 'Khoai', 'Sen', 'Cải'];
-const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
+const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'keoco'];
 const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua', 'beo', 'gay', 'cao'], fur: 16, robe: 16, skirt: 16, pants: 16, top: 16 };   // looks are only forwarded, the browser cleans them again
 
-const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'dodan']);   // dodan (folk-lore quiz) is not in the bag: it is dealt now and then, see startRound
+const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'dodan', 'keoco']);   // dodan (folk-lore quiz) is not in the bag: it is dealt now and then, see startRound
 const needCap = game => game === 'dodan' ? 3 : 2;   // the page version that knows the game
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz)/;   // devices used by test.mjs: never written to the board
 import { QUIZ, QUIZ_GROUPS } from './quiz.js';
@@ -48,6 +48,7 @@ const T = {
   MIN_LEN: 12000,
   LAN_MIN: 2500, LAN_SPAN: 5000, LAN_WAIT: 2500, LAN_FS: 90,
   BOAT_LEN: 10000, BOAT_CPS: 14,
+  KEOCO_PICK: 3000, KEOCO_LEN: 15000, KEOCO_CPS: 14,
   HANG_HOLES: 3, HANG_ROUNDS: 5, HANG_PICK: 4000, HANG_REVEAL: 1800,
   GIUA_LEN: 8000,
   TRONG_BEATS: 4, TRONG_N: 8, TRONG_GRACE: 2500,
@@ -376,9 +377,49 @@ export class Room extends DurableObject {
       cfg.len = T.HPB_LEN; r.deadline = t0 + T.HPB_LEN;
     } else if (g === 'khac') {
       cfg.n = T.KHAC_N; cfg.odd = ri(0, T.KHAC_N * T.KHAC_N - 1); cfg.hue = ri(0, 359); cfg.dl = 6; cfg.lock = T.KHAC_LOCK; r.deadline = t0 + T.KHAC_LEN;
-    } else if (g === 'dem') {
-      const n = ri(9, 26), items = []; for (let i = 0; i < n; i++) items.push([+Math.random().toFixed(3), +Math.random().toFixed(3), ri(0, 2)]);
-      cfg.items = items; cfg.show = T.DEM_SHOW; r.deadline = t0 + T.DEM_SHOW + T.DEM_LEN;
+    } else if (g === 'dem') {   // count the mice: 5 turns, running total, closest to the true total wins
+      const defs = [
+        { n: [2, 3], show: 1000, kind: 'static' },    // a couple of mice, 1 second
+        { n: [4, 6], show: 2000, kind: 'scatter' },   // more, scattered around
+        { n: [2, 3], show: 2000, kind: 'white' },     // 2-3 white/black mix
+        { n: [5, 7], show: 2500, kind: 'chaos' },     // running around chaotically
+        { n: [4, 4], show: 2500, kind: 'run' },       // the whole herd runs across the screen
+      ];
+      const INPUT = 3000;   // 3s to type the count after the mice hide
+      const turns = defs.map(d => {
+        const n = ri(d.n[0], d.n[1]), mice = [];
+        // place mice with minimum separation so none touch/overlap
+        // mouse is ~0.24 wide x 0.15 tall; use generous margins: dx>0.30 or dy>0.20
+        // run turn: fixed y lanes (like race tracks) so they never overlap while running
+        const isRun = d.kind === 'run';
+        const laneH = isRun ? 0.76 / n : 0;
+        for (let i = 0; i < n; i++) {
+          let x = 0.5, y = 0.5;
+          if (isRun) {
+            y = 0.12 + (i + 0.5) * laneH + (Math.random() - 0.5) * laneH * 0.25;
+            x = 0.5;
+          } else {
+            for (let tr = 0; tr < 300; tr++) {
+              x = 0.08 + Math.random() * 0.84; y = 0.12 + Math.random() * 0.76;
+              if (mice.every(m => Math.abs(m.x - x) > 0.30 || Math.abs(m.y - y) > 0.20)) break;
+              if (tr === 299) { x = 0.10 + (i % 3) * 0.32; y = 0.20 + Math.floor(i / 3) * 0.30; }   // grid fallback
+            }
+          }
+          mice.push({
+            x: +x.toFixed(3), y: +y.toFixed(3),
+            w: d.kind === 'white' ? (Math.random() < 0.5 ? 1 : 0) : 0,
+            vx: +(Math.random() * 2 - 1).toFixed(3), vy: +(Math.random() * 2 - 1).toFixed(3),
+            ph: +Math.random().toFixed(3),
+            x0: d.kind === 'run' ? +(-0.18 - i * 0.08).toFixed(3) : 0,   // staggered start for the run
+          });
+        }
+        return { n, show: d.show, input: INPUT, kind: d.kind, mice };
+      });
+      let acc = 0;
+      for (const t of turns) { t.start = acc; acc += t.show + t.input; t.end = acc; }
+      cfg.turns = turns;
+      r.guess = new Map();
+      r.deadline = t0 + acc + 2000;
     } else if (g === 'xep') {
       const perm = [1, 2, 3, 4, 5, 6, 7, 8, 9]; for (let i = 8; i > 0; i--) { const j = ri(0, i); [perm[i], perm[j]] = [perm[j], perm[i]]; }
       cfg.perm = perm; cfg.pen = T.XEP_PEN; r.deadline = t0 + T.XEP_LEN; r.prog = new Map(ids.map(id => [id, { c: 0, pen: 0, fin: null }]));
@@ -402,6 +443,9 @@ export class Room extends DurableObject {
     } else if (g === 'chen') {
       const ball = ri(0, 2), swaps = []; let pos = ball; for (let i = 0; i < T.CHEN_SWAPS; i++) { const a = ri(0, 2); let b = ri(0, 2); if (b === a) b = (a + 1 + ri(0, 1)) % 3; swaps.push([a, b]); if (pos === a) pos = b; else if (pos === b) pos = a; }
       cfg.ball = ball; cfg.swaps = swaps; cfg.show = T.CHEN_SHOW; cfg.swap = T.CHEN_SWAP; cfg.end = T.CHEN_SHOW + T.CHEN_SWAPS * T.CHEN_SWAP + 300; r.final = pos; r.deadline = t0 + cfg.end + T.CHEN_PICK;
+    } else if (g === 'keoco') {   // tug of war: pick a side, then tap to pull; the stronger side's players share the pot
+      cfg.pick = T.KEOCO_PICK; cfg.len = T.KEOCO_LEN; r.deadline = t0 + T.KEOCO_PICK + T.KEOCO_LEN + 500;
+      r.team = new Map(); r.tap = new Map(); r.progAt = 0;
     }
   }
   giuaX(cfg, id, p) { const u = ((p / cfg.T[id] + cfg.phi[id]) % 2 + 2) % 2; return u < 1 ? u : 2 - u; }
@@ -470,7 +514,14 @@ export class Room extends DurableObject {
     } else if (g === 'hpb') {
       if (a.k !== 'v') return; const v = Math.max(0, Math.min(100, a.v | 0)), first = !inp.has(id); inp.set(id, { v, p }); if (first) this.live(r, { id, k: 'v' });
     } else if (g === 'dem') {
-      if (a.k !== 'v' || inp.has(id) || p < cfg.show - 100) return; inp.set(id, { v: Math.max(0, Math.min(99, a.v | 0)), p }); this.live(r, { id, k: 'v' });
+      const t = a.t | 0;
+      if (a.k !== 'v' || t < 0 || t >= cfg.turns.length) return;
+      const turn = cfg.turns[t], pt = p - turn.start;
+      if (pt < turn.show - 100 || pt > turn.show + turn.input) return;   // only during this turn's input phase
+      let gu = r.guess.get(id); if (!gu) { gu = []; r.guess.set(id, gu); }
+      if (gu[t] !== undefined) return;   // one guess per turn
+      gu[t] = Math.max(0, Math.min(99, a.v | 0));
+      this.live(r, { id, k: 'v', t });
     } else if (g === 'xep') {
       if (a.k !== 't') return; const pr = r.prog.get(id); if (!pr || pr.fin !== null) return;
       if ((a.v | 0) === pr.c + 1) { pr.c++; if (pr.c === 9) pr.fin = p; } else pr.pen++;
@@ -485,6 +536,15 @@ export class Room extends DurableObject {
       else { const j = pr.open[0]; if (r.cards[j] === r.cards[i]) { pr.matched.add(i); pr.matched.add(j); pr.pairs++; pr.at = p; pr.open = []; this.send(c, { t: 'flip', n: r.n, i, v: r.cards[i], m: j }); this.live(r, { id, k: 'm', c: pr.pairs }); } else { pr.open = []; this.send(c, { t: 'flip', n: r.n, i, v: r.cards[i], bad: j }); } }
     } else if (g === 'chen') {
       if (a.k !== 'p' || inp.has(id) || p < cfg.end - 100) return; inp.set(id, { v: Math.max(0, Math.min(2, a.v | 0)), p }); this.live(r, { id, k: 'p' });
+    } else if (g === 'keoco') {   // pick a side (once, during the pick phase), then tap to pull
+      if (a.k === 'side') {
+        if (p > cfg.pick || (a.v !== 0 && a.v !== 1) || r.team.has(id)) return;
+        r.team.set(id, a.v); this.live(r, { id, k: 'side', v: a.v });
+      } else if (a.k === 't') {
+        if (p < cfg.pick || p > cfg.pick + T.KEOCO_LEN + 350 || !r.team.has(id)) return;
+        const cap = Math.floor(T.KEOCO_CPS * Math.max(0, p - cfg.pick) / 1000) + 3;
+        r.tap.set(id, Math.min(cap, (r.tap.get(id) || 0) + Math.max(0, Math.min(8, a.c | 0))));
+      }
     }
   }
   gameTick(r, now) {
@@ -495,6 +555,19 @@ export class Room extends DurableObject {
       if (!r.sent && now >= r.s) { r.sent = true; this.all({ t: 'go', n: r.n, hole: g === 'chuot' ? r.cfg.hole : undefined }); }
     } else if (g === 'boat') {
       if (now - r.progAt >= 500 && p > 0) { r.progAt = now; const o = {}; for (const [id, s] of r.inp) o[id] = s.c; this.all({ t: 'prog', n: r.n, p: o }); }
+    } else if (g === 'keoco') {
+      if (!r.teamsDone && p >= r.cfg.pick) {   // pick phase over: the undecided join the smaller side (random on a tie)
+        r.teamsDone = true;
+        const cnt = [0, 0];
+        for (const s of r.team.values()) if (s === 0 || s === 1) cnt[s]++;
+        for (const id of this.ids(r)) {
+          if (r.team.has(id)) continue;
+          const v = cnt[0] === cnt[1] ? (Math.random() < .5 ? 0 : 1) : (cnt[0] < cnt[1] ? 0 : 1);
+          r.team.set(id, v); cnt[v]++;
+          this.live(r, { id, k: 'side', v });
+        }
+      }
+      if (now - r.progAt >= 500 && p > r.cfg.pick) { r.progAt = now; const o = {}; for (const [id, c] of r.tap) o[id] = c; this.all({ t: 'prog', n: r.n, p: o }); }
     } else if (g === 'hang') this.hangTick(r, p);
   }
   hangTick(r, p) {
@@ -594,10 +667,16 @@ export class Room extends DurableObject {
       return [...rank(ok, (a, b) => a.d - b.d), ...no];
     }
     if (g === 'dem') {
-      const n = r.cfg.items.length; r.xtra = { n };
+      const actual = cfg.turns.map(t => t.n), total = actual.reduce((a, b) => a + b, 0);
+      r.xtra = { turns: actual, total };
       const ok = [], no = [];
-      for (const id of ids) { const s = r.inp.get(id); if (s) ok.push({ id, v: s.v, d: Math.abs(s.v - n), p: s.p }); else no.push({ id, v: null }); }
-      return [...rank(ok, (a, b) => a.d - b.d || a.p - b.p), ...no];
+      for (const id of ids) {
+        const gu = r.guess.get(id) || []; let sum = 0, cnt = 0;
+        for (let t = 0; t < cfg.turns.length; t++) if (gu[t] !== undefined) { sum += gu[t]; cnt++; }
+        if (!cnt) no.push({ id, v: null });
+        else ok.push({ id, v: sum, d: Math.abs(sum - total), cnt });
+      }
+      return [...rank(ok, (a, b) => a.d - b.d), ...no];
     }
     if (g === 'xep') {
       const fin = [], rest = [];
@@ -618,6 +697,12 @@ export class Room extends DurableObject {
       for (const id of ids) { const s = r.inp.get(id); if (!s) no.push({ id, v: null }); else if (s.v === r.final) ok.push({ id, v: s.v, p: s.p, right: true }); else bad.push({ id, v: s.v, wrong: true }); }
       return [...rank(ok, (a, b) => a.p - b.p), ...bad, ...no];
     }
+    if (g === 'keoco') {   // team totals decide; rows stay per player for the result screen
+      const t = [0, 0]; for (const [id, c] of r.tap) { const s = r.team.get(id); if (s === 0 || s === 1) t[s] += c; }
+      r.kfinal = t;
+      const l = ids.map(id => ({ id, v: r.tap.get(id) || 0, team: r.team.has(id) ? r.team.get(id) : -1 }));
+      return rank(l, (a, b) => b.v - a.v);
+    }
     return rows;
   }
   // who shares the pot: everybody with the same winning result (owner, 2026-10-19: "có thể share tiền nếu cùng kết quả đúng")
@@ -635,6 +720,12 @@ export class Room extends DurableObject {
     if (g === 'hpb' || g === 'dem') return first.v === null ? [] : rows.filter(x => x.v !== null && eq(x.d, first.d)).map(x => x.id);
     if (g === 'xep') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
     if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'dodan' || g === 'lantern') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    if (g === 'keoco') {   // the stronger side's players share the whole pot: each nets the losing side's stakes, split evenly
+      const t = r.kfinal || [0, 0];
+      if (t[0] === t[1]) return [];   // a tie: no winners, nobody's stake moves
+      const ws = t[0] > t[1] ? 0 : 1;
+      return rows.filter(x => x.team === ws).map(x => x.id);
+    }
     return rows.filter(x => x.rank === 1 && x.v !== null && eq(x.v, first.v)).map(x => x.id);   // pomelo, giua, balloon
   }
   finish(r) {
@@ -652,7 +743,7 @@ export class Room extends DurableObject {
     this.noteRound(r);
     r.state = 'result'; r.next = Date.now() + T.RESULT;
     r.result = { rows, winner, winners, share, pot, N, net };
-    this.all({ t: 'result', n: r.n, game: g, rows, winner, winners, share, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : g === 'chen' ? { final: r.final } : g === 'dodan' ? { a: r.ans } : g === 'hpb' || g === 'dem' ? r.xtra : undefined });
+    this.all({ t: 'result', n: r.n, game: g, rows, winner, winners, share, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : g === 'chen' ? { final: r.final } : g === 'dodan' ? { a: r.ans } : g === 'hpb' || g === 'dem' ? r.xtra : g === 'keoco' ? { teams: r.kfinal } : undefined });
     if (!r.solo) this.record(r, stat, winners, net);
     this.all({ t: 'players', players: this.playerList() });
   }
