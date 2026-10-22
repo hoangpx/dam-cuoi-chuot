@@ -164,21 +164,3 @@ LEVELS[4] = {
   ],
 };
 
-/* ---------- tranh 6 ---------- */
-LEVELS[6] = {
-  han: '迎親', name: 'Rước Dâu', paper: 'lilac', width: 5500, key: -1, abil: ['drum', 'ken', 'parasol', 'plates', 'hold'], cps: [160, 1320, 2320, 2820, 3950, 4250],
-  intro: 'Màn cuối, gộp mọi tài nghệ: bản màu, bàn đạp, giữ đoàn, trống, kèn, lọng. Cổng nhà gái có mèo lớn canh, cần lễ cá.',
-  endTitle: 'Đón dâu về', endText: 'Cả đoàn rước qua đủ sáu chặng tranh. Đám cưới chuột thành rồi, cả làng cùng vui!',
-  build: () => [
-    decor(MP.lanterns, 450, GROUND - 262), decor(MP.lanterns, 1350, GROUND - 262), decor(MP.lanterns, 2500, GROUND - 262), decor(MP.lanterns, 4100, GROUND - 262),
-    decor(PROPS.bamboo, 300, GROUND + 4, .85), decor(PROPS.bamboo, 5150, GROUND + 4, 1, -1),
-    plateBridge(720, 920, 'red'), secretSpot(1150, 'drum', 'Tùng! Trên bụi tre giữa bãi rơi xuống một mảnh triện đỏ!'), decor(PROPS.bamboo, 1180, GROUND + 4, .8),
-    plateBridge(1520, 1720, 'green'),
-    hawk(1800, 2700),
-    pickup(2300, 'fish', 'Nhặt được con cá: lễ vật cho mèo lớn giữ cổng.'),
-    pad(2700, 'a'), plateBridge(3000, 3200, 'yellow', 'Vực rộng, chỉ có bè tre in bản vàng (phím 6) mới qua được. Cổng then bên kia mở nhờ bàn đạp: để một người ở lại giữ (phím G) rồi mới qua.'),
-    door(3500, ['a', 'b']), pad(3850, 'b'),
-    groundCat(4900, 4150), cover(4300, 'chum', 40), cover(4470, 'hay', 70),
-    gate(5350),
-  ],
-};

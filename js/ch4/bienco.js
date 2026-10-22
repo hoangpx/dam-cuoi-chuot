@@ -28,6 +28,7 @@ function c4EvReplace() {
   if ((C4.evRepl || 0) >= 2 || C4.mins > 16 * 60) return;
   C4.evRepl = (C4.evRepl || 0) + 1;
   const own = c4Owned(), pool = ['vay', 'chiu', 'boi', 'trom', 'ho', 'cau', 'tuan', 'xin', 'trong', 'linh', 'gio', ...c4ExtraPool(own)];
+  if (!c4LinhOk(SAVE4.plan) || (C4.events || []).some(e => e.kind === 'linh')) pool.splice(pool.indexOf('linh'), 1);   // (cho.js c4LinhOk: not on cụ Lý's days, not twice)
   if (!SAVE4.cauDoi) pool.push('do');
   C4.events.push({ at: C4.mins + 20 + R() * 50, kind: c4Pick(pool) }); C4.events.sort((a, b) => a.at - b.at);
 }

@@ -132,6 +132,7 @@ function updateP4(dt) {
   if (P4.paused) return;
   if (P4.phase === 'open') {
     const dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1); P4.mins += dm;   // the evening lasts longer
+    if (typeof w4TownTick === 'function') w4TownTick();                     // the one clock of village and town (dongho.js)
     if (P4.mins >= P4_CLOSE) { P4.mins = P4_CLOSE; p4EndDay(); }
     if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / (p4Busy() * p4WxFlow()); p4Spawn(); }
     p4Hud();
@@ -298,7 +299,7 @@ function p4HomeDraw() {
     if (b.dataset.rename) { AU.tap(); p4NameSheet(false); return; }
     if (b.dataset.homesign) { if (!SAVE4B.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); SAVE4B.sign = true; p4Persist(); toast('Biển hiệu mới sơn son thếp vàng!', 2.4); } AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (p4HandsClick(b)) { AU.tap(); p4HomeOpen(); p4Hud(); return; }
-    if (b.dataset.n) { const n = +b.dataset.n, c = n * 3; if (p4Purse() < c) { toast('Không đủ tiền nhập trầu.', 2); return; } p4Spend(c); SAVE4B.stock += n; }
+    if (b.dataset.n) { const n = +b.dataset.n, c = n * 3; if (p4Purse() < c) { toast('Không đủ tiền nhập trầu.', 2); return; } p4Spend(c); SAVE4B.stock += n; p4BetelLog(n); }
     if (b.dataset.p) SAVE4B.price = Math.max(4, Math.min(20, SAVE4B.price + +b.dataset.p));
     p4Persist(); AU.tap(); p4HomeOpen(); p4Hud();
   });

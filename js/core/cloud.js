@@ -9,7 +9,7 @@
    merged key by key: whatever is newer wins (cloudDiff), so progress made on either device survives. Newer cloud keys are
    applied and the page reloads; mid-play the player is asked first. A stale device never overwrites the cloud blindly. */
 const CLOUD = { url: 'https://mamafzllyhbmzyystivo.supabase.co/rest/v1/rpc/', key: 'sb_publishable_aY82m4E4mmc0AN2_n0Gcdw_2Kl31gCd',
-  abc: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', skip: ['dcc.cloud', 'dcc.cloudT', 'dcc.instLater', 'dcc.lang'], timer: 0, busy: false, checked: false, lastCheck: 0 };
+  abc: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', skip: ['dcc.cloud', 'dcc.cloudT', 'dcc.instLater', 'dcc.lang', 'dcc.c9s'], timer: 0, busy: false, checked: false, lastCheck: 0 };
 const CLOUD_MT = 'dcc.mt';
 const cloudMtGet = () => { try { return JSON.parse(cloudGet(CLOUD_MT) || '{}') || {}; } catch (e) { return {}; } };
 const cloudRaw = Storage.prototype.setItem;   // writes that must not count as a change made on this device
@@ -23,14 +23,32 @@ function cloudSnapshot() {
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('dcc.') && !CLOUD.skip.includes(k)) out[k] = localStorage.getItem(k); } } catch (e) {}
   return out;
 }
+// a long save is packed (gzip, base64 under the one key dcc.z) so it stays under the server's 64 KB; small ones go as they are
+const CLOUD_PACK_AT = 40000;
+async function cloudPack(obj) {
+  const json = JSON.stringify(obj); if (json.length < CLOUD_PACK_AT || typeof CompressionStream === 'undefined') return obj;
+  try {
+    const buf = new Uint8Array(await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+    let s = ''; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+    return { 'dcc.z': btoa(s) };
+  } catch (e) { return obj; }
+}
+async function cloudUnpack(got) {
+  if (!got || !got.data || typeof got.data['dcc.z'] !== 'string') return got;
+  const bin = atob(got.data['dcc.z']), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  const json = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return { ...got, data: JSON.parse(json) };
+}
+const cloudSave = async (code, keepalive) => cloudRpc('dcc_save', { p_code: code, p_data: await cloudPack(cloudSnapshot()) }, keepalive);
 async function cloudRpc(fn, body, keepalive) {
   const r = await fetch(CLOUD.url + fn, { method: 'POST', keepalive: !!keepalive, headers: { apikey: CLOUD.key, 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error('rpc ' + r.status);
+  if (!r.ok) { const er = new Error('rpc ' + r.status); er.status = r.status; throw er; }
   return r.json();
 }
 // what differs between the cloud copy and this device, key by key: 'newer' = the cloud's version is newer (take it),
 // 'older' = ours is newer or only here (keep it, it goes up). A key with no recorded time counts as changed when the
 // copy holding it was last synced (cloud: its server time; here: dcc.cloudT).
+const cloudRev = s => { const m = /"_rev":(\d+)/.exec(s || ''); return m ? +m[1] : 0; };
 function cloudDiff(got) {
   const cd = got.data || {}, local = cloudSnapshot(), lm = cloudMtGet(), tc = Date.parse(got.t) || 0, ts = +cloudGet('dcc.cloudT') || 0;
   let cm = {}; try { cm = JSON.parse(cd[CLOUD_MT] || '{}') || {}; } catch (e) {}
@@ -39,6 +57,10 @@ function cloudDiff(got) {
     if (k === CLOUD_MT || CLOUD.skip.includes(k) || !k.startsWith('dcc.')) continue;
     const inC = typeof cd[k] === 'string', inL = k in local;
     if (inC && inL && cd[k] === local[k]) continue;
+    if (inC && inL && (k === 'dcc.c4' || k === 'dcc.c4b')) {               // chương IV: the copy played further (more saves) wins, whatever the clocks say
+      const rc = cloudRev(cd[k]), rl = cloudRev(local[k]);
+      if (rc !== rl && rc && rl) { (rc > rl ? newer : older).push(k); continue; }
+    }
     const c = inC ? (cm[k] ?? tc) : -1, l = inL ? (lm[k] ?? ts) : -1;
     (c > l ? newer : older).push(k);
   }
@@ -53,7 +75,7 @@ function cloudApply(d) {
 // 'focus' / 'push' (maybe mid-play: ask first). Returns 'none' | 'reloading' | 'kept' | 'ahead' | 'same' | 'offline'.
 async function cloudSync(mode) {
   const code = cloudCode(); if (!code) return 'none';
-  let got; try { got = await cloudRpc('dcc_load', { p_code: code }); } catch (e) { return 'offline'; }
+  let got; try { got = await cloudUnpack(await cloudRpc('dcc_load', { p_code: code })); } catch (e) { return 'offline'; }
   CLOUD.checked = true; CLOUD.lastCheck = Date.now();
   if (!got || !got.data) return 'ahead';
   const d = cloudDiff(got);
@@ -62,7 +84,7 @@ async function cloudSync(mode) {
   if (!quiet && !confirm(lg('Máy khác vừa lưu tiến trình mới hơn. Bấm OK để lấy tiến trình đó về máy này (trang sẽ tải lại). Bấm Huỷ để giữ tiến trình của máy này và ghi đè lên mạng.', 'Another device has saved newer progress. OK takes that progress onto this device (the page reloads). Cancel keeps this device\'s progress and overwrites the online copy.'))) { CLOUD.checked = true; return 'kept'; }
   cloudApply(d);
   clearTimeout(CLOUD.timer); CLOUD.timer = 0;
-  try { await cloudRpc('dcc_save', { p_code: code, p_data: cloudSnapshot() }); } catch (e) {}   // the merged result (our newer keys too)
+  try { await cloudSave(code); } catch (e) {}   // the merged result (our newer keys too)
   try { sessionStorage.setItem('dcc.synced', '1'); } catch (e) {}
   location.reload(); return 'reloading';
 }
@@ -70,8 +92,10 @@ async function cloudPush(keepalive) {
   const code = cloudCode(); if (!code) return false;
   clearTimeout(CLOUD.timer); CLOUD.timer = 0;
   if (!CLOUD.checked && !keepalive) { const r = await cloudSync('push'); if (r === 'reloading') return false; }   // never put a stale copy over a newer one
-  try { await cloudRpc('dcc_save', { p_code: code, p_data: cloudSnapshot() }, keepalive); localStorage.setItem('dcc.cloudT', String(Date.now())); cloudStatus(); return true; }
-  catch (e) { cloudStatus(lg('Chưa lưu được lên mạng (mất kết nối?). Game sẽ thử lại lần sau.', 'Could not save online (no connection?). The game will try again later.')); return false; }
+  try { await cloudSave(code, keepalive); localStorage.setItem('dcc.cloudT', String(Date.now())); cloudStatus(); return true; }
+  catch (e) {
+    if (e.status && !CLOUD.warned) { CLOUD.warned = true; try { toast(lg('Tiến trình chưa lưu lên mạng được (máy chủ từ chối). Đừng nạp mã ở máy khác lúc này kẻo mất ngày chơi.', 'Progress could not be saved online (the server refused). Do not load the code on another device for now.'), 4); } catch (er) {} }
+    cloudStatus(lg('Chưa lưu được lên mạng (mất kết nối?). Game sẽ thử lại lần sau.', 'Could not save online (no connection?). The game will try again later.')); return false; }
 }
 // every save the game makes on this device goes up later: at most one trip a CLOUD_EVERY (chương IV saves all the time; owner, 2026-10-17:
 // Supabase logs every request), and at once when the page is hidden or left
@@ -136,13 +160,13 @@ $('#bCloudLoad').addEventListener('click', async e => {
   if (code === cloudCode()) { msg.textContent = lg('Đây là mã của máy này rồi: bấm "Cập nhật từ mạng" ở trên để lấy tiến trình mới nhất.', 'That is this device\'s own code: use "Update from online" above to get the latest progress.'); return; }
   const b = e.currentTarget; b.disabled = true; msg.textContent = lg('Đang tìm…', 'Looking…');
   let got = null;
-  try { got = await cloudRpc('dcc_load', { p_code: code }); } catch (er) { msg.textContent = lg('Không kết nối được, bạn thử lại sau nhé.', 'Could not connect. Please try again later.'); b.disabled = false; return; }
+  try { got = await cloudUnpack(await cloudRpc('dcc_load', { p_code: code })); } catch (er) { msg.textContent = lg('Không kết nối được, bạn thử lại sau nhé.', 'Could not connect. Please try again later.'); b.disabled = false; return; }
   b.disabled = false;
   if (!got || !got.data) { msg.textContent = lg('Không tìm thấy mã này. Bạn xem lại từng chữ nhé.', 'No such code. Please check each letter.'); return; }
   if (!confirm(lg('Tiến trình trên máy này sẽ được thay bằng tiến trình của mã ', 'The progress on this device will be replaced by the progress saved under ') + cloudShow(code) + lg('. Tiếp tục?', '. Go on?'))) { msg.textContent = ''; return; }
   try {
     for (const k of Object.keys(cloudSnapshot())) localStorage.removeItem(k);
-    for (const [k, v] of Object.entries(got.data)) if (k.startsWith('dcc.') && !CLOUD.skip.includes(k) && typeof v === 'string') localStorage.setItem(k, v);
+    for (const [k, v] of Object.entries(got.data)) if (k.startsWith('dcc.') && !CLOUD.skip.includes(k) && typeof v === 'string') cloudRaw.call(localStorage, k, v);   // raw: the cloud's own times stay (dcc.mt came with it), a loaded copy is never 'newer' than the device that made it
     localStorage.setItem('dcc.cloud', code); localStorage.setItem('dcc.cloudT', String(Date.parse(got.t) || Date.now()));
   } catch (er) { msg.textContent = lg('Máy này không cho lưu dữ liệu (chế độ ẩn danh?).', 'This browser will not keep data (private mode?).'); return; }
   clearTimeout(CLOUD.timer); CLOUD.timer = 0;

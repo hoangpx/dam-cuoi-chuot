@@ -326,15 +326,18 @@ function c4Morning() {
   const tot = document.createElement('div'); tot.className = 'tot'; box.appendChild(tot);
   const go = document.createElement('button'); go.className = 'btn go'; go.textContent = 'Họp chợ'; box.appendChild(go);
   C4.orders = orders; c4LoanUI();
+  const late = document.createElement('div'); late.className = 'amLate'; box.prepend(late);   // the hour now, when the world's clock has moved on (c4AmClock)
   go.addEventListener('click', () => {
+    if (c4AmClock()) return;                                                // too late today: nothing is bought (players 2026-10-18)
     C4.today.m0 = SAVE4.money;                                              // the purse before the morning's buying (for the evening ledger)
     SAVE4.lastOrder = { ...orders };                                         // "Như hôm qua" tomorrow (c4OrderRows)
     for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
-    c4Sheets(null); C4.phase = 'open'; c4PlanEvents(); c4ShipOrders(); c4Hud();
+    c4Sheets(null); C4.phase = 'open'; if (typeof c4OpenAt === 'function') C4.mins = c4OpenAt();   // the market opens at the world's hour (the one clock with the town, dongho.js)
+    c4PlanEvents(); if (C4.mins > C4_OPEN) C4.events = C4.events.filter(e => e.at > C4.mins); c4ShipOrders(); c4Hud();
     SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
   });
   c4AmTotal(orders);
-  c4Sheets('c4am');
+  c4Sheets('c4am'); c4AmClock();
 }
 // the money box on the morning sheet: what is owed, borrow, pay back
 // (in the evening, on the tally: pay back only — the player decides when and how much; nothing is taken during the day)
@@ -370,6 +373,23 @@ function c4Borrow(k) {
   c4AfterMoney();
 }
 function c4AfterMoney() { persist4(); c4Hud(); c4LoanUI(); if (C4.orders) c4AmTotal(C4.orders); }
+// the morning sheet against the world's clock (one clock with the town, dongho.js): the hour now and the time left; returns true when
+// the village market is over for today (less than C4_LATE game minutes left): no order, a button to the next day instead
+const C4_LATE = 30;
+const c4AmNow = () => (typeof c4OpenAt === 'function' ? c4OpenAt() : C4_OPEN);
+const c4Hm = m => `${Math.floor(m / 60)}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
+function c4AmClock() {
+  const box = $('#c4amO'), el = box && box.querySelector('.amLate'); if (!el || C4.phase !== 'morning') return false;
+  const now = c4AmNow(), over = now >= C4_CLOSE - C4_LATE;
+  box.classList.toggle('over', over);
+  if (now <= C4_OPEN + 5) el.innerHTML = '';
+  else if (!over) el.innerHTML = `<p class="sm bad">Bây giờ đã ${c4Hm(now)}: chợ làng chỉ còn họp đến ${c4Hm(C4_CLOSE)} (khoảng ${Math.max(1, Math.round((C4_CLOSE - now) / 60))} tiếng), nhập ít thôi kẻo thừa.</p>`;
+  else {
+    el.innerHTML = `<p class="bad"><b>Đã ${c4Hm(now)}, chợ làng hôm nay tan rồi.</b> Không nhập hàng nữa.</p><div class="row"><button class="btn" data-amnext>Sang ngày mới</button></div>`;
+    el.querySelector('[data-amnext]').addEventListener('click', () => { AU.tap(); c4Sheets(null); c4NewDay(); });
+  }
+  return over;
+}
 function c4AmTotal(orders) {
   const el = $('#c4amO .tot'); if (!el) return;
   const sum = Object.entries(orders).reduce((a, [g, q]) => a + q * c4Cost(g) + (g === 'che' && q ? C4_GOODS.che.fuel : 0), 0);
@@ -406,6 +426,7 @@ function c4Suggest(g) {
   const G = C4_GOODS[g], H = (SAVE4.salesHist || []).filter(h => h.by[g]), p = SAVE4.plan || {}, room = Math.max(0, c4Cap(g) - c4Stock(g));
   let base = H.length ? H.reduce((a, h) => a + h.by[g].n + h.by[g].lost * 2, 0) / H.length : c4Cap(g) * .35;
   base *= ((G.wx && G.wx[p.wx]) || 1) * (p.hoi ? 1.3 : 1);
+  { const now = c4AmNow(); if (now > C4_OPEN + 5 && typeof w4VillageBusy === 'function') base *= Math.max(0, w4VillageBusy(now, C4_CLOSE) / w4VillageBusy(C4_OPEN, C4_CLOSE)); }   // a late start: only the hours left
   return Math.max(0, Math.min(room, Math.ceil((base * 1.15 - c4Stock(g)) / 5) * 5));
 }
 function c4OrderRows(box, orders) {
@@ -493,6 +514,8 @@ function c4SlumpMorning(back) {
   }
   if (s && s.say) back.push(s.say.replace(/\(Còn khoảng \d+ ngày\)/, `(Còn khoảng ${s.until - SAVE4.day + 1} ngày)`));
 }
+// the district soldiers' levy never comes on a day cụ Lý collects (his dues day, the day he comes for what was deferred) nor within 6 days of the last one
+const c4LinhOk = p => !(p && p.thue) && !SAVE4.dues && !((SAVE4.linhDay || -9) > SAVE4.day - 7);
 function c4PlanEvents() {
   const p = SAVE4.plan, ev = [], at = (a, b) => (a + R() * (b - a)) * 60, own = c4Owned();
   if (SAVE4.feast && SAVE4.feast.day < SAVE4.day) SAVE4.feast = null;      // a feast whose day went by without being collected no longer blocks new ones (a player: no orders after ~day 30)
@@ -502,6 +525,7 @@ function c4PlanEvents() {
   if (SAVE4.dues) ev.push({ at: at(6, 7), kind: 'khat' });
   // the everyday ones (some only make sense with certain stalls); hard luck a little more often than good
   const pool = ['vay', 'chiu', 'boi', 'trom', 'ho', 'cau', 'tuan', 'xin', 'trong', 'sau', 'linh', 'gio', 'lua', 'rival', 'tangtien', ...c4ExtraPool(own)];
+  if (!c4LinhOk(p)) pool.splice(pool.indexOf('linh'), 1);   // not on cụ Lý's days (players: "the soldiers collect twice a day")
   if (!SAVE4.cauDoi) pool.push('do');
   if (['che', 'xoi', 'bun', 'banhcuon', 'ruou'].some(g => own.includes(g))) pool.push('do2', 'do2');
   if (own.length > 1) pool.push('om', 'om');                       // ('bot', the announced skimming, is gone: a hand's skimming is silent now, the player finds it in the tally)
@@ -699,9 +723,10 @@ function c4Event(kind) {
     for (const w of C4.walkers) if (w.st !== 'leave') { if (w.chat) w.chat = null; w.st = 'leave'; w.talk = false; w.sp = 160; }
     for (const g of own) C4.Q[g] = [];
   } else if (kind === 'linh') {                                             // the district's soldiers levy money for labour
-    const d = c4Loss(.01, .02, 10);
+    if (SAVE4.linhDay === SAVE4.day) return; SAVE4.linhDay = SAVE4.day;     // once a day
+    const d = c4Loss(.005, .01, 5);                                          // half what it was (owner, 2026-10-19: "cho lính huyện thu ít lại")
     // owner: pleading poverty means they take goods worth what they asked, from whatever is on the stalls
-    Object.assign(E, { title: 'Lính huyện', text: `Lính huyện đi qua, đòi tiền phu cho ${own.length} gánh: có thể phải nộp ${c4LossText(.01, .02, 10)}. Kêu nghèo thì họ lấy hàng trị giá tương đương.`, opts: [
+    Object.assign(E, { title: 'Lính huyện', text: `Lính huyện đi qua, đòi tiền phu cho ${own.length} gánh: có thể phải nộp ${c4LossText(.005, .01, 5)}. Kêu nghèo thì họ lấy hàng trị giá tương đương.`, opts: [
       [`Nộp ${d} đồng`, () => sp(d), SAVE4.money >= d],
       ['Kêu nghèo, nộp hàng thay tiền', () => toast(c4Confiscate(d), 3.6)]] });
   } else if (C4_EXTRA_EV[kind]) { if (C4_EXTRA_EV[kind](E) === false) return; }   // kinhdoanh.js
@@ -938,7 +963,7 @@ function c4EndDay() {
     + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '')
     + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '') + c4LedgerHtml(d)
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
-    + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.slice(0, 4).join(', ')}${gossip.hurt.length > 4 ? ' và ' + (gossip.hurt.length - 4) + ' người nữa' : ''} bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
+    + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.length} người quen bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
     + (quits.length ? `<br><span class="bad">${quits.join(' ')}</span>` : '')
     + (extra.length ? `<br>${extra.join('<br>')}` : '')
     + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);
@@ -1401,10 +1426,4 @@ registerChapter({
   update: updateC4, render: renderC4, key: c4Key,
   pointer: { down: c4Down, move: c4Move, up: c4Up },
   next() { startC4(); }, retry() { startC4(); },
-});
-// chương V (the brood's adventures) is not made yet: its card shows once chương IV's goal is reached
-registerChapter({
-  id: 5, modes: [], locked: () => true, hidden: () => !SAVE4.goal,
-  card: { num: lg('Chương V', 'Chapter V'), han: '冒險', name: lg('Bầy Chuột Phiêu Lưu', 'The Little Mice\'s Adventures'), desc: lg('Bầy chuột con nhà trầu cau lớn lên, rủ nhau đi phiêu lưu khắp làng.', 'The betel sellers\' children grow up and set off on adventures all over the village.'), bg: '#cfcbd0' },
-  lockText: lg('Đang khắc ván', 'Being carved'), progress: () => lg('Đang khắc ván', 'Being carved'),
 });

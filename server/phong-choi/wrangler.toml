@@ -1,0 +1,60 @@
+name = "dcc-phong-choi"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "Room"
+
+[[durable_objects.bindings]]
+name = "STORE"
+class_name = "Store"
+
+[[durable_objects.bindings]]
+name = "JIGSAW"
+class_name = "JigsawV2"
+
+[[durable_objects.bindings]]
+name = "JIGSAW_VQ"
+class_name = "JigsawVQ"
+
+[[durable_objects.bindings]]
+name = "JIGSAW_DG"
+class_name = "JigsawDG"
+
+[[durable_objects.bindings]]
+name = "JIGSAW_DG2"
+class_name = "JigsawDG2"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Store"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["Jigsaw"]
+
+# 2026-10-20: a deploy never restarted the running object (players kept it busy for hours, so new code never ran). Renaming the class keeps
+# every stored row and the object named 'main', and starts it again on the new code.
+[[migrations]]
+tag = "v4"
+renamed_classes = [{ from = "Jigsaw", to = "JigsawV2" }]
+
+# 2026-10-20: the second print (Vinh quy bai to) is its own object with its own storage
+[[migrations]]
+tag = "v5"
+new_sqlite_classes = ["JigsawVQ"]
+
+# 2026-10-22: the third print (Đàn gà mẹ con, 5600 pieces)
+[[migrations]]
+tag = "v6"
+new_sqlite_classes = ["JigsawDG"]
+
+# 2026-10-22: Đàn gà mẹ con again, cropped and 2990 pieces (own object, own storage)
+[[migrations]]
+tag = "v7"
+new_sqlite_classes = ["JigsawDG2"]

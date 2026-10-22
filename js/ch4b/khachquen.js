@@ -43,6 +43,7 @@ function p4Served(w, kind) {
   if (w.net !== undefined) { hsServed(w, 'pho'); return; }               // a far-away guest: another player's profile (js/ch4/hoso.js)
   if (w.pid === undefined || w.pid === null) return;
   const p = p4People()[w.pid], T = C4_TRAITS[p.trait] || {}, f = p4F(p.id), day = SAVE4.day;
+  if (!w.treat) { const b = f.buy || (f.buy = {}); b[kind] = (b[kind] || 0) + 1; }   // what they buy here (orders the Mời list, p4TreatBlock)
   if (w.treat) { toast(p4TreatEffect(p, kind), 3.6); }
   else if (!f.k) {
     f.v = (f.v || 0) + 1; if (!f.seen) f.seen = day;
@@ -105,8 +106,9 @@ function p4TreatBlock(kind) {
   const known = p4People().filter(p => p4Seen(p.id)); if (!known.length && !hsGuests().length) return d;   // other players' profiles met here can be invited too (js/ch4/hoso.js)
   if (P4.phase !== 'open') { d.innerHTML = '<p class="sm">Mời khách quen được lúc phố còn mở hàng.</p>'; return d; }
   const has = kind === 'trau' ? SAVE4B.stock > 0 : true, day = SAVE4.day, F = id => SAVE4B.folk[id];
+  const rank = p => { const f = F(p.id); return kind === 'trau' && f.favK && p.fav === 'trau' ? 0 : kind === 'trau' && f.nopeK ? 2 : 1; };   // ♥ first, ✕ last (owner, 2026-10-18), then who buys it most here
   d.innerHTML = `<p class="sm">Nhắn người ta ra ${kind === 'trau' ? 'hiệu' : 'quán'} ăn thử, mỗi người một lần một ngày. Chưa chắc người ta đến; có đến thì cũng phải một lúc sau. Mời đúng thứ họ thích mới thân${has ? '' : '. <b>Hết trầu rồi.</b>'}</p>`
-    + `<div class="trl">${known.sort((a, b) => (p4Known(b.id) - p4Known(a.id)) || (F(b.id).a || 0) - (F(a.id).a || 0)).map(p => { const f = F(p.id), done = f.treat === day, fav = kind === 'trau' && f.favK && p.fav === 'trau', no = kind === 'trau' && f.nopeK;
+    + `<div class="trl">${known.sort((a, b) => rank(a) - rank(b) || ((F(b.id).buy || {})[kind] || 0) - ((F(a.id).buy || {})[kind] || 0) || (p4Known(b.id) - p4Known(a.id)) || (F(b.id).a || 0) - (F(a.id).a || 0)).map(p => { const f = F(p.id), done = f.treat === day, fav = kind === 'trau' && f.favK && p.fav === 'trau', no = kind === 'trau' && f.nopeK;
       return `<div class="tr${p4Known(p.id) ? '' : ' unk2'}"><img src="${p4Face(p)}" alt=""><b>${p.name}${fav ? ' <i class="fav">♥</i>' : ''}${no ? ' <i class="no">✕</i>' : ''}</b>${c4Bar(f.a || 0)}<button data-tr="${p.id}" ${!has || done ? 'disabled' : ''}>${done ? '✓ đã nhắn' : 'Mời'}</button></div>`; }).join('')}</div>`;
   const redraw = () => { P4.keepTab = true; if (kind === 'trau') p4HomeOpen(); else p4KeepScroll('p4shop', p4ShopSheet); };
   d.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); p4Invite(+b.dataset.tr, kind); redraw(); }));
