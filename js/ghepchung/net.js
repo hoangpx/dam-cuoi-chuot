@@ -16,7 +16,12 @@ const JG_NET = {
     this.ws = ws;
     ws.onopen = () => { this.up = true; this.tries = 0; this.send(this.hello); };
     ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } if (m.t === 'welcome') this.status('up'); this.on(m); };
-    ws.onclose = ws.onerror = () => { if (this.ws === ws) this.lost(); };
+    ws.onerror = () => { if (this.ws === ws) this.lost(); };
+    ws.onclose = ev => {
+      if (this.ws !== ws) return;
+      if (ev && (ev.code === 4003 || ev.code === 4001 || ev.code === 4005)) { this.up = false; this.wantOn = false; clearTimeout(this.retry); this.ws = null; this.status(ev.code === 4003 ? 'blocked' : ev.code === 4005 ? 'crowded' : 'replaced'); return; }   // told to go away: no retrying
+      this.lost();
+    };
   },
   lost() {
     this.up = false; const w = this.ws; this.ws = null; if (w) { w.onclose = w.onerror = w.onmessage = null; try { w.close(); } catch (e) {} }

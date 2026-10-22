@@ -19,7 +19,7 @@ const COLS = cfg.cols, ROWS = cfg.rows, N = COLS * ROWS, PW = cfg.pw, PH = cfg.p
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
-const MAX_SOCK_IP = 8, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKES_BAN = 10, PAID_MIN = 40, BAN_DEV = 6 * 3600000, BAN_IP = 20 * 60000, VER = '2026-10-20-freeze';
+const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 30, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, VER = '2026-10-20-freeze';
 const FREEZE = !!cfg.freeze;   // a frozen picture is put together at once and nobody can lift anything (the first print, kept to be looked at)
 const ANG_TOL = 22 * Math.PI / 180, POS_TOL = .6 * Math.min(CW, CH), NEXT_AFTER = 120000, KEEP_DONE = true, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
@@ -110,7 +110,9 @@ class Jigsaw extends DurableObject {
     if (u.pathname === '/sus') return this.sus();
     if (u.pathname === '/ban') return this.banReq(u);
     const ip = req.headers.get('CF-Connecting-IP') || '';
-    if (ip && (this.banned(ip) || [...this.conns.values()].filter(x => x.ip === ip).length >= MAX_SOCK_IP)) return new Response('busy', { status: 429 });
+    if (ip && (this.banned(ip) || [...this.conns.values()].filter(x => x.ip === ip).length >= MAX_SOCK_IP)) {   // accepted and closed with a code, so the page can say why (a plain 429 is only 'connection lost' to it)
+      const pair = new WebSocketPair(), [cl, sv] = Object.values(pair); sv.accept(); sv.close(this.banned(ip) ? 4003 : 4005, 'busy'); return new Response(null, { status: 101, webSocket: cl });
+    }
     if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, n: [...this.conns.values()].filter(c => c.joined && !TESTDEV.test(c.dev)).length, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
     const pair = new WebSocketPair(), [client, server] = Object.values(pair); server.accept();
     const c = { ws: server, id: 'j' + (this.nextId++), dev: '', name: '', look: null, joined: false, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], ip, at: Date.now(), liftAt: 0, joinT: [], jn: 0, strikes: 0 };
@@ -141,6 +143,7 @@ class Jigsaw extends DurableObject {
       const known = this.users.get(c.dev); let u = known || { n: '', m: 0 }, late = false;
       if (!known) { const got = await Promise.race([this.user(c.dev), new Promise(r => setTimeout(() => r(null), 1500))]); if (got) u = got; else late = true; }
       if (this.banned(c.dev) || (c.ip && this.banned(c.ip))) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
+      for (const o of [...this.conns.values()]) if (o !== c && o.dev === c.dev) { try { o.ws.close(4001, 'replaced'); } catch (e) {} this.onClose(o); }   // one socket a device: the older one is dead or another window
       u.n = c.name; c.joined = true;
       this.send(c, { t: 'welcome', id: c.id, ...this.full(c), me: { m: u.m } });
       if (late) this.user(c.dev).then(r => { r.n = c.name; }).catch(() => {});
@@ -178,14 +181,14 @@ class Jigsaw extends DurableObject {
   }
   drop(c, m, now) {
     const g = this.groups.get(m.g | 0); if (!g || g.by !== c.id) return;
-    if (now - c.liftAt < MIN_HOLD) { this.strike(c); this.release(g.id); return; }   // no hand lifts and drops in 180 ms
+    const quick = now - c.liftAt < MIN_HOLD;   // lifted and dropped within 180 ms (a double click, or a program): dropped, but it does not join
     const x = +m.x, y = +m.y, a = +m.a; if (isFinite(x) && isFinite(y) && isFinite(a)) { g.x = x; g.y = y; g.a = a; }
     g.by = null; c.holding = null; this.clamp(g); this.dirty.delete(g.id);
     const ipw = c.ip ? (this.ipJ.get(c.ip) || []).filter(t => now - t < JOIN_WIN) : [];
     c.joinT = c.joinT.filter(t => now - t < 60000);
     const hot = c.joinT.filter(t => now - t < JOIN_WIN).length >= JOIN_DEV || ipw.length >= JOIN_IP;   // more joining drops than a person makes: this one just does not join
     if (hot) this.strike(c);
-    const joins = hot ? [] : this.tryJoin(g);
+    const joins = hot || quick ? [] : this.tryJoin(g);
     if (joins.length) { c.joinT.push(now); c.jn += joins.length; if (c.ip) { ipw.push(now); this.ipJ.set(c.ip, ipw); } }
     if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
     const u = this.users.get(c.dev); const paid = TESTDEV.test(c.dev) ? 0 : this.award(c, joins.length, now);
@@ -231,7 +234,7 @@ class Jigsaw extends DurableObject {
   banned(key) { const t = this.bans.get(key); if (!t) return false; if (t < Date.now()) { this.bans.delete(key); return false; } return true; }
   ban(key, ms) { if (!key) return; this.bans.set(key, Date.now() + ms); for (const c of [...this.conns.values()]) if (c.dev === key || c.ip === key) { try { c.ws.close(4003, 'busy'); } catch (e) {} } this.saveBans(); }
   saveBans() { const o = {}, now = Date.now(); for (const [k, t] of this.bans) if (t > now) o[k] = t; this.ctx.storage.put('bans', o).catch(() => {}); }
-  strike(c) { if (++c.strikes >= STRIKES_BAN) { this.ban(c.dev, BAN_DEV); this.ban(c.ip, BAN_IP); } }
+  strike(c) { const now = Date.now(); c.strikeT = (c.strikeT || []).filter(t => now - t < STRIKE_WIN); c.strikeT.push(now); c.strikes = c.strikeT.length; if (c.strikes >= STRIKES_BAN) { this.ban(c.dev, BAN_DEV); this.ban(c.ip, BAN_IP); } }
   json(o) { return new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } }); }
   sus() {
     const now = Date.now(), live = [...this.conns.values()].filter(c => c.joined).map(c => ({ id: c.id, name: c.name, dev: c.dev, ip: c.ip, joins: c.jn, last60: c.joinT.filter(t => now - t < 60000).length, strikes: c.strikes, secs: Math.round((now - c.at) / 1000) })).sort((a, b) => b.last60 - a.last60 || b.joins - a.joins);
