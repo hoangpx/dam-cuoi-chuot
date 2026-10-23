@@ -120,7 +120,19 @@ function c4View() {
 }
 // stock, price and cost of a ware; the betel stall keeps its old fields in SAVE4
 const c4Own = g => g === 'trau' || !!(SAVE4.shops[g] && SAVE4.shops[g].own);
-const c4Open = g => g === 'trau' ? !C4.build : c4Own(g);   // the couple can always mind a stall themselves (owner)
+// a stall can be shut for a while (owner, 2026-10-22: "tạm đóng cửa hàng"): nobody comes to it, cụ Lý's tax and the happenings leave it (and the whole village) alone
+const c4Shut = g => !!(SAVE4.shut && SAVE4.shut[g]);
+const c4OpenStalls = () => c4Owned().filter(g => !c4Shut(g));
+// shutting a stall during the day: those waiting go home without a grumble (no snub, no lost sale); one being served is served
+const c4TurnAway = g => { if (!C4.walkers) return; for (const w of C4.walkers) if (w.shop === g && !(C4.SV[g] || []).some(sv => sv.who === w)) { if (w.st === 'queue') c4Leave(w, true); w.shop = null; w.buy = false; } };
+const c4SetShut = (g, v) => { SAVE4.shut = SAVE4.shut || {}; if (v) SAVE4.shut[g] = true; else delete SAVE4.shut[g]; persist4(); };
+function c4ShutBlock(g) {
+  const d = document.createElement('div'), b = document.createElement('button'); d.className = 'shutBox'; b.className = 'btn alt';
+  const show = () => { b.textContent = c4Shut(g) ? 'Mở cửa lại' : 'Tạm đóng cửa'; d.innerHTML = ''; d.append(b, Object.assign(document.createElement('p'), { className: 'sm', textContent: c4Shut(g) ? 'Quán đang đóng: không ai ghé, không phải nộp thuế cho quán này.' : 'Đóng thì khách không ghé nữa (không ai bỏ đi vì chờ lâu).' })); };
+  b.addEventListener('click', () => { AU.tap(); c4SetShut(g, !c4Shut(g)); show(); if (c4Shut(g)) c4TurnAway(g); });
+  show(); return d;
+}
+const c4Open = g => (g === 'trau' ? !C4.build : c4Own(g)) && !c4Shut(g);   // the couple can always mind a stall themselves (owner)
 const c4Stock = g => g === 'trau' ? SAVE4.stock : (SAVE4.shops[g] ? SAVE4.shops[g].stock : 0);
 const c4SetStock = (g, v) => { v = Math.max(0, v); if (g === 'trau') SAVE4.stock = v; else SAVE4.shops[g].stock = v; };
 const c4Cap = g => g === 'trau' ? c4Lv().cap : Math.round(C4_GOODS[g].cap * c4SLv(g).cap);
@@ -253,7 +265,7 @@ const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * 
 // how much a passer-by wants a ware now
 function c4Want(g, noWx) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
-  if (!c4Own(g)) return 0;
+  if (!c4Own(g) || c4Shut(g)) return 0;
   const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
   const sl = c4Slump();
   return base * (noWx ? 1 : G.wx[c4Wx()] || 1) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
@@ -294,7 +306,7 @@ function c4Morning() {
   const p = SAVE4.plan, heard = SAVE4.notes.filter(n => n.day === SAVE4.day);
   const back = [];
   SAVE4.owed = SAVE4.owed.filter(o => { if (o.due > SAVE4.day) return true; if (o.ok) { SAVE4.money += o.back; back.push(`${o.name} trả ${c4Money(o.back)}.`); } else if (o.khe) { const h = Math.round(o.back / 2); SAVE4.money += h; back.push(`${o.name} không chịu trả, nhưng có khế ước điểm chỉ nên cụ Lý ép trả được ${c4Money(h)}.`); } else { back.push(`${o.name} khất mãi không trả, còn nghênh mặt: "Khế ước đâu? Khế ước đâu?"`); SAVE4.badLoan = { name: o.name, amt: o.back }; } return false; });
-  c4FloodMorning(back); c4SlumpMorning(back);
+  if (c4OpenStalls().length) { c4FloodMorning(back); c4SlumpMorning(back); }   // every stall shut: nothing befalls the village
   if (c4Guild() && SAVE4.day % 5 === 0 && SAVE4.duesDay !== SAVE4.day) { SAVE4.duesDay = SAVE4.day; SAVE4.money -= C4_GUILD.dues; back.push(`Góp quỹ phường ${C4_GUILD.dues} đồng.`); }
   SAVE4.debtDays = SAVE4.debt >= C4_BROKE ? (SAVE4.debtDays || 0) + 1 : 0;
   if (SAVE4.debtDays >= C4_BROKE_DAYS) { c4Bankrupt(); return; }
@@ -314,7 +326,7 @@ function c4Morning() {
   $('#c4amB').innerHTML = `<p class="wx">${C4_WXI[p.wx]} ${C4_WX[p.wx]}${p.hoi ? ' <b>Làng mở hội, chợ đông!</b>' : ''}</p>`
     + (SAVE4.goal ? '' : `<p class="goal">Mục tiêu: để dành <b>${c4Money(C4_GOAL)}</b> · còn thiếu ${c4Money(Math.max(0, C4_GOAL - c4Net()))}</p>`)
     + warn + '<div id="c4loan"></div>' + (back.length ? `<p class="back">${back.join(' ')}</p>` : '')
-    + (p.thue ? `<p>Hôm nay cụ Lý đi thu tiền chợ (${dues} đồng).</p>` : SAVE4.next && SAVE4.next.thue ? `<p>Mai cụ Lý đi thu tiền chợ, nhớ để dành ${dues} đồng.</p>` : '')
+    + (!c4OpenStalls().length ? '' : p.thue ? `<p>Hôm nay cụ Lý đi thu tiền chợ (${dues} đồng).</p>` : SAVE4.next && SAVE4.next.thue ? `<p>Mai cụ Lý đi thu tiền chợ, nhớ để dành ${dues} đồng.</p>` : '')
     + (SAVE4.rival > 0 ? '<p class="bad">Gánh trầu đối diện vẫn bán rẻ, khách bị kéo sang bên ấy.</p>' : '')
     + (heard.length ? `<div class="heard"><b>Hôm qua nghe được:</b>${heard.map(n => `<p>• ${n.text}</p>`).join('')}</div>` : '')
     + '<div id="c4biz"></div>';
@@ -326,12 +338,16 @@ function c4Morning() {
   const tot = document.createElement('div'); tot.className = 'tot'; box.appendChild(tot);
   const go = document.createElement('button'); go.className = 'btn go'; go.textContent = 'Họp chợ'; box.appendChild(go);
   C4.orders = orders; c4LoanUI();
+  if (typeof SAVE4B !== 'undefined' && SAVE4B.house && SAVE4B.morning === SAVE4.day) {   // the town's stocking is still to do (owner, 2026-10-22)
+    const ph = document.createElement('button'); ph.className = 'btn alt'; ph.textContent = 'Nhập hàng ở phố'; ph.addEventListener('click', () => { AU.tap(); p4Enter(); }); box.appendChild(ph);
+  }
   const late = document.createElement('div'); late.className = 'amLate'; box.prepend(late);   // the hour now, when the world's clock has moved on (c4AmClock)
   go.addEventListener('click', () => {
     if (c4AmClock()) return;                                                // too late today: nothing is bought (players 2026-10-18)
     C4.today.m0 = SAVE4.money;                                              // the purse before the morning's buying (for the evening ledger)
     SAVE4.lastOrder = { ...orders };                                         // "Như hôm qua" tomorrow (c4OrderRows)
     for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
+    if (typeof w4VillageOpened === 'function') w4VillageOpened();
     c4Sheets(null); C4.phase = 'open'; if (typeof c4OpenAt === 'function') C4.mins = c4OpenAt();   // the market opens at the world's hour (the one clock with the town, dongho.js)
     c4PlanEvents(); if (C4.mins > C4_OPEN) C4.events = C4.events.filter(e => e.at > C4.mins); c4ShipOrders(); c4Hud();
     SAVE4.openDay = SAVE4.day; SAVE4.openMins = C4.mins; persist4();   // the day is under way (a reload carries on, see c4MarketStart)
@@ -435,14 +451,21 @@ function c4OrderRows(box, orders) {
     + `<button class="btn alt" data-all="max">Tối đa</button><button class="btn alt" data-all="0">Bỏ hết</button></div><p class="sm ordH"></p><div class="ordL"></div>`;
   box.appendChild(w);
   for (const g of c4Owned()) {
-    const G = C4_GOODS[g], closed = g !== 'trau' && !c4Open(g), max = closed ? 0 : Math.max(0, c4Cap(g) - c4Stock(g)), s = H0 && H0.by[g], r1 = v => Math.round(v * 10) / 10;
-    const note = closed ? '<span class="bad">không ai trông</span>' : [s ? `hôm qua bán ${s.n}${s.lost ? `, lỡ ${s.lost} khách` : ''}` : '', c4Stock(g) ? `còn ${c4Stock(g)}` : '', g === 'xoi' ? 'để quá 7 tiếng là thiu' : '', g === 'che' ? `củi ${G.fuel} đồng` : '', `${r1(c4Cost(g))} → ${c4Price(g)} đồng`].filter(Boolean).join(' · ');
+    const G = C4_GOODS[g], closed = c4Shut(g) || (g !== 'trau' && !c4Open(g)); let max = closed ? 0 : Math.max(0, c4Cap(g) - c4Stock(g)), s = H0 && H0.by[g], r1 = v => Math.round(v * 10) / 10;
+    const note = closed ? `<span class="bad">${c4Shut(g) ? 'tạm đóng cửa' : 'không ai trông'}</span>` : [s ? `hôm qua bán ${s.n}${s.lost ? `, lỡ ${s.lost} khách` : ''}` : '', c4Stock(g) ? `còn ${c4Stock(g)}` : '', g === 'xoi' ? 'để quá 7 tiếng là thiu' : '', g === 'che' ? `củi ${G.fuel} đồng` : '', `${r1(c4Cost(g))} → ${c4Price(g)} đồng`].filter(Boolean).join(' · ');
     const r = document.createElement('div'); r.className = 'ordR' + (closed ? ' off' : '');
-    r.innerHTML = `<div class="nm"><b>${G.name}</b><small>${note}</small></div><button type="button" class="m"${closed ? ' disabled' : ''}>−</button>`
+    r.innerHTML = `<div class="nm"><b>${G.name}</b><small>${note}</small><button type="button" class="shutB">${c4Shut(g) ? 'Mở cửa lại' : 'Tạm đóng cửa'}</button></div><button type="button" class="m"${closed ? ' disabled' : ''}>−</button>`
       + `<input type="number" inputmode="numeric" min="0" max="${max}" step="5"${closed ? ' disabled' : ''}><button type="button" class="p"${closed ? ' disabled' : ''}>+</button>`;
     w.querySelector('.ordL').appendChild(r);
     const inp = r.querySelector('input'), set = q => { q = Math.max(0, Math.min(max, Math.round(+q || 0))); orders[g] = q; inp.value = q; };
     rows[g] = set; set(0);
+    r.querySelector('.shutB').addEventListener('click', () => {            // shut it (nothing to buy for it) or open it again
+      AU.tap(); const shut = !c4Shut(g); c4SetShut(g, shut);
+      if (shut && C4.phase === 'open') c4TurnAway(g);
+      const cl = shut || (g !== 'trau' && !c4Open(g)); max = cl ? 0 : Math.max(0, c4Cap(g) - c4Stock(g)); set(0);
+      r.classList.toggle('off', cl); r.querySelectorAll('input,.m,.p').forEach(e => { e.disabled = cl; }); r.querySelector('.shutB').textContent = shut ? 'Mở cửa lại' : 'Tạm đóng cửa';
+      r.querySelector('small').innerHTML = shut ? '<span class="bad">tạm đóng cửa</span>' : (closed ? '' : note); c4AmTotal(orders);
+    });
     r.querySelector('.m').addEventListener('click', () => { AU.tap(); set((orders[g] || 0) - 5); c4AmTotal(orders); });
     r.querySelector('.p').addEventListener('click', () => { AU.tap(); set((orders[g] || 0) + 5); c4AmTotal(orders); });
     inp.addEventListener('focus', () => inp.select());
@@ -544,6 +567,7 @@ function c4PlanEvents() {
   C4.evGap = 0;
 
   C4.events = ev.sort((a, b) => a.at - b.at); C4.evRepl = 0;
+  if (!c4OpenStalls().length) { C4.events = []; C4.parade = null; }          // every stall shut: no happening, no visitor, no tax, no procession
   C4.evDay = SAVE4.day; c4Tasks();                                                    // today's tasks are drawn ONCE (a player: the morning sheet showed other tasks than the notebook, they were drawn again here)
   SAVE4.tasks = SAVE4.tasks.filter(t => { const T = C4_TASKS.find(x => x.k === t.k); return t.done || !T || !T.from || T.from(); });   // one that no longer fits today (the wedding already came before a reload) goes
   c4NvInit();
@@ -784,6 +808,7 @@ function updateC4(dt) {
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
     for (const v of C4.vendors) if (!c4VendorMine(v) && (v.callT -= dt) <= 0) { v.callT = 9 + R() * 9; if (Math.abs(v.x - C4.camX - c4View().vw / 2) < 600) c4Say(v, c4Pick(v.calls)); }
+    if (C4.events.length && !c4OpenStalls().length) C4.events = [];            // every stall shut meanwhile: nothing befalls the village
     if (C4.events.length && C4.mins >= C4.events[0].at && C4.mins >= (C4.evGap || 0) && !Object.values(C4.SV).some(A => A && A.length)) { const e0 = C4.events.shift(); c4NoteFired(e0.kind); C4.evGap = C4.mins + 30; c4Dispatch(e0.kind, e0); return; }   // one at a time, half an hour apart (owner: several came together)
     c4XoiTick();
     // noon: scorching days wilt some betel
@@ -1064,6 +1089,7 @@ function c4OpenUp(g = 'trau') {
     let q = 0; c4Stepper(box.querySelector('.ord'), g, v => { q = v; }, true);
     box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
+  box.appendChild(c4ShutBlock(g));                                          // shut it for a while
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
   box.appendChild(c4SaleBlock(g));                                          // a sale: how much, from when to when, every day or today (giamgia.js)
   box.appendChild(c4HandsBlock(g));                                          // always there (a player could not find the hire button when only the betel stall was open)

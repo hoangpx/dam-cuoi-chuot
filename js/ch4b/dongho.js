@@ -51,11 +51,13 @@ function w4CatchVillage(to) {
   const from = C4.mins; to = Math.min(to, C4_CLOSE); if (to <= from + .5) return;
   const day = w4VillageBusy(C4_OPEN, C4_CLOSE), share = w4VillageBusy(from, to) / day, H = SAVE4.salesHist || [];
   for (const g of c4Owned()) {
-    const hands = c4HandsOn(g); if (!hands.length || !c4Open(g) || c4Stock(g) < 1) continue;   // nobody minding it: the stall is shut meanwhile
-    const past = H.filter(h => h.by && h.by[g]), want = past.length ? past.reduce((a, h) => a + h.by[g].n + h.by[g].lost * 2, 0) / past.length : c4Cap(g) * .35;
-    const quick = hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length;
-    const cap = (to - from) / C4_MPS / (c4ServeDur(g, hands[0]) + 1.5) * 2 * hands.length;   // what the hands can serve in that time
-    const n = Math.min(c4Stock(g), Math.round(Math.min(cap, want * share * Math.min(1, .55 * hands.length) * quick * w4Rnd())));
+    const hands = c4HandsOn(g); if (!c4Open(g) || c4Stock(g) < 1) continue;
+    // nobody hired: a relative minds the stall and sells a little less than one hand would (owner, 2026-10-22: "không lên phố thì không tự bán được")
+    const nh = hands.length || 1, past = H.filter(h => h.by && h.by[g]), want = Math.max(c4Cap(g) * .7, past.length ? past.reduce((a, h) => a + h.by[g].n + h.by[g].lost * 2, 0) / past.length : 0);   // (never below 70 % of the capacity: days it sold nothing while unattended must not keep it at nothing)
+    const quick = hands.length ? hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length : 1;
+    const cap = (to - from) / C4_MPS / (c4ServeDur(g, hands[0]) + 1.5) * 2 * nh;   // what they can serve in that time
+    const raw = Math.min(cap, want * share * (hands.length ? Math.min(1, .55 * nh) : .6) * quick * w4Rnd());
+    const fr = (C4.bgFrac = C4.bgFrac || {}), n = Math.min(c4Stock(g), Math.floor((fr[g] || 0) + raw)); fr[g] = (fr[g] || 0) + raw - n;   // (a half hour at a time is a fraction of a sale: the rest carries over)
     if (n < 1) continue;
     const pay = Math.round(n * c4Price(g) * (1 - c4SalePct(g) / 100));
     c4SetStock(g, c4Stock(g) - n); SAVE4.money += pay; SAVE4.sold = (SAVE4.sold || 0) + n;
@@ -80,6 +82,7 @@ function w4BeforeDay() {
     p4EnsureDay(); w4CatchTown(P4_CLOSE);
     if (P4.w4day === SAVE4.day && SAVE4B.settled !== SAVE4.day) p4EndDay(true);
   }
+  if (SAVE4B.house) { SAVE4B.morning = SAVE4.day + 1; p4Persist(); }          // the next morning starts with the town's stocking sheet (and a way to the village's)
   W4.day = SAVE4.day + 1; W4.mins = C4_OPEN; W4.pho = 0; w4Save();
 }
 
@@ -123,9 +126,9 @@ function p4BetelLog(n) { const L = SAVE4B.buyLog; if (!L || L.day !== SAVE4.day)
 // buys the betel of the last day it was bought, at 3 đồng (as the sheet), as far as the purse goes; only when a hand minds the house
 // (the couple are in the village, nobody else sells there); the eating houses buy their own ingredients as they cook
 function w4TownAutoBuy() {
-  if (!SAVE4B.house || S.mode === 'c4bplay' || SAVE4B.autoDay === SAVE4.day) return;
+  if (!SAVE4B.house || SAVE4B.shut || S.mode === 'c4bplay' || SAVE4B.autoDay === SAVE4.day) return;
   SAVE4B.autoDay = SAVE4.day;
-  const L = SAVE4B.buyLog; if (!L || L.day >= SAVE4.day || !L.n || !p4Hands().length) return;
+  const L = SAVE4B.buyLog; if (!L || L.day >= SAVE4.day || !L.n) return;
   const n = Math.min(L.n, Math.floor(p4Purse() / 3)); if (n < 1) return;
   p4Spend(n * 3); SAVE4B.stock += n; SAVE4B.buyLog = { day: SAVE4.day, n };
 }
@@ -137,9 +140,9 @@ function w4CatchTown(to) {
   w4TownAutoBuy();                                                          // a new day away from the town: betel as the last day
   const from = P4.mins; to = Math.min(to, P4_CLOSE); if (to <= from + .5) return;
   const hands = p4Hands();
-  if (hands.length && SAVE4B.stock > 0) {                                   // the betel house: its hand alone (the wife is with the player)
+  if (SAVE4B.stock > 0 && !SAVE4B.shut) {                                  // the betel house: its hand alone, or a relative at 60 % when none is hired (the wife is with the player)
     let buyers = 0; for (let m = from; m < to; m += 5) buyers += w4TownBetelRate(m) * Math.min(5, to - m);
-    const quick = hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length;
+    const quick = hands.length ? hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length : .6;
     const n = Math.min(SAVE4B.stock, Math.round(buyers * 2 * .6 * quick * w4Rnd()));
     if (n > 0) {
       const got = p4SalePrice('home', n * SAVE4B.price);
@@ -149,7 +152,7 @@ function w4CatchTown(to) {
   }
   const S2 = p4Shops();
   for (const key in S2) {                                                   // the eating houses: the cook serves the meals' customers
-    const R = S2[key]; let cust = 0;
+    const R = S2[key]; if (R.shut) continue; let cust = 0;
     for (let m = from; m < to; m += 5) cust += P4_FOOD_CUST / 900 * P4_MEALS(m / 60) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * Math.min(5, to - m);
     const n = Math.round(cust * 2.5 * w4Rnd()); if (n < 1) continue;
     const got = p4SalePrice(key, n * P4_FOOD.price), cost = n * P4_FOOD.cost;
@@ -166,21 +169,27 @@ function w4CatchTown(to) {
 function w4TownNextDay() {
   if (w4VillageLive()) { w4CatchVillage(C4_CLOSE); if (w4VillageLive()) c4EndDay(); }
   SAVE4B.settled = SAVE4.day;
-  w4VillageAutoDay();                                                       // the day turns (c4DayAdvance) and the village opens by itself
+  c4DayAdvance();                                                           // the day turns
   p4Sheets(null); p4EnsureDay(); P4.mins = P4_OPEN; p4Hud();
+  if (SAVE4B.house) { p4HomeOpen(); toast('Sáng ngày mới: nhập trầu cho hiệu rồi bấm Họp chợ, hoặc sang làng nhập hàng trước.', 3.4); }   // the town's morning stocking (owner, 2026-10-22); the village's order is made by the player, or for them when the town opens (w4TownOpen)
+  else w4VillageAutoMorning();                                              // no house in town: the village just opens
 }
-// a new day begun in the town (owner, 2026-10-18): the village's morning is played without the player: the day turns as in the village
-// (c4NewDay: loans, dues, the morning's happenings), the morning order is yesterday's ("Như hôm qua"; with none, the usual suggestion) for the stalls a hired hand minds (no one else sells there meanwhile),
-// cut to what can be paid as the sheet does, and the market opens at 5:00; from then the hands sell while the player stays in the town
-function w4VillageAutoDay() {
-  if (typeof C4 === 'undefined' || !C4.porter) { c4DayAdvance(); if (typeof C4 === 'undefined') return; c4MarketStart(); $('#c4hud').hidden = true; }
-  else c4NewDay();
-  if (C4.day !== SAVE4.day || C4.phase !== 'morning' || !$('#c4amO .go')) { c4Sheets(null); C4.away = null; return; }   // (the second talk, a ruin…: left for the player)
+// the town's "Họp chợ" (or closing the morning sheet): the town opens; if the village's morning order was not given by the player, it is given for them
+function w4TownOpen() {
+  SAVE4B.morning = 0; p4Persist(); p4Sheets(null); p4Hud();
+  w4VillageAutoMorning();
+}
+// the village's morning played without the player (owner, 2026-10-18; asked again 2026-10-22 for both ways): the order is yesterday's ("Như hôm qua", else the usual suggestion), cut to what can be paid, and the market opens at the world's hour
+function w4VillageAutoMorning() {
+  if (typeof C4 === 'undefined' || SAVE4.openDay === SAVE4.day || !SAVE4.intro || c4Talk2Due()) return;
+  if (!(C4.day === SAVE4.day && C4.phase === 'morning' && $('#c4amO .go'))) { c4MarketStart(); $('#c4hud').hidden = true; }   // (the morning sheet may already be waiting there)
+  if (C4.day !== SAVE4.day || C4.phase !== 'morning' || !$('#c4amO .go')) { c4Sheets(null); C4.away = null; return; }   // (a ruin…: left for the player)
   const qua = $('#c4amO [data-all="qua"]'); if (qua && !qua.disabled) qua.click();
-  for (const g of c4Owned()) if (!c4HandsOn(g).length && C4.orders) C4.orders[g] = 0;   // only the stalls a hired hand minds: the couple are in the town, nobody else would sell it
   const go = $('#c4amO .go'); if (go && !go.disabled && getComputedStyle(go).display !== 'none') go.click();
   c4Sheets(null); C4.away = null;
 }
+// the village's "Họp chợ" was pressed: the town's morning is over too (it stocks itself as the last day if the player did not, w4TownAutoBuy)
+function w4VillageOpened() { if (SAVE4B.house && SAVE4B.morning === SAVE4.day) { SAVE4B.morning = 0; p4Persist(); } }
 // the village's part of the town's evening sheet (caught up first, so the hands' sales are in)
 function w4VillageLine() {
   if (w4VillageLive()) w4CatchVillage(W4.mins);

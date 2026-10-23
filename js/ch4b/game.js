@@ -50,6 +50,8 @@ function p4Folk(g, w, x, y, s) {
   if (sort.role === 'old') { g.strokeStyle = INK; g.lineWidth = 6 * k; g.lineCap = 'round'; g.beginPath(); g.moveTo(f * 32 * k, -92 * k); g.lineTo(f * 44 * k, 0); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 3.4 * k; g.stroke(); }
   g.restore();
 }
+// shutting the house for a while: those in the queue go home (nobody is snubbed); one being served is served
+const p4TurnAway = () => { for (const w of P4.Q) if (!w.servedBy) { w.st = 'leave'; w.buy = false; w.dir = w.x < P4.camX + p4View().vw / 2 ? -1 : 1; } P4.Q = P4.Q.filter(w => w.servedBy); };
 const p4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text, t: 0, life }; };
 const p4Pick = a => a[(Math.random() * a.length) | 0];
 
@@ -67,7 +69,7 @@ function p4Spawn(atX, who, opt) {
   const x = atX !== undefined ? atX : fromRight ? P4.camX + V.vw + 120 + Math.random() * 200 : P4.camX - 120 - Math.random() * 200;
   const look = kid ? {} : p4TownLook({ skirt: P.look.skirt, hat: P.look.hat }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
-  const buy = !kid && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4KeenK(P) && !p4HoldBack(P, 'home') || !!(opt && opt.buy && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0);   // regulars buy more, a habit of sales makes them wait; invited / sale guests come to buy (khachquen.js)
+  const buy = !kid && SAVE4B.house && !SAVE4B.shut && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4KeenK(P) && !p4HoldBack(P, 'home') || !!(opt && opt.buy && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0);   // regulars buy more, a habit of sales makes them wait; invited / sale guests come to buy (khachquen.js)
   P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o' || (p4Wx() === 'mua' && Math.random() < .75), x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
     sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: (opt && opt.n) || 1 + ((Math.random() * 3) | 0), pid: P ? P.id : undefined, treat: !!(opt && opt.treat), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
@@ -101,6 +103,7 @@ function startP4() {
   $('#album').hidden = true; $('#end').hidden = true; $('#chapters').hidden = true; $('#hud').hidden = true; $('#abil').hidden = true; $('#pad').hidden = true;
   if (!P4.scene) { P4.scene = p4TownScene(mulberry(7)); P4.camX = P4_HOME - p4View().vw * .5; }
   w4TownEnter();                                                           // the village's day and hour (dongho.js)
+  if (SAVE4B.house && SAVE4B.morning === SAVE4.day && P4.phase === 'open') p4HomeOpen();   // the new day's stocking, not yet done
   p4HoaLoad();                                                              // everyone's lanterns (hoadang-net.js)
   $('#p4hud').hidden = false; p4Hud(); if (P4.hoaHold) p4HoaHold(P4.hoaHold); cv.focus();
   if (typeof trackEnter === 'function') trackEnter('chuong-4/pho-huyen');
@@ -234,12 +237,17 @@ cv.addEventListener('wheel', e => { if (S.mode !== 'c4bplay' || P4.sheet) return
 function p4Key(e) {
   if (P4.talk) { if (['Space', 'Enter', 'NumpadEnter'].includes(e.code)) { e.preventDefault && e.preventDefault(); p4TalkNext(); } return; }
   if (e.code === 'Escape' && P4T.on) { p4TemStop(); return; }
+  if (e.code === 'Escape' && P4.sheet === 'p4home' && SAVE4B.morning === SAVE4.day) { w4TownOpen(); return; }
   if (e.code === 'Escape') { if (P4.sheet && P4.sheet !== 'p4buy' && P4.sheet !== 'p4day' && P4.sheet !== 'p4boss') p4Sheets(null); else showChapters(); return; }
   if (e.code === 'ArrowLeft') P4.camX -= 60; if (e.code === 'ArrowRight') P4.camX += 60;
 }
 
 // ---------- HUD and sheets ----------
 function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd', 'c4rank', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+// a sheet opened by a tap on the street (our house, a neighbour's, the lanterns) appears under the finger, and the phone then sends that
+// same tap's click to the button now there (Nhập trầu, Đổi tên, Trả quán…: a player, "nhấn một lần mà như nhấn đúp"): clicks inside a
+// sheet in its first .45 s are dropped (chương IV's village has the same guard in cho.js)
+addEventListener('click', e => { if (S.mode === 'c4bplay' && P4.sheet && performance.now() - (P4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + P4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;
@@ -265,10 +273,12 @@ function p4HomeDraw() {
   $('#p4homeB').innerHTML = `<div class="row"><button class="btn tem" data-tem="1">Têm trầu</button></div><p class="p4name">Hiệu <b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b> <button class="btn alt" data-rename="1">Đổi tên</button></p><p>Trầu trong nhà: <b>${G.stock}</b> miếng · giá bán <b>${G.price}</b> đồng một miếng</p><p>Nhập trầu: ${cost} đồng một miếng. Trầu không để được qua đêm.</p>`
     + `<div class="row"><button class="btn" data-n="20">Nhập 20</button><button class="btn" data-n="50">Nhập 50</button></div>`
     + `<div class="row"><button class="btn alt" data-p="-1">Giảm giá</button><button class="btn alt" data-p="1">Tăng giá</button></div>`
+    + `<div class="row"><button class="btn alt" data-shut="1">${SAVE4B.shut ? 'Mở cửa lại' : 'Tạm đóng cửa hiệu'}</button></div>` + (SAVE4B.shut ? '<p class="sm">Hiệu đang đóng: khách không ghé nữa.</p>' : '')
     + (SAVE4B.sign ? '' : `<div class="row"><button class="btn" data-homesign="1"${p4Purse() < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${c4Money(P4_SIGN_PRICE)} (+10% khách)</button></div>`)
     + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>` + p4HandsHtml();
   $('#p4homeB').appendChild(p4SaleBlock('home', p4HomeOpen));               // a sale at the betel house (giamgia.js)
   { const tb = p4TreatBlock('trau'); $('#p4homeB').appendChild(tb); p4Tabs('p4home', $('#p4homeB'), tb, 'Hiệu trầu'); }   // the Mời khách tab (khachquen.js)
+  { const m = SAVE4B.morning === SAVE4.day; $('#p4homeGo').hidden = !m; $('#p4homeVil').hidden = !m; $('#p4homeX').hidden = m; }   // the morning after "Sang ngày mới": stock, then open or go to the village
   p4Sheets('p4home');
 }
 {
@@ -277,7 +287,7 @@ function p4HomeDraw() {
   const sheet = (id, inner) => { const d = document.createElement('div'); d.id = id; d.className = 'c4sheet p4sheet'; d.hidden = true; d.innerHTML = `<div class="card4">${inner}</div>`; return d; };
   document.body.append(hud,
     sheet('p4buy', '<h3>Lên Phố Huyện</h3><div id="p4buyB"></div><div class="row"><button class="btn" id="p4buyGo">Mua nhà</button><button class="btn alt" id="p4buyX">Thôi</button></div>'),
-    sheet('p4home', '<h3>Hiệu trầu nhà chuột</h3><div id="p4homeB"></div><div class="row"><button class="btn alt" id="p4homeX">Đóng</button></div>'),
+    sheet('p4home', '<h3>Hiệu trầu nhà chuột</h3><div id="p4homeB"></div><div class="row"><button class="btn" id="p4homeGo" hidden>Họp chợ ở phố</button><button class="btn alt" id="p4homeVil" hidden>Nhập hàng ở làng</button><button class="btn alt" id="p4homeX">Đóng</button></div>'),
     sheet('p4name', '<h3>Đặt tên hiệu</h3><p>Tên treo trên biển trước nhà (tối đa ' + P4_NAME_MAX + ' chữ).</p><input id="p4nameIn" maxlength="' + P4_NAME_MAX + '" autocomplete="off"><div class="row"><button class="btn" id="p4nameGo">Treo biển</button><button class="btn alt" id="p4nameX">Thôi</button></div>'),
     sheet('p4day', '<h3 id="p4dayT"></h3><div id="p4dayB"></div><div class="row"><button class="btn" id="p4dayGo">Sang ngày mới</button></div>'));
   $('#p4Name').addEventListener('click', () => showChapters());
@@ -293,8 +303,11 @@ function p4HomeDraw() {
     AU.tap(); p4BuyTalkStart(p4DoBuy);                                     // the couple talk it over first (muanha.js)
   });
   $('#p4homeX').addEventListener('click', () => p4Sheets(null));
+  $('#p4homeGo').addEventListener('click', () => { AU.tap(); w4TownOpen(); });          // the new day's morning: open the house (dongho.js)
+  $('#p4homeVil').addEventListener('click', () => { AU.tap(); p4Hide(); startC4(); });   // …or first go to the village's morning order
   $('#p4homeB').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.shut) { SAVE4B.shut = !SAVE4B.shut; if (SAVE4B.shut) p4TurnAway(); p4Persist(); AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (b.dataset.tem) { AU.tap(); p4TemStart(); return; }
     if (b.dataset.rename) { AU.tap(); p4NameSheet(false); return; }
     if (b.dataset.homesign) { if (!SAVE4B.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); SAVE4B.sign = true; p4Persist(); toast('Biển hiệu mới sơn son thếp vàng!', 2.4); } AU.tap(); p4HomeOpen(); p4Hud(); return; }
@@ -332,7 +345,7 @@ function p4BoatOrders(dt) {
     if (b.stop && !o.taken && P4.t - o.t0 > 40) p4BoatLeave(b, p4Pick(['Thôi, đi tiếp vậy.', 'Chờ lâu quá!']), true);
   }
   // now and then (more when the street is busy) a boat turns in towards the house: it comes from off the screen and stops at the quay
-  if (!SAVE4B.house || P4.phase !== 'open' || SAVE4B.stock <= 0 || B.some(b => b.order)) return;
+  if (!SAVE4B.house || SAVE4B.shut || P4.phase !== 'open' || SAVE4B.stock <= 0 || B.some(b => b.order)) return;
   if ((P4.boatT -= dt) > 0) return;
   P4.boatT = (22 + Math.random() * 25) / p4Busy();
   const V = p4View(), b = B.filter(q => !q.order && (q.x < P4.camX - 150 || q.x > P4.camX + V.vw + 150)).sort((p, q) => Math.abs(p.x - P4_HOME) - Math.abs(q.x - P4_HOME))[0]; if (!b) return;

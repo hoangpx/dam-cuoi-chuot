@@ -404,6 +404,9 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .ordR input{width:58px;height:36px;box-sizing:border-box;text-align:center;font:900 16px var(--display);border:2px solid var(--ink);background:#fff;color:var(--ink);padding:0;-moz-appearance:textfield}
 .ordR input::-webkit-outer-spin-button,.ordR input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .ordR.off{opacity:.5}
+.ordR .nm .shutB{width:auto;height:auto;font:700 11.5px/1.2 var(--body,inherit);text-decoration:underline;border:0;background:none;padding:2px 0;margin-top:2px;cursor:pointer}
+.shutBox{margin:10px 0}
+.shutBox .sm{font-size:12px;opacity:.75;margin:4px 0 0}
 #c4amO .tot{margin-top:8px}
 #c4amO .go{position:sticky;bottom:4px;z-index:3}
 .ordH{margin:0 0 4px;text-align:center}

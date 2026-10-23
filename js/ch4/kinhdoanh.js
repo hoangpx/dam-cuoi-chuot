@@ -387,7 +387,7 @@ function c4BuyItem(id) {
 // the money a misfortune takes (owner, 2026-10-09): a base amount (lo/hi × 1000 đồng, at least `min`) times the stalls' levels, never more than the purse. The tax stays a share of the profit.
 // (a stall of level 1 counts 1, level 2 counts 2…; bought neighbour stalls count 1)
 const c4Stalls = () => Math.max(1, c4Owned().length);
-const c4LossMult = () => c4Owned().reduce((n, g) => n + (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g)) + 1, 0);   // each stall counts its level (1 for the first): 2 stalls of level 1 = 2, level 1 + level 2 = 3, two of level 2 = 4
+const c4LossMult = () => c4OpenStalls().reduce((n, g) => n + (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g)) + 1, 0);   // each stall counts its level (1 for the first): 2 stalls of level 1 = 2, level 1 + level 2 = 3, two of level 2 = 4
 const C4_LOSS_CAP = .2;                                                    // one misfortune takes at most a fifth of the purse (owner, 2026-10-17: a gale ate nearly all of 3 quan)
 const c4LossRange = (lo, hi, min = 20) => { const m = Math.max(0, SAVE4.money), k = c4LossMult(), cap = Math.min(m, Math.max(min, Math.round(m * C4_LOSS_CAP))); return [Math.min(cap, Math.max(min * k, Math.round(1000 * lo * k))), Math.min(cap, Math.max(min * k, Math.round(1000 * hi * k)))]; };   // lo, hi: the base amount ÷ 1000 (a share of 1000 đồng)
 const c4Loss = (lo, hi, min = 20) => { const [a, b] = c4LossRange(lo, hi, min); return Math.min(SAVE4.money, a + Math.round(R() * (b - a))); };
@@ -496,7 +496,7 @@ const c4Earned = () => (SAVE4.earn || []).reduce((a, x) => a + Math.max(0, x), 0
 // progressive (owner): 5% of the first 300 đồng earned in the last five days, 10% up to 1 200, 15% above; plus 5 a stall
 const C4_TAX_BANDS = [[300, .05], [1200, .1], [3000, .2], [8000, .3], [Infinity, .4]];
 const c4TaxOn = e => { let t = 0, lo = 0; for (const [hi, r] of C4_TAX_BANDS) { if (e > lo) t += (Math.min(e, hi) - lo) * r; lo = hi; } return t; };
-const c4Tax = () => Math.max(10, Math.round(c4TaxOn(c4Earned())) + 5 * c4LossMult());
+const c4Tax = () => !c4OpenStalls().length ? 0 : Math.max(10, Math.round(c4TaxOn(c4Earned())) + 5 * c4LossMult());   // only the stalls that are open (owner)
 /* ---------- every stall at a glance (owner's reference): a card each, tap to open it ---------- */
 function c4OpenUps() {
   $('#c4evT').textContent = 'Các hàng của nhà mình';

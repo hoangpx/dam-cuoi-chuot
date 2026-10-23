@@ -23,7 +23,8 @@ function p4ShopsUpdate(dt) {
   if (P4.phase !== 'open') return;
   const S = p4Shops(), h = P4.mins / 60, dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);   // game minutes this frame
   for (const key in S) {
-    const R = S[key], x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R) * p4Harass();   // customers a game minute (a sale's extra regulars come by khachquen.js)
+    const R = S[key]; if (R.shut) { R.acc = 0; for (const w of P4.FQ[key] || []) { w.st = 'leave'; w.dir = 1; } P4.FQ[key] = []; if (R.cook) R.cook.w = null; continue; }   // shut for a while: nobody comes, those waiting go home
+    const x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R) * p4Harass();   // customers a game minute (a sale's extra regulars come by khachquen.js)
     R.acc = (R.acc || 0) + rate * dm;
     while (R.acc >= 1) { R.acc -= 1; p4FoodCustomer(x, key); }
     // the cook serves the first in the queue
@@ -94,6 +95,7 @@ function p4ShopSheet() {
       + `<p>Hôm nay: ${T.n} bát/đĩa, thu ${m(T.take)}</p><p>${R.own === 'buy' ? 'Thuế nhà ' + m(P4_TAX_WEEK) : 'Tiền thuê ' + m(P4_RENT_WEEK)} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).</p>`
       + `<div class="row">` + (R.sign ? '' : `<button class="btn" data-sign="1"${purse < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${m(P4_SIGN_PRICE)} (+10% khách)</button>`)
       + `<button class="btn alt" data-shopname="1">Đổi tên</button></div>`
+      + `<div class="row"><button class="btn alt" data-shut="1">${R.shut ? 'Mở cửa lại' : 'Tạm đóng cửa quán'}</button></div>` + (R.shut ? '<p class="sm">Quán đang đóng: khách không ghé nữa.</p>' : '')
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
   }
   $('#p4shopB').innerHTML = h + `<div class="row"><button class="btn alt" data-shopx="1">Đóng</button></div>`;
@@ -112,6 +114,7 @@ function p4ShopClick(b) {
     toast(`Đã mua đứt ${S[sel.key].name}. Từ nay chỉ đóng thuế nhà mỗi tuần.`, 3);
   } else if (b.dataset.sign && R && !R.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); R.sign = true; toast('Biển hiệu mới sơn son thếp vàng!', 2.4); }
   else if (b.dataset.giveup && R && R.own === 'rent') { delete S[sel.key]; delete P4.FQ[sel.key]; toast(`Đã trả lại ${sel.name}.`, 2.4); }
+  else if (b.dataset.shut && R) { R.shut = !R.shut; if (R.shut) { for (const w of P4.FQ[sel.key] || []) { w.st = 'leave'; w.dir = 1; } P4.FQ[sel.key] = []; if (R.cook) R.cook.w = null; } }
   else if (b.dataset.shopname && R) { p4NameSheet(false, sel.key); return; }
   p4Persist(); p4Hud(); AU.tap(); p4ShopSheet();
 }
