@@ -247,7 +247,7 @@ function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now()
 // a sheet opened by a tap on the street (our house, a neighbour's, the lanterns) appears under the finger, and the phone then sends that
 // same tap's click to the button now there (Nhập trầu, Đổi tên, Trả quán…: a player, "nhấn một lần mà như nhấn đúp"): clicks inside a
 // sheet in its first .45 s are dropped (chương IV's village has the same guard in cho.js)
-addEventListener('click', e => { if (S.mode === 'c4bplay' && P4.sheet && performance.now() - (P4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + P4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
+addEventListener('click', e => { if (S.mode === 'c4bplay' && P4.sheet && c4GhostClick(e, P4.sheetT || 0) && e.target.closest && e.target.closest('#' + P4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;

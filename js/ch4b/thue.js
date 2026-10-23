@@ -96,7 +96,7 @@ function p4ShopSheet() {
       + `<div class="row">` + (R.sign ? '' : `<button class="btn" data-sign="1"${purse < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${m(P4_SIGN_PRICE)} (+10% khách)</button>`)
       + `<button class="btn alt" data-shopname="1">Đổi tên</button></div>`
       + `<div class="row"><button class="btn alt" data-shut="1">${R.shut ? 'Mở cửa lại' : 'Tạm đóng cửa quán'}</button></div>` + (R.shut ? '<p class="sm">Quán đang đóng: khách không ghé nữa.</p>' : '')
-      + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
+      + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button></div>`);
   }
   $('#p4shopB').innerHTML = h + `<div class="row"><button class="btn alt" data-shopx="1">Đóng</button></div>`;
   { const rr = $('#p4shopB > .row:last-child'); if (R && rr) { rr.before(p4SaleBlock(key, () => p4KeepScroll('p4shop', p4ShopSheet))); const tb = p4TreatBlock(key); rr.before(tb); p4Tabs('p4shop', $('#p4shopB'), tb, 'Quán'); } }   // a sale and the Mời khách tab at a shop we run (giamgia.js, khachquen.js)
@@ -113,7 +113,6 @@ function p4ShopClick(b) {
     p4Spend(P4_HOUSE_PRICE); S[sel.key] = { ...(R || { food: sel.name, name: sel.name, sign: false }), own: 'buy', since: SAVE4B.day };
     toast(`Đã mua đứt ${S[sel.key].name}. Từ nay chỉ đóng thuế nhà mỗi tuần.`, 3);
   } else if (b.dataset.sign && R && !R.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); R.sign = true; toast('Biển hiệu mới sơn son thếp vàng!', 2.4); }
-  else if (b.dataset.giveup && R && R.own === 'rent') { delete S[sel.key]; delete P4.FQ[sel.key]; toast(`Đã trả lại ${sel.name}.`, 2.4); }
   else if (b.dataset.shut && R) { R.shut = !R.shut; if (R.shut) { for (const w of P4.FQ[sel.key] || []) { w.st = 'leave'; w.dir = 1; } P4.FQ[sel.key] = []; if (R.cook) R.cook.w = null; } }
   else if (b.dataset.shopname && R) { p4NameSheet(false, sel.key); return; }
   p4Persist(); p4Hud(); AU.tap(); p4ShopSheet();

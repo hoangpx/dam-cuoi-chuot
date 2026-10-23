@@ -256,7 +256,10 @@ function c4Sheets(id) { const up = $('#c4up'); if (up) up.classList.remove('tab-
  if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 // a sheet opened by a tap on the market (a visitor, a stall) appears under the finger, and some phones (an Oppo) then send that tap's click
 // to the button now there, e.g. the refusal (a player): clicks inside a sheet in its first .45 s are dropped
-addEventListener('click', e => { if (S.mode === 'c4play' && C4.sheet && performance.now() - (C4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + C4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
+// (owner, 2026-10-22, again: a click whose finger went DOWN before the sheet opened is the tap that opened it, however late it arrives: dropped. Keyboard and scripted clicks (detail 0) pass.)
+let C4_DOWNT = 0; addEventListener('pointerdown', () => { C4_DOWNT = performance.now(); }, true);
+const c4GhostClick = (e, sheetT) => e.detail !== 0 && (C4_DOWNT < sheetT || performance.now() - sheetT < 450);
+addEventListener('click', e => { if (S.mode === 'c4play' && C4.sheet && c4GhostClick(e, C4.sheetT || 0) && e.target.closest && e.target.closest('#' + C4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
 const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text, t: 0, life }; };
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
 const c4Grow = () => 1 + Math.min(.45, Math.max(0, (SAVE4.day - 15) / 60));   // more folk come as the market becomes known (owner: more people, later days less dull)
