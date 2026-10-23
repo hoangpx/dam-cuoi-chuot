@@ -241,7 +241,7 @@ const C4_SCROLLERS = '.trl,.folk,.rk';
 function c4ScrollGet(id) { const s = $('#' + id); if (!s || C4.sheet !== id) return null; const c = s.querySelector('.card4'); return { s: s.scrollTop, c: c ? c.scrollTop : 0, l: [...s.querySelectorAll(C4_SCROLLERS)].map(e => e.scrollTop) }; }
 function c4ScrollSet(id, k) { if (!k) return; const s = $('#' + id), c = s.querySelector('.card4'); s.scrollTop = k.s; if (c) c.scrollTop = k.c; [...s.querySelectorAll(C4_SCROLLERS)].forEach((e, i) => { if (k.l[i] != null) e.scrollTop = k.l[i]; }); }
 function c4Sheets(id) { const up = $('#c4up'); if (up) up.classList.remove('tab-moi');   // the stall sheet's "Mời khách" tab (c4UpTabs) is set again after each opening
- if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
+ if (id && id !== C4.sheet) C4.sheetT = performance.now(); for (const s of ['c4am', 'c4up', 'c4ev', 'c4note', 'c4day', 'c4home', 'c4shop', 'c4rank', 'c4nhax', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } C4.paused = !!id && id !== 'c4day'; C4.sheet = id; }
 // a sheet opened by a tap on the market (a visitor, a stall) appears under the finger, and some phones (an Oppo) then send that tap's click
 // to the button now there, e.g. the refusal (a player): clicks inside a sheet in its first .45 s are dropped
 addEventListener('click', e => { if (S.mode === 'c4play' && C4.sheet && performance.now() - (C4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + C4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
