@@ -37,6 +37,43 @@ update public.dcc_rank r set gift = least(coalesce((select sum(v.amount) from pu
 update public.dcc_rank set gift = 300000 where gift > 300000;
 alter table public.dcc_rank add constraint dcc_rank_gift_cap check (gift >= 0 and gift <= 300000);
 
+-- IP: địa chỉ mạng của người gọi (Supabase đưa header qua request.headers; IPv6 chỉ lấy 4 nhóm đầu = một mạng /64, vì một máy đổi được cả dãy sau).
+-- Dùng để: đếm giới hạn theo địa chỉ, ghi vết (dcc_rank.last_ip, dcc_rank_review.from_ip), và chặn theo địa chỉ (bảng dcc_ban_ip, KHÔNG phải ẩn vĩnh viễn: có hạn).
+-- Nhiều người dùng chung một địa chỉ (mạng di động, quán net) nên chỉ chặn ngắn (vài chục phút đến vài giờ) và chỉ khi đang gian lận.
+-- Chặn:   insert into dcc_ban_ip (ip, until, note) values ('1.2.3.4', now() + interval '6 hours', 'lý do') on conflict (ip) do update set until = excluded.until, note = excluded.note;
+-- Mở:     delete from dcc_ban_ip where ip = '1.2.3.4';          Xem:  select * from dcc_ban_ip where until > now();
+-- Ai chung địa chỉ: select last_ip, count(*), array_agg(name) from dcc_rank where last_ip <> '' group by 1 having count(*) > 1 order by 2 desc;
+-- Địa chỉ chỉ được giữ 30 ngày: dcc_purge_ips() xoá cũ hơn (tự chạy thỉnh thoảng khi có người cho tiền / gửi dòng; hoặc gọi tay: select dcc_purge_ips();).
+alter table public.dcc_rank add column if not exists last_ip text not null default '';
+create table if not exists public.dcc_ban_ip (
+  ip text primary key,
+  until timestamptz not null,
+  note text not null default '',
+  created_at timestamptz not null default now()
+);
+alter table public.dcc_ban_ip enable row level security;   -- không policy nào: anon không chạm được bảng
+create or replace function public.dcc_req_ip() returns text language plpgsql stable set search_path = public as $$
+declare hd json; ip text := '';
+begin
+  begin
+    hd := current_setting('request.headers', true)::json;
+    ip := btrim(split_part(coalesce(hd ->> 'cf-connecting-ip', hd ->> 'x-forwarded-for', hd ->> 'x-real-ip', ''), ',', 1));
+  exception when others then ip := '';
+  end;
+  if position(':' in ip) > 0 then ip := split_part(ip, ':', 1) || ':' || split_part(ip, ':', 2) || ':' || split_part(ip, ':', 3) || ':' || split_part(ip, ':', 4); end if;
+  return ip;
+end $$;
+create or replace function public.dcc_ip_banned(p_ip text) returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(p_ip, '') <> '' and exists (select 1 from public.dcc_ban_ip b where b.ip = p_ip and b.until > now())
+$$;
+create or replace function public.dcc_purge_ips() returns void language sql security definer set search_path = public as $$
+  update public.dcc_rank_review set from_ip = '' where from_ip <> '' and created_at < now() - interval '30 days';
+  update public.dcc_rank set last_ip = '' where last_ip <> '' and updated_at < now() - interval '30 days';
+  delete from public.dcc_ban_ip where until < now() - interval '30 days';
+$$;
+revoke all on function public.dcc_purge_ips() from public;   -- chỉ hàm khác (security definer) và chủ dự án gọi, anon thì không
+revoke all on function public.dcc_ip_banned(text) from public;       -- kẻ lạ không dò được địa chỉ nào đang bị chặn
+
 -- B) cho tiền có luật
 create or replace function public.dcc_rank_review_put(p_target text, p_device text, p_name text, p_amount bigint, p_note text)
 returns table (kind text, amount bigint)
@@ -58,11 +95,9 @@ begin
     from public.dcc_rank r where r.pub = p_target and not r.hidden and not r.flag;
   if t_device is null then raise exception 'no such house'; end if;
   if t_device = p_device then raise exception 'no self'; end if;
-  begin
-    hd := current_setting('request.headers', true)::json;
-    ip := coalesce(split_part(coalesce(hd ->> 'cf-connecting-ip', hd ->> 'x-forwarded-for', ''), ',', 1), '');
-  exception when others then ip := '';
-  end;
+  ip := public.dcc_req_ip();
+  if public.dcc_ip_banned(ip) then raise exception 'no purse'; end if;   -- địa chỉ đang bị chặn
+  if random() < 0.02 then perform public.dcc_purge_ips(); end if;      -- thỉnh thoảng xoá địa chỉ cũ hơn 30 ngày
   select max(created_at) into last from public.dcc_rank_review where from_device = p_device;
   if last is not null and last > now() - interval '20 seconds' then raise exception 'slow down'; end if;
   select count(*) into many from public.dcc_rank_review where from_device = p_device;

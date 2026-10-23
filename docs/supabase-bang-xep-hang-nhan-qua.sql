@@ -21,6 +21,7 @@ language plpgsql security definer set search_path = public as $$
 declare pubv text; t bigint; k int;
 begin
   if p_device !~ '^[a-z0-9]{12,40}$' then raise exception 'bad device'; end if;
+  if public.dcc_ip_banned(public.dcc_req_ip()) then return query select 0::bigint, 0; return; end if;   -- địa chỉ đang bị chặn
   select r.pub into pubv from public.dcc_rank r where r.device = p_device and not r.hidden and not r.flag;
   if pubv is null then return query select 0::bigint, 0; return; end if;
   with u as (

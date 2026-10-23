@@ -55,6 +55,7 @@ class Jigsaw extends DurableObject {
       this.total = (await ctx.storage.get('total')) || 0;
       for (const [k, v] of await ctx.storage.list({ prefix: 'u:', limit: 5000 })) if (v && v.m >= 1) this.ppl.add(k);   // who has joined at least one piece (shown on the card)
       if (cfg.resetTag && (await ctx.storage.get('resetTag')) !== cfg.resetTag) { await ctx.storage.put('resetTag', cfg.resetTag); await this.resetNow(); }   // once, on the first start of this code
+      await this.purgeLog().catch(() => {});   // the join log keeps addresses: nothing older than 30 days
       if (!this.startAt) this.startAt = cfg.startAt || Date.now();
       const bn = await ctx.storage.get('bans'); if (bn) for (const [k, t] of Object.entries(bn)) if (t > Date.now()) this.bans.set(k, t);
       if (FREEZE && !(this.done && this.groups.size === 1)) {   // the run in progress is kept, then the whole print is put together in the middle of the table
@@ -107,6 +108,7 @@ class Jigsaw extends DurableObject {
   flush(soft) {
     const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() }, put = { pz, total: this.total };
     if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
+    if (Date.now() - (this.purgeAt || 0) > 6 * 3600000) this.purgeLog().catch(() => {});
     const jl = this.jl; this.jl = []; for (const [k, v] of jl) put[k] = v;
     const users = [...this.dirtyUsers]; for (const dev of users) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
     return this.ctx.storage.put(put, soft ? { allowUnconfirmed: true } : undefined).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); this.jl.unshift(...jl); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 5000); });
@@ -266,6 +268,14 @@ class Jigsaw extends DurableObject {
   sus() {
     const now = Date.now(), live = [...this.conns.values()].filter(c => c.joined).map(c => ({ id: c.id, name: c.name, dev: c.dev, ip: c.ip, joins: c.jn, last60: c.joinT.filter(t => now - t < 60000).length, strikes: c.strikes, secs: Math.round((now - c.at) / 1000) })).sort((a, b) => b.last60 - a.last60 || b.joins - a.joins);
     return this.json({ ver: VER, puzzle: this.n, left: this.groups.size - 1, live: live.slice(0, 40), bans: [...this.bans].filter(([, t]) => t > now).map(([k, t]) => [k, Math.round((t - now) / 60000) + ' min']) });
+  }
+  // the join records (j:<time>:<socket>) hold addresses; they are for catching cheats, so they go after 30 days (at start and every 6 hours with a save)
+  async purgeLog() {
+    this.purgeAt = Date.now();
+    const cut = 'j:' + String(Date.now() - 30 * 86400000).padStart(14, '0');
+    const keys = [...(await this.ctx.storage.list({ prefix: 'j:', end: cut, limit: 5000 })).keys()];
+    for (let i = 0; i < keys.length; i += 128) await this.ctx.storage.delete(keys.slice(i, i + 128));
+    return keys.length;
   }
   // who joined how much, from the per-join records (key j:<time>:<socket>): by device, with addresses, names, first and last time, the busiest minute and the quickest hold
   async logReq() {

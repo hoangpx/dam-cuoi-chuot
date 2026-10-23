@@ -18,7 +18,14 @@ alter table public.dcc_ban enable row level security;   -- không policy nào: a
 
 -- chặn ở tầng bảng: bất kể hàm nào ghi vào, máy bị khoá vẫn bị ẩn
 create or replace function public.dcc_rank_ban_guard() returns trigger language plpgsql security definer set search_path = public as $$
+declare ip text := public.dcc_req_ip();
 begin
+  -- chỉ lần GỬI DÒNG CỦA CHÍNH MÁY ĐÓ (đổi updated_at) mới mang địa chỉ của người gọi; quà cộng vào dòng người khác thì không
+  if tg_op = 'INSERT' or new.updated_at is distinct from old.updated_at then
+    if public.dcc_ip_banned(ip) then return null; end if;   -- địa chỉ đang bị chặn (dcc_ban_ip): lần ghi bị bỏ lặng lẽ
+    if ip <> '' then new.last_ip := ip; end if;
+    if random() < 0.02 then perform public.dcc_purge_ips(); end if;
+  end if;
   if exists (select 1 from public.dcc_ban b where b.device = new.device) then new.hidden := true; new.flag := true; end if;
   return new;
 end $$;

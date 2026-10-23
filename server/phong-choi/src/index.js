@@ -35,6 +35,8 @@ const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua'
 
 const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'dodan', 'keoco', 'dhang', 'nhotranh', 'ngoay', 'mecung', 'thaihanh']);   // dodan (folk-lore quiz) is not in the bag: it is dealt now and then, see startRound
 const needCap = game => game === 'dodan' ? 3 : 2;   // the page version that knows the game
+// an address as the ban list keys it: IPv6 only by its first four groups (one /64 network: a single machine owns the whole tail)
+const ipKey = ip => { ip = String(ip || '').trim(); return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip; };
 // devices of cheaters (2026-10-23): refused at hello, the socket closed with 4003 (the same two as docs/supabase-bang-xep-hang-khoa.sql). Takes effect when the room object next restarts
 const BANNED_DEVS = new Set(['llmtkvnjmpa1wfx0o0on', 't2fns94ywx89utpcdf4a']);
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz)/;   // devices used by test.mjs: never written to the board
@@ -119,6 +121,10 @@ export default {
       const ns = u.searchParams.get('p') === 'dg' ? env.JIGSAW_DG2 : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
       return ns.get(ns.idFromName('main')).fetch(new Request(u.origin + path + u.search));
     }
+    if (u.pathname === '/hl-sus' || u.pathname === '/hl-ban' || u.pathname === '/hl-who') {   // the owner's tools for Hội Làng: who is in the room (with address), ban / free an address or a device, find a device by name: Bearer <ADMIN secret>
+      if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
+      return env.ROOM.get(env.ROOM.idFromName('v20')).fetch(new Request(u.origin + u.pathname.replace('/hl-', '/') + u.search));
+    }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
       return env.ROOM.get(env.ROOM.idFromName('v20')).fetch(new Request(req.url.replace('/stats', '/days')));
@@ -144,16 +150,52 @@ export class Room extends DurableObject {
     this.top = null; this.topAt = 0; this.dirty = new Set();
   }
 
+  // bans: { key: until } where key is a device id or an address (ipKey); kept in the store, loaded once. An address ban is short on purpose (many players share one).
+  async loadBans() {
+    if (this.bans) return;
+    this.bans = new Map(); let o = null; try { o = await this.kv.get('bans'); } catch (e) {}
+    if (o) for (const [k, t] of Object.entries(o)) if (t > Date.now()) this.bans.set(k, t);
+  }
+  banned(key) { const t = key && this.bans && this.bans.get(key); if (!t) return false; if (t < Date.now()) { this.bans.delete(key); return false; } return true; }
+  saveBans() { const o = {}, now = Date.now(); for (const [k, t] of this.bans) if (t > now) o[k] = t; this.kv.put('bans', o).catch(() => {}); }
+  ban(key, ms) { if (!key) return; this.bans.set(key, Date.now() + ms); for (const c of [...this.conns.values()]) if (c.dev === key || c.ipk === key) { try { c.ws.close(4003, 'busy'); } catch (e) {} } this.saveBans(); }
+  async admin(u) {
+    await this.loadBans();
+    const json = o => new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+    if (u.pathname === '/sus') {
+      const now = Date.now();
+      return json({ live: this.humans().map(c => ({ id: c.id, name: c.name, dev: c.dev, ip: c.ip, secs: Math.round((now - c.at) / 1000) })), bans: [...this.bans].filter(([, t]) => t > now).map(([k, t]) => [k, Math.round((t - now) / 60000) + ' min']) });
+    }
+    if (u.pathname === '/ban') {   // /ban?dev=…|ip=…[&mins=N][&un=1]
+      const dev = u.searchParams.get('dev'), ip = u.searchParams.get('ip'), key = dev || (ip ? ipKey(ip) : ''); if (!key) return json({ error: 'dev or ip' });
+      if (u.searchParams.get('un')) { this.bans.delete(key); this.saveBans(); return json({ ok: 'freed', key }); }
+      const mins = +u.searchParams.get('mins') || (dev ? 60 * 24 * 365 : 30); this.ban(key, mins * 60000); return json({ ok: 'banned', key, mins });
+    }
+    if (u.pathname === '/who') {
+      const q = (u.searchParams.get('name') || '').toLowerCase(); if (!q) return json({ error: 'name' });
+      const all = await this.kv.list({ prefix: 'u:', limit: 5000 }), out = [];
+      for (const [k, v] of all) { const s = this.stats.get(k.slice(2)) || v; if (s && String(s.n || '').toLowerCase().includes(q)) out.push({ dev: k.slice(2), n: s.n, rounds: s.r }); }
+      for (const [dev, st] of this.stats) if (!out.some(o => o.dev === dev) && String(st.n || '').toLowerCase().includes(q)) out.push({ dev, n: st.n, rounds: st.r });   // players of the last minute are not in the store yet
+      return json({ found: out });
+    }
+    return json({ error: 'unknown' });
+  }
+
   async fetch(req) {
+    const pth = req && new URL(req.url).pathname;
+    if (pth === '/sus' || pth === '/ban' || pth === '/who') return this.admin(new URL(req.url));
     if (req && new URL(req.url).pathname === '/count') return new Response(JSON.stringify({ n: this.humans().filter(c => !TESTDEV.test(c.dev)).length }));
     if (req && new URL(req.url).pathname === '/days') {
       const all = await this.kv.list({ prefix: 'd:', reverse: true, limit: 90 }), out = [];
       for (const [k, v] of all) out.push({ day: k.slice(2), players: v.players, peak: v.peak, peakAt: v.peakAt, rounds: v.rounds, maxSeat: v.maxSeat });
       return new Response(JSON.stringify(out, null, 1), { headers: { 'content-type': 'application/json' } });
     }
+    await this.loadBans();
+    const ip = (req && req.headers.get('CF-Connecting-IP')) || '', ipk = ipKey(ip);
     const pair = new WebSocketPair(), [client, server] = Object.values(pair);
     server.accept();
-    const c = { ws: server, id: 'p' + (this.nextId++), dev: '', name: '', look: null, joined: false, ok: false, idle: true, miss: 0, rtt: 150, seen: Date.now(), win: 0, cnt: 0 };
+    if (this.banned(ipk)) { server.close(4003, 'busy'); return new Response(null, { status: 101, webSocket: client }); }   // accepted and closed with a code, so the page can say why
+    const c = { ws: server, id: 'p' + (this.nextId++), dev: '', name: '', look: null, joined: false, ok: false, idle: true, miss: 0, rtt: 150, seen: Date.now(), win: 0, cnt: 0, ip, ipk, at: Date.now() };
     this.conns.set(c.id, c);
     server.addEventListener('message', e => this.onMsg(c, e.data));
     server.addEventListener('close', () => this.onClose(c));
@@ -175,7 +217,7 @@ export class Room extends DurableObject {
       let name = String(m.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
       if (!name || BAD.test(name)) name = 'Chuột ' + c.id.slice(1);
       c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok; c.cap = +m.cap || 1;   // cap 2 = knows the newer games
-      if (BANNED_DEVS.has(c.dev)) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
+      if (BANNED_DEVS.has(c.dev) || this.banned(c.dev)) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
       const st = await this.getStats(c.dev); st.n = name;
       c.joined = true; this.noteJoin(c);
       this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: (this.round && NEWG.has(this.round.game) && !(c.cap >= needCap(this.round.game))) ? null : this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
