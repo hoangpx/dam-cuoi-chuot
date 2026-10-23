@@ -128,6 +128,7 @@ function updateP4(dt) {
   if (P4.paused) return;
   if (P4.phase === 'open') {
     const dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1); P4.mins += dm;   // the evening lasts longer
+    w4TownTick(dm);                                                        // one clock with the village, which trades on meanwhile (dongho.js)
     if (P4.mins >= P4_CLOSE) { P4.mins = P4_CLOSE; p4EndDay(); }
     if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / (p4Busy() * p4WxFlow()); p4Spawn(); }
     p4Hud();
@@ -234,6 +235,10 @@ function p4Key(e) {
 
 // ---------- HUD and sheets ----------
 function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd', 'c4rank']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+// a sheet opened by a tap on the street (our house, a neighbour's, the lanterns) appears under the finger, and the phone then sends that
+// same tap's click to the button now there (Nhập trầu, Đổi tên, Trả quán…: a player, "nhấn một lần mà như nhấn đúp"): clicks inside a
+// sheet in its first .45 s are dropped (chương IV's village has the same guard in cho.js)
+addEventListener('click', e => { if (S.mode === 'c4bplay' && P4.sheet && performance.now() - (P4.sheetT || 0) < 450 && e.target.closest && e.target.closest('#' + P4.sheet)) { e.stopPropagation(); e.preventDefault(); } }, true);
 const p4Clock = () => { const m = Math.floor(P4.mins), h = Math.floor(m / 60), mm = m % 60; return `${h}:${String(mm).padStart(2, '0')}`; };
 function p4Hud() {
   if ($('#p4hud').hidden) return;

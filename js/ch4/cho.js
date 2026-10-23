@@ -687,7 +687,7 @@ function updateC4(dt) {
   for (const e of [...C4.walkers, C4.wife, ...C4.vendors, C4.porter, ...C4_SHOPS.map(g => SAVE4.shops[g]).filter(Boolean), ...c4AllHands().map(o => o.h)]) if (e.say && (e.say.t += dt) > e.say.life) e.say = null;
   if (C4.phase === 'open') {
     const was = C4.mins; C4.mins += dt * C4_MPS;
-    if (typeof w4VillageTick === 'function') w4VillageTick();   // the village's hour, where the town opens its day (js/ch4b/dongho.js)
+    if (typeof w4VillageTick === 'function') w4VillageTick(dt * C4_MPS);   // one clock with the town (js/ch4b/dongho.js)
     if (Math.floor(was / 30) !== Math.floor(C4.mins / 30)) { SAVE4.openMins = C4.mins; persist4(); }   // every half hour of the market
     const busy = C4_BUSY[c4Hour(C4.mins)] || .3;
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
