@@ -22,6 +22,7 @@ function mk(i) {
     else if (m.t === 'idle') send({ t: 'join' });
     else if (m.t === 'round' && !m.wait) { c.round = m; if (m.seated.includes(c.id)) c.play(m); }
     else if (m.t === 'result') { if (i === 0) { const w = m.rows.find(x => x.id === m.winner); summary.push(`ván ${m.n} ${m.game}: người=${m.rows.length} thắng=${m.winner} hũ=${m.pot} net_tôi=${m.net[c.id] ?? '-'} hàng1=${JSON.stringify(m.rows[0])}`); console.log(summary[summary.length - 1]); seen.add(m.game); } }
+    else if (m.t === 'mzv' && c.mz && c.round) { const R = c.round.cfg.R, s = 2 * R + 1; for (let k = 0; k < s * s; k++) { const ch = m.w[k]; if (ch !== 'g') c.mz.w.set((m.y + Math.floor(k / s) - R) * 100 + (m.x + k % s - R), parseInt(ch, 16)); } }
     else if (m.t === 'hole' && i === 0) console.log('   hang vòng', m.i, 'mèo=', m.cat, 'loại=', m.out.length);
   };
   c.play = r => {
@@ -35,11 +36,26 @@ function mk(i) {
     else if (g === 'minnum') at(rel(rnd(1500, 8000)), () => act(r, { k: 'v', v: 1 + ((Math.random() * cfg.max) | 0) }));
     else if (g === 'lantern') c.waitGo = r;
     else if (g === 'boat') { for (let k = 1; k <= 19; k++) at(rel(k * 500), () => act(r, { k: 't', c: 3 + ((Math.random() * 3) | 0) })); }
+    else if (g === 'keoco') { at(rel(rnd(500, cfg.pick - 500)), () => act(r, { k: 'side', v: Math.random() < .5 ? 0 : 1 })); for (let k = 1; k <= 23; k++) at(rel(cfg.pick + k * 500), () => act(r, { k: 't', c: 3 + ((Math.random() * 3) | 0) })); }
     else if (g === 'hang') { for (let k = 0; k < cfg.rounds; k++) at(rel(k * cfg.slot + rnd(900, 3300)), () => act(r, { k: 'h', v: (Math.random() * 3) | 0, i: k })); }
     else if (g === 'chuot') c.waitGo = r;
     else if (g === 'hpb') at(rel(rnd(1500, 6000)), () => act(r, { k: 'v', v: Math.round(rnd(10, 60)) }));
     else if (g === 'khac') { if (Math.random() < .3) at(rel(rnd(300, 900)), () => act(r, { k: 'p', v: 0 })); at(rel(rnd(1500, 5000)), () => act(r, { k: 'p', v: cfg.odd })); }
-    else if (g === 'dem') at(rel(cfg.show + rnd(1500, 6000)), () => act(r, { k: 'v', v: Math.max(0, cfg.items.length + Math.round(rnd(-3, 3))) }));
+    else if (g === 'thaihanh') { const sp = rnd(75, 130), total = cfg.n + (Math.random() < .35 ? 1 : 0); let k = 0; at(rel(600), () => { const timer = setInterval(() => { if (k >= total) { clearInterval(timer); return; } k++; act(r, { k: 't', q: k }); }, sp); at(rel(cfg.len + 500), () => clearInterval(timer)); }); }
+    else if (g === 'mecung') {
+      const st = c.mz = { w: new Map(), q: 0, x: cfg.cx, y: cfg.cy, seen: new Set([cfg.cx + ',' + cfg.cy]), path: [] }, DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+      st.timer = setInterval(() => {
+        const mask = st.w.get(st.y * 100 + st.x); if (mask === undefined) return; let d = -1;
+        for (let k = 0; k < 4 && d < 0; k++) if (mask & (1 << k)) { const nx = st.x + DX[k], ny = st.y + DY[k]; if (nx < 0 || ny < 0 || nx >= cfg.N || ny >= cfg.N || !st.seen.has(nx + ',' + ny)) d = k; }
+        if (d >= 0) { st.path.push((d + 2) % 4); st.seen.add((st.x + DX[d]) + ',' + (st.y + DY[d])); } else if (st.path.length) d = st.path.pop(); else return;
+        st.q++; act(r, { k: 'm', d, q: st.q }); st.x += DX[d]; st.y += DY[d];
+      }, 115);
+      at(rel(cfg.len + 600), () => clearInterval(st.timer));
+    }
+    else if (g === 'ngoay') { const aim = Math.random() < .6 ? cfg.ps[cfg.ps.length - 1] + .02 : rnd(.3, .95), hold = aim / cfg.speed * 1000 + rnd(-120, 120); at(rel(cfg.t2 + 400), () => act(r, { k: 'd' })); at(rel(cfg.t2 + 400 + hold), () => act(r, { k: 'u' })); }
+    else if (g === 'nhotranh') { at(rel(600), () => act(r, { k: 's' })); for (let tn = 1; tn < cfg.tops.length; tn++) at(rel(1600 + tn * 900 + rnd(0, 500)), () => act(r, { k: 'c', tn, v: Math.random() < .85 ? cfg.opts[tn].indexOf(cfg.tops[tn - 1]) : 0 })); }
+    else if (g === 'dhang') { let n = 3; for (const e of cfg.evs) n += e.k === 'in' ? e.n : -e.n; at(rel(cfg.anim + rnd(500, 4000)), () => act(r, { k: 'v', v: Math.max(0, n + Math.round(rnd(-1, 1))) })); }
+    else if (g === 'dem') cfg.turns.forEach((tu, i) => at(rel(tu.start + tu.show + rnd(600, 2200)), () => act(r, { k: 'v', tn: i, v: Math.max(0, tu.n + Math.round(rnd(-1, 1))) })));
     else if (g === 'xep') { let p = rnd(500, 1500); for (let v = 1; v <= 9; v++) { p += rnd(250, 700); at(rel(p), () => act(r, { k: 't', v })); } }
     else if (g === 'mau') { let p = rnd(500, 1200); cfg.rounds.forEach((q, i) => { p += rnd(600, 1500); at(rel(p), () => act(r, { k: 'a', i, v: Math.random() < .85 ? q.c : (q.c + 1) % 4 })); }); }
     else if (g === 'tinh') { const ans = eval(cfg.expr.replace(/×/g, '*').replace(/−/g, '-')); at(rel(rnd(900, 5000)), () => act(r, { k: 'p', v: cfg.opts.indexOf(ans) })); }
