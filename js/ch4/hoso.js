@@ -2,17 +2,20 @@
    1. Hồ sơ (localStorage dcc.hoso): vai chuột chồng / chuột vợ, tên (≤ HS_NAME_MAX), tuổi, trang phục (màu lông, đội đầu, màu áo,
       màu quần / váy), những món thích ăn ở làng và trên phố (tick), mô tả bản thân (≤ HS_DESC_MAX), các câu chuyện (≤ HS_STORIES, mỗi
       chuyện ≤ HS_STORY_MAX) và các chỉ số: ngày buôn bán, người quen, danh tiếng (hsFame: chơi càng nhiều ngày càng cao), số chợ coi
-      mình là khách quen, sao đánh giá. Lưu lên Supabase (rpc dcc_prof_put, docs/supabase-ho-so-khach.sql, owner phải chạy một lần)
+      mình là khách quen. Lưu lên Supabase (rpc dcc_prof_put, docs/supabase-ho-so-khach.sql, owner phải chạy một lần)
       khi bấm Lưu và mỗi lần sang ngày (c4DayAdvance).
    2. Khách phương xa: hồ sơ của người chơi khác (rpc dcc_prof_pick: ngẫu nhiên; dcc_prof_get: những người đã quen) đi chợ trong game
       này. Mỗi ngày (SAVE4.day) mỗi chợ có tối đa HS_PER_DAY khách phương xa, mỗi người chỉ đi chợ một lần một ngày (dcc.hsPlan), đến
       vào một giờ ngẫu nhiên; người đã quen được chọn nhiều hơn. Họ mặc đúng trang phục của hồ sơ, kể các câu chuyện của mình trong bong
       bóng, mua món họ thích nếu nhà mình có bán. Mua lần đầu thì biết mặt, lần hai thành khách quen (★, rpc dcc_regular_add), từ đó có
-      trong danh sách khách (sổ tay › Khách quen ở làng; nút Hồ sơ ở phố) với hồ sơ, chỉ số, món thích, và được đánh giá một lần (sao +
-      lời, rpc dcc_review_put). Chủ hồ sơ đọc mọi đánh giá trong sổ tay › Hồ sơ (rpc dcc_review_mine).
-   Ghi nhớ từng khách phương xa (dùng chung cho làng và phố) ở localStorage dcc.hsKhach[id] = { v, seen, k, a, rev, last, p }.
+      trong danh sách khách (sổ tay › Khách quen ở làng; nút Hồ sơ ở phố) với hồ sơ, chỉ số, món thích.
+   Đánh giá bằng sao đã bỏ khỏi hồ sơ (owner, 2026-10-22: "bỏ cái đánh giá nhận xét ở tab hồ sơ đi, để 1 chỗ ở nhà thôi"): hồ sơ
+   không cho chấm sao, không liệt kê đánh giá; lời nhận xét chỉ còn một chỗ — dưới gian nhà ở bảng tổng sắp (js/ch4/xephang.js).
+   Máy chủ vẫn giữ các rpc cũ (dcc_review_put / dcc_review_mine / dcc_review_report trong docs/supabase-ho-so-khach.sql) nhưng
+   game không gọi nữa, dữ liệu cũ nằm yên.
+   Ghi nhớ từng khách phương xa (dùng chung cho làng và phố) ở localStorage dcc.hsKhach[id] = { v, seen, k, a, last, p }.
    Máy chủ chưa dựng thì mọi rpc lặng lẽ hỏng: không có khách phương xa, hồ sơ chỉ lưu trên máy. */
-const HS_NAME_MAX = 12, HS_DESC_MAX = 200, HS_STORY_MAX = 120, HS_STORIES = 8, HS_REVIEW_MAX = 200;
+const HS_NAME_MAX = 12, HS_DESC_MAX = 200, HS_STORY_MAX = 120, HS_STORIES = 8;
 const HS_PER_DAY = 2;                                                      // far-away guests a day at each market (owner: "đừng để chợ quá đông")
 const HS_POOL_EVERY = 60 * 60 * 1000;                                      // fetch other players' profiles again every hour (was 10 min; owner 2026-10-17: fewer requests)
 const HS_ROLES = [['chong', 'Chuột chồng'], ['vo', 'Chuột vợ']];
@@ -73,7 +76,6 @@ function hsSaveK() {
 const hsShow = id => (S.mode === 'c4bplay' ? p4Sheets : c4Sheets)(id);
 const hsCol = k => (PL[k] || PL.red)[0];
 const hsOpt = (L, k) => (L.find(o => o[0] === k) || L[0])[1];
-const hsStars = n => '★★★★★'.slice(0, Math.round(n)) + '☆☆☆☆☆'.slice(0, 5 - Math.round(n));
 const hsAgo = t => { const d = Math.floor((Date.now() - new Date(t)) / 864e5); return d <= 0 ? 'hôm nay' : d === 1 ? 'hôm qua' : d + ' ngày trước'; };
 
 // whatever comes from the server (or an old save) is cut back to the shapes the game knows
@@ -183,9 +185,7 @@ function hsPoolEnsure() {
 // my own numbers on the server, and a word when new reviews have come in
 function hsMeLoad() {
   return p4Rpc('dcc_prof_me', { p_device: p4Device() }).then(r => {
-    const me = Array.isArray(r) && r[0]; if (!me) return; HS.me = { id: +me.id, stars: me.stars === null ? null : +me.stars, nrev: +me.nrev || 0, nreg: +me.nreg || 0, hidden: !!me.hidden };
-    const seen = +hsGet('dcc.hsRevSeen', 0) || 0;
-    if (HS.me.nrev > seen && !HS.told) { HS.told = true; toast(`Có ${HS.me.nrev - seen} đánh giá mới về bạn từ người chơi khác. Xem trong Sổ tay › Hồ sơ.`, 3.6); if (typeof C4 !== 'undefined') C4.noteNew = true; }
+    const me = Array.isArray(r) && r[0]; if (!me) return; HS.me = { id: +me.id, nreg: +me.nreg || 0, hidden: !!me.hidden };
     return p4Rpc('dcc_gift_count', { p_device: p4Device() }).then(c => {
       const n = Array.isArray(c) && c[0]; if (!n) return; HS.me.ngift = +n.ngift || 0;
       const g = HS.me.ngift - (+hsGet('dcc.hsGiftSeen', 0) || 0), t = (+n.nthank || 0) - (+hsGet('dcc.hsThankSeen', 0) || 0);
@@ -347,30 +347,23 @@ function hsGuests() { const K = hsKhach(); return Object.keys(K).filter(i => (K[
 function hsBookHtml() {
   const ids = hsGuests(), K = hsKhach(); if (!ids.length) return '';
   return `<h4>Khách phương xa <small>(người chơi khác)</small></h4><div class="folk">${ids.map(i => { const d = hsProf(i).d, f = K[i];
-    return `<button class="fk${f.k ? '' : ' unk2'}" data-net="${i}"><img src="${hsFace(d, i)}" alt=""><b>${p4Esc(hsName(d))}</b>${f.k ? c4Bar(f.a || 0) : ''}<span>${f.k ? `ghé ${f.v} lần${f.rev ? ' · đã đánh giá' : ''}` : 'mới ghé 1 lần'}</span></button>`; }).join('')}</div>`;
+    return `<button class="fk${f.k ? '' : ' unk2'}" data-net="${i}"><img src="${hsFace(d, i)}" alt=""><b>${p4Esc(hsName(d))}</b>${f.k ? c4Bar(f.a || 0) : ''}<span>${f.k ? `ghé ${f.v} lần` : 'mới ghé 1 lần'}</span></button>`; }).join('')}</div>`;
 }
 function hsBookWire(root, back) { root.querySelectorAll('[data-net]').forEach(b => b.addEventListener('click', () => { AU.tap(); hsWhoOpen(+b.dataset.net, back); })); }
 function hsWhoOpen(id, back) {
   const P = hsProf(id); if (!P) return; const d = P.d, f = hsK(id), sell = hsSellsNow();
-  HS.back = back || null; HS.star = 0;
+  HS.back = back || null;
   const likes = d.likes.length ? d.likes.map(k => `<span class="hsChip${sell.has(k) ? ' on' : ''}">${sell.has(k) ? '♥ ' : ''}${p4Esc(HS_FOOD_NAME[k])}</span>`).join('') : '<span class="sm">chưa kể</span>';
-  const rev = f.rev ? `<p class="hsDone">Bạn đã đánh giá: <b class="hsSt">${hsStars(f.rev.stars)}</b>${f.rev.body ? `<br><i>“${p4Esc(f.rev.body)}”</i>` : ''}</p>`
-    : f.k ? `<div class="hsRev"><p class="sm">Đánh giá vị khách này (chỉ được một lần, người ấy sẽ đọc được trong sổ tay):</p><div class="hsStars">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-st="${n}">☆</button>`).join('')}</div>`
-      + `<textarea class="hsRevT" maxlength="${HS_REVIEW_MAX}" rows="3" placeholder="Vài lời về vị khách này…"></textarea><p class="hsCnt sm"><span>0</span>/${HS_REVIEW_MAX}</p><button class="btn hsRevGo" disabled>Gửi đánh giá</button></div>`
-    : '<p class="sm">Ghé mua thêm lần nữa, thành khách quen rồi mới đánh giá được.</p>';
   $('#hsWhoB').innerHTML = `<div class="hsHead"><img src="${hsFace(d, id)}" alt=""><div><h3>${p4Esc(hsName(d))}</h3><p class="sm">${hsOpt(HS_ROLES, d.role)} · ${hsOpt(HS_AGES, d.age).toLowerCase()} · ${hsOpt(HS_BODIES, d.body).toLowerCase()} · người chơi phương xa</p>${hsAddr(d) ? `<p class="sm">Ở ${p4Esc(hsAddr(d))}</p>` : ''}`
     + (d.shop ? `<p class="sm">Chủ hiệu <b>${p4Esc(d.shop)}</b></p>` : '') + `</div></div>`
-    + `<div class="hsStats"><div><b>${d.stats.day}</b><span>ngày buôn</span></div><div><b>${d.stats.known}</b><span>người quen</span></div><div><b>${P.nreg || 0}</b><span>chợ coi là khách quen</span></div><div><b>${P.stars ? P.stars + '★' : '–'}</b><span>${P.nrev || 0} đánh giá</span></div></div>`
+    + `<div class="hsStats"><div><b>${d.stats.day}</b><span>ngày buôn</span></div><div><b>${d.stats.known}</b><span>người quen</span></div><div><b>${P.nreg || 0}</b><span>chợ coi là khách quen</span></div></div>`
     + `<p class="hsFame">Danh tiếng: <b>${hsFameWord(d.stats.fame)}</b> ${c4Bar(d.stats.fame)}</p>`
     + (d.desc ? `<p class="hsDesc">“${p4Esc(d.desc)}”</p>` : '')
     + `<h4>Thích ăn</h4><p class="hsChips">${likes}</p>`
     + (d.stories.length ? `<h4>Chuyện kể</h4>${d.stories.map(s => `<p class="hsStory">${p4Esc(s)}</p>`).join('')}` : '')
     + `<h4>Ở chợ nhà mình</h4><p class="sm">${f.k ? `Khách quen từ ngày ${f.k}, ghé ${f.v} lần. Mức thân: ${c4LikeWord(f.a || 0).toLowerCase()}.` : `Mới ghé ${f.v || 0} lần.`}</p>${f.k ? c4Bar(f.a || 0) : ''}`
-    + rev + `<p><button class="link hsRep">Báo hồ sơ xấu</button></p>`;
+    + `<p><button class="link hsRep">Báo hồ sơ xấu</button></p>`;
   const B = $('#hsWhoB');
-  B.querySelectorAll('[data-st]').forEach(b => b.addEventListener('click', () => { AU.tap(); HS.star = +b.dataset.st; B.querySelectorAll('[data-st]').forEach(x => { x.textContent = +x.dataset.st <= HS.star ? '★' : '☆'; x.classList.toggle('on', +x.dataset.st <= HS.star); }); B.querySelector('.hsRevGo').disabled = false; }));
-  const ta = B.querySelector('.hsRevT'); if (ta) ta.addEventListener('input', () => { B.querySelector('.hsCnt span').textContent = ta.value.length; });
-  const go = B.querySelector('.hsRevGo'); if (go) go.addEventListener('click', () => hsReview(id, go));
   B.querySelector('.hsRep').addEventListener('click', () => { if (!confirm('Báo hồ sơ này có lời lẽ xấu? Hồ sơ bị nhiều người báo sẽ bị ẩn.')) return; p4Rpc('dcc_prof_report', { p_id: +id }).catch(() => {}); HS.pool.delete(+id); delete hsKhach()[id]; hsSaveK(); toast('Đã báo. Cảm ơn bạn.', 2); hsWhoClose(); });
   $('#hsWhoBack').textContent = back ? 'Quay lại' : 'Đóng';
   hsShow('hsWho'); $('#hsWho .card4').scrollTop = 0;
@@ -383,49 +376,26 @@ function hsSellsNow() {
   try { if (SAVE4B.house) { out.add('trau'); for (const R of Object.values(p4Shops())) out.add('pho:' + R.food); } } catch (e) {}
   return out;
 }
-function hsReview(id, btn) {
-  const body = ($('#hsWhoB .hsRevT').value || '').replace(/\s+/g, ' ').trim().slice(0, HS_REVIEW_MAX), stars = HS.star;
-  if (!stars) { toast('Chọn số sao trước đã.', 2); return; }
-  if (p4HoaBad(body)) { toast('Lời đánh giá có chữ không đẹp, sửa lại nhé.', 2.6); return; }
-  const mine = hsMine(), from = mine ? hsName(mine) : c4RankName();
-  btn.disabled = true; btn.textContent = 'Đang gửi…';
-  p4Rpc('dcc_review_put', { p_device: p4Device(), p_target: +id, p_stars: stars, p_body: body, p_from: from })
-    .then(() => { hsK(id).rev = { stars, body, day: SAVE4.day }; hsSaveK(); AU.tap(); toast('Đã gửi đánh giá. Người ấy sẽ đọc được trong sổ tay.', 3); hsWhoOpen(id, HS.back); })
-    .catch(e => {
-      const m = e.message || '';
-      if (/already/.test(m)) { hsK(id).rev = { stars, body, day: SAVE4.day }; hsSaveK(); toast('Bạn đã đánh giá người này rồi.', 2.6); hsWhoOpen(id, HS.back); return; }
-      btn.disabled = false; btn.textContent = 'Gửi đánh giá';
-      toast(/bad words/.test(m) ? 'Lời đánh giá có chữ không đẹp, sửa lại nhé.' : /too soon/.test(m) ? 'Chậm lại một chút rồi gửi nhé.' : 'Chưa gửi được (mất kết nối?). Thử lại sau nhé.', 3);
-    });
-}
-
-/* ---------- my profile: the summary with my numbers and the reviews I got ---------- */
+/* ---------- my profile: the summary with my numbers (reviews live only under the house, xephang.js) ---------- */
 async function hsProfileInto(box, back) {
   box.classList.add('hsBox');
   const p = hsMine(), fame = hsFame(), me = HS.me || {};
   box.innerHTML = `<div class="hsHead"><img src="${hsFace(p, me.id || 0)}" alt=""><div><h3>${p4Esc(hsName(p))}</h3><p class="sm">${hsOpt(HS_ROLES, p.role)} · ${hsOpt(HS_AGES, p.age).toLowerCase()} · ${hsOpt(HS_BODIES, p.body).toLowerCase()}</p>`
     + `<p class="sm">${p4Esc(hsAddr(p))}</p></div></div>`
-    + `<div class="hsStats"><div><b>${Math.max(1, SAVE4.day || 1)}</b><span>ngày buôn</span></div><div><b>${hsKnownCount()}</b><span>người quen</span></div><div><b class="hsReg">${me.nreg ?? '–'}</b><span>chợ coi là khách quen</span></div><div><b class="hsAvg">${me.stars ? me.stars + '★' : '–'}</b><span><i class="hsN">${me.nrev || 0}</i> đánh giá</span></div></div>`
+    + `<div class="hsStats"><div><b>${Math.max(1, SAVE4.day || 1)}</b><span>ngày buôn</span></div><div><b>${hsKnownCount()}</b><span>người quen</span></div><div><b class="hsReg">${me.nreg ?? '–'}</b><span>chợ coi là khách quen</span></div></div>`
     + `<p class="hsFame">Danh tiếng: <b>${hsFameWord(fame)}</b> ${c4Bar(fame)}</p>`
     + (p.desc ? `<p class="hsDesc">“${p4Esc(p.desc)}”</p>` : '')
     + `<p class="hsChips">${p.likes.map(k => `<span class="hsChip">${p4Esc(HS_FOOD_NAME[k])}</span>`).join('')}</p>`
     + `<p class="sm">${p.stories.length} câu chuyện</p><button class="btn alt hsEditB">Sửa hồ sơ</button>`
-    + `<h4>Đánh giá từ khách hàng</h4><div class="hsRevs"><p class="sm">Đang tải…</p></div>`
     + `<h4>Quà mời nhận được</h4><div class="hsGifts"><p class="sm">Đang tải…</p></div>`
     + `<h4>Lời cảm ơn nhận được</h4><div class="hsThx"><p class="sm">Đang tải…</p></div>`;
   hsGiftsInto(box);
   box.querySelector('.hsEditB').addEventListener('click', () => { AU.tap(); hsEditOpen(back); });
-  const R = box.querySelector('.hsRevs');
   try {
     await hsPush().catch(() => {}); await hsMeLoad();
-    const list = await p4Rpc('dcc_review_mine', { p_device: p4Device() }), L = Array.isArray(list) ? list : [];
-    const m = HS.me || {}; box.querySelector('.hsReg').textContent = m.nreg ?? 0; box.querySelector('.hsAvg').textContent = m.stars ? m.stars + '★' : '–'; box.querySelector('.hsN').textContent = m.nrev || 0;
-    hsSet('dcc.hsRevSeen', L.length); HS.told = true;
-    R.innerHTML = m.hidden ? '<p class="bad">Hồ sơ của bạn bị nhiều người báo nên đang bị ẩn.</p>' : '';
-    R.innerHTML += L.length ? `<p class="sm">Trung bình <b class="hsSt">${hsStars(m.stars || 0)}</b> ${m.stars || ''} · ${L.length} lượt</p><div class="hsRl">${L.map(r => `<div class="hsR"><b class="hsSt">${hsStars(r.stars)}</b> <small>${p4Esc(r.from_name || 'một nhà buôn')} · ${hsAgo(r.created_at)}</small>${r.body ? `<p>${p4Esc(r.body)}</p>` : ''}<button class="link" data-rr="${r.id}">Báo xấu</button></div>`).join('')}</div>`
-      : '<p class="sm">Chưa ai đánh giá. Khi hồ sơ của bạn thành khách quen ở chợ nhà người khác, họ có thể để lại vài lời.</p>';
-    R.querySelectorAll('[data-rr]').forEach(b => b.addEventListener('click', () => { p4Rpc('dcc_review_report', { p_id: +b.dataset.rr }).catch(() => {}); b.closest('.hsR').remove(); toast('Đã báo. Cảm ơn bạn.', 2); }));
-  } catch (e) { R.innerHTML = '<p class="sm">Chưa kết nối được máy chủ. Hồ sơ vẫn lưu trên máy này; lát nữa thử lại nhé.</p>'; }
+    const m = HS.me || {}; box.querySelector('.hsReg').textContent = m.nreg ?? 0;
+    if (m.hidden) box.querySelector('.hsFame').insertAdjacentHTML('beforebegin', '<p class="bad">Hồ sơ của bạn bị nhiều người báo nên đang bị ẩn.</p>');
+  } catch (e) {}
 }
 
 // the gifts others sent me (each can be thanked once) and the thanks I got for mine

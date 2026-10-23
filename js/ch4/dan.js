@@ -329,9 +329,9 @@ let C4_PICK = null;                                                         // {
 function c4OpenNotes(tab) {
   const keep = C4.sheet === 'c4note' && (tab || C4_TAB) === C4_TAB && C4.noteWho === C4_WHO ? c4ScrollGet('c4note') : null;   // the same page drawn again (an action on it): scrolls stay
   C4.noteNew = false; c4Hud();
-  if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY && C4_TAB !== 'viec' && C4_TAB !== 'rank' && C4_TAB !== 'hoso') C4_TAB = 'tin';
+  if (tab) C4_TAB = tab; if (SAVE4.day < C4_BOOK_DAY && C4_TAB !== 'viec' && C4_TAB !== 'rank' && C4_TAB !== 'hoso' && C4_TAB !== 'home') C4_TAB = 'tin';
   const P = c4People(), known = P.list.filter(p => c4Known(p.id)), open = SAVE4.day >= C4_BOOK_DAY;
-  const tabs = [['tin', 'Tin đồn'], ['viec', 'Việc'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['thanh', 'Thành tựu']] : []), ['hoso', 'Hồ sơ'], ['rank', 'Tổng sắp']];   // Tổng sắp: the board of the richest (xephang.js); Hồ sơ: my profile and the reviews I got (hoso.js)
+  const tabs = [['tin', 'Tin đồn'], ['viec', 'Việc'], ...(open ? [['don', 'Đơn hàng'], ['quen', 'Khách quen'], ['thanh', 'Thành tựu']] : []), ['home', 'Nhà'], ['hoso', 'Hồ sơ'], ['rank', 'Tổng sắp']];   // Tổng sắp: the board of the richest (xephang.js); Hồ sơ: my profile and the reviews I got (hoso.js)
   let h = `<div class="c4tabs">${tabs.map(([k, n]) => `<button class="${k === C4_TAB ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
   const seen = P.list.filter(p => !c4Known(p.id) && SAVE4.folk[p.id] && SAVE4.folk[p.id].seen);
   if (open) h += `<p class="cnt">${known.length + seen.length} khách</p>`;
@@ -362,13 +362,14 @@ function c4OpenNotes(tab) {
   else if (C4_TAB === 'viec') h += c4TasksTab();
   else if (C4_TAB === 'thanh') h += c4AchHtml();
   else if (C4_TAB === 'rank') h += '<h4>Bảng tổng sắp nhà giàu</h4><div id="c4rankTab"></div>';
+  else if (C4_TAB === 'home') h += c4HomeTab();
   else if (C4_TAB === 'nha') h += c4HousesTab();
   const wasWeb = !!$('#qhCv');
   $('#c4noteB').innerHTML = h;
   if (C4_TAB === 'rank') c4RankInto($('#c4rankTab'));
   if (C4_TAB === 'hoso') hsProfileInto($('#c4hsTab'), () => c4OpenNotes('hoso'));
   if (C4_TAB === 'quen' && C4_WHO === null && !C4_PICK) hsBookWire($('#c4noteB'), () => c4OpenNotes('quen'));
-  $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha');
+  $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha' || C4_TAB === 'home');
   $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
   $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   $('#c4noteB').querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_PICK.deal = b.dataset.deal; const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
@@ -379,6 +380,7 @@ function c4OpenNotes(tab) {
   c4Sheets('c4note'); C4.noteWho = C4_WHO; c4ScrollSet('c4note', keep);
   if (C4_TAB === 'web') c4WebOpened(!wasWeb && QH.focus === null);
   if (C4_TAB === 'nha') c4HousesWire();
+  if (C4_TAB === 'home') c4HomeTabWire();
 }
 const c4Bar = a => `<i class="bar"><i style="width:${a}%;background:${a >= 60 ? '#2f6a4c' : a >= 35 ? '#c98a1c' : '#a3332a'}"></i></i>`;
 // a dish sent to someone (owner, 2026-10-11: "phải mời đúng món thì họ mới gần mới thích"): their favourite wins them over
