@@ -113,12 +113,13 @@ function c4RankRvLoad(B, r) {
 // the box to leave one: words, and money if the guest wants to give some. The money line says only what the gift is called
 // ("bố thí" with more money than the host, "biếu" with less) — the owner asked for no explanation there (2026-10-22).
 // My own house gets no box (the server refuses it too).
+const C4_GIFT_MAX = 5999;   // one gift is under 10 quan (docs/supabase-bang-xep-hang-chan-qua.sql keeps the same limit on the server)
 function c4RankFormHtml(r) {
   if (r.mine) return '<p class="cnt rvown">Đây là nhà của bạn — lời nhận xét của khách ở trên.</p>';
   const mine = Math.round(c4NetWorth()), theirs = Math.round(+r.money || 0), more = mine > theirs;
   const word = more ? 'Bố thí' : 'Biếu';
   return '<div class="rvform"><textarea class="rvnote" maxlength="140" rows="2" placeholder="Đôi lời nhận xét cho nhà này…"></textarea>'
-    + `<div class="rvrow"><label>${word} <input class="rvamt" type="number" min="0" step="1" inputmode="numeric" placeholder="0"> đồng</label>`
+    + `<div class="rvrow"><label>${word} <input class="rvamt" type="number" min="0" max="5999" step="1" inputmode="numeric" placeholder="0"> đồng</label>`
     + '<button class="btn rvs">Gửi</button></div></div>';
 }
 function c4RankWire(B, r) {
@@ -130,6 +131,7 @@ function c4RankWire(B, r) {
     const note = ta.value.replace(/\s+/g, ' ').trim().slice(0, 140);
     let amt = Math.round(+ai.value || 0); if (!(amt > 0)) amt = 0;
     const purse = Math.max(0, Math.round(SAVE4.money || 0));
+    if (amt > C4_GIFT_MAX) { toast('Mỗi lần chỉ cho dưới 10 quan (tối đa 5.999 đồng).', 3); ai.value = C4_GIFT_MAX; return; }
     if (amt > purse) { toast(`Ví chỉ còn ${c4RankMoney(purse)}.`, 2.8); ai.value = purse; return; }
     if (!note && !amt) { toast('Viết một câu nhận xét, hoặc để lại chút tiền cho nhà này.', 3); ta.focus(); return; }
     if (p4HoaBad(note)) { toast('Lời nhận xét có chữ không đẹp, sửa lại nhé.', 2.8); return; }
@@ -146,7 +148,11 @@ function c4RankWire(B, r) {
       c4RankRvLoad(B, r);
     } catch (e) {
       const m = (e && e.message) || '';
-      toast(/slow down/.test(m) ? 'Gửi dày quá, chờ một chút rồi gửi tiếp nhé.'
+      toast(/too much/.test(m) ? 'Mỗi lần chỉ cho dưới 10 quan (tối đa 5.999 đồng).'
+        : /giver limit/.test(m) ? 'Hôm nay bạn đã cho nhiều rồi, mai cho tiếp nhé.'
+        : /house full/.test(m) ? 'Nhà này hôm nay nhận đủ quà rồi.'
+        : /no purse/.test(m) ? 'Chưa cho được: ví của bạn chưa đủ hoặc bạn mới chơi những ngày đầu.'
+        : /slow down/.test(m) ? 'Gửi dày quá, chờ một chút rồi gửi tiếp nhé.'
         : /bad words/.test(m) ? 'Lời nhận xét có chữ không đẹp, sửa lại nhé.'
         : /no self/.test(m) ? 'Không tự nhận xét nhà mình được.'
         : /no such house/.test(m) ? 'Nhà này vừa rời bảng, mở lại từ bảng nhé.'
