@@ -24,7 +24,7 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG2 } from './jigsaw.js';
+export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3 } from './jigsaw.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
@@ -111,9 +111,10 @@ export default {
       const pp = u.searchParams.get('p');
       return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : FROZEN_COUNT, { headers: h });
     }
-    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban') {   // the owner's view of who is busy in the second jigsaw, and the ban list: Bearer <ADMIN secret>
+    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(new Request(req.url.replace('/jg-sus', '/sus').replace('/jg-ban', '/ban')));
+      const ns = u.searchParams.get('p') === 'dg' ? env.JIGSAW_DG2 : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
+      return ns.get(ns.idFromName('main')).fetch(new Request(u.origin + path + u.search));
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });

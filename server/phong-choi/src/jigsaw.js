@@ -19,14 +19,16 @@ const COLS = cfg.cols, ROWS = cfg.rows, N = COLS * ROWS, PW = cfg.pw, PH = cfg.p
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
-const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 30, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, VER = '2026-10-20-freeze';
+const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 30, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, VER = '2026-10-23-log';
 // HOLD RULE (owner, 2026-10-22): when someone clicks a group another player is carrying, the carrier is reminded not to hold it long and must put it down within
 // NUDGE_MS; once it is down (by themselves or by the server) they cannot pick up that group again for LOCK_MS
 const NUDGE_MS = 30000, LOCK_MS = 90000;
 const FREEZE = !!cfg.freeze;   // a frozen picture is put together at once and nobody can lift anything (the first print, kept to be looked at)
 const ANG_TOL = 22 * Math.PI / 180, POS_TOL = .6 * Math.min(CW, CH), NEXT_AFTER = 120000, KEEP_DONE = true, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
+// devices of the test scripts: never paid or stored, but ONLY on a local server (no CF-Connecting-IP, or loopback). On the real server this prefix was a free pass: joins nobody counts or lists (2026-10-23)
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz|jgtest)/;
+const isTest = (dev, ip) => TESTDEV.test(dev) && (!ip || ip === '127.0.0.1' || ip === '::1');
 const LOOK = ['role', 'age', 'body', 'fur', 'robe', 'skirt', 'pants', 'top'];   // a look is only forwarded; every browser cleans it again
 const cleanLook = l => { if (!l || typeof l !== 'object') return null; const o = {}; for (const k of LOOK) { const v = String(l[k] ?? '').slice(0, 16); if (v) o[k] = v; } return o; };
 const NB = [[-1, 0], [1, 0], [0, -1], [0, 1]];
@@ -39,7 +41,7 @@ class Jigsaw extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0; this.startAt = 0; this.ppl = new Set();
-    this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map(); this.locks = new Map();
+    this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map(); this.locks = new Map(); this.jl = [];
     ctx.blockConcurrencyWhile(async () => {
       // The picture must never be lost: the saved state is checked piece by piece, a damaged one falls back to the backup copy, and nothing is ever
       // thrown away without being kept under another key first (a different picture = a fresh puzzle, the old one stays as 'old:<pic>').
@@ -52,6 +54,7 @@ class Jigsaw extends DurableObject {
       }
       this.total = (await ctx.storage.get('total')) || 0;
       for (const [k, v] of await ctx.storage.list({ prefix: 'u:', limit: 5000 })) if (v && v.m >= 1) this.ppl.add(k);   // who has joined at least one piece (shown on the card)
+      if (cfg.resetTag && (await ctx.storage.get('resetTag')) !== cfg.resetTag) { await ctx.storage.put('resetTag', cfg.resetTag); await this.resetNow(); }   // once, on the first start of this code
       if (!this.startAt) this.startAt = cfg.startAt || Date.now();
       const bn = await ctx.storage.get('bans'); if (bn) for (const [k, t] of Object.entries(bn)) if (t > Date.now()) this.bans.set(k, t);
       if (FREEZE && !(this.done && this.groups.size === 1)) {   // the run in progress is kept, then the whole print is put together in the middle of the table
@@ -104,8 +107,9 @@ class Jigsaw extends DurableObject {
   flush(soft) {
     const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() }, put = { pz, total: this.total };
     if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
+    const jl = this.jl; this.jl = []; for (const [k, v] of jl) put[k] = v;
     const users = [...this.dirtyUsers]; for (const dev of users) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
-    return this.ctx.storage.put(put, soft ? { allowUnconfirmed: true } : undefined).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 5000); });
+    return this.ctx.storage.put(put, soft ? { allowUnconfirmed: true } : undefined).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); this.jl.unshift(...jl); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 5000); });
   }
   scheduleNext() { if (KEEP_DONE) return; clearTimeout(this.nextT); this.nextT = setTimeout(() => { if (this.done) { this.fresh(this.n + 1); this.all({ t: 'reset', ...this.full() }); } }, Math.max(1000, NEXT_AFTER - (Date.now() - this.doneAt))); }
 
@@ -113,12 +117,14 @@ class Jigsaw extends DurableObject {
   async fetch(req) {
     const u = new URL(req.url);
     if (u.pathname === '/sus') return this.sus();
+    if (u.pathname === '/log') return this.logReq();
+    if (u.pathname === '/reset') return this.resetReq(u);
     if (u.pathname === '/ban') return this.banReq(u);
     const ip = req.headers.get('CF-Connecting-IP') || '';
     if (ip && (this.banned(ip) || [...this.conns.values()].filter(x => x.ip === ip).length >= MAX_SOCK_IP)) {   // accepted and closed with a code, so the page can say why (a plain 429 is only 'connection lost' to it)
       const pair = new WebSocketPair(), [cl, sv] = Object.values(pair); sv.accept(); sv.close(this.banned(ip) ? 4003 : 4005, 'busy'); return new Response(null, { status: 101, webSocket: cl });
     }
-    if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, done: this.done, n: [...this.conns.values()].filter(c => c.joined && !TESTDEV.test(c.dev)).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
+    if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, done: this.done, n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
     const pair = new WebSocketPair(), [client, server] = Object.values(pair); server.accept();
     const c = { ws: server, id: 'j' + (this.nextId++), dev: '', name: '', look: null, joined: false, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], ip, at: Date.now(), liftAt: 0, joinT: [], jn: 0, strikes: 0 };
     this.conns.set(c.id, c);
@@ -149,7 +155,7 @@ class Jigsaw extends DurableObject {
       if (!known) { const got = await Promise.race([this.user(c.dev), new Promise(r => setTimeout(() => r(null), 1500))]); if (got) u = got; else late = true; }
       if (this.banned(c.dev) || (c.ip && this.banned(c.ip))) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
       for (const o of [...this.conns.values()]) if (o !== c && o.dev === c.dev) { try { o.ws.close(4001, 'replaced'); } catch (e) {} this.onClose(o); }   // one socket a device: the older one is dead or another window
-      u.n = c.name; c.joined = true;
+      u.n = c.name; c.joined = true; c.test = isTest(c.dev, c.ip);
       this.send(c, { t: 'welcome', id: c.id, ...this.full(c), me: { m: u.m } });
       if (late) this.user(c.dev).then(r => { r.n = c.name; }).catch(() => {});
       this.all({ t: 'players', players: this.playerList() }, c);
@@ -209,9 +215,10 @@ class Jigsaw extends DurableObject {
     const joins = hot || quick ? [] : this.tryJoin(g);
     if (joins.length) { c.joinT.push(now); c.jn += joins.length; if (c.ip) { ipw.push(now); this.ipJ.set(c.ip, ipw); } }
     if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
-    const u = this.users.get(c.dev); const paid = TESTDEV.test(c.dev) ? 0 : this.award(c, joins.length, now);
+    const u = this.users.get(c.dev); const paid = c.test ? 0 : this.award(c, joins.length, now);
     if (u && paid) { u.m += paid; this.ppl.add('u:' + c.dev); this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
+    this.jl.push(['j:' + String(now).padStart(14, '0') + ':' + c.id, { t: now, dev: c.dev, ip: c.ip, name: c.name, n: joins.length, hold: now - c.liftAt, test: !!c.test }]);
     const finished = this.groups.size === 1; if (finished) { this.done = true; this.doneAt = Date.now(); }
     // stored first, then told: nobody ever sees a join that is not kept. The write does not hold the output gate (allowUnconfirmed) and we wait for it
     // ourselves, so a refused write (a storage limit) cannot break the whole object: the join is then told anyway and the write is retried
@@ -258,6 +265,23 @@ class Jigsaw extends DurableObject {
     const now = Date.now(), live = [...this.conns.values()].filter(c => c.joined).map(c => ({ id: c.id, name: c.name, dev: c.dev, ip: c.ip, joins: c.jn, last60: c.joinT.filter(t => now - t < 60000).length, strikes: c.strikes, secs: Math.round((now - c.at) / 1000) })).sort((a, b) => b.last60 - a.last60 || b.joins - a.joins);
     return this.json({ ver: VER, puzzle: this.n, left: this.groups.size - 1, live: live.slice(0, 40), bans: [...this.bans].filter(([, t]) => t > now).map(([k, t]) => [k, Math.round((t - now) / 60000) + ' min']) });
   }
+  // who joined how much, from the per-join records (key j:<time>:<socket>): by device, with addresses, names, first and last time, the busiest minute and the quickest hold
+  async logReq() {
+    const by = new Map(); let rows = 0;
+    for (const [k, v] of await this.ctx.storage.list({ prefix: 'j:', limit: 20000 })) {
+      rows++; let d = by.get(v.dev); if (!d) by.set(v.dev, d = { dev: v.dev, names: new Set(), ips: new Set(), drops: 0, joins: 0, first: v.t, last: v.t, min: {}, fast: 1e9, test: v.test });
+      d.names.add(v.name); d.ips.add(v.ip); d.drops++; d.joins += v.n; d.last = v.t; d.min[Math.floor(v.t / 60000)] = (d.min[Math.floor(v.t / 60000)] || 0) + v.n; if (v.hold < d.fast) d.fast = v.hold;
+    }
+    const out = [...by.values()].map(d => ({ dev: d.dev, names: [...d.names].join(','), ips: [...d.ips].join(','), drops: d.drops, joins: d.joins, first: new Date(d.first).toISOString(), last: new Date(d.last).toISOString(), peakPerMin: Math.max(0, ...Object.values(d.min)), fastHoldMs: d.fast, test: d.test })).sort((a, b) => b.joins - a.joins);
+    return this.json({ ver: VER, rows, devices: out.length, joins: out.reduce((s, d) => s + d.joins, 0), list: out.slice(0, 80) });
+  }
+  // start the same picture again (everybody's records and the board stay): the finished picture is kept as old:<pic>:<time>
+  async resetNow() {
+    await this.ctx.storage.put('old:' + PIC + ':' + Date.now(), { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() });
+    this.total = 0; this.bakAt = 0; clearTimeout(this.nextT); this.fresh(this.n + 1); await this.flush();
+    this.all({ t: 'reset', ...this.full() });
+  }
+  async resetReq(u) { if (u.searchParams.get('ok') !== PIC) return this.json({ error: 'add ?ok=' + PIC }); await this.resetNow(); return this.json({ ok: 'reset', n: this.n }); }
   banReq(u) {   // /ban?dev=…|ip=…[&mins=N][&un=1]
     const key = u.searchParams.get('dev') || u.searchParams.get('ip'); if (!key) return this.json({ error: 'dev or ip' });
     if (u.searchParams.get('un')) { this.bans.delete(key); this.saveBans(); return this.json({ ok: 'freed', key }); }
@@ -274,7 +298,7 @@ class Jigsaw extends DurableObject {
     const now = Date.now();
     if (!this.board || now - this.boardAt > 15000) {
       const all = await this.ctx.storage.list({ prefix: 'u:', limit: 3000 }), rows = [];
-      for (const [k, v] of all) { const u = this.users.get(k.slice(2)) || v; if (u && u.m > 0 && !TESTDEV.test(k.slice(2))) rows.push({ dev: k.slice(2), n: u.n, m: u.m }); }
+      for (const [k, v] of all) { const u = this.users.get(k.slice(2)) || v; if (u && u.m > 0) rows.push({ dev: k.slice(2), n: u.n, m: u.m }); }
       rows.sort((a, b) => b.m - a.m || a.dev.localeCompare(b.dev)); this.board = rows; this.boardAt = now;
     }
     const me = this.board.findIndex(x => x.dev === c.dev), u = this.users.get(c.dev);
@@ -291,4 +315,4 @@ export class JigsawVQ extends makeJigsaw({ pic: 'vq1', cols: 57, rows: 35, pw: 4
 // the third print: Đàn gà mẹ con, img/ch10/dan-ga-me-con.jpg 4400 x 2456, 100 x 56 = 5600 pieces
 export class JigsawDG extends makeJigsaw({ pic: 'dg1', cols: 100, rows: 56, pw: 4400, ph: 2456, freeze: false }) {}   // dropped (too heavy), kept only because its migration exists
 // the same print cropped and cut in 65 x 46 = 2990 pieces (owner, 2026-10-22: less lag), img/ch10/dan-ga-me-con.jpg 3300 x 2324
-export class JigsawDG2 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false }) {}
+export class JigsawDG3 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false, resetTag: 'r1' }) {}
