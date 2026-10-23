@@ -30,11 +30,11 @@ create temp table dcc_bad_dev on commit drop as
   where amount >= 100000000 or (from_name in ('Chuột Bưởi Đào 93', 'Bà chủ Mè Xửng 69') and amount >= 100000);
 update public.dcc_rank_review set hidden = true where from_device in (select device from dcc_bad_dev) and not hidden;
 update public.dcc_rank set hidden = true where device in (select device from dcc_bad_dev) and not hidden;
-update public.dcc_rank r set gift = coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0);
+alter table public.dcc_rank drop constraint if exists dcc_rank_gift_cap;   -- (lần chạy trước đã thêm nó; bỏ ra trước khi tính lại, thêm lại ở dưới)
+update public.dcc_rank r set gift = least(coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0), 300000);
 
 -- C) gift của một nhà không quá 300000 đồng
 update public.dcc_rank set gift = 300000 where gift > 300000;
-alter table public.dcc_rank drop constraint if exists dcc_rank_gift_cap;
 alter table public.dcc_rank add constraint dcc_rank_gift_cap check (gift >= 0 and gift <= 300000);
 
 -- B) cho tiền có luật

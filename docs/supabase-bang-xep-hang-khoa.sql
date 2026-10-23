@@ -48,4 +48,4 @@ on conflict (device) do nothing;
 -- áp ngay cho những gì đã có
 update public.dcc_rank set hidden = true, flag = true where device in (select device from public.dcc_ban) and not (hidden and flag);
 update public.dcc_rank_review set hidden = true where from_device in (select device from public.dcc_ban) and not hidden;
-update public.dcc_rank r set gift = coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0);
+update public.dcc_rank r set gift = least(coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0), 300000);

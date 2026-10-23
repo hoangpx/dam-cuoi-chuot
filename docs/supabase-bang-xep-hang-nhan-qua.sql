@@ -12,7 +12,7 @@ alter table public.dcc_rank_review add column if not exists claimed boolean not 
 
 -- quà cũ lớn hơn giới hạn: không trả, không tính nữa
 update public.dcc_rank_review set claimed = true where amount > 5999 and not claimed;
-update public.dcc_rank r set gift = coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0);
+update public.dcc_rank r set gift = least(coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0), 300000);
 
 create or replace function public.dcc_rank_claim(p_device text)
 returns table (total bigint, n int)
