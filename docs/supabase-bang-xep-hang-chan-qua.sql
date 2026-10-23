@@ -16,6 +16,7 @@
 -- Muốn mở lại một người: update dcc_rank set hidden = false where device = '<mã máy>';  (và update dcc_rank_review set hidden = false where from_device = '<mã máy>')
 
 alter table public.dcc_rank_review add column if not exists from_ip text not null default '';
+alter table public.dcc_rank_review add column if not exists claimed boolean not null default false;   -- quà đã được người nhận lấy vào ví (docs/supabase-bang-xep-hang-nhan-qua.sql)
 
 -- A1) xem trước: những máy bị thu hồi (cho từ 100 triệu đồng trở lên, hoặc hai tên đã biết mà cho từ 100000 đồng)
 -- select v.from_device, v.from_name, count(*) as lan, sum(v.amount) as dong, min(v.created_at) as tu, max(v.created_at) as den
@@ -29,7 +30,7 @@ create temp table dcc_bad_dev on commit drop as
   where amount >= 100000000 or (from_name in ('Chuột Bưởi Đào 93', 'Bà chủ Mè Xửng 69') and amount >= 100000);
 update public.dcc_rank_review set hidden = true where from_device in (select device from dcc_bad_dev) and not hidden;
 update public.dcc_rank set hidden = true where device in (select device from dcc_bad_dev) and not hidden;
-update public.dcc_rank r set gift = coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and v.amount > 0), 0);
+update public.dcc_rank r set gift = coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0);
 
 -- C) gift của một nhà không quá 300000 đồng
 update public.dcc_rank set gift = 300000 where gift > 300000;
@@ -43,7 +44,7 @@ language plpgsql security definer set search_path = public as $$
 declare n text := btrim(regexp_replace(coalesce(p_name, ''), '\s+', ' ', 'g'));
         s text := btrim(regexp_replace(coalesce(p_note, ''), '\s+', ' ', 'g'));
         t_device text; t_money bigint; t_gift bigint; g_money bigint; g_day int; g_flag boolean; g_hidden boolean; k text; last timestamptz; many bigint;
-        hd json; ip text := ''; c_cnt bigint; c_sum bigint; c_same bigint; t_day bigint; c_ip bigint;
+        hd json; ip text := ''; c_cnt bigint; c_sum bigint; c_same bigint; t_day bigint; t_all bigint; c_ip bigint;
 begin
   if p_device !~ '^[a-z0-9]{12,40}$' then raise exception 'bad device'; end if;
   if char_length(n) < 2 or char_length(n) > 22 then raise exception 'bad name'; end if;
@@ -74,7 +75,8 @@ begin
       from public.dcc_rank_review v where v.from_device = p_device and v.amount > 0 and v.created_at > now() - interval '24 hours';
     if c_cnt >= 5 or c_sum + p_amount > 12000 or c_same >= 1 then raise exception 'giver limit'; end if;
     select coalesce(sum(v.amount), 0) into t_day from public.dcc_rank_review v where v.target = p_target and not v.hidden and v.amount > 0 and v.created_at > now() - interval '24 hours';
-    if t_day + p_amount > 30000 or t_gift + p_amount > 300000 then raise exception 'house full'; end if;
+    select coalesce(sum(v.amount), 0) into t_all from public.dcc_rank_review v where v.target = p_target and not v.hidden and v.amount > 0;   -- cả đời, kể cả quà đã được lấy
+    if t_day + p_amount > 30000 or t_all + p_amount > 300000 then raise exception 'house full'; end if;
     if ip <> '' then
       select count(*) into c_ip from public.dcc_rank_review v where v.from_ip = ip and v.amount > 0 and v.created_at > now() - interval '24 hours';
       if c_ip >= 8 then raise exception 'giver limit'; end if;

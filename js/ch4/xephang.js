@@ -12,9 +12,28 @@ function c4RankName() { const n = hsName(hsMine()).replace(/\s+/g, ' ').trim(); 
 // quietly does nothing while the server has no board yet, and falls back to the old call while the home column is not there
 function c4RankSend() {
   if (!SAVE4.started) return Promise.resolve();
+  return c4RankClaim().then(c4RankPut);
+}
+function c4RankPut() {
   const row = { p_device: p4Device(), p_name: c4RankName(), p_money: Math.round(c4NetWorth()), p_day: Math.max(1, SAVE4.day || 1) };
   return p4Rpc('dcc_rank_put', { ...row, p_home: c4HomeItems().join(',') })
     .catch(() => p4Rpc('dcc_rank_put', row)).catch(() => {});
+}
+// gifts left under my house become real money in my purse (owner, 2026-10-23: "làm nhận tiền thật"): asked before every send (a day turns, the board
+// opens). The server (dcc_rank_claim, docs/supabase-bang-xep-hang-nhan-qua.sql) marks the gifts taken and answers the total in one step, so a gift is paid once;
+// a reply lost on the way would lose that sum, which is rare and small (a gift is under 10 quan).
+let C4_CLAIMING = null;
+function c4RankClaim() {
+  if (C4_CLAIMING) return C4_CLAIMING;
+  C4_CLAIMING = p4Rpc('dcc_rank_claim', { p_device: p4Device() }).then(r => {
+    const g = Array.isArray(r) && r[0], t = g ? Math.round(+g.total || 0) : 0, n = g ? +g.n || 0 : 0;
+    if (t > 0 && t <= 100000000) {
+      SAVE4.money = Math.max(0, Math.round(SAVE4.money || 0)) + t; persist4(); c4RankHud();
+      try { AU.pluck(84); } catch (e) {}
+      toast(n > 1 ? `Khách ghé nhà để lại ${n} món quà, được ${c4RankMoney(t)}.` : `Có khách để lại quà ở nhà, được ${c4RankMoney(t)}.`, 3.6);
+    }
+  }).catch(() => {}).then(() => { C4_CLAIMING = null; });
+  return C4_CLAIMING;
 }
 const c4RankMoney = m => m >= 600 ? `${Math.floor(m / 600).toLocaleString('vi')} quan` : `${Math.max(0, Math.round(m))} đồng`;
 const c4RankShow = id => (S.mode === 'c4bplay' ? p4Sheets : c4Sheets)(id);
