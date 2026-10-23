@@ -44,7 +44,7 @@ Ghi chú chi tiết từng chương nằm ở docs/chuong/. KHÔNG đọc cả t
 | II Chữ Là Luật | docs/chuong/chuong-2-chu-la-luat.md | Đố chữ kiểu Baba Is You: ghép luật bằng thẻ chữ (NOUN LÀ PROP…), 92 màn chia mục (Nhập môn, Biến hoá, Thần thông…); engine js/ch2/engine.js, giải bằng tools/c2-solve.js. |
 | III Nhanh Tay Nhanh Mắt | docs/chuong/chuong-3-nhanh-tay.md | 5 trò nhanh cho trẻ (gà mẹ con, hứng dừa, chăn trâu, thả diều, đánh đu), mỗi trò có ảnh tranh thật làm phần thưởng. |
 | IV Vợ Chồng Khởi Nghiệp | docs/chuong/chuong-4-khoi-nghiep.md | Game buôn bán ở chợ làng (nhiều gian hàng, người làm, khách quen, sổ tay, sự kiện) + phần 2 Phố Huyện (js/ch4b: nhà phố, hoa đăng, têm trầu), hồ sơ người chơi, bảng tổng sắp, đồng hồ chung hai nơi. Quy tắc: mọi thay đổi luật chương IV áp cho CẢ làng và phố. |
-| V Hội Làng | docs/chuong/chuong-5-hoi-lang.md | Một phòng chơi chung realtime (Cloudflare Durable Object): ~21 trò nhỏ, cược 10 đồng, chia hũ khi cùng kết quả, chat, emote, bảng xếp hạng ngày/tuần/tháng/mọi lúc. |
+| V Hội Làng | docs/chuong/chuong-5-hoi-lang.md | Một phòng chơi chung realtime (Cloudflare Durable Object): ~26 trò nhỏ, cược 10 đồng, chia hũ khi cùng kết quả, chat, emote, bảng xếp hạng ngày/tuần/tháng/mọi lúc. |
 | VI Tìm Chuột | docs/chuong/chuong-6-tim-chuot.md | Meowdoku với chuột: mỗi hàng, cột, ô màu một con, không kề nhau; màn sinh offline bằng tools/gen-mice-levels.js. |
 | VII Ai Ăn Vụng? | docs/chuong/chuong-7-ai-an-vung.md | Án kiểu Murdoku: suy ra ai ở cùng phòng với đĩa đồ ăn; vụ sinh offline bằng tools/gen-anvung.js. |
 | VIII Gom Ba Mở Lối | docs/chuong/chuong-8-gom-ba.md | Platformer + vuốt gom 3 (lửa, xoáy, chum, băng, nước, đá…); hơn 60 màn; ghi chú rất dài về luật game gốc và cách kiểm tra màn bằng engine thật. |
