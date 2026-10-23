@@ -1,18 +1,12 @@
 /* Chương IV · bảng tổng sắp nhà giàu (owner, 2026-10-16: "xem được tất cả những người chơi và tiền, số ngày, tên tự gen và xếp theo thứ
    tự ai giàu nhất, người chơi có option đổi tên"). Every player has one row on Supabase (table dcc_rank, only through the rpc dcc_rank_put /
    dcc_rank_top / dcc_rank_me, docs/supabase-bang-xep-hang.sql), keyed by the device id dcc.dev (it goes with the cloud save to other
-   devices): a name made up the first time (C4_RANK_A × C4_RANK_B + a number, kept in dcc.rankName, can be changed, 2–22 letters, no bad
-   words), the purse SAVE4.money and the day SAVE4.day. The row is sent when a day turns (c4DayAdvance) and when the board is opened. The
+   devices): the player's one name (the Hồ sơ name, changed only in the Hồ sơ tab; before 2026-10-23 a made-up name in dcc.rankName with its own Đổi tên), the purse SAVE4.money and the day SAVE4.day. The row is sent when a day turns (c4DayAdvance) and when the board is opened. The
    board (#c4rank, HUD button "Tổng sắp" in the village and the town) lists the richest 100 and the player's own place. */
-const C4_RANK_A = ['Phú ông', 'Lái buôn', 'Bà chủ', 'Cậu ấm', 'Cô hàng', 'Bác', 'Chú', 'Lão', 'Mợ', 'Chuột'];
-const C4_RANK_B = ['Trầu Cau', 'Bánh Đa', 'Xôi Gấc', 'Hạt Thóc', 'Củ Lạc', 'Mè Xửng', 'Bánh Chưng', 'Ngô Rang', 'Khoai Lang', 'Cốm Vòng',
-  'Chè Kho', 'Râu Dài', 'Đuôi Cong', 'Tai To', 'Má Hồng', 'Bánh Giầy', 'Hạt Dẻ', 'Bưởi Đào', 'Nón Lá', 'Quai Thao'];
 const C4_RANK_MAX = 22;
-function c4RankName() {
-  let n = ''; try { n = localStorage.getItem('dcc.rankName') || ''; } catch (e) {}
-  if (!n) { const r = () => Math.random(); n = `${C4_RANK_A[(r() * C4_RANK_A.length) | 0]} ${C4_RANK_B[(r() * C4_RANK_B.length) | 0]} ${10 + ((r() * 90) | 0)}`; try { localStorage.setItem('dcc.rankName', n); } catch (e) {} }
-  return n;
-}
+// ONE name for the whole game (owner, 2026-10-23: "chỉ cho phép dùng 1 tên toàn game và đổi tên ở 1 chỗ là Hồ sơ"): the Hồ sơ name (dcc.hoso), the same one
+// Hội Làng and Ghép Tranh send. The board's own made-up name and its Đổi tên button (dcc.rankName) are gone; the server wants 2–22 letters.
+function c4RankName() { const n = hsName(hsMine()).replace(/\s+/g, ' ').trim(); return n.length < 2 ? n + ' chuột' : n.slice(0, C4_RANK_MAX); }
 // send my row (the purse plus the things in the house, c4NetWorth: buying furniture moves money from one column to the other),
 // with the list of what has been sắm sanh so others can look into the room (docs/supabase-bang-xep-hang-nha.sql);
 // quietly does nothing while the server has no board yet, and falls back to the old call while the home column is not there
@@ -27,23 +21,8 @@ const c4RankShow = id => (S.mode === 'c4bplay' ? p4Sheets : c4Sheets)(id);
 // the board in a box: my name (with Đổi tên), my place, the richest 100
 async function c4RankInto(box) {
   box.classList.add('rankbox');
-  box.innerHTML = '<p class="rkme rs">Tên bạn: <b class="rn"></b> <button class="btn alt rren">Đổi tên</button></p>'
-    + `<p class="rkme re" hidden><input class="rin" maxlength="${C4_RANK_MAX}" autocomplete="off"><button class="btn rok">Lưu</button><button class="btn alt rno">Thôi</button></p>`
-    + '<div class="rkB"><p class="sm">Đang tải bảng tổng sắp…</p></div>';
+  box.innerHTML = `<p class="rkme">Tên bạn: <b class="rn">${p4Esc(c4RankName())}</b></p><div class="rkB"><p class="sm">Đang tải bảng tổng sắp…</p></div>`;
   const q = c => box.querySelector(c), B = q('.rkB');
-  const edit = on => { q('.rn').textContent = c4RankName(); q('.rs').hidden = on; q('.re').hidden = !on; if (on) { const i = q('.rin'); i.value = c4RankName(); i.focus(); i.select(); } };
-  const save = () => {
-    const v = q('.rin').value.replace(/\s+/g, ' ').trim().slice(0, C4_RANK_MAX);
-    if (v.length < 2) { toast('Tên phải có ít nhất 2 chữ.', 2.2); return; }
-    if (p4HoaBad(v)) { toast('Tên có chữ không đẹp, chọn tên khác nhé.', 2.6); return; }
-    try { localStorage.setItem('dcc.rankName', v); } catch (e) {}
-    AU.tap(); toast('Đã đổi tên: ' + p4Esc(v), 2.2); setTimeout(() => c4RankInto(box), 300);
-  };
-  edit(false);
-  q('.rren').addEventListener('click', () => { AU.tap(); edit(true); });
-  q('.rno').addEventListener('click', () => edit(false));
-  q('.rok').addEventListener('click', save);
-  q('.rin').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') save(); });
   // sending my row must never hold the board up: a stalled put once left the sheet on "Đang tải…" for good, so it gets a short
   // wait and then the list is drawn anyway (owner, 2026-10-22: "sao bảng tổng sắp trắng trơn vậy?")
   await Promise.race([c4RankSend(), new Promise(done => setTimeout(done, 2500))]);
