@@ -118,6 +118,8 @@ class Jigsaw extends DurableObject {
     const u = new URL(req.url);
     if (u.pathname === '/sus') return this.sus();
     if (u.pathname === '/log') return this.logReq();
+    if (u.pathname === '/who') return this.whoReq(u);
+    if (u.pathname === '/purge') return this.purgeReq(u);
     if (u.pathname === '/reset') return this.resetReq(u);
     if (u.pathname === '/ban') return this.banReq(u);
     const ip = req.headers.get('CF-Connecting-IP') || '';
@@ -274,6 +276,21 @@ class Jigsaw extends DurableObject {
     }
     const out = [...by.values()].map(d => ({ dev: d.dev, names: [...d.names].join(','), ips: [...d.ips].join(','), drops: d.drops, joins: d.joins, first: new Date(d.first).toISOString(), last: new Date(d.last).toISOString(), peakPerMin: Math.max(0, ...Object.values(d.min)), fastHoldMs: d.fast, test: d.test })).sort((a, b) => b.joins - a.joins);
     return this.json({ ver: VER, rows, devices: out.length, joins: out.reduce((s, d) => s + d.joins, 0), list: out.slice(0, 80) });
+  }
+  // which devices carry a name (the records u:<dev> hold {n name, m pieces}); the owner then bans or purges one
+  async whoReq(u) {
+    const q = (u.searchParams.get('name') || '').toLowerCase(); if (!q) return this.json({ error: 'name' });
+    const out = [];
+    for (const [k, v] of await this.ctx.storage.list({ prefix: 'u:', limit: 20000 })) { const r = this.users.get(k.slice(2)) || v; if (r && String(r.n || '').toLowerCase().includes(q)) out.push({ dev: k.slice(2), n: r.n, m: r.m }); }
+    return this.json({ ver: VER, found: out });
+  }
+  // off the board for good: pieces back to 0 (the board lists players with at least one piece) and the device banned for a year
+  async purgeReq(u) {
+    const dev = u.searchParams.get('dev'); if (!dev) return this.json({ error: 'dev' });
+    const old = this.users.get(dev) || await this.ctx.storage.get('u:' + dev); if (!old) return this.json({ error: 'unknown device' });
+    const rec = { n: old.n, m: 0 }; this.users.set(dev, rec); this.dirtyUsers.delete(dev); await this.ctx.storage.put('u:' + dev, rec); this.ppl.delete('u:' + dev); this.board = null;
+    this.ban(dev, 365 * 86400000);
+    return this.json({ ok: 'purged', dev, name: old.n, was: old.m });
   }
   // start the same picture again (everybody's records and the board stay): the finished picture is kept as old:<pic>:<time>
   async resetNow() {

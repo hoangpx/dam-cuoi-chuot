@@ -35,6 +35,8 @@ const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua'
 
 const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'dodan']);   // dodan (folk-lore quiz) is not in the bag: it is dealt now and then, see startRound
 const needCap = game => game === 'dodan' ? 3 : 2;   // the page version that knows the game
+// devices of cheaters (2026-10-23): refused at hello, the socket closed with 4003 (the same two as docs/supabase-bang-xep-hang-khoa.sql). Takes effect when the room object next restarts
+const BANNED_DEVS = new Set(['llmtkvnjmpa1wfx0o0on', 't2fns94ywx89utpcdf4a']);
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz)/;   // devices used by test.mjs: never written to the board
 import { QUIZ, QUIZ_GROUPS } from './quiz.js';
 const T = {
@@ -111,7 +113,7 @@ export default {
       const pp = u.searchParams.get('p');
       return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : FROZEN_COUNT, { headers: h });
     }
-    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
+    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset' || u.pathname === '/jg-who' || u.pathname === '/jg-purge') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
       const ns = u.searchParams.get('p') === 'dg' ? env.JIGSAW_DG2 : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
       return ns.get(ns.idFromName('main')).fetch(new Request(u.origin + path + u.search));
@@ -172,6 +174,7 @@ export class Room extends DurableObject {
       let name = String(m.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
       if (!name || BAD.test(name)) name = 'Chuột ' + c.id.slice(1);
       c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok; c.cap = +m.cap || 1;   // cap 2 = knows the newer games
+      if (BANNED_DEVS.has(c.dev)) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
       const st = await this.getStats(c.dev); st.n = name;
       c.joined = true; this.noteJoin(c);
       this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: (this.round && NEWG.has(this.round.game) && !(c.cap >= needCap(this.round.game))) ? null : this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
