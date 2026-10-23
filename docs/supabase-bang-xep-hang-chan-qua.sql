@@ -82,7 +82,7 @@ begin
       if c_ip >= 8 then raise exception 'giver limit'; end if;
     end if;
   end if;
-  k := case when coalesce(g_money, (select r.money from public.dcc_rank r where r.device = p_device), 0) > t_money + t_gift then 'bothi' else 'bieu' end;   -- nhiều tiền hơn chủ nhà: bố thí; ít hơn: biếu
+  k := case when coalesce(g_money, (select r.money from public.dcc_rank r where r.device = p_device), 0) > t_money then 'bothi' else 'bieu' end;   -- nhiều tiền hơn chủ nhà: bố thí; ít hơn: biếu
   insert into public.dcc_rank_review (target, from_device, from_name, kind, amount, note, from_ip)
   values (p_target, p_device, n, k, p_amount, s, ip);
   if p_amount > 0 then update public.dcc_rank set gift = gift + p_amount where pub = p_target; end if;

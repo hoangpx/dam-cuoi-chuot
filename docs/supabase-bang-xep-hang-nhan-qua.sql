@@ -9,6 +9,7 @@
 -- Dòng bị ẩn / bị đánh dấu gian lận / bị khoá không lấy được quà (hàm trả 0), quà của máy bị khoá (lời nhận xét bị giấu) không bao giờ trả.
 
 alter table public.dcc_rank_review add column if not exists claimed boolean not null default false;
+alter table public.dcc_rank add column if not exists got bigint not null default 0;   -- phần ví là quà đã nhận: hạng tính money − got (docs/supabase-bang-xep-hang-khong-tinh-qua.sql)
 
 -- quà cũ lớn hơn giới hạn: không trả, không tính nữa
 update public.dcc_rank_review set claimed = true where amount > 5999 and not claimed;
@@ -28,7 +29,7 @@ begin
     returning v.amount
   ) select coalesce(sum(u.amount), 0), count(*)::int into t, k from u;
   if t > 0 then
-    update public.dcc_rank set gift = greatest(gift - t, 0), money = money + t where device = p_device;
+    update public.dcc_rank set gift = greatest(gift - t, 0), money = money + t, got = got + t where device = p_device;
   end if;
   return query select t, k;
 end $$;

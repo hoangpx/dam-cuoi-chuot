@@ -139,7 +139,7 @@ function c4RankWire(B, r) {
       await p4Rpc('dcc_rank_review_put', { p_target: r.pub, p_device: p4Device(), p_name: c4RankName(), p_amount: amt, p_note: note });
       if (amt > 0) { SAVE4.money = Math.max(0, Math.round(SAVE4.money || 0) - amt); persist4(); c4RankSend(); c4RankHud(); }
       AU.pluck(84); AU.tap();
-      r.money = (+r.money || 0) + amt;   // the gift is on their row now; the place may shift with it, which the next opening sorts out
+      // a gift does not count for the board (owner, 2026-10-23: "cho tiền thì ko tính vào bảng xếp hạng"), so the host's line stays as it is
       const m = B.querySelector('.rvmeta'); if (m) m.innerHTML = c4RankMeta(r);
       ta.value = ''; ai.value = '';
       toast(amt > 0 ? `Đã ${kind} ${c4RankMoney(amt)} cho nhà này.` : 'Đã để lại lời nhận xét.', 3);
