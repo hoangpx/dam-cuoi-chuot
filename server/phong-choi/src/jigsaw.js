@@ -17,6 +17,8 @@ import { cleanChat, CHAT_GAP } from './chat.js';
 export function makeJigsaw(cfg) {
 const COLS = cfg.cols, ROWS = cfg.rows, N = COLS * ROWS, PW = cfg.pw, PH = cfg.ph, PIC = cfg.pic, CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
+const COOL_MS = 60000;   // the biggest group, once moved, cannot be lifted again for this long
+const FIX_MIN = 2;   // the biggest group is fixed (isFixed) from this many pieces on
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
 const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 30, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, VER = '2026-10-23-log';
@@ -185,8 +187,34 @@ class Jigsaw extends DurableObject {
   }
   lockPieces(dev, ids) { if (!dev) return; let m = this.locks.get(dev); const now = Date.now(); if (!m) { m = new Map(); this.locks.set(dev, m); } for (const [k, t] of m) if (t < now) m.delete(k); for (const id of ids) m.set(id, now + LOCK_MS); }
   lockLeft(dev, g) { const m = this.locks.get(dev); if (!m || !m.size) return 0; const now = Date.now(); let best = 0; for (const id of g.ids) { const t = m.get(id); if (t && t - now > best) best = t - now; } return best; }
+  // FIXED BIGGEST (owner, 2026-10-24: "bức lớn nhất mà ko đè lên 1 mảnh nào hết thì ko ai di chuyển được trừ khi ghép xong hết rồi"): the group with the most pieces (strictly: no other group is
+  // as big, and at least FIX_MIN pieces) that lies clear of every piece of every other group cannot be lifted by anyone. Others still bring their pieces to it and join; if some piece lies on top
+  // of it (centres closer than .8 of a cell) it can be lifted, to put it right. Overlap is measured piece centre to piece centre with a grid, about 6000 steps a lift.
+  isBiggest(g) {   // strictly the biggest, and at least FIX_MIN pieces
+    if (g.ids.length < FIX_MIN) return false;
+    for (const o of this.groups.values()) if (o !== g && o.ids.length >= g.ids.length) return false;
+    return true;
+  }
+  isFixed(g) {
+    if (!this.isBiggest(g)) return false;
+    const R = Math.min(CW, CH) * .8, key = (i, j) => i * 100003 + j, grid = new Map();
+    const at = (grp, id) => { const p = rot(grp.a, (id % COLS + .5) * CW, (Math.floor(id / COLS) + .5) * CH); return [grp.x + p[0], grp.y + p[1]]; };
+    for (const id of g.ids) { const [x, y] = at(g, id), k = key(Math.floor(x / R), Math.floor(y / R)); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(x, y); if (x < 0 || y < 0 || x > WW || y > WH) return false; }   // a piece off the table: the group stays movable (owner: out of the screen it must still move)
+    for (const o of this.groups.values()) {
+      if (o === g) continue;
+      for (const id of o.ids) {
+        const [x, y] = at(o, id), ci = Math.floor(x / R), cj = Math.floor(y / R);
+        for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const a = grid.get(key(ci + di, cj + dj)); if (a) for (let q = 0; q < a.length; q += 2) if (Math.hypot(a[q] - x, a[q + 1] - y) < R) return false; }
+      }
+    }
+    return true;
+  }
   lift(c, gid) {
     const g = this.groups.get(gid); if (!g || this.done || (g.by && g.by !== c.id)) { this.send(c, { t: 'deny', g: gid }); return; }
+    if (!g.by && this.isBiggest(g)) {   // the biggest group: fixed while it lies whole on the table and clear; otherwise movable, but only once a minute (COOL_MS after each put-down)
+      if (this.isFixed(g)) { this.send(c, { t: 'deny', g: gid, fixed: 1 }); return; }
+      const left = (g.coolUntil || 0) - Date.now(); if (left > 0) { this.send(c, { t: 'deny', g: gid, cool: Math.ceil(left / 1000) }); return; }
+    }
     const lk = this.lockLeft(c.dev, g); if (lk > 0) { this.send(c, { t: 'deny', g: gid, lock: Math.ceil(lk / 1000) }); return; }
     g.nudgeAt = 0;
     if (c.holding && c.holding !== gid) this.release(c.holding);
@@ -205,6 +233,7 @@ class Jigsaw extends DurableObject {
   release(gid) {
     const g = this.groups.get(gid); if (!g) return; const holder = this.conns.get(g.by); if (holder) holder.holding = null;
     if (g.nudgeAt && holder) this.lockPieces(holder.dev, g.ids); g.nudgeAt = 0; g.by = null; this.clamp(g);
+    if (this.isBiggest(g)) g.coolUntil = Date.now() + COOL_MS;
     this.all({ t: 'drop', g: gid, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save();
   }
   drop(c, m, now) {
@@ -217,7 +246,9 @@ class Jigsaw extends DurableObject {
     c.joinT = c.joinT.filter(t => now - t < 60000);
     const hot = c.joinT.filter(t => now - t < JOIN_WIN).length >= JOIN_DEV || ipw.length >= JOIN_IP;   // more joining drops than a person makes: this one just does not join
     if (hot) this.strike(c);
+    const wasBig = this.isBiggest(g);   // the group dropped is the biggest: whatever it becomes (it may merge) rests for COOL_MS
     this._mg = []; const joins = hot || quick ? [] : this.tryJoin(g); const mg = joins.length ? this._mg : [];
+    if (wasBig) { const fin = this.groups.get(this.pieceG[g.ids[0]]); if (fin) fin.coolUntil = now + COOL_MS; }
     if (joins.length) { c.joinT.push(now); c.jn += joins.length; if (c.ip) { ipw.push(now); this.ipJ.set(c.ip, ipw); } }
     if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
     const u = this.users.get(c.dev); const paid = c.test ? 0 : this.award(c, joins.length, now);
@@ -392,4 +423,6 @@ export class JigsawVQ extends makeJigsaw({ pic: 'vq1', cols: 57, rows: 35, pw: 4
 // the third print: Đàn gà mẹ con, img/ch10/dan-ga-me-con.jpg 4400 x 2456, 100 x 56 = 5600 pieces
 export class JigsawDG extends makeJigsaw({ pic: 'dg1', cols: 100, rows: 56, pw: 4400, ph: 2456, freeze: false }) {}   // dropped (too heavy), kept only because its migration exists
 // the same print cropped and cut in 65 x 46 = 2990 pieces (owner, 2026-10-22: less lag), img/ch10/dan-ga-me-con.jpg 3300 x 2324
+// the fifth print (2026-10-24): Lễ hội đầu xuân, 73 x 41 = 2993 pieces of 50 px (3650 x 2050, img/ch10/le-hoi-dau-xuan.jpg). Same guards, join log, revert, fixed biggest group and cooldown as every print (all in makeJigsaw)
+export class JigsawLH extends makeJigsaw({ pic: 'lh1', cols: 73, rows: 41, pw: 3650, ph: 2050, freeze: false }) {}
 export class JigsawDG3 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false, resetTag: 'r1' }) {}

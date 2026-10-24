@@ -26,6 +26,10 @@ class_name = "JigsawDG"
 name = "JIGSAW_DG2"
 class_name = "JigsawDG3"
 
+[[durable_objects.bindings]]
+name = "JIGSAW_LH"
+class_name = "JigsawLH"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
@@ -63,3 +67,8 @@ new_sqlite_classes = ["JigsawDG2"]
 [[migrations]]
 tag = "v8"
 renamed_classes = [{ from = "JigsawDG2", to = "JigsawDG3" }]
+
+# 2026-10-24: the fifth print (Lễ hội đầu xuân, 2993 pieces), its own object and storage
+[[migrations]]
+tag = "v9"
+new_sqlite_classes = ["JigsawLH"]

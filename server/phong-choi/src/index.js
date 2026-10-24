@@ -24,7 +24,7 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3 } from './jigsaw.js';
+export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3, JigsawLH } from './jigsaw.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
@@ -105,6 +105,7 @@ export default {
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
       if (u.searchParams.get('p') === 'vq') return env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(req);
       if (u.searchParams.get('p') === 'dg') return env.JIGSAW_DG2.get(env.JIGSAW_DG2.idFromName('main')).fetch(req);
+      if (u.searchParams.get('p') === 'lh') return env.JIGSAW_LH.get(env.JIGSAW_LH.idFromName('main')).fetch(req);
       return frozenJg();
     }
     if (u.pathname === '/jg-online' || u.pathname === '/jg-list') {   // /jg-online?p=vq: that picture's numbers; /jg-list: every picture's, in one request
@@ -112,13 +113,14 @@ export default {
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
       const vq = async () => (await env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
       const dg = async () => (await env.JIGSAW_DG2.get(env.JIGSAW_DG2.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
-      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + ',"dg":' + await dg() + '}}', { headers: h });
+      const lh = async () => (await env.JIGSAW_LH.get(env.JIGSAW_LH.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
+      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + ',"dg":' + await dg() + ',"lh":' + await lh() + '}}', { headers: h });
       const pp = u.searchParams.get('p');
-      return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : FROZEN_COUNT, { headers: h });
+      return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : pp === 'lh' ? await lh() : FROZEN_COUNT, { headers: h });
     }
     if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset' || u.pathname === '/jg-who' || u.pathname === '/jg-purge' || u.pathname === '/jg-revert') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      const ns = u.searchParams.get('p') === 'dg' ? env.JIGSAW_DG2 : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
+      const pq = u.searchParams.get('p'), ns = pq === 'dg' ? env.JIGSAW_DG2 : pq === 'lh' ? env.JIGSAW_LH : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
       return ns.get(ns.idFromName('main')).fetch(new Request(u.origin + path + u.search));
     }
     if (u.pathname === '/hl-sus' || u.pathname === '/hl-ban' || u.pathname === '/hl-who') {   // the owner's tools for Hội Làng: who is in the room (with address), ban / free an address or a device, find a device by name: Bearer <ADMIN secret>
