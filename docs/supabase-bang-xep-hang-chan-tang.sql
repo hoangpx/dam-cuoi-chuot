@@ -30,8 +30,11 @@ begin
     if p_day > old_day then inc := public.dcc_rank_cap(p_day) - public.dcc_rank_cap(old_day);
     else inc := least(public.dcc_rank_cap(p_day) - public.dcc_rank_cap(greatest(p_day - 1, 1)), 2000 + floor(secs * 20)); end if;
     if p_money > old_money + inc + 3000 then bad := true; end if;   -- luật 2: tiền tăng quá nhanh
+    if bad and p_money > 20 * public.dcc_rank_cap(p_day) then perform public.dcc_auto_ban(p_device, 'khai ' || (p_money / 600) || ' quan o ngay ' || p_day); return; end if;   -- vô lý (hơn 20 lần trần): sửa tay, khoá luôn
     if bad then return; end if;   -- giữ nguyên dòng cũ (và updated_at cũ, để chờ đủ lâu thì lại qua)
-  elsif p_money > public.dcc_rank_cap(least(p_day, 120)) then return;   -- luật 3: dòng mới không khai giàu hơn trần ngày 120 (không lưu gì; nếu lưu rồi đánh dấu thì lần gửi sau sẽ tự hết dấu)
+  elsif p_money > public.dcc_rank_cap(least(p_day, 120)) then
+    if p_money > 20 * public.dcc_rank_cap(least(p_day, 120)) then perform public.dcc_auto_ban(p_device, 'dong moi khai ' || (p_money / 600) || ' quan o ngay ' || p_day); end if;
+    return;   -- luật 3: dòng mới không khai giàu hơn trần ngày 120 (không lưu gì; nếu lưu rồi đánh dấu thì lần gửi sau sẽ tự hết dấu)
   end if;
   insert into public.dcc_rank (device, name, money, day, updated_at, flag, home, pub)
   values (p_device, n, p_money, p_day, now(), p_money > public.dcc_rank_cap(p_day), coalesce(p_home, ''),

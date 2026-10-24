@@ -46,6 +46,17 @@ insert into public.dcc_ban (device, note) values
   ('t2fns94ywx89utpcdf4a', 'Chuot Buoi Dao 93: 82 lan cho tien gian, ngay 5 khai 78 trieu quan')
 on conflict (device) do nothing;
 
+-- khoá thêm máy thì dòng và lời nhận xét của nó bị giấu NGAY (cả khi hàm tự khoá chèn vào dcc_ban)
+create or replace function public.dcc_ban_apply() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  update public.dcc_rank set hidden = true, flag = true where device = new.device;
+  update public.dcc_rank_review set hidden = true where from_device = new.device and not hidden;
+  update public.dcc_rank r set gift = coalesce((select sum(v.amount) from public.dcc_rank_review v where v.target = r.pub and not v.hidden and not v.claimed and v.amount > 0), 0) where r.pub in (select target from public.dcc_rank_review where from_device = new.device);
+  return new;
+end $$;
+drop trigger if exists dcc_ban_apply on public.dcc_ban;
+create trigger dcc_ban_apply after insert on public.dcc_ban for each row execute function public.dcc_ban_apply();
+
 -- máy khai tiền vô lý (quá 20 lần trần của số ngày chơi, tức là sửa tay chứ không phải kiếm được) cũng bị khoá
 insert into public.dcc_ban (device, note)
   select device, 'tien khai qua 20 lan tran (' || (money / 600) || ' quan, ngay ' || day || ')' from public.dcc_rank

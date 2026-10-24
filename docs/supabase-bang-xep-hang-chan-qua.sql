@@ -74,6 +74,18 @@ $$;
 revoke all on function public.dcc_purge_ips() from public;   -- chỉ hàm khác (security definer) và chủ dự án gọi, anon thì không
 revoke all on function public.dcc_ip_banned(text) from public;       -- kẻ lạ không dò được địa chỉ nào đang bị chặn
 
+-- Tự khoá ngay khi gặp dấu hiệu RÕ RÀNG là gọi thẳng máy chủ chứ không phải người chơi (trang không bao giờ gửi những thứ này): ghi máy vào dcc_ban (bảng của -khoa.sql,
+-- tạo ở đây nếu chưa có), khoá địa chỉ 1 giờ, và -khoa.sql có trigger giấu dòng và lời nhận xét của máy đó ngay. Xem: select * from dcc_ban order by created_at desc;
+create table if not exists public.dcc_ban (device text primary key, note text not null default '', created_at timestamptz not null default now());
+alter table public.dcc_ban enable row level security;
+create or replace function public.dcc_auto_ban(p_device text, p_note text) returns void language plpgsql security definer set search_path = public as $$
+declare v_ip text := public.dcc_req_ip();
+begin
+  insert into public.dcc_ban (device, note) values (p_device, left('tu dong: ' || p_note, 200)) on conflict (device) do nothing;
+  if v_ip <> '' then insert into public.dcc_ban_ip (ip, until, note) values (v_ip, now() + interval '1 hour', left('tu dong: ' || p_note || ' (' || p_device || ')', 200)) on conflict (ip) do update set until = greatest(public.dcc_ban_ip.until, excluded.until); end if;
+end $$;
+revoke all on function public.dcc_auto_ban(text, text) from public;
+
 -- B) cho tiền có luật
 create or replace function public.dcc_rank_review_put(p_target text, p_device text, p_name text, p_amount bigint, p_note text)
 returns table (kind text, amount bigint)
@@ -89,7 +101,9 @@ begin
   if char_length(s) > 140 then raise exception 'bad note'; end if;
   if public.dcc_rank_bad(s) then raise exception 'bad words'; end if;
   if p_amount is null or p_amount < 0 then raise exception 'bad amount'; end if;
-  if p_amount > 5999 then raise exception 'too much'; end if;                      -- dưới 10 quan một lần
+  if p_amount > 5999 then   -- trang chặn ở 5999: ai gửi hơn là gọi thẳng máy chủ, khoá luôn (không raise, để lần khoá còn ghi lại được)
+    perform public.dcc_auto_ban(p_device, 'cho ' || p_amount || ' dong (gioi han 5999)'); return;
+  end if;
   if s = '' and p_amount = 0 then raise exception 'empty review'; end if;
   select r.device, r.money, r.gift into t_device, t_money, t_gift
     from public.dcc_rank r where r.pub = p_target and not r.hidden and not r.flag;

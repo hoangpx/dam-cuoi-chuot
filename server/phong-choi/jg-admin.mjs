@@ -33,4 +33,5 @@ else {
   console.log(`bản ${s.ver} · tranh số ${s.puzzle} · còn ${s.left} nhóm`);
   console.table(s.live.map(c => ({ tên: c.name, 'ghép/60s': c.last60, 'ghép cả lần vào': c.joins, 'vi phạm': c.strikes, 'giây': c.secs, máy: c.dev, ip: c.ip })));
   console.log('đang bị khoá:', s.bans.length ? s.bans : 'không ai');
+  if (s.banlog && s.banlog.length) { console.log('máy chủ tự khoá gần đây:'); console.table(s.banlog.map(b => ({ lúc: b.at.slice(5, 19), tên: b.name, máy: b.dev, ip: b.ip, lý_do: b.why, lần: b.level, phút: b.mins, nối: b.joins }))); }
 }
