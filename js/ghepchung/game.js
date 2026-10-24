@@ -11,7 +11,7 @@ const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG
 const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0 };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
-  { id: 'lh', hidden: true, pic: { id: 'lh', src: 'img/ch10/le-hoi-dau-xuan.jpg', w: 3650, h: 2050, vi: 'Lễ hội đầu xuân', en: 'Spring Festival' }, thumb: 'img/ch10/thumb-lh.jpg', cols: 73, rows: 41 },   // hidden until the owner opens it (delete hidden: true)
+  { id: 'lh', pic: { id: 'lh', src: 'img/ch10/le-hoi-dau-xuan.jpg', w: 3650, h: 2050, vi: 'Lễ hội đầu xuân', en: 'Spring Festival' }, thumb: 'img/ch10/thumb-lh.jpg', cols: 73, rows: 41 },   // opened 2026-10-24 (owner: "sao tranh mới vẫn chưa thấy lên")
   { id: 'dg', pic: { id: 'dg', src: 'img/ch10/dan-ga-me-con-2.jpg', w: 3300, h: 2324, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' }, thumb: 'img/ch10/thumb-dg2.jpg', cols: 65, rows: 46 },
   { id: 'vq', pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, thumb: 'img/ch10/thumb-vq.jpg', cols: 57, rows: 35 },
   { id: 'dcm', pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, thumb: 'img/ch10/thumb-dcm.jpg', cols: 40, rows: 25 },
