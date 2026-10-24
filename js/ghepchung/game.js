@@ -180,8 +180,7 @@ function jgReport(g, W, hh) {
   const pk = JG.repPick;
   if (pk) {
     hlText(g, lg('Báo cáo "' + pk.name + '" vì gian lận?', 'Report "' + pk.name + '" for cheating?'), W / 2, y + 74, 14, { ...sub, w: 800 });
-    hlText(g, lg('Khi có từ 3 người ở 3 địa chỉ mạng khác nhau báo cáo,', 'When 3 players on 3 different networks report someone,'), W / 2, y + 104, 11, { ...sub, al: .85 });
-    hlText(g, lg('người đó bị đuổi ra và không vào lại được nữa.', 'they are kicked out and can not come back.'), W / 2, y + 120, 11, { ...sub, al: .85 });
+    hlText(g, lg('Nhiều người báo cáo thì người đó bị đuổi ra.', 'If enough players report someone, they are kicked out.'), W / 2, y + 108, 11, { ...sub, al: .85 });
     hlPlate(g, W / 2 - 112, y + 146, 104, 36, '#e9b9ae', HL_INK, 8); hlText(g, lg('Báo cáo', 'Report'), W / 2 - 60, y + 165, 14, { f: hlSans, w: 800, o: false, c: '#7d1f17' });
     JG.btns.push({ x: W / 2 - 112, y: y + 146, w: 104, h: 36, down: () => { JG_NET.send({ t: 'report', id: pk.id }); close(); } });
     hlPlate(g, W / 2 + 8, y + 146, 104, 36, '#f2ecde', HL_INK, 8); hlText(g, lg('Thôi', 'Cancel'), W / 2 + 60, y + 165, 14, { f: hlSans, w: 800, o: false });
@@ -192,7 +191,8 @@ function jgReport(g, W, hh) {
   hlText(g, others.length ? lg('Chạm vào tên người bạn nghi gian lận', 'Tap the name of the player you suspect') : lg('Chưa có ai khác trong phòng', 'Nobody else is in the room'), W / 2, y + 46, 12, { ...sub, al: .85 });
   const ly0 = y + 62, ly1 = y + h - 40, maxScroll = Math.max(0, others.length * rowH - (ly1 - ly0)); JG.bscroll = Math.max(0, Math.min(maxScroll, JG.bscroll)); JG.barea = { x, y: ly0, w, h: ly1 - ly0 };
   g.save(); g.beginPath(); g.rect(x + 2, ly0, w - 4, ly1 - ly0); g.clip();
-  others.forEach((p, i) => { const ry = ly0 + i * rowH - JG.bscroll; if (ry < ly0 - rowH || ry > ly1) return; hlPlate(g, x + 10, ry + 2, w - 20, rowH - 6, '#f6efdc', HL_INK, 7); hlText(g, p.name || '?', x + 24, ry + rowH / 2, 13, { ...sub, a: 'left', w: 700 }); hlText(g, '⚑', x + w - 28, ry + rowH / 2, 14, { ...sub, c: '#a3332a', w: 900 }); if (ry >= ly0 - 2 && ry + rowH <= ly1 + 2) JG.btns.push({ x: x + 10, y: ry + 2, w: w - 20, h: rowH - 6, down: () => { JG.repPick = { id: p.id, name: p.name || '?' }; } }); });
+  JG.repRows = [];
+  others.forEach((p, i) => { const ry = ly0 + i * rowH - JG.bscroll; if (ry < ly0 - rowH || ry > ly1) return; hlPlate(g, x + 10, ry + 2, w - 20, rowH - 6, '#f6efdc', HL_INK, 7); hlText(g, p.name || '?', x + 24, ry + rowH / 2, 13, { ...sub, a: 'left', w: 700 }); hlText(g, '⚑', x + w - 28, ry + rowH / 2, 14, { ...sub, c: '#a3332a', w: 900 }); JG.repRows.push({ x: x + 10, y: Math.max(ry + 2, ly0), w: w - 20, h: Math.min(ry + rowH - 4, ly1) - Math.max(ry + 2, ly0), p }); });
   g.restore();
 }
 function jgBoard(g, W, hh) {
@@ -308,7 +308,7 @@ function jgDown(e) {
   if (JG.tray) { const tb = JG.trayBtns.find(b => jgIn(b, x, y)); JG.tray = false; if (tb) tb.down(e); return; }
   for (const b of JG.btns) if (jgIn(b, x, y)) { b.down(e); return; }
   if (!JG.pz) { JG.drag = { y, s: JG.gscroll, gal: true }; return; }
-  if (JG.ui === 'board' || JG.ui === 'report') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, s: JG.bscroll }; else { JG.ui = null; JG.repPick = null; } return; }
+  if (JG.ui === 'board' || JG.ui === 'report') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, x, s: JG.bscroll, rep: JG.ui === 'report', moved: false }; else { JG.ui = null; JG.repPick = null; } return; }
   if (!G) return;
   if (y > G.lh - JG_STRIP) return;
   for (const b of jgZoomBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 6) { if (b.k === 'in') c9Zoom(G, 1.5, G.lw / 2, (G.lh + G.top) / 2); else if (b.k === 'out') c9Zoom(G, 1 / 1.5, G.lw / 2, (G.lh + G.top) / 2); else { G.cam.z = G.zmin; c9ClampCam(G); } return; }
@@ -317,10 +317,10 @@ function jgDown(e) {
 }
 function jgMove(e) {
   if (S.mode !== 'jgplay') return; const [x, y] = jgPos(e);
-  if (JG.drag) { if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
+  if (JG.drag) { if (Math.abs(y - JG.drag.y) > 6) JG.drag.moved = true; if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
   if (!JG.G || JG.ui) return; c9Move(JG.G, x, y, e); cv.style.cursor = JG.G.held ? 'grabbing' : JG.G.hover ? 'grab' : '';
 }
-function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { JG.drag = null; return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); c9PtrUp(JG.G, x, y, e, () => {}); }
+function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); c9PtrUp(JG.G, x, y, e, () => {}); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'jgplay') e.preventDefault(); });
 cv.addEventListener('touchstart', e => { if (S.mode === 'jgplay') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
