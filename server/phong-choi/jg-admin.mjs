@@ -6,6 +6,7 @@
 //   node jg-admin.mjs who <tên>                      tìm mã máy theo tên (một phần tên cũng được)
 //   node jg-admin.mjs purge <mã máy>                 xoá khỏi bảng xếp hạng (về 0 mảnh) và khoá một năm
 //   node jg-admin.mjs hl sus | hl who <tên> | hl ban ip <địa chỉ> [số phút] | hl ban dev <mã máy> [số phút] | hl free <địa chỉ hoặc mã máy>   (Hội Làng)
+//   P=dg node jg-admin.mjs revert <mã máy> [dry]       người gian lận: tách lại những nhóm máy đó đã nối (chỉ các lần nối ghi từ 2026-10-24), xoá điểm, khoá 1 năm; 'dry' chỉ đếm
 //   node jg-admin.mjs reset <mã tranh>               làm lại tranh đang chơi (giữ điểm mọi người)
 //   đặt P=dg để xem tranh Đàn gà mẹ con (mặc định: Vinh quy)
 //   node jg-admin.mjs free <mã máy hoặc địa chỉ>     mở khoá
@@ -25,6 +26,7 @@ else if (cmd === 'hl') {   // Hội Làng: node jg-admin.mjs hl sus | who <tên>
   else if (kind === 'free') console.log(await hl(`/hl-ban?${/[:.]/.test(key) ? 'ip' : 'dev'}=${encodeURIComponent(key)}&un=1`));
   else { const s = await hl('/hl-sus'); console.table(s.live.map(c => ({ tên: c.name, máy: c.dev, ip: c.ip, giây: c.secs }))); console.log('đang bị khoá:', s.bans.length ? s.bans : 'không ai'); }
 }
+else if (cmd === 'revert') console.log(await get('/jg-revert?dev=' + encodeURIComponent(kind) + (key === 'dry' ? '&dry=1' : '') + P));   // hoàn tác những gì máy đó đã nối + xoá điểm + khoá 1 năm (thêm 'dry' để chỉ đếm)
 else if (cmd === 'reset') console.log(await get('/jg-reset?ok=' + kind + P));
 else {
   const s = await get('/jg-sus?x=1' + P);

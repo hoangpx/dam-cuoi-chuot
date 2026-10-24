@@ -122,6 +122,7 @@ class Jigsaw extends DurableObject {
     if (u.pathname === '/log') return this.logReq();
     if (u.pathname === '/who') return this.whoReq(u);
     if (u.pathname === '/purge') return this.purgeReq(u);
+    if (u.pathname === '/revert') return this.hackReq(u);
     if (u.pathname === '/reset') return this.resetReq(u);
     if (u.pathname === '/ban') return this.banReq(u);
     const ip = req.headers.get('CF-Connecting-IP') || '';
@@ -216,13 +217,13 @@ class Jigsaw extends DurableObject {
     c.joinT = c.joinT.filter(t => now - t < 60000);
     const hot = c.joinT.filter(t => now - t < JOIN_WIN).length >= JOIN_DEV || ipw.length >= JOIN_IP;   // more joining drops than a person makes: this one just does not join
     if (hot) this.strike(c);
-    const joins = hot || quick ? [] : this.tryJoin(g);
+    this._mg = []; const joins = hot || quick ? [] : this.tryJoin(g); const mg = joins.length ? this._mg : [];
     if (joins.length) { c.joinT.push(now); c.jn += joins.length; if (c.ip) { ipw.push(now); this.ipJ.set(c.ip, ipw); } }
     if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
     const u = this.users.get(c.dev); const paid = c.test ? 0 : this.award(c, joins.length, now);
     if (u && paid) { u.m += paid; this.ppl.add('u:' + c.dev); this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
-    this.jl.push(['j:' + String(now).padStart(14, '0') + ':' + c.id, { t: now, dev: c.dev, ip: c.ip, name: c.name, n: joins.length, hold: now - c.liftAt, test: !!c.test }]);
+    this.jl.push(['j:' + String(now).padStart(14, '0') + ':' + c.id, { t: now, dev: c.dev, ip: c.ip, name: c.name, n: joins.length, hold: now - c.liftAt, test: !!c.test, mg: mg.map(m => [m.keep, m.gone, m.ids.join(','), m.pose, m.own]) }]);
     const finished = this.groups.size === 1; if (finished) { this.done = true; this.doneAt = Date.now(); }
     // stored first, then told: nobody ever sees a join that is not kept. The write does not hold the output gate (allowUnconfirmed) and we wait for it
     // ourselves, so a refused write (a storage limit) cannot break the whole object: the join is then told anyway and the write is retried
@@ -234,7 +235,7 @@ class Jigsaw extends DurableObject {
   award(c, k, now) { c.awards = c.awards.filter(t => now - t < 60000); const r10 = c.awards.filter(t => now - t < 10000).length, room = Math.max(0, Math.min(10 - r10, PAID_MIN - c.awards.length)), paid = Math.min(k, room); for (let i = 0; i < paid; i++) c.awards.push(now); return paid; }
   // the dropped group joins every neighbour it fits: the bigger group keeps its pose, the smaller moves onto it
   tryJoin(grp) {
-    const out = [];
+    const out = []; this._mg = []; const mine = new Set(grp.ids);   // the dropped group: a merge that moves any of ITS pieces is the dropper's own work (own: 1), one that moves another group only snapped that group onto the big one   // this._mg: what each merge moved (the smaller group's pieces and its pose before it joined), kept in the join log so a cheat can be undone (revertDev)
     for (let guard = 0; guard < 60; guard++) {
       // the neighbour that fits best, measured AT THE CONTACT (same rule as js/ghep/manh.js c9Contact): the angle within ANG_TOL and the two
       // touching pieces, each placed under the other group's pose, within POS_TOL (the corner of the print would need a fraction of a degree)
@@ -253,6 +254,7 @@ class Jigsaw extends DurableObject {
       }
       if (!hit) break;
       const big = hit.o.ids.length >= grp.ids.length ? hit.o : grp, small = big === grp ? hit.o : grp;
+      this._mg.push({ keep: big.id, gone: small.id, ids: small.ids.slice(), pose: [r1(small.x), r1(small.y), r3(small.a)], own: small.ids.some(id => mine.has(id)) ? 1 : 0 });
       for (const id of small.ids) { this.pieceG[id] = big.id; big.ids.push(id); }
       this.groups.delete(small.id); this.dirty.delete(small.id);
       out.push({ keep: big.id, gone: small.id, x: r1(big.x), y: r1(big.y), a: r3(big.a), pair: hit.pair }); grp = big;
@@ -295,12 +297,60 @@ class Jigsaw extends DurableObject {
     return this.json({ ver: VER, found: out });
   }
   // off the board for good: pieces back to 0 (the board lists players with at least one piece) and the device banned for a year
+  async purgeDev(dev) {
+    const old = this.users.get(dev) || await this.ctx.storage.get('u:' + dev); if (!old) return null;
+    const rec = { n: old.n, m: 0 }; this.users.set(dev, rec); this.dirtyUsers.delete(dev); await this.ctx.storage.put('u:' + dev, rec); this.ppl.delete('u:' + dev); this.board = null;
+    return { name: old.n, was: old.m };
+  }
   async purgeReq(u) {
     const dev = u.searchParams.get('dev'); if (!dev) return this.json({ error: 'dev' });
-    const old = this.users.get(dev) || await this.ctx.storage.get('u:' + dev); if (!old) return this.json({ error: 'unknown device' });
-    const rec = { n: old.n, m: 0 }; this.users.set(dev, rec); this.dirtyUsers.delete(dev); await this.ctx.storage.put('u:' + dev, rec); this.ppl.delete('u:' + dev); this.board = null;
+    const p = await this.purgeDev(dev); if (!p) return this.json({ error: 'unknown device' });
     this.ban(dev, 365 * 86400000);
-    return this.json({ ok: 'purged', dev, name: old.n, was: old.m });
+    return this.json({ ok: 'purged', dev, name: p.name, was: p.was });
+  }
+  // a group at a random place and angle of the table, as fresh() would leave a piece
+  scatter(g) {
+    g.a = r3(Math.random() * 2 * Math.PI); g.x = 0; g.y = 0; const c = this.centroid(g);
+    const tx = CW + Math.random() * (WW - 2 * CW), ty = CH + Math.random() * (WH - 2 * CH);
+    g.x = r1(tx - c[0]); g.y = r1(ty - c[1]); this.clamp(g);
+  }
+  // UNDO what one device joined: the join log (key j:…) holds, for every merge it made, the pieces that moved and the pose they had before. Merges are undone newest first:
+  // those pieces are taken out of whatever group holds them now (a group may keep holes, which is fine) and stand again as a group of their own at their old pose. What other
+  // players joined onto the result stays as it is. Only joins logged since the log carries pieces (2026-10-24) can be undone; older rows are counted as rowsWithoutData.
+  async revertDev(dev, dry) {
+    const rows = [];
+    for (const [k, v] of await this.ctx.storage.list({ prefix: 'j:', limit: 20000 })) if (v && v.dev === dev) rows.push([k, v]);
+    const done = rows.filter(([, v]) => v.rev).length, withData = rows.filter(([, v]) => Array.isArray(v.mg) && v.mg.length), merges = [];
+    for (const [, v] of withData) for (const m of v.mg) merges.push(m);
+    const info = { rows: rows.length, mergesToUndo: merges.length, rowsWithoutData: rows.length - withData.length - done, alreadyReverted: done };
+    if (dry || !merges.length) return { ...info, groupsNow: this.groups.size };
+    let nid = Math.max(...this.groups.keys()) + 1;
+    for (let i = merges.length - 1; i >= 0; i--) {
+      const ids = String(merges[i][2]).split(',').map(Number), pose = merges[i][3], own = merges[i][4], set = new Set(ids);
+      for (const gid of new Set(ids.map(id => this.pieceG[id]))) {
+        const g = this.groups.get(gid); if (!g) continue;
+        if (g.by) this.release(gid);
+        g.ids = g.ids.filter(id => !set.has(id)); this.dirty.delete(gid); if (!g.ids.length) this.groups.delete(gid);
+      }
+      const ng = { id: nid++, x: pose[0], y: pose[1], a: pose[2], ids: ids.slice(), by: null, heldAt: 0 };
+      this.groups.set(ng.id, ng); for (const id of ids) this.pieceG[id] = ng.id;
+      if (own) this.scatter(ng);   // the dropper's own pieces went to the right place only because of the cheat: they go back to a random spot (a group someone else had placed goes back to where it stood)
+    }
+    const put = {}; for (const [k, v] of withData) put[k] = { ...v, mg: null, rev: true };
+    const keys = Object.keys(put); for (let i = 0; i < keys.length; i += 100) { const part = {}; for (const k of keys.slice(i, i + 100)) part[k] = put[k]; await this.ctx.storage.put(part); }
+    this.done = this.groups.size === 1; if (!this.done) this.doneAt = 0;
+    this.total = Math.max(0, this.total - merges.length); this.board = null;
+    await this.flush();
+    this.all({ t: 'reset', ...this.full() });
+    return { ...info, undone: merges.length, groupsNow: this.groups.size };
+  }
+  // one command for a known cheat: undo what they joined, then take them off the board and ban the device for a year (?dry=1 only counts)
+  async hackReq(u) {
+    const dev = u.searchParams.get('dev'); if (!dev) return this.json({ error: 'dev' });
+    if (u.searchParams.get('dry')) return this.json({ dry: true, ...(await this.revertDev(dev, true)) });
+    this.ban(dev, 365 * 86400000);
+    const rev = await this.revertDev(dev, false), pur = await this.purgeDev(dev);
+    return this.json({ ok: 'reverted and banned', dev, ...rev, purged: pur });
   }
   // start the same picture again (everybody's records and the board stay): the finished picture is kept as old:<pic>:<time>
   async resetNow() {
