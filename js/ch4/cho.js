@@ -812,7 +812,7 @@ function updateC4(dt) {
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
     for (const v of C4.vendors) if (!c4VendorMine(v) && (v.callT -= dt) <= 0) { v.callT = 9 + R() * 9; if (Math.abs(v.x - C4.camX - c4View().vw / 2) < 600) c4Say(v, c4Pick(v.calls)); }
     if (C4.events.length && !c4OpenStalls().length) C4.events = [];            // every stall shut meanwhile: nothing befalls the village
-    if (C4.events.length && C4.mins >= C4.events[0].at && C4.mins >= (C4.evGap || 0) && !Object.values(C4.SV).some(A => A && A.length)) { const e0 = C4.events.shift(); c4NoteFired(e0.kind); C4.evGap = C4.mins + 30; c4Dispatch(e0.kind, e0); return; }   // one at a time, half an hour apart (owner: several came together)
+    if (C4.events.length && C4.mins >= C4.events[0].at && (C4.events[0].kind === 'nvdem' || (C4.mins >= (C4.evGap || 0) && !Object.values(C4.SV).some(A => A && A.length)))) { const e0 = C4.events.shift(); c4NoteFired(e0.kind); C4.evGap = C4.mins + 30; c4Dispatch(e0.kind, e0); return; }   // one at a time, half an hour apart (owner: several came together)
     c4XoiTick();
     // noon: scorching days wilt some betel
     if (was < 12 * 60 && C4.mins >= 12 * 60) {
@@ -826,7 +826,12 @@ function updateC4(dt) {
       c4Hud();
     }
     c4NvUpdate(dt); c4SaleTick(dt); c4DelivUpdate(); c4ExtraUpdate(); c4StreetUpdate(dt); c4CoupleTalk(dt); c4Ambience(dt); c4FlowerSeller(dt); c4VisitorsUpdate(dt); c4RivalUpdate(dt); c4RivalWalk(dt); c4HusbTout(dt); c4TripsUpdate(dt); c4AutoUpdate(dt);
-    if (C4.mins >= C4_CLOSE) { C4.mins = C4_CLOSE - 1; c4EndDay(); }
+    if (C4.mins >= C4_CLOSE) {
+      C4.mins = C4_CLOSE - 1;
+      const i = C4.events.findIndex(e => e.kind === 'nvdem');                 // a counting question still unasked: ask before the day ends
+      if (i >= 0) { c4Dispatch('nvdem', C4.events.splice(i, 1)[0]); return; }
+      c4EndDay();
+    }
   }
   // the cat: on the roof, a leap down, the decision; fed it goes back over the roof; refused it sits, then takes betel
   if (C4.cat) {
