@@ -65,7 +65,7 @@ async function c4RankInto(box) {
       const go = () => { const n = parseInt(gi.value, 10); if (!(n > 0)) { toast('Nhập số hạng muốn xem nhé.', 2.2); gi.focus(); return; } AU.tap(); c4RankVisit(n); };
       box.querySelector('.rgo').addEventListener('click', go);
       gi.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') go(); }); }
-    const me1 = B.querySelector('tr.me'), rk = B.querySelector('.rk'); if (me1 && rk) rk.scrollTop = me1.offsetTop - rk.clientHeight / 2;
+    const rk = B.querySelector('.rk'); if (rk) rk.scrollTop = 0;   // opens at the top of the board (owner), not at my own row
   } catch (e) { B.innerHTML = '<p class="sm">Chưa kết nối được bảng tổng sắp. Lát nữa thử lại nhé.</p>'; }
 }
 // looking into someone else's house (owner, 2026-10-22: "vào bảng tổng sắp thì sẽ có nút xem nhà của người trong bảng, hoặc nhập số
