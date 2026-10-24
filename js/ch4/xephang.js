@@ -96,7 +96,7 @@ const c4RankWhen = t => {
 };
 const c4RankRvHtml = list => {
   const L = Array.isArray(list) ? list.filter(r => r && (r.note || r.amount > 0)) : [];
-  return L.length ? '<ul class="rvl">' + L.map(r => `<li class="rv"><p class="rvh"><b>${p4Esc(r.from_name || 'Khách')}</b> ${c4RankRvTag(r)}`
+  return L.length ? '<ul class="rvl">' + L.map(r => `<li class="rv"><p class="rvh">${r.from_pub ? `<button type="button" class="rvgo" data-pub="${p4Esc(r.from_pub)}" title="Sang thăm nhà người này"><b>${p4Esc(r.from_name || 'Khách')}</b> ›</button>` : `<b>${p4Esc(r.from_name || 'Khách')}</b>`} ${c4RankRvTag(r)}`
       + `<span class="rvwhen">${c4RankWhen(r.created_at)}</span></p>`
       + (r.note ? `<p class="rvn">${p4Esc(r.note)}</p>` : '') + '</li>').join('') + '</ul>'
     : '<p class="cnt rvnone">Chưa ai để lại lời gì.</p>';
@@ -105,7 +105,10 @@ const c4RankMeta = r => `Hạng <b>${r.pos}</b> trong ${r.total} nhà buôn · $
 const c4RankHud = () => { try { if (S.mode === 'c4bplay') p4Hud(); else c4Hud(); } catch (e) {} };
 function c4RankRvLoad(B, r) {
   const box = B.querySelector('.rvB'); if (!box) return;
-  p4Rpc('dcc_rank_review_list', { p_target: r.pub, p_limit: 40 }).then(l => { box.innerHTML = c4RankRvHtml(l); })
+  p4Rpc('dcc_rank_review_list', { p_target: r.pub, p_limit: 40 }).then(l => {
+    box.innerHTML = c4RankRvHtml(l);
+    box.querySelectorAll('.rvgo').forEach(b => b.addEventListener('click', () => { AU.tap(); c4RankVisit(0, b.dataset.pub); }));   // on to the house of whoever wrote it
+  })
     .catch(() => { box.innerHTML = '<p class="cnt rvnone">Chưa tải được lời nhận xét.</p>'; });
 }
 // the box to leave one: words, and money if the guest wants to give some. The money line says only what the gift is called
@@ -158,13 +161,14 @@ function c4RankWire(B, r) {
     } finally { btn.disabled = false; }
   });
 }
-function c4RankVisit(pos) {
+function c4RankVisit(pos, pub) {
   const B = $('#c4nhaxB'); if (!B) return;
-  $('#c4nhaxT').textContent = `Hạng ${pos}`; B.innerHTML = '<p class="sm">Đang mở cổng nhà…</p>';
+  $('#c4nhaxT').textContent = pub ? 'Nhà' : `Hạng ${pos}`; B.innerHTML = '<p class="sm">Đang mở cổng nhà…</p>';
   c4RankShow('c4nhax');
-  p4Rpc('dcc_rank_at', { p_pos: pos, p_device: p4Device() }).then(list => {
+  const card = $('#c4nhaxB').closest('.card4'); if (card) card.scrollTop = 0;
+  (pub ? p4Rpc('dcc_rank_at_pub', { p_pub: pub, p_device: p4Device() }) : p4Rpc('dcc_rank_at', { p_pos: pos, p_device: p4Device() })).then(list => {
     const r = Array.isArray(list) && list[0];
-    if (!r) { $('#c4nhaxT').textContent = `Hạng ${pos}`; B.innerHTML = `<p class="sm">Không có ai ở hạng ${pos} trên bảng.</p>`; return; }
+    if (!r) { $('#c4nhaxT').textContent = pub ? 'Nhà' : `Hạng ${pos}`; B.innerHTML = pub ? '<p class="sm">Nhà này vừa rời bảng tổng sắp.</p>' : `<p class="sm">Không có ai ở hạng ${pos} trên bảng.</p>`; return; }
     const has = (r.home || '').split(',').filter(id => C4_SHOP_ITEMS.some(it => it[0] === id));
     $('#c4nhaxT').innerHTML = `Nhà của ${p4Esc(r.name)}${r.mine ? ' (bạn)' : ''}`;
     B.innerHTML = `<p class="cnt rvmeta">${c4RankMeta(r)}</p>`
