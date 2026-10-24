@@ -27,6 +27,7 @@ else if (cmd === 'hl') {   // Hội Làng: node jg-admin.mjs hl sus | who <tên>
   else { const s = await hl('/hl-sus'); console.table(s.live.map(c => ({ tên: c.name, máy: c.dev, ip: c.ip, giây: c.secs }))); console.log('đang bị khoá:', s.bans.length ? s.bans : 'không ai'); }
 }
 else if (cmd === 'revert') console.log(await get('/jg-revert?dev=' + encodeURIComponent(kind) + (key === 'dry' ? '&dry=1' : '') + P));   // hoàn tác những gì máy đó đã nối + xoá điểm + khoá 1 năm (thêm 'dry' để chỉ đếm)
+else if (cmd === 'reports') console.log(JSON.stringify(await get('/jg-reports?x=1' + P), null, 1));   // ai đang bị người chơi báo cáo (chưa đủ 3 địa chỉ khác nhau)
 else if (cmd === 'reset') console.log(await get('/jg-reset?ok=' + kind + P));
 else {
   const s = await get('/jg-sus?x=1' + P);

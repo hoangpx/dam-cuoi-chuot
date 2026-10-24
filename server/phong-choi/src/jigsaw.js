@@ -17,6 +17,10 @@ import { cleanChat, CHAT_GAP } from './chat.js';
 export function makeJigsaw(cfg) {
 const COLS = cfg.cols, ROWS = cfg.rows, N = COLS * ROWS, PW = cfg.pw, PH = cfg.ph, PIC = cfg.pic, CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
+// REPORT (owner, 2026-10-24): a player reports another; REPORT_NEED reports from that many DIFFERENT networks (an address as its /64) within a day and the reported one is kicked and can not come back (BAN_FOREVER).
+// To keep a few trolls from kicking anyone: the reporter must have joined REPORT_MIN_PIECES pieces, may report REPORT_DAY players a day, each player once, never one on their own network.
+const REPORT_NEED = 3, REPORT_WIN = 24 * 3600000, REPORT_MIN_PIECES = 3, REPORT_DAY = 5, BAN_FOREVER = 3650 * 86400000;
+const ipKey = ip => { ip = String(ip || ''); return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip; };
 const COOL_MS = 60000;   // the biggest group, once moved, cannot be lifted again for this long
 const FIX_MIN = 2;   // the biggest group is fixed (isFixed) from this many pieces on
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
@@ -60,6 +64,7 @@ class Jigsaw extends DurableObject {
       await this.purgeLog().catch(() => {});   // the join log keeps addresses: nothing older than 30 days
       if (!this.startAt) this.startAt = cfg.startAt || Date.now();
         this.off = new Map(Object.entries((await ctx.storage.get('off')) || {}));
+      this.reps = new Map(Object.entries((await ctx.storage.get('rep')) || {})); this.repBy = new Map();   // reps: reported device -> [[network, reporter device, time, reporter name]]
       const bn = await ctx.storage.get('bans'); if (bn) for (const [k, t] of Object.entries(bn)) if (t > Date.now()) this.bans.set(k, t);
       if (FREEZE && !(this.done && this.groups.size === 1)) {   // the run in progress is kept, then the whole print is put together in the middle of the table
         await ctx.storage.put('prev:' + Date.now(), { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() });
@@ -125,6 +130,7 @@ class Jigsaw extends DurableObject {
     if (u.pathname === '/log') return this.logReq();
     if (u.pathname === '/who') return this.whoReq(u);
     if (u.pathname === '/purge') return this.purgeReq(u);
+    if (u.pathname === '/reports') { const now = Date.now(); return this.json({ need: REPORT_NEED, pending: [...this.reps].map(([dev, a]) => ({ dev, reports: a.filter(r => now - r[2] < REPORT_WIN).map(r => ({ by: r[3], net: r[0], at: new Date(r[2]).toISOString() })) })).filter(x => x.reports.length) }); }
     if (u.pathname === '/revert') return this.hackReq(u);
     if (u.pathname === '/reset') return this.resetReq(u);
     if (u.pathname === '/ban') return this.banReq(u);
@@ -172,6 +178,7 @@ class Jigsaw extends DurableObject {
     if (!c.joined) return;
     if (m.t === 'lift') this.lift(c, m.g | 0);
     else if (m.t === 'poke') this.poke(c, m.g | 0, now);
+    else if (m.t === 'report') this.report(c, String(m.id || ''), now);
     else if (m.t === 'move') this.move(c, m);
     else if (m.t === 'drop') this.drop(c, m, now);
     else if (m.t === 'chat') { if (now - c.chatAt < CHAT_GAP) return; const s = cleanChat(m.s); if (!s) return; c.chatAt = now; this.all({ t: 'chat', id: c.id, s }); }
@@ -298,6 +305,25 @@ class Jigsaw extends DurableObject {
   ban(key, ms) { if (!key) return; this.bans.set(key, Date.now() + ms); for (const c of [...this.conns.values()]) if (c.dev === key || c.ip === key) { try { c.ws.close(4003, 'busy'); } catch (e) {} } this.saveBans(); }
   saveBans() { const o = {}, now = Date.now(); for (const [k, t] of this.bans) if (t > now) o[k] = t; this.ctx.storage.put('bans', o).catch(() => {}); }
   strike(c) { const now = Date.now(); c.strikeT = (c.strikeT || []).filter(t => now - t < STRIKE_WIN); c.strikeT.push(now); c.strikes = c.strikeT.length; if (c.strikes >= STRIKES_BAN) this.autoBan(c, 'joining faster than a person can'); }
+  report(c, id, now) {
+    const deny = err => this.send(c, { t: 'report', err });
+    const tc = this.conns.get(id); if (!tc || !tc.joined || tc === c) return deny('who');
+    const u = this.users.get(c.dev); if (!u || u.m < REPORT_MIN_PIECES) return deny('new');
+    const ipk = ipKey(c.ip); if (!ipk || ipk === ipKey(tc.ip) || tc.dev === c.dev) return deny('self');
+    const mine = (this.repBy.get(c.dev) || []).filter(t => now - t < REPORT_WIN); if (mine.length >= REPORT_DAY) return deny('limit');
+    const arr = (this.reps.get(tc.dev) || []).filter(r => now - r[2] < REPORT_WIN);
+    if (arr.some(r => r[0] === ipk || r[1] === c.dev)) return deny('dup');
+    arr.push([ipk, c.dev, now, c.name]); mine.push(now); this.repBy.set(c.dev, mine); this.reps.set(tc.dev, arr);
+    this.send(c, { t: 'report', ok: 1 });
+    if (new Set(arr.map(r => r[0])).size >= REPORT_NEED) this.kickReported(tc, arr, now); else this.ctx.storage.put('rep', Object.fromEntries(this.reps)).catch(() => {});
+  }
+  kickReported(tc, arr, now) {
+    this.reps.delete(tc.dev); this.ctx.storage.put('rep', Object.fromEntries(this.reps)).catch(() => {});
+    this.off.set(tc.dev, { n: 9, t: now }); this.ctx.storage.put('off', Object.fromEntries(this.off)).catch(() => {});
+    this.ctx.storage.put('b:' + String(now).padStart(14, '0') + ':' + tc.id, { t: now, dev: tc.dev, ip: tc.ip, name: tc.name, why: 'reported by ' + arr.length + ' players (' + arr.map(r => r[3]).join(', ') + ')', level: 9, mins: Math.round(BAN_FOREVER / 60000), joins: tc.jn }).catch(() => {});
+    try { tc.ws.close(4006, 'reported'); } catch (e) {}   // 4006: the page says why
+    this.ban(tc.dev, BAN_FOREVER);   // the address is NOT banned: it may be shared
+  }
   // The server's own ban: 30 minutes the first time, 24 hours the second, a year the third (offences are counted for 30 days); the address only 10 minutes (it may be shared).
   // Every automatic ban is written down (key b:<time>:<socket>) with who, from where and why, so it can be looked at (jg-sus lists the latest) and, if it was wrong, freed.
   autoBan(c, why) {

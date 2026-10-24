@@ -118,7 +118,7 @@ export default {
       const pp = u.searchParams.get('p');
       return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : pp === 'lh' ? await lh() : FROZEN_COUNT, { headers: h });
     }
-    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset' || u.pathname === '/jg-who' || u.pathname === '/jg-purge' || u.pathname === '/jg-revert') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
+    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset' || u.pathname === '/jg-who' || u.pathname === '/jg-purge' || u.pathname === '/jg-revert' || u.pathname === '/jg-reports') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
       const pq = u.searchParams.get('p'), ns = pq === 'dg' ? env.JIGSAW_DG2 : pq === 'lh' ? env.JIGSAW_LH : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
       return ns.get(ns.idFromName('main')).fetch(new Request(u.origin + path + u.search));
