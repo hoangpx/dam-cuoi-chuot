@@ -274,7 +274,7 @@ function c4AutoGet(g) {
 function c4AutoUpdate(dt) {
   if (C4.phase !== 'open' || (C4.autoT = (C4.autoT || 0) - dt) > 0) return;
   C4.autoT = 1;
-  for (const g of c4Owned()) {
+  for (const g of c4OpenStalls()) {                                          // a stall shut for a while sends nobody for goods (a player)
     const A = c4AutoGet(g), st = c4Stock(g);
     if (A.at === null || !c4AutoOk(g) || st > A.at || c4Fetching(g)) continue;
     if (A.until && C4.mins >= A.until * 60) continue;                       // past the hour set: no more trips today
