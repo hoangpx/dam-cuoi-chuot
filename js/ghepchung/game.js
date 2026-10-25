@@ -11,6 +11,7 @@ const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG
 const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0 };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
+  { id: 'ly', after: 'lh', pic: { id: 'ly', src: 'img/ch10/ly-ngu-vong-nguyet.jpg', w: 2050, h: 3650, vi: 'Lý ngư vọng nguyệt', en: 'Carp Gazing at the Moon' }, thumb: 'img/ch10/thumb-ly.jpg', cols: 41, rows: 73 },   // tall print; appears in the list only once Lễ hội đầu xuân is finished (owner, 2026-10-25)
   { id: 'lh', pic: { id: 'lh', src: 'img/ch10/le-hoi-dau-xuan.jpg', w: 3650, h: 2050, vi: 'Lễ hội đầu xuân', en: 'Spring Festival' }, thumb: 'img/ch10/thumb-lh.jpg', cols: 73, rows: 41 },   // opened 2026-10-24 (owner: "sao tranh mới vẫn chưa thấy lên")
   { id: 'dg', pic: { id: 'dg', src: 'img/ch10/dan-ga-me-con-2.jpg', w: 3300, h: 2324, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' }, thumb: 'img/ch10/thumb-dg2.jpg', cols: 65, rows: 46 },
   { id: 'vq', pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, thumb: 'img/ch10/thumb-vq.jpg', cols: 57, rows: 35 },
@@ -52,6 +53,10 @@ function jgStats(info, fin) {
   const a = []; if (info.players) a.push(`${info.players} ${lg('người ghép', 'players')}`); if (fin && info.took > 0) a.push(jgDur(info.took));
   return a.join(' · ');
 }
+// a print with `after` shows only once that print is finished (the list numbers say so)
+const jgFin = info => !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
+const JG_PEEK = /[?&]xemly/.test(location.search);   // ?xemly: the owner's way to see a print that waits for another (any host)
+const jgShown = () => JG_PUZZLES.filter(pz => !pz.after || JG_PEEK || jgFin(JG.list && JG.list[pz.after]));
 function jgListAsk(force) {
   if (JG.listBusy || (!force && Date.now() - JG.listAt < 15000)) return; JG.listBusy = true; JG.listAt = Date.now();
   fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {}).then(() => { JG.listBusy = false; });
@@ -244,14 +249,14 @@ function jgBoard(g, W, hh) {
 function jgGallery(g, W, hh) {
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
   hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Tranh', 'Print Puzzles'), 56, 28, 18, { w: 900, a: 'left' });
-  const w = Math.min(W - 24, 540), x = (W - w) / 2, cardH = 132, gap = 14, y0 = 72, endY = y0 + JG_PUZZLES.length * (cardH + gap);
+  const w = Math.min(W - 24, 540), x = (W - w) / 2, cardH = 132, gap = 14, y0 = 72, endY = y0 + jgShown().length * (cardH + gap);
   JG.gscroll = Math.max(0, Math.min(Math.max(0, endY - hh + 8), JG.gscroll));
   g.save(); g.beginPath(); g.rect(0, 56, W, hh - 56); g.clip();
-  JG_PUZZLES.forEach((pz, i) => {
+  jgShown().forEach((pz, i) => {
     const y = y0 + i * (cardH + gap) - JG.gscroll, info = JG.list[pz.id], total = pz.cols * pz.rows, fin = !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
     if (y > hh || y + cardH < 56) return;
     hlPlate(g, x, y, w, cardH, '#f2ecde', HL_INK, 14);
-    const im = JG.thumbs[pz.id], tw = Math.min(170, w * .42), th = tw * pz.pic.h / pz.pic.w, tx = x + 12, ty = y + (cardH - th) / 2;
+    const im = JG.thumbs[pz.id], tw0 = Math.min(170, w * .42), th = Math.min(tw0 * pz.pic.h / pz.pic.w, cardH - 16), tw = th * pz.pic.w / pz.pic.h, tx = x + 12, ty = y + (cardH - th) / 2;
     if (im) g.drawImage(im, tx, ty, tw, th); else { g.fillStyle = 'rgba(29,25,21,.12)'; g.fillRect(tx, ty, tw, th); }
     g.lineWidth = 2; g.strokeStyle = HL_INK; g.strokeRect(tx, ty, tw, th);
     const lx = tx + tw + 14, lw = x + w - 14 - lx, sub = { f: hlSans, w: 700, o: false, a: 'left' };

@@ -465,4 +465,6 @@ export class JigsawDG extends makeJigsaw({ pic: 'dg1', cols: 100, rows: 56, pw: 
 // the same print cropped and cut in 65 x 46 = 2990 pieces (owner, 2026-10-22: less lag), img/ch10/dan-ga-me-con.jpg 3300 x 2324
 // the fifth print (2026-10-24): Lễ hội đầu xuân, 73 x 41 = 2993 pieces of 50 px (3650 x 2050, img/ch10/le-hoi-dau-xuan.jpg). Same guards, join log, revert, fixed biggest group and cooldown as every print (all in makeJigsaw)
 export class JigsawLH extends makeJigsaw({ pic: 'lh1', cols: 73, rows: 41, pw: 3650, ph: 2050, freeze: false }) {}
+// the sixth print (2026-10-25): Lý ngư vọng nguyệt, a tall print, 41 x 73 = 2993 pieces of 50 px (2050 x 3650, img/ch10/ly-ngu-vong-nguyet.jpg). Same guards as every print (all in makeJigsaw)
+export class JigsawLY extends makeJigsaw({ pic: 'ly1', cols: 41, rows: 73, pw: 2050, ph: 3650, freeze: false }) {}
 export class JigsawDG3 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false, resetTag: 'r1' }) {}
