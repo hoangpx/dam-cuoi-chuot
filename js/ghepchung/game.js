@@ -12,7 +12,7 @@ const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'con
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
   { id: 'ly', after: 'lh', pic: { id: 'ly', src: 'img/ch10/ly-ngu-vong-nguyet.jpg', w: 2050, h: 3650, vi: 'Lý ngư vọng nguyệt', en: 'Carp Gazing at the Moon' }, thumb: 'img/ch10/thumb-ly.jpg', cols: 41, rows: 73 },   // tall print; appears in the list only once Lễ hội đầu xuân is finished (owner, 2026-10-25)
-  { id: 'lh', pic: { id: 'lh', src: 'img/ch10/le-hoi-dau-xuan.jpg', w: 3650, h: 2050, vi: 'Lễ hội đầu xuân', en: 'Spring Festival' }, thumb: 'img/ch10/thumb-lh.jpg', cols: 73, rows: 41 },   // opened 2026-10-24 (owner: "sao tranh mới vẫn chưa thấy lên")
+  { id: 'lh', hideMin: 10, pic: { id: 'lh', src: 'img/ch10/le-hoi-dau-xuan.jpg', w: 3650, h: 2050, vi: 'Lễ hội đầu xuân', en: 'Spring Festival' }, thumb: 'img/ch10/thumb-lh.jpg', cols: 73, rows: 41 },   // opened 2026-10-24 (owner: "sao tranh mới vẫn chưa thấy lên")
   { id: 'dg', pic: { id: 'dg', src: 'img/ch10/dan-ga-me-con-2.jpg', w: 3300, h: 2324, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' }, thumb: 'img/ch10/thumb-dg2.jpg', cols: 65, rows: 46 },
   { id: 'vq', pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, thumb: 'img/ch10/thumb-vq.jpg', cols: 57, rows: 35 },
   { id: 'dcm', pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, thumb: 'img/ch10/thumb-dcm.jpg', cols: 40, rows: 25 },
@@ -56,7 +56,9 @@ function jgStats(info, fin) {
 // a print with `after` shows only once that print is finished (the list numbers say so)
 const jgFin = info => !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
 const jgPeek = () => location.search.indexOf('xemly') >= 0;   // ?xemly: the owner's way to see a print that waits for another (any host)
-const jgShown = () => JG_PUZZLES.filter(pz => !pz.after || jgPeek() || jgFin(JG.list && JG.list[pz.after]));
+// a print with `hideMin` disappears from the list that many minutes after it was finished (the list gives since + took = the finishing time)
+const jgGone = pz => { const i = JG.list && JG.list[pz.id]; return !!(pz.hideMin && !jgPeek() && i && i.done && i.since && i.took > 0 && Date.now() - (i.since + i.took) > pz.hideMin * 60000); };
+const jgShown = () => JG_PUZZLES.filter(pz => !jgGone(pz) && (!pz.after || jgPeek() || jgFin(JG.list && JG.list[pz.after])));
 function jgListAsk(force) {
   if (JG.listBusy || (!force && Date.now() - JG.listAt < 15000)) return; JG.listBusy = true; JG.listAt = Date.now();
   fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {}).then(() => { JG.listBusy = false; });
