@@ -165,6 +165,30 @@ function jgEye(g, cx, cy, on) {
   g.beginPath(); g.arc(cx, cy, 16, 0, 6.283); g.fillStyle = on ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = HL_INK; g.stroke();
   g.beginPath(); g.ellipse(cx, cy, 9, 5.5, 0, 0, 6.283); g.stroke(); g.beginPath(); g.arc(cx, cy, 2.6, 0, 6.283); g.fillStyle = HL_INK; g.fill();
 }
+// RENAME (owner, 2026-10-24: "thêm tính năng đổi tên, đổi tên ở đây cũng đổi tên khắp nơi, kể cả chương 4"): it edits the one name of the game, the Hồ sơ name (dcc.hoso), exactly as the Hồ sơ tab saves it
+// (clean, bad words refused, pushed to the server), so Hội Làng, the rich list of chương IV and every print use it; the open room is told ({t:'name'}) so the strip shows it at once.
+let JG_REN_EL = null;
+function jgRenameClose() { if (JG_REN_EL) { JG_REN_EL.remove(); JG_REN_EL = null; } }
+function jgRenameOpen() {
+  if (JG_REN_EL) { jgRenameClose(); return; }
+  JG.ui = null;
+  const el = document.createElement('div'), touch = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window), max = HS_NAME_MAX, cur = hsName(hsMine());
+  el.style.cssText = 'position:fixed;left:0;right:0;' + (touch ? 'top:0;border-bottom:2px solid #1d1915;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;' : 'bottom:0;border-top:2px solid #1d1915;padding:8px 10px;') + 'z-index:60;background:#f2ecde;display:flex;gap:8px;align-items:center;font-family:inherit';
+  el.innerHTML = '<input id="jgRenIn" type="text" maxlength="' + max + '" autocomplete="off" placeholder="' + lg('Tên mới (tối đa ' + max + ' chữ)', 'New name (up to ' + max + ' letters)') + '" style="flex:1;min-width:0;font-size:16px;padding:9px 11px;border:2px solid #1d1915;background:#fbf6ea;border-radius:6px"><button id="jgRenOk" style="font-size:15px;padding:9px 14px;border:2px solid #1d1915;background:#e9b9ae;border-radius:6px;font-weight:700">' + lg('Lưu', 'Save') + '</button><button id="jgRenNo" style="font-size:15px;padding:9px 12px;border:2px solid #1d1915;background:#f2ecde;border-radius:6px">' + lg('Thôi', 'Cancel') + '</button>';
+  document.body.appendChild(el); JG_REN_EL = el;
+  const inp = el.querySelector('#jgRenIn'); inp.value = cur; inp.focus(); inp.select();
+  const save = () => {
+    const v = inp.value.replace(/\s+/g, ' ').trim().slice(0, max);
+    if (v.length < 2) { toast(lg('Tên phải có ít nhất 2 chữ.', 'A name needs at least 2 letters.'), 2.4); return; }
+    if (p4HoaBad(v)) { toast(lg('Tên có chữ không đẹp, chọn tên khác nhé.', 'That name has a bad word, pick another.'), 2.8); return; }
+    const old = hsGet('dcc.hoso', {}) || {}, d = hsClean({ ...hsMine(), name: v });
+    hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); HS_FACE.clear();
+    hsPush().catch(() => {}); JG_NET.send({ t: 'name', s: v }); try { if (typeof c4RankSend === 'function') c4RankSend(); } catch (e) {}
+    jgRenameClose(); toast(lg('Đã đổi tên thành ' + v + ' ở mọi nơi', 'Renamed to ' + v + ' everywhere'), 2.8);
+  };
+  el.querySelector('#jgRenOk').addEventListener('click', save); el.querySelector('#jgRenNo').addEventListener('click', jgRenameClose);
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') save(); else if (e.key === 'Escape') jgRenameClose(); });
+}
 function jgFlag(g, cx, cy) {
   g.beginPath(); g.arc(cx, cy, 16, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = HL_INK; g.stroke();
   g.beginPath(); g.moveTo(cx - 5, cy + 9); g.lineTo(cx - 5, cy - 9); g.stroke();
@@ -200,6 +224,7 @@ function jgBoard(g, W, hh) {
   g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(0, 0, W, hh); hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 14);
   hlText(g, lg('Bảng xếp hạng · mọi lúc', 'Leaderboard · all time'), W / 2, y + 22, 17, { w: 900 });
   hlText(g, '‹ đóng', x + w - 44, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a' }); JG.btns.push({ x: x + w - 90, y: y + h - 30, w: 90, h: 30, down: () => { JG.ui = null; } });
+  hlText(g, lg('✎ Đổi tên', '✎ Rename'), x + 50, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#2f6a4c' }); JG.btns.push({ x: x + 8, y: y + h - 30, w: 100, h: 30, down: () => jgRenameOpen() });
   const sub = { f: hlSans, w: 600, o: false }, b = JG.board;
   if (!b) { hlText(g, 'Đang tải…', W / 2, y + 90, 14, sub); return; }
   const hy = y + 50; hlText(g, 'Hạng', x + 14, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Tên', x + 56, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Số mảnh đã ghép', x + w - 14, hy, 11, { ...sub, a: 'right', w: 800 });
@@ -345,7 +370,7 @@ registerChapter({
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,
   album() {},
-  hide() { if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
+  hide() { jgRenameClose(); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
   update: updateJG, render: renderJG, key: jgKey,
   pointer: { down: jgDown, move: jgMove, up: jgUp },
   next() { showChapters(); }, retry() { startJG(); },

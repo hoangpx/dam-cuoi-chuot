@@ -182,6 +182,10 @@ class Jigsaw extends DurableObject {
     else if (m.t === 'move') this.move(c, m);
     else if (m.t === 'drop') this.drop(c, m, now);
     else if (m.t === 'chat') { if (now - c.chatAt < CHAT_GAP) return; const s = cleanChat(m.s); if (!s) return; c.chatAt = now; this.all({ t: 'chat', id: c.id, s }); }
+    else if (m.t === 'name') {   // the player changed their name in the page (the Hồ sơ name, shared by every chapter): same cleaning as hello, once every 10 s
+      if (now - (c.nameAt || 0) < 10000) return; let nm = String(m.s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12); nm = cleanChat(nm) || nm; if (!nm) return;
+      c.nameAt = now; c.name = nm; const u = this.users.get(c.dev); if (u) { u.n = nm; if (!c.test) this.dirtyUsers.add(c.dev); this.board = null; } this.all({ t: 'players', players: this.playerList() });
+    }
     else if (m.t === 'emote') { const k = m.k | 0; if (now - c.emoAt < 2000 || k < 0 || k > 5) return; c.emoAt = now; this.all({ t: 'emote', id: c.id, k }); }
     else if (m.t === 'board') this.sendBoard(c);
   }
