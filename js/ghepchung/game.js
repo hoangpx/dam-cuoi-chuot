@@ -55,8 +55,8 @@ function jgStats(info, fin) {
 }
 // a print with `after` shows only once that print is finished (the list numbers say so)
 const jgFin = info => !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
-const JG_PEEK = /[?&]xemly/.test(location.search);   // ?xemly: the owner's way to see a print that waits for another (any host)
-const jgShown = () => JG_PUZZLES.filter(pz => !pz.after || JG_PEEK || jgFin(JG.list && JG.list[pz.after]));
+const jgPeek = () => location.search.indexOf('xemly') >= 0;   // ?xemly: the owner's way to see a print that waits for another (any host)
+const jgShown = () => JG_PUZZLES.filter(pz => !pz.after || jgPeek() || jgFin(JG.list && JG.list[pz.after]));
 function jgListAsk(force) {
   if (JG.listBusy || (!force && Date.now() - JG.listAt < 15000)) return; JG.listBusy = true; JG.listAt = Date.now();
   fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {}).then(() => { JG.listBusy = false; });
