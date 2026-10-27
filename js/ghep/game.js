@@ -86,7 +86,7 @@ function renderC9() {
   g.font = "600 12px 'Inter', system-ui, sans-serif"; g.globalAlpha = .75; g.fillText(`${C9.G && C9.G.big ? `${C9.G.groups.length} ${lg('mảng', 'parts')}` : `${lg('Màn', 'Level')} ${C9.i + 1}`} · ${L.cols * L.rows} ${lg('mảnh', 'pieces')}${C9.touch ? lg(' · vuốt xoay · 2 ngón zoom', ' · flick turns · pinch zooms') : lg(' · cuộn: xoay / zoom', ' · wheel: turn / zoom')}`, W / 2, 40, W - 160); g.globalAlpha = 1;
   if (C9.G) {
     const G = C9.G; g.font = "700 15px 'Inter', system-ui, sans-serif"; g.textAlign = 'right'; g.fillText(c9Time(G.t), W - 56, 28);
-    g.beginPath(); g.arc(W - 28, 28, 16, 0, 6.283); g.fillStyle = G.peek > 0 ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = '#1d1915'; g.stroke();   // the eye: a peek at the whole picture
+    g.beginPath(); g.arc(W - 28, 28, 16, 0, 6.283); g.fillStyle = G.sv ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = '#1d1915'; g.stroke();   // the eye: a peek at the whole picture
     g.beginPath(); g.ellipse(W - 28, 28, 9, 5.5, 0, 0, 6.283); g.stroke(); g.beginPath(); g.arc(W - 28, 28, 2.6, 0, 6.283); g.fillStyle = '#1d1915'; g.fill();
     c9Draw(G, g, W, hh);
     c9DrawTurnBtn(G, g);
@@ -113,7 +113,8 @@ function c9PDown(e) {
   if (S.mode !== 'c9play') return; C9.touch = e.pointerType !== 'mouse'; const [x, y] = c9Pos(e), G = C9.G;
   if (x < 56 && y < 56) { showAlbum(9); return; }
   if (!G) return;
-  if (x > G.lw - 52 && y < 52 && !G.done) { G.peek = G.peek > 0 ? 0 : 4; return; }
+  if (x > G.lw - 52 && y < 52 && !G.done) { c9SvToggle(G); return; }
+  if (G.sv) { capturePointer(e); c9SvDown(G, x, y, e); return; }
   if (G.done) { const b = c9WinBox(G); if (y >= b.by && y <= b.by + 40) { if (x < b.x + 12 + b.bw + 6) showAlbum(9); else if (C9.i + 1 < C9_LEVELS.length) startC9(C9.i + 1); else showAlbum(9); } return; }
   if (G.big) for (const b of c9ZoomBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 6) {
     if (b.k === 'in') c9Zoom(G, 1.5, G.lw / 2, (G.lh + G.top) / 2); else if (b.k === 'out') c9Zoom(G, 1 / 1.5, G.lw / 2, (G.lh + G.top) / 2);
@@ -123,12 +124,13 @@ function c9PDown(e) {
   }
   capturePointer(e); c9Down(G, x, y, e, c9Done);
 }
-function c9PMove(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9Move(C9.G, x, y, e); cv.style.cursor = C9.G.held ? 'grabbing' : C9.G.hover ? 'grab' : ''; }
-function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9PtrUp(C9.G, x, y, e, c9Done); }
+function c9PMove(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); if (C9.G.sv) { c9SvMove(C9.G, x, y, e); return; } c9Move(C9.G, x, y, e); cv.style.cursor = C9.G.held ? 'grabbing' : C9.G.hover ? 'grab' : ''; }
+function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); if (C9.G.sv) { c9SvUp(C9.G, x, y, e); return; } c9PtrUp(C9.G, x, y, e, c9Done); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'c9play') e.preventDefault(); });
 cv.addEventListener('touchstart', e => { if (S.mode === 'c9play') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
   if (S.mode !== 'c9play' || !C9.G || C9.G.done) return;
+  if (C9.G.sv) { const [sx, sy] = c9Pos(e); c9SvWheel(C9.G, e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY, sx, sy); e.preventDefault(); return; }
   const G = C9.G, [x, y] = c9Pos(e), d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
   c9Wheel(G, d, x, y, e.ctrlKey); e.preventDefault();
 }, { passive: false });

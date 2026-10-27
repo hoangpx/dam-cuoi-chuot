@@ -305,13 +305,13 @@ function renderJG() {
   hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg(L.pic.vi, L.pic.en), 56, 20, 16, { w: 900, a: 'left' });
   hlText(g, G ? `${JG.joinedN}/${L.cols * L.rows} · ${JG.players.length} ${lg('người', 'people')}` : '', 56, 41, 11, { f: hlSans, w: 600, o: false, al: .8, a: 'left' });
   const cy = 28, X = [W - 20, W - 56, W - 92, W - 128, W - 164];
-  if (G) { jgEye(g, X[4], cy, G.peek > 0); JG.btns.push({ x: X[4] - 18, y: cy - 19, w: 36, h: 38, down: () => { G.peek = G.peek > 0 ? 0 : 4; } }); }
+  if (G) { jgEye(g, X[4], cy, !!G.sv); JG.btns.push({ x: X[4] - 18, y: cy - 19, w: 36, h: 38, down: () => { c9SvToggle(G); } }); }
   if (up) { hlEmoteFace(g, 4, X[3], cy, 16); JG.btns.push({ x: X[3] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.tray = !JG.tray; } }); hlChatIcon(g, X[2], cy, HL.chatOff); JG.btns.push({ x: X[2] - 18, y: cy - 19, w: 36, h: 38, down: () => hlChatOpen() }); jgFlag(g, X[1], cy); JG.btns.push({ x: X[1] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'report'; JG.repPick = null; JG.bscroll = 0; } }); }
   hlTrophy(g, X[0], cy); JG.btns.push({ x: X[0] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'board'; JG.bscroll = 0; JG_NET.send({ t: 'board' }); } });
   if (!G) {
     hlText(g, JG.bad ? 'Bức tranh bị lỗi, hãy tải lại trang' : JG.conn === 'blocked' ? lg('Máy bạn tạm bị chặn vì bấm quá nhanh. Đợi ít phút rồi vào lại nhé.', 'Your device is blocked for a while for tapping too fast. Come back in a few minutes.') : JG.conn === 'reported' ? lg('Bạn đã bị nhiều người chơi báo cáo nên không vào lại được nữa.', 'Several players reported you, so you can not come back.') : JG.conn === 'crowded' ? lg('Có quá nhiều máy cùng mạng với bạn đang mở bức tranh. Đóng bớt rồi vào lại nhé.', 'Too many devices on your network have the print open. Close some and come back.') : JG.conn === 'replaced' ? lg('Bức tranh đang mở ở một cửa sổ khác của bạn. Đóng bên kia rồi vào lại.', 'The print is open in another window of yours. Close it and come back.') : JG.conn === 'down' ? lg('Mất kết nối, đang nối lại…', 'Connection lost, reconnecting…') : lg('Đang mở bức tranh chung…', 'Opening the shared print…'), W / 2, hh / 2, 18);
   } else {
-    for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
+    if (!G.sv) for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
     if (G.done) {
       const w = Math.min(340, W - 28), x = (W - w) / 2, h = 96, y = hh - JG_STRIP - h - 10, a = Math.min(1, G.win * 2);
       g.globalAlpha = a; hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 16);
@@ -342,6 +342,7 @@ function jgDown(e) {
   if (!JG.pz) { JG.drag = { y, s: JG.gscroll, gal: true }; return; }
   if (JG.ui === 'board' || JG.ui === 'report') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, x, s: JG.bscroll, rep: JG.ui === 'report', moved: false }; else { JG.ui = null; JG.repPick = null; } return; }
   if (!G) return;
+  if (G.sv) { capturePointer(e); c9SvDown(G, x, y, e); return; }   // the sample print is open: it takes the pointer
   if (y > G.lh - JG_STRIP) return;
   for (const b of jgZoomBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 6) { if (b.k === 'in') c9Zoom(G, 1.5, G.lw / 2, (G.lh + G.top) / 2); else if (b.k === 'out') c9Zoom(G, 1 / 1.5, G.lw / 2, (G.lh + G.top) / 2); else { G.cam.z = G.zmin; c9ClampCam(G); } return; }
   if (y < 56) return;
@@ -350,20 +351,22 @@ function jgDown(e) {
 function jgMove(e) {
   if (S.mode !== 'jgplay') return; const [x, y] = jgPos(e);
   if (JG.drag) { if (Math.abs(y - JG.drag.y) > 6) JG.drag.moved = true; if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
+  if (JG.G && JG.G.sv && !JG.ui) { c9SvMove(JG.G, x, y, e); return; }
   if (!JG.G || JG.ui) return; c9Move(JG.G, x, y, e); cv.style.cursor = JG.G.held ? 'grabbing' : JG.G.hover ? 'grab' : '';
 }
-function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); c9PtrUp(JG.G, x, y, e, () => {}); }
+function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); if (JG.G.sv) { c9SvUp(JG.G, x, y, e); return; } c9PtrUp(JG.G, x, y, e, () => {}); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'jgplay') e.preventDefault(); });
 cv.addEventListener('touchstart', e => { if (S.mode === 'jgplay') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
   if (S.mode !== 'jgplay') return; const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
   if (!JG.pz) { JG.gscroll += d; e.preventDefault(); return; }
   if (JG.ui === 'board' || JG.ui === 'report') { JG.bscroll += d; e.preventDefault(); return; }
+  if (JG.G && JG.G.sv) { const [sx, sy] = jgPos(e); c9SvWheel(JG.G, d, sx, sy); e.preventDefault(); return; }
   if (!JG.G) return; const [x, y] = jgPos(e); c9Wheel(JG.G, d, x, y, e.ctrlKey); e.preventDefault();
 }, { passive: false });
 function jgKey(e) {
   if (S.mode !== 'jgplay') return;
-  if (e.code === 'Escape') { if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
+  if (e.code === 'Escape') { if (JG.G && JG.G.sv) JG.G.sv = null; else if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
   const G = JG.G; if (!G) return;
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { c9Zoom(G, 1.25, G.lw / 2, (G.lh + G.top) / 2); return; } if (e.code === 'Minus' || e.code === 'NumpadSubtract') { c9Zoom(G, .8, G.lw / 2, (G.lh + G.top) / 2); return; }
   const grp = G.held; if (!grp) return;

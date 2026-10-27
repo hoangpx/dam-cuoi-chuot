@@ -191,7 +191,6 @@ function c9Tick(G, dt) {
     if (g.tx !== undefined && G.held !== g) { const k = Math.min(1, dt * 12); g.x += (g.tx - g.x) * k; g.y += (g.ty - g.y) * k; g.a += c9Wrap(g.ta - g.a) * k; if (Math.abs(g.tx - g.x) + Math.abs(g.ty - g.y) < .05 && Math.abs(c9Wrap(g.ta - g.a)) < .002) { g.x = g.tx; g.y = g.ty; g.a = g.ta; g.tx = undefined; } } }
   if (G.net) G.net.tick(G, dt);
   for (const p of G.pieces) if (p.flash > 0) p.flash = Math.max(0, p.flash - dt / .45);
-  G.peek = Math.max(0, G.peek - dt);
   G.flash = G.flash.filter(f => (f.t += dt) < f.life);
   if (G.done) G.win += dt;
   // a lifted piece near the edge of the screen scrolls the view
@@ -200,6 +199,48 @@ function c9Tick(G, dt) {
     if (G.psx < m) dx = -sp; else if (G.psx > G.lw - m) dx = sp; if (G.psy < G.top + m) dy = -sp; else if (G.psy > G.lh - m) dy = sp;
     if (dx || dy) { const x0 = G.cam.x, y0 = G.cam.y; G.cam.x += dx; G.cam.y += dy; c9ClampCam(G); const w = c9S2W(G, G.psx, G.psy); c9Hold(G, G.held, w[0], w[1]); void x0; void y0; }
   }
+}
+
+// ---- the sample print (the eye button): the whole picture at its full quality, zoomed in and out and panned. G.sv = null | { z (screen px per picture px), cx, cy (the picture point at the middle), fit, pts, pan, pinch }
+const c9SvArea = G => ({ x: 0, y: G.top, w: G.lw, h: G.lh - G.top - (G.net ? 52 : 0) });
+function c9SvBtns(G) { const a = c9SvArea(G), r = 19, x = a.x + a.w - 30; return [{ k: 'x', t: '×', x, y: a.y + 30, r }, { k: 'in', t: '+', x, y: a.y + a.h - 30 - 2 * 48, r }, { k: 'out', t: '−', x, y: a.y + a.h - 30 - 48, r }, { k: 'fit', t: '⤢', x, y: a.y + a.h - 30, r }]; }
+function c9SvToggle(G) {
+  if (G.sv) { G.sv = null; return; }
+  const a = c9SvArea(G), iw = G.img.naturalWidth, ih = G.img.naturalHeight, f = Math.min((a.w - 24) / iw, (a.h - 24) / ih);
+  G.sv = { z: f, fit: f, cx: iw / 2, cy: ih / 2, pts: new Map(), pan: null, pinch: null };
+}
+function c9SvClamp(G) {
+  const s = G.sv, a = c9SvArea(G), iw = G.img.naturalWidth, ih = G.img.naturalHeight; s.z = c9Clip(s.z, s.fit, Math.max(s.fit * 1.01, 2.2));
+  const hw = a.w / 2 / s.z, hh = a.h / 2 / s.z; s.cx = iw <= 2 * hw ? iw / 2 : c9Clip(s.cx, hw, iw - hw); s.cy = ih <= 2 * hh ? ih / 2 : c9Clip(s.cy, hh, ih - hh);
+}
+function c9SvZoom(G, f, sx, sy) {   // zoom about a screen point
+  const s = G.sv, a = c9SvArea(G), ox = sx - (a.x + a.w / 2), oy = sy - (a.y + a.h / 2), ix = s.cx + ox / s.z, iy = s.cy + oy / s.z;
+  s.z = c9Clip(s.z * f, s.fit, Math.max(s.fit * 1.01, 2.2)); s.cx = ix - ox / s.z; s.cy = iy - oy / s.z; c9SvClamp(G);
+}
+function c9SvDown(G, x, y, e) {
+  const s = G.sv; for (const b of c9SvBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 8) {
+    const a = c9SvArea(G); if (b.k === 'x') G.sv = null; else if (b.k === 'in') c9SvZoom(G, 1.5, a.x + a.w / 2, a.y + a.h / 2); else if (b.k === 'out') c9SvZoom(G, 1 / 1.5, a.x + a.w / 2, a.y + a.h / 2); else { s.z = s.fit; s.cx = G.img.naturalWidth / 2; s.cy = G.img.naturalHeight / 2; c9SvClamp(G); } return;
+  }
+  s.pts.set(e.pointerId, { x, y });
+  if (s.pts.size >= 2) { const p = [...s.pts.values()]; s.pinch = { d: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1 }; s.pan = null; }
+  else s.pan = { id: e.pointerId, x0: x, y0: y, cx: s.cx, cy: s.cy };
+}
+function c9SvMove(G, x, y, e) {
+  const s = G.sv; if (!s.pts.has(e.pointerId)) return; s.pts.set(e.pointerId, { x, y });
+  if (s.pinch && s.pts.size >= 2) { const p = [...s.pts.values()], d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1; c9SvZoom(G, d / s.pinch.d, (p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2); s.pinch.d = d; }
+  else if (s.pan && s.pan.id === e.pointerId) { s.cx = s.pan.cx - (x - s.pan.x0) / s.z; s.cy = s.pan.cy - (y - s.pan.y0) / s.z; c9SvClamp(G); }
+}
+function c9SvUp(G, x, y, e) {
+  const s = G.sv; s.pts.delete(e.pointerId); s.pinch = null; s.pan = null;
+  if (s.pts.size === 1) { const [id, p] = [...s.pts][0]; s.pan = { id, x0: p.x, y0: p.y, cx: s.cx, cy: s.cy }; }
+}
+function c9SvWheel(G, d, x, y) { c9SvZoom(G, Math.exp(-d * .0016), x, y); }
+function c9SvDraw(G, g) {
+  const s = G.sv, a = c9SvArea(G); g.save(); g.fillStyle = 'rgba(29,25,21,.93)'; g.fillRect(a.x, a.y, a.w, a.h); g.beginPath(); g.rect(a.x, a.y, a.w, a.h); g.clip();
+  const iw = G.img.naturalWidth, ih = G.img.naturalHeight, w = iw * s.z, h = ih * s.z, x = a.x + a.w / 2 - s.cx * s.z, y = a.y + a.h / 2 - s.cy * s.z;
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(G.img, x, y, w, h);
+  g.strokeStyle = '#f2ecde'; g.lineWidth = 3; g.strokeRect(x - 1.5, y - 1.5, w + 3, h + 3); g.restore();
+  for (const b of c9SvBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = '#1d1915'; g.fillStyle = '#f2ecde'; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#1d1915'; g.font = '800 ' + (b.k === 'fit' ? 15 : 22) + 'px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(b.t, b.x, b.y + 1); }
 }
 
 function c9Draw(G, g, W, H) {
@@ -266,10 +307,7 @@ function c9Draw(G, g, W, H) {
   for (const f of G.flash) { const k = f.t / f.life; g.globalAlpha = 1 - k; g.strokeStyle = '#fff6c8'; g.lineWidth = 4 / z; g.beginPath(); g.arc(f.x, f.y, Math.max(G.cw, G.ch) * (.3 + k * .5), 0, 6.283); g.stroke(); g.globalAlpha = 1; }
   g.restore();
   if (G.net) for (const grp of G.groups) if (grp.by) { const c = c9Centroid(G, grp), s = c9W2S(G, c[0], c[1]); if (s[0] < -40 || s[0] > W + 40 || s[1] < G.top - 40 || s[1] > H + 40) continue; G.net.tag(g, grp.by, s[0], s[1] - Math.max(14, G.ch * z * .7)); }
-  if (G.peek > 0) {   // the sample print, over everything (the eye button)
-    const aw = W - 40, ah = H - 56 - 40, k = Math.min(aw / G.img.naturalWidth, ah / G.img.naturalHeight), w = G.img.naturalWidth * k, h = G.img.naturalHeight * k, x = (W - w) / 2, y = 56 + (H - 56 - h) / 2;
-    g.globalAlpha = Math.min(1, G.peek * 4) * .96; g.fillStyle = '#f2ecde'; g.strokeStyle = '#1d1915'; g.lineWidth = 3; g.beginPath(); g.rect(x - 8, y - 8, w + 16, h + 16); g.fill(); g.stroke(); g.drawImage(G.img, x, y, w, h); g.globalAlpha = 1;
-  }
+  if (G.sv) c9SvDraw(G, g);   // the sample print (the eye button), over everything
 }
 
 // the two little turn buttons beside the lifted group (for a finger), in screen pixels: anticlockwise (dir -1) on the left, clockwise (dir 1) on the right
