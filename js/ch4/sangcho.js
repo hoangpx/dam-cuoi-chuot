@@ -41,8 +41,8 @@ function cnMsg(m) {
     case 'came': cnGuestIn(m.p, true); break;
     case 'gone': CN.guests.delete(m.id); if (CN.visit) CN.visit.peers.delete(m.id); break;
     case 'move': { const p = CN.guests.get(m.id) || (CN.visit && CN.visit.peers.get(m.id)); if (p) { p.tx = m.x; p.tz = m.z; p.face = m.face; p.mv = m.mv; } break; }
-    case 'chat': { const p = cnPlayerObj(m.id); if (p) p.say = { text: m.text, t: 0, life: 2.6 + m.text.length * .05 }; else if (CN.visit && m.id === CN.visit.host) CN.visit.hostSay = { text: m.text, t: 0, life: 2.6 + m.text.length * .05 }; break; }
-    case 'emo': { const p = cnPlayerObj(m.id); if (p) p.emo = { e: m.e, t: 0 }; else if (CN.visit && m.id === CN.visit.host) CN.visit.hostEmo = { e: m.e, t: 0 }; break; }
+    case 'chat': { if (typeof HL !== 'undefined' && HL.chatOff) break; const p = cnPlayerObj(m.id); if (!p && m.id === cnId() && !CN.visit) CN.mySay = { text: m.text, t: 0, life: 2.6 + m.text.length * .05 }; else if (p) p.say = { text: m.text, t: 0, life: 2.6 + m.text.length * .05 }; else if (CN.visit && m.id === CN.visit.host) CN.visit.hostSay = { text: m.text, t: 0, life: 2.6 + m.text.length * .05 }; break; }
+    case 'emo': { const p = cnPlayerObj(m.id); if (!p && m.id === cnId() && !CN.visit) CN.myEmo = { e: m.e, t: 0 }; else if (p) p.emo = { e: m.e, t: 0 }; else if (CN.visit && m.id === CN.visit.host) CN.visit.hostEmo = { e: m.e, t: 0 }; break; }
     case 'buy': cnHandleBuy(m); break;
     case 'sold': cnSold(m); break;
     case 'room': cnvEnter(m); break;
@@ -50,7 +50,7 @@ function cnMsg(m) {
     case 'closed': if (CN.visit) cnvLeave(`${m.name || 'Chủ chợ'} đã đóng chợ`); break;
     case 'nobody': CN.visitWait = false; toast('Chợ ấy vừa đóng cửa hoặc chủ chợ đã rời đi.', 3); cnListRefresh(); break;
     case 'crowd': CN.visitWait = false; toast('Chợ ấy đông quá, chờ chút nhé.', 3); break;
-    case 'hosts': CN.hosts = m.list || []; CN.count = m.count || CN.count; cnListRefresh(); break;
+    case 'hosts': CN.hosts = m.list || []; CN.count = m.count || CN.count; cnListRefresh(); if (CN.hostsCb) CN.hostsCb(); break;
     case 'ison': CN.ison[m.id] = { on: m.on, place: m.place, t: Date.now() }; if (CN.whoId === m.id) cnWhoRefresh(); break;
     case 'bye': CN.want = false; toast(m.why || 'Bạn đã vào từ chỗ khác', 3); try { CN.ws.close(); } catch (e) {} break;
   }
@@ -179,8 +179,8 @@ function cnTxnHtml(list, empty) {
   if (!list.length) return `<p class="sm">${empty}</p>`;
   return '<div class="cnTx">' + list.map(t => `<button class="cnTl" data-txn="${(SAVE4.txn || []).indexOf(t)}"><span class="dy">Ngày ${t.day}</span> ${cnLine(t)}</button>`).join('') + '</div>';
 }
-const cnTxnTab = () => '<h4>Giao dịch với bạn bè</h4>' + cnTxnHtml((SAVE4.txn || []).slice(0, 40), 'Chưa có ai mua bán với nhà mình.') + '<p class="sm">Bấm vào một dòng để xem người đó.</p>';
-function cnTxnWire(root) { root.querySelectorAll('[data-txn]').forEach(b => b.addEventListener('click', () => { AU.tap(); const t = (SAVE4.txn || [])[+b.dataset.txn]; if (t) cnWhoOpen(t.id, t.name); })); }
+const cnTxnTab = () => '<h4>Giao dịch với bạn bè</h4>' + cnSwitchHtml() + cnTxnHtml((SAVE4.txn || []).slice(0, 40), 'Chưa có ai mua bán với nhà mình.') + '<p class="sm">Bấm vào một dòng để xem người đó.</p>';
+function cnTxnWire(root) { cnSwitchWire(root); root.querySelectorAll('[data-txn]').forEach(b => b.addEventListener('click', () => { AU.tap(); const t = (SAVE4.txn || [])[+b.dataset.txn]; if (t) cnWhoOpen(t.id, t.name); })); }
 function cnTxnBlock(g) {
   const d = document.createElement('div'); d.className = 'hands autof cnTxB';
   const list = (SAVE4.txn || []).filter(t => t.g === g && t.dir === 'sold').slice(0, 5);
@@ -225,11 +225,6 @@ function cnWhoRefresh() {
   cnTxnWire($('#cnWhoB'));
 }
 $('#cnWhoX').addEventListener('click', () => { AU.tap(); cnHide(cnWho); CN.whoId = null; });
-// the buttons in the two HUDs
-for (const [bar, id] of [['#c4hud .bar', 'cnBtn'], ['#p4hud .bar', 'cnBtnP']]) {
-  const b = document.createElement('button'); b.className = 'tag'; b.id = id; b.textContent = 'Chợ bạn'; b.addEventListener('click', () => { AU.tap(); cnListOpen(); });
-  const host = $(bar); if (host) host.appendChild(b);
-}
 // a way in
 function cnVisit(hostId, place) {
   if (CN.visitWait) return; CN.visitWait = true; setTimeout(() => { CN.visitWait = false; }, 4000);
@@ -245,7 +240,7 @@ function cnWalker(p) {
 function cnStep(p, dt) {
   const dx = p.tx - p.x, dz = p.tz - p.z; p.x += dx * Math.min(1, dt * 9); p.z += dz * Math.min(1, dt * 9); if (Math.abs(dx) > .5) p.face = dx > 0 ? 1 : -1;
   const moving = p.mv || Math.abs(dx) > 3; p.ph += moving ? dt * 9 : 0; p.moving = moving;
-  if (p.say && (p.say.t += dt) > p.say.life) p.say = null; if (p.emo && (p.emo.t += dt) > 2.2) p.emo = null;
+  if (p.say && (p.say.t += dt) > p.say.life) p.say = null; if (p.emo && (p.emo.t += dt) > 2.8) p.emo = null;
 }
 let cnLast = performance.now();
 function cnDrawPeople(items, g, vis, list, YF, SF, lift, crowd, tall) {
@@ -261,21 +256,65 @@ function cnDrawPeople(items, g, vis, list, YF, SF, lift, crowd, tall) {
 }
 function cnBubbles(g, p, x, y, s) {
   if (p.say) { const B = c4Bubble(p.say.text, 0, 13, 150), a = Math.min(1, p.say.t * 6, (p.say.life - p.say.t) * 4), sc = .8 + .2 * s; g.globalAlpha = Math.max(0, a); dp(g, B, x, y - (B.bh + 14) * sc, 0, sc, sc); g.globalAlpha = 1; }
-  if (p.emo) { const q = p.emo.t / 2.2; g.save(); g.globalAlpha = Math.max(0, Math.min(1, (1 - q) * 3, q * 8)); g.font = `${Math.round(30 * (.8 + .2 * s))}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.emo.e, x + Math.sin(q * 6) * 6, y - 40 - q * 50); g.restore(); }
+  if (p.emo && /^[0-5]$/.test(p.emo.e)) { const sc = .8 + .2 * s, pop = Math.min(1, p.emo.t * 8), r = 17 * (.6 + .4 * pop) * sc, ex = x + 24 * sc, ey = y - 30 * sc; g.save(); g.globalAlpha = Math.max(0, Math.min(1, (2.8 - p.emo.t) * 2)); hlEmoteFace(g, +p.emo.e, ex, ey, r); g.restore(); }
+  else if (p.emo) { const q = p.emo.t / 2.8; g.save(); g.globalAlpha = Math.max(0, Math.min(1, (1 - q) * 3, q * 8)); g.font = `${Math.round(30 * (.8 + .2 * s))}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.emo.e, x + Math.sin(q * 6) * 6, y - 40 - q * 50); g.restore(); }
 }
 { const fx0 = c4FxItems;
-  c4FxItems = function (items, g, vis) { fx0(items, g, vis); if (CN.hosting === 'lang' && CN.guests.size) cnDrawPeople(items, g, vis, [...CN.guests.values()], c4Y, c4S, () => 0, C4_CROWD, C4_TALL.mouse * C4_CROWD * .92); }; }
+  c4FxItems = function (items, g, vis) { fx0(items, g, vis); if (CN.hosting === 'lang') { if (CN.guests.size) cnDrawPeople(items, g, vis, [...CN.guests.values()], c4Y, c4S, () => 0, C4_CROWD, C4_TALL.mouse * C4_CROWD * .92); cnOwnItems(items, g, C4_STALL - 40, c4Y(C4_WIFE_Z) - 150 * c4S(C4_WIFE_Z), c4S(C4_WIFE_Z)); } }; }
 { const br0 = p4TownBridgeItems;
-  p4TownBridgeItems = function (items, g, vis) { br0(items, g, vis); if (CN.hosting === 'pho' && CN.guests.size) cnDrawPeople(items, g, vis, [...CN.guests.values()], p4Y, p4S, p4TownLift, P4_CROWD, P4_TALL * P4_CROWD * .92); }; }
-// the host chats back / sends an emoji while visitors are here: the bar at the bottom
-const cnBar = (() => { const d = document.createElement('div'); d.id = 'cnBar'; d.hidden = true;
-  d.innerHTML = '<div class="cnEmo">' + ['😊', '😍', '👍', '😢', '😮', '❤️'].map(e => `<button data-e="${e}">${e}</button>`).join('') + '</div><input id="cnIn" maxlength="90" placeholder="Nói gì đó…" autocomplete="off"><button id="cnSend" class="btn">Gửi</button>';
-  document.body.appendChild(d);
-  d.querySelectorAll('[data-e]').forEach(b => b.addEventListener('click', () => { AU.tap(); cnSend({ t: 'emo', e: b.dataset.e }); const me = cnMeObj(); if (me) me.emo = { e: b.dataset.e, t: 0 }; }));
-  const send = () => { const i = $('#cnIn'), v = i.value.trim(); if (!v) return; cnSend({ t: 'chat', text: v }); i.value = ''; };
-  $('#cnSend').addEventListener('click', () => { AU.tap(); send(); });
-  $('#cnIn').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') send(); });
-  return d; })();
+  p4TownBridgeItems = function (items, g, vis) { br0(items, g, vis); if (CN.hosting === 'pho') { if (CN.guests.size) cnDrawPeople(items, g, vis, [...CN.guests.values()], p4Y, p4S, p4TownLift, P4_CROWD, P4_TALL * P4_CROWD * .92); cnOwnItems(items, g, P4_HOME, p4Y(.1) - 150 * p4S(.1), p4S(.1)); } }; }
+/* ---------- chat and the six faces (owner 2026-10-28: "như chương X ghép tranh; chú ý bàn phím không che") ----------
+   Two round buttons at the top left under the HUD, in my own market (while a visitor is in it) and in a visit. The chat is Hội Làng's own
+   bar (hlChatOpen: on a phone it sits at the TOP, where the keyboard cannot cover it); the faces are Hội Làng's six woodblock faces
+   (hlEmoteFace), sent at once and shown over my head (in my own market, over my wife at the stall). Built on first use because
+   hoilang/game.js loads after this file. */
+const CN_CHAT = { send: m => cnSend({ t: 'chat', text: m.s }) };
+let cnTools = null;
+function cnToolsInit() {
+  if (cnTools) return cnTools;
+  const d = document.createElement('div'); d.id = 'cnTools'; d.hidden = true;
+  const icon = draw => { const c = document.createElement('canvas'); c.width = c.height = 84; c.style.width = c.style.height = '42px'; const g = c.getContext('2d'); g.scale(2, 2); draw(g, 21); return c; };
+  const bChat = document.createElement('button'); bChat.id = 'cnChatB'; bChat.title = 'Nói chuyện'; bChat.append(icon((g, h) => hlChatIcon(g, h, h, false)));
+  const bEmo = document.createElement('button'); bEmo.id = 'cnEmoB'; bEmo.title = 'Biểu cảm'; bEmo.append(icon((g, h) => hlEmoteFace(g, 4, h, h, 17)));
+  const tray = document.createElement('div'); tray.id = 'cnTray'; tray.hidden = true;
+  for (let k = 0; k < 6; k++) { const b = document.createElement('button'); b.title = HL_EMO_NAME[k]; b.append(icon((g, h) => hlEmoteFace(g, k, h, h, 17))); b.addEventListener('click', () => cnEmote(k)); tray.append(b); }
+  d.append(bChat, bEmo, tray); document.body.appendChild(d);
+  bChat.addEventListener('click', () => { AU.tap(); tray.hidden = true; HL_CHAT_NET = CN_CHAT; hlChatOpen(); });
+  bEmo.addEventListener('click', () => { AU.tap(); hlChatClose(); tray.hidden = !tray.hidden; });
+  return (cnTools = d);
+}
+function cnEmote(k) {
+  if (performance.now() - (CN.emoAt || 0) < 700) return; CN.emoAt = performance.now(); AU.tap(); $('#cnTray').hidden = true;
+  cnSend({ t: 'emo', e: String(k) }); if (CN.visit) CN.visit.me.emo = { e: String(k), t: 0 }; else CN.myEmo = { e: String(k), t: 0 };
+}
+setInterval(() => {
+  const sheet = S.mode === 'c4play' ? C4.sheet : S.mode === 'c4bplay' ? P4.sheet : null;
+  const market = (S.mode === 'c4play' || S.mode === 'c4bplay') && cnOn() && CN.up && CN.hosting && !sheet;
+  const on = S.mode === 'c4visit' || market; if (on) cnToolsInit();
+  if (cnTools) { cnTools.hidden = !on; if (!on) { $('#cnTray').hidden = true; if (HL_CHAT_EL) hlChatClose(); } }
+}, 300);
+// my own words and faces in my own market hang over the wife at the stall (I have no mouse of my own there)
+function cnOwnItems(items, g, x, y, s) {
+  const now = performance.now(), dt = Math.min(.1, (now - (CN.ownLast || now)) / 1000); CN.ownLast = now;
+  if (CN.mySay && (CN.mySay.t += dt) > CN.mySay.life) CN.mySay = null; if (CN.myEmo && (CN.myEmo.t += dt) > 2.8) CN.myEmo = null;
+  if (CN.mySay || CN.myEmo) items.push({ z: 1.7, f: () => cnBubbles(g, { say: CN.mySay, emo: CN.myEmo }, x, y, s) });
+}
 const cnMeObj = () => (CN.visit ? CN.visit.me : null);
-setInterval(() => { cnBar.hidden = !(S.mode === 'c4visit' || ((S.mode === 'c4play' || S.mode === 'c4bplay') && CN.hosting && CN.guests.size && !C4.sheet && !P4.sheet)); }, 400);
-// my own chat and emoji above the host's market are drawn on the visitor's side; on the host's side the host has no mouse to hang them on, so a visitor's bubble is the only thing seen.
+// the owner's own switch for visitors, on the Giao dịch tab
+const cnSwitchHtml = () => `<div class="row"><button class="btn alt" id="cnSw">${cnOn() ? 'Đóng chợ nhà mình với khách' : 'Mở chợ nhà mình cho khách'}</button></div><p class="sm">${cnOn() ? 'Bạn bè đang online có thể sang chợ nhà mình mua hàng.' : 'Chợ nhà mình đang đóng với khách.'}</p>`;
+function cnSwitchWire(root) {
+  const b = root.querySelector('#cnSw'); if (!b) return;
+  b.addEventListener('click', () => { AU.tap(); SAVE4.cnOff = cnOn() ? 1 : 0; if (!SAVE4.cnOff) delete SAVE4.cnOff; persist4(); if (!cnOn() && CN.hosting) { cnSend({ t: 'host', place: null }); CN.hosting = null; CN.guests.clear(); } c4OpenNotes('gd'); });
+}
+// the house of someone on the board: a way into his market when he is online with it open (matched by his one name)
+function cnMarketBtn(B, r) {
+  if (r.mine) return;
+  const row = document.createElement('div'); row.className = 'row cnMk'; const anchor = B.querySelector('.roomBox'); if (anchor) anchor.after(row); else B.prepend(row);
+  CN.want = true; cnConnect();
+  CN.hostsCb = () => {
+    const hs = CN.hosts.filter(h => String(h.name).toLowerCase() === String(r.name).toLowerCase());
+    row.innerHTML = cnOn() ? hs.map(h => `<button class="btn" data-id="${h.id}" data-pl="${h.place}">Vào chợ ${h.place === 'lang' ? 'làng' : 'phố huyện'} của bạn ấy</button>`).join('') : '';
+    row.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { AU.tap(); c4RankShow(null); cnVisit(b.dataset.id, b.dataset.pl); }));
+  };
+  for (const t of [300, 1500, 4000]) setTimeout(() => cnSend({ t: 'hosts' }), t);
+}

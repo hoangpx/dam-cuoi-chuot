@@ -178,6 +178,7 @@ function c4RankVisit(pos, pub) {
       + c4RankFormHtml(r);
     c4RankWire(B, r);
     c4RankRvLoad(B, r);
+    if (typeof cnMarketBtn === 'function') cnMarketBtn(B, r);   // a way into his market when he is online (sangcho.js)
   }).catch(() => { B.innerHTML = '<p class="sm">Chưa xem được nhà người này. Lát nữa thử lại nhé.</p>'; });
 }
 // closing the visit goes back to the board it was opened from: the book's tab in the village, its own sheet in the town

@@ -1,9 +1,16 @@
 /* Chương IV · Chợ Làng Chuột: top bar (money, day and hour, stock), end-of-day tally, upgrade sheet */
 #c4hud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;z-index:4;pointer-events:none}
 #cnvHud{position:fixed;left:0;right:0;top:0;z-index:4;pointer-events:none}
-#cnvHud .cnvTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0}
+#cnvHud .cnvTop{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0}
 #cnvHud .tag{font-family:var(--display);font-weight:900;font-size:14px;color:var(--ink);white-space:normal;pointer-events:auto}
 #cnvHud button.tag{cursor:pointer}
+#cnvHud #cnvChap{justify-self:start}#cnvHud #cnvMoney{justify-self:end}
+#cnvHud .cnvSub{display:block;width:max-content;max-width:92vw;margin:6px auto 0;text-align:center}
+#cnTools{position:fixed;left:12px;top:calc(64px + env(safe-area-inset-top,0px));z-index:5;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+#cnTools[hidden]{display:none}
+#cnTools>button,#cnTray button{width:46px;height:46px;border:2px solid var(--ink);border-radius:50%;background:rgba(251,244,220,.95);padding:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#cnTray{position:absolute;left:54px;top:54px;display:grid;grid-template-columns:repeat(3,46px);gap:6px;background:rgba(251,244,220,.97);border:2px solid var(--ink);padding:6px}
+#cnTray[hidden]{display:none}
 #cnBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;width:min(94vw,520px)}
 #cnBar[hidden]{display:none}
 #cnBar .cnEmo{display:flex;gap:4px;width:100%;justify-content:center}

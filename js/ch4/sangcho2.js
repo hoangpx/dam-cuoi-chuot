@@ -3,8 +3,8 @@
    sees the host's price and stock, buys, chats and drops emoji. sangcho.js has the net, the host's side and the lists. */
 
 const cnvHud = (() => { const d = document.createElement('div'); d.id = 'cnvHud'; d.hidden = true;
-  d.innerHTML = '<div class="cnvTop"><button class="tag" id="cnvBack">← Về chợ mình</button><div class="tag" id="cnvTitle"></div><div class="tag" id="cnvMoney"></div></div>';
-  document.body.appendChild(d); $('#cnvBack').addEventListener('click', () => { AU.tap(); cnvLeave(''); }); return d; })();
+  d.innerHTML = '<div class="cnvTop"><button class="tag" id="cnvChap">← Chọn chương</button><button class="tag" id="cnvBack">Về chợ mình</button><div class="tag" id="cnvMoney"></div></div><div class="cnvSub tag" id="cnvTitle"></div>';
+  document.body.appendChild(d); $('#cnvBack').addEventListener('click', () => { AU.tap(); cnvLeave(''); }); $('#cnvChap').addEventListener('click', () => { AU.tap(); cnvLeave('', true); }); return d; })();
 const cnvW = () => (CN.visit && CN.visit.place === 'pho' ? P4_W : C4_W);
 const cnvView = () => (CN.visit.place === 'pho' ? p4View() : c4View());
 function cnvEnter(m) {
@@ -21,17 +21,18 @@ function cnvEnter(m) {
   for (const id of ['#album', '#end', '#chapters', '#hud', '#abil', '#pad']) { const el = $(id); if (el) el.hidden = true; }
   if (place === 'pho' && !P4.scene) P4.scene = p4TownScene(mulberry(7));
   AU.init(); AU.setSong(place === 'lang' ? 6 : 12); AU.setQuiet(false);
-  cnvHud.hidden = false; $('#cnvTitle').textContent = `Chợ ${place === 'lang' ? 'làng' : 'phố huyện'} của ${CN.visit.hostName}`; cnvMoneyShow(); cnBar.hidden = false; cv.focus();
+  cnvHud.hidden = false; $('#cnvTitle').textContent = `Chợ ${place === 'lang' ? 'làng' : 'phố huyện'} của ${CN.visit.hostName}`; cnvMoneyShow(); cv.focus();
   if (typeof trackEnter === 'function') trackEnter('chuong-4/sang-cho');
 }
 const cnvMoneyShow = () => { const e = $('#cnMoneyV') || $('#cnvMoney'); if (e) e.innerHTML = c4Money(Math.round(SAVE4.money)); };
-function cnvLeave(msg) {
+function cnvLeave(msg, toChapters) {
   const v = CN.visit; if (!v) return; v.closing = true; cnSend({ t: 'leave' }); CN.visit = null; CN.pend = {};
-  cnvHud.hidden = true; cnHide(cnBuySh); cnBar.hidden = true;
+  cnvHud.hidden = true; cnHide(cnBuySh); hlChatClose(); const tt = $('#cnTray'); if (tt) tt.hidden = true;
   if (msg) toast(msg, 3);
+  if (toChapters) { showChapters(); return; }
   (v.from === 'pho' ? startP4 : startC4)();
 }
-function cnvHide() { cnvHud.hidden = true; cnBar.hidden = true; if (CN.visit && S.mode !== 'c4visit') { cnSend({ t: 'leave' }); CN.visit = null; } }
+function cnvHide() { cnvHud.hidden = true; hlChatClose(); if (CN.visit && S.mode !== 'c4visit') { cnSend({ t: 'leave' }); CN.visit = null; } }
 
 /* ---------- walking ---------- */
 function cnvUpdate(dt) {
@@ -40,8 +41,8 @@ function cnvUpdate(dt) {
   me.moving = d > 4;
   if (me.moving) { const st = Math.min(d, spd * dt); me.x += dx / d * st; me.z += dz / d * st / 300; if (Math.abs(dx) > 2) me.face = dx > 0 ? 1 : -1; me.ph += dt * 9; }
   me.x = Math.max(120, Math.min(W - 120, me.x)); me.z = Math.max(.3, Math.min(1.02, me.z));
-  if (me.say && (me.say.t += dt) > me.say.life) me.say = null; if (me.emo && (me.emo.t += dt) > 2.2) me.emo = null;
-  if (v.hostSay && (v.hostSay.t += dt) > v.hostSay.life) v.hostSay = null; if (v.hostEmo && (v.hostEmo.t += dt) > 2.2) v.hostEmo = null;
+  if (me.say && (me.say.t += dt) > me.say.life) me.say = null; if (me.emo && (me.emo.t += dt) > 2.8) me.emo = null;
+  if (v.hostSay && (v.hostSay.t += dt) > v.hostSay.life) v.hostSay = null; if (v.hostEmo && (v.hostEmo.t += dt) > 2.8) v.hostEmo = null;
   v.sent += dt; if (v.sent > .12 && (me.moving || v.wasMoving)) { v.sent = 0; cnSend({ t: 'move', x: Math.round(me.x), z: +me.z.toFixed(2), face: me.face, mv: me.moving ? 1 : 0 }); }
   v.wasMoving = me.moving;
   const V = cnvView(); v.camX += (Math.max(-100, Math.min(W - V.vw + 100, me.x - V.vw / 2)) - v.camX) * Math.min(1, dt * 5);
@@ -97,14 +98,24 @@ function cnBuyRefresh(open) {
   const can = cnCanSell(b.g), max = Math.max(0, Math.min(info.avail, 40, Math.floor(SAVE4.money / Math.max(1, info.price))));
   b.n = Math.max(max ? 1 : 0, Math.min(b.n, max));
   $('#cnBuyT').textContent = info.nm;
-  $('#cnBuyB').innerHTML = `<p>Giá <b>${c4Money(info.price)}</b> một ${info.unit} · còn <b>${info.avail}</b></p>`
+  if (!$('#cnN')) $('#cnBuyB').innerHTML = '<div id="cnBI"></div><div class="row cnStep"><button class="btn alt" data-d="-1">−</button><b id="cnN"></b><button class="btn alt" data-d="1">+</button></div><div id="cnBT"></div>';   // the stepper stays put so a held press keeps going
+  $('#cnBI').innerHTML = `<p>Giá <b>${c4Money(info.price)}</b> một ${info.unit} · còn <b>${info.avail}</b></p>`
     + (can ? '' : '<p class="bad">Nhà bạn chưa có quầy bán món này, mua về cũng không bán được.</p>')
-    + (!info.open ? '<p class="bad">Quầy đang đóng cửa.</p>' : '')
-    + `<div class="row cnStep"><button class="btn alt" data-d="-5">−5</button><button class="btn alt" data-d="-1">−</button><b>${b.n}</b><button class="btn alt" data-d="1">+</button><button class="btn alt" data-d="5">+5</button></div>`
-    + `<p>Tiền: <b>${c4Money(b.n * info.price)}</b> · trong túi ${c4Money(Math.round(SAVE4.money))}</p><p class="sm" id="cnBuyMsg">${b.msg || 'Hàng mang về để được hôm nay và cả ngày mai.'}</p>`;
+    + (!info.open ? '<p class="bad">Quầy đang đóng cửa.</p>' : '');
+  $('#cnN').textContent = b.n;
+  $('#cnBT').innerHTML = `<p>Tiền: <b>${c4Money(b.n * info.price)}</b> · trong túi ${c4Money(Math.round(SAVE4.money))}</p><p class="sm" id="cnBuyMsg">${b.msg || 'Hàng mang về để được hôm nay và cả ngày mai.'}</p>`;
   $('#cnBuyGo').disabled = !can || !info.open || b.n < 1 || !!b.wait;
-  $('#cnBuyB').querySelectorAll('[data-d]').forEach(x => x.addEventListener('click', () => { AU.tap(); b.n += +x.dataset.d; b.msg = ''; cnBuyRefresh(); }));
 }
+// ± 1 a press; held down it repeats, faster and faster (owner 2026-10-28)
+{ let timer = 0; const stop = () => { clearTimeout(timer); timer = 0; };
+  $('#cnBuyB').addEventListener('pointerdown', e => {
+    const x = e.target.closest('[data-d]'); if (!x || !CN.buy) return; e.preventDefault(); stop(); AU.tap();
+    const d = +x.dataset.d; let wait = 380, k = 0;
+    const step = () => { const b = CN.buy; if (!b) return stop(); b.n += d * (k > 14 ? 3 : k > 7 ? 2 : 1); b.msg = ''; k++; cnBuyRefresh(); wait = Math.max(35, wait * .86); timer = setTimeout(step, wait); };
+    b0step(); function b0step() { const b = CN.buy; b.n += d; b.msg = ''; cnBuyRefresh(); timer = setTimeout(step, wait); }
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) $('#cnBuyB').addEventListener(ev, stop);
+  window.addEventListener('pointerup', stop); }
 $('#cnBuyX').addEventListener('click', () => { AU.tap(); cnBuySh.hidden = true; CN.buy = null; });
 $('#cnBuyGo').addEventListener('click', () => {
   const b = CN.buy; if (!b || b.wait || b.n < 1) return; b.wait = true; b.msg = 'Đang hỏi chủ chợ…'; cnBuyRefresh();
@@ -138,7 +149,6 @@ function cnvRender() {
     g.globalAlpha = 1; g.restore();
     g.fillStyle = 'rgba(91,47,31,.2)'; g.fillRect(cx - 50, C4_Y0 - 4, vw + 100, C4_D + 10); g.fillStyle = 'rgba(91,47,31,.09)'; g.fillRect(cx - 50, C4_Y0 + C4_D + 6, vw + 100, V.vh);
     g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.moveTo(cx - 50, C4_Y0 - 4); g.lineTo(cx + vw + 50, C4_Y0 - 4); g.stroke();
-    g.strokeStyle = 'rgba(29,25,21,.25)'; g.lineWidth = 1.4; g.setLineDash([18, 14]); for (const z of [.45, .78]) { g.beginPath(); g.moveTo(cx - 50, c4Y(z)); g.lineTo(cx + vw + 50, c4Y(z)); g.stroke(); } g.setLineDash([]);
     for (const [x, k, s, hv] of (C4.scene ? C4.scene.near : [[960, 'tree', .9], [1360, 'house', .72, 1], [1760, 'house', .7, 3], [2050, 'bamboo', .8], [2260, 'bamboo', .85], [600, 'house', .62, 5], [210, 'bamboo', .7]])) if (vis(x, 260)) dp(g, k === 'tree' ? WP.bigTree : k === 'house' ? c4HouseArt(hv) : k === 'bamboo' ? PROPS.bamboo : PROPS.hay, x, C4_Y0, 0, s, s);
     if (vis(C4_GATE, 140)) dp(g, A.gate, C4_GATE, C4_Y0 + 6, 0, .88, .88);
     const sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
