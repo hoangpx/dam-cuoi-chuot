@@ -525,3 +525,12 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .rankbox .rk,.card4 .rk{overflow-x:hidden}
 .rankbox table{table-layout:auto;max-width:100%}
 @media (max-width:520px){.rankbox table{font-size:12px}.rankbox th,.rankbox td{padding:5px 2px}.rankbox td:first-child,.rankbox th:first-child{width:1.8em}.rankbox td:last-child,.rankbox th:last-child{width:2.8em}.rankbox .rnv{font-size:10.5px;padding:3px 5px}}
+#c4look .lkB{text-align:left;margin-top:6px}
+#c4look .lkB h4{font-size:14px;margin:8px 0 2px}
+#c4look .lkR{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-start;margin:2px 0}
+#c4look .opt{border:2px solid var(--ink);background:#fbf6ea;padding:4px 8px;font:600 12.5px var(--body);cursor:pointer;color:var(--ink);text-align:left}
+#c4look .opt small{display:block;font-size:11px;font-weight:400;opacity:.8}
+#c4look .opt.on{background:#a3332a;color:#fbf6ea}
+#c4look .sw{width:30px;height:30px;border:2px solid var(--ink);cursor:pointer;padding:0}
+#c4look .sw.on{outline:3px solid var(--ink);outline-offset:2px}
+#c4look .btn:disabled{opacity:.5}

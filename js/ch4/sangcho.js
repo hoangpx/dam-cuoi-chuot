@@ -67,7 +67,7 @@ const cnPlace = () => (S.mode === 'c4play' ? 'lang' : S.mode === 'c4bplay' ? 'ph
 function cnSnapLang() {
   const stalls = [];
   for (const g of c4Owned()) { if (C4_BUYS.includes(g)) continue;
-    stalls.push({ g, nm: g === 'trau' ? 'TRẦU CAU' : C4_GOODS[g].name.toUpperCase(), price: c4Price(g), stock: c4Stock(g), lv: g === 'trau' ? (SAVE4.lv || 0) : c4SLvI(g), open: !c4Shut(g) }); }
+    stalls.push({ g, nm: g === 'trau' ? 'TRẦU CAU' : C4_GOODS[g].name.toUpperCase(), price: c4Price(g), stock: c4Stock(g), lv: g === 'trau' ? (SAVE4.lv || 0) : c4SLvI(g), open: !c4Shut(g), look: (SAVE4.look || {})[g] || null }); }
   return { v: 1, day: SAVE4.day, name: hsName(hsMine()), home: cnHome(), stalls, town: !!SAVE4B.house, prof: cnProf(hsMine()) };
 }
 const cnPortionCap = 20;

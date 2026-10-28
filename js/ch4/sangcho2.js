@@ -170,10 +170,11 @@ function cnvRender() {
     for (const st of sn.stalls || []) {
       const sx = st.g === 'trau' ? C4_STALL + (st.lv ? 10 : 30) : C4_GOODS[st.g].x + 20; if (!vis(sx, 200)) continue;
       items.push({ z: C4_STALL_Z, f: () => {
+        c4LookCtx = st.look || null;
         g.globalAlpha = st.open ? 1 : .45;
         if (st.g === 'trau') { if (st.lv >= 3) c4DrawShopLv(g, sx, sy, ss, st.lv, 'trau'); dp(g, c4StallArt(Math.min(2, st.lv)), sx, sy, 0, ss, ss); if (st.lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU'); }
         else { c4DrawShopLv(g, sx, sy, ss, st.lv, st.g); dp(g, A[C4_GOODS[st.g].art], sx, sy, 0, ss, ss); c4SignDraw(g, sx, sy, ss, st.nm); }
-        g.globalAlpha = 1; cnvTag(g, sx, sy + 8 * ss, ss, c4Money(st.price), st.stock > 0 ? `còn ${st.stock}` : 'Hết hàng'); } });
+        g.globalAlpha = 1; if (st.g === 'trau') c4LookFront(g, 'trau', sx, sy, ss, st.lv); c4LookDecoAt(g, sx, sy, ss, st.look); c4LookCtx = undefined; cnvTag(g, sx, sy + 8 * ss, ss, c4Money(st.price), st.stock > 0 ? `còn ${st.stock}` : 'Hết hàng'); } });
     }
     if (!v.hostP) items.push({ z: C4_WIFE_Z, f: () => c4Mouse(g, MICE.wife, C4_STALL - 40, 1, now * 2, false, -.2, null, c4S(C4_WIFE_Z), c4Y(C4_WIFE_Z), 2.1) });
   } else {

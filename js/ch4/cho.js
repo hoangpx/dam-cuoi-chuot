@@ -1104,6 +1104,7 @@ function c4OpenUp(g = 'trau') {
   }
   box.appendChild(c4ShutBlock(g));                                          // shut it for a while
   box.appendChild(c4PriceBlock(g));
+  if (typeof c4LookBlock === 'function') box.appendChild(c4LookBlock(g));                                // dress the stall (trangtri.js)
   if (typeof cnTxnBlock === 'function') box.appendChild(cnTxnBlock(g));                                  // who bought here (sangcho.js)
                                          // its price (gia.js)
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
@@ -1234,6 +1235,7 @@ function renderC4() {
     items.push({ z: C4_STALL_Z, f: () => { const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
       if (lv >= 3) c4DrawShopLv(g, sx, sy, ss, lv, 'trau');                       // the house behind it
       g.globalAlpha = C4.shut > 0 ? .45 : 1; dp(g, c4StallArt(Math.min(2, lv)), sx, sy, 0, ss, ss); g.globalAlpha = 1;
+      if (typeof c4LookFront === 'function') c4LookFront(g, 'trau', sx, sy, ss, lv);
       if (lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU', 'trau'); else if (c4SalePct('trau')) { g.save(); g.translate(sx, sy); g.scale(ss, ss); c4SaleTag(g, 'trau'); g.restore(); }
       if (SAVE4.cauDoi) for (const d of [-1, 1]) { const px = sx + d * (lv ? 120 : 112) * ss, py = sy - (lv ? 150 : 80) * ss; g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(px - 7, py - 40 * ss, 14, 60 * ss); g.strokeRect(px - 7, py - 40 * ss, 14, 60 * ss); g.fillStyle = '#f2c640'; for (let k = 0; k < 3; k++) g.fillRect(px - 3, py - 32 * ss + k * 18 * ss, 6, 8 * ss); }
     } });
