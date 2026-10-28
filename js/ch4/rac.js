@@ -19,7 +19,7 @@ function c4RacLay(R0) {
 function c4RacEnsure() {
   let R0 = SAVE4.rac;
   if (!(R0 && R0.day === SAVE4.day)) {
-    const N = 11 + ((R() * 5) | 0), plan = Array.from({ length: N }, () => ({ at: Math.round(300 + 840 * Math.pow(R(), 1.8)), town: R() < .4 })).sort((a, b) => a.at - b.at);
+    const N = 20 + ((R() * 6) | 0), plan = Array.from({ length: N }, () => ({ at: Math.round(300 + 840 * Math.pow(R(), 1.8)), town: R() < .4 })).sort((a, b) => a.at - b.at);
     R0 = SAVE4.rac = { day: SAVE4.day, v: [], t: [], n: 0, plan }; persist4();
   }
   c4RacLay(R0); return R0;

@@ -267,7 +267,7 @@ const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
 const c4Grow = () => 1 + Math.min(.45, Math.max(0, (SAVE4.day - 15) / 60));   // more folk come as the market becomes known (owner: more people, later days less dull)
 const c4Slump = () => (SAVE4.slump && SAVE4.slump.until >= SAVE4.day ? SAVE4.slump : null);
-const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * ({ dep: 1, gat: .85, ret: 1 }[c4Wx()] || (SAVE4.plan.rk || .3)) * (SAVE4.plan.hoi ? (SAVE4.plan.hk || 1.7) : 1) * (SAVE4.plan.cuoi ? (SAVE4.plan.ck || 1.7) : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1);   // a streak's market luck
+const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * ({ dep: 1, gat: .85, ret: 1 }[c4Wx()] || (SAVE4.plan.rk || .3)) * (SAVE4.plan.hoi ? (SAVE4.plan.hk || 1.7) : 1) * (SAVE4.plan.cuoi ? (SAVE4.plan.ck || 1.7) : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1) * (typeof c4DoiBonus === 'function' ? 1 + c4DoiBonus() : 1);   // a streak's market luck; the plots across the lane (khudoi.js)
 // how much a passer-by wants a ware now
 function c4Want(g, noWx) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
@@ -1397,6 +1397,7 @@ function c4Up(e) {
   for (const g of C4_SHOPS) { const gx = C4_GOODS[g].x, hit = c4Own(g) ? c4SignHit(x, y, gx + 20, sy, s) : Math.abs(x - gx) < 56 * s && y > sy - 115 * s && y < sy - 70 * s;
     if (hit) { AU.tap(); c4OpenUp(g); return; } }
   if (c4RivalTap(x, y)) return;
+  if (typeof c4DoiTap === 'function' && c4DoiTap(x, y)) return;          // the plots across the lane (khudoi.js)
   for (const v of C4.vendors) { const vz = v.z || .05, s2 = c4S(vz), vy = c4Y(vz);
     if (x > v.x - 60 * s2 && x < v.x + 90 * s2 && y > vy - 130 * s2 && y < vy + 14) { AU.tap(); if (c4VendorMine(v)) c4OpenUp(C4_VENDOR_G[v.ware]); else c4BuyOpen(v); return; } }
 }

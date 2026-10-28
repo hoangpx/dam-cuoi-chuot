@@ -174,6 +174,7 @@ function cnvRender() {
         c4LookDrawStall(g, sx, sy, ss, st.g, st.lv || 0, st.g === 'trau' ? 'TRẦU CAU' : st.nm, st.open ? 1 : .45);
         g.globalAlpha = 1; c4LookDecoAt(g, sx, sy, ss, st.look); c4LookCtx = undefined; cnvTag(g, sx, sy + 8 * ss, ss, c4Money(st.price), st.stock > 0 ? `còn ${st.stock}` : 'Hết hàng'); } });
     }
+    { const dy = c4DoiBase(), ds = c4DoiScale(); C4_DOI_X.forEach((x, i) => { if (sn.doi && sn.doi[i] && vis(x, 220)) items.push({ z: 2.05, f: () => c4DoiDrawAt(g, x, dy, ds, sn.doi[i]) }); }); }
     if (!v.hostP) items.push({ z: C4_WIFE_Z, f: () => c4Mouse(g, MICE.wife, C4_STALL - 40, 1, now * 2, false, -.2, null, c4S(C4_WIFE_Z), c4Y(C4_WIFE_Z), 2.1) });
   } else {
     g.save(); g.translate(cx * .3, 0); g.globalAlpha = .5; for (const [x, k, sc] of P4.scene.far) if (x + 150 > cx * .7 - 40 && x - 150 < cx * .7 + vw + 40) dp(g, p4TownPart(k), x, P4_Y0 - 70, 0, sc, sc); g.globalAlpha = 1; g.restore();

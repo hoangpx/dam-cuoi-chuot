@@ -22,8 +22,10 @@ function c4DayLook() {
   for (let x = 160; x < C4_W + 60; x += 240 + rs() * 200) { if (Math.abs(x - C4_STALL) < 150) continue; near.push([x, kinds[(rs() * kinds.length) | 0], .6 + rs() * .35, (rs() * 6) | 0]); }
   C4.scene = { far, near };
   // the children's games on the grass in front, two of them, somewhere along the lane
+  // (owner, 2026-10-28: not the same two games all day, and not at dawn) each spot plays in sessions from about 8:00, a random game each, with breaks between
   const games = ['dacau', 'daynhay', 'keoco', 'oanquan'], gs = [];
-  for (let i = 0; i < 2; i++) gs.push({ k: games.splice((r() * games.length) | 0, 1)[0], x: 300 + i * 900 + r() * 600, ph: r() * 6 });
+  for (let i = 0; i < 2; i++) { const sess = []; let t = 480 + r() * 150, last = ''; while (t < 1050) { const dur = 35 + r() * 60, pool = games.filter(q => q !== last), k = pool[(r() * pool.length) | 0]; sess.push({ from: t, to: t + dur, k }); last = k; t += dur + 25 + r() * 80; }
+    gs.push({ sess, x: 300 + i * 900 + r() * 600, ph: r() * 6 }); }
   C4.games = gs; C4.show = null; C4.streetT = 25 + r() * 20; C4.fightT = 40 + r() * 40; C4.talkT = 4;
 }
 
@@ -165,23 +167,24 @@ function c4StreetItems(items, g, vis) {
   // children's games on the grass in front of the lane
   for (const G of C4.games || []) {
     if (!vis(G.x, 160)) continue;
+    const act = (G.sess || []).find(q => C4.mins >= q.from && C4.mins < q.to); if (!act) continue; const kk = act.k;
     const y = c4Y(1) + 104, s = c4S(1) * .62, ph = C4.t * 4 + G.ph, kid = i => c4MouseRig(11 + (i % 3));
     items.push({ z: 2, f: () => {
-      if (G.k === 'dacau') {
+      if (kk === 'dacau') {
         c4Mouse(g, kid(0), G.x - 60, 1, ph, false, null, null, s, y - Math.max(0, Math.sin(ph)) * 6, 21); c4Mouse(g, kid(1), G.x + 60, -1, ph, false, null, null, s, y - Math.max(0, -Math.sin(ph)) * 6, 22);
         const t = (Math.sin(ph * .5) + 1) / 2, cx = G.x - 50 + t * 100, cy = y - 60 - Math.sin(t * Math.PI) * 70;   // the shuttlecock arcing between them
         c4Ink(g, 1.6); g.fillStyle = '#a3332a'; g.beginPath(); g.arc(cx, cy, 5, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = '#2f6a4c'; g.lineWidth = 2; g.beginPath(); for (const a of [-.5, 0, .5]) { g.moveTo(cx, cy - 4); g.lineTo(cx + Math.sin(a) * 8, cy - 16); } g.stroke();
-      } else if (G.k === 'daynhay') {
+      } else if (kk === 'daynhay') {
         c4Mouse(g, kid(0), G.x - 80, 1, 0, false, -.8, null, s, y, 23); c4Mouse(g, kid(2), G.x + 80, -1, 0, false, -.8, null, s, y, 24);
         const sw = Math.sin(ph * 1.5), jump = Math.max(0, -sw) * 26;
         c4Ink(g, 2); g.beginPath(); g.moveTo(G.x - 66, y - 58); g.quadraticCurveTo(G.x, y - 58 + sw * 60, G.x + 66, y - 58); g.stroke();   // the rope
         c4Mouse(g, kid(1), G.x, 1, 0, false, -.5, null, s, y - jump, 25);
-      } else if (G.k === 'keoco') {
+      } else if (kk === 'keoco') {
         const pull = Math.sin(ph * .4) * 14;
         c4Ink(g, 3); g.strokeStyle = '#b57a22'; g.beginPath(); g.moveTo(G.x - 130 + pull, y - 50); g.lineTo(G.x + 130 + pull, y - 50); g.stroke();
         g.fillStyle = '#a3332a'; g.fillRect(G.x + pull - 4, y - 58, 8, 16);
         for (let i = 0; i < 3; i++) { c4Mouse(g, kid(i), G.x - 40 - i * 40 + pull, -1, ph + i, false, -.2, null, s, y, 26 + i); c4Mouse(g, kid(i + 1), G.x + 40 + i * 40 + pull, 1, ph + i, false, -.2, null, s, y, 29 + i); }
-      } else if (G.k === 'oanquan') {
+      } else if (kk === 'oanquan') {
         c4Ink(g, 2); g.fillStyle = '#c9a24a'; g.beginPath(); g.ellipse(G.x, y - 6, 70, 16, 0, 0, 6.283); g.fill(); g.stroke();
         g.beginPath(); for (let i = -2; i <= 2; i++) { g.moveTo(G.x + i * 22, y - 18); g.lineTo(G.x + i * 22, y + 6); } g.moveTo(G.x - 55, y - 6); g.lineTo(G.x + 55, y - 6); g.stroke();
         g.fillStyle = '#5b2f1f'; for (let i = 0; i < 10; i++) { g.beginPath(); g.arc(G.x - 44 + (i % 5) * 22, y - 12 + Math.floor(i / 5) * 12, 2.6, 0, 6.283); g.fill(); }

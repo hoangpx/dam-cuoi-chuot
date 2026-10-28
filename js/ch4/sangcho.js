@@ -68,7 +68,7 @@ function cnSnapLang() {
   const stalls = [];
   for (const g of c4Owned()) { if (C4_BUYS.includes(g)) continue;
     stalls.push({ g, nm: g === 'trau' ? 'TRẦU CAU' : C4_GOODS[g].name.toUpperCase(), price: c4Price(g), stock: c4Stock(g), lv: g === 'trau' ? (SAVE4.lv || 0) : c4SLvI(g), open: !c4Shut(g), look: (SAVE4.look || {})[g] || null }); }
-  return { v: 1, day: SAVE4.day, name: hsName(hsMine()), home: cnHome(), stalls, town: !!SAVE4B.house, prof: cnProf(hsMine()) };
+  return { v: 1, day: SAVE4.day, name: hsName(hsMine()), home: cnHome(), stalls, town: !!SAVE4B.house, prof: cnProf(hsMine()), doi: SAVE4.doi || null };
 }
 const cnPortionCap = 20;
 const cnPortionsLeft = R0 => cnPortionCap - (R0.cnDay === SAVE4.day ? (R0.cnN || 0) : 0);
@@ -282,7 +282,9 @@ function cnToolsInit() {
   for (let k = 0; k < 6; k++) { const b = document.createElement('button'); b.title = HL_EMO_NAME[k]; b.append(icon((g, h) => hlEmoteFace(g, k, h, h, 17))); b.addEventListener('click', () => cnEmote(k)); tray.append(b); }
   d.append(bChat, bEmo, tray); document.body.appendChild(d);
   bChat.addEventListener('click', () => { AU.tap(); tray.hidden = true; HL_CHAT_NET = CN_CHAT; hlChatOpen();
-    const off = HL_CHAT_EL && HL_CHAT_EL.querySelector('#hlChatOff'); if (off) off.addEventListener('click', () => { if (HL.chatOff) hlChatClose(); });   // "Tắt chat" shuts the bar too
+    // the bar has three things (owner 2026-10-28): Gửi, the switch Tắt chat / Bật chat (words and faces on or off, the bar stays), and Đóng (shuts only the bar)
+    const bar = HL_CHAT_EL, off = bar && bar.querySelector('#hlChatOff');
+    if (bar && off && !bar.querySelector('#cnChatX')) { const x = document.createElement('button'); x.id = 'cnChatX'; x.textContent = 'Đóng'; x.style.cssText = off.style.cssText; x.addEventListener('click', () => { AU.tap(); hlChatClose(); }); bar.appendChild(x); }
   });
   bEmo.addEventListener('click', () => { AU.tap(); hlChatClose(); tray.hidden = !tray.hidden; });
   return (cnTools = d);
