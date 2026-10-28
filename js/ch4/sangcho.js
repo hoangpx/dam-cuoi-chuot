@@ -280,7 +280,13 @@ function cnToolsInit() {
   const bEmo = document.createElement('button'); bEmo.id = 'cnEmoB'; bEmo.title = 'Biểu cảm'; bEmo.append(icon((g, h) => hlEmoteFace(g, 4, h, h, 17)));
   const tray = document.createElement('div'); tray.id = 'cnTray'; tray.hidden = true;
   for (let k = 0; k < 6; k++) { const b = document.createElement('button'); b.title = HL_EMO_NAME[k]; b.append(icon((g, h) => hlEmoteFace(g, k, h, h, 17))); b.addEventListener('click', () => cnEmote(k)); tray.append(b); }
-  d.append(bChat, bEmo, tray); document.body.appendChild(d);
+  // a third round button that only switches chat on or off (owner 2026-10-28: "ô chat chỉ gửi và đóng thôi, ko bật tắt gì hết"): the icon is crossed out while chat is off
+  const bSw = document.createElement('button'); bSw.id = 'cnSwB';
+  const paintSw = () => { bSw.title = HL.chatOff ? 'Bật chat' : 'Tắt chat'; bSw.innerHTML = ''; bSw.append(icon((g, h) => { hlChatIcon(g, h, h - 5, !!HL.chatOff); g.fillStyle = HL.chatOff ? '#a3332a' : '#2f6a4c'; g.font = '800 9px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(HL.chatOff ? 'TẮT' : 'BẬT', h, 36); })); bSw.classList.toggle('off', !!HL.chatOff); };
+  try { if (localStorage.getItem('dcc.cnChatOff') === '1') HL.chatOff = true; } catch (e) {}
+  paintSw();
+  bSw.addEventListener('click', () => { AU.tap(); HL.chatOff = !HL.chatOff; try { localStorage.setItem('dcc.cnChatOff', HL.chatOff ? '1' : '0'); } catch (e) {} if (HL.chatOff) { CN.mySay = null; for (const p of CN.guests.values()) p.say = null; if (CN.visit) { CN.visit.hostSay = null; for (const p of CN.visit.peers.values()) p.say = null; } } paintSw(); toast(HL.chatOff ? 'Đã tắt chat: không thấy lời của mọi người nữa.' : 'Đã bật chat.', 2.2); });
+  d.append(bChat, bEmo, bSw, tray); document.body.appendChild(d);
   bChat.addEventListener('click', () => { AU.tap(); tray.hidden = true; HL_CHAT_NET = CN_CHAT; hlChatOpen();
     // the bar has three things (owner 2026-10-28): Gửi, the switch Tắt chat / Bật chat (words and faces on or off, the bar stays), and Đóng (shuts only the bar)
     const bar = HL_CHAT_EL, off = bar && bar.querySelector('#hlChatOff');
