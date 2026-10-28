@@ -221,3 +221,5 @@ Khu doi dien cho + ttre choi + chat bar + rac (owner 2026-10-28): (1) js/ch4/khu
 Chat switch (owner 2026-10-28: the chat box had only Gui and Dong): a third round button under the two (cnSwB) switches chat on or off at once, its icon crossed out with the word TAT while off (BAT while on), saved in localStorage dcc.cnChatOff; off hides every bubble. The typing bar keeps Gui, Tat chat / Bat chat and Dong. VERSION 2026-10-28zzw.
 
 Chat has NO on/off (owner 2026-10-28, said twice: "ko bat tat gi het"): the typing bar of the two round buttons has only Gui and Dong (the Hoi Lang switch is replaced by Dong), no third round switch, HL.chatOff is forced false. The earlier "Tat chat" notes above are superseded. VERSION 2026-10-28zzx.
+
+Chat faces inside (owner 2026-10-28): only ONE round chat button outside (cnChatB); the six faces are a second line inside the chat bar (#cnFaces), under the input, Gui and Dong; tapping a face sends it at once and the bar stays open. The outside face button and its tray are gone. VERSION 2026-10-28zzy.

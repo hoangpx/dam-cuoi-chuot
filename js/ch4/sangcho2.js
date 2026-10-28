@@ -41,7 +41,7 @@ function cnvEnter(m) {
 const cnvMoneyShow = () => { const e = $('#cnMoneyV') || $('#cnvMoney'); if (e) e.innerHTML = c4Money(Math.round(SAVE4.money)); };
 function cnvLeave(msg, toChapters) {
   const v = CN.visit; if (!v) return; v.closing = true; cnSend({ t: 'leave' }); CN.visit = null; CN.pend = {};
-  cnvHud.hidden = true; cnHide(cnBuySh); hlChatClose(); const tt = $('#cnTray'); if (tt) tt.hidden = true;
+  cnvHud.hidden = true; cnHide(cnBuySh); hlChatClose();
   if (msg) toast(msg, 3);
   if (toChapters) { showChapters(); return; }
   (v.from === 'pho' ? startP4 : startC4)();

@@ -277,28 +277,28 @@ function cnToolsInit() {
   const d = document.createElement('div'); d.id = 'cnTools'; d.hidden = true;
   const icon = draw => { const c = document.createElement('canvas'); c.width = c.height = 84; c.style.width = c.style.height = '42px'; const g = c.getContext('2d'); g.scale(2, 2); draw(g, 21); return c; };
   const bChat = document.createElement('button'); bChat.id = 'cnChatB'; bChat.title = 'Nói chuyện'; bChat.append(icon((g, h) => hlChatIcon(g, h, h, false)));
-  const bEmo = document.createElement('button'); bEmo.id = 'cnEmoB'; bEmo.title = 'Biểu cảm'; bEmo.append(icon((g, h) => hlEmoteFace(g, 4, h, h, 17)));
-  const tray = document.createElement('div'); tray.id = 'cnTray'; tray.hidden = true;
-  for (let k = 0; k < 6; k++) { const b = document.createElement('button'); b.title = HL_EMO_NAME[k]; b.append(icon((g, h) => hlEmoteFace(g, k, h, h, 17))); b.addEventListener('click', () => cnEmote(k)); tray.append(b); }
   try { HL.chatOff = false; localStorage.removeItem('dcc.cnChatOff'); } catch (e) {}   // chat has no on/off here (owner 2026-10-28: only Gửi and Đóng)
-  d.append(bChat, bEmo, tray); document.body.appendChild(d);
-  bChat.addEventListener('click', () => { AU.tap(); tray.hidden = true; HL_CHAT_NET = CN_CHAT; hlChatOpen();
+  d.append(bChat); document.body.appendChild(d);
+  bChat.addEventListener('click', () => { AU.tap(); HL_CHAT_NET = CN_CHAT; hlChatOpen();
+    // the six faces live inside the chat bar, on a second line (owner 2026-10-28: "trong phần chat thì sẽ có icon, ngoài chỉ còn 1 icon chat")
+    if (HL_CHAT_EL && !HL_CHAT_EL.querySelector('#cnFaces')) { const row = document.createElement('div'); row.id = 'cnFaces'; row.style.cssText = 'flex:0 0 100%;display:flex;gap:6px;justify-content:center;padding-top:4px';
+      for (let k = 0; k < 6; k++) { const b = document.createElement('button'); b.title = HL_EMO_NAME[k]; b.style.cssText = 'width:44px;height:44px;border:2px solid #1d1915;border-radius:50%;background:#fbf6ea;padding:1px;cursor:pointer'; b.append(icon((g, h) => hlEmoteFace(g, k, h, h, 17))); b.firstChild.style.cssText = 'width:38px;height:38px;display:block'; b.addEventListener('click', () => cnEmote(k)); row.append(b); }
+      HL_CHAT_EL.style.flexWrap = 'wrap'; HL_CHAT_EL.appendChild(row); }
     // the bar has only Gửi and Đóng (owner 2026-10-28: "ko bật tắt gì hết"): the switch Hội Làng puts there is taken out, and Đóng shuts the bar
     const bar = HL_CHAT_EL, off = bar && bar.querySelector('#hlChatOff');
     if (bar && off && !bar.querySelector('#cnChatX')) { const x = document.createElement('button'); x.id = 'cnChatX'; x.textContent = 'Đóng'; x.style.cssText = off.style.cssText; x.addEventListener('click', () => { AU.tap(); hlChatClose(); }); off.replaceWith(x); }
   });
-  bEmo.addEventListener('click', () => { AU.tap(); hlChatClose(); tray.hidden = !tray.hidden; });
   return (cnTools = d);
 }
 function cnEmote(k) {
-  if (performance.now() - (CN.emoAt || 0) < 700) return; CN.emoAt = performance.now(); AU.tap(); $('#cnTray').hidden = true;
+  if (performance.now() - (CN.emoAt || 0) < 700) return; CN.emoAt = performance.now(); AU.tap();
   cnSend({ t: 'emo', e: String(k) }); if (CN.visit) CN.visit.me.emo = { e: String(k), t: 0 }; else CN.myEmo = { e: String(k), t: 0 };
 }
 setInterval(() => {
   const sheet = S.mode === 'c4play' ? C4.sheet : S.mode === 'c4bplay' ? P4.sheet : null;
   const market = (S.mode === 'c4play' || S.mode === 'c4bplay') && cnOn() && CN.up && CN.hosting && !sheet;
   const on = S.mode === 'c4visit' || market; if (on) cnToolsInit();
-  if (cnTools) { cnTools.hidden = !on; if (!on) { $('#cnTray').hidden = true; if (HL_CHAT_EL) hlChatClose(); } }
+  if (cnTools) { cnTools.hidden = !on; if (!on) { if (HL_CHAT_EL) hlChatClose(); } }
 }, 300);
 // my own words and faces in my own market hang over the wife at the stall (I have no mouse of my own there)
 function cnOwnItems(items, g, x, y, s) {
