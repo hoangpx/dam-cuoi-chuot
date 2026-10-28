@@ -7,6 +7,18 @@ const cnvHud = (() => { const d = document.createElement('div'); d.id = 'cnvHud'
   document.body.appendChild(d); $('#cnvBack').addEventListener('click', () => { AU.tap(); cnvLeave(''); }); $('#cnvTown').addEventListener('click', () => { AU.tap(); if (CN.visit) cnVisit(CN.visit.host, CN.visit.place === 'pho' ? 'lang' : 'pho'); }); $('#cnvChap').addEventListener('click', () => { AU.tap(); cnvLeave('', true); }); return d; })();
 const cnvW = () => (CN.visit && CN.visit.place === 'pho' ? P4_W : C4_W);
 const cnvView = () => (CN.visit.place === 'pho' ? p4View() : c4View());
+// the host's own mouse standing at his stall, and the villagers strolling along the lane (the visitor sees a living market, not an empty one)
+function cnHostPerson(place, v) {
+  const pr = v.snap && v.snap.prof; if (!pr) return null; const x = place === 'pho' ? P4_HOME - 30 : C4_STALL - 40, z = place === 'pho' ? .1 : C4_WIFE_Z;
+  return { id: 'h' + v.host, name: v.hostName, x, z, tx: x, tz: z, face: -1, mv: 0, ph: 0, say: null, emo: null, prof: pr };
+}
+function cnMakeNpcs(place, host, day) {
+  const W = place === 'pho' ? P4_W : C4_W, r = mulberry(cnHash(host + ':' + day) % 99991 + 7), pick = a => a[Math.floor(r() * a.length)][0], list = [];
+  for (let i = 0; i < 16; i++) { const x = 200 + r() * (W - 400), z = .35 + r() * .6, dir = r() < .5 ? -1 : 1;
+    list.push({ id: 'n' + i + host, name: '', x, z, tx: x, tz: z, face: dir, mv: 1, ph: r() * 6, say: null, emo: null, dir, spd: 22 + r() * 28, wait: 0,
+      prof: { role: r() < .5 ? 'chong' : 'vo', age: pick(HS_AGES), body: pick(HS_BODIES), fur: pick(HS_FURS), robe: pick(HS_ROBES), skirt: pick(HS_SKIRTS), pants: pick(HS_PANTS), top: pick(HS_TOPS) } }); }
+  return list;
+}
 function cnvEnter(m) {
   CN.visitWait = false; cnHide(cnList); cnHide(cnWho);
   const prev = S.mode; CN.from = prev === 'c4visit' && CN.visit ? CN.visit.from : prev === 'c4bplay' ? 'pho' : 'lang';
@@ -16,6 +28,7 @@ function cnvEnter(m) {
   CN.visit = { host: m.host, hostName: m.hostName || 'Chủ chợ', place, snap: m.snap || {}, from: CN.from, peers: new Map(), camX: 0, sent: 0, hostSay: null, hostEmo: null,
     me: { id: cnId(), name: hsName(hsMine()), prof: cnProf(hsMine()), x: x0, z: .72, tx: x0, tz: .72, face: 1, mv: 0, ph: 0, say: null, emo: null, moving: false } };
   for (const q of m.peers || []) cnGuestIn(q);
+  CN.visit.npcs = cnMakeNpcs(place, m.host, CN.visit.snap.day || 0); CN.visit.hostP = cnHostPerson(place, CN.visit);
   S.chapter = 4; S.mode = 'c4visit'; document.body.classList.add('c4');
   const key = place === 'lang' ? 'yellow' : P4_PAPER; PAPER = getPaper(key); document.documentElement.style.setProperty('--paper', PAPERS[key].css);
   for (const id of ['#album', '#end', '#chapters', '#hud', '#abil', '#pad']) { const el = $(id); if (el) el.hidden = true; }
@@ -46,6 +59,7 @@ function cnvUpdate(dt) {
   if (v.hostSay && (v.hostSay.t += dt) > v.hostSay.life) v.hostSay = null; if (v.hostEmo && (v.hostEmo.t += dt) > 2.8) v.hostEmo = null;
   v.sent += dt; if (v.sent > .12 && (me.moving || v.wasMoving)) { v.sent = 0; cnSend({ t: 'move', x: Math.round(me.x), z: +me.z.toFixed(2), face: me.face, mv: me.moving ? 1 : 0 }); }
   v.wasMoving = me.moving;
+  for (const n of v.npcs || []) { if (n.wait > 0) { n.wait -= dt; n.mv = 0; continue; } n.mv = 1; n.tx += n.dir * n.spd * dt; if (n.tx < 150 || n.tx > W - 150) n.dir *= -1; if (Math.random() < dt * .12) n.wait = 1 + Math.random() * 3; }
   const V = cnvView(); v.camX += (Math.max(-100, Math.min(W - V.vw + 100, me.x - V.vw / 2)) - v.camX) * Math.min(1, dt * 5);
   if (!(v.mt = (v.mt || 0) + dt) || v.mt > 1) { v.mt = 0; cnvMoneyShow(); }
 }
@@ -161,7 +175,7 @@ function cnvRender() {
         else { c4DrawShopLv(g, sx, sy, ss, st.lv, st.g); dp(g, A[C4_GOODS[st.g].art], sx, sy, 0, ss, ss); c4SignDraw(g, sx, sy, ss, st.nm); }
         g.globalAlpha = 1; cnvTag(g, sx, sy + 8 * ss, ss, c4Money(st.price), st.stock > 0 ? `còn ${st.stock}` : 'Hết hàng'); } });
     }
-    items.push({ z: C4_WIFE_Z, f: () => c4Mouse(g, MICE.wife, C4_STALL - 40, 1, now * 2, false, -.2, null, c4S(C4_WIFE_Z), c4Y(C4_WIFE_Z), 2.1) });
+    if (!v.hostP) items.push({ z: C4_WIFE_Z, f: () => c4Mouse(g, MICE.wife, C4_STALL - 40, 1, now * 2, false, -.2, null, c4S(C4_WIFE_Z), c4Y(C4_WIFE_Z), 2.1) });
   } else {
     g.save(); g.translate(cx * .3, 0); g.globalAlpha = .5; for (const [x, k, sc] of P4.scene.far) if (x + 150 > cx * .7 - 40 && x - 150 < cx * .7 + vw + 40) dp(g, p4TownPart(k), x, P4_Y0 - 70, 0, sc, sc); g.globalAlpha = 1; g.restore();
     g.fillStyle = 'rgba(91,47,31,.2)'; g.fillRect(cx - 50, P4_Y0 - 4, vw + 100, P4_D + 10); g.fillStyle = 'rgba(91,47,31,.09)'; g.fillRect(cx - 50, P4_Y0 + P4_D + 6, vw + 100, V.vh);
@@ -175,7 +189,7 @@ function cnvRender() {
   // the host's own words and emoji, over his stall; the people (me, the other visitors)
   const hx = town ? P4_HOME : C4_STALL, hy = Y(town ? .1 : C4_WIFE_Z) - (town ? 150 : 150) * SS(town ? .1 : C4_WIFE_Z);
   items.push({ z: 1.7, f: () => cnBubbles(g, { say: v.hostSay, emo: v.hostEmo }, hx, hy, SS(.1)) });
-  const people = [v.me, ...v.peers.values()];
+  const people = [v.me, ...v.peers.values(), ...(v.npcs || []), ...(v.hostP ? [v.hostP] : [])];
   for (const p of people) if (p !== v.me) { /* their steps */ }
   cnDrawPeople(items, g, vis, people.filter(p => p !== v.me), Y, SS, town ? p4TownLift : () => 0, crowd, (town ? P4_TALL : C4_TALL.mouse) * crowd * .92);
   { const me = v.me; me.say = me.say; const w = cnWalker(me); Object.assign(w, { face: me.face, ph: me.ph, st: me.moving ? 'walk' : 'idle' }); const s = SS(me.z) * crowd, tall = (town ? P4_TALL : C4_TALL.mouse) * crowd * .92;

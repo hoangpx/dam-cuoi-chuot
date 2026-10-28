@@ -520,5 +520,6 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 #c4note .card4:has(.buyList) #c4noteB>*{flex:none}
 #c4note .card4:has(.buyList) #c4noteB>.buyList{flex:1 1 auto;min-height:100px;max-height:none}
 #cnvHud #cnvTown[hidden]{display:none}
-.rkon{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2f9e5a;border:1.5px solid var(--ink);margin-left:6px;vertical-align:middle}
+.rkon{display:inline-block;width:6px;height:6px;border-radius:50%;background:#2f9e5a;margin-left:4px;vertical-align:middle}
 .cnLive{color:#2f9e5a}
+.rk td:nth-child(2){white-space:nowrap}
