@@ -1106,6 +1106,7 @@ function c4OpenUp(g = 'trau') {
   }
   box.appendChild(c4ShutBlock(g));                                          // shut it for a while
   box.appendChild(c4PriceBlock(g));
+  box.appendChild(c4KheViewBlock(g));                                      // read the house paper again (kheuoc.js)
   if (typeof c4LookBlock === 'function') box.appendChild(c4LookBlock(g));                                // dress the stall (trangtri.js)
   if (typeof cnTxnBlock === 'function') box.appendChild(cnTxnBlock(g));                                  // who bought here (sangcho.js)
                                          // its price (gia.js)

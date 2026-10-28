@@ -14,7 +14,10 @@ function c4KheFinger(seed) {
   return `<svg viewBox="0 0 40 54" width="38" height="52" aria-hidden="true">${h}</svg>`;
 }
 function c4Khe(o, done) {
-  const el = $('#c4khe'); if (!el || C4.kheOn) { if (done) done(); return; }
+  // the deed is done AT ONCE and the paper is only the show (owner 2026-10-28: a rented house kept offering itself and its paper): a player who left before
+  // the seal used to pay nothing and find the thing undone
+  { const deed = done; done = null; if (deed) deed(); }
+  const el = $('#c4khe'); if (!el || C4.kheOn) { return; }
   C4.kheOn = true; C4.paused = true;
   const k = o.k || 1, seed = ((o.money || 7) * 31 + (o.what || '').length * 17) | 0, side = ([role, name]) => `<p class="ln"><span>${role}</span><b>${name}</b></p>`;
   el.style.setProperty('--k', k);
@@ -32,4 +35,13 @@ function c4Khe(o, done) {
   const t0 = performance.now();
   el.onclick = () => { if (performance.now() - t0 < 1100) return; el.classList.add('fast'); setTimeout(finish, 450); };
   T.push(setTimeout(finish, 4700 * k));
+}
+
+// a rented house: its paper can be read again (owner 2026-10-28: "nếu đã thuê rồi thì chỉ hiện ra xem khế ước thôi")
+function c4KheViewBlock(g) {
+  const lv = g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g), d = document.createElement('div'); if (lv < 3 || typeof c4RentOf !== 'function') return d;
+  const L = c4Landlord(g), own = lv >= 4, nm = g === 'trau' ? 'trầu' : C4_GOODS[g].name.toLowerCase();
+  d.innerHTML = `<h4>Khế ước nhà</h4><p class="sm">${own ? 'Nhà đã mua đứt, không phải trả tiền thuê.' : 'Nhà đang thuê, trả tiền mỗi tối.'}</p><div class="row"><button class="btn alt">Xem khế ước</button></div>`;
+  d.querySelector('button').addEventListener('click', () => { AU.tap(); c4Khe({ title: own ? 'Mua nhà mặt chợ' : 'Thuê nhà mặt chợ', a: [own ? 'Bên bán' : 'Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ nhà'], what: (own ? 'Bán đứt nhà mặt chợ bán ' : 'Cho thuê nhà mặt chợ bán ') + nm, money: own ? 0 : c4RentOf(g), per: own ? '' : 'mỗi tối', k: .6 }, null); });
+  return d;
 }
