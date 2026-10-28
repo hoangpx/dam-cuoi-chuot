@@ -316,7 +316,7 @@ function cnMarketBtn(B, r) {
   CN.want = true; cnConnect();
   CN.hostsCb = () => {
     const hs = CN.hosts.filter(h => String(h.name).toLowerCase() === String(r.name).toLowerCase());
-    const h = hs.find(q => q.place === 'lang') || hs[0];   // always the village market first; the town one is reached from inside it
+    const h = hs[0];   // wherever the owner stands is where the visitor goes
     row.innerHTML = cnOn() && h ? `<button class="btn" data-id="${h.id}" data-pl="${h.place}">Vào chợ của bạn ấy</button>` : '';
     row.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { AU.tap(); c4RankShow(null); cnVisit(b.dataset.id, b.dataset.pl); }));
   };

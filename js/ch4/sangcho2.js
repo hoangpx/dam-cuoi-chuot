@@ -22,7 +22,7 @@ function cnvEnter(m) {
   if (place === 'pho' && !P4.scene) P4.scene = p4TownScene(mulberry(7));
   AU.init(); AU.setSong(place === 'lang' ? 6 : 12); AU.setQuiet(false);
   cnvHud.hidden = false; $('#cnvTitle').textContent = `Chợ ${place === 'lang' ? 'làng' : 'phố huyện'} của ${CN.visit.hostName}`; cnvMoneyShow(); cv.focus();
-  { const b = $('#cnvTown'), snap = CN.visit.snap || {}; b.hidden = !(place === 'pho' || snap.town); b.textContent = place === 'pho' ? 'Về chợ làng' : 'Sang phố huyện'; }
+  $('#cnvTown').hidden = true;   // (the switch between his two markets was dropped: he is only in one at a time)
   if (typeof trackEnter === 'function') trackEnter('chuong-4/sang-cho');
 }
 const cnvMoneyShow = () => { const e = $('#cnMoneyV') || $('#cnvMoney'); if (e) e.innerHTML = c4Money(Math.round(SAVE4.money)); };
