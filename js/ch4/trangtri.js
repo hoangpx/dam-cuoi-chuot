@@ -96,7 +96,7 @@ c4DrawShopLv = function (g, x, y, s, lv, ware = 'che') {
   _c4DrawShopLv0(g, x, y, s, lv, ware);
 };
 // the betel stall's art has its roof inside it: ours is laid over it
-function c4LookFront(g, ware, x, y, s, lv) { const L = c4LookGet(ware); if (L && L.roof && lv >= 1 && lv <= 2) c4LookRoofAt(g, x, y, s, L); }
+function c4LookFront(g, ware, x, y, s, lv) { const L = c4LookGet(ware); if (L && L.roof && lv === 1) c4LookRoofAt(g, x, y, s, L); }   // (the gian mái ngói, level 2, has its own roof and board)
 const _c4SignDraw0 = c4SignDraw;
 c4SignDraw = function (g, x, y, s, name, ware) {
   const L = c4LookGet(ware);
@@ -133,7 +133,7 @@ let LK = null;
 const lkName = g => (g === 'trau' ? 'TRẦU CAU' : C4_GOODS[g].name.toUpperCase());
 const lkLv = g => (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g));
 function lkDraw() {
-  const cv = $('#lkCv'), g = cv.getContext('2d'), w = LK.g, lv = Math.max(1, Math.min(2, lkLv(w))), s = 1.15, x = 220, y = 440;
+  const cv = $('#lkCv'), g = cv.getContext('2d'), w = LK.g, lv = w === 'trau' ? Math.max(1, Math.min(2, lkLv(w))) : Math.max(1, Math.min(2, lkLv(w))), s = 1.15, x = 220, y = 440;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 880, 520); g.setTransform(2, 0, 0, 2, 0, 0); g.fillStyle = '#e6d3a0'; g.fillRect(0, 205, 440, 60); g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 205); g.lineTo(440, 205); g.stroke();
   const A = c4Art(), prev = c4LookCtx; c4LookCtx = LK.look;
   try {
@@ -152,7 +152,7 @@ function lkRefresh() {
   B.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { AU.tap(); const k = b.dataset.k, v = b.dataset.v; if (v) L[k] = v; else delete L[k]; lkRefresh(); }));
   B.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { AU.tap(); const d = L.deco || (L.deco = []), i = d.indexOf(b.dataset.d); if (i >= 0) d.splice(i, 1); else if (d.length < LOOK_MAXDECO) d.push(b.dataset.d); else toast('Chỉ đặt được ' + LOOK_MAXDECO + ' món cạnh quầy.', 2); lkRefresh(); }));
   $('#lkGo').textContent = cost > 0 ? `Áp dụng · ${c4Money(cost)}` : 'Áp dụng'; $('#lkGo').disabled = cost > SAVE4.money;
-  $('#lkMsg').innerHTML = (lkLv(LK.g) < 1 ? 'Mẹt hàng chưa có mái: nâng lên sạp tre mới thấy mái. ' : lkLv(LK.g) >= 3 ? 'Nhà mặt chợ có mái nhà rồi, mái chọn ở đây không hiện. ' : '') + `Trong túi: ${c4Money(Math.round(SAVE4.money))}` + (cost > SAVE4.money ? ' (chưa đủ tiền)' : '');
+  $('#lkMsg').innerHTML = (LK.g === 'trau' ? (lkLv(LK.g) < 1 ? 'Gánh trầu chưa có mái: nâng lên sạp lều mới thấy mái. ' : lkLv(LK.g) >= 2 ? 'Gian mái ngói đã có mái và biển riêng, ở đây chỉ chọn đồ đặt cạnh quán. ' : '') : (lkLv(LK.g) < 1 ? 'Mẹt hàng chưa có mái: nâng lên sạp tre mới thấy mái. ' : lkLv(LK.g) >= 3 ? 'Nhà mặt chợ có mái nhà rồi, mái chọn ở đây không hiện. ' : '')) + `Trong túi: ${c4Money(Math.round(SAVE4.money))}` + (cost > SAVE4.money ? ' (chưa đủ tiền)' : '');
   lkDraw();
 }
 function c4LookOpen(g) {

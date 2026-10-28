@@ -231,6 +231,7 @@ function startC4() {
 // coming back to a day still in memory: the same market, and whatever sheet was open (the morning order only if it was not yet given)
 function c4Resume() { $('#c4hud').hidden = false; c4Sheets(C4.away || null); if (typeof w4VillageEnter === 'function') w4VillageEnter(); c4Hud(); cv.focus(); }
 function c4MarketStart() {
+  AU.sample('ga', 'audio/ga-gay.mp3?v=' + VERSION); setTimeout(() => { if (C4.phase === 'morning') AU.play('ga', .85); }, 900);   // the rooster crows as a new morning begins (owner 2026-10-28)
   $('#c4hud').hidden = false;
   if (!SAVE4.plan || !SAVE4.plan.wx) { SAVE4.plan = c4Roll(SAVE4.day); SAVE4.next = c4Roll(SAVE4.day + 1); }
   Object.assign(C4, { mins: C4_OPEN, phase: 'morning', walkers: [], fx: [], build: null, drag: null, spawnT: .3, cat: null, wed: null, shut: 0, kid: null, parade: null, Q: {}, SV: {},
