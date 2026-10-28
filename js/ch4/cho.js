@@ -926,7 +926,7 @@ function c4ChatStart(a, b) {
   let news = null, pick = C4_CHATS;
   const hunt = SAVE4.day >= 1 && (c4Tasks() || []).some(t => t.k === 'news' && !t.done);   // the task asks for news: whispers come more often
   if (R() < (hunt ? .75 : .38) && SAVE4.next) {
-    const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : k === 'kha' ? (SAVE4.next.gia || 1) > 1.1 : k === 'kho' ? (SAVE4.next.gia || 1) < .9 : !!SAVE4.next[k];
+    const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : k === 'kha' ? c4GiaMood() > 1.1 : k === 'kho' ? c4GiaMood() < .9 : !!SAVE4.next[k];
     C4.said = C4.said || {};
     const kinds = Object.keys(C4_NEWS).filter(k => !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === k) && (C4.said[k] || 0) < 2);
     const yes = kinds.filter(truth), no = kinds.filter(k => !truth(k));

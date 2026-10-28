@@ -12,7 +12,9 @@
    SAVE4.pr[g] = the village stall's price; SAVE4B.price the town's betel house; SAVE4B.shops[key].price an eating house. */
 
 const c4Clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const c4DemandD = r => r < 1 ? Math.min(1.9, Math.pow(r, -.7)) : Math.max(.03, (1 + Math.exp(6 * (1 - 1.3))) / (1 + Math.exp(6 * (r - 1.3))));
+// when the village is flush (mood above ~1.08) a dearer price costs nothing up to 1 + .6 × how flush (owner: "khấm khá mà tăng giá thì cũng không sao")
+const c4Flush = () => c4Clamp((c4GiaMood() - 1.08) / .14, 0, 1);
+const c4DemandD = r => (r > 1 ? (r = 1 + Math.max(0, r - 1 - .6 * c4Flush())) : 0, r < 1 ? Math.min(1.9, Math.pow(r, -.7)) : Math.max(.03, (1 + Math.exp(6 * (1 - 1.3))) / (1 + Math.exp(6 * (r - 1.3)))));
 const c4PFlow = r => Math.pow(c4DemandD(r), .55), c4PQty = r => Math.pow(c4DemandD(r), .45);
 const c4GiaMood = () => ((SAVE4.plan && SAVE4.plan.gia) || 1) * (typeof c4Slump === 'function' && c4Slump() && !c4Slump().g ? .92 : 1);   // (a village-wide lean spell, which is announced, also tightens purses)
 const c4RatioOf = (price, base) => price / (base * c4GiaMood());
@@ -52,9 +54,9 @@ function c4PriceServed(w) {
   if (r < .9 && f && R() < Math.min(.85, (.9 - r) * 2.4)) {
     if (f.k) c4Bump(p.id, 1 + Math.round((.9 - r) * 6)); else if (f.seen) f.v = (f.v || 0) + 1;
     if (R() < .25) c4Say(w, c4Pick(C4_GIA_CHEAP));
-  } else if (r > 1.35 && f && f.k && R() < .5) {
+  } else if (r > 1.35 && f && f.k && c4Flush() < .5 && R() < .5) {
     c4Bump(p.id, -1 - ((T.half || 1) < 1 ? 1 : 0)); if (R() < .3) c4Say(w, c4Pick(C4_GIA_DEAR));
-  } else if (R() < .05) c4Say(w, c4Pick(mood > 1.12 ? C4_GIA_GOOD : mood < .9 ? C4_GIA_HARD : r > 1.2 ? C4_GIA_DEAR : C4_GIA_CHEAP));
+  } else if (R() < .05) c4Say(w, c4Pick(mood > 1.12 ? C4_GIA_GOOD : mood < .9 ? C4_GIA_HARD : r > 1.2 && c4Flush() < .5 ? C4_GIA_DEAR : C4_GIA_CHEAP));
 }
 { const served0 = c4Served; c4Served = function (w) { c4PriceServed(w); return served0(w); }; }
 
@@ -79,7 +81,39 @@ function p4PriceServed(w, kind) {
   if (r < .9 && R() < Math.min(.85, (.9 - r) * 2.4)) {
     if (f.k) f.a = Math.min(100, f.a + 1 + Math.round((.9 - r) * 6)); else if (f.seen) f.v = (f.v || 0) + 1;
     if (R() < .25) p4Say(w, c4Pick(C4_GIA_CHEAP));
-  } else if (r > 1.35 && f.k && R() < .5) { f.a = Math.max(0, f.a - 1 - ((T.half || 1) < 1 ? 1 : 0)); if (R() < .3) p4Say(w, c4Pick(C4_GIA_DEAR)); }
+  } else if (r > 1.35 && f.k && c4Flush() < .5 && R() < .5) { f.a = Math.max(0, f.a - 1 - ((T.half || 1) < 1 ? 1 : 0)); if (R() < .3) p4Say(w, c4Pick(C4_GIA_DEAR)); }
   else if (R() < .05) p4Say(w, c4Pick(mood > 1.12 ? C4_GIA_GOOD : mood < .9 ? C4_GIA_HARD : r > 1.2 ? C4_GIA_DEAR : C4_GIA_CHEAP));
 }
 { const served0 = p4Served; p4Served = function (w, kind) { p4PriceServed(w, kind); return served0(w, kind); }; }
+
+/* ---------- the folk's feelings (owner 2026-10-27: "thi thoảng bà con có icon mặt cười, thoả mãn, hoặc buồn… người chơi dựa vào đó mà tăng hoặc giảm giá") ----------
+   Now and then a passer-by shows a face over their head for a moment. It is the village's mood of the day (c4GiaMood) plus a little of
+   their own: flush → 😄 😊 😌, middling → 🙂 😐, hard times → 😕 😟 😞 😢. Nothing says what the faces mean. */
+const C4_FEEL = [[1.15, ['😄', '😊']], [1.04, ['😌', '😊']], [.93, ['🙂', '😐']], [.84, ['😕', '😟']], [0, ['😞', '😢']]];
+function c4FeelAssign(w, t) {
+  if (!w || w.kind && w.kind !== 'mouse' || R() > .24) return;
+  const v = c4GiaMood() + (R() - .5) * .36, row = C4_FEEL.find(([lim]) => v >= lim)[1];
+  w.feel = { icon: c4Pick(row), t0: t + 1.2 + R() * 9, dur: 2.8 };
+}
+function c4FeelDraw(g, icon, x, y, s, q) {
+  const a = Math.min(1, q * 6, (1 - q) * 4), up = q * 10 * s, r = 17 * s;
+  g.save(); g.globalAlpha = Math.max(0, a); g.fillStyle = '#fbf4dc'; g.strokeStyle = INK; g.lineWidth = 2;
+  g.beginPath(); g.arc(x, y - up, r, 0, 6.283); g.fill(); g.stroke(); g.beginPath(); g.moveTo(x - 4 * s, y - up + r - 1); g.lineTo(x, y - up + r + 7 * s); g.lineTo(x + 5 * s, y - up + r - 2); g.closePath(); g.fillStyle = '#fbf4dc'; g.fill(); g.stroke();
+  g.font = `${Math.round(22 * s)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK; g.fillText(icon, x, y - up + 1); g.restore();
+}
+{ const spawn0 = c4Spawn; c4Spawn = function (...a) { const n = C4.walkers.length; spawn0(...a); for (let i = n; i < C4.walkers.length; i++) c4FeelAssign(C4.walkers[i], C4.t); }; }
+{ const spawn0 = p4Spawn; p4Spawn = function (...a) { const n = P4.walkers.length; spawn0(...a); for (let i = n; i < P4.walkers.length; i++) c4FeelAssign(P4.walkers[i], P4.t); }; }
+{ const fx0 = c4FxItems;
+  c4FxItems = function (items, g, vis) {
+    fx0(items, g, vis);
+    for (const w of C4.walkers) { const f = w.feel; if (!f || C4.t < f.t0 || C4.t > f.t0 + f.dur || !vis(w.x, 80)) continue;
+      const tall = C4_TALL.mouse * C4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1), s = c4S(w.z);
+      items.push({ z: w.z + .002, f: () => c4FeelDraw(g, f.icon, w.x, c4Y(w.z) - tall * s - 30 * s, s, (C4.t - f.t0) / f.dur) }); }
+  }; }
+{ const br0 = p4TownBridgeItems;
+  p4TownBridgeItems = function (items, g, vis) {
+    br0(items, g, vis);
+    for (const w of P4.walkers) { const f = w.feel; if (!f || P4.t < f.t0 || P4.t > f.t0 + f.dur || !vis(w.x, 80)) continue;
+      const tall = P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), s = p4S(w.z);
+      items.push({ z: w.z + .002, f: () => c4FeelDraw(g, f.icon, w.x, p4Y(w.z) - p4TownLift(w.x) - tall * s - 30 * s, s, (P4.t - f.t0) / f.dur) }); }
+  }; }
