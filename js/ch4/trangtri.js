@@ -124,6 +124,8 @@ const lkWallPart = (wall, door, win) => lkPart('W' + wall + door + win, LK_HB, a
 });
 
 /* ---------- drawing ---------- */
+// a custom house stands behind the stall: then the stall in front is only its table and goods (no roof, posts or board of its own: a player saw two roofs)
+const lkHouseOn = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 3 && (L.wall || L.door || L.win || L.hroof || L.hpost)); };
 const lkFull = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 1 && lv <= 2 && (L.roof || L.post || L.table || L.sign)); };
 // a stall drawn whole: posts, table, goods (the old art cut off just above the table top), board, roof. x, y = the stall's foot; s = scale
 function c4LookStall(g, x, y, s, ware, name, alpha = 1) {
@@ -137,6 +139,15 @@ function c4LookStall(g, x, y, s, ware, name, alpha = 1) {
   g.restore();
   if (c4LookCtx === undefined && typeof c4SalePct === 'function' && c4SalePct(ware)) { g.save(); g.translate(x, y); g.scale(s, s); c4SaleTag(g, ware); g.restore(); }   // GIẢM n% (my own stall only)
 }
+// the table and the goods in front of the house, and the board standing on the roof's ridge
+function c4LookHouseFront(g, x, y, s, ware, name, alpha = 1) {
+  const L = c4LookGet(ware) || {}, A = c4Art(), art = ware === 'trau' ? A.sap : A[C4_GOODS[ware].art];
+  g.save(); g.globalAlpha = alpha;
+  if (ware !== 'gom') { dp(g, lkTablePart(L.table || 'go'), x, y, 0, s, s); g.save(); g.translate(x, y); g.scale(s, s); g.beginPath(); g.rect(-120, -190, 240, 128); g.clip(); dp(g, art, 0, 0, 0, 1, 1); g.restore(); }
+  else dp(g, art, x, y, 0, s, s);
+  g.restore();
+  dp(g, lkSignPart(L.sign || 'vang', L.col || 'red', name), x, y - 108 * s, 0, s, s);
+}
 // the house behind a stall of level 3, 4
 function c4LookHouse(g, x, y, s, L, lv) {
   const P = (list, v, d) => (list.some(e => e[0] === v) ? v : d), wall = P(LOOK_WALL, L.wall, 'cream'), door = P(LOOK_DOOR, L.door, 'go'), win = P(LOOK_WIN, L.win, 'vuong'), hr = P(LOOK_HROOF, L.hroof, 'tranh');
@@ -144,7 +155,7 @@ function c4LookHouse(g, x, y, s, L, lv) {
   dp(g, lkWallPart(wall, door, win), x, y0, 0, k, k);
   if (L.hpost) dp(g, lkPostPart(L.hpost, 190, 150), x, y0, 0, k, k);
   dp(g, lkRoofPart(hr, 'red'), x, y0 - 23 * k, 0, 1.37 * k, 1.1 * k);
-  g.save(); g.translate(x, y); g.scale(s, s); g.font = '900 13px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32'; g.fillText(lv >= 4 ? 'Nhà mình' : 'Nhà thuê', 0, -222); g.restore();
+  g.save(); g.translate(x, y); g.scale(s, s); g.font = '900 13px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32'; g.fillText(lv >= 4 ? 'Nhà mình' : 'Nhà thuê', 0, -262); g.restore();
 }
 const _c4DrawShopLv0 = c4DrawShopLv;
 c4DrawShopLv = function (g, x, y, s, lv, ware = 'che') {
@@ -155,6 +166,7 @@ c4DrawShopLv = function (g, x, y, s, lv, ware = 'che') {
 // the whole stall as the market draws it (used by the dresser and by a visit); ware 'trau' is the betel stall
 function c4LookDrawStall(g, x, y, s, ware, lv, name, alpha = 1) {
   if (lkFull(ware, lv)) { c4LookStall(g, x, y, s, ware, name, alpha); return; }
+  if (lkHouseOn(ware, lv)) { c4DrawShopLv(g, x, y, s, lv, ware); c4LookHouseFront(g, x, y, s, ware, name, alpha); return; }
   if (ware === 'trau') { if (lv >= 3) c4DrawShopLv(g, x, y, s, lv, 'trau'); g.globalAlpha = alpha; dp(g, c4StallArt(Math.min(2, lv)), x, y, 0, s, s); g.globalAlpha = 1; if (lv < 2) c4SignDraw(g, x, y, s, name, c4LookCtx === undefined ? 'trau' : undefined); return; }
   c4DrawShopLv(g, x, y, s, lv, ware); g.globalAlpha = alpha; dp(g, c4Art()[C4_GOODS[ware].art], x, y, 0, s, s); g.globalAlpha = 1; c4SignDraw(g, x, y, s, name, c4LookCtx === undefined ? ware : undefined);
 }

@@ -1226,6 +1226,7 @@ function renderC4() {
       c4TableItems(items, g, vis, sh);
       items.push({ z: C4_STALL_Z, f: () => { const al = c4Open(sh) && !(C4.shut > 0) ? 1 : .45;
         if (lkFull(sh, c4SLvI(sh))) c4LookStall(g, sx + 20, sy, ss, sh, G.name.toUpperCase(), al);          // dressed whole (trangtri.js)
+        else if (lkHouseOn(sh, c4SLvI(sh))) c4LookDrawStall(g, sx + 20, sy, ss, sh, c4SLvI(sh), G.name.toUpperCase(), al);
         else { c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = al; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
         c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase(), sh); }
         if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } } });
@@ -1240,6 +1241,7 @@ function renderC4() {
     c4HandItems(items, 'trau', head);
     items.push({ z: C4_STALL_Z, f: () => { const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
       if (lkFull('trau', lv)) c4LookStall(g, sx, sy, ss, 'trau', 'TRẦU CAU', C4.shut > 0 ? .45 : 1);        // a stall dressed whole (trangtri.js)
+      else if (lkHouseOn('trau', lv)) c4LookDrawStall(g, sx, sy, ss, 'trau', lv, 'TRẦU CAU', C4.shut > 0 ? .45 : 1);   // a dressed house, only table and goods in front
       else {
       if (lv >= 3) c4DrawShopLv(g, sx, sy, ss, lv, 'trau');                       // the house behind it
       g.globalAlpha = C4.shut > 0 ? .45 : 1; dp(g, c4StallArt(Math.min(2, lv)), sx, sy, 0, ss, ss); g.globalAlpha = 1;
