@@ -3,13 +3,13 @@
    sees the host's price and stock, buys, chats and drops emoji. sangcho.js has the net, the host's side and the lists. */
 
 const cnvHud = (() => { const d = document.createElement('div'); d.id = 'cnvHud'; d.hidden = true;
-  d.innerHTML = '<div class="cnvTop"><button class="tag" id="cnvChap">← Chọn chương</button><button class="tag" id="cnvBack">Về chợ mình</button><div class="tag" id="cnvMoney"></div></div><div class="cnvSub tag" id="cnvTitle"></div>';
-  document.body.appendChild(d); $('#cnvBack').addEventListener('click', () => { AU.tap(); cnvLeave(''); }); $('#cnvChap').addEventListener('click', () => { AU.tap(); cnvLeave('', true); }); return d; })();
+  d.innerHTML = '<div class="cnvTop"><button class="tag" id="cnvChap">← Chọn chương</button><button class="tag" id="cnvBack">Về chợ mình</button><div class="tag" id="cnvMoney"></div></div><div class="cnvSub tag" id="cnvTitle"></div><div class="cnvSub"><button class="tag" id="cnvTown" hidden></button></div>';
+  document.body.appendChild(d); $('#cnvBack').addEventListener('click', () => { AU.tap(); cnvLeave(''); }); $('#cnvTown').addEventListener('click', () => { AU.tap(); if (CN.visit) cnVisit(CN.visit.host, CN.visit.place === 'pho' ? 'lang' : 'pho'); }); $('#cnvChap').addEventListener('click', () => { AU.tap(); cnvLeave('', true); }); return d; })();
 const cnvW = () => (CN.visit && CN.visit.place === 'pho' ? P4_W : C4_W);
 const cnvView = () => (CN.visit.place === 'pho' ? p4View() : c4View());
 function cnvEnter(m) {
   CN.visitWait = false; cnHide(cnList); cnHide(cnWho);
-  const prev = S.mode; CN.from = prev === 'c4bplay' ? 'pho' : 'lang';
+  const prev = S.mode; CN.from = prev === 'c4visit' && CN.visit ? CN.visit.from : prev === 'c4bplay' ? 'pho' : 'lang';
   if (prev === 'c4play') c4Hide(); else if (prev === 'c4bplay') p4Hide();
   hideChapterHuds(); CN.guests.clear(); CN.hosting = null;
   const place = m.place, x0 = place === 'lang' ? C4_GATE + 80 : P4_GATE + 80;
@@ -22,6 +22,7 @@ function cnvEnter(m) {
   if (place === 'pho' && !P4.scene) P4.scene = p4TownScene(mulberry(7));
   AU.init(); AU.setSong(place === 'lang' ? 6 : 12); AU.setQuiet(false);
   cnvHud.hidden = false; $('#cnvTitle').textContent = `Chợ ${place === 'lang' ? 'làng' : 'phố huyện'} của ${CN.visit.hostName}`; cnvMoneyShow(); cv.focus();
+  { const b = $('#cnvTown'), snap = CN.visit.snap || {}; b.hidden = !(place === 'pho' || snap.town); b.textContent = place === 'pho' ? 'Về chợ làng' : 'Sang phố huyện'; }
   if (typeof trackEnter === 'function') trackEnter('chuong-4/sang-cho');
 }
 const cnvMoneyShow = () => { const e = $('#cnMoneyV') || $('#cnvMoney'); if (e) e.innerHTML = c4Money(Math.round(SAVE4.money)); };

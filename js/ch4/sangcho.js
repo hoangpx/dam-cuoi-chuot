@@ -48,7 +48,7 @@ function cnMsg(m) {
     case 'room': cnvEnter(m); break;
     case 'snap': if (CN.visit && m.host === CN.visit.host) { CN.visit.snap = m.snap; cnBuyRefresh(); } break;
     case 'closed': if (CN.visit) cnvLeave(`${m.name || 'Chủ chợ'} đã đóng chợ`); break;
-    case 'nobody': CN.visitWait = false; toast('Chợ ấy vừa đóng cửa hoặc chủ chợ đã rời đi.', 3); cnListRefresh(); break;
+    case 'nobody': CN.visitWait = false; toast(S.mode === 'c4visit' ? 'Bạn ấy đang ở chỗ khác, chưa sang được.' : 'Chợ ấy vừa đóng cửa hoặc chủ chợ đã rời đi.', 3); cnListRefresh(); break;
     case 'crowd': CN.visitWait = false; toast('Chợ ấy đông quá, chờ chút nhé.', 3); break;
     case 'hosts': CN.hosts = m.list || []; CN.count = m.count || CN.count; cnListRefresh(); if (CN.hostsCb) CN.hostsCb(); break;
     case 'ison': CN.ison[m.id] = { on: m.on, place: m.place, t: Date.now() }; if (CN.whoId === m.id) cnWhoRefresh(); break;
@@ -68,7 +68,7 @@ function cnSnapLang() {
   const stalls = [];
   for (const g of c4Owned()) { if (C4_BUYS.includes(g)) continue;
     stalls.push({ g, nm: g === 'trau' ? 'TRẦU CAU' : C4_GOODS[g].name.toUpperCase(), price: c4Price(g), stock: c4Stock(g), lv: g === 'trau' ? (SAVE4.lv || 0) : c4SLvI(g), open: !c4Shut(g) }); }
-  return { v: 1, day: SAVE4.day, name: hsName(hsMine()), home: cnHome(), stalls };
+  return { v: 1, day: SAVE4.day, name: hsName(hsMine()), home: cnHome(), stalls, town: !!SAVE4B.house };
 }
 const cnPortionCap = 20;
 const cnPortionsLeft = R0 => cnPortionCap - (R0.cnDay === SAVE4.day ? (R0.cnN || 0) : 0);
@@ -228,7 +228,7 @@ $('#cnWhoX').addEventListener('click', () => { AU.tap(); cnHide(cnWho); CN.whoId
 // a way in
 function cnVisit(hostId, place) {
   if (CN.visitWait) return; CN.visitWait = true; setTimeout(() => { CN.visitWait = false; }, 4000);
-  CN.from = S.mode === 'c4bplay' ? 'pho' : 'lang'; cnSend({ t: 'visit', host: hostId, place, x: place === 'lang' ? C4_GATE + 60 : P4_GATE + 60, z: .7 });
+  CN.from = S.mode === 'c4visit' && CN.visit ? CN.visit.from : S.mode === 'c4bplay' ? 'pho' : 'lang'; cnSend({ t: 'visit', host: hostId, place, x: place === 'lang' ? C4_GATE + 60 : P4_GATE + 60, z: .7 });
 }
 
 /* ---------- the host sees his visitors ---------- */
@@ -316,7 +316,8 @@ function cnMarketBtn(B, r) {
   CN.want = true; cnConnect();
   CN.hostsCb = () => {
     const hs = CN.hosts.filter(h => String(h.name).toLowerCase() === String(r.name).toLowerCase());
-    row.innerHTML = cnOn() ? hs.map(h => `<button class="btn" data-id="${h.id}" data-pl="${h.place}">Vào chợ ${h.place === 'lang' ? 'làng' : 'phố huyện'} của bạn ấy</button>`).join('') : '';
+    const h = hs.find(q => q.place === 'lang') || hs[0];   // always the village market first; the town one is reached from inside it
+    row.innerHTML = cnOn() && h ? `<button class="btn" data-id="${h.id}" data-pl="${h.place}">Vào chợ của bạn ấy</button>` : '';
     row.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { AU.tap(); c4RankShow(null); cnVisit(b.dataset.id, b.dataset.pl); }));
   };
   for (const t of [300, 1500, 4000]) setTimeout(() => cnSend({ t: 'hosts' }), t);
