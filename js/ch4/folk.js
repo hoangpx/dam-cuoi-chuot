@@ -161,6 +161,10 @@ const C4_NEWS = {
         [[0, 'Đêm qua thấy bóng mèo ở đầu làng.'], [1, 'Mai nó ra chợ cho xem, cẩn thận đấy.']]],
   thue: [[[0, 'Mai cụ Lý đi thu tiền chợ đấy.'], [1, 'Lại thu! Phải để dành ít tiền.']],
         [[0, 'Cụ Lý dặn mai ai cũng phải nộp tiền chợ.'], [1, 'Ai biếu thêm thì ông ấy cho chỗ đẹp.']]],
+  kha:  [[[0, 'Dạo này bà con làm ăn khấm khá, nhà nào cũng rủng rỉnh.'], [1, 'Ừ, mai ra chợ chắc ai cũng chịu chi.']],
+        [[0, 'Được mùa rồi, mai ai cũng xênh xang áo mới ra chợ.'], [1, 'Có tiền thì chẳng tiếc, mua bao nhiêu cũng chịu.']]],
+  kho:  [[[0, 'Năm nay khó khăn quá, gạo đắt mà thóc rẻ.'], [1, 'Ừ, mai ra chợ ai cũng đếm từng đồng.']],
+        [[0, 'Mất mùa, bà con thắt lưng buộc bụng cả.'], [1, 'Thế thì mai chợ ế, ai dám mua sắm.']]],
   cuoi: [[[0, 'Nhà {X} mai cưới con, cần nhiều trầu lắm.'], [1, 'Thế cô bán trầu cổng chợ lại đắt hàng!']],
         [[0, 'Mai có đám hỏi, phải mấy chục miếng trầu.'], [1, 'Nhà gái chắc đặt trầu cánh phượng.']]],
 };
@@ -184,7 +188,7 @@ const C4_OMENS = {
 // what the wife writes in her notebook when she overhears it
 const C4_NOTE = {
   hoi: 'mai làng mở hội, chợ sẽ đông.', mua: 'mai trời mưa to, chợ vắng.', meo: 'mai mèo về chợ đòi lễ.',
-  thue: 'mai cụ Lý đi thu tiền chợ.', cuoi: 'mai có nhà cưới con, cần nhiều trầu.',
+  thue: 'mai cụ Lý đi thu tiền chợ.', kha: 'mai bà con khấm khá, chịu chi hơn.', kho: 'mai bà con túng thiếu, chi tiêu dè sẻn.', cuoi: 'mai có nhà cưới con, cần nhiều trầu.',
 };
 
 /* ---------- more chats: proverbs, village life, a little teasing ---------- */

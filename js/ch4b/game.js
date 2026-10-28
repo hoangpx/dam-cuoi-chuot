@@ -69,9 +69,9 @@ function p4Spawn(atX, who, opt) {
   const x = atX !== undefined ? atX : fromRight ? P4.camX + V.vw + 120 + Math.random() * 200 : P4.camX - 120 - Math.random() * 200;
   const look = kid ? {} : p4TownLook({ skirt: P.look.skirt, hat: P.look.hat }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
-  const buy = !kid && SAVE4B.house && !SAVE4B.shut && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4KeenK(P) && !p4HoldBack(P, 'home') || !!(opt && opt.buy && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0);   // regulars buy more, a habit of sales makes them wait; invited / sale guests come to buy (khachquen.js)
+  const buy = !kid && SAVE4B.house && !SAVE4B.shut && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * p4BetelFlow() * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4KeenK(P) && !p4HoldBack(P, 'home') || !!(opt && opt.buy && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0);   // regulars buy more, a habit of sales makes them wait; invited / sale guests come to buy (khachquen.js)
   P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o' || (p4Wx() === 'mua' && Math.random() < .75), x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
-    sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: (opt && opt.n) || 1 + ((Math.random() * 3) | 0), pid: P ? P.id : undefined, treat: !!(opt && opt.treat), wait: 0, say: null, cd: 3 + Math.random() * 8 });
+    sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: (opt && opt.n) || (buy ? Math.max(1, c4RandRound((1 + ((Math.random() * 3) | 0)) * p4BetelQty())) : 1 + ((Math.random() * 3) | 0)), pid: P ? P.id : undefined, treat: !!(opt && opt.treat), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
 function p4WalkersUpdate(dt) {
   const V = p4View(), Q = P4.Q, door = P4_HOME, qz = .3;
@@ -313,7 +313,7 @@ function p4HomeDraw() {
     if (b.dataset.homesign) { if (!SAVE4B.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); SAVE4B.sign = true; p4Persist(); toast('Biển hiệu mới sơn son thếp vàng!', 2.4); } AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (p4HandsClick(b)) { AU.tap(); p4HomeOpen(); p4Hud(); return; }
     if (b.dataset.n) { const n = +b.dataset.n, c = n * 3; if (p4Purse() < c) { toast('Không đủ tiền nhập trầu.', 2); return; } p4Spend(c); SAVE4B.stock += n; p4BetelLog(n); }
-    if (b.dataset.p) SAVE4B.price = Math.max(4, Math.min(20, SAVE4B.price + +b.dataset.p));
+    if (b.dataset.p) SAVE4B.price = Math.max(3, Math.min(24, SAVE4B.price + +b.dataset.p));
     p4Persist(); AU.tap(); p4HomeOpen(); p4Hud();
   });
   const nameBack = () => { if (P4.nameKey) p4ShopSheet(); else if (P4.nameBack) p4HomeOpen(); else p4Sheets(null); };

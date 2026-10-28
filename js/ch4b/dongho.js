@@ -56,7 +56,7 @@ function w4CatchVillage(to) {
     const nh = hands.length || 1, past = H.filter(h => h.by && h.by[g]), want = Math.max(c4Cap(g) * .7, past.length ? past.reduce((a, h) => a + h.by[g].n + h.by[g].lost * 2, 0) / past.length : 0);   // (never below 70 % of the capacity: days it sold nothing while unattended must not keep it at nothing)
     const quick = hands.length ? hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length : 1;
     const cap = (to - from) / C4_MPS / (c4ServeDur(g, hands[0]) + 1.5) * 2 * nh;   // what they can serve in that time
-    const raw = Math.min(cap, want * share * (hands.length ? Math.min(1, .55 * nh) : .6) * quick * w4Rnd());
+    const raw = Math.min(cap, want * share * (hands.length ? Math.min(1, .55 * nh) : .6) * quick * w4Rnd() * c4DemandD(c4PRatio(g)));
     const fr = (C4.bgFrac = C4.bgFrac || {}), n = Math.min(c4Stock(g), Math.floor((fr[g] || 0) + raw)); fr[g] = (fr[g] || 0) + raw - n;   // (a half hour at a time is a fraction of a sale: the rest carries over)
     if (n < 1) continue;
     const pay = Math.round(n * c4Price(g) * (1 - c4SalePct(g) / 100));
@@ -117,7 +117,7 @@ function w4TownEnter() {
 // how many buyers of betel the street sends a game minute at hour m (p4Spawn's odds, as an average)
 function w4TownBetelRate(m) {
   const h = m / 60; let busy = .4; for (let i = P4_BUSY.length - 1; i >= 0; i--) if (h >= P4_BUSY[i][0]) { busy = P4_BUSY[i][1]; break; }
-  const walkers = busy * p4WxFlow() / 3.2, buy = Math.min(1, .3 * (8 / Math.max(5, SAVE4B.price)) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * .8);
+  const walkers = busy * p4WxFlow() / 3.2, buy = Math.min(1, .3 * p4BetelFlow() * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * .8);
   return walkers * buy / (P4_MPS * (m >= 18 * 60 ? .4 : 1));
 }
 // betel bought at the house on a day (the house sheet's Nhập trầu): a new day begun away from the town buys the same (w4TownAutoBuy)
@@ -143,7 +143,7 @@ function w4CatchTown(to) {
   if (SAVE4B.stock > 0 && !SAVE4B.shut) {                                  // the betel house: its hand alone, or a relative at 60 % when none is hired (the wife is with the player)
     let buyers = 0; for (let m = from; m < to; m += 5) buyers += w4TownBetelRate(m) * Math.min(5, to - m);
     const quick = hands.length ? hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length : .6;
-    const raw = buyers * 2 * .6 * quick * w4Rnd(), T = P4.today;
+    const raw = buyers * 2 * .6 * quick * w4Rnd() * p4BetelQty(), T = P4.today;
     const n = Math.min(SAVE4B.stock, Math.floor((T.frac || 0) + raw)); T.frac = (T.frac || 0) + raw - n;   // (a half hour at a time is often a fraction of a sale, as in the village: the rest carries over, else a dear or quiet house never sold while we were away)
     if (n > 0) {
       const got = p4SalePrice('home', n * SAVE4B.price);
@@ -154,9 +154,9 @@ function w4CatchTown(to) {
   const S2 = p4Shops();
   for (const key in S2) {                                                   // the eating houses: the cook serves the meals' customers
     const R = S2[key]; if (R.shut) continue; let cust = 0;
-    for (let m = from; m < to; m += 5) cust += P4_FOOD_CUST / 900 * P4_MEALS(m / 60) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * Math.min(5, to - m);
-    const n = Math.round(cust * 2.5 * w4Rnd()); if (n < 1) continue;
-    const got = p4SalePrice(key, n * P4_FOOD.price), cost = n * P4_FOOD.cost;
+    for (let m = from; m < to; m += 5) cust += P4_FOOD_CUST / 900 * P4_MEALS(m / 60) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * p4FoodFlow(R) * Math.min(5, to - m);
+    const n = Math.round(cust * 2.5 * w4Rnd() * p4FoodQty(R)); if (n < 1) continue;
+    const got = p4SalePrice(key, n * p4FoodPrice(R)), cost = n * P4_FOOD.cost;
     SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost;
     const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 }); T.n += n; T.take += got; T.cost += cost;
   }

@@ -149,7 +149,9 @@ function c4Confiscate(value) {
   if (!list) return 'Lính huyện lục gánh chẳng còn gì đáng giá, chửi đổng rồi đi.';
   return `Lính huyện tịch thu ${list} (trị giá khoảng ${c4Money(Math.round(total))})${left > 0 ? ', lục hết gánh mà vẫn chưa đủ, chửi đổng bỏ đi' : ' thay tiền'}.`;
 }
-const c4Price = g => g === 'trau' ? (SAVE4.cheap > 0 ? 5 : 6) : C4_GOODS[g].price;
+// the price a stall sells at is the player's own (SAVE4.pr[g], gia.js); the plain price is the starting one. (The cheap-betel offer still caps the betel at 5.)
+const c4PriceBase = g => g === 'trau' ? 6 : C4_GOODS[g].price;
+const c4Price = g => { const p = (SAVE4.pr && SAVE4.pr[g]) || c4PriceBase(g); return g === 'trau' && SAVE4.cheap > 0 ? Math.min(p, 5) : p; };
 const c4Owned = () => ['trau', ...C4_SHOPS.filter(c4Own), ...C4_BUYS.filter(c4Own)];   // (C4_BUYS: neighbours' stalls bought out, muagan.js)
 const c4QX = g => g === 'trau' ? [175, 200, 225, 225, 225][SAVE4.lv] : 140;          // where the queue starts, right of a stall
 
@@ -269,9 +271,9 @@ const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * 
 function c4Want(g, noWx) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
   if (!c4Own(g) || c4Shut(g)) return 0;
-  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
+  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && c4Price('trau') > 5 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
   const sl = c4Slump();
-  return base * (noWx ? 1 : G.wx[c4Wx()] || 1) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
+  return base * (noWx ? 1 : (G.wx[c4Wx()] || 1) * c4PFlow(c4PRatio(g))) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
 }
 function c4Spawn(atX, guest = null) {
   // a resident of the village (dan.js), or now and then a child (nameless, never buys); or an invited guest
@@ -296,7 +298,7 @@ function c4Spawn(atX, guest = null) {
   if (buf || smokeX !== undefined) shop = null;
   if (shop && fromRight && atX === undefined) x = Math.max(x, C4_GOODS[shop].x + 260);         // buyers come from a side that takes them past their stall
   C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort, look.skirt) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, smokeX, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, guest: !!guest, sp: guest ? 120 : buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
-    buy: !!shop, shop, st: 'walk', n: guest ? (guest.treat ? 1 : guest.sale ? c4BuyN(P) : 3 + ((R() * 4) | 0)) : c4BuyN(P), treat: !!(guest && guest.treat), carry: null, cd: 3 + R() * 6, say: null });
+    buy: !!shop, shop, st: 'walk', n: guest ? (guest.treat ? 1 : guest.sale ? c4BuyN(P) : 3 + ((R() * 4) | 0)) : c4PriceN(c4BuyN(P), shop), treat: !!(guest && guest.treat), carry: null, cd: 3 + R() * 6, say: null });
   if (kind === 'mouse' && role === 'child' && atX === undefined && R() < .5) {             // a gang of children chasing each other
     const lead = C4.walkers[C4.walkers.length - 1]; lead.sp = 150; lead.cd = 99;
     for (let i = 1; i <= 1 + ((R() * 2) | 0); i++) { const s2 = 11 + ((R() * 3) | 0); C4.walkers.push({ ...lead, pid: undefined, sort: s2, M: c4MouseRig(s2), seed: R() * 6, name: c4Pick(C4_NAMES.child), x: lead.x - lead.face * 60 * i, z: Math.min(.98, lead.z + (R() - .5) * .2), ph: R() * 6, say: null }); }
@@ -455,13 +457,15 @@ function c4OrderRows(box, orders) {
   box.appendChild(w);
   for (const g of c4Owned()) {
     const G = C4_GOODS[g], closed = c4Shut(g) || (g !== 'trau' && !c4Open(g)); let max = closed ? 0 : Math.max(0, c4Cap(g) - c4Stock(g)), s = H0 && H0.by[g], r1 = v => Math.round(v * 10) / 10;
-    const note = closed ? `<span class="bad">${c4Shut(g) ? 'tạm đóng cửa' : 'không ai trông'}</span>` : [s ? `hôm qua bán ${s.n}${s.lost ? `, lỡ ${s.lost} khách` : ''}` : '', c4Stock(g) ? `còn ${c4Stock(g)}` : '', g === 'xoi' ? 'để quá 7 tiếng là thiu' : '', g === 'che' ? `củi ${G.fuel} đồng` : '', `${r1(c4Cost(g))} → ${c4Price(g)} đồng`].filter(Boolean).join(' · ');
+    const note = closed ? `<span class="bad">${c4Shut(g) ? 'tạm đóng cửa' : 'không ai trông'}</span>` : [s ? `hôm qua bán ${s.n}${s.lost ? `, lỡ ${s.lost} khách` : ''}` : '', c4Stock(g) ? `còn ${c4Stock(g)}` : '', g === 'xoi' ? 'để quá 7 tiếng là thiu' : '', g === 'che' ? `củi ${G.fuel} đồng` : '', `vốn ${r1(c4Cost(g))} đồng`].filter(Boolean).join(' · ');
     const r = document.createElement('div'); r.className = 'ordR' + (closed ? ' off' : '');
-    r.innerHTML = `<div class="nm"><b>${G.name}</b><small>${note}</small><button type="button" class="shutB">${c4Shut(g) ? 'Mở cửa lại' : 'Tạm đóng cửa'}</button></div><button type="button" class="m"${closed ? ' disabled' : ''}>−</button>`
+    r.innerHTML = `<div class="nm"><b>${G.name}</b><small>${note}</small><button type="button" class="shutB">${c4Shut(g) ? 'Mở cửa lại' : 'Tạm đóng cửa'}</button><span class="pset"><button type="button" data-d="-1">−</button><b class="pv"></b><button type="button" data-d="1">+</button></span></div><button type="button" class="m"${closed ? ' disabled' : ''}>−</button>`
       + `<input type="number" inputmode="numeric" min="0" max="${max}" step="5"${closed ? ' disabled' : ''}><button type="button" class="p"${closed ? ' disabled' : ''}>+</button>`;
     w.querySelector('.ordL').appendChild(r);
     const inp = r.querySelector('input'), set = q => { q = Math.max(0, Math.min(max, Math.round(+q || 0))); orders[g] = q; inp.value = q; };
     rows[g] = set; set(0);
+    { const pv = r.querySelector('.pv'), pb = r.querySelectorAll('.pset button'), showP = () => { const [lo, hi] = c4PriceRange(g), p = c4PriceSet(g); pv.textContent = `bán ${p} đ`; pb[0].disabled = p <= lo; pb[1].disabled = p >= hi; };
+      pb.forEach(b => b.addEventListener('click', () => { AU.tap(); c4SetPrice(g, +b.dataset.d); showP(); })); showP(); }   // the price of this ware, set here or on the stall's sheet (gia.js)
     r.querySelector('.shutB').addEventListener('click', () => {            // shut it (nothing to buy for it) or open it again
       AU.tap(); const shut = !c4Shut(g); c4SetShut(g, shut);
       if (shut && C4.phase === 'open') c4TurnAway(g);
@@ -922,7 +926,7 @@ function c4ChatStart(a, b) {
   let news = null, pick = C4_CHATS;
   const hunt = SAVE4.day >= 1 && (c4Tasks() || []).some(t => t.k === 'news' && !t.done);   // the task asks for news: whispers come more often
   if (R() < (hunt ? .75 : .38) && SAVE4.next) {
-    const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : !!SAVE4.next[k];
+    const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : k === 'kha' ? (SAVE4.next.gia || 1) > 1.1 : k === 'kho' ? (SAVE4.next.gia || 1) < .9 : !!SAVE4.next[k];
     C4.said = C4.said || {};
     const kinds = Object.keys(C4_NEWS).filter(k => !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === k) && (C4.said[k] || 0) < 2);
     const yes = kinds.filter(truth), no = kinds.filter(k => !truth(k));
@@ -1098,6 +1102,7 @@ function c4OpenUp(g = 'trau') {
     box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
   box.appendChild(c4ShutBlock(g));                                          // shut it for a while
+  box.appendChild(c4PriceBlock(g));                                         // its price (gia.js)
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
   box.appendChild(c4SaleBlock(g));                                          // a sale: how much, from when to when, every day or today (giamgia.js)
   box.appendChild(c4HandsBlock(g));                                          // always there (a player could not find the hire button when only the betel stall was open)
