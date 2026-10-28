@@ -323,3 +323,21 @@ function cnMarketBtn(B, r) {
   };
   for (const t of [300, 1500, 4000]) setTimeout(() => cnSend({ t: 'hosts' }), t);
 }
+
+/* ---------- who is online (owner 2026-10-28): a green dot on the ranking, a count on the chapter card ---------- */
+const CN_HTTP = CN_URL.replace(/^wss?:/, m => (m === 'wss:' ? 'https:' : 'http:')).replace(/\/ws$/, '');
+let cnOnNames = new Set(), cnOnCount = null;
+const cnIsOnline = name => cnOnNames.has(String(name).trim().toLowerCase());
+function cnNamesOnline() {                     // asked while the board opens; a slow or failed answer just means no dots
+  const ctl = new AbortController(); setTimeout(() => ctl.abort(), 2500);
+  return fetch(CN_HTTP + '/names', { signal: ctl.signal }).then(r => r.json()).then(j => { cnOnNames = new Set((j.names || []).map(n => String(n).trim().toLowerCase())); }).catch(() => {});
+}
+function cnPollCount() {
+  if (document.hidden || !$('#chapters') || $('#chapters').hidden) return;
+  fetch(CN_HTTP + '/count').then(r => r.json()).then(j => { if (typeof j.count === 'number') cnOnCount = j.count; }).catch(() => {});
+}
+setInterval(cnPollCount, 20000); setTimeout(cnPollCount, 2500);
+setInterval(() => {                            // the card is rebuilt each time the list shows: write the count into it again
+  const st = document.querySelector('#chapCards .card[data-ch="4"] .st'); if (!st || cnOnCount === null) return;
+  if (!st.dataset.on || st.dataset.on !== String(cnOnCount)) { st.dataset.on = String(cnOnCount); st.innerHTML = (st.dataset.base || (st.dataset.base = st.innerHTML)) + (cnOnCount > 0 ? ` · <span class="cnLive">●</span> ${cnOnCount} đang buôn` : ''); }
+}, 700);

@@ -191,3 +191,5 @@ Sang chợ, vào chợ làng trước (owner 2026-10-28): from the ranking's hou
 Sang cho, reversed the same day (owner: "nguoi chu dang dung o dau thi vao do"): no switch between his two markets; #cnvTown stays hidden (code kept), the one "Vao cho cua ban ay" button goes to the place the host hosts now. VERSION 2026-10-28zze.
 
 Sang cho, ung ho (owner 2026-10-28): a visitor may buy any ware; one his own market does not sell (cnCanSell false) is limited to ONE portion, eaten there (nothing is stocked or kept). VERSION 2026-10-28zzf.
+
+Sang cho, who is online (owner 2026-10-28): the Worker also answers GET /names (the online players names) next to /count; the ranking draws a green dot (.rkon) beside a name in that list (cnNamesOnline asked while the board loads, 2.5 s cap, matched by lowercase name = the Ho so name) and the chapter list card of chuong IV reads "... · ● n dang buon" (cnPollCount every 20 s, hub.js cards carry data-ch). The Durable Object was renamed idFromName(cho2) to pick up the new code (a running one keeps the old). VERSION 2026-10-28zzg.

@@ -11,7 +11,7 @@ function showChapters() {
   const cards = CHAPTERS.filter(c => !(c.hidden && c.hidden())).map(c => { const lk = !!(c.locked && c.locked()); return { ...c.card, ch: c.id, prog: lk ? (c.lockText || lg('Sắp mở', 'Coming soon')) : c.progress(), locked: lk }; });   // hidden(): not shown at all yet
   cards.forEach(c => {
     const b = document.createElement('button');
-    b.className = 'card'; b.style.background = c.bg; b.disabled = !!c.locked;
+    b.className = 'card'; b.dataset.ch = c.ch; b.style.background = c.bg; b.disabled = !!c.locked;
     b.innerHTML = `<div class="num">${c.num}</div><div class="ch">${c.han}</div><b>${c.name}</b><p class="cd">${c.desc}</p><span class="st">${c.prog}</span>`;
     b.addEventListener('click', () => { if (c.locked) return; if (IS_EN && !LANG_READY.has(c.ch)) toast(tr('This chapter is still in Vietnamese. A translation is coming soon!'), 3.6); const ch = chapterById(c.ch); if (ch.direct) { trackSend('mo/chuong-' + c.ch); ch.direct(); } else showAlbum(c.ch); });   // direct(): a chapter with no album starts straight away
     box.appendChild(b);

@@ -53,13 +53,14 @@ async function c4RankInto(box) {
     let top, me;
     if (fresh) { top = C.top; me = C.me; } else {
       // and one of the two reads failing must not empty the list: whatever answered is drawn
-      const [t1, m1] = await Promise.allSettled([p4Rpc('dcc_rank_top', { p_limit: 100 }), p4Rpc('dcc_rank_me', { p_device: p4Device() })]);
+      const [t1, m1] = await Promise.allSettled([p4Rpc('dcc_rank_top', { p_limit: 100 }), p4Rpc('dcc_rank_me', { p_device: p4Device() }), typeof cnNamesOnline === 'function' ? cnNamesOnline() : null]);
       if (t1.status === 'rejected' && m1.status === 'rejected') throw t1.reason;
       top = t1.status === 'fulfilled' ? t1.value : null; me = m1.status === 'fulfilled' ? m1.value : null;
       if (top) C4_RANK_CACHE = { t: Date.now(), top, me };
     }
     const got = Array.isArray(me) && me[0], mine = got && got.pos ? got : null;   // pos is null while the server holds the row back (money far beyond what the days allow, docs/supabase-bang-xep-hang-chan.sql)
-    const row = (r, isMe) => `<tr class="${isMe ? 'me' : ''}${r.pos <= 3 ? ' top' + r.pos : ''}"><td>${r.pos}</td><td>${p4Esc(r.name)}</td><td>${c4RankMoney(r.money)}</td><td>${r.day}</td>`
+    const on = typeof cnIsOnline === 'function' ? cnIsOnline : () => false;   // a green dot beside whoever is playing chương IV now (sangcho.js)
+    const row = (r, isMe) => `<tr class="${isMe ? 'me' : ''}${r.pos <= 3 ? ' top' + r.pos : ''}"><td>${r.pos}</td><td>${p4Esc(r.name)}${on(r.name) ? '<i class="rkon" title="Đang buôn"></i>' : ''}</td><td>${c4RankMoney(r.money)}</td><td>${r.day}</td>`
       + `<td><button class="rnv" data-nv="${r.pos}" aria-label="Xem nhà của ${p4Esc(r.name)}">Nhà</button></td></tr>`;
     const list = Array.isArray(top) ? top : [], inTop = mine && list.some(r => +r.pos === +mine.pos);
     B.innerHTML = `<p class="sm">${mine ? `Bạn đứng thứ <b>${mine.pos}</b> trong ${mine.total} nhà buôn.` : got && got.flag ? 'Số tiền của bạn không khớp với số ngày đã chơi nên chưa được xếp hạng.' : 'Chưa có tên bạn trên bảng.'}</p>`
