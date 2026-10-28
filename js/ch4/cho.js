@@ -994,7 +994,7 @@ function c4EndDay() {
   SAVE4.phuc = 0;
   $('#c4dayT').textContent = `Ngày ${SAVE4.day} đã tan chợ`;
   $('#c4dayB').innerHTML = `<div><b>${c4Money(d.take)}</b><span>Bán được</span></div><div><b>${c4Money(d.cogs)}</b><span>Tiền hàng</span></div><div class="${gain >= 0 ? 'gain' : 'loss'}"><b>${c4Money(Math.abs(gain))}</b><span>${gain >= 0 ? 'Lãi' : 'Lỗ'}</span></div>`;
-  $('#c4dayN').innerHTML = c4ByShopHtml(d) + `${d.served} khách mua${d.lost ? ' · ' + d.lost + ' khách bỏ đi' : ''}`
+  $('#c4dayN').innerHTML = c4ByShopHtml(d) + `${d.served} khách mua${d.lost ? ' · ' + d.lost + ' khách bỏ đi' : ''}` + (typeof w4TownLine === 'function' ? w4TownLine() : '')
     + (lines.length || d.wiltLoss ? `<br><span class="bad">Hàng hỏng phải bỏ${lines.length ? ' (' + lines.join(', ') + ')' : ''}: mất ${c4Money(d.wiltLoss)}</span>` : '')
     + (d.wages ? `<br>Trả công người phụ: ${c4Money(d.wages)}` : '')
        // (owner: the player reckons whether it adds up)

@@ -201,3 +201,13 @@ function w4VillageLine() {
 }
 // the town's "Về chợ quê" blinks red once the village has closed while the player was in the town (owner: the only notice)
 function p4BackBlink() { const b = $('#p4Back'); if (b) b.classList.toggle('blink', !!W4.villageShut); }
+
+// the village's evening tally also says what the town sold meanwhile (a player: "ở quê thì phố huyện không bán được gì": it did, but nothing showed it)
+function w4TownLine() {
+  if (!SAVE4B.house) return '';
+  if (w4TownLive()) w4CatchTown(W4.mins);
+  if (P4.w4day !== SAVE4.day || !P4.today) return '';
+  const T = P4.today, shops = Object.values(P4.shopDay || {}), n = (T.sold || 0) + shops.reduce((s, x) => s + (x.n || 0), 0);
+  if (!(T.take > 0) && !n) return '<br>Phố huyện hôm nay chưa bán được gì (nhà trầu hết hàng, hoặc các quán đang đóng).';
+  return `<br>Phố huyện bán ngầm trong lúc bạn ở quê: ${n} phần, thu ${c4Money(Math.round(T.take))}${T.spent ? ' (vốn ' + c4Money(Math.round(T.spent)) + ')' : ''}.`;
+}
