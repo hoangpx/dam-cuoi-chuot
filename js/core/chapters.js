@@ -12,7 +12,7 @@
    Menus, the loop and input only ever talk to chapters through this object. */
 
 const CHAPTERS = [];
-function registerChapter(c) { CHAPTERS.push(c); CHAPTERS.sort((a, b) => a.id - b.id); }
+function registerChapter(c) { const i = CHAPTERS.findIndex(o => o.id === c.id); if (i >= 0) CHAPTERS[i] = c; else CHAPTERS.push(c); CHAPTERS.sort((a, b) => a.id - b.id); }   // the same id again replaces (chương XI's stub card is replaced by the real chapter when its files load)
 const chapterById = id => CHAPTERS.find(c => c.id === id);
 const coverChapter = () => CHAPTERS.find(c => c.cover) || CHAPTERS[0];
 const activeChapter = () => CHAPTERS.find(c => c.modes.includes(S.mode)) || coverChapter();
