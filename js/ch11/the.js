@@ -3,8 +3,8 @@
    day from the save itself) and, on the first tap, adds C11_FILES as scripts in order; the last of them registers the real chapter,
    which takes this one's place (registerChapter replaces a chapter with the same id), and then starts it. */
 const C11_FILES = ['js/ch11/items.js', 'js/ch11/nongtrai.js', 'js/ch11/langxa.js', 'js/ch11/viec.js', 'js/ch11/viecngay.js', 'js/ch11/dinhba.js', 'js/ch11/nghe.js', 'js/ch11/online.js', 'js/ch11/co.js', 'js/ch11/cay.js', 'js/ch11/nen.js'];
-/* Not playable yet (owner, 2026-10-28: merged but kept closed): the card is hidden from the chapter list unless the address has ?c11. */
-const C11_DEV = /[?&]c11/.test(location.search);
+/* Open as a trial since 2026-10-28 (a notice says so at the start). Set C11_DEV false to hide the card again. */
+const C11_DEV = true;
 let c11Loading = null;
 function c11LoadFiles() {
   if (c11Loading) return c11Loading;

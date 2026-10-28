@@ -125,7 +125,7 @@ function c11StepText(s) {
   if (s.t === 'pay') return `Trả ${c4Money(s.m)} cho ${nm}`;
   return `Gặp ${nm}`;
 }
-const c11StepReady = s => s.t === 'talk' || (s.t === 'bring' && c11Count(s.item) >= s.n) || (s.t === 'carry' && c11Count(s.item) >= 1) || (s.t === 'pay' && SAVE4.money >= s.m);
+const c11StepReady = s => s.t === 'talk' || (s.t === 'bring' && c11Count(s.item) >= s.n) || (s.t === 'carry' && c11Count(s.item) >= 1) || (s.t === 'pay' && SAVE11.money >= s.m);
 /* the next request a person can make: enough hearts, not done, nothing of theirs running */
 function c11Offer(p) {
   const Q = c11Q(); if (Q.act.some(q => q.giver === p.id)) return null;
@@ -143,7 +143,7 @@ function c11QuestTalk(v) {
   const f = c11StepFor(p.id);
   if (f && c11StepReady(f.s)) {
     const { q, s: st } = f;
-    if (st.t === 'bring') c11Take(st.item, st.n); else if (st.t === 'carry') c11Take(st.item, 1); else if (st.t === 'pay') { SAVE4.money -= st.m; persist4(); }
+    if (st.t === 'bring') c11Take(st.item, st.n); else if (st.t === 'carry') c11Take(st.item, 1); else if (st.t === 'pay') { SAVE11.money -= st.m;  }
     if (st.give && c11Add(st.give, 1)) { c11Put(SAVE11.chest, st.give, 1); c11Msg('Túi đầy, vật được cất vào rương ở nhà', '#a3332a'); }
     daily(); q.si++; c11Sfx.pluck && c11Sfx.pluck();
     if (q.si >= q.steps.length) { c11QuestDone(q, v); return true; }
@@ -161,7 +161,7 @@ function c11QuestTalk(v) {
 function c11QuestDone(q, v) {
   const Q = c11Q(), R = q.reward || {}, gp = q.giver && c11P(q.giver) ? q.giver : c11Who(q.steps[q.steps.length - 1].who);
   Q.act = Q.act.filter(x => x !== q); Q.done[q.id] = SAVE11.day; Q.n = (Q.n || 0) + 1;
-  if (R.m) { SAVE4.money += R.m; persist4(); }
+  if (R.m) { SAVE11.money += R.m;  }
   if (R.f && gp) c11PP(gp).f = Math.min(2500, c11PP(gp).f + R.f);
   for (const [id, pts] of Object.entries(R.ff || {})) { const s = c11PP(id); s.f = Math.min(2500, s.f + pts); s.met = 1; }
   let where = '';

@@ -533,9 +533,9 @@ function c11DrawPerson(g, px, py, pw, ph, m, btn) {
 function c11OpenTea() {
   const L = [['Bát nước chè xanh', 'nóng, chát mà ngọt hậu', 3, 8], ['Kẹo lạc', 'giòn tan', 5, 10], ['Bánh đa vừng', 'nướng than hoa', 6, 12], ['Chén chè hạt sen', 'mát lành', 10, 18]];
   C11.menu = { title: 'Hàng nước cô Duyên', rows: L.map(([name, sub, price, en]) => ({ name, sub: `${sub} · +${en} sức`, price, f: () => {
-    if (SAVE4.money < price) { C11.menu.note = 'Không đủ tiền'; return; }
+    if (SAVE11.money < price) { C11.menu.note = 'Không đủ tiền'; return; }
     if (SAVE11.stamina >= C11_EN) { C11.menu.note = 'Đang no rồi'; return; }
-    SAVE4.money -= price; persist4(); SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + en); c11Sfx.pluck && c11Sfx.pluck(); C11.menu.note = `+${en} sức`; persist11();
+    SAVE11.money -= price;  SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + en); c11Sfx.pluck && c11Sfx.pluck(); C11.menu.note = `+${en} sức`; persist11();
   } })) };
 }
 

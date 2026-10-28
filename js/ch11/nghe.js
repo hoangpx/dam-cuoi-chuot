@@ -19,7 +19,7 @@ C11_KEYS.shovel = C11_KEYS.hoe; C11_KEYS.rod = C11_KEYS.can;
 if (!SAVE11.tools) {                                                                   // old saves keep what they had; a new farmer has a sickle and a starting purse
   const old = SAVE11.day > 1 || Object.keys(SAVE11.tiles || {}).length > 0;
   SAVE11.tools = old ? { sickle: 1, hoe: 1, axe: 1, can: 1, dan: 1 } : { sickle: 1 }; SAVE11.skill = old ? { dan: 1 } : {};
-  SAVE11.gift = old ? 1 : 0;
+  SAVE11.gift = 1;                                                                    // no starting purse (owner 2026-10-28: money starts at 0)
 }
 SAVE11.skill = SAVE11.skill || {}; SAVE11.herd = SAVE11.herd || []; SAVE11.pens = SAVE11.pens || []; SAVE11.dug = SAVE11.dug || {}; SAVE11.fishN = SAVE11.fishN || 0; SAVE11.dex = SAVE11.dex || {}; SAVE11.uid = SAVE11.uid || 1;
 
@@ -65,18 +65,18 @@ const C11_SHOPS = [
 ];
 const c11WhoIs = (p, who) => who.startsWith('trade:') ? p.trade === who.slice(6) : p.id === who;
 const c11ShopsOf = p => C11_SHOPS.filter(s => c11WhoIs(p, s.who));
-function c11Money2(cost) { if (SAVE4.money < cost) return false; SAVE4.money -= cost; persist4(); persist11(); return true; }
+function c11Money2(cost) { if (SAVE11.money < cost) return false; SAVE11.money -= cost; persist11(); return true; }
 function c11ToolRows(shop) {
   const rows = [];
-  for (const t of shop.tools || []) { const T = C11_TOOLS[t]; rows.push({ name: T.name, sub: c11Has(t) ? 'Đã có' : T.sub, price: T.price, ok: !c11Has(t) && SAVE4.money >= T.price, f: () => {
+  for (const t of shop.tools || []) { const T = C11_TOOLS[t]; rows.push({ name: T.name, sub: c11Has(t) ? 'Đã có' : T.sub, price: T.price, ok: !c11Has(t) && SAVE11.money >= T.price, f: () => {
     if (c11Has(t)) { C11.menu.note = 'Bạn đã có rồi'; return; } if (!c11Money2(T.price)) { C11.menu.note = 'Chưa đủ tiền'; return; }
     SAVE11.tools[t] = 1; persist11(); C11.menu.note = `Đã mua ${T.name.toLowerCase()}`; } }); }
   for (const f of shop.feed || []) rows.push({ name: C11_ITEMS[f].name, sub: C11_ITEMS[f].desc, price: C11_ITEMS[f].price * 5, tag: `5 phần · ${c4Money(C11_ITEMS[f].price * 5)}`, f: () => {
-    if (SAVE4.money < C11_ITEMS[f].price * 5) { C11.menu.note = 'Chưa đủ tiền'; return; } const left = c11Add(f, 5); if (left === 5) { C11.menu.note = 'Túi đầy rồi'; return; }
+    if (SAVE11.money < C11_ITEMS[f].price * 5) { C11.menu.note = 'Chưa đủ tiền'; return; } const left = c11Add(f, 5); if (left === 5) { C11.menu.note = 'Túi đầy rồi'; return; }
     c11Money2(C11_ITEMS[f].price * (5 - left)); C11.menu.note = `Đã mua ${5 - left} phần ${C11_ITEMS[f].name.toLowerCase()}`; } });
-  for (const k of shop.animals || []) { const A = C11_ANIMALS[k]; rows.push({ name: A.name, sub: c11Know(A.skill) ? `${C11_PENS[A.pen].name} · lớn sau ${A.adult} ngày` : `phải học "${C11_SKILLS[A.skill].name}" trước`, price: A.price, ok: SAVE4.money >= A.price && c11Know(A.skill), f: () => c11BuyAnimal(k) }); }
+  for (const k of shop.animals || []) { const A = C11_ANIMALS[k]; rows.push({ name: A.name, sub: c11Know(A.skill) ? `${C11_PENS[A.pen].name} · lớn sau ${A.adult} ngày` : `phải học "${C11_SKILLS[A.skill].name}" trước`, price: A.price, ok: SAVE11.money >= A.price && c11Know(A.skill), f: () => c11BuyAnimal(k) }); }
   if (shop.animals) for (const h of SAVE11.herd.filter(h => shop.animals.includes(h.kind) && h.age >= C11_ANIMALS[h.kind].adult)) rows.push({ name: `Bán ${h.nm}`, sub: `${C11_ANIMALS[h.kind].name.replace(' con', '').replace(' giống', '')} đã lớn`, price: 0, tag: `Được ${c4Money(C11_ANIMALS[h.kind].sell)}`, f: () => {
-    const i = SAVE11.herd.indexOf(h); if (i < 0) return; SAVE11.herd.splice(i, 1); SAVE4.money += C11_ANIMALS[h.kind].sell; persist4(); persist11(); c11HerdBuild(); C11.menu.note = `Đã bán ${h.nm}`; c11OpenShopOf(C11.menu.shop); } });
+    const i = SAVE11.herd.indexOf(h); if (i < 0) return; SAVE11.herd.splice(i, 1); SAVE11.money += C11_ANIMALS[h.kind].sell; persist11(); c11HerdBuild(); C11.menu.note = `Đã bán ${h.nm}`; c11OpenShopOf(C11.menu.shop); } });
   return rows;
 }
 function c11OpenShopOf(shop) { C11.menu = { title: shop.title, note: '', shop, cols: 1, rows: c11ToolRows(shop) }; }
@@ -92,7 +92,7 @@ c11TalkTo = function (v) {
   for (const sh of shops) rows.push({ name: 'Mua đồ', sub: sh.title, tag: 'Xem hàng', ok: true, f: () => { C11.say = { who: v, text: sh.say, t: 0 }; c11OpenShopOf(sh); } });
   for (const id of teach) {
     const S = C11_SKILLS[id], known = c11Know(id), need = !s.met ? 'chưa quen nhau, hãy trò chuyện trước' : h < S.hearts ? `cần thân đến ♥${S.hearts} (đang ♥${h})` : '';
-    rows.push({ name: known ? `${S.name} · đã biết` : `Học ${S.name.toLowerCase()}`, sub: known ? S.desc : need || S.desc, tag: known ? '' : `Học phí ${c4Money(S.fee)}`, ok: !known && !need && SAVE4.money >= S.fee, f: () => {
+    rows.push({ name: known ? `${S.name} · đã biết` : `Học ${S.name.toLowerCase()}`, sub: known ? S.desc : need || S.desc, tag: known ? '' : `Học phí ${c4Money(S.fee)}`, ok: !known && !need && SAVE11.money >= S.fee, f: () => {
       if (known) { C11.menu.note = 'Bạn đã biết nghề này rồi'; return; }
       if (need) { C11.menu.note = need[0].toUpperCase() + need.slice(1) + '. Trò chuyện, tặng quà, làm việc giúp họ'; return; }
       if (!c11Money2(S.fee)) { C11.menu.note = 'Chưa đủ tiền học phí'; return; }
@@ -125,7 +125,7 @@ c11Beast = function (g, b, X, Y, u) { if (b.kind === 'vit') { g.fillStyle = 'rgb
 function c11BuyAnimal(k) {
   const A = C11_ANIMALS[k], P = C11_PENS[A.pen];
   if (!c11Know(A.skill)) { C11.menu.note = `Phải học "${C11_SKILLS[A.skill].name}" trước`; return; }
-  if (SAVE4.money < A.price) { C11.menu.note = 'Chưa đủ tiền'; return; }
+  if (SAVE11.money < A.price) { C11.menu.note = 'Chưa đủ tiền'; return; }
   const pen = SAVE11.pens.find(q => q.kind === A.pen && SAVE11.herd.filter(h => h.pen === q.id).length < P.cap);
   if (!pen) { C11.menu.note = SAVE11.pens.some(q => q.kind === A.pen) ? 'Chuồng đã đầy' : `Nhà bạn chưa có ${P.name.toLowerCase()}`; return; }
   c11Money2(A.price);
@@ -242,7 +242,6 @@ function c11NewDayNew() {
 }
 function c11NewUpdate(dt) {
   const G = C11;
-  if (!SAVE11.gift) { SAVE11.gift = 1; SAVE4.money += 100; persist4(); persist11(); c11Msg('Bà con góp vốn cho 1 quan 100 đồng, mua cuốc và bình tưới ở lò rèn nhé', '#2f6a4c'); }
   if (G.herdMsg && !G.msg) { c11Msg(G.herdMsg, '#a3332a'); G.herdMsg = null; }
   const f = G.fish; if (!f) return;
   if (G.area !== 'ruong' && G.area !== f.area && f.area) { G.fish = null; return; } f.area = G.area;

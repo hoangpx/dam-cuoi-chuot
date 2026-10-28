@@ -1,7 +1,7 @@
 /* Chương XI · Ruộng Chuột 田 (DEMO, owner asked for a farm like Stardew Valley, to look at the art first).
    A little farm seen from above-and-aside: a house (the door is the bed), a shipping box, a seed stall, a pond and a field.
    Hoe the earth, plant, water, sleep (crops grow one stage for each night they were watered), harvest, drop the crops in the
-   box. The money is chương IV's purse (SAVE4.money, persist4) and the folk are chương IV's residents (c4People): the seed
+   box. The money is its own purse (SAVE11.money, starts at 0, apart from chương IV's) and the folk are chương IV's residents (c4People): the seed
    seller and three villagers who stroll along the lane carry their names. Controls on both: tap a tile = walk beside it and use the
    selected slot on it; WASD / arrows walk, Space / Enter / E uses the slot on the tile in front, 1-5 pick a slot (or tap the
    slots). Saves: SAVE11 in localStorage 'dcc.c11'. */
@@ -33,7 +33,7 @@ const c11Sfx = { tap() {}, pluck() {}, plop() {}, thump() {} };   // chương IX
 const C11_WALK = 1, C11_EN = 100, C11_FAINT = -15, C11_COST = { sickle: .5, hoe: 1.5, axe: 2, can: 1, seed: .5, dan: 1.5 }, C11_FOOD = { ca: 12, bi: 20, ngo: 16, lua: 14, muong: 8, cai: 8, khoai: 18, dau: 10, muop: 12, ot: 3, nam: 10, rau: 6, qua: 12 };
 const C11_FORAGE = { nam: { name: 'Nấm', sell: 18, col: '#b0523a' }, rau: { name: 'Rau dại', sell: 9, col: '#4f8a3e' }, qua: { name: 'Quả rừng', sell: 14, col: '#c8402f' } };
 const c11Info = k => k === 'go' ? { name: 'gỗ', col: '#8a5a38' } : k === 'co' ? { name: 'cỏ', col: '#4f8a3e' } : C11_CROPS[k] || C11_FORAGE[k] || (C11_ITEMS[k] ? { name: C11_ITEMS[k].name.toLowerCase(), col: '#a3332a' } : { name: k, col: INK });
-const C11_NEW = () => ({ v: 1, day: 1, mins: C11_DAY0, stamina: 100, hp: 100, water: 6, tiles: {}, seeds: { ca: 6, bi: 3, ngo: 0, lua: 4, muong: 4, cai: 0, khoai: 0, dau: 0, muop: 0, ot: 0 }, sel: 'ca', inv: { ca: 0, bi: 0, ngo: 0, lua: 0, muong: 0, cai: 0, khoai: 0, dau: 0, muop: 0, ot: 0, go: 0, co: 0, nam: 0, rau: 0, qua: 0 }, cut: {}, gone: {}, hits: {}, drops: [], clear: {} });
+const C11_NEW = () => ({ v: 1, money: 0, day: 1, mins: C11_DAY0, stamina: 100, hp: 100, water: 6, tiles: {}, seeds: { ca: 6, bi: 3, ngo: 0, lua: 4, muong: 4, cai: 0, khoai: 0, dau: 0, muop: 0, ot: 0 }, sel: 'ca', inv: { ca: 0, bi: 0, ngo: 0, lua: 0, muong: 0, cai: 0, khoai: 0, dau: 0, muop: 0, ot: 0, go: 0, co: 0, nam: 0, rau: 0, qua: 0 }, cut: {}, gone: {}, hits: {}, drops: [], clear: {} });
 /* slots: arrays of { id, n } or null; stacks of up to C11_STACK */
 function c11Put(box, id, n) {
   for (const sl of box) if (sl && sl.id === id && sl.n < C11_STACK) { const k = Math.min(n, C11_STACK - sl.n); sl.n += k; n -= k; if (!n) return 0; }
@@ -43,6 +43,7 @@ function c11Put(box, id, n) {
 let SAVE11 = C11_NEW();
 try { if (!localStorage.getItem('dcc.c11')) { const o = JSON.parse(localStorage.getItem('dcc.c9') || 'null'); if (o && o.v === 1 && o.tiles) localStorage.setItem('dcc.c11', JSON.stringify(o)); } } catch (e) {}   // before the rename this chapter saved under dcc.c9 (now Ghép Tranh's)
 try { const s = JSON.parse(localStorage.getItem('dcc.c11') || 'null'); if (s && s.v === 1) SAVE11 = Object.assign(SAVE11, s); } catch (e) {}
+if (typeof SAVE11.money !== 'number' || !(SAVE11.money >= 0)) SAVE11.money = 0;
 SAVE11.drops = SAVE11.drops || []; SAVE11.clear = SAVE11.clear || {}; SAVE11.inv.co = SAVE11.inv.co || 0; SAVE11.cut = SAVE11.cut || {}; SAVE11.gone = SAVE11.gone || {}; SAVE11.hits = SAVE11.hits || {}; SAVE11.inv.go = SAVE11.inv.go || 0; for (const k of ['nam', 'rau', 'qua', ...Object.keys(C11_CROPS)]) SAVE11.inv[k] = SAVE11.inv[k] || 0; for (const k of Object.keys(C11_CROPS)) SAVE11.seeds[k] = SAVE11.seeds[k] ?? C11_NEW().seeds[k]; if (!C11_CROPS[SAVE11.sel]) SAVE11.sel = 'ca';
 if (!SAVE11.bag) {                                                   // a bag of 10 slots and a chest of 30 (owner); the old counts move into them
   SAVE11.bag = Array(C11_BAG).fill(null); SAVE11.chest = Array(C11_CHEST).fill(null);
@@ -677,6 +678,20 @@ function startC11() {
   for (const d of SAVE11.drops) d.t = d.dur;
   Object.assign(C11, { ready: true, fainted: false, late: false, passed: false, warnLate: false, faintMsg: null, go: null, pend: null, swing: 0, shake: null, fall: null, keys: {}, fx: [], say: null, sleep: null, kbd: false, msg: null, hl: null, menu: null, fade: null });
   cv.focus();
+  c11TrialNotice();
+}
+/* Trial notice (owner 2026-10-28): shown each time the chapter is entered; the game waits behind it. */
+function c11TrialNotice() {
+  if (document.getElementById('c11trial')) return;
+  const d = document.createElement('div'); d.id = 'c11trial';
+  d.style.cssText = 'position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(29,25,21,.55);padding:16px';
+  d.innerHTML = '<div style="max-width:380px;background:#f4ecd6;border:3px solid #1d1915;border-radius:10px;padding:20px 22px;text-align:center;box-shadow:5px 5px 0 #1d1915;font-family:Be Vietnam Pro,sans-serif;color:#1d1915">'
+    + '<div style="font:700 22px Playfair Display,serif;margin-bottom:8px">Đang thử nghiệm</div>'
+    + '<p style="margin:0 0 8px;font-size:15px;line-height:1.5">Chương này chưa chơi được. Bạn chỉ vào <b>khám phá</b> làng Vũ Đại thôi: đi lại, ngắm cảnh, làm quen dân làng.</p>'
+    + '<p style="margin:0 0 14px;font-size:13px;opacity:.75;line-height:1.45">Tiền ở đây tính riêng, bắt đầu từ 0, không dính tới các chương khác.</p>'
+    + '<button style="font:700 16px Be Vietnam Pro,sans-serif;background:#c0392b;color:#fff;border:2px solid #1d1915;border-radius:8px;padding:9px 22px;cursor:pointer">Vào khám phá</button></div>';
+  d.querySelector('button').onclick = () => { d.remove(); cv.focus(); };
+  document.body.appendChild(d);
 }
 function c11Enter(id, x, y, quiet) {
   const a = C11_AREAS[id]; C11_AR = a; C11_MAP = a.map; C11_W = a.map[0].length; C11_H = a.map.length;
@@ -725,7 +740,7 @@ function c11Chips(tx, ty, dir, n = 7, green = false) {          // wood splinter
   for (let i = 0; i < n; i++) C11.fx.push({ k: 'chip', x: tx + .5 - dir * .3, y: ty + .55, vx: -dir * (.8 + Math.random() * 2.2), vy: -(1.4 + Math.random() * 2), rot: Math.random() * 6, vr: (Math.random() - .5) * 16, col: green ? ['#6fa54c', '#9bc45e', '#4f8a3e'][i % 3] : ['#e6c48c', '#c89a5e', '#a06a3c'][i % 3], leaf: green || i % 4 === 3, life: .7 + Math.random() * .4, t: 0, r: 3 + Math.random() * 3 });
 }
 function c11Dots(tx, ty, col, n = 8, up = 1) { for (let i = 0; i < n; i++) C11.fx.push({ k: 'dot', x: tx + .5, y: ty + .55, vx: (Math.random() - .5) * 2.4, vy: -(.8 + Math.random() * 1.8) * up, col, life: .5 + Math.random() * .3, t: 0, r: 2 + Math.random() * 2 }); }
-const c11Money = () => c4Money(SAVE4.money);
+const c11Money = () => c4Money(SAVE11.money);
 
 function c11Act(tx, ty) {
   let k = c11Kind(tx, ty); const tool = c11HandTool(), key = c11Pre() + tx + ',' + ty;
@@ -804,7 +819,7 @@ function c11EatSlot(i) {
 const c11Price = (id, mult) => C11_ITEMS[id].cat === 'truyen' ? 0 : Math.round(C11_ITEMS[id].price * mult);
 function c11SellSlot(i, mult) {
   const sl = SAVE11.bag[i]; if (!sl) return 0; const p = c11Price(sl.id, mult); if (!p) { C11.menu.note = 'Vật này không bán được'; return 0; }
-  const got = p * sl.n; SAVE4.money += got; SAVE11.bag[i] = null; persist4(); persist11(); c11Sfx.pluck && c11Sfx.pluck(); C11.menu.note = `Bán ${sl.n} ${C11_ITEMS[sl.id].name}: ${c4Money(got)}`; return got;
+  const got = p * sl.n; SAVE11.money += got; SAVE11.bag[i] = null; persist11(); c11Sfx.pluck && c11Sfx.pluck(); C11.menu.note = `Bán ${sl.n} ${C11_ITEMS[sl.id].name}: ${c4Money(got)}`; return got;
 }
 function c11OpenSell(title, mult, note) { C11.menu = { grid: 'sell', title, mult, note }; }
 function c11OpenChest() { C11.menu = { grid: 'chest', title: 'Rương đồ', note: 'Chạm một ô để chuyển đồ giữa túi và rương' }; }
@@ -815,15 +830,15 @@ function c11Move(from, i, to) {                                         // move 
 }
 function c11OpenShop() {
   C11.menu = { title: 'Hạt giống', note: 'Cây thường 4 gói một lần · cây leo giàn mua từng hạt', cols: 2, rows: Object.keys(C11_CROPS).map(id => { const c = C11_CROPS[id], qty = c.dan ? 1 : 4, cost = c.seed * qty; return { name: c.name, sub: c.dan ? `1 hạt cho 1 giàn · bán ${c.sell}` : `lớn ${c.days} ngày · bán ${c.sell}`, price: cost, icon: id, f: () => {
-    if (SAVE4.money < cost) { C11.menu.note = 'Chưa đủ tiền'; return; }
-    const left = c11Add('h_' + id, qty); if (left === qty) { C11.menu.note = 'Túi đầy rồi, không mang thêm được'; return; } SAVE4.money -= c.seed * (qty - left); persist4(); persist11(); c11Sfx.tap(); C11.menu.note = `Đã mua ${qty - left} ${c.dan ? 'hạt' : 'gói'} ${c.name}` + (left ? ' (túi đầy)' : ''); } }; }) };
+    if (SAVE11.money < cost) { C11.menu.note = 'Chưa đủ tiền'; return; }
+    const left = c11Add('h_' + id, qty); if (left === qty) { C11.menu.note = 'Túi đầy rồi, không mang thêm được'; return; } SAVE11.money -= c.seed * (qty - left); persist11(); c11Sfx.tap(); C11.menu.note = `Đã mua ${qty - left} ${c.dan ? 'hạt' : 'gói'} ${c.name}` + (left ? ' (túi đầy)' : ''); } }; }) };
 }
 function c11OpenFood() {
   const dishes = [['Xôi vò', 'dẻo thơm', 12, 20, 0], ['Bún riêu', 'nóng hổi', 30, 45, 10], ['Cơm nếp thịt', 'bữa đủ đầy', 55, 100, 30]];
   C11.menu = { title: 'Quán ăn', rows: dishes.map(([name, sub, price, en, hp]) => ({ name, sub: `${sub} · +${en} sức${hp ? ` · +${hp} máu` : ''}`, price, f: () => {
-    if (SAVE4.money < price) { c11Msg('Không đủ tiền', '#a3332a'); return; }
+    if (SAVE11.money < price) { c11Msg('Không đủ tiền', '#a3332a'); return; }
     if (SAVE11.stamina >= C11_EN && SAVE11.hp >= 100) { c11Msg('Đang no căng rồi', '#5b2f1f'); return; }
-    SAVE4.money -= price; persist4(); SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + en); SAVE11.hp = Math.min(100, SAVE11.hp + hp); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${en} sức`, '#2f6a4c'); persist11();
+    SAVE11.money -= price;  SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + en); SAVE11.hp = Math.min(100, SAVE11.hp + hp); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${en} sức`, '#2f6a4c'); persist11();
   } })) };
 }
 function c11StartSleep(forced) { if (C11.sleep) return; C11.go = null; C11.sleep = { t: 0, did: false, forced }; }
@@ -835,7 +850,7 @@ function c11NewDay() {
   }
   for (const m of [SAVE11.cut, SAVE11.gone]) for (const k of Object.keys(m)) if (SAVE11.day + 1 - m[k] >= 5) delete m[k];   // stumps sprout again after 5 days
   for (const k of Object.keys(SAVE11.clear)) if (!SAVE11.tiles[k] && SAVE11.day + 1 - SAVE11.clear[k] >= 4) delete SAVE11.clear[k];   // mown grass left unhoed grows back in 4 nights
-  if (C11.fainted || C11.passed) { const lost = Math.min(Math.floor(SAVE4.money * .1), 100); SAVE4.money -= lost; persist4(); C11.faintMsg = C11.fainted ? (lost ? `Ngất giữa ruộng, mất ${c4Money(lost)} tiền thuốc` : 'Ngất giữa ruộng, tỉnh dậy mệt lử') : (lost ? `Ngủ gục ngoài đường, ai đó lấy mất ${c4Money(lost)}` : 'Ngủ gục ngoài đường, sáng ra mệt rã rời'); }
+  if (C11.fainted || C11.passed) { const lost = Math.min(Math.floor(SAVE11.money * .1), 100); SAVE11.money -= lost;  C11.faintMsg = C11.fainted ? (lost ? `Ngất giữa ruộng, mất ${c4Money(lost)} tiền thuốc` : 'Ngất giữa ruộng, tỉnh dậy mệt lử') : (lost ? `Ngủ gục ngoài đường, ai đó lấy mất ${c4Money(lost)}` : 'Ngủ gục ngoài đường, sáng ra mệt rã rời'); }
   if (C11.area !== 'ruong') c11Enter('ruong', 4.5, 5.7, true);
   c11NewDayNew();
   const late = c11QuestNewDay();
@@ -1253,11 +1268,11 @@ function c11DrawMenu(g, W, H) {
   g.font = '600 10.5px "Be Vietnam Pro", sans-serif'; const subs = m.rows.map(r => { const tx0 = (r.icon && c11Art().crop[r.icon]) ? 56 : 12; return c11Wrap(g, r.sub || '', cw0 - tx0 - 8).slice(0, 3); }), rh = Math.max(cols === 2 ? 62 : 58, 45 + 13 * Math.max(1, ...subs.map(l => l.length))), ph = 76 + rows * (rh + gap) + 26, px = (W - pw) / 2, py = Math.max(8, (H - ph) / 2);
   g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 3.2; g.beginPath(); g.roundRect(px, py, pw, ph, 14); g.fill(); g.stroke();
   g.fillStyle = INK; g.font = '900 22px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(m.title, W / 2, py + 26);
-  g.font = '600 12px "Be Vietnam Pro", sans-serif'; g.fillStyle = 'rgba(29,25,21,.7)'; g.fillText('Ví: ' + c4Money(SAVE4.money), W / 2, py + 50);
+  g.font = '600 12px "Be Vietnam Pro", sans-serif'; g.fillStyle = 'rgba(29,25,21,.7)'; g.fillText('Ví: ' + c4Money(SAVE11.money), W / 2, py + 50);
   if (m.note) { g.fillStyle = '#2f6a4c'; g.font = '700 12px "Be Vietnam Pro", sans-serif'; g.fillText(m.note, W / 2, py + ph - 14); }
   const cw = (pw - 24 - gap * (cols - 1)) / cols, A = c11Art();
   m.rows.forEach((r, i) => {
-    const x = px + 12 + (i % cols) * (cw + gap), y = py + 66 + Math.floor(i / cols) * (rh + gap), ok = r.ok !== undefined ? r.ok : SAVE4.money >= (r.price || 0);
+    const x = px + 12 + (i % cols) * (cw + gap), y = py + 66 + Math.floor(i / cols) * (rh + gap), ok = r.ok !== undefined ? r.ok : SAVE11.money >= (r.price || 0);
     g.fillStyle = ok ? '#f7e3a4' : '#e6dcc0'; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.roundRect(x, y, cw, rh, 10); g.fill(); g.stroke();
     let tx = x + 12;
     if (r.icon && A.crop[r.icon]) { g.save(); g.beginPath(); g.roundRect(x + 4, y + 4, 44, rh - 8, 7); g.clip(); g.fillStyle = 'rgba(111,165,76,.25)'; g.fillRect(x + 4, y + 4, 44, rh - 8); c11Spr(g, A.crop[r.icon][3], x + 26, y + rh - 8, .36); g.restore(); tx = x + 56; }
