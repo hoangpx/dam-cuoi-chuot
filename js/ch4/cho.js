@@ -1120,7 +1120,8 @@ function c4OpenUp(g = 'trau') {
     const nx = C4_LV[SAVE4.lv + 1];
     if (nx && !c4UpAllowed(nx)) { $('#c4upB').innerHTML = '<p class="hint">Mua nhà sẽ có sau.</p>'; $('#c4upGo').hidden = true; }
     else if (!nx) $('#c4upB').innerHTML = '<p>Gian hàng trầu khang trang nhất phiên chợ.</p>';
-    else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${nx.house === 'own' ? c4HouseNote(nx.up) : ''}<p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(c4UpPrice(nx, nx.up))}`; $('#c4upGo').onclick = () => { const price = c4UpPrice(nx, nx.up); if (SAVE4.money < price || C4.build) return; if (!nx.house) { c4DoUp(); return; } const L = c4Landlord('trau'); c4Khe({ title: nx.house === 'own' ? 'Mua nhà mặt chợ' : 'Thuê nhà mặt chợ', a: [nx.house === 'own' ? 'Bên bán' : 'Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ nhà'], what: (nx.house === 'own' ? 'Bán đứt ' : 'Cho thuê ') + nx.name.toLowerCase() + ' bán trầu', money: price }, c4DoUp); }; }
+    else if (nx.house && !c4Landlord('trau').known) { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4><p class="bad">Muốn ${nx.house === 'own' ? 'mua' : 'thuê'} nhà mặt chợ: không biết chủ căn nhà là ai mà hỏi. Quen thêm người trong làng thì sẽ biết; càng thân giá càng rẻ.</p>`; $('#c4upGo').hidden = true; }   // (the offer and its paper used to show anyway, then the deed refused: a player kept seeing "Thuê nhà")
+    else { $('#c4upB').innerHTML = `<h4>Nâng cấp</h4>${nx.house === 'own' ? c4HouseNote(nx.up) : ''}<p class="nx">Lên <b>${nx.name}</b>: chứa ${nx.cap} miếng · nhập ${nx.cost} đồng/miếng · khách ghé đông hơn, bán nhanh hơn${nx.daily ? ` · <b>tiền nhà ${nx.daily} đồng mỗi tối</b>` : ''}${nx.house === 'own' ? ' · <b>mua đứt, khỏi trả tiền nhà</b>' : ''}</p>`; $('#c4upGo').hidden = false; $('#c4upGo').disabled = !(SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build); $('#c4upGo').innerHTML = `${nx.house === 'own' ? 'Mua nhà' : nx.house ? 'Thuê nhà' : 'Nâng cấp'} · ${c4Money(c4UpPrice(nx, nx.up))}`; $('#c4upGo').onclick = () => { const price = c4UpPrice(nx, nx.up); if (SAVE4.money < price || C4.build) return; if (!nx.house) { c4DoUp(); return; } const L = c4Landlord('trau'); if (!L.known) { toast('Không biết chủ căn nhà là ai mà hỏi thuê hay mua.', 3.4); return; } c4Khe({ title: nx.house === 'own' ? 'Mua nhà mặt chợ' : 'Thuê nhà mặt chợ', a: [nx.house === 'own' ? 'Bên bán' : 'Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ nhà'], what: (nx.house === 'own' ? 'Bán đứt ' : 'Cho thuê ') + nx.name.toLowerCase() + ' bán trầu', money: price }, c4DoUp); }; }
   }
   c4Sheets('c4up'); c4UpTabs(); c4ScrollSet('c4up', keep);
 }
@@ -1154,7 +1155,7 @@ function c4DoUp() {
   for (const w of [...C4.Q.trau]) c4Leave(w, false); C4.SV.trau = [];
   c4Sheets(null); persist4(); c4Hud(); AU.stamp();
 }
-const c4CanUp = () => { const nx = C4_LV[SAVE4.lv + 1]; return nx && c4UpAllowed(nx) && SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build; };
+const c4CanUp = () => { const nx = C4_LV[SAVE4.lv + 1]; return nx && c4UpAllowed(nx) && SAVE4.money >= c4UpPrice(nx, nx.up) && !C4.build && (!nx.house || c4Landlord('trau').known); };
 
 /* ---------- drawing ---------- */
 // the stall's sign (owner): a board hung on two posts above the stall; tapping the board opens the stall, nothing else does
