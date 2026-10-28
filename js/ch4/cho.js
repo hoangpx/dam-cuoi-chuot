@@ -136,7 +136,7 @@ const c4Open = g => (g === 'trau' ? !C4.build : c4Own(g)) && !c4Shut(g);   // th
 const c4Stock = g => g === 'trau' ? SAVE4.stock : (SAVE4.shops[g] ? SAVE4.shops[g].stock : 0);
 const c4SetStock = (g, v) => { v = Math.max(0, v); if (g === 'trau') SAVE4.stock = v; else SAVE4.shops[g].stock = v; };
 const c4Cap = g => g === 'trau' ? c4Lv().cap : Math.round(C4_GOODS[g].cap * c4SLv(g).cap);
-const c4Cost = g => (g === 'trau' ? c4Lv().cost : C4_GOODS[g].cost) * (c4Guild() ? C4_GUILD.off : 1);   // the guild buys cheaper
+const c4Cost = g => (g === 'trau' ? c4Lv().cost : C4_GOODS[g].cost) * (c4Guild() ? C4_GUILD.off : 1) * (typeof c4SpecK === 'function' ? c4SpecK(g) : 1);   // the guild buys cheaper; a player's own specialty, half (sangcho.js, never said)
 // the soldiers take goods worth `value` (at the selling price) from the stalls, a bit from each in turn; returns what to say
 function c4Confiscate(value) {
   const taken = {}; let left = value, total = 0;
@@ -976,7 +976,8 @@ function c4EndDay() {
   if (C4.kid) { SAVE4.money += 10; C4.kid = null; }
   const d = C4.today, lines = [];
   // what does not keep is lost
-  for (const g of c4Owned()) { const G = C4_GOODS[g], n = c4Stock(g); if (n && G.keep !== 'ever') { d.wilt += n; d.wiltLoss += n * c4Unit(g); lines.push(`${n} ${G.unit} ${G.name.toLowerCase()}`); c4SetStock(g, 0); } }
+  for (const g of c4Owned()) { const G = C4_GOODS[g], n0 = c4Stock(g), n = Math.max(0, n0 - (typeof cnKeepN === 'function' ? cnKeepN(g) : 0)); if (n && G.keep !== 'ever') { d.wilt += n; d.wiltLoss += n * c4Unit(g); lines.push(`${n} ${G.unit} ${G.name.toLowerCase()}`); c4SetStock(g, n0 - n); } }   // (goods bought from a friend's market keep one night: sangcho.js)
+  if (SAVE4.keep) for (const k of Object.keys(SAVE4.keep)) if (SAVE4.keep[k].until <= SAVE4.day + 1) delete SAVE4.keep[k];
   d.wiltLoss = Math.round(d.wiltLoss);
   // helpers are paid; one owed two days running walks out
   const quits = []; c4PayHands(d, quits); C4.trips = [];
@@ -1102,7 +1103,9 @@ function c4OpenUp(g = 'trau') {
     box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
   box.appendChild(c4ShutBlock(g));                                          // shut it for a while
-  box.appendChild(c4PriceBlock(g));                                         // its price (gia.js)
+  box.appendChild(c4PriceBlock(g));
+  if (typeof cnTxnBlock === 'function') box.appendChild(cnTxnBlock(g));                                  // who bought here (sangcho.js)
+                                         // its price (gia.js)
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
   box.appendChild(c4SaleBlock(g));                                          // a sale: how much, from when to when, every day or today (giamgia.js)
   box.appendChild(c4HandsBlock(g));                                          // always there (a player could not find the hire button when only the betel stall was open)

@@ -34,7 +34,7 @@ function p4ShopsUpdate(dt) {
     if (C.say) { C.say.t += dt; if (C.say.t > C.say.life) C.say = null; }
     if (!C.w) { const w = Q.find(q => q.st === 'fq'); if (w) { C.w = w; C.t = P4_FOOD.serve; } }
     else if ((C.t -= dt) <= 0) {
-      const w = C.w, got = w.treat ? 0 : p4SalePrice(key, w.n * p4FoodPrice(R)), cost = w.n * P4_FOOD.cost; p4Served(w, key);
+      const w = C.w, got = w.treat ? 0 : p4SalePrice(key, w.n * p4FoodPrice(R)), pre = cnPreLive(R) ? Math.min(w.n, R.pre) : 0, cost = (w.n - pre) * p4FoodCost(key); if (pre) R.pre -= pre; p4Served(w, key);
       SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost; persist4();
       const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 }); T.n += w.n; T.take += got; T.cost += cost;
       if (Math.abs(x - P4.camX - p4View().vw / 2) < p4View().vw) { P4.fx.push({ x, y: p4Y(.12) - 120, s: '+' + (got - cost), t: 0 }); if (Math.random() < .3) p4Say(C, p4Pick(['Mời bác ngồi!', 'Nóng hổi đây!', 'Ăn ngon lại ghé nhé!'])); }
@@ -99,7 +99,7 @@ function p4ShopSheet() {
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
   }
   $('#p4shopB').innerHTML = h + `<div class="row"><button class="btn alt" data-shopx="1">Đóng</button></div>`;
-  { const rr = $('#p4shopB > .row:last-child'); if (R && rr) { rr.before(p4FoodPriceBlock(R)); rr.before(p4SaleBlock(key, () => p4KeepScroll('p4shop', p4ShopSheet))); const tb = p4TreatBlock(key); rr.before(tb); p4Tabs('p4shop', $('#p4shopB'), tb, 'Quán'); } }   // a sale and the Mời khách tab at a shop we run (giamgia.js, khachquen.js)
+  { const rr = $('#p4shopB > .row:last-child'); if (R && rr) { rr.before(p4FoodPriceBlock(R)); rr.before(cnTxnBlock(key)); rr.before(p4SaleBlock(key, () => p4KeepScroll('p4shop', p4ShopSheet))); const tb = p4TreatBlock(key); rr.before(tb); p4Tabs('p4shop', $('#p4shopB'), tb, 'Quán'); } }   // a sale and the Mời khách tab at a shop we run (giamgia.js, khachquen.js)
   p4Sheets('p4shop');
 }
 function p4ShopClick(b) {

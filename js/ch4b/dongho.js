@@ -156,7 +156,7 @@ function w4CatchTown(to) {
     const R = S2[key]; if (R.shut) continue; let cust = 0;
     for (let m = from; m < to; m += 5) cust += P4_FOOD_CUST / 900 * P4_MEALS(m / 60) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * p4FoodFlow(R) * Math.min(5, to - m);
     const n = Math.round(cust * 2.5 * w4Rnd() * p4FoodQty(R)); if (n < 1) continue;
-    const got = p4SalePrice(key, n * p4FoodPrice(R)), cost = n * P4_FOOD.cost;
+    const got = p4SalePrice(key, n * p4FoodPrice(R)), cost = n * p4FoodCost(key);
     SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost;
     const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 }); T.n += n; T.take += got; T.cost += cost;
   }

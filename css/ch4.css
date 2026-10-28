@@ -1,5 +1,24 @@
 /* Chương IV · Chợ Làng Chuột: top bar (money, day and hour, stock), end-of-day tally, upgrade sheet */
 #c4hud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;z-index:4;pointer-events:none}
+#cnvHud{position:fixed;left:0;right:0;top:0;z-index:4;pointer-events:none}
+#cnvHud .cnvTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0}
+#cnvHud .tag{font-family:var(--display);font-weight:900;font-size:14px;color:var(--ink);white-space:normal;pointer-events:auto}
+#cnvHud button.tag{cursor:pointer}
+#cnBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;width:min(94vw,520px)}
+#cnBar[hidden]{display:none}
+#cnBar .cnEmo{display:flex;gap:4px;width:100%;justify-content:center}
+#cnBar .cnEmo button{font-size:22px;line-height:1;padding:4px 8px;border:2px solid var(--ink);background:rgba(251,244,220,.95);cursor:pointer}
+#cnBar input{flex:1;min-width:120px;height:34px;box-sizing:border-box;border:2px solid var(--ink);background:#fffaf0;padding:0 8px;font:600 14px var(--body)}
+#cnBar .btn{padding:6px 14px}
+.cnHr{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1.5px dashed rgba(29,25,21,.3);padding:7px 0;text-align:left}
+.cnHr small{display:block;font-size:12px;opacity:.75}
+.cnTx{display:flex;flex-direction:column;gap:2px;text-align:left}
+.cnTl{border:0;background:none;font:600 13px/1.35 var(--body);color:var(--ink);text-align:left;padding:5px 2px;border-top:1.5px dashed rgba(29,25,21,.25);cursor:pointer}
+.cnTl .dy{opacity:.6;font-size:11.5px;margin-right:4px}
+.cnStep{display:flex;align-items:center;justify-content:center;gap:8px}
+.cnStep b{min-width:34px;font:900 18px var(--display)}
+.cnsheet .roomBox{max-width:min(100%,420px);margin:6px auto}
+.cnsheet .roomBox svg{width:100%;height:auto;max-height:34vh}
 #c4hud .tag{font-family:var(--display);font-weight:900;font-size:14px;color:var(--ink);white-space:nowrap}
 #c4hud button.tag{pointer-events:auto;cursor:pointer}
 #c4hud .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
