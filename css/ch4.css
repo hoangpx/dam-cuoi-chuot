@@ -522,4 +522,6 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 #cnvHud #cnvTown[hidden]{display:none}
 .rkon{display:inline-block;width:6px;height:6px;border-radius:50%;background:#2f9e5a;margin-left:4px;vertical-align:middle}
 .cnLive{color:#2f9e5a}
-.rk td:nth-child(2){white-space:nowrap}
+.rankbox .rk,.card4 .rk{overflow-x:hidden}
+.rankbox table{table-layout:auto;max-width:100%}
+@media (max-width:520px){.rankbox table{font-size:12px}.rankbox th,.rankbox td{padding:5px 2px}.rankbox td:first-child,.rankbox th:first-child{width:1.8em}.rankbox td:last-child,.rankbox th:last-child{width:2.8em}.rankbox .rnv{font-size:10.5px;padding:3px 5px}}
