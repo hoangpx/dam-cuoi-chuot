@@ -468,3 +468,5 @@ export class JigsawLH extends makeJigsaw({ pic: 'lh1', cols: 73, rows: 41, pw: 3
 // the sixth print (2026-10-25): Lý ngư vọng nguyệt, a tall print, 41 x 73 = 2993 pieces of 50 px (2050 x 3650, img/ch10/ly-ngu-vong-nguyet.jpg). Same guards as every print (all in makeJigsaw)
 export class JigsawLY extends makeJigsaw({ pic: 'ly1', cols: 41, rows: 73, pw: 2050, ph: 3650, freeze: false }) {}
 export class JigsawDG3 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false, resetTag: 'r1' }) {}
+// the seventh print (2026-10-27): Đàn lợn âm dương, 68 x 44 = 2992 pieces of 50 px (3400 x 2200, img/ch10/dan-lon-am-duong.jpg). Opens in the list once Lý ngư vọng nguyệt is finished. Same guards as every print (all in makeJigsaw)
+export class JigsawLO extends makeJigsaw({ pic: 'lo1', cols: 68, rows: 44, pw: 3400, ph: 2200, freeze: false }) {}

@@ -34,6 +34,10 @@ class_name = "JigsawLH"
 name = "JIGSAW_LY"
 class_name = "JigsawLY"
 
+[[durable_objects.bindings]]
+name = "JIGSAW_LO"
+class_name = "JigsawLO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
@@ -81,3 +85,8 @@ new_sqlite_classes = ["JigsawLH"]
 [[migrations]]
 tag = "v10"
 new_sqlite_classes = ["JigsawLY"]
+
+# 2026-10-27: the seventh print (Đàn lợn âm dương, 2992 pieces), its own object and storage
+[[migrations]]
+tag = "v11"
+new_sqlite_classes = ["JigsawLO"]
