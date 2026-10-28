@@ -17,16 +17,24 @@ import { cleanChat, CHAT_GAP } from './chat.js';
 export function makeJigsaw(cfg) {
 const COLS = cfg.cols, ROWS = cfg.rows, N = COLS * ROWS, PW = cfg.pw, PH = cfg.ph, PIC = cfg.pic, CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
+// REPORT (owner, 2026-10-24): a player reports another; REPORT_NEED reports from that many DIFFERENT networks (an address as its /64) within a day and the reported one is kicked and can not come back (BAN_FOREVER).
+// To keep a few trolls from kicking anyone: the reporter must have joined REPORT_MIN_PIECES pieces, may report REPORT_DAY players a day, each player once, never one on their own network.
+const REPORT_NEED = 3, REPORT_WIN = 24 * 3600000, REPORT_MIN_PIECES = 3, REPORT_DAY = 5, BAN_FOREVER = 3650 * 86400000;
+const ipKey = ip => { ip = String(ip || ''); return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip; };
+const COOL_MS = 60000;   // the biggest group, once moved, cannot be lifted again for this long
+const FIX_MIN = 2;   // the biggest group is fixed (isFixed) from this many pieces on
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
-const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 30, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, VER = '2026-10-20-freeze';
+const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 5, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, BAN_STEPS = [30 * 60000, 24 * 3600000, 365 * 86400000], VER = '2026-10-23-log';
 // HOLD RULE (owner, 2026-10-22): when someone clicks a group another player is carrying, the carrier is reminded not to hold it long and must put it down within
 // NUDGE_MS; once it is down (by themselves or by the server) they cannot pick up that group again for LOCK_MS
 const NUDGE_MS = 30000, LOCK_MS = 90000;
 const FREEZE = !!cfg.freeze;   // a frozen picture is put together at once and nobody can lift anything (the first print, kept to be looked at)
 const ANG_TOL = 22 * Math.PI / 180, POS_TOL = .6 * Math.min(CW, CH), NEXT_AFTER = 120000, KEEP_DONE = true, HOLD_IDLE = 40000;
 const ORIGIN_OK = /^https?:\/\/(damcuoichuot\.com|www\.damcuoichuot\.com|[a-z0-9-]+\.github\.io|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(10|192\.168)\.\d+\.\d+(:\d+)?|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/i;
+// devices of the test scripts: never paid or stored, but ONLY on a local server (no CF-Connecting-IP, or loopback). On the real server this prefix was a free pass: joins nobody counts or lists (2026-10-23)
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz|jgtest)/;
+const isTest = (dev, ip) => TESTDEV.test(dev) && (!ip || ip === '127.0.0.1' || ip === '::1');
 const LOOK = ['role', 'age', 'body', 'fur', 'robe', 'skirt', 'pants', 'top'];   // a look is only forwarded; every browser cleans it again
 const cleanLook = l => { if (!l || typeof l !== 'object') return null; const o = {}; for (const k of LOOK) { const v = String(l[k] ?? '').slice(0, 16); if (v) o[k] = v; } return o; };
 const NB = [[-1, 0], [1, 0], [0, -1], [0, 1]];
@@ -39,7 +47,7 @@ class Jigsaw extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0; this.startAt = 0; this.ppl = new Set();
-    this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map(); this.locks = new Map();
+    this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map(); this.locks = new Map(); this.jl = [];
     ctx.blockConcurrencyWhile(async () => {
       // The picture must never be lost: the saved state is checked piece by piece, a damaged one falls back to the backup copy, and nothing is ever
       // thrown away without being kept under another key first (a different picture = a fresh puzzle, the old one stays as 'old:<pic>').
@@ -52,7 +60,11 @@ class Jigsaw extends DurableObject {
       }
       this.total = (await ctx.storage.get('total')) || 0;
       for (const [k, v] of await ctx.storage.list({ prefix: 'u:', limit: 5000 })) if (v && v.m >= 1) this.ppl.add(k);   // who has joined at least one piece (shown on the card)
+      if (cfg.resetTag && (await ctx.storage.get('resetTag')) !== cfg.resetTag) { await ctx.storage.put('resetTag', cfg.resetTag); await this.resetNow(); }   // once, on the first start of this code
+      await this.purgeLog().catch(() => {});   // the join log keeps addresses: nothing older than 30 days
       if (!this.startAt) this.startAt = cfg.startAt || Date.now();
+        this.off = new Map(Object.entries((await ctx.storage.get('off')) || {}));
+      this.reps = new Map(Object.entries((await ctx.storage.get('rep')) || {})); this.repBy = new Map();   // reps: reported device -> [[network, reporter device, time, reporter name]]
       const bn = await ctx.storage.get('bans'); if (bn) for (const [k, t] of Object.entries(bn)) if (t > Date.now()) this.bans.set(k, t);
       if (FREEZE && !(this.done && this.groups.size === 1)) {   // the run in progress is kept, then the whole print is put together in the middle of the table
         await ctx.storage.put('prev:' + Date.now(), { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, g: this.rows() });
@@ -104,8 +116,10 @@ class Jigsaw extends DurableObject {
   flush(soft) {
     const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() }, put = { pz, total: this.total };
     if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
+    if (Date.now() - (this.purgeAt || 0) > 6 * 3600000) this.purgeLog().catch(() => {});
+    const jl = this.jl; this.jl = []; for (const [k, v] of jl) put[k] = v;
     const users = [...this.dirtyUsers]; for (const dev of users) { const u = this.users.get(dev); if (u) put['u:' + dev] = u; } this.dirtyUsers.clear();
-    return this.ctx.storage.put(put, soft ? { allowUnconfirmed: true } : undefined).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 5000); });
+    return this.ctx.storage.put(put, soft ? { allowUnconfirmed: true } : undefined).catch(err => { console.log('jigsaw: save failed, retrying', String(err)); for (const d of users) this.dirtyUsers.add(d); this.jl.unshift(...jl); clearTimeout(this.saveT); this.saveT = setTimeout(() => { this.saveT = null; this.flush(); }, 5000); });
   }
   scheduleNext() { if (KEEP_DONE) return; clearTimeout(this.nextT); this.nextT = setTimeout(() => { if (this.done) { this.fresh(this.n + 1); this.all({ t: 'reset', ...this.full() }); } }, Math.max(1000, NEXT_AFTER - (Date.now() - this.doneAt))); }
 
@@ -113,12 +127,18 @@ class Jigsaw extends DurableObject {
   async fetch(req) {
     const u = new URL(req.url);
     if (u.pathname === '/sus') return this.sus();
+    if (u.pathname === '/log') return this.logReq();
+    if (u.pathname === '/who') return this.whoReq(u);
+    if (u.pathname === '/purge') return this.purgeReq(u);
+    if (u.pathname === '/reports') { const now = Date.now(); return this.json({ need: REPORT_NEED, pending: [...this.reps].map(([dev, a]) => ({ dev, reports: a.filter(r => now - r[2] < REPORT_WIN).map(r => ({ by: r[3], net: r[0], at: new Date(r[2]).toISOString() })) })).filter(x => x.reports.length) }); }
+    if (u.pathname === '/revert') return this.hackReq(u);
+    if (u.pathname === '/reset') return this.resetReq(u);
     if (u.pathname === '/ban') return this.banReq(u);
     const ip = req.headers.get('CF-Connecting-IP') || '';
     if (ip && (this.banned(ip) || [...this.conns.values()].filter(x => x.ip === ip).length >= MAX_SOCK_IP)) {   // accepted and closed with a code, so the page can say why (a plain 429 is only 'connection lost' to it)
       const pair = new WebSocketPair(), [cl, sv] = Object.values(pair); sv.accept(); sv.close(this.banned(ip) ? 4003 : 4005, 'busy'); return new Response(null, { status: 101, webSocket: cl });
     }
-    if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, done: this.done, n: [...this.conns.values()].filter(c => c.joined && !TESTDEV.test(c.dev)).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
+    if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, done: this.done, n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
     const pair = new WebSocketPair(), [client, server] = Object.values(pair); server.accept();
     const c = { ws: server, id: 'j' + (this.nextId++), dev: '', name: '', look: null, joined: false, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], ip, at: Date.now(), liftAt: 0, joinT: [], jn: 0, strikes: 0 };
     this.conns.set(c.id, c);
@@ -149,7 +169,7 @@ class Jigsaw extends DurableObject {
       if (!known) { const got = await Promise.race([this.user(c.dev), new Promise(r => setTimeout(() => r(null), 1500))]); if (got) u = got; else late = true; }
       if (this.banned(c.dev) || (c.ip && this.banned(c.ip))) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
       for (const o of [...this.conns.values()]) if (o !== c && o.dev === c.dev) { try { o.ws.close(4001, 'replaced'); } catch (e) {} this.onClose(o); }   // one socket a device: the older one is dead or another window
-      u.n = c.name; c.joined = true;
+      u.n = c.name; c.joined = true; c.test = isTest(c.dev, c.ip);
       this.send(c, { t: 'welcome', id: c.id, ...this.full(c), me: { m: u.m } });
       if (late) this.user(c.dev).then(r => { r.n = c.name; }).catch(() => {});
       this.all({ t: 'players', players: this.playerList() }, c);
@@ -158,9 +178,14 @@ class Jigsaw extends DurableObject {
     if (!c.joined) return;
     if (m.t === 'lift') this.lift(c, m.g | 0);
     else if (m.t === 'poke') this.poke(c, m.g | 0, now);
+    else if (m.t === 'report') this.report(c, String(m.id || ''), now);
     else if (m.t === 'move') this.move(c, m);
     else if (m.t === 'drop') this.drop(c, m, now);
     else if (m.t === 'chat') { if (now - c.chatAt < CHAT_GAP) return; const s = cleanChat(m.s); if (!s) return; c.chatAt = now; this.all({ t: 'chat', id: c.id, s }); }
+    else if (m.t === 'name') {   // the player changed their name in the page (the Hồ sơ name, shared by every chapter): same cleaning as hello, once every 10 s
+      if (now - (c.nameAt || 0) < 10000) return; let nm = String(m.s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12); nm = cleanChat(nm) || nm; if (!nm) return;
+      c.nameAt = now; c.name = nm; const u = this.users.get(c.dev); if (u) { u.n = nm; if (!c.test) this.dirtyUsers.add(c.dev); this.board = null; } this.all({ t: 'players', players: this.playerList() });
+    }
     else if (m.t === 'emote') { const k = m.k | 0; if (now - c.emoAt < 2000 || k < 0 || k > 5) return; c.emoAt = now; this.all({ t: 'emote', id: c.id, k }); }
     else if (m.t === 'board') this.sendBoard(c);
   }
@@ -174,8 +199,34 @@ class Jigsaw extends DurableObject {
   }
   lockPieces(dev, ids) { if (!dev) return; let m = this.locks.get(dev); const now = Date.now(); if (!m) { m = new Map(); this.locks.set(dev, m); } for (const [k, t] of m) if (t < now) m.delete(k); for (const id of ids) m.set(id, now + LOCK_MS); }
   lockLeft(dev, g) { const m = this.locks.get(dev); if (!m || !m.size) return 0; const now = Date.now(); let best = 0; for (const id of g.ids) { const t = m.get(id); if (t && t - now > best) best = t - now; } return best; }
+  // FIXED BIGGEST (owner, 2026-10-24: "bức lớn nhất mà ko đè lên 1 mảnh nào hết thì ko ai di chuyển được trừ khi ghép xong hết rồi"): the group with the most pieces (strictly: no other group is
+  // as big, and at least FIX_MIN pieces) that lies clear of every piece of every other group cannot be lifted by anyone. Others still bring their pieces to it and join; if some piece lies on top
+  // of it (centres closer than .8 of a cell) it can be lifted, to put it right. Overlap is measured piece centre to piece centre with a grid, about 6000 steps a lift.
+  isBiggest(g) {   // strictly the biggest, and at least FIX_MIN pieces
+    if (g.ids.length < FIX_MIN) return false;
+    for (const o of this.groups.values()) if (o !== g && o.ids.length >= g.ids.length) return false;
+    return true;
+  }
+  isFixed(g) {
+    if (!this.isBiggest(g)) return false;
+    const R = Math.min(CW, CH) * .8, key = (i, j) => i * 100003 + j, grid = new Map();
+    const at = (grp, id) => { const p = rot(grp.a, (id % COLS + .5) * CW, (Math.floor(id / COLS) + .5) * CH); return [grp.x + p[0], grp.y + p[1]]; };
+    for (const id of g.ids) { const [x, y] = at(g, id), k = key(Math.floor(x / R), Math.floor(y / R)); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(x, y); if (x < 0 || y < 0 || x > WW || y > WH) return false; }   // a piece off the table: the group stays movable (owner: out of the screen it must still move)
+    for (const o of this.groups.values()) {
+      if (o === g) continue;
+      for (const id of o.ids) {
+        const [x, y] = at(o, id), ci = Math.floor(x / R), cj = Math.floor(y / R);
+        for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const a = grid.get(key(ci + di, cj + dj)); if (a) for (let q = 0; q < a.length; q += 2) if (Math.hypot(a[q] - x, a[q + 1] - y) < R) return false; }
+      }
+    }
+    return true;
+  }
   lift(c, gid) {
     const g = this.groups.get(gid); if (!g || this.done || (g.by && g.by !== c.id)) { this.send(c, { t: 'deny', g: gid }); return; }
+    if (!g.by && this.isBiggest(g)) {   // the biggest group: fixed while it lies whole on the table and clear; otherwise movable, but only once a minute (COOL_MS after each put-down)
+      if (this.isFixed(g)) { this.send(c, { t: 'deny', g: gid, fixed: 1 }); return; }
+      const left = (g.coolUntil || 0) - Date.now(); if (left > 0) { this.send(c, { t: 'deny', g: gid, cool: Math.ceil(left / 1000) }); return; }
+    }
     const lk = this.lockLeft(c.dev, g); if (lk > 0) { this.send(c, { t: 'deny', g: gid, lock: Math.ceil(lk / 1000) }); return; }
     g.nudgeAt = 0;
     if (c.holding && c.holding !== gid) this.release(c.holding);
@@ -194,6 +245,7 @@ class Jigsaw extends DurableObject {
   release(gid) {
     const g = this.groups.get(gid); if (!g) return; const holder = this.conns.get(g.by); if (holder) holder.holding = null;
     if (g.nudgeAt && holder) this.lockPieces(holder.dev, g.ids); g.nudgeAt = 0; g.by = null; this.clamp(g);
+    if (this.isBiggest(g)) g.coolUntil = Date.now() + COOL_MS;
     this.all({ t: 'drop', g: gid, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save();
   }
   drop(c, m, now) {
@@ -204,14 +256,17 @@ class Jigsaw extends DurableObject {
     g.by = null; c.holding = null; this.clamp(g); this.dirty.delete(g.id);
     const ipw = c.ip ? (this.ipJ.get(c.ip) || []).filter(t => now - t < JOIN_WIN) : [];
     c.joinT = c.joinT.filter(t => now - t < 60000);
-    const hot = c.joinT.filter(t => now - t < JOIN_WIN).length >= JOIN_DEV || ipw.length >= JOIN_IP;   // more joining drops than a person makes: this one just does not join
-    if (hot) this.strike(c);
-    const joins = hot || quick ? [] : this.tryJoin(g);
+    const devHot = c.joinT.filter(t => now - t < JOIN_WIN).length >= JOIN_DEV, hot = devHot || ipw.length >= JOIN_IP;   // more joining drops than a person makes: this one just does not join
+    if (devHot) this.strike(c);   // only the DEVICE's own speed counts against it (a busy shared address must not get its neighbours banned)
+    const wasBig = this.isBiggest(g);   // the group dropped is the biggest: whatever it becomes (it may merge) rests for COOL_MS
+    this._mg = []; const joins = hot || quick ? [] : this.tryJoin(g); const mg = joins.length ? this._mg : [];
+    if (wasBig) { const fin = this.groups.get(this.pieceG[g.ids[0]]); if (fin) fin.coolUntil = now + COOL_MS; }
     if (joins.length) { c.joinT.push(now); c.jn += joins.length; if (c.ip) { ipw.push(now); this.ipJ.set(c.ip, ipw); } }
     if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
-    const u = this.users.get(c.dev); const paid = TESTDEV.test(c.dev) ? 0 : this.award(c, joins.length, now);
+    const u = this.users.get(c.dev); const paid = c.test ? 0 : this.award(c, joins.length, now);
     if (u && paid) { u.m += paid; this.ppl.add('u:' + c.dev); this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
+    this.jl.push(['j:' + String(now).padStart(14, '0') + ':' + c.id, { t: now, dev: c.dev, ip: c.ip, name: c.name, n: joins.length, hold: now - c.liftAt, test: !!c.test, mg: mg.map(m => [m.keep, m.gone, m.ids.join(','), m.pose, m.own]) }]);
     const finished = this.groups.size === 1; if (finished) { this.done = true; this.doneAt = Date.now(); }
     // stored first, then told: nobody ever sees a join that is not kept. The write does not hold the output gate (allowUnconfirmed) and we wait for it
     // ourselves, so a refused write (a storage limit) cannot break the whole object: the join is then told anyway and the write is retried
@@ -223,7 +278,7 @@ class Jigsaw extends DurableObject {
   award(c, k, now) { c.awards = c.awards.filter(t => now - t < 60000); const r10 = c.awards.filter(t => now - t < 10000).length, room = Math.max(0, Math.min(10 - r10, PAID_MIN - c.awards.length)), paid = Math.min(k, room); for (let i = 0; i < paid; i++) c.awards.push(now); return paid; }
   // the dropped group joins every neighbour it fits: the bigger group keeps its pose, the smaller moves onto it
   tryJoin(grp) {
-    const out = [];
+    const out = []; this._mg = []; const mine = new Set(grp.ids);   // the dropped group: a merge that moves any of ITS pieces is the dropper's own work (own: 1), one that moves another group only snapped that group onto the big one   // this._mg: what each merge moved (the smaller group's pieces and its pose before it joined), kept in the join log so a cheat can be undone (revertDev)
     for (let guard = 0; guard < 60; guard++) {
       // the neighbour that fits best, measured AT THE CONTACT (same rule as js/ghep/manh.js c9Contact): the angle within ANG_TOL and the two
       // touching pieces, each placed under the other group's pose, within POS_TOL (the corner of the print would need a fraction of a degree)
@@ -242,6 +297,7 @@ class Jigsaw extends DurableObject {
       }
       if (!hit) break;
       const big = hit.o.ids.length >= grp.ids.length ? hit.o : grp, small = big === grp ? hit.o : grp;
+      this._mg.push({ keep: big.id, gone: small.id, ids: small.ids.slice(), pose: [r1(small.x), r1(small.y), r3(small.a)], own: small.ids.some(id => mine.has(id)) ? 1 : 0 });
       for (const id of small.ids) { this.pieceG[id] = big.id; big.ids.push(id); }
       this.groups.delete(small.id); this.dirty.delete(small.id);
       out.push({ keep: big.id, gone: small.id, x: r1(big.x), y: r1(big.y), a: r3(big.a), pair: hit.pair }); grp = big;
@@ -252,12 +308,128 @@ class Jigsaw extends DurableObject {
   banned(key) { const t = this.bans.get(key); if (!t) return false; if (t < Date.now()) { this.bans.delete(key); return false; } return true; }
   ban(key, ms) { if (!key) return; this.bans.set(key, Date.now() + ms); for (const c of [...this.conns.values()]) if (c.dev === key || c.ip === key) { try { c.ws.close(4003, 'busy'); } catch (e) {} } this.saveBans(); }
   saveBans() { const o = {}, now = Date.now(); for (const [k, t] of this.bans) if (t > now) o[k] = t; this.ctx.storage.put('bans', o).catch(() => {}); }
-  strike(c) { const now = Date.now(); c.strikeT = (c.strikeT || []).filter(t => now - t < STRIKE_WIN); c.strikeT.push(now); c.strikes = c.strikeT.length; if (c.strikes >= STRIKES_BAN) { this.ban(c.dev, BAN_DEV); this.ban(c.ip, BAN_IP); } }
-  json(o) { return new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } }); }
-  sus() {
-    const now = Date.now(), live = [...this.conns.values()].filter(c => c.joined).map(c => ({ id: c.id, name: c.name, dev: c.dev, ip: c.ip, joins: c.jn, last60: c.joinT.filter(t => now - t < 60000).length, strikes: c.strikes, secs: Math.round((now - c.at) / 1000) })).sort((a, b) => b.last60 - a.last60 || b.joins - a.joins);
-    return this.json({ ver: VER, puzzle: this.n, left: this.groups.size - 1, live: live.slice(0, 40), bans: [...this.bans].filter(([, t]) => t > now).map(([k, t]) => [k, Math.round((t - now) / 60000) + ' min']) });
+  strike(c) { const now = Date.now(); c.strikeT = (c.strikeT || []).filter(t => now - t < STRIKE_WIN); c.strikeT.push(now); c.strikes = c.strikeT.length; if (c.strikes >= STRIKES_BAN) this.autoBan(c, 'joining faster than a person can'); }
+  report(c, id, now) {
+    const deny = err => this.send(c, { t: 'report', err });
+    const tc = this.conns.get(id); if (!tc || !tc.joined || tc === c) return deny('who');
+    const u = this.users.get(c.dev); if (!u || u.m < REPORT_MIN_PIECES) return deny('new');
+    const ipk = ipKey(c.ip); if (!ipk || ipk === ipKey(tc.ip) || tc.dev === c.dev) return deny('self');
+    const mine = (this.repBy.get(c.dev) || []).filter(t => now - t < REPORT_WIN); if (mine.length >= REPORT_DAY) return deny('limit');
+    const arr = (this.reps.get(tc.dev) || []).filter(r => now - r[2] < REPORT_WIN);
+    if (arr.some(r => r[0] === ipk || r[1] === c.dev)) return deny('dup');
+    arr.push([ipk, c.dev, now, c.name]); mine.push(now); this.repBy.set(c.dev, mine); this.reps.set(tc.dev, arr);
+    this.send(c, { t: 'report', ok: 1 });
+    if (new Set(arr.map(r => r[0])).size >= REPORT_NEED) this.kickReported(tc, arr, now); else this.ctx.storage.put('rep', Object.fromEntries(this.reps)).catch(() => {});
   }
+  kickReported(tc, arr, now) {
+    this.reps.delete(tc.dev); this.ctx.storage.put('rep', Object.fromEntries(this.reps)).catch(() => {});
+    this.off.set(tc.dev, { n: 9, t: now }); this.ctx.storage.put('off', Object.fromEntries(this.off)).catch(() => {});
+    this.ctx.storage.put('b:' + String(now).padStart(14, '0') + ':' + tc.id, { t: now, dev: tc.dev, ip: tc.ip, name: tc.name, why: 'reported by ' + arr.length + ' players (' + arr.map(r => r[3]).join(', ') + ')', level: 9, mins: Math.round(BAN_FOREVER / 60000), joins: tc.jn }).catch(() => {});
+    try { tc.ws.close(4006, 'reported'); } catch (e) {}   // 4006: the page says why
+    this.ban(tc.dev, BAN_FOREVER);   // the address is NOT banned: it may be shared
+  }
+  // The server's own ban: 30 minutes the first time, 24 hours the second, a year the third (offences are counted for 30 days); the address only 10 minutes (it may be shared).
+  // Every automatic ban is written down (key b:<time>:<socket>) with who, from where and why, so it can be looked at (jg-sus lists the latest) and, if it was wrong, freed.
+  autoBan(c, why) {
+    const now = Date.now(), o = this.off.get(c.dev), n = o && now - o.t < 30 * 86400000 ? o.n + 1 : 1, ms = BAN_STEPS[Math.min(n, BAN_STEPS.length) - 1];
+    this.off.set(c.dev, { n, t: now }); this.ctx.storage.put('off', Object.fromEntries(this.off)).catch(() => {});
+    this.ctx.storage.put('b:' + String(now).padStart(14, '0') + ':' + c.id, { t: now, dev: c.dev, ip: c.ip, name: c.name, why, level: n, mins: Math.round(ms / 60000), joins: c.jn }).catch(() => {});
+    this.ban(c.dev, ms); this.ban(c.ip, BAN_IP);
+  }
+  json(o) { return new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } }); }
+  async sus() {
+    const banlog = [...(await this.ctx.storage.list({ prefix: 'b:', reverse: true, limit: 20 })).values()].map(b => ({ ...b, at: new Date(b.t).toISOString() }));
+    const now = Date.now(), live = [...this.conns.values()].filter(c => c.joined).map(c => ({ id: c.id, name: c.name, dev: c.dev, ip: c.ip, joins: c.jn, last60: c.joinT.filter(t => now - t < 60000).length, strikes: c.strikes, secs: Math.round((now - c.at) / 1000) })).sort((a, b) => b.last60 - a.last60 || b.joins - a.joins);
+    return this.json({ ver: VER, puzzle: this.n, left: this.groups.size - 1, live: live.slice(0, 40), bans: [...this.bans].filter(([, t]) => t > now).map(([k, t]) => [k, Math.round((t - now) / 60000) + ' min']), banlog });
+  }
+  // the join records (j:<time>:<socket>) hold addresses; they are for catching cheats, so they go after 30 days (at start and every 6 hours with a save)
+  async purgeLog() {
+    this.purgeAt = Date.now();
+    const cut = 'j:' + String(Date.now() - 30 * 86400000).padStart(14, '0');
+    const keys = [...(await this.ctx.storage.list({ prefix: 'j:', end: cut, limit: 5000 })).keys(), ...(await this.ctx.storage.list({ prefix: 'b:', end: 'b:' + cut.slice(2), limit: 1000 })).keys()];
+    for (let i = 0; i < keys.length; i += 128) await this.ctx.storage.delete(keys.slice(i, i + 128));
+    return keys.length;
+  }
+  // who joined how much, from the per-join records (key j:<time>:<socket>): by device, with addresses, names, first and last time, the busiest minute and the quickest hold
+  async logReq() {
+    const by = new Map(); let rows = 0;
+    for (const [k, v] of await this.ctx.storage.list({ prefix: 'j:', limit: 20000 })) {
+      rows++; let d = by.get(v.dev); if (!d) by.set(v.dev, d = { dev: v.dev, names: new Set(), ips: new Set(), drops: 0, joins: 0, first: v.t, last: v.t, min: {}, fast: 1e9, test: v.test });
+      d.names.add(v.name); d.ips.add(v.ip); d.drops++; d.joins += v.n; d.last = v.t; d.min[Math.floor(v.t / 60000)] = (d.min[Math.floor(v.t / 60000)] || 0) + v.n; if (v.hold < d.fast) d.fast = v.hold;
+    }
+    const out = [...by.values()].map(d => ({ dev: d.dev, names: [...d.names].join(','), ips: [...d.ips].join(','), drops: d.drops, joins: d.joins, first: new Date(d.first).toISOString(), last: new Date(d.last).toISOString(), peakPerMin: Math.max(0, ...Object.values(d.min)), fastHoldMs: d.fast, test: d.test })).sort((a, b) => b.joins - a.joins);
+    return this.json({ ver: VER, rows, devices: out.length, joins: out.reduce((s, d) => s + d.joins, 0), list: out.slice(0, 80) });
+  }
+  // which devices carry a name (the records u:<dev> hold {n name, m pieces}); the owner then bans or purges one
+  async whoReq(u) {
+    const q = (u.searchParams.get('name') || '').toLowerCase(); if (!q) return this.json({ error: 'name' });
+    const out = [];
+    for (const [k, v] of await this.ctx.storage.list({ prefix: 'u:', limit: 20000 })) { const r = this.users.get(k.slice(2)) || v; if (r && String(r.n || '').toLowerCase().includes(q)) out.push({ dev: k.slice(2), n: r.n, m: r.m }); }
+    return this.json({ ver: VER, found: out });
+  }
+  // off the board for good: pieces back to 0 (the board lists players with at least one piece) and the device banned for a year
+  async purgeDev(dev) {
+    const old = this.users.get(dev) || await this.ctx.storage.get('u:' + dev); if (!old) return null;
+    const rec = { n: old.n, m: 0 }; this.users.set(dev, rec); this.dirtyUsers.delete(dev); await this.ctx.storage.put('u:' + dev, rec); this.ppl.delete('u:' + dev); this.board = null;
+    return { name: old.n, was: old.m };
+  }
+  async purgeReq(u) {
+    const dev = u.searchParams.get('dev'); if (!dev) return this.json({ error: 'dev' });
+    const p = await this.purgeDev(dev); if (!p) return this.json({ error: 'unknown device' });
+    this.ban(dev, 365 * 86400000);
+    return this.json({ ok: 'purged', dev, name: p.name, was: p.was });
+  }
+  // a group at a random place and angle of the table, as fresh() would leave a piece
+  scatter(g) {
+    g.a = r3(Math.random() * 2 * Math.PI); g.x = 0; g.y = 0; const c = this.centroid(g);
+    const tx = CW + Math.random() * (WW - 2 * CW), ty = CH + Math.random() * (WH - 2 * CH);
+    g.x = r1(tx - c[0]); g.y = r1(ty - c[1]); this.clamp(g);
+  }
+  // UNDO what one device joined: the join log (key j:…) holds, for every merge it made, the pieces that moved and the pose they had before. Merges are undone newest first:
+  // those pieces are taken out of whatever group holds them now (a group may keep holes, which is fine) and stand again as a group of their own at their old pose. What other
+  // players joined onto the result stays as it is. Only joins logged since the log carries pieces (2026-10-24) can be undone; older rows are counted as rowsWithoutData.
+  async revertDev(dev, dry) {
+    const rows = [];
+    for (const [k, v] of await this.ctx.storage.list({ prefix: 'j:', limit: 20000 })) if (v && v.dev === dev) rows.push([k, v]);
+    const done = rows.filter(([, v]) => v.rev).length, withData = rows.filter(([, v]) => Array.isArray(v.mg) && v.mg.length), merges = [];
+    for (const [, v] of withData) for (const m of v.mg) merges.push(m);
+    const info = { rows: rows.length, mergesToUndo: merges.length, rowsWithoutData: rows.length - withData.length - done, alreadyReverted: done };
+    if (dry || !merges.length) return { ...info, groupsNow: this.groups.size };
+    let nid = Math.max(...this.groups.keys()) + 1;
+    for (let i = merges.length - 1; i >= 0; i--) {
+      const ids = String(merges[i][2]).split(',').map(Number), pose = merges[i][3], own = merges[i][4], set = new Set(ids);
+      for (const gid of new Set(ids.map(id => this.pieceG[id]))) {
+        const g = this.groups.get(gid); if (!g) continue;
+        if (g.by) this.release(gid);
+        g.ids = g.ids.filter(id => !set.has(id)); this.dirty.delete(gid); if (!g.ids.length) this.groups.delete(gid);
+      }
+      const ng = { id: nid++, x: pose[0], y: pose[1], a: pose[2], ids: ids.slice(), by: null, heldAt: 0 };
+      this.groups.set(ng.id, ng); for (const id of ids) this.pieceG[id] = ng.id;
+      if (own) this.scatter(ng);   // the dropper's own pieces went to the right place only because of the cheat: they go back to a random spot (a group someone else had placed goes back to where it stood)
+    }
+    const put = {}; for (const [k, v] of withData) put[k] = { ...v, mg: null, rev: true };
+    const keys = Object.keys(put); for (let i = 0; i < keys.length; i += 100) { const part = {}; for (const k of keys.slice(i, i + 100)) part[k] = put[k]; await this.ctx.storage.put(part); }
+    this.done = this.groups.size === 1; if (!this.done) this.doneAt = 0;
+    this.total = Math.max(0, this.total - merges.length); this.board = null;
+    await this.flush();
+    this.all({ t: 'reset', ...this.full() });
+    return { ...info, undone: merges.length, groupsNow: this.groups.size };
+  }
+  // one command for a known cheat: undo what they joined, then take them off the board and ban the device for a year (?dry=1 only counts)
+  async hackReq(u) {
+    const dev = u.searchParams.get('dev'); if (!dev) return this.json({ error: 'dev' });
+    if (u.searchParams.get('dry')) return this.json({ dry: true, ...(await this.revertDev(dev, true)) });
+    this.ban(dev, 365 * 86400000);
+    const rev = await this.revertDev(dev, false), pur = await this.purgeDev(dev);
+    return this.json({ ok: 'reverted and banned', dev, ...rev, purged: pur });
+  }
+  // start the same picture again (everybody's records and the board stay): the finished picture is kept as old:<pic>:<time>
+  async resetNow() {
+    await this.ctx.storage.put('old:' + PIC + ':' + Date.now(), { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() });
+    this.total = 0; this.bakAt = 0; clearTimeout(this.nextT); this.fresh(this.n + 1); await this.flush();
+    this.all({ t: 'reset', ...this.full() });
+  }
+  async resetReq(u) { if (u.searchParams.get('ok') !== PIC) return this.json({ error: 'add ?ok=' + PIC }); await this.resetNow(); return this.json({ ok: 'reset', n: this.n }); }
   banReq(u) {   // /ban?dev=…|ip=…[&mins=N][&un=1]
     const key = u.searchParams.get('dev') || u.searchParams.get('ip'); if (!key) return this.json({ error: 'dev or ip' });
     if (u.searchParams.get('un')) { this.bans.delete(key); this.saveBans(); return this.json({ ok: 'freed', key }); }
@@ -274,7 +446,7 @@ class Jigsaw extends DurableObject {
     const now = Date.now();
     if (!this.board || now - this.boardAt > 15000) {
       const all = await this.ctx.storage.list({ prefix: 'u:', limit: 3000 }), rows = [];
-      for (const [k, v] of all) { const u = this.users.get(k.slice(2)) || v; if (u && u.m > 0 && !TESTDEV.test(k.slice(2))) rows.push({ dev: k.slice(2), n: u.n, m: u.m }); }
+      for (const [k, v] of all) { const u = this.users.get(k.slice(2)) || v; if (u && u.m > 0) rows.push({ dev: k.slice(2), n: u.n, m: u.m }); }
       rows.sort((a, b) => b.m - a.m || a.dev.localeCompare(b.dev)); this.board = rows; this.boardAt = now;
     }
     const me = this.board.findIndex(x => x.dev === c.dev), u = this.users.get(c.dev);
@@ -291,4 +463,8 @@ export class JigsawVQ extends makeJigsaw({ pic: 'vq1', cols: 57, rows: 35, pw: 4
 // the third print: Đàn gà mẹ con, img/ch10/dan-ga-me-con.jpg 4400 x 2456, 100 x 56 = 5600 pieces
 export class JigsawDG extends makeJigsaw({ pic: 'dg1', cols: 100, rows: 56, pw: 4400, ph: 2456, freeze: false }) {}   // dropped (too heavy), kept only because its migration exists
 // the same print cropped and cut in 65 x 46 = 2990 pieces (owner, 2026-10-22: less lag), img/ch10/dan-ga-me-con.jpg 3300 x 2324
-export class JigsawDG2 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false }) {}
+// the fifth print (2026-10-24): Lễ hội đầu xuân, 73 x 41 = 2993 pieces of 50 px (3650 x 2050, img/ch10/le-hoi-dau-xuan.jpg). Same guards, join log, revert, fixed biggest group and cooldown as every print (all in makeJigsaw)
+export class JigsawLH extends makeJigsaw({ pic: 'lh1', cols: 73, rows: 41, pw: 3650, ph: 2050, freeze: false }) {}
+// the sixth print (2026-10-25): Lý ngư vọng nguyệt, a tall print, 41 x 73 = 2993 pieces of 50 px (2050 x 3650, img/ch10/ly-ngu-vong-nguyet.jpg). Same guards as every print (all in makeJigsaw)
+export class JigsawLY extends makeJigsaw({ pic: 'ly1', cols: 41, rows: 73, pw: 2050, ph: 3650, freeze: false }) {}
+export class JigsawDG3 extends makeJigsaw({ pic: 'dg2', cols: 65, rows: 46, pw: 3300, ph: 2324, freeze: false, resetTag: 'r1' }) {}

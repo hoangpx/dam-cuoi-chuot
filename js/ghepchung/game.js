@@ -11,6 +11,8 @@ const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG
 const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0 };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
+  { id: 'ly', after: 'lh', pic: { id: 'ly', src: 'img/ch10/ly-ngu-vong-nguyet.jpg', w: 2050, h: 3650, vi: 'Lý ngư vọng nguyệt', en: 'Carp Gazing at the Moon' }, thumb: 'img/ch10/thumb-ly.jpg', cols: 41, rows: 73 },   // tall print; appears in the list only once Lễ hội đầu xuân is finished (owner, 2026-10-25)
+  { id: 'lh', hideMin: 10, pic: { id: 'lh', src: 'img/ch10/le-hoi-dau-xuan.jpg', w: 3650, h: 2050, vi: 'Lễ hội đầu xuân', en: 'Spring Festival' }, thumb: 'img/ch10/thumb-lh.jpg', cols: 73, rows: 41 },   // opened 2026-10-24 (owner: "sao tranh mới vẫn chưa thấy lên")
   { id: 'dg', pic: { id: 'dg', src: 'img/ch10/dan-ga-me-con-2.jpg', w: 3300, h: 2324, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' }, thumb: 'img/ch10/thumb-dg2.jpg', cols: 65, rows: 46 },
   { id: 'vq', pic: { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, thumb: 'img/ch10/thumb-vq.jpg', cols: 57, rows: 35 },
   { id: 'dcm', pic: { id: 'dcm', src: 'img/ch10/dam-cuoi-chuot.jpg', w: 3200, h: 2204, vi: 'Đám cưới chuột', en: 'The Mice’s Wedding' }, thumb: 'img/ch10/thumb-dcm.jpg', cols: 40, rows: 25 },
@@ -19,21 +21,10 @@ for (let k = JG_PUZZLES.length - 1; k >= 0; k--) if (JG_PUZZLES[k].hidden) JG_PU
 const jgLevel = pz => ({ pic: pz.pic, tier: 3, cols: pz.cols, rows: pz.rows, big: true });
 const JG_STRIP = 50, JG_COIN = 10;
 
-// background track of the prints (plays ONCE per visit, then stops) (owner's own Suno song, 2026-10-22): a streamed <audio> element (an AudioBuffer of 4 minutes would take ~90 MB), 80 kbps, fetched only when chapter X opens
-const JG_MUSIC = { el: null, want: false };
-// plays once per visit, then stops (owner, 2026-10-22)
-function jgMusic(on) {
-  const M = JG_MUSIC; M.want = on;
-  if (on && !M.el) { try { M.el = new Audio('audio/nhac-nen-ghep-tranh.mp3'); M.el.loop = false; M.el.preload = 'auto'; M.el.addEventListener('ended', () => { M.want = false; }); } catch (e) { M.el = null; } }
-  if (!M.el) return;
-  if (on) { if (M.el.ended) M.el.currentTime = 0; M.el.volume = .45; if (AU.isMuted()) { M.el.pause(); return; } const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } else M.el.pause();
-}
-document.addEventListener('visibilitychange', () => { const M = JG_MUSIC; if (!M.el) return; if (document.hidden) M.el.pause(); else if (M.want && !AU.isMuted()) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
-// a tap before the browser allows sound: try again on the first touch
-document.addEventListener('pointerdown', () => { const M = JG_MUSIC; if (M.want && M.el && M.el.paused && !document.hidden && !AU.isMuted()) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
+// NO background music in the prints (owner, 2026-10-24: "bỏ nhạc đi, ko chạy nhạc nữa"): the track and its code are gone; the game's own songs stay off here (AU.setQuiet), sound effects stay
 function startJG() {
-  trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // the game's own songs stay off in the prints; one looping track plays instead (jgMusic)
-  hideChapterHuds(); jgMusic(true);
+  trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // the game's own songs stay off in the prints (and no track of ours plays any more)
+  hideChapterHuds();
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
@@ -62,6 +53,12 @@ function jgStats(info, fin) {
   const a = []; if (info.players) a.push(`${info.players} ${lg('người ghép', 'players')}`); if (fin && info.took > 0) a.push(jgDur(info.took));
   return a.join(' · ');
 }
+// a print with `after` shows only once that print is finished (the list numbers say so)
+const jgFin = info => !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
+const jgPeek = () => location.search.indexOf('xemly') >= 0;   // ?xemly: the owner's way to see a print that waits for another (any host)
+// a print with `hideMin` disappears from the list that many minutes after it was finished (the list gives since + took = the finishing time)
+const jgGone = pz => { const i = JG.list && JG.list[pz.id]; return !!(pz.hideMin && !jgPeek() && i && i.done && i.since && i.took > 0 && Date.now() - (i.since + i.took) > pz.hideMin * 60000); };
+const jgShown = () => JG_PUZZLES.filter(pz => !jgGone(pz) && (!pz.after || jgPeek() || jgFin(JG.list && JG.list[pz.after])));
 function jgListAsk(force) {
   if (JG.listBusy || (!force && Date.now() - JG.listAt < 15000)) return; JG.listBusy = true; JG.listAt = Date.now();
   fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {}).then(() => { JG.listBusy = false; });
@@ -100,7 +97,8 @@ function jgMsg(m) {
   else if (m.t === 'players') JG.players = m.players;
   else if (!G) return;
   else if (m.t === 'lift') { if (m.by !== JG.id) c9NetLift(G, m.g, m.by); }
-  else if (m.t === 'deny') { c9NetDeny(G, m.g); if (m.lock) JG.note = { t0: JG.t, s: lg(`Mảnh này bạn vừa giữ lâu, nghỉ ${m.lock} giây nữa mới nhấc lại được`, `You held this one too long: wait ${m.lock} s to pick it up again`) }; }
+  else if (m.t === 'report') JG.note = { t0: JG.t, s: m.ok ? lg('Đã gửi báo cáo. Cảm ơn bạn!', 'Report sent. Thank you!') : ({ new: lg('Bạn cần ghép được ít nhất 3 mảnh mới báo cáo được', 'Join at least 3 pieces before you can report'), dup: lg('Bạn đã báo cáo người này rồi', 'You already reported this player'), limit: lg('Hôm nay bạn đã báo cáo đủ 5 người', 'You have reported 5 players today'), self: lg('Không báo cáo được người này', 'You can not report this player') }[m.err] || lg('Người này vừa rời đi', 'This player just left')) };
+  else if (m.t === 'deny') { c9NetDeny(G, m.g); if (m.cool) JG.note = { t0: JG.t, s: lg(`Bức lớn nhất vừa được dời, ${m.cool} giây nữa mới dời lại được`, `The biggest picture was just moved: ${m.cool} s until it can be moved again`) }; if (m.fixed) JG.note = { t0: JG.t, s: lg('Bức lớn nhất đã đặt yên, không dời được cho tới khi ghép xong', 'The biggest picture stays where it is until the puzzle is finished') }; if (m.lock) JG.note = { t0: JG.t, s: lg(`Mảnh này bạn vừa giữ lâu, nghỉ ${m.lock} giây nữa mới nhấc lại được`, `You held this one too long: wait ${m.lock} s to pick it up again`) }; }
   else if (m.t === 'nudge') JG.nudge = { g: m.g, until: JG.t + (m.sec || 30) };
   else if (m.t === 'timeup') { JG.nudge = null; JG.note = { t0: JG.t, s: lg(`Hết giờ, mảnh đã được đặt xuống. ${m.sec || 90} giây nữa mới nhấc lại được`, `Time is up, the piece was put down. ${m.sec || 90} s before you can lift it again`) }; }
   else if (m.t === 'poked') JG.note = { t0: JG.t, s: lg('Đã nhắc bạn đó đặt mảnh xuống', 'Reminded them to put it down') };
@@ -122,10 +120,6 @@ function jgMsg(m) {
 
 /* ---------- update and drawing ---------- */
 function updateJG(dt) {
-  if (JG_MUSIC.el && JG_MUSIC.want) {   // the global sound switch: muted = no track at all (paused), unmuted = it goes on
-    const m = AU.isMuted(), e = JG_MUSIC.el;
-    if (m && !e.paused) e.pause(); else if (!m && e.paused && !e.ended && !document.hidden) { const p = e.play(); if (p && p.catch) p.catch(() => {}); }
-  }
   JG.t += dt; JG.st = safeTop();
   if (!JG.pz) jgListAsk(false);
   if (JG.G) { c9Tick(JG.G, dt); JG.joinedN = JG.G.done ? JG.G.pieces.length : JG.G.pieces.length - JG.G.groups.length; }
@@ -178,11 +172,66 @@ function jgEye(g, cx, cy, on) {
   g.beginPath(); g.arc(cx, cy, 16, 0, 6.283); g.fillStyle = on ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = HL_INK; g.stroke();
   g.beginPath(); g.ellipse(cx, cy, 9, 5.5, 0, 0, 6.283); g.stroke(); g.beginPath(); g.arc(cx, cy, 2.6, 0, 6.283); g.fillStyle = HL_INK; g.fill();
 }
+// RENAME (owner, 2026-10-24: "thêm tính năng đổi tên, đổi tên ở đây cũng đổi tên khắp nơi, kể cả chương 4"): it edits the one name of the game, the Hồ sơ name (dcc.hoso), exactly as the Hồ sơ tab saves it
+// (clean, bad words refused, pushed to the server), so Hội Làng, the rich list of chương IV and every print use it; the open room is told ({t:'name'}) so the strip shows it at once.
+let JG_REN_EL = null;
+function jgRenameClose() { if (JG_REN_EL) { JG_REN_EL.remove(); JG_REN_EL = null; } }
+function jgRenameOpen() {
+  if (JG_REN_EL) { jgRenameClose(); return; }
+  JG.ui = null;
+  const el = document.createElement('div'), touch = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window), max = HS_NAME_MAX, cur = hsName(hsMine());
+  el.style.cssText = 'position:fixed;left:0;right:0;' + (touch ? 'top:0;border-bottom:2px solid #1d1915;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;' : 'bottom:0;border-top:2px solid #1d1915;padding:8px 10px;') + 'z-index:60;background:#f2ecde;display:flex;gap:8px;align-items:center;font-family:inherit';
+  el.innerHTML = '<input id="jgRenIn" type="text" maxlength="' + max + '" autocomplete="off" placeholder="' + lg('Tên mới (tối đa ' + max + ' chữ)', 'New name (up to ' + max + ' letters)') + '" style="flex:1;min-width:0;font-size:16px;padding:9px 11px;border:2px solid #1d1915;background:#fbf6ea;border-radius:6px"><button id="jgRenOk" style="font-size:15px;padding:9px 14px;border:2px solid #1d1915;background:#e9b9ae;border-radius:6px;font-weight:700">' + lg('Lưu', 'Save') + '</button><button id="jgRenNo" style="font-size:15px;padding:9px 12px;border:2px solid #1d1915;background:#f2ecde;border-radius:6px">' + lg('Thôi', 'Cancel') + '</button>';
+  document.body.appendChild(el); JG_REN_EL = el;
+  const inp = el.querySelector('#jgRenIn'); inp.value = cur; inp.focus(); inp.select();
+  const save = () => {
+    const v = inp.value.replace(/\s+/g, ' ').trim().slice(0, max);
+    if (v.length < 2) { toast(lg('Tên phải có ít nhất 2 chữ.', 'A name needs at least 2 letters.'), 2.4); return; }
+    if (p4HoaBad(v)) { toast(lg('Tên có chữ không đẹp, chọn tên khác nhé.', 'That name has a bad word, pick another.'), 2.8); return; }
+    const old = hsGet('dcc.hoso', {}) || {}, d = hsClean({ ...hsMine(), name: v });
+    hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); HS_FACE.clear();
+    hsPush().catch(() => {}); JG_NET.send({ t: 'name', s: v }); try { if (typeof c4RankSend === 'function') c4RankSend(); } catch (e) {}
+    jgRenameClose(); toast(lg('Đã đổi tên thành ' + v + ' ở mọi nơi', 'Renamed to ' + v + ' everywhere'), 2.8);
+  };
+  el.querySelector('#jgRenOk').addEventListener('click', save); el.querySelector('#jgRenNo').addEventListener('click', jgRenameClose);
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') save(); else if (e.key === 'Escape') jgRenameClose(); });
+}
+function jgFlag(g, cx, cy) {
+  g.beginPath(); g.arc(cx, cy, 16, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = HL_INK; g.stroke();
+  g.beginPath(); g.moveTo(cx - 5, cy + 9); g.lineTo(cx - 5, cy - 9); g.stroke();
+  g.beginPath(); g.moveTo(cx - 5, cy - 9); g.lineTo(cx + 8, cy - 5); g.lineTo(cx - 5, cy); g.closePath(); g.fillStyle = '#a3332a'; g.fill(); g.stroke();
+}
+// report a player (owner, 2026-10-24): the people in the room, tap one, confirm; three different networks reporting kicks the player for good (the server counts)
+function jgReport(g, W, hh) {
+  const w = Math.min(W - 20, 460), x = (W - w) / 2, y = 56, h = hh - y - JG_STRIP - 10, rowH = 34, sub = { f: hlSans, w: 600, o: false };
+  g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(0, 0, W, hh); hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 14);
+  hlText(g, lg('Báo cáo người chơi', 'Report a player'), W / 2, y + 22, 17, { w: 900 });
+  const close = () => { JG.ui = null; JG.repPick = null; };
+  hlText(g, lg('‹ đóng', '‹ close'), x + w - 44, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a' }); JG.btns.push({ x: x + w - 90, y: y + h - 30, w: 90, h: 30, down: close });
+  const pk = JG.repPick;
+  if (pk) {
+    hlText(g, lg('Báo cáo "' + pk.name + '" vì gian lận?', 'Report "' + pk.name + '" for cheating?'), W / 2, y + 74, 14, { ...sub, w: 800 });
+    hlText(g, lg('Nhiều người báo cáo thì người đó bị đuổi ra.', 'If enough players report someone, they are kicked out.'), W / 2, y + 108, 11, { ...sub, al: .85 });
+    hlPlate(g, W / 2 - 112, y + 146, 104, 36, '#e9b9ae', HL_INK, 8); hlText(g, lg('Báo cáo', 'Report'), W / 2 - 60, y + 165, 14, { f: hlSans, w: 800, o: false, c: '#7d1f17' });
+    JG.btns.push({ x: W / 2 - 112, y: y + 146, w: 104, h: 36, down: () => { JG_NET.send({ t: 'report', id: pk.id }); close(); } });
+    hlPlate(g, W / 2 + 8, y + 146, 104, 36, '#f2ecde', HL_INK, 8); hlText(g, lg('Thôi', 'Cancel'), W / 2 + 60, y + 165, 14, { f: hlSans, w: 800, o: false });
+    JG.btns.push({ x: W / 2 + 8, y: y + 146, w: 104, h: 36, down: () => { JG.repPick = null; } });
+    return;
+  }
+  const others = JG.players.filter(p => p.id !== JG.id);
+  hlText(g, others.length ? lg('Chạm vào tên người bạn nghi gian lận', 'Tap the name of the player you suspect') : lg('Chưa có ai khác trong phòng', 'Nobody else is in the room'), W / 2, y + 46, 12, { ...sub, al: .85 });
+  const ly0 = y + 62, ly1 = y + h - 40, maxScroll = Math.max(0, others.length * rowH - (ly1 - ly0)); JG.bscroll = Math.max(0, Math.min(maxScroll, JG.bscroll)); JG.barea = { x, y: ly0, w, h: ly1 - ly0 };
+  g.save(); g.beginPath(); g.rect(x + 2, ly0, w - 4, ly1 - ly0); g.clip();
+  JG.repRows = [];
+  others.forEach((p, i) => { const ry = ly0 + i * rowH - JG.bscroll; if (ry < ly0 - rowH || ry > ly1) return; hlPlate(g, x + 10, ry + 2, w - 20, rowH - 6, '#f6efdc', HL_INK, 7); hlText(g, p.name || '?', x + 24, ry + rowH / 2, 13, { ...sub, a: 'left', w: 700 }); hlText(g, '⚑', x + w - 28, ry + rowH / 2, 14, { ...sub, c: '#a3332a', w: 900 }); JG.repRows.push({ x: x + 10, y: Math.max(ry + 2, ly0), w: w - 20, h: Math.min(ry + rowH - 4, ly1) - Math.max(ry + 2, ly0), p }); });
+  g.restore();
+}
 function jgBoard(g, W, hh) {
   const w = Math.min(W - 20, 560), x = (W - w) / 2, y = 56, h = hh - y - JG_STRIP - 10, rowH = 24;   // a tablet: the board stays a readable column in the middle, not the whole width (owner, 2026-10-20)
   g.fillStyle = 'rgba(29,25,21,.35)'; g.fillRect(0, 0, W, hh); hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 14);
   hlText(g, lg('Bảng xếp hạng · mọi lúc', 'Leaderboard · all time'), W / 2, y + 22, 17, { w: 900 });
   hlText(g, '‹ đóng', x + w - 44, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a' }); JG.btns.push({ x: x + w - 90, y: y + h - 30, w: 90, h: 30, down: () => { JG.ui = null; } });
+  hlText(g, lg('✎ Đổi tên', '✎ Rename'), x + 50, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#2f6a4c' }); JG.btns.push({ x: x + 8, y: y + h - 30, w: 100, h: 30, down: () => jgRenameOpen() });
   const sub = { f: hlSans, w: 600, o: false }, b = JG.board;
   if (!b) { hlText(g, 'Đang tải…', W / 2, y + 90, 14, sub); return; }
   const hy = y + 50; hlText(g, 'Hạng', x + 14, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Tên', x + 56, hy, 11, { ...sub, a: 'left', w: 800 }); hlText(g, 'Số mảnh đã ghép', x + w - 14, hy, 11, { ...sub, a: 'right', w: 800 });
@@ -202,14 +251,14 @@ function jgBoard(g, W, hh) {
 function jgGallery(g, W, hh) {
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
   hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Tranh', 'Print Puzzles'), 56, 28, 18, { w: 900, a: 'left' });
-  const w = Math.min(W - 24, 540), x = (W - w) / 2, cardH = 132, gap = 14, y0 = 72, endY = y0 + JG_PUZZLES.length * (cardH + gap);
+  const w = Math.min(W - 24, 540), x = (W - w) / 2, cardH = 132, gap = 14, y0 = 72, endY = y0 + jgShown().length * (cardH + gap);
   JG.gscroll = Math.max(0, Math.min(Math.max(0, endY - hh + 8), JG.gscroll));
   g.save(); g.beginPath(); g.rect(0, 56, W, hh - 56); g.clip();
-  JG_PUZZLES.forEach((pz, i) => {
+  jgShown().forEach((pz, i) => {
     const y = y0 + i * (cardH + gap) - JG.gscroll, info = JG.list[pz.id], total = pz.cols * pz.rows, fin = !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
     if (y > hh || y + cardH < 56) return;
     hlPlate(g, x, y, w, cardH, '#f2ecde', HL_INK, 14);
-    const im = JG.thumbs[pz.id], tw = Math.min(170, w * .42), th = tw * pz.pic.h / pz.pic.w, tx = x + 12, ty = y + (cardH - th) / 2;
+    const im = JG.thumbs[pz.id], tw0 = Math.min(170, w * .42), th = Math.min(tw0 * pz.pic.h / pz.pic.w, cardH - 16), tw = th * pz.pic.w / pz.pic.h, tx = x + 12, ty = y + (cardH - th) / 2;
     if (im) g.drawImage(im, tx, ty, tw, th); else { g.fillStyle = 'rgba(29,25,21,.12)'; g.fillRect(tx, ty, tw, th); }
     g.lineWidth = 2; g.strokeStyle = HL_INK; g.strokeRect(tx, ty, tw, th);
     const lx = tx + tw + 14, lw = x + w - 14 - lx, sub = { f: hlSans, w: 700, o: false, a: 'left' };
@@ -254,15 +303,15 @@ function renderJG() {
   // the top bar: back, the title and how far the print is, then four round buttons (sample, face, chat, cup)
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
   hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg(L.pic.vi, L.pic.en), 56, 20, 16, { w: 900, a: 'left' });
-  hlText(g, G ? `${JG.joinedN}/${L.cols * L.rows} ${lg('mảnh', 'pieces')} · ${JG.players.length} ${lg('người', 'people')}` : '', 56, 41, 11, { f: hlSans, w: 600, o: false, al: .8, a: 'left' });
-  const cy = 28, X = [W - 22, W - 60, W - 98, W - 136];
-  if (G) { jgEye(g, X[3], cy, G.peek > 0); JG.btns.push({ x: X[3] - 19, y: cy - 19, w: 38, h: 38, down: () => { G.peek = G.peek > 0 ? 0 : 4; } }); }
-  if (up) { hlEmoteFace(g, 4, X[2], cy, 16); JG.btns.push({ x: X[2] - 19, y: cy - 19, w: 38, h: 38, down: () => { JG.tray = !JG.tray; } }); hlChatIcon(g, X[1], cy, HL.chatOff); JG.btns.push({ x: X[1] - 19, y: cy - 19, w: 38, h: 38, down: () => hlChatOpen() }); }
-  hlTrophy(g, X[0], cy); JG.btns.push({ x: X[0] - 19, y: cy - 19, w: 38, h: 38, down: () => { JG.ui = 'board'; JG.bscroll = 0; JG_NET.send({ t: 'board' }); } });
+  hlText(g, G ? `${JG.joinedN}/${L.cols * L.rows} · ${JG.players.length} ${lg('người', 'people')}` : '', 56, 41, 11, { f: hlSans, w: 600, o: false, al: .8, a: 'left' });
+  const cy = 28, X = [W - 20, W - 56, W - 92, W - 128, W - 164];
+  if (G) { jgEye(g, X[4], cy, !!G.sv); JG.btns.push({ x: X[4] - 18, y: cy - 19, w: 36, h: 38, down: () => { c9SvToggle(G); } }); }
+  if (up) { hlEmoteFace(g, 4, X[3], cy, 16); JG.btns.push({ x: X[3] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.tray = !JG.tray; } }); hlChatIcon(g, X[2], cy, HL.chatOff); JG.btns.push({ x: X[2] - 18, y: cy - 19, w: 36, h: 38, down: () => hlChatOpen() }); jgFlag(g, X[1], cy); JG.btns.push({ x: X[1] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'report'; JG.repPick = null; JG.bscroll = 0; } }); }
+  hlTrophy(g, X[0], cy); JG.btns.push({ x: X[0] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'board'; JG.bscroll = 0; JG_NET.send({ t: 'board' }); } });
   if (!G) {
-    hlText(g, JG.bad ? 'Bức tranh bị lỗi, hãy tải lại trang' : JG.conn === 'blocked' ? lg('Máy bạn tạm bị chặn vì bấm quá nhanh. Đợi ít phút rồi vào lại nhé.', 'Your device is blocked for a while for tapping too fast. Come back in a few minutes.') : JG.conn === 'crowded' ? lg('Có quá nhiều máy cùng mạng với bạn đang mở bức tranh. Đóng bớt rồi vào lại nhé.', 'Too many devices on your network have the print open. Close some and come back.') : JG.conn === 'replaced' ? lg('Bức tranh đang mở ở một cửa sổ khác của bạn. Đóng bên kia rồi vào lại.', 'The print is open in another window of yours. Close it and come back.') : JG.conn === 'down' ? lg('Mất kết nối, đang nối lại…', 'Connection lost, reconnecting…') : lg('Đang mở bức tranh chung…', 'Opening the shared print…'), W / 2, hh / 2, 18);
+    hlText(g, JG.bad ? 'Bức tranh bị lỗi, hãy tải lại trang' : JG.conn === 'blocked' ? lg('Máy bạn tạm bị chặn vì bấm quá nhanh. Đợi ít phút rồi vào lại nhé.', 'Your device is blocked for a while for tapping too fast. Come back in a few minutes.') : JG.conn === 'reported' ? lg('Bạn đã bị nhiều người chơi báo cáo nên không vào lại được nữa.', 'Several players reported you, so you can not come back.') : JG.conn === 'crowded' ? lg('Có quá nhiều máy cùng mạng với bạn đang mở bức tranh. Đóng bớt rồi vào lại nhé.', 'Too many devices on your network have the print open. Close some and come back.') : JG.conn === 'replaced' ? lg('Bức tranh đang mở ở một cửa sổ khác của bạn. Đóng bên kia rồi vào lại.', 'The print is open in another window of yours. Close it and come back.') : JG.conn === 'down' ? lg('Mất kết nối, đang nối lại…', 'Connection lost, reconnecting…') : lg('Đang mở bức tranh chung…', 'Opening the shared print…'), W / 2, hh / 2, 18);
   } else {
-    for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
+    if (!G.sv) for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
     if (G.done) {
       const w = Math.min(340, W - 28), x = (W - w) / 2, h = 96, y = hh - JG_STRIP - h - 10, a = Math.min(1, G.win * 2);
       g.globalAlpha = a; hlPlate(g, x, y, w, h, '#f2ecde', HL_INK, 16);
@@ -278,6 +327,7 @@ function renderJG() {
   if (JG.flash && JG.t - JG.flash.t0 < 1.6) { const k = (JG.t - JG.flash.t0) / 1.6; g.globalAlpha = Math.min(1, (1 - k) * 2); hlText(g, `+${JG.flash.n} đồng`, W / 2, hh - JG_STRIP - 18 - k * 40, 22, { w: 900, c: '#2f6a4c' }); g.globalAlpha = 1; }
   jgTray(g, W);
   if (JG.ui === 'board') jgBoard(g, W, hh);
+  else if (JG.ui === 'report') jgReport(g, W, hh);
   g.restore();
 }
 
@@ -290,8 +340,9 @@ function jgDown(e) {
   if (JG.tray) { const tb = JG.trayBtns.find(b => jgIn(b, x, y)); JG.tray = false; if (tb) tb.down(e); return; }
   for (const b of JG.btns) if (jgIn(b, x, y)) { b.down(e); return; }
   if (!JG.pz) { JG.drag = { y, s: JG.gscroll, gal: true }; return; }
-  if (JG.ui === 'board') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, s: JG.bscroll }; else JG.ui = null; return; }
+  if (JG.ui === 'board' || JG.ui === 'report') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, x, s: JG.bscroll, rep: JG.ui === 'report', moved: false }; else { JG.ui = null; JG.repPick = null; } return; }
   if (!G) return;
+  if (G.sv) { capturePointer(e); c9SvDown(G, x, y, e); return; }   // the sample print is open: it takes the pointer
   if (y > G.lh - JG_STRIP) return;
   for (const b of jgZoomBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 6) { if (b.k === 'in') c9Zoom(G, 1.5, G.lw / 2, (G.lh + G.top) / 2); else if (b.k === 'out') c9Zoom(G, 1 / 1.5, G.lw / 2, (G.lh + G.top) / 2); else { G.cam.z = G.zmin; c9ClampCam(G); } return; }
   if (y < 56) return;
@@ -299,21 +350,23 @@ function jgDown(e) {
 }
 function jgMove(e) {
   if (S.mode !== 'jgplay') return; const [x, y] = jgPos(e);
-  if (JG.drag) { if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
+  if (JG.drag) { if (Math.abs(y - JG.drag.y) > 6) JG.drag.moved = true; if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
+  if (JG.G && JG.G.sv && !JG.ui) { c9SvMove(JG.G, x, y, e); return; }
   if (!JG.G || JG.ui) return; c9Move(JG.G, x, y, e); cv.style.cursor = JG.G.held ? 'grabbing' : JG.G.hover ? 'grab' : '';
 }
-function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { JG.drag = null; return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); c9PtrUp(JG.G, x, y, e, () => {}); }
+function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); if (JG.G.sv) { c9SvUp(JG.G, x, y, e); return; } c9PtrUp(JG.G, x, y, e, () => {}); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'jgplay') e.preventDefault(); });
 cv.addEventListener('touchstart', e => { if (S.mode === 'jgplay') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
   if (S.mode !== 'jgplay') return; const d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
   if (!JG.pz) { JG.gscroll += d; e.preventDefault(); return; }
-  if (JG.ui === 'board') { JG.bscroll += d; e.preventDefault(); return; }
+  if (JG.ui === 'board' || JG.ui === 'report') { JG.bscroll += d; e.preventDefault(); return; }
+  if (JG.G && JG.G.sv) { const [sx, sy] = jgPos(e); c9SvWheel(JG.G, d, sx, sy); e.preventDefault(); return; }
   if (!JG.G) return; const [x, y] = jgPos(e); c9Wheel(JG.G, d, x, y, e.ctrlKey); e.preventDefault();
 }, { passive: false });
 function jgKey(e) {
   if (S.mode !== 'jgplay') return;
-  if (e.code === 'Escape') { if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
+  if (e.code === 'Escape') { if (JG.G && JG.G.sv) JG.G.sv = null; else if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
   const G = JG.G; if (!G) return;
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { c9Zoom(G, 1.25, G.lw / 2, (G.lh + G.top) / 2); return; } if (e.code === 'Minus' || e.code === 'NumpadSubtract') { c9Zoom(G, .8, G.lw / 2, (G.lh + G.top) / 2); return; }
   const grp = G.held; if (!grp) return;
@@ -327,7 +380,7 @@ registerChapter({
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,
   album() {},
-  hide() { jgMusic(false); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
+  hide() { jgRenameClose(); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
   update: updateJG, render: renderJG, key: jgKey,
   pointer: { down: jgDown, move: jgMove, up: jgUp },
   next() { showChapters(); }, retry() { startJG(); },

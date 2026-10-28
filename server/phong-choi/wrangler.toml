@@ -24,7 +24,15 @@ class_name = "JigsawDG"
 
 [[durable_objects.bindings]]
 name = "JIGSAW_DG2"
-class_name = "JigsawDG2"
+class_name = "JigsawDG3"
+
+[[durable_objects.bindings]]
+name = "JIGSAW_LH"
+class_name = "JigsawLH"
+
+[[durable_objects.bindings]]
+name = "JIGSAW_LY"
+class_name = "JigsawLY"
 
 [[migrations]]
 tag = "v1"
@@ -58,3 +66,18 @@ new_sqlite_classes = ["JigsawDG"]
 [[migrations]]
 tag = "v7"
 new_sqlite_classes = ["JigsawDG2"]
+
+# 2026-10-23: rename to restart the object on the new code (keeps its storage and the name main)
+[[migrations]]
+tag = "v8"
+renamed_classes = [{ from = "JigsawDG2", to = "JigsawDG3" }]
+
+# 2026-10-24: the fifth print (Lễ hội đầu xuân, 2993 pieces), its own object and storage
+[[migrations]]
+tag = "v9"
+new_sqlite_classes = ["JigsawLH"]
+
+# 2026-10-25: the sixth print (Lý ngư vọng nguyệt, 2993 pieces), its own object and storage
+[[migrations]]
+tag = "v10"
+new_sqlite_classes = ["JigsawLY"]

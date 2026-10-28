@@ -1,5 +1,5 @@
 /* Phòng chơi chung của Đám Cưới Chuột (chương IX · Hội Làng), chạy trên Cloudflare Durable Objects.
-   MỘT phòng cho tất cả (idFromName('v19'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
+   MỘT phòng cho tất cả (idFromName('v20'); đổi tên khi đổi giao thức để phòng cũ còn người ở lại chạy nốt mã cũ). Máy chủ giữ giờ chung, lịch các ván, người máy, kết quả, tiền cược và bảng xếp hạng;
    trình duyệt chỉ vẽ và gửi "tôi làm việc này lúc này".
 
    TIỀN (owner, 2026-10-19): mỗi người chơi trong ván bỏ STAKE đồng từ túi chương IV (người máy bỏ "ảo"), một người thắng ăn cả hũ
@@ -24,17 +24,21 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG2 } from './jigsaw.js';
+export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3, JigsawLH, JigsawLY } from './jigsaw.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
 const BAD = /(địt|đụ|lồn|buồi|cặc|đéo|đĩ |đỉ |fuck|shit|bitch|óc chó|chó đẻ|mẹ mày|con mẹ mày|bố mày)/i;
 const BOT_NAMES = ['Tí', 'Tèo', 'Mít', 'Bơ', 'Nhím', 'Sóc', 'Cốm', 'Bống', 'Tũn', 'Xíu', 'Na', 'Bin', 'Đậu', 'Lạc', 'Gạo', 'Nếp', 'Ngô', 'Khoai', 'Sen', 'Cải'];
-const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen'];
+const GAMES = ['ten', 'pomelo', 'tuong', 'balloon', 'minnum', 'lantern', 'boat', 'hang', 'giua', 'trong', 'nho', 'chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'keoco', 'dhang', 'nhotranh', 'ngoay', 'mecung', 'thaihanh'];
 const LOOK = { role: ['chong', 'vo'], age: ['tre', 'trung', 'gia'], body: ['vua', 'beo', 'gay', 'cao'], fur: 16, robe: 16, skirt: 16, pants: 16, top: 16 };   // looks are only forwarded, the browser cleans them again
 
-const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'dodan']);   // dodan (folk-lore quiz) is not in the bag: it is dealt now and then, see startRound
+const NEWG = new Set(['chuot', 'hpb', 'khac', 'dem', 'xep', 'mau', 'tinh', 'lat', 'chen', 'dodan', 'keoco', 'dhang', 'nhotranh', 'ngoay', 'mecung', 'thaihanh']);   // dodan (folk-lore quiz) is not in the bag: it is dealt now and then, see startRound
 const needCap = game => game === 'dodan' ? 3 : 2;   // the page version that knows the game
+// an address as the ban list keys it: IPv6 only by its first four groups (one /64 network: a single machine owns the whole tail)
+const ipKey = ip => { ip = String(ip || '').trim(); return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip; };
+// devices of cheaters (2026-10-23): refused at hello, the socket closed with 4003 (the same two as docs/supabase-bang-xep-hang-khoa.sql). Takes effect when the room object next restarts
+const BANNED_DEVS = new Set(['llmtkvnjmpa1wfx0o0on', 't2fns94ywx89utpcdf4a']);
 const TESTDEV = /^(testdev|boardreader|dbgdev|realp|realq|realz|realsolo|viewer|prodck|qqq|zzz)/;   // devices used by test.mjs: never written to the board
 import { QUIZ, QUIZ_GROUPS } from './quiz.js';
 const T = {
@@ -48,6 +52,7 @@ const T = {
   MIN_LEN: 12000,
   LAN_MIN: 2500, LAN_SPAN: 5000, LAN_WAIT: 2500, LAN_FS: 90,
   BOAT_LEN: 10000, BOAT_CPS: 14,
+  KEOCO_PICK: 3000, KEOCO_LEN: 15000, KEOCO_CPS: 14,
   HANG_HOLES: 3, HANG_ROUNDS: 5, HANG_PICK: 4000, HANG_REVEAL: 1800,
   GIUA_LEN: 8000,
   TRONG_BEATS: 4, TRONG_N: 8, TRONG_GRACE: 2500,
@@ -86,12 +91,12 @@ export default {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
       const o = req.headers.get('Origin') || 'null';
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v19')).fetch(req);
+      return env.ROOM.get(env.ROOM.idFromName('v20')).fetch(req);
     }
     if (u.pathname === '/online') {   // how many people are in the room now (shown on the chapter card)
       const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store' };
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
-      const r = await env.ROOM.get(env.ROOM.idFromName('v19')).fetch(new Request(req.url.replace('/online', '/count')));
+      const r = await env.ROOM.get(env.ROOM.idFromName('v20')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
     }
     if (u.pathname === '/jg') {   // chương X: one shared jigsaw a picture (?p=vq: Vinh quy bai to, played; anything else: the first print, finished, answered by the Worker itself)
@@ -100,6 +105,8 @@ export default {
       if (!ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
       if (u.searchParams.get('p') === 'vq') return env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(req);
       if (u.searchParams.get('p') === 'dg') return env.JIGSAW_DG2.get(env.JIGSAW_DG2.idFromName('main')).fetch(req);
+      if (u.searchParams.get('p') === 'lh') return env.JIGSAW_LH.get(env.JIGSAW_LH.idFromName('main')).fetch(req);
+      if (u.searchParams.get('p') === 'ly') return env.JIGSAW_LY.get(env.JIGSAW_LY.idFromName('main')).fetch(req);
       return frozenJg();
     }
     if (u.pathname === '/jg-online' || u.pathname === '/jg-list') {   // /jg-online?p=vq: that picture's numbers; /jg-list: every picture's, in one request
@@ -107,17 +114,24 @@ export default {
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
       const vq = async () => (await env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
       const dg = async () => (await env.JIGSAW_DG2.get(env.JIGSAW_DG2.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
-      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + ',"dg":' + await dg() + '}}', { headers: h });
+      const lh = async () => (await env.JIGSAW_LH.get(env.JIGSAW_LH.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
+      const ly = async () => (await env.JIGSAW_LY.get(env.JIGSAW_LY.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
+      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + ',"dg":' + await dg() + ',"lh":' + await lh() + ',"ly":' + await ly() + '}}', { headers: h });
       const pp = u.searchParams.get('p');
-      return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : FROZEN_COUNT, { headers: h });
+      return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : pp === 'lh' ? await lh() : pp === 'ly' ? await ly() : FROZEN_COUNT, { headers: h });
     }
-    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban') {   // the owner's view of who is busy in the second jigsaw, and the ban list: Bearer <ADMIN secret>
+    if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset' || u.pathname === '/jg-who' || u.pathname === '/jg-purge' || u.pathname === '/jg-revert' || u.pathname === '/jg-reports') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.JIGSAW_VQ.get(env.JIGSAW_VQ.idFromName('main')).fetch(new Request(req.url.replace('/jg-sus', '/sus').replace('/jg-ban', '/ban')));
+      const pq = u.searchParams.get('p'), ns = pq === 'dg' ? env.JIGSAW_DG2 : pq === 'lh' ? env.JIGSAW_LH : pq === 'ly' ? env.JIGSAW_LY : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
+      return ns.get(ns.idFromName('main')).fetch(new Request(u.origin + path + u.search));
+    }
+    if (u.pathname === '/hl-sus' || u.pathname === '/hl-ban' || u.pathname === '/hl-who') {   // the owner's tools for Hội Làng: who is in the room (with address), ban / free an address or a device, find a device by name: Bearer <ADMIN secret>
+      if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
+      return env.ROOM.get(env.ROOM.idFromName('v20')).fetch(new Request(u.origin + u.pathname.replace('/hl-', '/') + u.search));
     }
     if (u.pathname === '/stats') {   // the owner's daily numbers: Authorization: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      return env.ROOM.get(env.ROOM.idFromName('v19')).fetch(new Request(req.url.replace('/stats', '/days')));
+      return env.ROOM.get(env.ROOM.idFromName('v20')).fetch(new Request(req.url.replace('/stats', '/days')));
     }
     return new Response('Đám Cưới Chuột · phòng chơi chung', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
@@ -140,16 +154,52 @@ export class Room extends DurableObject {
     this.top = null; this.topAt = 0; this.dirty = new Set();
   }
 
+  // bans: { key: until } where key is a device id or an address (ipKey); kept in the store, loaded once. An address ban is short on purpose (many players share one).
+  async loadBans() {
+    if (this.bans) return;
+    this.bans = new Map(); let o = null; try { o = await this.kv.get('bans'); } catch (e) {}
+    if (o) for (const [k, t] of Object.entries(o)) if (t > Date.now()) this.bans.set(k, t);
+  }
+  banned(key) { const t = key && this.bans && this.bans.get(key); if (!t) return false; if (t < Date.now()) { this.bans.delete(key); return false; } return true; }
+  saveBans() { const o = {}, now = Date.now(); for (const [k, t] of this.bans) if (t > now) o[k] = t; this.kv.put('bans', o).catch(() => {}); }
+  ban(key, ms) { if (!key) return; this.bans.set(key, Date.now() + ms); for (const c of [...this.conns.values()]) if (c.dev === key || c.ipk === key) { try { c.ws.close(4003, 'busy'); } catch (e) {} } this.saveBans(); }
+  async admin(u) {
+    await this.loadBans();
+    const json = o => new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+    if (u.pathname === '/sus') {
+      const now = Date.now();
+      return json({ live: this.humans().map(c => ({ id: c.id, name: c.name, dev: c.dev, ip: c.ip, secs: Math.round((now - c.at) / 1000) })), bans: [...this.bans].filter(([, t]) => t > now).map(([k, t]) => [k, Math.round((t - now) / 60000) + ' min']) });
+    }
+    if (u.pathname === '/ban') {   // /ban?dev=…|ip=…[&mins=N][&un=1]
+      const dev = u.searchParams.get('dev'), ip = u.searchParams.get('ip'), key = dev || (ip ? ipKey(ip) : ''); if (!key) return json({ error: 'dev or ip' });
+      if (u.searchParams.get('un')) { this.bans.delete(key); this.saveBans(); return json({ ok: 'freed', key }); }
+      const mins = +u.searchParams.get('mins') || (dev ? 60 * 24 * 365 : 30); this.ban(key, mins * 60000); return json({ ok: 'banned', key, mins });
+    }
+    if (u.pathname === '/who') {
+      const q = (u.searchParams.get('name') || '').toLowerCase(); if (!q) return json({ error: 'name' });
+      const all = await this.kv.list({ prefix: 'u:', limit: 5000 }), out = [];
+      for (const [k, v] of all) { const s = this.stats.get(k.slice(2)) || v; if (s && String(s.n || '').toLowerCase().includes(q)) out.push({ dev: k.slice(2), n: s.n, rounds: s.r }); }
+      for (const [dev, st] of this.stats) if (!out.some(o => o.dev === dev) && String(st.n || '').toLowerCase().includes(q)) out.push({ dev, n: st.n, rounds: st.r });   // players of the last minute are not in the store yet
+      return json({ found: out });
+    }
+    return json({ error: 'unknown' });
+  }
+
   async fetch(req) {
+    const pth = req && new URL(req.url).pathname;
+    if (pth === '/sus' || pth === '/ban' || pth === '/who') return this.admin(new URL(req.url));
     if (req && new URL(req.url).pathname === '/count') return new Response(JSON.stringify({ n: this.humans().filter(c => !TESTDEV.test(c.dev)).length }));
     if (req && new URL(req.url).pathname === '/days') {
       const all = await this.kv.list({ prefix: 'd:', reverse: true, limit: 90 }), out = [];
       for (const [k, v] of all) out.push({ day: k.slice(2), players: v.players, peak: v.peak, peakAt: v.peakAt, rounds: v.rounds, maxSeat: v.maxSeat });
       return new Response(JSON.stringify(out, null, 1), { headers: { 'content-type': 'application/json' } });
     }
+    await this.loadBans();
+    const ip = (req && req.headers.get('CF-Connecting-IP')) || '', ipk = ipKey(ip);
     const pair = new WebSocketPair(), [client, server] = Object.values(pair);
     server.accept();
-    const c = { ws: server, id: 'p' + (this.nextId++), dev: '', name: '', look: null, joined: false, ok: false, idle: true, miss: 0, rtt: 150, seen: Date.now(), win: 0, cnt: 0 };
+    if (this.banned(ipk)) { server.close(4003, 'busy'); return new Response(null, { status: 101, webSocket: client }); }   // accepted and closed with a code, so the page can say why
+    const c = { ws: server, id: 'p' + (this.nextId++), dev: '', name: '', look: null, joined: false, ok: false, idle: true, miss: 0, rtt: 150, seen: Date.now(), win: 0, cnt: 0, ip, ipk, at: Date.now() };
     this.conns.set(c.id, c);
     server.addEventListener('message', e => this.onMsg(c, e.data));
     server.addEventListener('close', () => this.onClose(c));
@@ -171,6 +221,7 @@ export class Room extends DurableObject {
       let name = String(m.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
       if (!name || BAD.test(name)) name = 'Chuột ' + c.id.slice(1);
       c.name = name; c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10); c.look = this.cleanLook(m.look); c.ok = !!m.ok; c.cap = +m.cap || 1;   // cap 2 = knows the newer games
+      if (BANNED_DEVS.has(c.dev) || this.banned(c.dev)) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
       const st = await this.getStats(c.dev); st.n = name;
       c.joined = true; this.noteJoin(c);
       this.send(c, { t: 'welcome', id: c.id, now: Date.now(), stake: T.STAKE, round: (this.round && NEWG.has(this.round.game) && !(c.cap >= needCap(this.round.game))) ? null : this.pubRound(), players: this.playerList(), stat: this.pubStat(st) });
@@ -379,9 +430,102 @@ export class Room extends DurableObject {
       cfg.len = T.HPB_LEN; r.deadline = t0 + T.HPB_LEN;
     } else if (g === 'khac') {
       cfg.n = T.KHAC_N; cfg.odd = ri(0, T.KHAC_N * T.KHAC_N - 1); cfg.hue = ri(0, 359); cfg.dl = 6; cfg.lock = T.KHAC_LOCK; r.deadline = t0 + T.KHAC_LEN;
-    } else if (g === 'dem') {
-      const n = ri(9, 26), items = []; for (let i = 0; i < n; i++) items.push([+Math.random().toFixed(3), +Math.random().toFixed(3), ri(0, 2)]);
-      cfg.items = items; cfg.show = T.DEM_SHOW; r.deadline = t0 + T.DEM_SHOW + T.DEM_LEN;
+    } else if (g === 'dem') {   // count the mice: 5 turns, running total, closest to the true total wins
+      const defs = [
+        { n: [2, 3], show: 1000, kind: 'static' },    // a couple of mice, 1 second
+        { n: [3, 6], show: 2000, kind: 'scatter' },   // more, scattered around
+        { n: [3, 8], show: 2000, kind: 'white' },     // from turn 3 on: 3-8 mice, 2-3 of them white
+        { n: [3, 8], show: 2500, kind: 'chaos' },     // running around chaotically
+        { n: [3, 8], show: 3000, kind: 'run' },       // the whole herd runs across the screen
+      ];
+      const INPUT = 3000;   // 3s to type the count after the mice hide
+      let prevN = -1;
+      const turns = defs.map((d, di) => {
+        let n = ri(d.n[0], d.n[1]); for (let k = 0; k < 8 && n === prevN; k++) n = ri(d.n[0], d.n[1]);   // never the same count twice in a row
+        prevN = n; const mice = [];
+        // place mice with minimum separation so none touch/overlap
+        // mouse is ~0.24 wide x 0.15 tall; use generous margins: dx>0.30 or dy>0.20
+        // run turn: fixed y lanes (like race tracks) so they never overlap while running
+        const isRun = d.kind === 'run', wCnt = di >= 2 ? Math.min(ri(2, 3), n - 1) : 0, wset = new Set();
+        while (wset.size < wCnt) wset.add(ri(0, n - 1));   // 2-3 white mice from turn 3 on, anywhere in the herd
+        const laneH = isRun ? 0.76 / n : 0;
+        for (let i = 0; i < n; i++) {
+          let x = 0.5, y = 0.5;
+          if (isRun) {
+            y = 0.12 + (i + 0.5) * laneH + (Math.random() - 0.5) * laneH * 0.25;
+            x = 0.5;
+          } else {
+            for (let tr = 0; tr < 300; tr++) {
+              x = 0.08 + Math.random() * 0.84; y = 0.12 + Math.random() * 0.76;
+              if (mice.every(m => Math.abs(m.x - x) > 0.30 || Math.abs(m.y - y) > 0.20)) break;
+              if (tr === 299) { x = 0.10 + (i % 3) * 0.32; y = 0.20 + Math.floor(i / 3) * 0.30; }   // grid fallback
+            }
+          }
+          mice.push({
+            x: +x.toFixed(3), y: +y.toFixed(3),
+            w: wset.has(i) ? 1 : 0,
+            vx: +(Math.random() * 2 - 1).toFixed(3), vy: +(Math.random() * 2 - 1).toFixed(3),
+            ph: +Math.random().toFixed(3),
+            dr: d.kind === 'run' ? (i % 2 ? -1 : 1) : 1,   // the herd splits in two: even lanes run left to right, odd lanes right to left
+            x0: d.kind === 'run' ? +((i % 2 ? 1.2 : -0.2) + (i % 2 ? 1 : -1) * Math.floor(i / 2) * 0.07).toFixed(3) : 0,   // staggered start from each side
+          });
+        }
+        const cat = di >= 3 && Math.random() < 0.4 ? { y: +rnd(0.2, 0.8).toFixed(3), dr: Math.random() < 0.5 ? 1 : -1, ph: +Math.random().toFixed(3), vx: +(Math.random() * 2 - 1).toFixed(3), vy: +(Math.random() * 2 - 1).toFixed(3) } : null;   // now and then a cat runs through turns 4 and 5; it is not a mouse and not counted
+        return { n, show: d.show, input: INPUT, kind: d.kind, mice, cat };
+      });
+      let acc = 0;
+      for (const t of turns) { t.start = acc; acc += t.show + t.input; t.end = acc; }
+      cfg.turns = turns;
+      r.guess = new Map();
+      r.deadline = t0 + acc + 2000;
+    } else if (g === 'thaihanh') {   // everyone slices an onion by tapping: each tap is a slice; a tap after the onion is gone cuts the hand and loses
+      cfg.n = ri(40, 60); cfg.len = 30000; r.deadline = t0 + cfg.len + 300;   // the number of slices changes every game
+      r.onion = new Map(ids.map(id => [id, { c: 0, fin: null, cut: null, last: -1e9, q: 0 }])); r.onAt = 0;
+    } else if (g === 'mecung') {   // a random maze with ONE way out; everyone starts in the middle, the first out wins, nobody out in a minute = nobody is paid
+      const N = 17, RD = 6, cells = new Uint8Array(N * N), seen = new Uint8Array(N * N), cx = (N - 1) / 2, cy = cx, DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+      const stack = [[cx, cy]]; seen[cy * N + cx] = 1;   // a perfect maze (depth-first): exactly one road between any two cells
+      while (stack.length) {
+        const [x, y] = stack[stack.length - 1], opts = [];
+        for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d]; if (nx >= 0 && ny >= 0 && nx < N && ny < N && !seen[ny * N + nx]) opts.push(d); }
+        if (!opts.length) { stack.pop(); continue; }
+        const d = opts[ri(0, opts.length - 1)], nx = x + DX[d], ny = y + DY[d];
+        cells[y * N + x] |= 1 << d; cells[ny * N + nx] |= 1 << ((d + 2) % 4); seen[ny * N + nx] = 1; stack.push([nx, ny]);
+      }
+      const dist = new Int16Array(N * N).fill(-1), bq = [[cx, cy]]; dist[cy * N + cx] = 0;   // how far every cell is from the middle by the road
+      for (let i = 0; i < bq.length; i++) { const [x, y] = bq[i]; for (let d = 0; d < 4; d++) if (cells[y * N + x] & (1 << d)) { const nx = x + DX[d], ny = y + DY[d]; if (dist[ny * N + nx] < 0) { dist[ny * N + nx] = dist[y * N + x] + 1; bq.push([nx, ny]); } } }
+      const cand = []; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (x === 0 || y === 0 || x === N - 1 || y === N - 1) cand.push({ x, y, d: dist[y * N + x] });
+      cand.sort((a, b) => b.d - a.d); const ex = cand[ri(0, 2)];   // the way out is at one of the three border cells farthest from the middle
+      cells[ex.y * N + ex.x] |= 1 << (ex.y === 0 ? 0 : ex.x === N - 1 ? 1 : ex.y === N - 1 ? 2 : 3);   // a gap in the outer wall
+      cfg.N = N; cfg.R = RD; cfg.cx = cx; cfg.cy = cy; cfg.len = 60000; r.deadline = t0 + cfg.len + 300;
+      r.mz = { cells, N, R: RD, exit: [ex.x, ex.y], len: ex.d, pos: new Map(ids.map(id => [id, { x: cx, y: cy, q: 0, fin: null, tok: 4, tAt: Date.now() }])), sent: false, at: 0, won: false };
+    } else if (g === 'ngoay') {   // pick a cat's ear: hold to push the stick in, let go to pull it out with what it caught; the innermost pellet sits right against the eardrum
+      const n = ri(6, 8), p1 = rnd(0.22, 0.34), pn = 0.955;   // depth 0 = the ear's opening, 1 = the eardrum; the last pellet sits right against it
+      const gm = 0.075, extra = pn - p1 - (n - 1) * gm, w = Array.from({ length: n - 1 }, () => Math.random() + 0.05), sw = w.reduce((x, y) => x + y, 0);   // every gap is at least 0.075, the rest of the length is shared out at random
+      const ps = [p1]; for (let i = 0; i < n - 1; i++) ps.push(ps[i] + gm + extra * w[i] / sw);
+      cfg.ps = ps.map(x => +x.toFixed(4)); cfg.n = n; cfg.speed = +rnd(0.16, 0.3).toFixed(3);   // the number of pellets and the stick's speed change every game
+      cfg.t1 = 2500; cfg.t2 = 7000; cfg.limit = 15000; cfg.len = cfg.t2 + cfg.limit + 1500; r.deadline = t0 + cfg.len;   // the face 2.5 s, the cut-away 4.5 s, then the stick (15 s to start using it)
+    } else if (g === 'nhotranh') {   // remember the print of the turn before: ten turns, 2 / 4 then 6 prints to choose from, all correct and quickest wins
+      const sh = a => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = ri(0, i); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+      const NT = 10, NP = 12, all9 = Array.from({ length: NP }, (_, i) => i), tops = [], opts = [[]];   // twelve prints in the game (HL_NT_PICS in js/hoilang/tro2.js: keep NP equal to its length)
+      for (let t = 0; t < NT; t++) { let x; do { x = ri(0, NP - 1); } while (t && x === tops[t - 1]); tops.push(x); }   // ten prints on top, never the same one twice running
+      for (let t = 1; t < NT; t++) { const right = tops[t - 1], n = t === 1 ? 2 : t === 2 ? 4 : 6; opts.push(sh([right, ...sh(all9.filter(x => x !== right)).slice(0, n - 1)])); }   // the right print among others picked at random
+      cfg.tops = tops; cfg.opts = opts; cfg.limit = 30000; cfg.auto = 12000;   // 30 s from pressing Start; Start is pressed by itself at 12 s
+      cfg.len = cfg.auto + cfg.limit + 1500; r.deadline = t0 + cfg.len;
+      r.pz = new Map(ids.map(id => [id, { st: null, picks: [], ok: 0, fin: null }]));
+    } else if (g === 'dhang') {   // count the mice left inside the burrow: three hide under it, then mice go in and out in four steps
+      const GAP = 320, DUR = 1500, evs = [], cats = [];   // GAP between the mice of one step, DUR for one mouse to cross
+      let t = 2300, inside = 3;   // the burrow lands over the three at 0.8 s and is down by 1.3 s; the first step is 1 s later
+      const add = list => { let end = 0; for (const [k, n] of list) if (n > 0) { evs.push({ k, t, n }); end = Math.max(end, DUR + (n - 1) * GAP); } const at = t; t += end + 1000; return at; };
+      const cat = at => { if (Math.random() < 0.5) cats.push({ t: at + ri(0, 900), dur: 2200, y: +rnd(0.04, 0.2).toFixed(3), dr: Math.random() < 0.5 ? 1 : -1 }); };
+      const A = ri(3, 6); add([['in', A]]); inside += A;   // 3-6 walk in from the left
+      const B = ri(2, Math.min(7, inside - 1)); add([['outR', B]]); inside -= B;   // 2-7 come out on the right
+      const C = ri(1, 5), D = inside > 1 ? ri(1, Math.min(5, inside - 1)) : 0;   // some in and some out together
+      cat(add([['in', C], ['outR', D]])); inside += C - D;
+      const E = ri(1, 5), mo = inside - 1, F = mo > 0 ? ri(1, Math.min(4, mo)) : 0, G = mo - F > 0 ? ri(1, Math.min(3, mo - F)) : 0;   // in, out to the right and out down, all together
+      cat(add([['in', E], ['outR', F], ['outD', G]])); inside += E - F - G;
+      r.final = inside;   // always at least 1 left
+      cfg.evs = evs; cfg.cats = cats; cfg.gap = GAP; cfg.dur = DUR; cfg.drop = 800; cfg.land = 1300; cfg.anim = t - 1000;
+      cfg.len = cfg.anim + 7000; r.deadline = t0 + cfg.len;
     } else if (g === 'xep') {
       const perm = [1, 2, 3, 4, 5, 6, 7, 8, 9]; for (let i = 8; i > 0; i--) { const j = ri(0, i); [perm[i], perm[j]] = [perm[j], perm[i]]; }
       cfg.perm = perm; cfg.pen = T.XEP_PEN; r.deadline = t0 + T.XEP_LEN; r.prog = new Map(ids.map(id => [id, { c: 0, pen: 0, fin: null }]));
@@ -405,6 +549,9 @@ export class Room extends DurableObject {
     } else if (g === 'chen') {
       const ball = ri(0, 2), swaps = []; let pos = ball; for (let i = 0; i < T.CHEN_SWAPS; i++) { const a = ri(0, 2); let b = ri(0, 2); if (b === a) b = (a + 1 + ri(0, 1)) % 3; swaps.push([a, b]); if (pos === a) pos = b; else if (pos === b) pos = a; }
       cfg.ball = ball; cfg.swaps = swaps; cfg.show = T.CHEN_SHOW; cfg.swap = T.CHEN_SWAP; cfg.end = T.CHEN_SHOW + T.CHEN_SWAPS * T.CHEN_SWAP + 300; r.final = pos; r.deadline = t0 + cfg.end + T.CHEN_PICK;
+    } else if (g === 'keoco') {   // tug of war: pick a side, then tap to pull; the stronger side's players share the pot
+      cfg.pick = T.KEOCO_PICK; cfg.len = T.KEOCO_LEN; r.deadline = t0 + T.KEOCO_PICK + T.KEOCO_LEN + 500;
+      r.team = new Map(); r.tap = new Map(); r.progAt = 0;
     }
   }
   giuaX(cfg, id, p) { const u = ((p / cfg.T[id] + cfg.phi[id]) % 2 + 2) % 2; return u < 1 ? u : 2 - u; }
@@ -420,6 +567,14 @@ export class Room extends DurableObject {
     this.act(r, c.id, m, Math.round(at - r.t0), now, false, lat);
   }
   live(r, o) { r.live.push(o); this.all({ t: 'in', n: r.n, ...o }); }
+  onAck(r, id, pr) {   // tell a player how many slices the server has counted for them (q: how many taps of theirs it has seen)
+    const c = this.conns.get(id); if (c) this.send(c, { t: 'onv', n: r.n, q: pr.q, c: pr.c, f: pr.fin !== null ? 1 : 0, x: pr.cut !== null ? 1 : 0 });
+  }
+  mzWin(r, id, pr) {   // the cells around a player (13 x 13, one hex digit each: the open sides; g = outside), sent only to that player
+    const c = this.conns.get(id); if (!c) return; const z = r.mz, RD = z.R; let w = '';
+    for (let dy = -RD; dy <= RD; dy++) for (let dx = -RD; dx <= RD; dx++) { const x = pr.x + dx, y = pr.y + dy; w += x >= 0 && y >= 0 && x < z.N && y < z.N ? z.cells[y * z.N + x].toString(16) : 'g'; }
+    this.send(c, { t: 'mzv', n: r.n, x: pr.x, y: pr.y, q: pr.q, f: pr.fin !== null ? 1 : 0, w });
+  }
   // one action by a person (validated above) or a bot, p = ms after t0
   act(r, id, a, p, now, bot, lat = 0) {
     const g = r.game, cfg = r.cfg, inp = r.inp; if (p < 0 && g !== 'minnum' && g !== 'boat' && g !== 'hang' && g !== 'nho') return;
@@ -472,8 +627,54 @@ export class Room extends DurableObject {
       else { const lk = g === 'chuot' ? T.CHUOT_LOCK : g === 'khac' ? T.KHAC_LOCK : T.TINH_LOCK; inp.set(id, { ...st, lock: p + lk, wrong: (st.wrong || 0) + 1 }); this.live(r, { id, k: 'w', lock: p + lk }); }
     } else if (g === 'hpb') {
       if (a.k !== 'v') return; const v = Math.max(0, Math.min(100, a.v | 0)), first = !inp.has(id); inp.set(id, { v, p }); if (first) this.live(r, { id, k: 'v' });
+    } else if (g === 'thaihanh') {
+      const pr = r.onion.get(id); if (!pr || pr.cut !== null || a.k !== 't' || p > cfg.len + 300) return;
+      pr.q = a.q | 0;
+      if (p - pr.last >= 40) {   // faster than that is not a hand
+        pr.last = p;
+        if (pr.fin !== null) pr.cut = p;   // one slice too many: the knife goes into the hand
+        else { pr.c++; if (pr.c >= cfg.n) pr.fin = p; }
+      }
+      this.onAck(r, id, pr);
+    } else if (g === 'mecung') {   // one step at a time; a client only learns the cells around itself, never the whole maze
+      const pr = r.mz.pos.get(id); if (!pr || pr.fin !== null) return;
+      if (a.k === 'v') { this.mzWin(r, id, pr); return; }
+      if (a.k !== 'm') return;
+      const z = r.mz, d = a.d | 0, now = Date.now(); pr.q = a.q | 0;
+      pr.tok = Math.min(4, pr.tok + (now - pr.tAt) / 90); pr.tAt = now;   // at most about 11 steps a second
+      if (d >= 0 && d < 4 && pr.tok >= 1) {
+        pr.tok -= 1;
+        if (z.cells[pr.y * z.N + pr.x] & (1 << d)) {
+          pr.x += [0, 1, 0, -1][d]; pr.y += [-1, 0, 1, 0][d];
+          if (pr.x < 0 || pr.y < 0 || pr.x >= z.N || pr.y >= z.N) { pr.fin = Math.max(0, p); if (!z.won) { z.won = true; r.deadline = Math.min(r.deadline, now + 350); } }   // out through the gap
+        }
+      }
+      this.mzWin(r, id, pr);
+    } else if (g === 'ngoay') {   // nothing about the depth or the time is sent to the others, only that this player is done
+      const s = inp.get(id) || {}; inp.set(id, s);
+      if (a.k === 'd' && s.d === undefined && p >= cfg.t2 - 150 && p <= cfg.t2 + cfg.limit + 300) s.d = p;
+      else if (a.k === 'u' && s.d !== undefined && s.u === undefined && s.pierce === undefined) {
+        if (cfg.speed * (p - s.d) / 1000 >= 1) s.pierce = s.d + 1000 / cfg.speed; else s.u = p;
+        this.live(r, { id, k: 'x' });
+      }
+    } else if (g === 'nhotranh') {
+      const pr = r.pz.get(id); if (!pr) return;
+      if (a.k === 's') { if (pr.st === null) pr.st = p; return; }
+      if (a.k !== 'c' || pr.st === null) return;
+      const tn = a.tn | 0; if (tn !== pr.picks.length + 1 || tn >= cfg.tops.length || p - pr.st > cfg.limit + 300) return;   // in order, inside the 30 s
+      const ok = cfg.opts[tn][a.v | 0] === cfg.tops[tn - 1]; pr.picks.push(ok); if (ok) pr.ok++; if (tn === cfg.tops.length - 1) pr.fin = Math.max(0, p - pr.st);
+      this.live(r, { id, k: 'c', c: pr.picks.length });   // only how far along: never whether it was right
+    } else if (g === 'dhang') {
+      if (a.k !== 'v' || inp.has(id)) return; inp.set(id, { v: Math.max(0, Math.min(60, a.v | 0)), p }); this.live(r, { id, k: 'v' });
     } else if (g === 'dem') {
-      if (a.k !== 'v' || inp.has(id) || p < cfg.show - 100) return; inp.set(id, { v: Math.max(0, Math.min(99, a.v | 0)), p }); this.live(r, { id, k: 'v' });
+      const t = a.tn | 0;
+      if (a.k !== 'v' || t < 0 || t >= cfg.turns.length) return;
+      const turn = cfg.turns[t], pt = p - turn.start;
+      if (pt < turn.show - 100 || pt > turn.show + turn.input) return;   // only during this turn's input phase
+      let gu = r.guess.get(id); if (!gu) { gu = []; r.guess.set(id, gu); }
+      if (gu[t] !== undefined) return;   // one guess per turn
+      gu[t] = Math.max(0, Math.min(99, a.v | 0));
+      this.live(r, { id, k: 'v', t });
     } else if (g === 'xep') {
       if (a.k !== 't') return; const pr = r.prog.get(id); if (!pr || pr.fin !== null) return;
       if ((a.v | 0) === pr.c + 1) { pr.c++; if (pr.c === 9) pr.fin = p; } else pr.pen++;
@@ -488,16 +689,53 @@ export class Room extends DurableObject {
       else { const j = pr.open[0]; if (r.cards[j] === r.cards[i]) { pr.matched.add(i); pr.matched.add(j); pr.pairs++; pr.at = p; pr.open = []; this.send(c, { t: 'flip', n: r.n, i, v: r.cards[i], m: j }); this.live(r, { id, k: 'm', c: pr.pairs }); } else { pr.open = []; this.send(c, { t: 'flip', n: r.n, i, v: r.cards[i], bad: j }); } }
     } else if (g === 'chen') {
       if (a.k !== 'p' || inp.has(id) || p < cfg.end - 100) return; inp.set(id, { v: Math.max(0, Math.min(2, a.v | 0)), p }); this.live(r, { id, k: 'p' });
+    } else if (g === 'keoco') {   // pick a side (once, during the pick phase), then tap to pull
+      if (a.k === 'side') {
+        if (p > cfg.pick || (a.v !== 0 && a.v !== 1) || r.team.has(id)) return;
+        r.team.set(id, a.v); this.live(r, { id, k: 'side', v: a.v });
+      } else if (a.k === 't') {
+        if (p < cfg.pick || p > cfg.pick + T.KEOCO_LEN + 350 || !r.team.has(id)) return;
+        const cap = Math.floor(T.KEOCO_CPS * Math.max(0, p - cfg.pick) / 1000) + 3;
+        r.tap.set(id, Math.min(cap, (r.tap.get(id) || 0) + Math.max(0, Math.min(8, a.c | 0))));
+      }
     }
   }
   gameTick(r, now) {
     const g = r.game, p = now - r.t0;
+    if (g === 'thaihanh') {
+      if (p > 0 && now - r.onAt >= 400) { r.onAt = now; const o = {}; for (const [id, pr] of r.onion) o[id] = pr.cut !== null ? -1 - pr.c : pr.c; this.all({ t: 'prog', n: r.n, p: o }); }   // how far everybody is (a negative number: cut), as in the boat race
+      let e0 = null; for (const pr of r.onion.values()) if (pr.fin !== null && pr.cut === null && (e0 === null || pr.fin < e0)) e0 = pr.fin;
+      if (e0 !== null && p >= e0 + 1500) r.deadline = Math.min(r.deadline, now);   // the first one done keeps 1.5 s to stop slicing, then the round ends
+      let lc = null, all = true; for (const pr of r.onion.values()) { if (pr.cut === null) all = false; else if (lc === null || pr.cut > lc) lc = pr.cut; }
+      if (all && lc !== null && p >= lc + 2500) r.deadline = Math.min(r.deadline, now);   // everybody cut: a moment to watch the wailing, then the result
+    }
+    if (g === 'mecung') {
+      const z = r.mz;
+      if (!z.sent && p >= 0) { z.sent = true; for (const [id, pr] of z.pos) this.mzWin(r, id, pr); }
+      if (p > 0 && now - z.at >= 200) { z.at = now; const o = {}; for (const [id, pr] of z.pos) o[id] = [pr.x, pr.y, pr.fin !== null ? 1 : 0]; this.all({ t: 'mzp', n: r.n, p: o }); }   // where everybody is, five times a second
+    }
+    if (g === 'ngoay') {   // still holding when the stick reaches the eardrum: it goes through
+      for (const [id, s] of r.inp) if (s.d !== undefined && s.u === undefined && s.pierce === undefined && p >= s.d + 1000 / r.cfg.speed + (this.conns.get(id) ? Math.min(600, this.conns.get(id).rtt / 2) + 150 : 120)) { s.pierce = s.d + 1000 / r.cfg.speed; this.live(r, { id, k: 'x' }); }
+    }
     if (g === 'balloon') {
       for (const [id, s] of r.inp) if (s.d !== undefined && s.u === undefined && !s.pop && p >= s.d + r.thr[id] + (this.conns.get(id) ? Math.min(600, this.conns.get(id).rtt / 2) + 150 : 120)) { s.pop = s.d + r.thr[id]; this.live(r, { id, k: 'pop', p: s.pop }); }
     } else if (g === 'lantern' || g === 'chuot') {
       if (!r.sent && now >= r.s) { r.sent = true; this.all({ t: 'go', n: r.n, hole: g === 'chuot' ? r.cfg.hole : undefined }); }
     } else if (g === 'boat') {
       if (now - r.progAt >= 500 && p > 0) { r.progAt = now; const o = {}; for (const [id, s] of r.inp) o[id] = s.c; this.all({ t: 'prog', n: r.n, p: o }); }
+    } else if (g === 'keoco') {
+      if (!r.teamsDone && p >= r.cfg.pick) {   // pick phase over: the undecided join the smaller side (random on a tie)
+        r.teamsDone = true;
+        const cnt = [0, 0];
+        for (const s of r.team.values()) if (s === 0 || s === 1) cnt[s]++;
+        for (const id of this.ids(r)) {
+          if (r.team.has(id)) continue;
+          const v = cnt[0] === cnt[1] ? (Math.random() < .5 ? 0 : 1) : (cnt[0] < cnt[1] ? 0 : 1);
+          r.team.set(id, v); cnt[v]++;
+          this.live(r, { id, k: 'side', v });
+        }
+      }
+      if (now - r.progAt >= 500 && p > r.cfg.pick) { r.progAt = now; const o = {}; for (const [id, c] of r.tap) o[id] = c; this.all({ t: 'prog', n: r.n, p: o }); }
     } else if (g === 'hang') this.hangTick(r, p);
   }
   hangTick(r, p) {
@@ -529,7 +767,9 @@ export class Room extends DurableObject {
     if (g === 'hang') return false;   // ends at its deadline (after the last reveal)
     if (g === 'chuot') return r.sent && ids.every(id => { const s = r.inp.get(id); return s && s.rt !== undefined; });
     if (g === 'khac' || g === 'tinh' || g === 'dodan') return ids.every(id => { const s = r.inp.get(id); return s && s.rt !== undefined; });
-    if (g === 'dem' || g === 'chen') return ids.every(id => r.inp.has(id));
+    if (g === 'dem' || g === 'chen' || g === 'dhang') return ids.every(id => r.inp.has(id));
+    if (g === 'nhotranh') return ids.every(id => r.pz.get(id).fin !== null);
+    if (g === 'ngoay') return ids.every(id => { const s = r.inp.get(id); return s && (s.u !== undefined || s.pierce !== undefined); });
     if (g === 'xep') return ids.every(id => r.prog.get(id).fin !== null);
     if (g === 'mau') return ids.every(id => r.prog.get(id).fin);
     if (g === 'lat') return ids.every(id => r.prog.get(id).pairs >= 6);
@@ -596,11 +836,45 @@ export class Room extends DurableObject {
       for (const id of ids) { const s = r.inp.get(id); if (s) ok.push({ id, v: s.v, d: Math.abs(s.v - target) }); else no.push({ id, v: null }); }
       return [...rank(ok, (a, b) => a.d - b.d), ...no];
     }
-    if (g === 'dem') {
-      const n = r.cfg.items.length; r.xtra = { n };
+    if (g === 'thaihanh') {   // done with the onion and unhurt, quickest first; the others by how many slices they made
+      const fin = [], rest = [];
+      for (const id of ids) { const pr = r.onion.get(id); if (pr.fin !== null && pr.cut === null) fin.push({ id, v: pr.fin, c: pr.c }); else rest.push({ id, v: null, c: pr.c, cut: pr.cut !== null }); }
+      rank(fin, (a, b) => a.v - b.v); const rr = rank(rest, (a, b) => b.c - a.c); rr.forEach(x => { x.rank += fin.length; });
+      return [...fin, ...rr];
+    }
+    if (g === 'mecung') {   // out first wins
+      const fin = [], no = [];
+      for (const id of ids) { const pr = r.mz.pos.get(id); if (pr.fin !== null) fin.push({ id, v: pr.fin }); else no.push({ id, v: null }); }
+      rank(fin, (a, b) => a.v - b.v); return [...fin, ...no];
+    }
+    if (g === 'ngoay') {   // the pellets the stick brought out; a pierced eardrum or no try counts none
       const ok = [], no = [];
-      for (const id of ids) { const s = r.inp.get(id); if (s) ok.push({ id, v: s.v, d: Math.abs(s.v - n), p: s.p }); else no.push({ id, v: null }); }
-      return [...rank(ok, (a, b) => a.d - b.d || a.p - b.p), ...no];
+      for (const id of ids) { const s = r.inp.get(id); if (s && s.u !== undefined) { const depth = r.cfg.speed * (s.u - s.d) / 1000; ok.push({ id, v: r.cfg.ps.filter(x => x <= depth).length, depth: +depth.toFixed(3) }); } else no.push({ id, v: 0, pierce: !!(s && s.pierce !== undefined) }); }
+      return [...rank(ok, (a, b) => b.v - a.v), ...no];
+    }
+    if (g === 'nhotranh') {   // everything right and quickest first; the rest by how many were right
+      const all = [], rest = [];
+      for (const id of ids) { const pr = r.pz.get(id); if (pr.fin !== null && pr.ok === r.cfg.tops.length - 1) all.push({ id, v: pr.fin, c: pr.ok }); else rest.push({ id, v: null, c: pr.ok, n: pr.picks.length }); }
+      rank(all, (a, b) => a.v - b.v); const rr = rank(rest, (a, b) => b.c - a.c); rr.forEach(x => { x.rank += all.length; });
+      return [...all, ...rr];
+    }
+    if (g === 'dhang') {
+      const fin = r.final; r.xtra = { final: fin };
+      const ok = [], no = [];
+      for (const id of ids) { const s = r.inp.get(id); if (s) ok.push({ id, v: s.v, d: Math.abs(s.v - fin) }); else no.push({ id, v: null }); }
+      return [...rank(ok, (a, b) => a.d - b.d), ...no];
+    }
+    if (g === 'dem') {
+      const actual = cfg.turns.map(t => t.n), total = actual.reduce((a, b) => a + b, 0);
+      r.xtra = { turns: actual, total };
+      const ok = [], no = [];
+      for (const id of ids) {
+        const gu = r.guess.get(id) || []; let sum = 0, cnt = 0;
+        for (let t = 0; t < cfg.turns.length; t++) if (gu[t] !== undefined) { sum += gu[t]; cnt++; }
+        if (!cnt) no.push({ id, v: null });
+        else ok.push({ id, v: sum, d: Math.abs(sum - total), cnt });
+      }
+      return [...rank(ok, (a, b) => a.d - b.d), ...no];
     }
     if (g === 'xep') {
       const fin = [], rest = [];
@@ -621,6 +895,12 @@ export class Room extends DurableObject {
       for (const id of ids) { const s = r.inp.get(id); if (!s) no.push({ id, v: null }); else if (s.v === r.final) ok.push({ id, v: s.v, p: s.p, right: true }); else bad.push({ id, v: s.v, wrong: true }); }
       return [...rank(ok, (a, b) => a.p - b.p), ...bad, ...no];
     }
+    if (g === 'keoco') {   // team totals decide; rows stay per player for the result screen
+      const t = [0, 0]; for (const [id, c] of r.tap) { const s = r.team.get(id); if (s === 0 || s === 1) t[s] += c; }
+      r.kfinal = t;
+      const l = ids.map(id => ({ id, v: r.tap.get(id) || 0, team: r.team.has(id) ? r.team.get(id) : -1 }));
+      return rank(l, (a, b) => b.v - a.v);
+    }
     return rows;
   }
   // who shares the pot: everybody with the same winning result (owner, 2026-10-19: "có thể share tiền nếu cùng kết quả đúng")
@@ -635,9 +915,19 @@ export class Room extends DurableObject {
     if (g === 'boat') return first.v > 0 ? rows.filter(x => x.v === first.v).map(x => x.id) : [];
     if (g === 'tuong') return first.fin ? rows.filter(x => x.fin && x.v === first.v).map(x => x.id) : [first.id];
     if (g === 'mau' || g === 'lat') return first.v > 0 ? rows.filter(x => x.v === first.v && x.at === first.at).map(x => x.id) : [];
-    if (g === 'hpb' || g === 'dem') return first.v === null ? [] : rows.filter(x => x.v !== null && eq(x.d, first.d)).map(x => x.id);
-    if (g === 'xep') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    if ((g === 'dem' || g === 'dhang') && (first.v === null || first.d !== 0)) return [];   // only an exact total wins: nobody guesses it, nobody is paid
+    if (g === 'hpb' || g === 'dem' || g === 'dhang') return first.v === null ? [] : rows.filter(x => x.v !== null && eq(x.d, first.d)).map(x => x.id);
+    if (g === 'thaihanh') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    if (g === 'mecung') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    if (g === 'ngoay') return first.v > 0 ? rows.filter(x => x.v === first.v).map(x => x.id) : [];   // most pellets wins, the same number shares
+    if (g === 'xep' || g === 'nhotranh') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
     if (g === 'chuot' || g === 'khac' || g === 'tinh' || g === 'dodan' || g === 'lantern') return first.v === null ? [] : rows.filter(x => x.v === first.v).map(x => x.id);
+    if (g === 'keoco') {   // the stronger side's players share the whole pot: each nets the losing side's stakes, split evenly
+      const t = r.kfinal || [0, 0];
+      if (t[0] === t[1]) return [];   // a tie: no winners, nobody's stake moves
+      const ws = t[0] > t[1] ? 0 : 1;
+      return rows.filter(x => x.team === ws).map(x => x.id);
+    }
     return rows.filter(x => x.rank === 1 && x.v !== null && eq(x.v, first.v)).map(x => x.id);   // pomelo, giua, balloon
   }
   finish(r) {
@@ -655,7 +945,7 @@ export class Room extends DurableObject {
     this.noteRound(r);
     r.state = 'result'; r.next = Date.now() + T.RESULT;
     r.result = { rows, winner, winners, share, pot, N, net };
-    this.all({ t: 'result', n: r.n, game: g, rows, winner, winners, share, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : g === 'chen' ? { final: r.final } : g === 'dodan' ? { a: r.ans } : g === 'hpb' || g === 'dem' ? r.xtra : undefined });
+    this.all({ t: 'result', n: r.n, game: g, rows, winner, winners, share, pot, N, net, next: r.next, extra: g === 'hang' ? { holes: r.holes } : g === 'balloon' ? { thr: r.thr } : g === 'lantern' ? { s: r.s - r.t0 } : g === 'chen' ? { final: r.final } : g === 'dodan' ? { a: r.ans } : g === 'hpb' || g === 'dem' || g === 'dhang' ? r.xtra : g === 'keoco' ? { teams: r.kfinal } : undefined });
     if (!r.solo) this.record(r, stat, winners, net);
     this.all({ t: 'players', players: this.playerList() });
   }

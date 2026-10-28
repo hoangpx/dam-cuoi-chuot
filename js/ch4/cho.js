@@ -149,7 +149,9 @@ function c4Confiscate(value) {
   if (!list) return 'Lính huyện lục gánh chẳng còn gì đáng giá, chửi đổng rồi đi.';
   return `Lính huyện tịch thu ${list} (trị giá khoảng ${c4Money(Math.round(total))})${left > 0 ? ', lục hết gánh mà vẫn chưa đủ, chửi đổng bỏ đi' : ' thay tiền'}.`;
 }
-const c4Price = g => g === 'trau' ? (SAVE4.cheap > 0 ? 5 : 6) : C4_GOODS[g].price;
+// the price a stall sells at is the player's own (SAVE4.pr[g], gia.js); the plain price is the starting one. (The cheap-betel offer still caps the betel at 5.)
+const c4PriceBase = g => g === 'trau' ? 6 : C4_GOODS[g].price;
+const c4Price = g => { const p = (SAVE4.pr && SAVE4.pr[g]) || c4PriceBase(g); return g === 'trau' && SAVE4.cheap > 0 ? Math.min(p, 5) : p; };
 const c4Owned = () => ['trau', ...C4_SHOPS.filter(c4Own), ...C4_BUYS.filter(c4Own)];   // (C4_BUYS: neighbours' stalls bought out, muagan.js)
 const c4QX = g => g === 'trau' ? [175, 200, 225, 225, 225][SAVE4.lv] : 140;          // where the queue starts, right of a stall
 
@@ -269,9 +271,9 @@ const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * 
 function c4Want(g, noWx) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
   if (!c4Own(g) || c4Shut(g)) return 0;
-  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && SAVE4.cheap <= 0 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
+  const base = g === 'trau' ? lv.buy * (.7 + (C4_BUSY[h] || .3) * .4) * (SAVE4.rival > 0 && c4Price('trau') > 5 ? .45 : 1) : .28 * (G.hours[h] || 0) * c4SLv(g).want * (1 + .12 * c4Tables(g));
   const sl = c4Slump();
-  return base * (noWx ? 1 : G.wx[c4Wx()] || 1) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
+  return base * (noWx ? 1 : (G.wx[c4Wx()] || 1) * c4PFlow(c4PRatio(g))) * (sl && sl.g === g ? sl.k : 1);          // a lean spell for this one ware: few buy it
 }
 function c4Spawn(atX, guest = null) {
   // a resident of the village (dan.js), or now and then a child (nameless, never buys); or an invited guest
@@ -296,7 +298,7 @@ function c4Spawn(atX, guest = null) {
   if (buf || smokeX !== undefined) shop = null;
   if (shop && fromRight && atX === undefined) x = Math.max(x, C4_GOODS[shop].x + 260);         // buyers come from a side that takes them past their stall
   C4.walkers.push({ kind, sort, M: kind === 'mouse' ? c4MouseRig(sort, look.skirt) : null, seed: R() * 6, name: kid ? c4Pick(C4_NAMES.child) : P.name, pid: kid ? undefined : P.id, look: look.tool === 'buf' && !buf ? { ...look, tool: null } : look, buf, smokeX, drunk, umb: look.tool === 'o' || R() < .4, x, z: .38 + R() * .6, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1, guest: !!guest, sp: guest ? 120 : buf ? 38 : drunk ? sp * .6 : sp, ph: R() * 6,
-    buy: !!shop, shop, st: 'walk', n: guest ? (guest.treat ? 1 : guest.sale ? c4BuyN(P) : 3 + ((R() * 4) | 0)) : c4BuyN(P), treat: !!(guest && guest.treat), carry: null, cd: 3 + R() * 6, say: null });
+    buy: !!shop, shop, st: 'walk', n: guest ? (guest.treat ? 1 : guest.sale ? c4BuyN(P) : 3 + ((R() * 4) | 0)) : c4PriceN(c4BuyN(P), shop), treat: !!(guest && guest.treat), carry: null, cd: 3 + R() * 6, say: null });
   if (kind === 'mouse' && role === 'child' && atX === undefined && R() < .5) {             // a gang of children chasing each other
     const lead = C4.walkers[C4.walkers.length - 1]; lead.sp = 150; lead.cd = 99;
     for (let i = 1; i <= 1 + ((R() * 2) | 0); i++) { const s2 = 11 + ((R() * 3) | 0); C4.walkers.push({ ...lead, pid: undefined, sort: s2, M: c4MouseRig(s2), seed: R() * 6, name: c4Pick(C4_NAMES.child), x: lead.x - lead.face * 60 * i, z: Math.min(.98, lead.z + (R() - .5) * .2), ph: R() * 6, say: null }); }
@@ -455,13 +457,15 @@ function c4OrderRows(box, orders) {
   box.appendChild(w);
   for (const g of c4Owned()) {
     const G = C4_GOODS[g], closed = c4Shut(g) || (g !== 'trau' && !c4Open(g)); let max = closed ? 0 : Math.max(0, c4Cap(g) - c4Stock(g)), s = H0 && H0.by[g], r1 = v => Math.round(v * 10) / 10;
-    const note = closed ? `<span class="bad">${c4Shut(g) ? 'tạm đóng cửa' : 'không ai trông'}</span>` : [s ? `hôm qua bán ${s.n}${s.lost ? `, lỡ ${s.lost} khách` : ''}` : '', c4Stock(g) ? `còn ${c4Stock(g)}` : '', g === 'xoi' ? 'để quá 7 tiếng là thiu' : '', g === 'che' ? `củi ${G.fuel} đồng` : '', `${r1(c4Cost(g))} → ${c4Price(g)} đồng`].filter(Boolean).join(' · ');
+    const note = closed ? `<span class="bad">${c4Shut(g) ? 'tạm đóng cửa' : 'không ai trông'}</span>` : [s ? `hôm qua bán ${s.n}${s.lost ? `, lỡ ${s.lost} khách` : ''}` : '', c4Stock(g) ? `còn ${c4Stock(g)}` : '', g === 'xoi' ? 'để quá 7 tiếng là thiu' : '', g === 'che' ? `củi ${G.fuel} đồng` : '', `vốn ${r1(c4Cost(g))} đồng`].filter(Boolean).join(' · ');
     const r = document.createElement('div'); r.className = 'ordR' + (closed ? ' off' : '');
-    r.innerHTML = `<div class="nm"><b>${G.name}</b><small>${note}</small><button type="button" class="shutB">${c4Shut(g) ? 'Mở cửa lại' : 'Tạm đóng cửa'}</button></div><button type="button" class="m"${closed ? ' disabled' : ''}>−</button>`
+    r.innerHTML = `<div class="nm"><b>${G.name}</b><small>${note}</small><button type="button" class="shutB">${c4Shut(g) ? 'Mở cửa lại' : 'Tạm đóng cửa'}</button><span class="pset"><button type="button" data-d="-1">−</button><b class="pv"></b><button type="button" data-d="1">+</button></span></div><button type="button" class="m"${closed ? ' disabled' : ''}>−</button>`
       + `<input type="number" inputmode="numeric" min="0" max="${max}" step="5"${closed ? ' disabled' : ''}><button type="button" class="p"${closed ? ' disabled' : ''}>+</button>`;
     w.querySelector('.ordL').appendChild(r);
     const inp = r.querySelector('input'), set = q => { q = Math.max(0, Math.min(max, Math.round(+q || 0))); orders[g] = q; inp.value = q; };
     rows[g] = set; set(0);
+    { const pv = r.querySelector('.pv'), pb = r.querySelectorAll('.pset button'), showP = () => { const [lo, hi] = c4PriceRange(g), p = c4PriceSet(g); pv.textContent = `bán ${p} đ`; pb[0].disabled = p <= lo; pb[1].disabled = p >= hi; };
+      pb.forEach(b => b.addEventListener('click', () => { AU.tap(); c4SetPrice(g, +b.dataset.d); showP(); })); showP(); }   // the price of this ware, set here or on the stall's sheet (gia.js)
     r.querySelector('.shutB').addEventListener('click', () => {            // shut it (nothing to buy for it) or open it again
       AU.tap(); const shut = !c4Shut(g); c4SetShut(g, shut);
       if (shut && C4.phase === 'open') c4TurnAway(g);
@@ -812,7 +816,7 @@ function updateC4(dt) {
     if ((C4.spawnT -= dt) <= 0) { C4.spawnT = 1 / (.9 * C4_PACE * busy * c4Lv().flow * c4Flow()) * (.6 + R() * .8); c4Spawn(); }
     for (const v of C4.vendors) if (!c4VendorMine(v) && (v.callT -= dt) <= 0) { v.callT = 9 + R() * 9; if (Math.abs(v.x - C4.camX - c4View().vw / 2) < 600) c4Say(v, c4Pick(v.calls)); }
     if (C4.events.length && !c4OpenStalls().length) C4.events = [];            // every stall shut meanwhile: nothing befalls the village
-    if (C4.events.length && C4.mins >= C4.events[0].at && C4.mins >= (C4.evGap || 0) && !Object.values(C4.SV).some(A => A && A.length)) { const e0 = C4.events.shift(); c4NoteFired(e0.kind); C4.evGap = C4.mins + 30; c4Dispatch(e0.kind, e0); return; }   // one at a time, half an hour apart (owner: several came together)
+    if (C4.events.length && C4.mins >= C4.events[0].at && (C4.events[0].kind === 'nvdem' || (C4.mins >= (C4.evGap || 0) && !Object.values(C4.SV).some(A => A && A.length)))) { const e0 = C4.events.shift(); c4NoteFired(e0.kind); C4.evGap = C4.mins + 30; c4Dispatch(e0.kind, e0); return; }   // one at a time, half an hour apart (owner: several came together)
     c4XoiTick();
     // noon: scorching days wilt some betel
     if (was < 12 * 60 && C4.mins >= 12 * 60) {
@@ -826,7 +830,12 @@ function updateC4(dt) {
       c4Hud();
     }
     c4NvUpdate(dt); c4SaleTick(dt); c4DelivUpdate(); c4ExtraUpdate(); c4StreetUpdate(dt); c4CoupleTalk(dt); c4Ambience(dt); c4FlowerSeller(dt); c4VisitorsUpdate(dt); c4RivalUpdate(dt); c4RivalWalk(dt); c4HusbTout(dt); c4TripsUpdate(dt); c4AutoUpdate(dt);
-    if (C4.mins >= C4_CLOSE) { C4.mins = C4_CLOSE - 1; c4EndDay(); }
+    if (C4.mins >= C4_CLOSE) {
+      C4.mins = C4_CLOSE - 1;
+      const i = C4.events.findIndex(e => e.kind === 'nvdem');                 // a counting question still unasked: ask before the day ends
+      if (i >= 0) { c4Dispatch('nvdem', C4.events.splice(i, 1)[0]); return; }
+      c4EndDay();
+    }
   }
   // the cat: on the roof, a leap down, the decision; fed it goes back over the roof; refused it sits, then takes betel
   if (C4.cat) {
@@ -917,7 +926,7 @@ function c4ChatStart(a, b) {
   let news = null, pick = C4_CHATS;
   const hunt = SAVE4.day >= 1 && (c4Tasks() || []).some(t => t.k === 'news' && !t.done);   // the task asks for news: whispers come more often
   if (R() < (hunt ? .75 : .38) && SAVE4.next) {
-    const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : !!SAVE4.next[k];
+    const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : k === 'kha' ? c4GiaMood() > 1.1 : k === 'kho' ? c4GiaMood() < .9 : !!SAVE4.next[k];
     C4.said = C4.said || {};
     const kinds = Object.keys(C4_NEWS).filter(k => !SAVE4.notes.some(n => n.day === SAVE4.day + 1 && n.kind === k) && (C4.said[k] || 0) < 2);
     const yes = kinds.filter(truth), no = kinds.filter(k => !truth(k));
@@ -991,7 +1000,7 @@ function c4EndDay() {
     + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '')
     + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '') + c4LedgerHtml(d)
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
-    + (gossip ? `<br><span class="bad">${gossip.who.map(c4Cap1).join(', ')} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.length} người quen bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : gossip.who[0]} thì hết chuyện.</span>` : '')
+    + (gossip ? `<br><span class="bad">${gossip.who.length > 1 ? gossip.who.length + ' người' : 'Có người'} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.length} người quen bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : 'người ấy'} thì hết chuyện.</span>` : '')
     + (quits.length ? `<br><span class="bad">${quits.join(' ')}</span>` : '')
     + (extra.length ? `<br>${extra.join('<br>')}` : '')
     + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);
@@ -1093,6 +1102,7 @@ function c4OpenUp(g = 'trau') {
     box.querySelector('.get').addEventListener('click', () => { if (!q) { c4Sheets(null); return; } if (carry.hand) c4SendTrip(carry, g, q, c4CostMid(g)); else Object.assign(P, { st: 'out', good: g, qty: q, cost: c4CostMid(g), to: null, at: null }); c4Sheets(null); toast(`${c4Cap1(carry.name)} đi lấy hàng ở bến.`); });
   }
   box.appendChild(c4ShutBlock(g));                                          // shut it for a while
+  box.appendChild(c4PriceBlock(g));                                         // its price (gia.js)
   box.appendChild(c4AutoBlock(g));                                          // fetching by itself, once it is a counter (nguoiban.js)
   box.appendChild(c4SaleBlock(g));                                          // a sale: how much, from when to when, every day or today (giamgia.js)
   box.appendChild(c4HandsBlock(g));                                          // always there (a player could not find the hire button when only the betel stall was open)
@@ -1292,11 +1302,11 @@ function c4Sky(g, V, cx, wx) {
     const x = ((base + C4.t * sp - cx * .08) % W + W) % W - 180, y = 26 + r() * skyH * .45;
     c4Cloud(g, x, y, s * (rain ? 1.3 : 1), type, rain ? '#cfc8cf' : sun > .3 ? '#f5d2a8' : '#f2ecde');
   }
-  // birds: a flock now and then crosses the sky, wings beating
-  if (!rain) for (let k = 0; k < 2; k++) {
-    const per = c4OmenOn('chim') ? 8 + k * 4 : 16 + k * 7, cyc = (C4.t + k * 9) / per, fr = cyc % 1, r = mulberry(Math.floor(cyc) * 17 + k * 3 + 1);
-    if (r() < (c4OmenOn('chim') ? .05 : .35)) continue;
-    const dir = r() < .5 ? 1 : -1, y0 = 30 + r() * skyH * .4, cnt = 3 + ((r() * 4) | 0), x0 = dir > 0 ? -60 + fr * (V.vw + 160) : V.vw + 60 - fr * (V.vw + 160);
+  // birds (owner: they used to stay with the screen as it scrolled): the flocks fly over the WORLD, slowly along the lane, a long way off
+  // so they slide a little against the view (a 15 % parallax); each flock comes round again after the lane's length
+  if (!rain) for (let k = 0, nf = c4OmenOn('chim') ? 5 : 3, L = C4_W + 900; k < nf; k++) {
+    const r = mulberry(k * 17 + 3), dir = k % 2 ? -1 : 1, y0 = 30 + r() * skyH * .4, cnt = 3 + ((r() * 4) | 0), wx0 = ((r() * L + dir * 52 * C4.t) % L + L) % L - 450, x0 = wx0 - cx * .85;
+    if (x0 < -80 || x0 > V.vw + 80) continue;
     g.strokeStyle = INK; g.lineWidth = 2; g.lineCap = 'round';
     for (let j = 0; j < cnt; j++) {
       const bx = x0 - dir * (j % 2 ? 1 : .5) * 22 * Math.ceil(j / 2), by = y0 + Math.ceil(j / 2) * (j % 2 ? 9 : -9) + Math.sin(C4.t * 2 + j) * 3, fl = Math.sin(C4.t * 11 + j * 1.7) * 5, w = 9;

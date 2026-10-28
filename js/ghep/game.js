@@ -86,7 +86,7 @@ function renderC9() {
   g.font = "600 12px 'Inter', system-ui, sans-serif"; g.globalAlpha = .75; g.fillText(`${C9.G && C9.G.big ? `${C9.G.groups.length} ${lg('mảng', 'parts')}` : `${lg('Màn', 'Level')} ${C9.i + 1}`} · ${L.cols * L.rows} ${lg('mảnh', 'pieces')}${C9.touch ? lg(' · vuốt xoay · 2 ngón zoom', ' · flick turns · pinch zooms') : lg(' · cuộn: xoay / zoom', ' · wheel: turn / zoom')}`, W / 2, 40, W - 160); g.globalAlpha = 1;
   if (C9.G) {
     const G = C9.G; g.font = "700 15px 'Inter', system-ui, sans-serif"; g.textAlign = 'right'; g.fillText(c9Time(G.t), W - 56, 28);
-    g.beginPath(); g.arc(W - 28, 28, 16, 0, 6.283); g.fillStyle = G.peek > 0 ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = '#1d1915'; g.stroke();   // the eye: a peek at the whole picture
+    g.beginPath(); g.arc(W - 28, 28, 16, 0, 6.283); g.fillStyle = G.sv ? '#f6e3a0' : '#f2ecde'; g.fill(); g.lineWidth = 2.2; g.strokeStyle = '#1d1915'; g.stroke();   // the eye: a peek at the whole picture
     g.beginPath(); g.ellipse(W - 28, 28, 9, 5.5, 0, 0, 6.283); g.stroke(); g.beginPath(); g.arc(W - 28, 28, 2.6, 0, 6.283); g.fillStyle = '#1d1915'; g.fill();
     c9Draw(G, g, W, hh);
     c9DrawTurnBtn(G, g);
@@ -113,7 +113,8 @@ function c9PDown(e) {
   if (S.mode !== 'c9play') return; C9.touch = e.pointerType !== 'mouse'; const [x, y] = c9Pos(e), G = C9.G;
   if (x < 56 && y < 56) { showAlbum(9); return; }
   if (!G) return;
-  if (x > G.lw - 52 && y < 52 && !G.done) { G.peek = G.peek > 0 ? 0 : 4; return; }
+  if (x > G.lw - 52 && y < 52 && !G.done) { c9SvToggle(G); return; }
+  if (G.sv) { capturePointer(e); c9SvDown(G, x, y, e); return; }
   if (G.done) { const b = c9WinBox(G); if (y >= b.by && y <= b.by + 40) { if (x < b.x + 12 + b.bw + 6) showAlbum(9); else if (C9.i + 1 < C9_LEVELS.length) startC9(C9.i + 1); else showAlbum(9); } return; }
   if (G.big) for (const b of c9ZoomBtns(G)) if (Math.hypot(x - b.x, y - b.y) < b.r + 6) {
     if (b.k === 'in') c9Zoom(G, 1.5, G.lw / 2, (G.lh + G.top) / 2); else if (b.k === 'out') c9Zoom(G, 1 / 1.5, G.lw / 2, (G.lh + G.top) / 2);
@@ -123,12 +124,13 @@ function c9PDown(e) {
   }
   capturePointer(e); c9Down(G, x, y, e, c9Done);
 }
-function c9PMove(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9Move(C9.G, x, y, e); cv.style.cursor = C9.G.held ? 'grabbing' : C9.G.hover ? 'grab' : ''; }
-function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); c9PtrUp(C9.G, x, y, e, c9Done); }
+function c9PMove(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); if (C9.G.sv) { c9SvMove(C9.G, x, y, e); return; } c9Move(C9.G, x, y, e); cv.style.cursor = C9.G.held ? 'grabbing' : C9.G.hover ? 'grab' : ''; }
+function c9PUp(e) { if (S.mode !== 'c9play' || !C9.G) return; const [x, y] = c9Pos(e); if (C9.G.sv) { c9SvUp(C9.G, x, y, e); return; } c9PtrUp(C9.G, x, y, e, c9Done); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'c9play') e.preventDefault(); });
 cv.addEventListener('touchstart', e => { if (S.mode === 'c9play') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
   if (S.mode !== 'c9play' || !C9.G || C9.G.done) return;
+  if (C9.G.sv) { const [sx, sy] = c9Pos(e); c9SvWheel(C9.G, e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY, sx, sy); e.preventDefault(); return; }
   const G = C9.G, [x, y] = c9Pos(e), d = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
   c9Wheel(G, d, x, y, e.ctrlKey); e.preventDefault();
 }, { passive: false });
@@ -156,7 +158,7 @@ registerChapter({
 // a test of a big print on this computer or over the home Wi-Fi (never on the real site): ?c9big=57x35 opens the print img/ch10/vinh-quy-bai-to.jpg cut that way, alone, as soon as the game has loaded
 (() => {
   const m = /[?&]c9big=(\d+)x(\d+)/.exec(location.search); if (!m || !/^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname)) return;
-  const dg = /[?&]c9pic=dg/.test(location.search);   // ?c9pic=dg: the Đàn gà mẹ con print instead (?c9big=100x56)
-  C9_LEVELS.push({ pic: dg ? { id: 'dg', src: 'img/ch10/dan-ga-me-con-2.jpg', w: 3300, h: 2324, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' } : { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, tier: 3, cols: +m[1], rows: +m[2], big: true });
+  const ly = /[?&]c9pic=ly/.test(location.search), dg = /[?&]c9pic=dg/.test(location.search);   // ?c9pic=dg: the Đàn gà mẹ con print instead (?c9big=100x56)
+  C9_LEVELS.push({ pic: ly ? { id: 'ly', src: 'img/ch10/ly-ngu-vong-nguyet.jpg', w: 2050, h: 3650, vi: 'Lý ngư vọng nguyệt', en: 'Carp Gazing at the Moon' } : dg ? { id: 'dg', src: 'img/ch10/dan-ga-me-con-2.jpg', w: 3300, h: 2324, vi: 'Đàn gà mẹ con', en: 'Mother Hen and Chicks' } : { id: 'vq', src: 'img/ch10/vinh-quy-bai-to.jpg', w: 4047, h: 2493, vi: 'Vinh quy bái tổ', en: 'Returning in Glory' }, tier: 3, cols: +m[1], rows: +m[2], big: true });
   const i = C9_LEVELS.length - 1, t = setInterval(() => { const L = document.getElementById('loading'); if (L && L.classList.contains('done')) { clearInterval(t); setTimeout(() => { try { localStorage.removeItem(C9_SAVEKEY); } catch (e) {} startC9(i); }, 800); } }, 400);
 })();

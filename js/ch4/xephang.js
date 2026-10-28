@@ -1,49 +1,47 @@
 /* Chương IV · bảng tổng sắp nhà giàu (owner, 2026-10-16: "xem được tất cả những người chơi và tiền, số ngày, tên tự gen và xếp theo thứ
    tự ai giàu nhất, người chơi có option đổi tên"). Every player has one row on Supabase (table dcc_rank, only through the rpc dcc_rank_put /
    dcc_rank_top / dcc_rank_me, docs/supabase-bang-xep-hang.sql), keyed by the device id dcc.dev (it goes with the cloud save to other
-   devices): a name made up the first time (C4_RANK_A × C4_RANK_B + a number, kept in dcc.rankName, can be changed, 2–22 letters, no bad
-   words), the purse SAVE4.money and the day SAVE4.day. The row is sent when a day turns (c4DayAdvance) and when the board is opened. The
+   devices): the player's one name (the Hồ sơ name, changed only in the Hồ sơ tab; before 2026-10-23 a made-up name in dcc.rankName with its own Đổi tên), the purse SAVE4.money and the day SAVE4.day. The row is sent when a day turns (c4DayAdvance) and when the board is opened. The
    board (#c4rank, HUD button "Tổng sắp" in the village and the town) lists the richest 100 and the player's own place. */
-const C4_RANK_A = ['Phú ông', 'Lái buôn', 'Bà chủ', 'Cậu ấm', 'Cô hàng', 'Bác', 'Chú', 'Lão', 'Mợ', 'Chuột'];
-const C4_RANK_B = ['Trầu Cau', 'Bánh Đa', 'Xôi Gấc', 'Hạt Thóc', 'Củ Lạc', 'Mè Xửng', 'Bánh Chưng', 'Ngô Rang', 'Khoai Lang', 'Cốm Vòng',
-  'Chè Kho', 'Râu Dài', 'Đuôi Cong', 'Tai To', 'Má Hồng', 'Bánh Giầy', 'Hạt Dẻ', 'Bưởi Đào', 'Nón Lá', 'Quai Thao'];
 const C4_RANK_MAX = 22;
-function c4RankName() {
-  let n = ''; try { n = localStorage.getItem('dcc.rankName') || ''; } catch (e) {}
-  if (!n) { const r = () => Math.random(); n = `${C4_RANK_A[(r() * C4_RANK_A.length) | 0]} ${C4_RANK_B[(r() * C4_RANK_B.length) | 0]} ${10 + ((r() * 90) | 0)}`; try { localStorage.setItem('dcc.rankName', n); } catch (e) {} }
-  return n;
-}
+// ONE name for the whole game (owner, 2026-10-23: "chỉ cho phép dùng 1 tên toàn game và đổi tên ở 1 chỗ là Hồ sơ"): the Hồ sơ name (dcc.hoso), the same one
+// Hội Làng and Ghép Tranh send. The board's own made-up name and its Đổi tên button (dcc.rankName) are gone; the server wants 2–22 letters.
+function c4RankName() { const n = hsName(hsMine()).replace(/\s+/g, ' ').trim(); return n.length < 2 ? n + ' chuột' : n.slice(0, C4_RANK_MAX); }
 // send my row (the purse plus the things in the house, c4NetWorth: buying furniture moves money from one column to the other),
 // with the list of what has been sắm sanh so others can look into the room (docs/supabase-bang-xep-hang-nha.sql);
 // quietly does nothing while the server has no board yet, and falls back to the old call while the home column is not there
 function c4RankSend() {
   if (!SAVE4.started) return Promise.resolve();
+  return c4RankClaim().then(c4RankPut);
+}
+function c4RankPut() {
   const row = { p_device: p4Device(), p_name: c4RankName(), p_money: Math.round(c4NetWorth()), p_day: Math.max(1, SAVE4.day || 1) };
   return p4Rpc('dcc_rank_put', { ...row, p_home: c4HomeItems().join(',') })
     .catch(() => p4Rpc('dcc_rank_put', row)).catch(() => {});
+}
+// gifts left under my house become real money in my purse (owner, 2026-10-23: "làm nhận tiền thật"): asked before every send (a day turns, the board
+// opens). The server (dcc_rank_claim, docs/supabase-bang-xep-hang-nhan-qua.sql) marks the gifts taken and answers the total in one step, so a gift is paid once;
+// a reply lost on the way would lose that sum, which is rare and small (a gift is under 10 quan).
+let C4_CLAIMING = null;
+function c4RankClaim() {
+  if (C4_CLAIMING) return C4_CLAIMING;
+  C4_CLAIMING = p4Rpc('dcc_rank_claim', { p_device: p4Device() }).then(r => {
+    const g = Array.isArray(r) && r[0], t = g ? Math.round(+g.total || 0) : 0, n = g ? +g.n || 0 : 0;
+    if (t > 0 && t <= 100000000) {
+      SAVE4.money = Math.max(0, Math.round(SAVE4.money || 0)) + t; persist4(); c4RankHud();
+      try { AU.pluck(84); } catch (e) {}
+      toast(n > 1 ? `Khách ghé nhà để lại ${n} món quà, được ${c4RankMoney(t)}.` : `Có khách để lại quà ở nhà, được ${c4RankMoney(t)}.`, 3.6);
+    }
+  }).catch(() => {}).then(() => { C4_CLAIMING = null; });
+  return C4_CLAIMING;
 }
 const c4RankMoney = m => m >= 600 ? `${Math.floor(m / 600).toLocaleString('vi')} quan` : `${Math.max(0, Math.round(m))} đồng`;
 const c4RankShow = id => (S.mode === 'c4bplay' ? p4Sheets : c4Sheets)(id);
 // the board in a box: my name (with Đổi tên), my place, the richest 100
 async function c4RankInto(box) {
   box.classList.add('rankbox');
-  box.innerHTML = '<p class="rkme rs">Tên bạn: <b class="rn"></b> <button class="btn alt rren">Đổi tên</button></p>'
-    + `<p class="rkme re" hidden><input class="rin" maxlength="${C4_RANK_MAX}" autocomplete="off"><button class="btn rok">Lưu</button><button class="btn alt rno">Thôi</button></p>`
-    + '<div class="rkB"><p class="sm">Đang tải bảng tổng sắp…</p></div>';
+  box.innerHTML = `<p class="rkme">Tên bạn: <b class="rn">${p4Esc(c4RankName())}</b></p><div class="rkB"><p class="sm">Đang tải bảng tổng sắp…</p></div>`;
   const q = c => box.querySelector(c), B = q('.rkB');
-  const edit = on => { q('.rn').textContent = c4RankName(); q('.rs').hidden = on; q('.re').hidden = !on; if (on) { const i = q('.rin'); i.value = c4RankName(); i.focus(); i.select(); } };
-  const save = () => {
-    const v = q('.rin').value.replace(/\s+/g, ' ').trim().slice(0, C4_RANK_MAX);
-    if (v.length < 2) { toast('Tên phải có ít nhất 2 chữ.', 2.2); return; }
-    if (p4HoaBad(v)) { toast('Tên có chữ không đẹp, chọn tên khác nhé.', 2.6); return; }
-    try { localStorage.setItem('dcc.rankName', v); } catch (e) {}
-    AU.tap(); toast('Đã đổi tên: ' + p4Esc(v), 2.2); setTimeout(() => c4RankInto(box), 300);
-  };
-  edit(false);
-  q('.rren').addEventListener('click', () => { AU.tap(); edit(true); });
-  q('.rno').addEventListener('click', () => edit(false));
-  q('.rok').addEventListener('click', save);
-  q('.rin').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') save(); });
   // sending my row must never hold the board up: a stalled put once left the sheet on "Đang tải…" for good, so it gets a short
   // wait and then the list is drawn anyway (owner, 2026-10-22: "sao bảng tổng sắp trắng trơn vậy?")
   await Promise.race([c4RankSend(), new Promise(done => setTimeout(done, 2500))]);
@@ -67,7 +65,7 @@ async function c4RankInto(box) {
       const go = () => { const n = parseInt(gi.value, 10); if (!(n > 0)) { toast('Nhập số hạng muốn xem nhé.', 2.2); gi.focus(); return; } AU.tap(); c4RankVisit(n); };
       box.querySelector('.rgo').addEventListener('click', go);
       gi.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') go(); }); }
-    const me1 = B.querySelector('tr.me'), rk = B.querySelector('.rk'); if (me1 && rk) rk.scrollTop = me1.offsetTop - rk.clientHeight / 2;
+    const rk = B.querySelector('.rk'); if (rk) rk.scrollTop = 0;   // opens at the top of the board (owner), not at my own row
   } catch (e) { B.innerHTML = '<p class="sm">Chưa kết nối được bảng tổng sắp. Lát nữa thử lại nhé.</p>'; }
 }
 // looking into someone else's house (owner, 2026-10-22: "vào bảng tổng sắp thì sẽ có nút xem nhà của người trong bảng, hoặc nhập số
@@ -98,7 +96,7 @@ const c4RankWhen = t => {
 };
 const c4RankRvHtml = list => {
   const L = Array.isArray(list) ? list.filter(r => r && (r.note || r.amount > 0)) : [];
-  return L.length ? '<ul class="rvl">' + L.map(r => `<li class="rv"><p class="rvh"><b>${p4Esc(r.from_name || 'Khách')}</b> ${c4RankRvTag(r)}`
+  return L.length ? '<ul class="rvl">' + L.map(r => `<li class="rv"><p class="rvh">${r.from_pub ? `<button type="button" class="rvgo" data-pub="${p4Esc(r.from_pub)}" title="Sang thăm nhà người này"><b>${p4Esc(r.from_name || 'Khách')}</b> ›</button>` : `<b>${p4Esc(r.from_name || 'Khách')}</b>`} ${c4RankRvTag(r)}`
       + `<span class="rvwhen">${c4RankWhen(r.created_at)}</span></p>`
       + (r.note ? `<p class="rvn">${p4Esc(r.note)}</p>` : '') + '</li>').join('') + '</ul>'
     : '<p class="cnt rvnone">Chưa ai để lại lời gì.</p>';
@@ -107,18 +105,22 @@ const c4RankMeta = r => `Hạng <b>${r.pos}</b> trong ${r.total} nhà buôn · $
 const c4RankHud = () => { try { if (S.mode === 'c4bplay') p4Hud(); else c4Hud(); } catch (e) {} };
 function c4RankRvLoad(B, r) {
   const box = B.querySelector('.rvB'); if (!box) return;
-  p4Rpc('dcc_rank_review_list', { p_target: r.pub, p_limit: 40 }).then(l => { box.innerHTML = c4RankRvHtml(l); })
+  p4Rpc('dcc_rank_review_list', { p_target: r.pub, p_limit: 40 }).then(l => {
+    box.innerHTML = c4RankRvHtml(l);
+    box.querySelectorAll('.rvgo').forEach(b => b.addEventListener('click', () => { AU.tap(); c4RankVisit(0, b.dataset.pub); }));   // on to the house of whoever wrote it
+  })
     .catch(() => { box.innerHTML = '<p class="cnt rvnone">Chưa tải được lời nhận xét.</p>'; });
 }
 // the box to leave one: words, and money if the guest wants to give some. The money line says only what the gift is called
 // ("bố thí" with more money than the host, "biếu" with less) — the owner asked for no explanation there (2026-10-22).
 // My own house gets no box (the server refuses it too).
+const C4_GIFT_MAX = 5999;   // one gift is under 10 quan (docs/supabase-bang-xep-hang-chan-qua.sql keeps the same limit on the server)
 function c4RankFormHtml(r) {
   if (r.mine) return '<p class="cnt rvown">Đây là nhà của bạn — lời nhận xét của khách ở trên.</p>';
   const mine = Math.round(c4NetWorth()), theirs = Math.round(+r.money || 0), more = mine > theirs;
   const word = more ? 'Bố thí' : 'Biếu';
   return '<div class="rvform"><textarea class="rvnote" maxlength="140" rows="2" placeholder="Đôi lời nhận xét cho nhà này…"></textarea>'
-    + `<div class="rvrow"><label>${word} <input class="rvamt" type="number" min="0" step="1" inputmode="numeric" placeholder="0"> đồng</label>`
+    + `<div class="rvrow"><label>${word} <input class="rvamt" type="number" min="0" max="5999" step="1" inputmode="numeric" placeholder="0"> đồng</label>`
     + '<button class="btn rvs">Gửi</button></div></div>';
 }
 function c4RankWire(B, r) {
@@ -130,6 +132,7 @@ function c4RankWire(B, r) {
     const note = ta.value.replace(/\s+/g, ' ').trim().slice(0, 140);
     let amt = Math.round(+ai.value || 0); if (!(amt > 0)) amt = 0;
     const purse = Math.max(0, Math.round(SAVE4.money || 0));
+    if (amt > C4_GIFT_MAX) { toast('Mỗi lần chỉ cho dưới 10 quan (tối đa 5.999 đồng).', 3); ai.value = C4_GIFT_MAX; return; }
     if (amt > purse) { toast(`Ví chỉ còn ${c4RankMoney(purse)}.`, 2.8); ai.value = purse; return; }
     if (!note && !amt) { toast('Viết một câu nhận xét, hoặc để lại chút tiền cho nhà này.', 3); ta.focus(); return; }
     if (p4HoaBad(note)) { toast('Lời nhận xét có chữ không đẹp, sửa lại nhé.', 2.8); return; }
@@ -139,14 +142,18 @@ function c4RankWire(B, r) {
       await p4Rpc('dcc_rank_review_put', { p_target: r.pub, p_device: p4Device(), p_name: c4RankName(), p_amount: amt, p_note: note });
       if (amt > 0) { SAVE4.money = Math.max(0, Math.round(SAVE4.money || 0) - amt); persist4(); c4RankSend(); c4RankHud(); }
       AU.pluck(84); AU.tap();
-      r.money = (+r.money || 0) + amt;   // the gift is on their row now; the place may shift with it, which the next opening sorts out
+      // a gift does not count for the board (owner, 2026-10-23: "cho tiền thì ko tính vào bảng xếp hạng"), so the host's line stays as it is
       const m = B.querySelector('.rvmeta'); if (m) m.innerHTML = c4RankMeta(r);
       ta.value = ''; ai.value = '';
       toast(amt > 0 ? `Đã ${kind} ${c4RankMoney(amt)} cho nhà này.` : 'Đã để lại lời nhận xét.', 3);
       c4RankRvLoad(B, r);
     } catch (e) {
       const m = (e && e.message) || '';
-      toast(/slow down/.test(m) ? 'Gửi dày quá, chờ một chút rồi gửi tiếp nhé.'
+      toast(/too much/.test(m) ? 'Mỗi lần chỉ cho dưới 10 quan (tối đa 5.999 đồng).'
+        : /giver limit/.test(m) ? 'Hôm nay bạn đã cho nhiều rồi, mai cho tiếp nhé.'
+        : /house full/.test(m) ? 'Nhà này hôm nay nhận đủ quà rồi.'
+        : /no purse/.test(m) ? 'Chưa cho được: ví của bạn chưa đủ hoặc bạn mới chơi những ngày đầu.'
+        : /slow down/.test(m) ? 'Gửi dày quá, chờ một chút rồi gửi tiếp nhé.'
         : /bad words/.test(m) ? 'Lời nhận xét có chữ không đẹp, sửa lại nhé.'
         : /no self/.test(m) ? 'Không tự nhận xét nhà mình được.'
         : /no such house/.test(m) ? 'Nhà này vừa rời bảng, mở lại từ bảng nhé.'
@@ -154,13 +161,14 @@ function c4RankWire(B, r) {
     } finally { btn.disabled = false; }
   });
 }
-function c4RankVisit(pos) {
+function c4RankVisit(pos, pub) {
   const B = $('#c4nhaxB'); if (!B) return;
-  $('#c4nhaxT').textContent = `Hạng ${pos}`; B.innerHTML = '<p class="sm">Đang mở cổng nhà…</p>';
+  $('#c4nhaxT').textContent = pub ? 'Nhà' : `Hạng ${pos}`; B.innerHTML = '<p class="sm">Đang mở cổng nhà…</p>';
   c4RankShow('c4nhax');
-  p4Rpc('dcc_rank_at', { p_pos: pos, p_device: p4Device() }).then(list => {
+  const card = $('#c4nhaxB').closest('.card4'); if (card) card.scrollTop = 0;
+  (pub ? p4Rpc('dcc_rank_at_pub', { p_pub: pub, p_device: p4Device() }) : p4Rpc('dcc_rank_at', { p_pos: pos, p_device: p4Device() })).then(list => {
     const r = Array.isArray(list) && list[0];
-    if (!r) { $('#c4nhaxT').textContent = `Hạng ${pos}`; B.innerHTML = `<p class="sm">Không có ai ở hạng ${pos} trên bảng.</p>`; return; }
+    if (!r) { $('#c4nhaxT').textContent = pub ? 'Nhà' : `Hạng ${pos}`; B.innerHTML = pub ? '<p class="sm">Nhà này vừa rời bảng tổng sắp.</p>' : `<p class="sm">Không có ai ở hạng ${pos} trên bảng.</p>`; return; }
     const has = (r.home || '').split(',').filter(id => C4_SHOP_ITEMS.some(it => it[0] === id));
     $('#c4nhaxT').innerHTML = `Nhà của ${p4Esc(r.name)}${r.mine ? ' (bạn)' : ''}`;
     B.innerHTML = `<p class="cnt rvmeta">${c4RankMeta(r)}</p>`

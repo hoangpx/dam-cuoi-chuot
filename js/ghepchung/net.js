@@ -19,7 +19,7 @@ const JG_NET = {
     ws.onerror = () => { if (this.ws === ws) this.lost(); };
     ws.onclose = ev => {
       if (this.ws !== ws) return;
-      if (ev && (ev.code === 4003 || ev.code === 4001 || ev.code === 4005)) { this.up = false; this.wantOn = false; clearTimeout(this.retry); this.ws = null; this.status(ev.code === 4003 ? 'blocked' : ev.code === 4005 ? 'crowded' : 'replaced'); return; }   // told to go away: no retrying
+      if (ev && (ev.code === 4003 || ev.code === 4001 || ev.code === 4005 || ev.code === 4006)) { this.up = false; this.wantOn = false; clearTimeout(this.retry); this.ws = null; this.status(ev.code === 4006 ? 'reported' : ev.code === 4003 ? 'blocked' : ev.code === 4005 ? 'crowded' : 'replaced'); return; }   // told to go away: no retrying
       this.lost();
     };
   },

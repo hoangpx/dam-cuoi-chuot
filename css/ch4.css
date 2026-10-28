@@ -339,7 +339,7 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .nhaview .roomBox svg{width:100%;height:auto;max-height:52vh}
 /* nhà người khác: đọc lời nhận xét của khách, để lại lời của mình, có thể kèm tiền (biếu / bố thí) */
 .nhaview .rvtt{margin:12px 0 6px;font-size:15px;text-align:left}
-.nhaview .rvl{list-style:none;margin:0;padding:0;max-height:40vh;max-height:40dvh;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid rgba(29,25,21,.18)}
+.nhaview .rvl{list-style:none;margin:0;padding:0;border-top:1px solid rgba(29,25,21,.18)}   /* no box of its own: it sat inside the scrolling card and trapped the touch, so the end of the page could not be reached */
 .nhaview .rv{padding:7px 2px;border-bottom:1px solid rgba(29,25,21,.12)}
 .nhaview .rvh{margin:0;font-size:13px;line-height:1.5}
 .nhaview .rvh b{font-family:var(--body)}
@@ -347,6 +347,8 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .nhaview .rvt.bieu{background:#d9ebc9}
 .nhaview .rvt.bothi{background:#f3d3c0}
 .nhaview .rvn{margin:2px 0 0;font-family:var(--body);font-size:13.5px;line-height:1.45;word-break:break-word}
+.nhaview .rvgo{font:inherit;font-size:13px;padding:0;margin:0;border:0;background:none;color:var(--ink);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+.nhaview .rvgo:hover{color:#a3332a}
 .nhaview .rvwhen{margin-left:6px;font-size:11.5px;font-weight:400;opacity:.65;white-space:nowrap}
 .nhaview .rvnone{font-size:12.5px;text-align:left}
 .nhaview .rvform{margin:12px 0 2px}
@@ -430,6 +432,12 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 .ordR input{width:58px;height:36px;box-sizing:border-box;text-align:center;font:900 16px var(--display);border:2px solid var(--ink);background:#fff;color:var(--ink);padding:0;-moz-appearance:textfield}
 .ordR input::-webkit-outer-spin-button,.ordR input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .ordR.off{opacity:.5}
+.ordR .nm .pset{display:inline-flex;align-items:center;gap:4px;margin-left:10px;vertical-align:middle}
+.ordR .nm .pset button{width:24px;height:24px;font:900 15px/1 var(--display);border:2px solid var(--ink);background:#fffaf0;color:var(--ink);cursor:pointer;padding:0}
+.ordR .nm .pset button:disabled{opacity:.35}
+.ordR .nm .pset .pv{display:inline;font-size:13px;min-width:46px;text-align:center}
+.priceB .row{display:flex;align-items:center;justify-content:center;gap:12px}
+.priceB .pv{font-size:16px}
 .ordR .nm .shutB{width:auto;height:auto;font:700 11.5px/1.2 var(--body,inherit);text-decoration:underline;border:0;background:none;padding:2px 0;margin-top:2px;cursor:pointer}
 .shutBox{margin:10px 0}
 .shutBox .sm{font-size:12px;opacity:.75;margin:4px 0 0}
@@ -475,6 +483,9 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 #c4noteB .buyRow:first-child{border-top:0}
 #c4noteB .buyRow .bnm{flex:1;min-width:0;font-size:15px;line-height:1.25}
 #c4noteB .buyRow .btn{flex:none}
+#c4noteB .buyRow{cursor:pointer}
+#c4noteB .buyRow.sel{background:rgba(226,177,58,.28);outline:1.5px solid rgba(29,25,21,.45)}
+#c4noteB .buyRow.sel .bnm::after{content:' · đang xem thử (bấm Mua để sắm)';font-size:12px;opacity:.75}
 #c4noteB .roomBox{max-width:min(100%,420px);margin:0 auto}
 #c4noteB .roomBox svg{max-height:34vh}   /* the room, the Sắm sanh button and the list fit one card on a short screen too */
 /* the Nhà tab: the room keeps its place, the Sắm sanh list takes the rest of the fixed-height card and scrolls itself */

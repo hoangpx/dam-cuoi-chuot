@@ -471,6 +471,7 @@ const hsEditKeep = () => { const c = $('#hsEdit .card4'), y = c.scrollTop; hsEdi
 function hsEditSave() {
   const E = HS.edit, d = hsClean(E), old = hsGet('dcc.hoso', {}) || {};
   if (!d.name) { toast('Đặt một cái tên đã.', 2.2); return; }
+  if (d.name.length < 2) { toast('Tên phải có ít nhất 2 chữ.', 2.2); return; }
   if ([d.name, d.addr, d.desc, ...d.stories].some(p4HoaBad)) { toast('Có chữ không đẹp trong tên, nơi ở, mô tả hay chuyện kể. Sửa lại nhé.', 3); return; }
   hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); HS_FACE.clear();
   AU.tap(); toast('Đã lưu hồ sơ.', 2);

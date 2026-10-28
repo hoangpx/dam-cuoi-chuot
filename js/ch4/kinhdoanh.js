@@ -312,7 +312,7 @@ function c4ShopRowsHtml() {
   const items = c4HomeItems();
   return '<div class="buyList">' + C4_SHOP_ITEMS.map(it => {
     const [id, name] = it, price = c4ItemPrice(it), has = items.includes(id);
-    return `<div class="buyRow"><span class="bnm">${name}<br><b>${c4Money(price)}</b></span>`
+    return `<div class="buyRow${C4.homePreview === id && !has ? ' sel' : ''}" data-view="${id}"><span class="bnm">${name}<br><b>${c4Money(price)}</b></span>`
       + `<button class="btn${has ? ' alt' : ''}" data-buy="${id}" ${has || SAVE4.money < price ? 'disabled' : ''}>${has ? 'Đã có' : 'Mua'}</button></div>`;
   }).join('') + '</div>';
 }
@@ -322,13 +322,15 @@ function c4BuyItem(id) {
   const price = c4ItemPrice(it);
   if (c4HomeItems().includes(id) || SAVE4.money < price) return;
   SAVE4.money -= price; C4.today.spent += price; (SAVE4.home = SAVE4.home || { items: [] }).items.push(id);
-  AU.pluck(84); persist4(); c4Hud();
+  C4.homePreview = null; AU.pluck(84); persist4(); c4Hud();
   toast(`Đã sắm ${it[1].toLowerCase()}: ví còn ${c4Money(SAVE4.money)}, nhưng của trong nhà vẫn tính đủ ${c4Money(c4NetWorth())}.`, 3.4);
 }
 // the book's Nhà tab: the room (empty to begin with), the Sắm sanh button, and the list under it
 function c4HomeTab() {
   const items = c4HomeItems(), shop = !!C4.homeShop;
-  return `<h4 class="tt">Nhà của vợ chồng chuột</h4><div class="roomBox">${c4RoomSvg(items)}</div>`
+  // a thing tapped in the list is shown in the room to look at (owner, 2026-10-22); it is bought only by its Mua button, and the try-on goes when the list is shut
+  const pv = shop && C4.homePreview && !items.includes(C4.homePreview) ? C4.homePreview : null; if (!pv) C4.homePreview = null;
+  return `<h4 class="tt">Nhà của vợ chồng chuột</h4><div class="roomBox">${c4RoomSvg(pv ? [...items, pv] : items)}</div>`
     + (items.length ? `<p class="cnt">Đồ đạc trong nhà ${c4Money(c4HomeValue())} · bảng tổng sắp tính cả ví lẫn nhà: <b>${c4Money(c4NetWorth())}</b></p>`
       : '<p class="cnt">Nhà mới cưới, chưa có nội thất gì.</p>')
     + `<div class="row"><button class="btn${shop ? ' alt' : ''}" data-shop>${shop ? 'Thôi' : 'Sắm sanh'}</button></div>`
@@ -336,7 +338,13 @@ function c4HomeTab() {
 }
 function c4HomeTabWire() {
   const B = $('#c4noteB');
-  B.querySelectorAll('[data-shop]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4.homeShop = !C4.homeShop; c4OpenNotes('home'); }));
+  B.querySelectorAll('[data-shop]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4.homeShop = !C4.homeShop; C4.homePreview = null; c4OpenNotes('home'); }));
+  B.querySelectorAll('.buyRow[data-view]').forEach(r => r.addEventListener('click', e => {   // tap a thing: see it in the room (tap again: take it out); the Mua button buys
+    if (e.target.closest('button')) return;
+    AU.tap(); const id = r.dataset.view; C4.homePreview = C4.homePreview === id ? null : id;
+    B.querySelector('.roomBox').innerHTML = c4RoomSvg(C4.homePreview ? [...c4HomeItems(), C4.homePreview] : c4HomeItems());
+    B.querySelectorAll('.buyRow').forEach(x => x.classList.toggle('sel', x.dataset.view === C4.homePreview));
+  }));
   B.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => { if (b.disabled) return; c4BuyItem(b.dataset.buy); c4OpenNotes('home'); }));
 }
 // the money a misfortune takes (owner, 2026-10-09): a base amount (lo/hi × 1000 đồng, at least `min`) times the stalls' levels, never more than the purse. The tax stays a share of the profit.

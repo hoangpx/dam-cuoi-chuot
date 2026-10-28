@@ -24,7 +24,7 @@ function p4ShopsUpdate(dt) {
   const S = p4Shops(), h = P4.mins / 60, dm = dt * P4_MPS * (P4.mins >= 18 * 60 ? .4 : 1);   // game minutes this frame
   for (const key in S) {
     const R = S[key]; if (R.shut) { R.acc = 0; for (const w of P4.FQ[key] || []) { w.st = 'leave'; w.dir = 1; } P4.FQ[key] = []; if (R.cook) R.cook.w = null; continue; }   // shut for a while: nobody comes, those waiting go home
-    const x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R) * p4Harass();   // customers a game minute (a sale's extra regulars come by khachquen.js)
+    const x = +key, rate = P4_FOOD_CUST / 900 * P4_MEALS(h) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * p4FoodFlow(R);   // customers a game minute (a sale's extra regulars come by khachquen.js)
     R.acc = (R.acc || 0) + rate * dm;
     while (R.acc >= 1) { R.acc -= 1; p4FoodCustomer(x, key); }
     // the cook serves the first in the queue
@@ -34,7 +34,7 @@ function p4ShopsUpdate(dt) {
     if (C.say) { C.say.t += dt; if (C.say.t > C.say.life) C.say = null; }
     if (!C.w) { const w = Q.find(q => q.st === 'fq'); if (w) { C.w = w; C.t = P4_FOOD.serve; } }
     else if ((C.t -= dt) <= 0) {
-      const w = C.w, got = w.treat ? 0 : p4SalePrice(key, w.n * P4_FOOD.price), cost = w.n * P4_FOOD.cost; p4Served(w, key);
+      const w = C.w, got = w.treat ? 0 : p4SalePrice(key, w.n * p4FoodPrice(R)), cost = w.n * P4_FOOD.cost; p4Served(w, key);
       SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost; persist4();
       const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 }); T.n += w.n; T.take += got; T.cost += cost;
       if (Math.abs(x - P4.camX - p4View().vw / 2) < p4View().vw) { P4.fx.push({ x, y: p4Y(.12) - 120, s: '+' + (got - cost), t: 0 }); if (Math.random() < .3) p4Say(C, p4Pick(['Mời bác ngồi!', 'Nóng hổi đây!', 'Ăn ngon lại ghé nhé!'])); }
@@ -53,7 +53,7 @@ function p4FoodCustomer(x, key, who, opt) {
   const before = P4.walkers.length; p4Spawn(x + (Math.random() < .5 ? -1 : 1) * (240 + Math.random() * 200), who || p4PickResident());
   const w = P4.walkers[before]; if (!w) return;
   if (!who && p4HoldBack(p4People()[w.pid], key)) { P4.walkers.splice(before, 1); return; }   // a regular used to sales waits for the next one (khachquen.js)
-  Object.assign(w, { food: key, buy: false, st: 'fgo', n: (opt && opt.n) || 1 + ((Math.random() * 4) | 0), wait: 0, treat: !!(opt && opt.treat) });
+  Object.assign(w, { food: key, buy: false, st: 'fgo', n: (opt && opt.n) || Math.max(1, c4RandRound((1 + ((Math.random() * 4) | 0)) * p4FoodQty(p4Shops()[key]))), wait: 0, treat: !!(opt && opt.treat) });
   (P4.FQ[key] || (P4.FQ[key] = [])).push(w);
 }
 // the evening: rent or tax when due, the cooks' wages; the tally's lines
@@ -99,7 +99,7 @@ function p4ShopSheet() {
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
   }
   $('#p4shopB').innerHTML = h + `<div class="row"><button class="btn alt" data-shopx="1">Đóng</button></div>`;
-  { const rr = $('#p4shopB > .row:last-child'); if (R && rr) { rr.before(p4SaleBlock(key, () => p4KeepScroll('p4shop', p4ShopSheet))); const tb = p4TreatBlock(key); rr.before(tb); p4Tabs('p4shop', $('#p4shopB'), tb, 'Quán'); } }   // a sale and the Mời khách tab at a shop we run (giamgia.js, khachquen.js)
+  { const rr = $('#p4shopB > .row:last-child'); if (R && rr) { rr.before(p4FoodPriceBlock(R)); rr.before(p4SaleBlock(key, () => p4KeepScroll('p4shop', p4ShopSheet))); const tb = p4TreatBlock(key); rr.before(tb); p4Tabs('p4shop', $('#p4shopB'), tb, 'Quán'); } }   // a sale and the Mời khách tab at a shop we run (giamgia.js, khachquen.js)
   p4Sheets('p4shop');
 }
 function p4ShopClick(b) {

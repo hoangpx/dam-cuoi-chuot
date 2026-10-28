@@ -223,7 +223,8 @@ function c4HusbTout(dt) {
   const goods = c4Owned().filter(g => c4Stock(g) > 0 && c4Open(g)); if (!goods.length || R() > .4) return;
   const w = C4.walkers.find(w => w.st === 'walk' && !w.buy && !w.visit && !w.rival && w.kind === 'mouse' && !w.buf && !w.drunk && w.pid !== undefined && Math.abs(w.x - P.x) < 320);
   if (!w) return;
-  const g = c4Pick(goods); Object.assign(w, { buy: true, shop: g, face: C4_GOODS[g].x + c4QX(g) > w.x ? 1 : -1 });
+  const g = c4Pick(goods); if (R() > Math.min(1, c4PFlow(c4PRatio(g)))) return;   // a dear stall is harder to talk anyone into (gia.js)
+  w.n = c4PriceN(w.n, g); Object.assign(w, { buy: true, shop: g, face: C4_GOODS[g].x + c4QX(g) > w.x ? 1 : -1 });
   setTimeout(() => c4Say(w, c4Pick(['Ừ thì ghé một tí!', 'Anh mời khéo thế, ghé xem!', 'Thôi được, mua ít!'])), 600);
 }
 
@@ -274,7 +275,7 @@ function c4AutoGet(g) {
 function c4AutoUpdate(dt) {
   if (C4.phase !== 'open' || (C4.autoT = (C4.autoT || 0) - dt) > 0) return;
   C4.autoT = 1;
-  for (const g of c4Owned()) {
+  for (const g of c4OpenStalls()) {                                          // a stall shut for a while sends nobody for goods (a player)
     const A = c4AutoGet(g), st = c4Stock(g);
     if (A.at === null || !c4AutoOk(g) || st > A.at || c4Fetching(g)) continue;
     if (A.until && C4.mins >= A.until * 60) continue;                       // past the hour set: no more trips today
