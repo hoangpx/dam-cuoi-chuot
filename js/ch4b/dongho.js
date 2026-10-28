@@ -143,7 +143,7 @@ function w4CatchTown(to) {
   if (SAVE4B.stock > 0 && !SAVE4B.shut) {                                  // the betel house: its hand alone, or a relative at 60 % when none is hired (the wife is with the player)
     let buyers = 0; for (let m = from; m < to; m += 5) buyers += w4TownBetelRate(m) * Math.min(5, to - m);
     const quick = hands.length ? hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length : .6;
-    const raw = buyers * 2 * .6 * quick * w4Rnd() * p4BetelQty(), T = P4.today;
+    const raw = buyers * 2 * 1.75 * quick * w4Rnd() * p4BetelQty(), T = P4.today;
     const n = Math.min(SAVE4B.stock, Math.floor((T.frac || 0) + raw)); T.frac = (T.frac || 0) + raw - n;   // (a half hour at a time is often a fraction of a sale, as in the village: the rest carries over, else a dear or quiet house never sold while we were away)
     if (n > 0) {
       const got = p4SalePrice('home', n * SAVE4B.price);
