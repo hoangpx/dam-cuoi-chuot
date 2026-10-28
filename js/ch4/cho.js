@@ -1090,7 +1090,8 @@ function c4OpenUp(g = 'trau') {
     const L = c4Landlord(g), ok = L.known;                                    // a plot needs no acquaintance (owner); a house does
     box.innerHTML = `<p>Chỗ này bán <b>${G.name.toLowerCase()}</b>. Chủ đất: <b>${L.p.name}</b> (${c4People().houses[L.p.house].xom})${ok ? '' : ', nhà mình chưa quen'}.</p>`
       + `<p>Giá thuê chỗ: <b>${c4Money(L.price)}</b>${ok ? L.word : ' (giá thường; quen thân với chủ đất thì được bớt)'}. Vợ tự trông được; đông khách thì thuê thêm người phụ.</p><p class="hint">${c4Ware(g)}</p><p class="hint">Riêng nhà mặt chợ (thuê hay mua cả căn về sau) thì chưa quen sẽ không biết chủ nhà là ai mà hỏi.</p>`;
-    { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => { if (SAVE4.money < L.price) return; c4Khe({ title: 'Thuê chỗ bán ' + G.name.toLowerCase(), a: ['Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ chỗ'], what: 'Thuê chỗ bán ' + G.name.toLowerCase() + ' ở chợ làng', money: L.price }, () => c4Rent(g)); }; }
+    { $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < L.price || C4.phase !== 'open'; $('#c4upGo').innerHTML = `Thuê · ${c4Money(L.price)}`; $('#c4upGo').onclick = () => { if (SAVE4.money < L.price) return; const kh = { title: 'Thuê chỗ bán ' + G.name.toLowerCase(), a: ['Bên cho thuê', L.known && L.p ? c4Cap1(L.p.name) : 'Chủ chỗ'], what: 'Thuê chỗ bán ' + G.name.toLowerCase() + ' ở chợ làng', money: L.price };
+      c4Rent(g); if (c4Own(g)) c4Khe(kh, null); }; }   // the plot is rented and paid AT ONCE, the paper is only the show (a player who left before the seal paid nothing and found the plot still for rent)
     c4Sheets('c4up'); return;
   }
   $('#c4upT').textContent = g === 'trau' ? c4Lv().name : G.name;
