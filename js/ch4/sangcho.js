@@ -280,7 +280,9 @@ function cnToolsInit() {
   const tray = document.createElement('div'); tray.id = 'cnTray'; tray.hidden = true;
   for (let k = 0; k < 6; k++) { const b = document.createElement('button'); b.title = HL_EMO_NAME[k]; b.append(icon((g, h) => hlEmoteFace(g, k, h, h, 17))); b.addEventListener('click', () => cnEmote(k)); tray.append(b); }
   d.append(bChat, bEmo, tray); document.body.appendChild(d);
-  bChat.addEventListener('click', () => { AU.tap(); tray.hidden = true; HL_CHAT_NET = CN_CHAT; hlChatOpen(); });
+  bChat.addEventListener('click', () => { AU.tap(); tray.hidden = true; HL_CHAT_NET = CN_CHAT; hlChatOpen();
+    const off = HL_CHAT_EL && HL_CHAT_EL.querySelector('#hlChatOff'); if (off) off.addEventListener('click', () => { if (HL.chatOff) hlChatClose(); });   // "Tắt chat" shuts the bar too
+  });
   bEmo.addEventListener('click', () => { AU.tap(); hlChatClose(); tray.hidden = !tray.hidden; });
   return (cnTools = d);
 }
