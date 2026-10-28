@@ -1278,7 +1278,7 @@ function c11DrawMenu(g, W, H) {
     if (r.icon && A.crop[r.icon]) { g.save(); g.beginPath(); g.roundRect(x + 4, y + 4, 44, rh - 8, 7); g.clip(); g.fillStyle = 'rgba(111,165,76,.25)'; g.fillRect(x + 4, y + 4, 44, rh - 8); c11Spr(g, A.crop[r.icon][3], x + 26, y + rh - 8, .36); g.restore(); tx = x + 56; }
     g.textAlign = 'left'; g.fillStyle = INK; g.font = '800 14px "Be Vietnam Pro", sans-serif'; g.fillText(r.name, tx, y + 17, cw - (tx - x) - 8);
     g.font = '600 10.5px "Be Vietnam Pro", sans-serif'; g.fillStyle = 'rgba(29,25,21,.75)'; const sl = subs[i]; sl.forEach((l, k) => g.fillText(l, tx, y + 34 + k * 13));
-    g.fillStyle = '#a3332a'; g.font = '800 12px "Be Vietnam Pro", sans-serif'; g.fillText(r.tag || c4Money(r.price), tx, y + 34 + Math.max(1, sl.length) * 13 + 4, cw - (tx - x) - 8);
+    g.fillStyle = '#a3332a'; g.font = '800 12px "Be Vietnam Pro", sans-serif'; g.fillText(r.tag !== undefined ? r.tag : c4Money(r.price), tx, y + 34 + Math.max(1, sl.length) * 13 + 4, cw - (tx - x) - 8);
     C11.hud.push({ r: [x, y, cw, rh], modal: true, f: r.f });
   });
 }

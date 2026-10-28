@@ -30,14 +30,14 @@ function c11OConnect() {
   ws.onopen = () => { C11O.tries = 0; c11OSend({ t: 'hello', id: SAVE11.oid, name: SAVE11.oname, friends: c11OFriendIds() }); };
   ws.onmessage = e => { try { c11OGot(JSON.parse(e.data)); } catch (err) { /* a bad message is ignored */ } };
   ws.onclose = () => {
-    const wasOn = C11O.on; C11O.ws = null; C11O.on = false; C11O.peers.clear(); C11O.room = null; c11OUiShow();
+    clearInterval(C11O.pollT); const wasOn = C11O.on; C11O.ws = null; C11O.on = false; C11O.peers.clear(); C11O.room = null; c11OUiShow();
     if (C11O.visit) c11OEndVisit();
     if (!C11O.closing && SAVE11.online && C11.ready) { if (wasOn || C11O.tries < 3) { C11O.tries++; setTimeout(() => { if (!C11O.ws && SAVE11.online && !C11O.closing) c11OConnect(); }, 2000 + C11O.tries * 2000); } c11Msg('Mất kết nối, đang nối lại…', '#a3332a'); }
   };
   ws.onerror = () => {};
 }
 function c11OLeave(quiet) {
-  C11O.closing = true; if (C11O.visit) c11OEndVisit(); const ws = C11O.ws; C11O.ws = null; C11O.on = false; C11O.peers.clear(); C11O.room = null; C11O.pending = null;
+  clearInterval(C11O.pollT); C11O.closing = true; if (C11O.visit) c11OEndVisit(); const ws = C11O.ws; C11O.ws = null; C11O.on = false; C11O.peers.clear(); C11O.room = null; C11O.pending = null;
   if (ws) try { ws.close(); } catch (e) {}
   c11OUiShow(); if (!quiet) c11Msg('Đã ra khỏi làng online', '#2f6a4c');
 }
@@ -48,7 +48,7 @@ function c11OEnterRoom() {
 function c11OGot(m) {
   const G = C11;
   switch (m.t) {
-    case 'welcome': C11O.on = true; SAVE11.online = true; persist11(); c11Msg(`Đã vào làng online · ${m.count} người`, '#2f6a4c'); c11OEnterRoom(); c11OUiShow(); C11O.onlineF = new Set(m.online || []); break;
+    case 'welcome': C11O.on = true; SAVE11.online = true; persist11(); C11O.count = m.count || 1; clearInterval(C11O.pollT); C11O.pollT = setInterval(() => c11OSend({ t: 'who' }), 15000); c11Msg(`Đã vào làng online · ${m.count} người`, '#2f6a4c'); c11OEnterRoom(); c11OUiShow(); C11O.onlineF = new Set(m.online || []); break;
     case 'room': if (m.room !== C11O.room) break; C11O.peers.clear(); for (const p of m.peers || []) c11OAddPeer(p); break;
     case 'came': c11OAddPeer(m.p); break;
     case 'gone': C11O.peers.delete(m.id); break;
@@ -58,7 +58,7 @@ function c11OGot(m) {
       if (m.id === SAVE11.oid) C11O.mine = { text: m.text, t: 0 }; else { const p = C11O.peers.get(m.id); if (p) p.say = { text: m.text, t: 0 }; }
       c11OLogDraw(); break;
     }
-    case 'who': C11O.who = m.list || []; if (C11O.whoOpen) { C11O.whoOpen = false; c11OWhoMenu(); } break;
+    case 'who': C11O.who = m.list || []; C11O.count = m.count || C11O.who.length + 1; if (C11O.whoOpen) { C11O.whoOpen = false; c11OWhoMenu(); } break;
     case 'on': C11O.onlineF.add(m.id); { const f = SAVE11.friends[m.id]; if (f) c11Msg(`${f.name} vừa vào làng`, '#2f6a4c'); } break;
     case 'off': C11O.onlineF.delete(m.id); break;
     case 'online': C11O.onlineF = new Set(m.online || []); break;
@@ -218,7 +218,7 @@ function c11OMainMenu() {
 }
 function c11OHud(g, st) {
   if (!c11OUrl()) return;                                              // no Online button while it is closed                                              // the Online button under the farm name; a banner on a friend's farm
-  const n = C11O.on ? C11O.peers.size : 0, lab = C11O.on ? `Online · ${n + 1}` : 'Online', t = c11Tag(g, 10, 108, lab, { size: 12, h: 28, pad: 18, fill: C11O.on ? '#bfe3a8' : '#f4ead0' });
+  const n = C11O.on ? Math.max(C11O.count || 1, C11O.peers.size + 1) : 0, lab = C11O.on ? `Online · ${n} người` : 'Online', t = c11Tag(g, 10, 108, lab, { size: 12, h: 28, pad: 18, fill: C11O.on ? '#bfe3a8' : '#f4ead0' });
   C11.hud.push({ r: [t[0], t[1] + st, t[2], t[3]], f: c11OMainMenu });
   if (C11O.reqs.length) { g.fillStyle = '#e5391a'; g.beginPath(); g.arc(t[0] + t[2] - 2, t[1] + 2, 7, 0, 6.283); g.fill(); }
   if (C11O.visit) c11TagC(g, (cv.width / DPR) / 2, 10, `Nhà bạn ${C11O.visit.name}`, { size: 12, h: 28, pad: 22, fill: '#d9e6c0' });

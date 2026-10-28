@@ -7,6 +7,7 @@ const ORIGINS = ['https://damcuoichuot.com', 'https://www.damcuoichuot.com', 'ht
 export class Village {
   constructor(state, env) { this.hub = new Hub(); }
   async fetch(req) {
+    if (new URL(req.url).pathname === '/count') return new Response(JSON.stringify({ count: this.hub.players.size }), { headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' } });   // how many are in the village now (the chapter list shows it)
     if (req.headers.get('Upgrade') !== 'websocket') return new Response('Làng Vũ Đại online. Dùng WebSocket.', { status: 426 });
     const pair = new WebSocketPair(), [client, server] = Object.values(pair);
     server.accept(); this.hub.add(server);
@@ -23,6 +24,7 @@ export default {
       if (origin && !ORIGINS.some(o => origin === o || origin.startsWith(o + ':'))) return new Response('forbidden', { status: 403 });
       return env.VILLAGE.get(env.VILLAGE.idFromName('lang')).fetch(req);
     }
+    if (url.pathname === '/count') return env.VILLAGE.get(env.VILLAGE.idFromName('lang')).fetch(req);
     return new Response('Làng Vũ Đại online', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
 };
