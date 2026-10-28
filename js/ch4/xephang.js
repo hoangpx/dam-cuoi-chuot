@@ -15,6 +15,7 @@ function c4RankSend() {
   return c4RankClaim().then(c4RankPut);
 }
 function c4RankPut() {
+  C4_RANK_CACHE = null;
   const row = { p_device: p4Device(), p_name: c4RankName(), p_money: Math.round(c4NetWorth()), p_day: Math.max(1, SAVE4.day || 1) };
   return p4Rpc('dcc_rank_put', { ...row, p_home: c4HomeItems().join(',') })
     .catch(() => p4Rpc('dcc_rank_put', row)).catch(() => {});
@@ -38,18 +39,25 @@ function c4RankClaim() {
 const c4RankMoney = m => m >= 600 ? `${Math.floor(m / 600).toLocaleString('vi')} quan` : `${Math.max(0, Math.round(m))} đồng`;
 const c4RankShow = id => (S.mode === 'c4bplay' ? p4Sheets : c4Sheets)(id);
 // the board in a box: my name (with Đổi tên), my place, the richest 100
+// the last answer is kept for 90 s: going in and out of a house (or the book) shows the board at once instead of asking the server again
+let C4_RANK_CACHE = null;
 async function c4RankInto(box) {
   box.classList.add('rankbox');
   box.innerHTML = `<p class="rkme">Tên bạn: <b class="rn">${p4Esc(c4RankName())}</b></p><div class="rkB"><p class="sm">Đang tải bảng tổng sắp…</p></div>`;
   const q = c => box.querySelector(c), B = q('.rkB');
   // sending my row must never hold the board up: a stalled put once left the sheet on "Đang tải…" for good, so it gets a short
   // wait and then the list is drawn anyway (owner, 2026-10-22: "sao bảng tổng sắp trắng trơn vậy?")
-  await Promise.race([c4RankSend(), new Promise(done => setTimeout(done, 2500))]);
+  const C = C4_RANK_CACHE, fresh = C && Date.now() - C.t < 90000;
+  if (!fresh) await Promise.race([c4RankSend(), new Promise(done => setTimeout(done, 2500))]);
   try {
-    // and one of the two reads failing must not empty the list: whatever answered is drawn
-    const [t1, m1] = await Promise.allSettled([p4Rpc('dcc_rank_top', { p_limit: 100 }), p4Rpc('dcc_rank_me', { p_device: p4Device() })]);
-    if (t1.status === 'rejected' && m1.status === 'rejected') throw t1.reason;
-    const top = t1.status === 'fulfilled' ? t1.value : null, me = m1.status === 'fulfilled' ? m1.value : null;
+    let top, me;
+    if (fresh) { top = C.top; me = C.me; } else {
+      // and one of the two reads failing must not empty the list: whatever answered is drawn
+      const [t1, m1] = await Promise.allSettled([p4Rpc('dcc_rank_top', { p_limit: 100 }), p4Rpc('dcc_rank_me', { p_device: p4Device() })]);
+      if (t1.status === 'rejected' && m1.status === 'rejected') throw t1.reason;
+      top = t1.status === 'fulfilled' ? t1.value : null; me = m1.status === 'fulfilled' ? m1.value : null;
+      if (top) C4_RANK_CACHE = { t: Date.now(), top, me };
+    }
     const got = Array.isArray(me) && me[0], mine = got && got.pos ? got : null;   // pos is null while the server holds the row back (money far beyond what the days allow, docs/supabase-bang-xep-hang-chan.sql)
     const row = (r, isMe) => `<tr class="${isMe ? 'me' : ''}${r.pos <= 3 ? ' top' + r.pos : ''}"><td>${r.pos}</td><td>${p4Esc(r.name)}</td><td>${c4RankMoney(r.money)}</td><td>${r.day}</td>`
       + `<td><button class="rnv" data-nv="${r.pos}" aria-label="Xem nhà của ${p4Esc(r.name)}">Nhà</button></td></tr>`;
