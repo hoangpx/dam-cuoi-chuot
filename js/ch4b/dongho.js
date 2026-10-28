@@ -15,6 +15,7 @@
      the day in the village runs the town to its closing first (w4BeforeDay). The town's caught-up hour is kept (SAVE4.w4.pho) so a reload
      never sells the same hours twice. */
 const W4 = { day: 0, mins: 0, pho: 0 };
+const W4_BG = .7;                                  // the town trades in the background with ~30 % fewer customers than when the player is there (owner 2026-10-28)
 function w4Load() {   // the world's hour today, from the save (a reload) or a fresh morning
   const s = SAVE4.w4;
   if (W4.day !== SAVE4.day) { const ok = s && s.day === SAVE4.day; W4.day = SAVE4.day; W4.mins = ok ? s.mins : C4_OPEN; W4.pho = ok && s.pho ? s.pho : 0; }
@@ -143,7 +144,7 @@ function w4CatchTown(to) {
   if (SAVE4B.stock > 0 && !SAVE4B.shut) {                                  // the betel house: its hand alone, or a relative at 60 % when none is hired (the wife is with the player)
     let buyers = 0; for (let m = from; m < to; m += 5) buyers += w4TownBetelRate(m) * Math.min(5, to - m);
     const quick = hands.length ? hands.reduce((a, h) => a + .8 + .4 * (h.sp || .5), 0) / hands.length : .6;
-    const raw = buyers * 2 * 1.75 * quick * w4Rnd() * p4BetelQty(), T = P4.today;
+    const raw = buyers * 2 * 1.75 * quick * W4_BG * w4Rnd() * p4BetelQty(), T = P4.today;
     const n = Math.min(SAVE4B.stock, Math.floor((T.frac || 0) + raw)); T.frac = (T.frac || 0) + raw - n;   // (a half hour at a time is often a fraction of a sale, as in the village: the rest carries over, else a dear or quiet house never sold while we were away)
     if (n > 0) {
       const got = p4SalePrice('home', n * SAVE4B.price);
@@ -156,7 +157,7 @@ function w4CatchTown(to) {
     const R = S2[key]; if (R.shut) continue; let cust = 0;
     for (let m = from; m < to; m += 5) cust += P4_FOOD_CUST / 900 * P4_MEALS(m / 60) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * p4FoodFlow(R) * Math.min(5, to - m);
     const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 });
-    const raw = cust * 2.5 * w4Rnd() * p4FoodQty(R), n = Math.floor((T.frac || 0) + raw); T.frac = (T.frac || 0) + raw - n;   // (a half hour is often a fraction of a meal: the rest carries over, else a quiet house never sold while we were in the village — a player's report)
+    const raw = cust * 2.5 * W4_BG * w4Rnd() * p4FoodQty(R), n = Math.floor((T.frac || 0) + raw); T.frac = (T.frac || 0) + raw - n;   // (a half hour is often a fraction of a meal: the rest carries over, else a quiet house never sold while we were in the village — a player's report)
     if (n < 1) continue;
     const got = p4SalePrice(key, n * p4FoodPrice(R)), cost = n * p4FoodCost(key);
     SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost;
