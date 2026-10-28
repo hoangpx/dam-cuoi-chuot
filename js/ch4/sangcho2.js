@@ -170,7 +170,7 @@ function cnvRender() {
     for (const st of sn.stalls || []) {
       const sx = st.g === 'trau' ? C4_STALL + (st.lv ? 10 : 30) : C4_GOODS[st.g].x + 20; if (!vis(sx, 200)) continue;
       items.push({ z: C4_STALL_Z, f: () => {
-        c4LookCtx = st.look || null;
+        c4LookCtx = st.look || null; c4LookLv = st.lv || 0;
         g.globalAlpha = st.open ? 1 : .45;
         if (st.g === 'trau') { if (st.lv >= 3) c4DrawShopLv(g, sx, sy, ss, st.lv, 'trau'); dp(g, c4StallArt(Math.min(2, st.lv)), sx, sy, 0, ss, ss); if (st.lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU'); }
         else { c4DrawShopLv(g, sx, sy, ss, st.lv, st.g); dp(g, A[C4_GOODS[st.g].art], sx, sy, 0, ss, ss); c4SignDraw(g, sx, sy, ss, st.nm); }
