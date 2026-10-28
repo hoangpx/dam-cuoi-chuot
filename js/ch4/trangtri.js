@@ -1,39 +1,51 @@
-/* Chương IV · trang trí quán (owner, 2026-10-28: "kiểu dáng khác nhau, mái khác nhau, cột, bảng hiệu... cây cảnh, đèn lồng, chỗ chơi để thu hút khách,
-   chọn kiểu dáng chọn màu, mỗi kiểu tiền khác nhau"). A stall of the village can be dressed from parts: a roof, a pair of posts, a signboard, one
-   colour for the roof and the flag or board, and up to four things beside it (plants, lanterns, a pond, swings and games for the children).
-   SAVE4.look[g] = { roof, post, sign, col, deco: [..] }; SAVE4.lookOwn[g] = { 'roof:vai': 1, ... } what has been paid for (switching back is free).
-   Parts are drawn with the woodblock engine like the rest. The look rides in the stall's snapshot (sangcho.js) so a visiting friend sees it.
-   Nothing says what it does: a dressed stall draws a little more custom (c4LookBonus), never shown as a number. Town stalls are not dressed yet. */
+/* Chương IV · trang trí quán (owner, 2026-10-28; redone the same day: "mỗi quán chỉ có cột, bàn, mái, biển là sẽ custom được; nhà thì có cột, cửa, cửa sổ, mái, màu tường;
+   đừng làm kiểu đè đè che lên nhau"). A dressed stall is DRAWN WHOLE from its own parts, nothing is laid over the old art:
+   posts + table + (the ware's goods, cut off the old art above the table top) + signboard + roof. A house level (3, 4) gets a house
+   drawn from a wall colour, roof, door, window and porch posts. Beside either: up to two things on the ground and a string of lanterns.
+   SAVE4.look[g] = { roof, post, table, sign, col, deco[], hroof, hpost, door, win, wall }; SAVE4.lookOwn[g] = what is paid for (switching back is free).
+   Level 0 (mẹt, gánh) has no frame: only the things beside it. Town stalls are not dressed yet. The look rides in the stall snapshot (st.look, st.lv). */
 const LOOK_ROOF = [['vai', 'Mái vải sọc', 200], ['tranh', 'Mái tranh', 150], ['non', 'Mái nón lá', 250], ['dan', 'Mái tre đan', 300], ['du', 'Mái dù lớn', 400], ['ngoi', 'Mái ngói', 600], ['cong', 'Mái cong đình', 1800]];
 const LOOK_POST = [['tre', 'Cột tre', 60], ['do', 'Cột gỗ sơn đỏ', 200], ['khac', 'Cột gỗ chạm, chân đá', 600], ['day', 'Cột tre đôi buộc dây', 120]];
-const LOOK_SIGN = [['vang', 'Biển vàng', 80], ['do', 'Biển đỏ viền vàng', 120], ['phuon', 'Cờ phướn', 100], ['go', 'Biển gỗ treo', 180], ['tron', 'Biển tròn', 150]];
+const LOOK_TABLE = [['go', 'Bàn gỗ', 100], ['tre', 'Bàn tre', 40], ['son', 'Bàn sơn đỏ', 250], ['da', 'Bàn đá', 500]];
+const LOOK_SIGN = [['vang', 'Biển vàng', 80], ['do', 'Biển đỏ viền vàng', 120], ['go', 'Biển gỗ treo', 180], ['tron', 'Biển tròn', 150], ['vai', 'Biển vải', 100]];
+const LOOK_HROOF = [['tranh', 'Mái tranh', 300], ['ngoi', 'Mái ngói', 900], ['cong', 'Mái cong đình', 2400]];
+const LOOK_DOOR = [['go', 'Cửa gỗ', 80], ['do', 'Cửa sơn đỏ', 250], ['ke', 'Cửa chấn song', 200], ['cong', 'Cửa vòm', 600]];
+const LOOK_WIN = [['vuong', 'Cửa sổ vuông', 60], ['tron', 'Cửa sổ tròn', 150], ['chop', 'Cửa chớp', 120], ['hoa', 'Cửa sổ hoa văn', 300]];
+const LOOK_WALL = [['cream', 'Kem', 80], ['white', 'Trắng vôi', 80], ['tan', 'Nâu đất', 80], ['rose', 'Hồng phấn', 80], ['ash', 'Xám tro', 80], ['yellow', 'Vàng nghệ', 80]];
 const LOOK_COL = [['red', 'Đỏ son', '#a3332a'], ['yellow', 'Vàng nghệ', '#f2c640'], ['teal', 'Xanh lam', '#3f8a86'], ['green', 'Xanh lá', '#2f6a4c'], ['pink', 'Hồng', '#c0567a'], ['orange', 'Cam đất', '#d97b2a']];
 const LOOK_COL_PRICE = 60;
-const LOOK_DECO = [['bonsai', 'Chậu cây cảnh', 150, .7], ['quat', 'Cây quất ngày Tết', 300, .7], ['den', 'Đèn lồng đỏ', 100, .75], ['day', 'Dây đèn lồng', 250, .5], ['sen', 'Chum hoa sen', 200, .75], ['ca', 'Hồ cá chép', 600, .6],
-  ['xich', 'Xích đu tre', 1200, .55], ['bap', 'Bập bênh gỗ', 780, .55], ['chong', 'Chong chóng gió', 80, .75], ['quan', 'Ô ăn quan', 400, .55], ['truot', 'Cầu trượt tre', 1800, .55], ['mai', 'Mái che, bàn ghế', 1200, .45]];
+const LOOK_DECO = [['bonsai', 'Chậu cây cảnh', 150, .55], ['quat', 'Cây quất ngày Tết', 300, .55], ['den', 'Đèn lồng đỏ', 100, .6], ['day', 'Dây đèn lồng', 250, .5], ['sen', 'Chum hoa sen', 200, .45], ['ca', 'Hồ cá chép', 600, .38],
+  ['xich', 'Xích đu tre', 1200, .44], ['bap', 'Bập bênh gỗ', 780, .36], ['chong', 'Chong chóng gió', 80, .55], ['quan', 'Ô ăn quan', 400, .36], ['truot', 'Cầu trượt tre', 1800, .38], ['mai', 'Mái che, bàn ghế', 1200, .3]];
 const LOOK_KIDS = ['xich', 'bap', 'chong', 'truot', 'ca'];
-const LOOK_SLOTS = [-135, 135, -200, 200];
-const LOOK_MAXDECO = 4;
-let c4LookCtx, c4LookLv = 0;                         // (the stall's level too, while drawing someone else's betel stall)                                     // set while drawing someone else's stall (a visit): that stall's look, or null; undefined = my own
+const LOOK_SLOTS = [-146, 146];
+const LOOK_MAXGROUND = 2;                          // two things on the ground at a framed stall (the plots are only 380 apart, so each is small and never meets a neighbour's); a house has no room: only the string of lanterns
+// which parts a level has: 1-2 a framed stall, 3-4 a house; level 0 only the things beside
+const LOOK_FIELDS_STALL = [['roof', LOOK_ROOF, 'Mái'], ['post', LOOK_POST, 'Cột'], ['table', LOOK_TABLE, 'Bàn'], ['sign', LOOK_SIGN, 'Biển hiệu']];
+const LOOK_FIELDS_HOUSE = [['hroof', LOOK_HROOF, 'Mái nhà'], ['hpost', LOOK_POST, 'Cột hiên'], ['door', LOOK_DOOR, 'Cửa ra vào'], ['win', LOOK_WIN, 'Cửa sổ'], ['wall', LOOK_WALL, 'Màu tường']];
+const lkFields = lv => (lv >= 3 ? LOOK_FIELDS_HOUSE : lv >= 1 ? LOOK_FIELDS_STALL : []);
+let c4LookCtx, c4LookLv = 0;                       // set while drawing someone else's stall (a visit): that stall's look (or null) and level; undefined = my own
 
 const c4LookOf = g => (SAVE4.look || {})[g] || null;
 const c4LookGet = g => (c4LookCtx !== undefined ? c4LookCtx : c4LookOf(g));
 const c4LookOwn = g => (SAVE4.lookOwn || (SAVE4.lookOwn = {}))[g] || (SAVE4.lookOwn[g] = {});
 const lkPrice = (list, k) => { const e = list.find(q => q[0] === k); return e ? e[2] : 0; };
+const lkLvOf = g => (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g));
 // what a look is worth (for the hidden customer bonus) and what it still costs to pay for
-function c4LookScore(L) { if (!L) return 0; return (L.roof ? lkPrice(LOOK_ROOF, L.roof) / 8000 : 0) + (L.post ? lkPrice(LOOK_POST, L.post) / 12000 : 0) + (L.sign ? lkPrice(LOOK_SIGN, L.sign) / 10000 : 0)
-  + (L.deco || []).reduce((s, k) => s + .025 + (LOOK_KIDS.includes(k) ? .015 : 0), 0); }
+function c4LookScore(L) {
+  if (!L) return 0; let t = 0; for (const [k, list] of [...LOOK_FIELDS_STALL, ...LOOK_FIELDS_HOUSE]) if (L[k]) t += lkPrice(list, L[k]) / 10000;
+  return t + (L.deco || []).reduce((s, k) => s + .025 + (LOOK_KIDS.includes(k) ? .015 : 0), 0);
+}
 const c4LookBonus = g => Math.min(.3, c4LookScore(c4LookOf(g)));
-function c4LookCost(g, L) {
+function c4LookCost(g, L, lv) {
   const own = c4LookOwn(g); let t = 0; const add = (key, p) => { if (!own[key]) t += p; };
-  if (L.roof) add('roof:' + L.roof, lkPrice(LOOK_ROOF, L.roof)); if (L.post) add('post:' + L.post, lkPrice(LOOK_POST, L.post)); if (L.sign) add('sign:' + L.sign, lkPrice(LOOK_SIGN, L.sign));
-  if (L.col && L.col !== 'red' && (L.roof || L.sign)) add('col:' + L.col, LOOK_COL_PRICE);
-  for (const k of L.deco || []) add('deco:' + k, lkPrice(LOOK_DECO, k));
+  for (const [k, list] of lkFields(lv)) if (L[k]) add(k + ':' + L[k], lkPrice(list, L[k]));
+  if (L.col && L.col !== 'red' && (L.roof || L.sign) && lv >= 1 && lv <= 2) add('col:' + L.col, LOOK_COL_PRICE);
+  for (const k of L.deco || []) if (lv < 3 || k === 'day') add('deco:' + k, lkPrice(LOOK_DECO, k));
   return t;
 }
 
 /* ---------- the parts ---------- */
-const LK_FD = '"Playfair Display", serif', LK_B = [-160, -240, 160, 10], lkCache = {};
+const LK_FD = '"Playfair Display", serif', LK_B = [-160, -280, 160, 10], LK_HB = [-230, -300, 230, 12], lkCache = {};
 const lkPoly = pts => { const p = new Path2D(); p.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) p.lineTo(pts[i][0], pts[i][1]); p.closePath(); return p; };
 const lkPart = (key, b, f) => lkCache[key] || (lkCache[key] = part(b, f));
 const LK_ROOF = {
@@ -53,12 +65,19 @@ const LK_POST = {
   khac: (a, X, H) => { for (const x of [-X, X]) { a.fk('brown', rect(x - 7, -H, 14, H - 4), 2); for (const f of [.25, .5, .75]) { const y = -H * f; a.fk('yellow', lkPoly([[x, y - 11], [x + 5, y], [x, y + 11], [x - 5, y]]), 1.2); } a.fk('grey', rect(x - 12, -8, 24, 12), 2); } },
   day: (a, X, H) => { for (const x of [-X, X]) { a.fk('straw', tube([[x - 4, 0], [x - 4, -H]], 8, 8), 2); a.fk('straw', tube([[x + 4, 0], [x + 4, -H]], 8, 8), 2); for (const f of [.2, .5, .8]) a.fk('red', rect(x - 8, -H * f - 4, 18, 8), 1.3); } },
 };
+// the table: its top is at y -62..-52 like the old art, so the goods cut from it sit right on it
+const LK_TABLE = {
+  go: a => { a.fk('brown', rect(-112, -62, 224, 10), 1.8); for (const x of [-100, 100]) a.fk('brown', rect(x - 4, -54, 8, 54), 1.4); a.key(lines([[-100, -30, 100, -30]]), 1.4); },
+  tre: a => { a.fk('straw', rect(-112, -62, 224, 10), 1.8); for (let i = 0; i < 8; i++) a.key(lines([[-100 + i * 28, -62, -100 + i * 28, -52]]), 1.2); for (const x of [-100, 100]) a.fk('straw', tube([[x, -54], [x, 0]], 8, 8), 1.6); a.fk('straw', tube([[-100, -26], [100, -26]], 5, 5), 1.4); },
+  son: a => { a.fk('red', rect(-114, -64, 228, 12), 1.8); a.fk('yellow', rect(-114, -64, 228, 3), 1); for (const x of [-100, 100]) { a.fk('brown', rect(x - 5, -52, 10, 52), 1.4); a.fk('yellow', rect(x - 7, -6, 14, 6), 1.2); } a.fk('red', rect(-96, -50, 192, 12), 1.4); a.key(lines([[-60, -44, -60, -38], [0, -44, 0, -38], [60, -44, 60, -38]]), 1); },
+  da: a => { a.fk('grey', rect(-116, -68, 232, 16), 2); a.key(lines([[-60, -68, -60, -52], [40, -68, 40, -52]]), 1); for (const x of [-96, 96]) { a.fk('grey', rect(x - 14, -52, 28, 52), 2); a.key(lines([[x - 14, -30, x + 14, -30]]), 1); } },
+};
 const LK_SIGN = {
   vang: (a, c, t) => { a.fk('yellow', rect(-52, -118, 104, 30), 2.4); a.text(t, 0, -103, 15, 'dark', LK_FD, 'ink', '700'); a.key(lines([[-36, -88, -36, -80], [36, -88, 36, -80]]), 1.4); },
   do: (a, c, t) => { a.fk('red', rect(-52, -118, 104, 30), 2.4); a.fk('yellow', rect(-48, -114, 96, 22), 1); a.key(rect(-48, -114, 96, 22), 1); a.text(t, 0, -103, 15, 'dark', LK_FD, 'ink', '700'); },
-  phuon: (a, c) => { a.fk('brown', tube([[-70, -4], [-70, -196]], 6, 6), 1.8); a.fk(c, lkPoly([[-70, -196], [-4, -196], [-4, -92], [-37, -106], [-70, -92]]), 2.2); a.fk('yellow', rect(-70, -196, 66, 8), 1.4); for (let i = 0; i < 3; i++) a.key(lines([[-56 + i * 14, -170, -56 + i * 14, -130]]), 1.2); },
-  go: (a, c, t) => { a.key(lines([[-34, -136, -34, -112], [34, -136, 34, -112]]), 2); a.fk('brown', rect(-56, -114, 112, 28), 2.4); a.key(lines([[-50, -106, 50, -106], [-50, -96, 50, -96]]), .8); a.fk('yellow', rect(-44, -110, 88, 20), 1); a.text(t, 0, -100, 15, 'dark', LK_FD, 'ink', '700'); },
-  tron: (a, c, t) => { a.key(lines([[0, -134, 0, -122]]), 2); a.fk(c, circ(0, -100, 26), 2.6); a.fk('yellow', circ(0, -100, 19), 1.6); a.text(t.length > 6 ? t.slice(0, 5) : t, 0, -100, 13, 'dark', LK_FD, 'ink', '700'); },
+  go: (a, c, t) => { a.key(lines([[-34, -136, -34, -118], [34, -136, 34, -118]]), 2); a.fk('brown', rect(-56, -118, 112, 30), 2.4); a.key(lines([[-50, -110, 50, -110], [-50, -98, 50, -98]]), .8); a.fk('yellow', rect(-44, -113, 88, 21), 1); a.text(t, 0, -102, 15, 'dark', LK_FD, 'ink', '700'); },
+  tron: (a, c, t) => { a.fk(c, circ(0, -103, 27), 2.6); a.fk('yellow', circ(0, -103, 21), 1.6); const w = t.split(' '); if (w.length > 1) { a.text(w.slice(0, -1).join(' '), 0, -110, 11, 'dark', LK_FD, 'ink', '700'); a.text(w[w.length - 1], 0, -96, 11, 'dark', LK_FD, 'ink', '700'); } else a.text(t, 0, -103, t.length > 5 ? 11 : 14, 'dark', LK_FD, 'ink', '700'); },
+  vai: (a, c, t) => { a.fk(c, smooth([[-54, -120], [54, -120], [54, -92], [36, -86], [18, -92], [0, -86], [-18, -92], [-36, -86], [-54, -92]]), 2.4); a.fk('yellow', rect(-54, -122, 108, 5), 1.2); a.text(t, 0, -106, 14, 'white', LK_FD, 'ink', '700'); },
 };
 const LK_DECO = {
   bonsai: [[-70, -150, 70, 6], a => { a.fk('red', lkPoly([[-34, -30], [34, -30], [26, -2], [-26, -2]]), 2.4); a.fk('yellow', rect(-38, -38, 76, 10), 2); a.fk('brown', tube([[0, -36], [-10, -62], [6, -86], [-4, -108]], 14, 7), 2); a.fk('brown', tube([[-4, -76], [-34, -84]], 7, 4), 1.6); a.fk('brown', tube([[4, -90], [36, -98]], 7, 4), 1.6);
@@ -81,40 +100,70 @@ const LK_DECO = {
   mai: [[-130, -170, 130, 12], a => { for (const x of [-100, 100]) a.fk('brown', rect(x - 5, -110, 10, 112), 2); a.fk('straw', lkPoly([[-130, -96], [0, -168], [130, -96]]), 2.6); a.key(lines([[-100, -100, 0, -160], [-60, -100, 0, -150], [0, -100, 0, -150], [60, -100, 0, -150], [100, -100, 0, -160]]), 1.2); a.fk('red', rect(-130, -100, 260, 8), 1.8);
     a.fk('brown', rect(-60, -44, 120, 10), 2); a.key(lines([[-50, -34, -50, 2], [50, -34, 50, 2]]), 2.4); a.fk('white', ell(-16, -52, 20, 6), 1.2); a.fk('red', rect(-96, -24, 36, 8), 1.8); a.key(lines([[-90, -16, -90, 2], [-66, -16, -66, 2]]), 2); a.fk('green', rect(60, -24, 36, 8), 1.8); a.key(lines([[66, -16, 66, 2], [90, -16, 90, 2]]), 2); }],
 };
+// the house (levels 3, 4): the wall with its door and windows; the porch posts and the roof are separate parts drawn over it, never across the door
+const LK_DOORS = {
+  go: (a, x) => { a.fk('brown', rect(x - 32, -108, 64, 108), 2.2); a.key(lines([[x, -108, x, 0], [x - 16, -108, x - 16, 0], [x + 16, -108, x + 16, 0]]), 1.2); a.fk('yellow', circ(x - 7, -54, 3), 1); a.fk('yellow', circ(x + 7, -54, 3), 1); },
+  do: (a, x) => { a.fk('red', rect(x - 32, -108, 64, 108), 2.2); a.fk('yellow', rect(x - 32, -108, 64, 6), 1.2); a.key(lines([[x, -102, x, 0]]), 1.4); a.fk('yellow', circ(x - 9, -54, 4), 1.2); a.fk('yellow', circ(x + 9, -54, 4), 1.2); a.key(rect(x - 26, -96, 52, 90), 1); },
+  ke: (a, x) => { a.fk('brown', rect(x - 34, -108, 68, 108), 2.2); a.fk('cream', rect(x - 26, -100, 52, 70), 1); for (let i = -2; i <= 2; i++) a.key(lines([[x + i * 10, -100, x + i * 10, -30]]), 1.4); for (let j = 0; j < 4; j++) a.key(lines([[x - 26, -100 + j * 23, x + 26, -100 + j * 23]]), 1.2); a.key(rect(x - 26, -100, 52, 70), 1.6); a.fk('yellow', circ(x, -16, 3), 1); },
+  cong: (a, x) => { const p = new Path2D(); p.moveTo(x - 34, 0); p.lineTo(x - 34, -76); p.arc(x, -76, 34, Math.PI, 0); p.lineTo(x + 34, 0); p.closePath(); a.fk('brown', p, 2.4); a.key(lines([[x, -110, x, 0]]), 1.4); const q = new Path2D(); q.arc(x, -76, 27, Math.PI, 0); a.band('yellow', q, 4); a.fk('yellow', circ(x - 8, -50, 3), 1); a.fk('yellow', circ(x + 8, -50, 3), 1); a.fk('red', rect(x - 22, -118, 44, 8), 1.4); },
+};
+const LK_WINS = {
+  vuong: (a, x) => { a.fk('brown', rect(x - 30, -134, 60, 54), 2.2); a.fk('cream', rect(x - 24, -128, 48, 42), 1); a.key(lines([[x, -128, x, -86], [x - 24, -107, x + 24, -107]]), 1.4); },
+  tron: (a, x) => { a.fk('brown', circ(x, -108, 30), 2.2); a.fk('cream', circ(x, -108, 23), 1); a.key(lines([[x - 23, -108, x + 23, -108], [x, -131, x, -85], [x - 16, -124, x + 16, -92], [x + 16, -124, x - 16, -92]]), 1.2); },
+  chop: (a, x) => { a.fk('dark', rect(x - 28, -134, 56, 54), 2.2); a.fk('brown', rect(x - 42, -134, 20, 54), 2); a.fk('brown', rect(x + 22, -134, 20, 54), 2); for (let j = 0; j < 5; j++) { a.key(lines([[x - 42, -128 + j * 10, x - 22, -128 + j * 10], [x + 22, -128 + j * 10, x + 42, -128 + j * 10]]), 1); } },
+  hoa: (a, x) => { a.fk('brown', rect(x - 30, -134, 60, 54), 2.2); a.fk('cream', rect(x - 24, -128, 48, 42), 1); for (let i = -2; i <= 2; i++) { a.key(lines([[x + i * 12, -128, x + i * 12 + 24, -86], [x + i * 12, -128, x + i * 12 - 24, -86]]), 1); } a.key(rect(x - 24, -128, 48, 42), 1.4); },
+};
 const lkRoofPart = (k, c) => lkPart('R' + k + c, LK_B, a => LK_ROOF[k](a, c));
-const lkPostPart = (k, X = 50, H = 210) => lkPart('P' + k + X + '_' + H, LK_B, a => LK_POST[k](a, X, H));   // the betel sạp's frame is wider (posts at ±128, 185 high) than a counter's (±50, 210)
-const lkSignPart = (k, c, t) => lkPart('S' + k + c + (k === 'phuon' ? '' : t), LK_B, a => LK_SIGN[k](a, c, t));
+const lkPostPart = (k, X, H) => lkPart('P' + k + X + '_' + H, LK_B, a => LK_POST[k](a, X, H));
+const lkTablePart = k => lkPart('T' + k, LK_B, a => LK_TABLE[k](a));
+const lkSignPart = (k, c, t) => lkPart('S' + k + c + t, LK_B, a => LK_SIGN[k](a, c, t));
 const lkDecoPart = k => lkPart('D' + k, LK_DECO[k][0], LK_DECO[k][1]);
+const lkWallPart = (wall, door, win) => lkPart('W' + wall + door + win, LK_HB, a => {
+  a.fk(wall, rect(-190, -150, 380, 150), 2.6); a.key(lines([[-190, -14, 190, -14]]), 1.2); for (const x of [-70, -20, 20, 70]) a.key(lines([[x, -148, x, -140]]), 1);
+  LK_DOORS[door](a, -156); LK_WINS[win](a, 156);   // the door and the window stand to the sides: the stall in front hides the middle
+});
 
-/* ---------- drawing, hooked into the stall's own drawing ---------- */
-const c4LookRoofAt = (g, x, y, s, L, wide) => { const p = lkRoofPart(L.roof, L.col || 'red'); if (wide) dp(g, p, x, y - 79 * s, 0, 1.08 * s, .9 * s); else dp(g, p, x, y - 40 * s, 0, .52 * s, .85 * s); };   // wide: the betel sạp, whose own roof (±150, up to 238) it must cover
+/* ---------- drawing ---------- */
+const lkFull = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 1 && lv <= 2 && (L.roof || L.post || L.table || L.sign)); };
+// a stall drawn whole: posts, table, goods (the old art cut off just above the table top), board, roof. x, y = the stall's foot; s = scale
+function c4LookStall(g, x, y, s, ware, name, alpha = 1) {
+  const L = c4LookGet(ware) || {}, c = L.col || 'red', A = c4Art(), art = ware === 'trau' ? A.sap : A[C4_GOODS[ware].art];
+  g.save(); g.globalAlpha = alpha;
+  dp(g, lkPostPart(L.post || 'tre', 106, 205), x, y, 0, s, s);
+  if (ware !== 'gom') { dp(g, lkTablePart(L.table || 'go'), x, y, 0, s, s); g.save(); g.translate(x, y); g.scale(s, s); g.beginPath(); g.rect(-120, -190, 240, 128); g.clip(); dp(g, art, 0, 0, 0, 1, 1); g.restore(); }
+  else dp(g, art, x, y, 0, s, s);                                            // pottery stands on its own mat, no table
+  dp(g, lkSignPart(L.sign || 'vang', c, name), x, y - 68 * s, 0, s, s);
+  dp(g, lkRoofPart(L.roof || 'vai', c), x, y - 103 * s, 0, .88 * s, .85 * s);
+  g.restore();
+  if (c4LookCtx === undefined && typeof c4SalePct === 'function' && c4SalePct(ware)) { g.save(); g.translate(x, y); g.scale(s, s); c4SaleTag(g, ware); g.restore(); }   // GIẢM n% (my own stall only)
+}
+// the house behind a stall of level 3, 4
+function c4LookHouse(g, x, y, s, L, lv) {
+  const P = (list, v, d) => (list.some(e => e[0] === v) ? v : d), wall = P(LOOK_WALL, L.wall, 'cream'), door = P(LOOK_DOOR, L.door, 'go'), win = P(LOOK_WIN, L.win, 'vuong'), hr = P(LOOK_HROOF, L.hroof, 'tranh');
+  const k = .85 * s, y0 = y - 8 * s;
+  dp(g, lkWallPart(wall, door, win), x, y0, 0, k, k);
+  if (L.hpost) dp(g, lkPostPart(L.hpost, 190, 150), x, y0, 0, k, k);
+  dp(g, lkRoofPart(hr, 'red'), x, y0 - 23 * k, 0, 1.37 * k, 1.1 * k);
+  g.save(); g.translate(x, y); g.scale(s, s); g.font = '900 13px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32'; g.fillText(lv >= 4 ? 'Nhà mình' : 'Nhà thuê', 0, -222); g.restore();
+}
 const _c4DrawShopLv0 = c4DrawShopLv;
 c4DrawShopLv = function (g, x, y, s, lv, ware = 'che') {
   const L = c4LookGet(ware);
-  if (L && L.roof && lv >= 1 && lv <= 2) { c4LookRoofAt(g, x, y, s, L); return; }                      // a roof of our own instead of the awning
+  if (L && lv >= 3 && (L.wall || L.door || L.win || L.hroof || L.hpost)) { c4LookHouse(g, x, y, s, L, lv); return; }
   _c4DrawShopLv0(g, x, y, s, lv, ware);
 };
-// the betel stall's art has its roof inside it: ours is laid over it
-function c4LookFront(g, ware, x, y, s, lv) { const L = c4LookGet(ware); if (L && L.roof && lv === 1) c4LookRoofAt(g, x, y, s, L, true); }   // (the gian mái ngói, level 2, has its own roof and board)
-const _c4SignDraw0 = c4SignDraw;
-c4SignDraw = function (g, x, y, s, name, ware) {
-  const L = c4LookGet(ware);
-  if (!L || !(L.post || L.sign)) return _c4SignDraw0(g, x, y, s, name, ware);
-  g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = INK; g.lineWidth = 2;
-  const bl = ware === 'trau' ? (c4LookCtx !== undefined ? c4LookLv : SAVE4.lv || 0) : -1;   // the betel stall: a frame only from level 1
-  if (L.post && bl !== 0) dp(g, bl === 1 ? lkPostPart(L.post, 128, 185) : lkPostPart(L.post), 0, 0, 0, 1, 1);
-  else { g.fillStyle = '#7a4a22'; g.fillRect(-52, C4_SIGN_Y + 12, 5, -C4_SIGN_Y - 12); g.fillRect(47, C4_SIGN_Y + 12, 5, -C4_SIGN_Y - 12); }
-  if (L.sign) { const k = L.sign, c = L.col || 'red'; if (k === 'phuon') dp(g, lkSignPart(k, c, name), 0, -28, 0, .9, .62); else dp(g, lkSignPart(k, c, name), 0, C4_SIGN_Y + 103, 0, 1.15, 1); }
-  else { g.fillStyle = '#f2d27a'; g.beginPath(); g.rect(-62, C4_SIGN_Y - 14, 124, 28); g.fill(); g.stroke(); g.fillStyle = INK; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, 0, C4_SIGN_Y + 1); }
-  if (ware && c4LookCtx === undefined) c4SaleTag(g, ware);
-  g.restore();
-};
+// the whole stall as the market draws it (used by the dresser and by a visit); ware 'trau' is the betel stall
+function c4LookDrawStall(g, x, y, s, ware, lv, name, alpha = 1) {
+  if (lkFull(ware, lv)) { c4LookStall(g, x, y, s, ware, name, alpha); return; }
+  if (ware === 'trau') { if (lv >= 3) c4DrawShopLv(g, x, y, s, lv, 'trau'); g.globalAlpha = alpha; dp(g, c4StallArt(Math.min(2, lv)), x, y, 0, s, s); g.globalAlpha = 1; if (lv < 2) c4SignDraw(g, x, y, s, name, c4LookCtx === undefined ? 'trau' : undefined); return; }
+  c4DrawShopLv(g, x, y, s, lv, ware); g.globalAlpha = alpha; dp(g, c4Art()[C4_GOODS[ware].art], x, y, 0, s, s); g.globalAlpha = 1; c4SignDraw(g, x, y, s, name, c4LookCtx === undefined ? ware : undefined);
+}
 // the things beside the stall (and the lantern string over it)
-function c4LookDecoAt(g, sx, sy, ss, L) {
+function c4LookDecoAt(g, sx, sy, ss, L, lv = 1) {
   if (!L || !L.deco || !L.deco.length) return;
   let n = 0; for (const k of L.deco) { const e = LOOK_DECO.find(q => q[0] === k); if (!e) continue; const sc = e[3] * ss;
-    if (k === 'day') dp(g, lkDecoPart(k), sx, sy - 215 * ss, 0, .62 * ss, .62 * ss);
-    else dp(g, lkDecoPart(k), sx + LOOK_SLOTS[n++ % 4] * ss, sy, 0, sc, sc); }
+    if (k === 'day') dp(g, lkDecoPart(k), sx, sy - 232 * ss, 0, .62 * ss, .62 * ss);
+    else if (lv <= 2 && n < LOOK_MAXGROUND) dp(g, lkDecoPart(k), sx + LOOK_SLOTS[n++] * ss, sy, 0, sc, sc); }
 }
 const c4LookStallX = g => (g === 'trau' ? C4_STALL + ((SAVE4.lv || 0) ? 10 : 30) : C4_GOODS[g].x + 20);
 { const fx0 = c4FxItems;
@@ -122,7 +171,7 @@ const c4LookStallX = g => (g === 'trau' ? C4_STALL + ((SAVE4.lv || 0) ? 10 : 30)
     fx0(items, g, vis);
     if (c4LookCtx !== undefined || !SAVE4.look) return;
     for (const w of Object.keys(SAVE4.look)) { const L = SAVE4.look[w]; if (!L || !L.deco || !L.deco.length || !c4Own(w) || !C4_GOODS[w]) continue; const sx = c4LookStallX(w); if (!vis(sx, 260)) continue;
-      items.push({ z: C4_STALL_Z + .005, f: () => c4LookDecoAt(g, sx, c4Y(C4_STALL_Z), c4S(C4_STALL_Z), L) }); }
+      const lvw = lkLvOf(w); items.push({ z: C4_STALL_Z + .005, f: () => c4LookDecoAt(g, sx, c4Y(C4_STALL_Z), c4S(C4_STALL_Z), L, lvw) }); }
   }; }
 // a dressed stall draws a few more customers (never said)
 { const want0 = c4Want; c4Want = function (g, noWx) { const w = want0(g, noWx); return w * (1 + c4LookBonus(g)); }; }
@@ -131,29 +180,26 @@ const c4LookStallX = g => (g === 'trau' ? C4_STALL + ((SAVE4.lv || 0) ? 10 : 30)
 const c4LookSheet = cnSheet('c4look', '<h3 id="lkT">Trang trí quán</h3><canvas id="lkCv" width="880" height="520" style="width:100%;max-width:440px;height:auto;border:2px solid var(--ink);background:#efe3c4"></canvas><div id="lkB" class="lkB"></div><p class="sm" id="lkMsg"></p><div class="row"><button class="btn" id="lkGo">Áp dụng</button><button class="btn alt" id="lkX">Đóng</button></div>');
 let LK = null;
 const lkName = g => (g === 'trau' ? 'TRẦU CAU' : C4_GOODS[g].name.toUpperCase());
-const lkLv = g => (g === 'trau' ? SAVE4.lv || 0 : c4SLvI(g));
+function lkClean(L, lv) { const ok = new Set(lkFields(lv).map(f => f[0])); for (const [k] of [...LOOK_FIELDS_STALL, ...LOOK_FIELDS_HOUSE]) if (!ok.has(k)) delete L[k]; if (L.table && LK && LK.g === 'gom') delete L.table; if (!(L.roof || L.sign) || lv < 1 || lv > 2) delete L.col; if (lv >= 3 && L.deco) L.deco = L.deco.filter(k => k === 'day'); }
 function lkDraw() {
-  const cv = $('#lkCv'), g = cv.getContext('2d'), w = LK.g, lv = lkLv(w), s = 1.15, x = 220, y = 440;
-  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 880, 520); g.setTransform(2, 0, 0, 2, 0, 0); g.fillStyle = '#e6d3a0'; g.fillRect(0, 205, 440, 60); g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 205); g.lineTo(440, 205); g.stroke();
-  const A = c4Art(), prev = c4LookCtx; c4LookCtx = LK.look; c4LookLv = lv;
-  try {
-    const sy = 222, k = s * .62;   // the same order as the market draws it (cho.js)
-    if (w === 'trau') { if (lv >= 3) c4DrawShopLv(g, x, sy, k, lv, w); dp(g, c4StallArt(Math.min(2, lv)), x, sy, 0, k, k); c4LookFront(g, 'trau', x, sy, k, lv); if (lv < 2) c4SignDraw(g, x, sy, k, lkName(w), w); }
-    else { c4DrawShopLv(g, x, sy, k, lv, w); dp(g, A[C4_GOODS[w].art], x, sy, 0, k, k); c4SignDraw(g, x, sy, k, lkName(w), w); }
-    c4LookDecoAt(g, x, sy, k, LK.look);
-  } catch (e) {}
-  c4LookCtx = prev;
+  const cv = $('#lkCv'), g = cv.getContext('2d'), w = LK.g, lv = lkLvOf(w), k = lv >= 3 ? .8 : .8, x = 220, y = 240;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 880, 520); g.setTransform(2, 0, 0, 2, 0, 0); g.fillStyle = '#e6d3a0'; g.fillRect(0, y - 8, 440, 60); g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(0, y - 8); g.lineTo(440, y - 8); g.stroke();
+  const prev = c4LookCtx, prevLv = c4LookLv; c4LookCtx = LK.look; c4LookLv = lv;
+  try { c4LookDrawStall(g, x, y, k, w, lv, lkName(w)); c4LookDecoAt(g, x, y, k, LK.look, lv); } catch (e) {}
+  c4LookCtx = prev; c4LookLv = prevLv;
 }
 function lkRefresh() {
-  const L = LK.look, own = c4LookOwn(LK.g), cost = c4LookCost(LK.g, L), B = $('#lkB');
-  const sec = (title, list, key, none) => `<h4>${title}</h4><div class="row lkR">${none ? `<button class="opt${L[key] ? '' : ' on'}" data-k="${key}" data-v="">${none}</button>` : ''}${list.map(([id, nm, p]) => `<button class="opt${L[key] === id ? ' on' : ''}" data-k="${key}" data-v="${id}">${nm}<small>${own[key + ':' + id] ? 'đã có' : c4Money(p)}</small></button>`).join('')}</div>`;
-  B.innerHTML = sec('Mái', LOOK_ROOF, 'roof', 'Mái thường') + sec('Cột', LOOK_POST, 'post', 'Cột thường') + sec('Biển hiệu', LOOK_SIGN, 'sign', 'Biển thường')
-    + `<h4>Màu mái, cờ, biển</h4><div class="row lkR">${LOOK_COL.map(([id, nm, hex], i) => `<button class="sw${(L.col || 'red') === id ? ' on' : ''}" data-k="col" data-v="${id}" title="${nm}${i && !own['col:' + id] ? ' · ' + c4Money(LOOK_COL_PRICE) : ''}" style="background:${hex}"></button>`).join('')}</div>`
-    + `<h4>Đồ trang trí, chỗ chơi (tối đa ${LOOK_MAXDECO})</h4><div class="row lkR">${LOOK_DECO.map(([id, nm, p]) => `<button class="opt${(L.deco || []).includes(id) ? ' on' : ''}" data-d="${id}">${nm}<small>${own['deco:' + id] ? 'đã có' : c4Money(p)}</small></button>`).join('')}</div>`;
+  const w = LK.g, lv = lkLvOf(w), L = LK.look; lkClean(L, lv);
+  const own = c4LookOwn(w), cost = c4LookCost(w, L, lv), B = $('#lkB'), fields = lkFields(lv).filter(f => !(f[0] === 'table' && w === 'gom'));
+  const sec = ([key, list, title]) => `<h4>${title}</h4><div class="row lkR"><button class="opt${L[key] ? '' : ' on'}" data-k="${key}" data-v="">Như cũ</button>${list.map(([id, nm, p]) => `<button class="opt${L[key] === id ? ' on' : ''}" data-k="${key}" data-v="${id}">${nm}<small>${own[key + ':' + id] ? 'đã có' : c4Money(p)}</small></button>`).join('')}</div>`;
+  const colOk = lv >= 1 && lv <= 2;
+  B.innerHTML = fields.map(sec).join('')
+    + (colOk ? `<h4>Màu mái, vải, biển</h4><div class="row lkR">${LOOK_COL.map(([id, nm, hex], i) => `<button class="sw${(L.col || 'red') === id ? ' on' : ''}" data-k="col" data-v="${id}" title="${nm}${i && !own['col:' + id] ? ' · ' + c4Money(LOOK_COL_PRICE) : ''}" style="background:${hex}"></button>`).join('')}</div>` : '')
+    + `<h4>${lv >= 3 ? 'Dây đèn lồng (nhà không còn chỗ đặt đồ dưới đất)' : 'Đặt cạnh quán (hai món dưới đất, một dây đèn)'}</h4><div class="row lkR">${LOOK_DECO.filter(e => lv < 3 || e[0] === 'day').map(([id, nm, p]) => `<button class="opt${(L.deco || []).includes(id) ? ' on' : ''}" data-d="${id}">${nm}<small>${own['deco:' + id] ? 'đã có' : c4Money(p)}</small></button>`).join('')}</div>`;
   B.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { AU.tap(); const k = b.dataset.k, v = b.dataset.v; if (v) L[k] = v; else delete L[k]; lkRefresh(); }));
-  B.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { AU.tap(); const d = L.deco || (L.deco = []), i = d.indexOf(b.dataset.d); if (i >= 0) d.splice(i, 1); else if (d.length < LOOK_MAXDECO) d.push(b.dataset.d); else toast('Chỉ đặt được ' + LOOK_MAXDECO + ' món cạnh quầy.', 2); lkRefresh(); }));
+  B.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { AU.tap(); const d = L.deco || (L.deco = []), id = b.dataset.d, i = d.indexOf(id); if (i >= 0) d.splice(i, 1); else if (id !== 'day' && d.filter(q => q !== 'day').length >= LOOK_MAXGROUND) toast('Dưới đất chỉ đặt được ' + LOOK_MAXGROUND + ' món cạnh quán.', 2); else d.push(id); lkRefresh(); }));
   $('#lkGo').textContent = cost > 0 ? `Áp dụng · ${c4Money(cost)}` : 'Áp dụng'; $('#lkGo').disabled = cost > SAVE4.money;
-  $('#lkMsg').innerHTML = (LK.g === 'trau' ? (lkLv(LK.g) < 1 ? 'Gánh trầu chưa có mái: nâng lên sạp lều mới thấy mái. ' : lkLv(LK.g) >= 2 ? 'Gian mái ngói đã có mái và biển riêng, ở đây chỉ chọn đồ đặt cạnh quán. ' : '') : (lkLv(LK.g) < 1 ? 'Mẹt hàng chưa có mái: nâng lên sạp tre mới thấy mái. ' : lkLv(LK.g) >= 3 ? 'Nhà mặt chợ có mái nhà rồi, mái chọn ở đây không hiện. ' : '')) + `Trong túi: ${c4Money(Math.round(SAVE4.money))}` + (cost > SAVE4.money ? ' (chưa đủ tiền)' : '');
+  $('#lkMsg').innerHTML = (lv < 1 ? 'Chưa có khung quán (mẹt, gánh): nâng cấp lên sạp mới chọn được mái, cột, bàn, biển. ' : lv >= 3 ? 'Nhà mặt chợ: chọn mái, cột, cửa, cửa sổ, màu tường. ' : '') + `Trong túi: ${c4Money(Math.round(SAVE4.money))}` + (cost > SAVE4.money ? ' (chưa đủ tiền)' : '');
   lkDraw();
 }
 function c4LookOpen(g) {
@@ -162,14 +208,13 @@ function c4LookOpen(g) {
 }
 $('#lkX').addEventListener('click', () => { AU.tap(); cnHide(c4LookSheet); LK = null; });
 $('#lkGo').addEventListener('click', () => {
-  if (!LK) return; const g = LK.g, cost = c4LookCost(g, LK.look); if (cost > SAVE4.money) return;
-  const L = LK.look; if (!(L.roof || L.post || L.sign) && L.col) delete L.col;
-  const own = c4LookOwn(g); if (L.roof) own['roof:' + L.roof] = 1; if (L.post) own['post:' + L.post] = 1; if (L.sign) own['sign:' + L.sign] = 1; if (L.col && L.col !== 'red' && (L.roof || L.sign)) own['col:' + L.col] = 1; for (const k of L.deco || []) own['deco:' + k] = 1;
-  SAVE4.money -= cost; (SAVE4.look || (SAVE4.look = {}))[g] = L; if (!(L.roof || L.post || L.sign || (L.deco && L.deco.length))) delete SAVE4.look[g];
+  if (!LK) return; const g = LK.g, lv = lkLvOf(g), L = LK.look; lkClean(L, lv); const cost = c4LookCost(g, L, lv); if (cost > SAVE4.money) return;
+  const own = c4LookOwn(g); for (const [k] of lkFields(lv)) if (L[k]) own[k + ':' + L[k]] = 1; if (L.col && L.col !== 'red') own['col:' + L.col] = 1; for (const k of L.deco || []) own['deco:' + k] = 1;
+  SAVE4.money -= cost; (SAVE4.look || (SAVE4.look = {}))[g] = L; if (!Object.keys(L).some(k => k !== 'col' && (k !== 'deco' || L.deco.length))) delete SAVE4.look[g];
   persist4(); AU.pluck(84); if (typeof c4Hud === 'function') c4Hud(); toast(cost > 0 ? `Đã trang trí quán, tốn ${c4Money(cost)}.` : 'Đã đổi kiểu quán.', 2.6); cnHide(c4LookSheet); LK = null;
 });
 // a block on the stall's sheet (cho.js c4OpenUp)
 function c4LookBlock(g) {
-  const d = document.createElement('div'); d.innerHTML = '<h4>Trang trí quán</h4><p class="sm">Chọn mái, cột, biển hiệu, màu và đồ trang trí cho quán này.</p><div class="row"><button class="btn alt">Trang trí</button></div>';
+  const d = document.createElement('div'); d.innerHTML = '<h4>Trang trí quán</h4><p class="sm">Chọn mái, cột, bàn, biển hiệu (nhà thì cột, cửa, cửa sổ, mái, màu tường) và đồ đặt cạnh quán.</p><div class="row"><button class="btn alt">Trang trí</button></div>';
   d.querySelector('button').addEventListener('click', () => { AU.tap(); c4LookOpen(g); }); return d;
 }

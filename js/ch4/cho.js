@@ -1221,8 +1221,10 @@ function renderC4() {
     if (c4Own(sh)) {
       c4HandItems(items, sh, head);
       c4TableItems(items, g, vis, sh);
-      items.push({ z: C4_STALL_Z, f: () => { c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = c4Open(sh) && !(C4.shut > 0) ? 1 : .45; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
-        c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase(), sh);
+      items.push({ z: C4_STALL_Z, f: () => { const al = c4Open(sh) && !(C4.shut > 0) ? 1 : .45;
+        if (lkFull(sh, c4SLvI(sh))) c4LookStall(g, sx + 20, sy, ss, sh, G.name.toUpperCase(), al);          // dressed whole (trangtri.js)
+        else { c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = al; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
+        c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase(), sh); }
         if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } } });
     } else {
       items.push({ z: C4_STALL_Z, f: () => { dp(g, A.lot, sx, sy, 0, ss, ss); g.save(); g.translate(sx, sy); g.scale(ss, ss); g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK;
@@ -1234,10 +1236,12 @@ function renderC4() {
   else {
     c4HandItems(items, 'trau', head);
     items.push({ z: C4_STALL_Z, f: () => { const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
+      if (lkFull('trau', lv)) c4LookStall(g, sx, sy, ss, 'trau', 'TRẦU CAU', C4.shut > 0 ? .45 : 1);        // a stall dressed whole (trangtri.js)
+      else {
       if (lv >= 3) c4DrawShopLv(g, sx, sy, ss, lv, 'trau');                       // the house behind it
       g.globalAlpha = C4.shut > 0 ? .45 : 1; dp(g, c4StallArt(Math.min(2, lv)), sx, sy, 0, ss, ss); g.globalAlpha = 1;
-      if (typeof c4LookFront === 'function') c4LookFront(g, 'trau', sx, sy, ss, lv);
       if (lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU', 'trau'); else if (c4SalePct('trau')) { g.save(); g.translate(sx, sy); g.scale(ss, ss); c4SaleTag(g, 'trau'); g.restore(); }
+      }
       if (SAVE4.cauDoi) for (const d of [-1, 1]) { const px = sx + d * (lv ? 120 : 112) * ss, py = sy - (lv ? 150 : 80) * ss; g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(px - 7, py - 40 * ss, 14, 60 * ss); g.strokeRect(px - 7, py - 40 * ss, 14, 60 * ss); g.fillStyle = '#f2c640'; for (let k = 0; k < 3; k++) g.fillRect(px - 3, py - 32 * ss + k * 18 * ss, 6, 8 * ss); }
     } });
   }
