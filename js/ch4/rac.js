@@ -9,12 +9,20 @@
 
 const C4_RAC_KINDS = 5, C4_RAC_HIT = 46;
 const c4RacFan = id => ((id * 2654435761) >>> 0) % 100 < 20;
+// the bits come through the day, more of them early (owner: "rải rác trong ngày, đầu ngày nhiều hơn"): the day's plan is a list of times
+// (game minutes, 5:00–19:00, denser at the start) and where; each one is laid on the ground when the world's clock reaches it
+const c4RacMins = () => (typeof w4Load === 'function' ? w4Load().mins : (C4.mins || 300));
+function c4RacLay(R0) {
+  const m = c4RacMins(), mk = (town) => town ? { x: Math.round(220 + R() * (P4_W - 440)), z: .28 + R() * .58, k: (R() * C4_RAC_KINDS) | 0 } : { x: Math.round(260 + R() * (C4_W - 560)), z: .42 + R() * .53, k: (R() * C4_RAC_KINDS) | 0 };
+  while (R0.plan && R0.plan.length && R0.plan[0].at <= m) { const p = R0.plan.shift(); (p.town ? R0.t : R0.v).push(mk(p.town)); }
+}
 function c4RacEnsure() {
   let R0 = SAVE4.rac;
-  if (R0 && R0.day === SAVE4.day) return R0;
-  const N = 11 + ((R() * 5) | 0), nv = Math.round(N * .6), mk = (n, x0, x1, z0, z1) => Array.from({ length: n }, (_, i) => ({ x: Math.round(x0 + R() * (x1 - x0)), z: z0 + R() * (z1 - z0), k: (R() * C4_RAC_KINDS) | 0, i }));
-  R0 = SAVE4.rac = { day: SAVE4.day, v: mk(nv, 260, C4_W - 300, .42, .95), t: mk(N - nv, 220, P4_W - 220, .28, .86), n: 0 };
-  persist4(); return R0;
+  if (!(R0 && R0.day === SAVE4.day)) {
+    const N = 11 + ((R() * 5) | 0), plan = Array.from({ length: N }, () => ({ at: Math.round(300 + 840 * Math.pow(R(), 1.8)), town: R() < .4 })).sort((a, b) => a.at - b.at);
+    R0 = SAVE4.rac = { day: SAVE4.day, v: [], t: [], n: 0, plan }; persist4();
+  }
+  c4RacLay(R0); return R0;
 }
 // one picked up: +1 đồng, a floating "+1", the liking of those who saw, the task
 function c4RacPick(list, i, town) {

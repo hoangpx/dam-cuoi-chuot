@@ -1302,11 +1302,11 @@ function c4Sky(g, V, cx, wx) {
     const x = ((base + C4.t * sp - cx * .08) % W + W) % W - 180, y = 26 + r() * skyH * .45;
     c4Cloud(g, x, y, s * (rain ? 1.3 : 1), type, rain ? '#cfc8cf' : sun > .3 ? '#f5d2a8' : '#f2ecde');
   }
-  // birds: a flock now and then crosses the sky, wings beating
-  if (!rain) for (let k = 0; k < 2; k++) {
-    const per = c4OmenOn('chim') ? 8 + k * 4 : 16 + k * 7, cyc = (C4.t + k * 9) / per, fr = cyc % 1, r = mulberry(Math.floor(cyc) * 17 + k * 3 + 1);
-    if (r() < (c4OmenOn('chim') ? .05 : .35)) continue;
-    const dir = r() < .5 ? 1 : -1, y0 = 30 + r() * skyH * .4, cnt = 3 + ((r() * 4) | 0), x0 = dir > 0 ? -60 + fr * (V.vw + 160) : V.vw + 60 - fr * (V.vw + 160);
+  // birds (owner: they used to stay with the screen as it scrolled): the flocks fly over the WORLD, slowly along the lane, a long way off
+  // so they slide a little against the view (a 15 % parallax); each flock comes round again after the lane's length
+  if (!rain) for (let k = 0, nf = c4OmenOn('chim') ? 5 : 3, L = C4_W + 900; k < nf; k++) {
+    const r = mulberry(k * 17 + 3), dir = k % 2 ? -1 : 1, y0 = 30 + r() * skyH * .4, cnt = 3 + ((r() * 4) | 0), wx0 = ((r() * L + dir * 52 * C4.t) % L + L) % L - 450, x0 = wx0 - cx * .85;
+    if (x0 < -80 || x0 > V.vw + 80) continue;
     g.strokeStyle = INK; g.lineWidth = 2; g.lineCap = 'round';
     for (let j = 0; j < cnt; j++) {
       const bx = x0 - dir * (j % 2 ? 1 : .5) * 22 * Math.ceil(j / 2), by = y0 + Math.ceil(j / 2) * (j % 2 ? 9 : -9) + Math.sin(C4.t * 2 + j) * 3, fl = Math.sin(C4.t * 11 + j * 1.7) * 5, w = 9;

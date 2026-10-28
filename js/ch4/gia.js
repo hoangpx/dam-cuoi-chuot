@@ -91,9 +91,18 @@ function p4PriceServed(w, kind) {
    their own: flush → 😄 😊 😌, middling → 🙂 😐, hard times → 😕 😟 😞 😢. Nothing says what the faces mean. */
 const C4_FEEL = [[1.15, ['😄', '😊']], [1.04, ['😌', '😊']], [.93, ['🙂', '😐']], [.84, ['😕', '😟']], [0, ['😞', '😢']]];
 function c4FeelAssign(w, t) {
-  if (!w || w.kind && w.kind !== 'mouse' || R() > .24) return;
+  if (!w || w.kind && w.kind !== 'mouse' || R() > .4) return;
   const v = c4GiaMood() + (R() - .5) * .36, row = C4_FEEL.find(([lim]) => v >= lim)[1];
-  w.feel = { icon: c4Pick(row), t0: t + 1.2 + R() * 9, dur: 2.8 };
+  w.feel = { icon: c4Pick(row), delay: .6 + R() * 4, start: null, shown: 0, last: null, dur: 3.4 };   // it counts from when the walker is first in view, and only while nothing is being said
+}
+// is this walker's face to be drawn now? q = how far through its showing (0…1), or -1
+function c4FeelQ(w, t, inView, busy) {
+  const f = w.feel; if (!f || f.shown >= f.dur) return -1;
+  if (f.start === null) { if (!inView) return -1; f.start = t + f.delay; }
+  if (t < f.start || t > f.start + 16) return -1;
+  if (busy || !inView) { f.last = null; return -1; }
+  f.shown += f.last === null ? 0 : Math.min(.1, Math.max(0, t - f.last)); f.last = t;
+  return f.shown / f.dur;
 }
 function c4FeelDraw(g, icon, x, y, s, q) {
   const a = Math.min(1, q * 6, (1 - q) * 4), up = q * 10 * s, r = 17 * s;
@@ -109,17 +118,17 @@ const c4FeelBusy = (w, list, s) => w.say || w.chat || w.st === 'chat' || list.so
   c4FxItems = function (items, g, vis) {
     fx0(items, g, vis);
     const talkers = [...C4.walkers, ...(C4.vendors || []), C4.porter, C4.wife].filter(o => o && (o.say || o.st === 'chat'));
-    for (const w of C4.walkers) { const f = w.feel; if (!f || C4.t < f.t0 || C4.t > f.t0 + f.dur || !vis(w.x, 80)) continue;
-      if (c4FeelBusy(w, talkers, c4S(w.z))) continue;
-      const tall = C4_TALL.mouse * C4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1), s = c4S(w.z);
-      items.push({ z: w.z + .002, f: () => c4FeelDraw(g, f.icon, w.x, c4Y(w.z) - tall * s - 30 * s, s, (C4.t - f.t0) / f.dur) }); }
+    for (const w of C4.walkers) { if (!w.feel) continue;
+      const q = c4FeelQ(w, C4.t, vis(w.x, 80), c4FeelBusy(w, talkers, c4S(w.z))); if (q < 0) continue;
+      const f = w.feel, tall = C4_TALL.mouse * C4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .68 : 1), s = c4S(w.z);
+      items.push({ z: w.z + .002, f: () => c4FeelDraw(g, f.icon, w.x, c4Y(w.z) - tall * s - 30 * s, s, q) }); }
   }; }
 { const br0 = p4TownBridgeItems;
   p4TownBridgeItems = function (items, g, vis) {
     br0(items, g, vis);
     const talkers = [...P4.walkers, ...(P4.sellers || []), ...(P4.townBoats || [])].filter(o => o && (o.say || o.st === 'chat'));
-    for (const w of P4.walkers) { const f = w.feel; if (!f || P4.t < f.t0 || P4.t > f.t0 + f.dur || !vis(w.x, 80)) continue;
-      if (c4FeelBusy(w, talkers, p4S(w.z))) continue;
-      const tall = P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), s = p4S(w.z);
-      items.push({ z: w.z + .002, f: () => c4FeelDraw(g, f.icon, w.x, p4Y(w.z) - p4TownLift(w.x) - tall * s - 30 * s, s, (P4.t - f.t0) / f.dur) }); }
+    for (const w of P4.walkers) { if (!w.feel) continue;
+      const q = c4FeelQ(w, P4.t, vis(w.x, 80), c4FeelBusy(w, talkers, p4S(w.z))); if (q < 0) continue;
+      const f = w.feel, tall = P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), s = p4S(w.z);
+      items.push({ z: w.z + .002, f: () => c4FeelDraw(g, f.icon, w.x, p4Y(w.z) - p4TownLift(w.x) - tall * s - 30 * s, s, q) }); }
   }; }
