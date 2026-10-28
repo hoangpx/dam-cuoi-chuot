@@ -255,6 +255,7 @@ function cnDrawPeople(items, g, vis, list, YF, SF, lift, crowd, tall) {
   }
 }
 function cnBubbles(g, p, x, y, s) {
+  if (p.say && typeof HL !== 'undefined' && HL.chatOff) p.say = null;   // "Tắt chat" in the chat bar: the words vanish too
   if (p.say) { const B = c4Bubble(p.say.text, 0, 13, 150), a = Math.min(1, p.say.t * 6, (p.say.life - p.say.t) * 4), sc = .8 + .2 * s; g.globalAlpha = Math.max(0, a); dp(g, B, x, y - (B.bh + 14) * sc, 0, sc, sc); g.globalAlpha = 1; }
   if (p.emo && /^[0-5]$/.test(p.emo.e)) { const sc = .8 + .2 * s, pop = Math.min(1, p.emo.t * 8), r = 17 * (.6 + .4 * pop) * sc, ex = x + 24 * sc, ey = y - 30 * sc; g.save(); g.globalAlpha = Math.max(0, Math.min(1, (2.8 - p.emo.t) * 2)); hlEmoteFace(g, +p.emo.e, ex, ey, r); g.restore(); }
   else if (p.emo) { const q = p.emo.t / 2.8; g.save(); g.globalAlpha = Math.max(0, Math.min(1, (1 - q) * 3, q * 8)); g.font = `${Math.round(30 * (.8 + .2 * s))}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.emo.e, x + Math.sin(q * 6) * 6, y - 40 - q * 50); g.restore(); }

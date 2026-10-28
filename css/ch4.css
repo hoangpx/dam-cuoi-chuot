@@ -6,10 +6,10 @@
 #cnvHud button.tag{cursor:pointer}
 #cnvHud #cnvChap{justify-self:start}#cnvHud #cnvMoney{justify-self:end}
 #cnvHud .cnvSub{display:block;width:max-content;max-width:92vw;margin:6px auto 0;text-align:center}
-#cnTools{position:fixed;left:12px;top:calc(64px + env(safe-area-inset-top,0px));z-index:5;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+#cnTools{position:fixed;left:8px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 #cnTools[hidden]{display:none}
 #cnTools>button,#cnTray button{width:46px;height:46px;border:2px solid var(--ink);border-radius:50%;background:rgba(251,244,220,.95);padding:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-#cnTray{position:absolute;left:54px;top:54px;display:grid;grid-template-columns:repeat(3,46px);gap:6px;background:rgba(251,244,220,.97);border:2px solid var(--ink);padding:6px}
+#cnTray{position:absolute;left:54px;top:0;display:grid;grid-template-columns:repeat(3,46px);gap:6px;background:rgba(251,244,220,.97);border:2px solid var(--ink);padding:6px}
 #cnTray[hidden]{display:none}
 #cnBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;width:min(94vw,520px)}
 #cnBar[hidden]{display:none}
