@@ -96,16 +96,16 @@ function cnBuyOpen(g) { CN.buy = { g, n: 1 }; cnBuyRefresh(true); cnBuySh.hidden
 function cnBuyRefresh(open) {
   const b = CN.buy; if (!b || cnBuySh.hidden && !open || !CN.visit) return;
   const info = cnStallInfo(b.g); if (!info) { cnBuySh.hidden = true; return; }
-  const can = cnCanSell(b.g), max = Math.max(0, Math.min(info.avail, 40, Math.floor(SAVE4.money / Math.max(1, info.price))));
+  const can = cnCanSell(b.g), max = Math.max(0, Math.min(info.avail, can ? 40 : 1, Math.floor(SAVE4.money / Math.max(1, info.price))));   // a ware my own market does not sell: one portion, eaten on the spot, to support him
   b.n = Math.max(max ? 1 : 0, Math.min(b.n, max));
   $('#cnBuyT').textContent = info.nm;
   if (!$('#cnN')) $('#cnBuyB').innerHTML = '<div id="cnBI"></div><div class="row cnStep"><button class="btn alt" data-d="-1">−</button><b id="cnN"></b><button class="btn alt" data-d="1">+</button></div><div id="cnBT"></div>';   // the stepper stays put so a held press keeps going
   $('#cnBI').innerHTML = `<p>Giá <b>${c4Money(info.price)}</b> một ${info.unit} · còn <b>${info.avail}</b></p>`
-    + (can ? '' : '<p class="bad">Nhà bạn chưa có quầy bán món này, mua về cũng không bán được.</p>')
+    + (can ? '' : '<p class="sm">Nhà bạn không bán món này, nên chỉ ghé ăn một phần để ủng hộ bạn ấy thôi.</p>')
     + (!info.open ? '<p class="bad">Quầy đang đóng cửa.</p>' : '');
   $('#cnN').textContent = b.n;
-  $('#cnBT').innerHTML = `<p>Tiền: <b>${c4Money(b.n * info.price)}</b> · trong túi ${c4Money(Math.round(SAVE4.money))}</p><p class="sm" id="cnBuyMsg">${b.msg || 'Hàng mang về để được hôm nay và cả ngày mai.'}</p>`;
-  $('#cnBuyGo').disabled = !can || !info.open || b.n < 1 || !!b.wait;
+  $('#cnBT').innerHTML = `<p>Tiền: <b>${c4Money(b.n * info.price)}</b> · trong túi ${c4Money(Math.round(SAVE4.money))}</p><p class="sm" id="cnBuyMsg">${b.msg || (can ? 'Hàng mang về để được hôm nay và cả ngày mai.' : 'Ăn tại chỗ, không mang về.')}</p>`;
+  $('#cnBuyGo').disabled = !info.open || b.n < 1 || !!b.wait;
 }
 // ± 1 a press; held down it repeats, faster and faster (owner 2026-10-28)
 { let timer = 0; const stop = () => { clearTimeout(timer); timer = 0; };

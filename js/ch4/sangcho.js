@@ -131,7 +131,8 @@ function cnSold(m) {
   if (!m.ok) return p.cb(false, m.why || 'Không mua được');
   const v = CN.visit, k = m.n, total = m.price * k, g = m.g, place = v ? v.place : 'lang';
   SAVE4.money -= total;
-  if (place === 'lang') { c4SetStock(g, c4Stock(g) + k); cnKeepAdd(SAVE4, g, k); }
+  if (v && !cnCanSell(g)) { /* not one of my wares: eaten there and then */ }
+  else if (place === 'lang') { c4SetStock(g, c4Stock(g) + k); cnKeepAdd(SAVE4, g, k); }
   else if (g === 'trau') { SAVE4B.stock += k; cnKeepAdd(SAVE4B, 'trau', k); p4Persist(); }
   else { const R0 = p4Shops()[g]; if (R0) { R0.pre = (cnPreLive(R0) ? R0.pre : 0) + k; R0.preUntil = SAVE4.day + 1; } p4Persist(); }
   cnTxn({ dir: 'bought', id: v ? v.host : '', name: v ? v.hostName : '', g, n: k, p: m.price, pl: place, home: v && v.snap ? v.snap.home : null });
