@@ -137,7 +137,13 @@ function c4LookStall(g, x, y, s, ware, name, alpha = 1) {
   dp(g, lkSignPart(L.sign || 'vang', c, name), x, y - 68 * s, 0, s, s);
   dp(g, lkRoofPart(L.roof || 'vai', c), x, y - 103 * s, 0, .88 * s, .85 * s);
   g.restore();
-  if (c4LookCtx === undefined && typeof c4SalePct === 'function' && c4SalePct(ware)) { g.save(); g.translate(x, y); g.scale(s, s); c4SaleTag(g, ware); g.restore(); }   // GIẢM n% (my own stall only)
+  c4LookSale(g, x, y, s, ware, -171);
+}
+// the GIẢM n% tag at the top right corner of OUR board, drawn last so nothing covers it (my own stall only; a visit has no sale)
+function c4LookSale(g, x, y, s, ware, signY) {
+  if (c4LookCtx !== undefined || typeof c4SalePct !== 'function') return; const pct = c4SalePct(ware); if (!pct) return;
+  g.save(); g.translate(x + 62 * s, y + (signY - 16) * s); g.rotate(.12); g.scale(s, s); g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.rect(-30, -11, 60, 22); g.fill(); g.stroke();
+  g.fillStyle = '#f2ecde'; g.font = '900 12px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`GIẢM ${pct}%`, 0, 1); g.restore();
 }
 // the table and the goods in front of the house, and the board standing on the roof's ridge
 function c4LookHouseFront(g, x, y, s, ware, name, alpha = 1) {
@@ -147,6 +153,7 @@ function c4LookHouseFront(g, x, y, s, ware, name, alpha = 1) {
   else dp(g, art, x, y, 0, s, s);
   g.restore();
   dp(g, lkSignPart(L.sign || 'vang', L.col || 'red', name), x, y - 108 * s, 0, s, s);
+  c4LookSale(g, x, y, s, ware, -211);
 }
 // the house behind a stall of level 3, 4
 function c4LookHouse(g, x, y, s, L, lv) {
