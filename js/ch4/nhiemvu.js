@@ -117,7 +117,7 @@ function c4NvFire(t, ap) {
     else ap.fired = false;                                                   // nobody to be drunk yet: try again next frame
   } else if (t.k === 'loi') {
     const B = c4People().list[t.to], w = C4.walkers.find(q => q.st === 'walk' && q.kind === 'mouse' && !q.buf && !q.guest && !q.hoa && !q.buy && C4_MOUSE_SORTS[q.sort].role !== 'child' && q.x > C4.camX - 100 && q.x < C4.camX + V.vw + 100);
-    if (w) { Object.assign(w, { name: B.name, pid: B.id, sort: B.sort, M: c4MouseRig(B.sort, (B.look || {}).skirt), look: B.look || {}, buy: false, shop: null, nvMsg: true }); }
+    if (w) { Object.assign(w, { name: B.name, pid: B.id, sort: B.sort, M: B.id !== undefined && B.role !== 'child' ? c4VarRig(B.sort, (B.look || {}).skirt, (SAVE4.seed || 0) + ':' + B.id, B.g === 'f') : c4MouseRig(B.sort, (B.look || {}).skirt), look: B.look || {}, buy: false, shop: null, nvMsg: true }); }
     else ap.fired = false;
   }
 }

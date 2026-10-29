@@ -177,6 +177,7 @@ const c4StallArt = lv => { const A = c4Art(); return [A.ganh, A.sap, A.gian][lv]
 let C4_SIT = false;                                                        // c4Mouse draws the legs folded forward (sitting on a stool)
 function c4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y = GROUND, seed = 0) {
   const sw = moving ? Math.sin(ph) : 0, bob = moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0;
+  s *= C4_RIG_SZ.get(M) || 1;                                              // each mouse its own size (c4VarRig)
   g.save(); g.translate(x, y); g.scale(face * s, s);
   const hy = -45 + bob, armN = arm === null ? sw * .4 : arm;
   dp(g, M.tail, -18, hy + 2, Math.sin(C4.t * 2.4 + seed) * .12);
@@ -224,6 +225,45 @@ const c4MouseRig = (i, sk) => {
   if (!C4_MOUSE_RIGS) C4_MOUSE_RIGS = {}; const pl = sk ? (PL[sk] ? sk : C4_SKIRT_PL[sk] || 'dark') : '', key = i + '|' + pl;
   return C4_MOUSE_RIGS[key] || (C4_MOUSE_RIGS[key] = buildMouse(pl ? { ...C4_MOUSE_SORTS[i].o, skirt: pl } : C4_MOUSE_SORTS[i].o));
 };
+/* ---------- one mouse's own looks (owner, 2026-10-28: all the mice looked alike, and hats / hair laid over the head looked pasted on) ----------
+   c4VarRig(sort, skirt, key, female): the sort's rig plus, from a hash of key (a villager's id and the village seed): fur and ear colours, the
+   ear's shape, snout, eye, head size, a hairstyle or a hat drawn INTO the head (art/characters.js mouseHead), a body size. Same key, same mouse.
+   A hat or long hair hides the ear. C4_RIG_HAT marks a rig that carries its own headgear (the overlay hats are then skipped), C4_RIG_SZ its size. */
+const C4_RIG_HAT = new WeakSet(), C4_RIG_SZ = new WeakMap(), C4_VAR_RIGS = {};
+const C4_FUR = ['brown', 'dark', 'ash', 'tan', 'grey', 'cream', 'rose', 'ltred', 'brown', 'dark'], C4_EAR_OUT = ['lilac', 'rose', 'ash', 'cream', 'tan', 'white', 'grey', 'lilac'], C4_EAR_IN = ['red', 'pink', 'rose', 'red', 'orange'];
+function c4VarRig(sort, skirt, key, female) {
+  if (key === undefined || key === null) return c4MouseRig(sort, skirt);
+  const pl = skirt ? (PL[skirt] ? skirt : C4_SKIRT_PL[skirt] || 'dark') : '', ck = sort + '|' + pl + '|' + key + '|' + (female ? 1 : 0);
+  if (C4_VAR_RIGS[ck]) return C4_VAR_RIGS[ck];
+  let h = 2166136261; for (const ch of String(key)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const r = () => { h = (Math.imul(h, 1103515245) + 12345) >>> 0; return (h >>> 8) / 16777216; }, pk = a => a[(r() * a.length) | 0], wk = (a, w) => { let t = r() * w.reduce((x, y) => x + y, 0); for (let i = 0; i < a.length; i++) if ((t -= w[i]) <= 0) return a[i]; return a[0]; };
+  const S = C4_MOUSE_SORTS[sort], kid = S.role === 'child', old = S.role === 'old', f = !!female || !!skirt, o = { ...S.o };
+  if (skirt) o.skirt = pl;
+  if (r() < .6) o.head = pk(C4_FUR);
+  o.earc = pk(C4_EAR_OUT); o.earin = pk(C4_EAR_IN);
+  o.ear = wk(['round', 'big', 'small', 'point', 'droop'], [34, 14, 20, 16, 16]); o.earS = .85 + r() * .35;
+  o.snout = .8 + r() * .45; o.headS = kid ? 1.05 + r() * .08 : .92 + r() * .16;
+  o.eye = kid ? wk(['round', 'big'], [50, 50]) : f ? wk(['round', 'big', 'lash', 'narrow', 'small'], [30, 15, 35, 10, 10]) : wk(['round', 'big', 'narrow', 'small'], [40, 12, 28, 20]);
+  if (!kid && r() < .25) o.brow = r() < .5 ? 1 : 2;
+  if (r() < .5) o.nose = .8 + r() * .6;
+  if (f ? r() < .25 : r() < .1) o.blush = 1;
+  if (!f && !kid && r() < (old ? .4 : .2)) o.stache = 1;
+  if (r() < .07) o.teeth = 1;
+  if (old) o.wrinkle = 1;
+  o.hairc = wk(['dark', 'brown', 'dark', 'grey'], [50, 25, 10, old ? 40 : 6]);
+  delete o.hat;                                                                            // headgear is drawn into the head now
+  if (S.non) o.hatk = 'nonla';
+  else if (skirt && f && r() < .3 && !kid) o.hatk = 'quai';
+  else if (kid) o.hair = wk(['ngan', 'haibui', 'bui', 'xoan', ''], [30, 25, 20, 10, 15]) || undefined;
+  else if (f) { const k = wk(['hair', 'hat', 'none'], [70, 20, 10]); if (k === 'hair') o.hair = wk(['bui', 'duoi', 'dai', 'xoan', 'haibui', 'ngan'], [26, 16, 16, 14, 14, 14]); else if (k === 'hat') o.hatk = pk(['nonme', 'van', 'nonla']); }
+  else { const k = wk(['hair', 'hat', 'none'], [45, 45, 10]); if (k === 'hair') o.hair = wk(['ngan', 'ro', 'xoan', 'bui'], [40, 25, 20, 15]); else if (k === 'hat') o.hatk = pk(old ? ['van', 'xep', 'van'] : ['xep', 'van', 'quan', 'mu', 'nonla']); }
+  if (o.hatk) { o.hatc = pk(['straw', 'straw', 'brown', 'dark']); o.hatc2 = pk(['dark', 'brown', 'blue', 'dark']); }
+  if (!kid && !old && r() < .04) o.fat = true;
+  const rig = buildMouse(o); C4_VAR_RIGS[ck] = rig;
+  if (o.hatk) C4_RIG_HAT.add(rig);
+  C4_RIG_SZ.set(rig, kid ? 1 : (o.fat ? 1 : .92 + r() * .2));
+  return rig;
+}
 // a conical hat (nón lá) over a mouse's head, in the mouse's own frame
 function c4Non(g) {
   g.fillStyle = '#b57a22'; g.strokeStyle = INK; g.lineWidth = 2.2;
@@ -290,7 +330,7 @@ function c4Deco(g, w, k, moving = false) {
     for (let x = -32; x <= 28; x += 5) { g.moveTo(x, -36); g.lineTo(x - 2, -28); }
     g.stroke();
   }
-  if (L.hat === 'quai' && !(rain && w.umb)) {                               // nón quai thao: a wide flat hat with tassels
+  if (L.hat === 'quai' && !(rain && w.umb) && !C4_RIG_HAT.has(w.M)) {                               // nón quai thao: a wide flat hat with tassels
     g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-26, -140); g.lineTo(-30, -104); g.moveTo(40, -140); g.lineTo(44, -106); g.stroke();
     g.fillStyle = '#e2b43c'; g.fillRect(-33, -106, 6, 8); g.fillRect(41, -108, 6, 8);
     g.fillStyle = '#d9b46a'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.ellipse(8, -142, 48, 9, 0, 0, 6.283); g.fill(); g.stroke();
@@ -360,7 +400,7 @@ function c4Critter(g, w, x, y, s) {
     g.save(); g.scale(f * k, k); c4Deco(g, w, k, moving); g.restore();
     if (sort.role === 'old' && !sit) { g.strokeStyle = INK; g.lineWidth = 6 * k; g.lineCap = 'round'; g.beginPath(); g.moveTo(f * 32 * k, -92 * k); g.lineTo(f * 44 * k, 0); g.stroke(); g.strokeStyle = '#7a4a22'; g.lineWidth = 3.4 * k; g.stroke(); }
     const wet = c4Rain();
-    if ((sort.non || (wet && !w.umb)) && L.hat !== 'quai' && !(w.umb && (L.tool === 'o' || wet))) { g.scale(f * k, k); c4Non(g); }   // a conical hat; in the rain with the straw cape; never over a quai thao hat (owner, 2026-10-17: a sort that wears the nón lá got both)
+    if ((sort.non || (wet && !w.umb)) && L.hat !== 'quai' && !C4_RIG_HAT.has(w.M) && !(w.umb && (L.tool === 'o' || wet))) { g.scale(f * k, k); c4Non(g); }   // a conical hat; in the rain with the straw cape; never over a quai thao hat (owner, 2026-10-17: a sort that wears the nón lá got both)
     g.restore();
     if (muzzle) { const hx = x + f * -13 * k, hy = y - 71 * k; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(hx, hy); g.quadraticCurveTo((hx + muzzle[0]) / 2, Math.max(hy, muzzle[1]) + 22 * s, muzzle[0], muzzle[1]); g.stroke(); }
     return;

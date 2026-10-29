@@ -314,10 +314,10 @@ function c4Face(p) {
   const X = c4FaceLook(p);
   g.fillStyle = X.bg; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.fill();
   g.save(); g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.clip();
-  const w = { kind: p.kind, sort: p.sort, M: p.kind === 'mouse' ? c4MouseRig(p.sort) : null, seed: 0, ph: 0, st: 'idle', face: 1 }, t = C4.t; C4.t = 0;
+  const w = { kind: p.kind, sort: p.sort, M: p.kind === 'mouse' ? (p.role === 'child' ? c4MouseRig(p.sort) : c4VarRig(p.sort, (p.look || {}).skirt, (SAVE4.seed || 0) + ':' + p.id, p.g === 'f')) : null, seed: 0, ph: 0, st: 'idle', face: 1 }, t = C4.t; C4.t = 0;
   if (p.kind === 'mouse') c4NoWx(() => c4Critter(g, w, 44, 150, 1.05));    // head and shoulders, whatever the weather outside
   else { const s = { duck: 1.2, rooster: .55, dog: .62 }[p.kind]; c4NoWx(() => c4Critter(g, w, 48, 82, s)); }
-  if (p.kind === 'mouse') c4FaceExtras(g, X);
+  if (p.kind === 'mouse') c4FaceExtras(g, C4_RIG_HAT.has(w.M) || w.M !== c4MouseRig(p.sort) ? { bg: X.bg, glasses: X.glasses } : X);   // a varied rig has its own hair and hat
   C4.t = t; g.restore();
   g.strokeStyle = '#b39a6a'; g.lineWidth = 5; g.beginPath(); g.arc(48, 48, 44, 0, 6.283); g.stroke();
   const url = c.toDataURL(); C4_FACE.set(key, url); return url;

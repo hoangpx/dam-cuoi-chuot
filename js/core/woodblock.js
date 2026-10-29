@@ -64,6 +64,8 @@ function part(b, draw, keepKey) {
     band(pl, path, w) { const [c, [dx, dy]] = PL[pl]; T(cg, dx, dy); cg.strokeStyle = c; cg.lineWidth = w; cg.lineCap = cg.lineJoin = 'round'; cg.stroke(path); },
     key(path, w = 2.4) { kg.lineWidth = w; kg.stroke(path); kg.save(); kg.translate(.5, .35); kg.lineWidth = w * .5; kg.stroke(path); kg.restore(); },
     ink(path) { kg.fill(path); },
+    // wipe the ink under a shape, so something drawn over it (a hat over the head) hides the lines below instead of showing through
+    erase(path) { kg.save(); kg.globalCompositeOperation = 'destination-out'; kg.fill(path); kg.restore(); },
     fk(pl, path, w = 2.4) { api.fill(pl, path); api.key(path, w); },
     text(str, x, y, size, pl, font = '"Han Wang Yan Kai", "Nom Na Tong", "Ma Shan Zheng", KaiTi, serif', layer = 'color', weight = '') {
       const g = layer === 'ink' ? kg : cg; if (g === cg) { const [c, [dx, dy]] = PL[pl]; T(cg, dx, dy); cg.fillStyle = c; }
