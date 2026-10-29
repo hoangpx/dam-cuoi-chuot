@@ -495,7 +495,7 @@ function p4TownDress(g, w, moving, hy) {
 }
 // over the head: a black turban (khăn xếp) for the men, a gold pin in the hair for the women; none under a quai thao hat
 function p4TownHead(g, w) {
-  const L = w.look || {}; if (!L.silk || L.hat === 'quai' || w.net !== undefined) return;   // a far-away guest wears what their profile chose (js/ch4/hoso.js)
+  const L = w.look || {}; if (!L.silk || L.hat === 'quai' || w.net !== undefined || C4_RIG_SZ.has(w.M)) return;   // a far-away guest wears what their profile chose (js/ch4/hoso.js)
   if (!L.skirt) { g.fillStyle = '#1f1a17'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.ellipse(4, -142, 20, 7, -.08, 0, 6.283); g.fill(); g.stroke(); g.strokeStyle = 'rgba(242,236,222,.35)'; g.lineWidth = 1; g.beginPath(); g.ellipse(4, -142, 14, 3.5, -.08, 0, 6.283); g.stroke(); }
   else { g.fillStyle = '#e2b43c'; g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.arc(-8, -146, 3.4, 0, 6.283); g.fill(); g.stroke(); }
 }

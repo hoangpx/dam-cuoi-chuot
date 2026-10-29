@@ -231,14 +231,18 @@ const c4MouseRig = (i, sk) => {
    A hat or long hair hides the ear. C4_RIG_HAT marks a rig that carries its own headgear (the overlay hats are then skipped), C4_RIG_SZ its size. */
 const C4_RIG_HAT = new WeakSet(), C4_RIG_SZ = new WeakMap(), C4_VAR_RIGS = {};
 const C4_FUR = ['brown', 'dark', 'ash', 'tan', 'grey', 'cream', 'rose', 'ltred', 'brown', 'dark'], C4_EAR_OUT = ['lilac', 'rose', 'ash', 'cream', 'tan', 'white', 'grey', 'lilac'], C4_EAR_IN = ['red', 'pink', 'rose', 'red', 'orange'];
-function c4VarRig(sort, skirt, key, female) {
+function c4VarRig(sort, skirt, key, female, hat) {
   if (key === undefined || key === null) return c4MouseRig(sort, skirt);
-  const pl = skirt ? (PL[skirt] ? skirt : C4_SKIRT_PL[skirt] || 'dark') : '', ck = sort + '|' + pl + '|' + key + '|' + (female ? 1 : 0);
+  const pl = skirt ? (PL[skirt] ? skirt : C4_SKIRT_PL[skirt] || 'dark') : '', ck = sort + '|' + pl + '|' + key + '|' + (female ? 1 : 0) + '|' + (hat || '');
   if (C4_VAR_RIGS[ck]) return C4_VAR_RIGS[ck];
+  const S = C4_MOUSE_SORTS[sort], o = { ...S.o }; if (skirt) o.skirt = pl;
+  return (C4_VAR_RIGS[ck] = c4VarBuild(o, S.role, !!female || !!skirt, !!S.non, key, hat ? { hatk: hat } : null));
+}
+// the random part, shared with the visitors' profiles (hoso.js hsRig): o = the base buildMouse options, ov = what must be exactly so
+function c4VarBuild(o, role, f, non, key, ov) {
   let h = 2166136261; for (const ch of String(key)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
   const r = () => { h = (Math.imul(h, 1103515245) + 12345) >>> 0; return (h >>> 8) / 16777216; }, pk = a => a[(r() * a.length) | 0], wk = (a, w) => { let t = r() * w.reduce((x, y) => x + y, 0); for (let i = 0; i < a.length; i++) if ((t -= w[i]) <= 0) return a[i]; return a[0]; };
-  const S = C4_MOUSE_SORTS[sort], kid = S.role === 'child', old = S.role === 'old', f = !!female || !!skirt, o = { ...S.o };
-  if (skirt) o.skirt = pl;
+  const kid = role === 'child', old = role === 'old';
   if (r() < .6) o.head = pk(C4_FUR);
   o.earc = pk(C4_EAR_OUT); o.earin = pk(C4_EAR_IN);
   o.ear = wk(['round', 'big', 'small', 'point', 'droop'], [34, 14, 20, 16, 16]); o.earS = .85 + r() * .35;
@@ -252,14 +256,19 @@ function c4VarRig(sort, skirt, key, female) {
   if (old) o.wrinkle = 1;
   o.hairc = wk(['dark', 'brown', 'dark', 'grey'], [50, 25, 10, old ? 40 : 6]);
   delete o.hat;                                                                            // headgear is drawn into the head now
-  if (S.non) o.hatk = 'nonla';
-  else if (skirt && f && r() < .3 && !kid) o.hatk = 'quai';
+  if (non) o.hatk = 'nonla';
+  else if (o.skirt && f && r() < .3 && !kid) o.hatk = 'quai';
   else if (kid) o.hair = wk(['ngan', 'haibui', 'bui', 'xoan', ''], [30, 25, 20, 10, 15]) || undefined;
   else if (f) { const k = wk(['hair', 'hat', 'none'], [70, 20, 10]); if (k === 'hair') o.hair = wk(['bui', 'duoi', 'dai', 'xoan', 'haibui', 'ngan'], [26, 16, 16, 14, 14, 14]); else if (k === 'hat') o.hatk = pk(['nonme', 'van', 'nonla']); }
   else { const k = wk(['hair', 'hat', 'none'], [45, 45, 10]); if (k === 'hair') o.hair = wk(['ngan', 'ro', 'xoan', 'bui'], [40, 25, 20, 15]); else if (k === 'hat') o.hatk = pk(old ? ['van', 'xep', 'van'] : ['xep', 'van', 'quan', 'mu', 'nonla']); }
   if (o.hatk) { o.hatc = pk(['straw', 'straw', 'brown', 'dark']); o.hatc2 = pk(['dark', 'brown', 'blue', 'dark']); }
   if (!kid && !old && r() < .04) o.fat = true;
-  const rig = buildMouse(o); C4_VAR_RIGS[ck] = rig;
+  if (ov) {                                                                                // ov: hatk 'x' = exactly that hat, hatk null = bare-headed (hair only), hair 'x' = exactly that hair
+    if (ov.hatk) delete o.hair; else if (ov.hatk === null) { delete o.hatk; if (!o.hair) o.hair = f ? 'bui' : 'ngan'; } else if (ov.hair) delete o.hatk;
+    Object.assign(o, ov); if (!o.hatk) delete o.hatk;
+  }
+  if (o.hatk && !o.hatc) { o.hatc = pk(['straw', 'straw', 'brown', 'dark']); o.hatc2 = pk(['dark', 'brown', 'blue', 'dark']); }
+  const rig = buildMouse(o);
   if (o.hatk) C4_RIG_HAT.add(rig);
   C4_RIG_SZ.set(rig, kid ? 1 : (o.fat ? 1 : .92 + r() * .2));
   return rig;

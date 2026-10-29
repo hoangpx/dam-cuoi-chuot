@@ -96,8 +96,10 @@ const hsAddr = d => d.addr || '';
 /* ---------- looks: a rig of their own colours, a portrait ---------- */
 const HS_RIGS = new Map();
 function hsRig(d) {
-  const man = d.role === 'chong', key = [d.fur, d.robe, d.top === 'mu' ? 1 : 0, man ? d.pants : '', man ? '' : d.skirt, d.body === 'beo' ? 1 : 0].join('|');
-  if (!HS_RIGS.has(key)) HS_RIGS.set(key, buildMouse({ robe: d.robe, trim: HS_TRIM[d.robe] || 'yellow', head: d.fur, hat: d.top === 'mu' ? 'dark' : undefined, leg: man ? d.pants : undefined, skirt: man ? undefined : d.skirt, fat: d.body === 'beo' }));
+  const man = d.role === 'chong', key = [d.name, d.fur, d.robe, d.top, d.age, man ? d.pants : '', man ? '' : d.skirt, d.body === 'beo' ? 1 : 0].join('|');
+  // their own looks (hair, ear, eye, snout...) from a hash of the name, the hat from the pick, drawn into the head (owner, 2026-10-28; art.js c4VarBuild)
+  const hat = { quai: 'quai', van: 'van', xep: 'xep', mu: 'mu' }[d.top] || null, hair = d.top === 'hoa' ? 'bui' : undefined;
+  if (!HS_RIGS.has(key)) HS_RIGS.set(key, c4VarBuild({ robe: d.robe, trim: HS_TRIM[d.robe] || 'yellow', head: d.fur, leg: man ? d.pants : undefined, skirt: man ? undefined : d.skirt }, d.age === 'gia' ? 'old' : 'adult', !man, false, key, { hatk: hat, hair, head: d.fur, fat: d.body === 'beo', hatc: 'straw' }));
   return HS_RIGS.get(key);
 }
 const hsSort = d => (d.age === 'gia' ? 9 : 0);                             // a base sort for the walk (old ones stoop with a stick); colours come from hsRig
@@ -106,8 +108,6 @@ const hsLook = d => ({ skirt: null, hat: d.top === 'quai' ? 'quai' : null, umbCo
 // is the lane's own (look.hat), so only the portrait asks for it here
 function hsExtras(d, face) {
   const X = {};
-  if (face && d.top === 'quai') X.quai = true;
-  if (d.top === 'van' || d.top === 'xep') { X.wrap = d.top; X.wrapCol = d.role === 'vo' ? '#3a2a5a' : '#2a2320'; }
   if (d.top === 'hoa') X.flower = '#c0567a';
   if (d.age === 'gia') { X.glasses = true; if (d.role === 'chong' && face) X.beard = true; }   // the beard only in the round portrait: on a whole figure it read as a white fang (owner)
   return X;

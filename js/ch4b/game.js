@@ -34,7 +34,7 @@ function p4Folk(g, w, x, y, s) {
   g.save(); g.scale(f * k, k);
   if (sort.role !== 'child') p4TownHead(g, w);
   if (busy && busy !== 'o') p4TownThing(g, w, busy);
-  if (L.hat === 'quai') {                                                   // nón quai thao
+  if (L.hat === 'quai' && !C4_RIG_HAT.has(w.M)) {                           // nón quai thao
     g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-26, -140); g.lineTo(-30, -104); g.moveTo(40, -140); g.lineTo(44, -106); g.stroke();
     g.fillStyle = '#e2b43c'; g.fillRect(-33, -106, 6, 8); g.fillRect(41, -108, 6, 8);
     g.fillStyle = '#d9b46a'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.ellipse(8, -142, 48, 9, 0, 0, 6.283); g.fill(); g.stroke();
@@ -70,7 +70,7 @@ function p4Spawn(atX, who, opt) {
   const look = kid ? {} : p4TownLook({ skirt: P.look.skirt, hat: P.look.hat }, seed);
   // some come for betel: the more so in the busy hours, never children, never when the house is out of it
   const buy = !kid && SAVE4B.house && !SAVE4B.shut && P4.phase === 'open' && SAVE4B.stock > 0 && Math.random() < .3 * p4BetelFlow() * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * p4KeenK(P) && !p4HoldBack(P, 'home') || !!(opt && opt.buy && SAVE4B.house && P4.phase === 'open' && SAVE4B.stock > 0);   // regulars buy more, a habit of sales makes them wait; invited / sale guests come to buy (khachquen.js)
-  P4.walkers.push({ sort, M: c4MouseRig(sort), seed, look, umb: look.tool === 'o' || (p4Wx() === 'mua' && Math.random() < .75), x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
+  P4.walkers.push({ sort, M: kid || !P.seed ? c4MouseRig(sort) : c4VarRig(sort, P.look.skirt, 'town' + P.seed, !!P.look.skirt, P.look.hat === 'quai' ? 'quai' : undefined), seed, look, umb: look.tool === 'o' || (p4Wx() === 'mua' && Math.random() < .75), x, z: .3 + Math.random() * .62, face: fromRight ? -1 : 1, dir: fromRight ? -1 : 1,
     sp: kid ? 85 + Math.random() * 30 : old ? 34 + Math.random() * 10 : 50 + Math.random() * 35, ph: Math.random() * 6, st: 'walk', buy, n: (opt && opt.n) || (buy ? Math.max(1, c4RandRound((1 + ((Math.random() * 3) | 0)) * p4BetelQty())) : 1 + ((Math.random() * 3) | 0)), pid: P ? P.id : undefined, treat: !!(opt && opt.treat), wait: 0, say: null, cd: 3 + Math.random() * 8 });
 }
 function p4WalkersUpdate(dt) {
