@@ -232,3 +232,4 @@ Town line per house (owner 2026-10-28: a player still reports 1-2 portions in th
 
 Chương XI lane (owner 2026-10-28: "con đường nhìn hơi xấu, trên điện thoại viền còn màu đen"): the black edge was a typo in nen.js c11BgLane, tint(m, "#c11a66e") (not a colour, so the dirt fill stayed black and showed at the soft edge of the mask); now "#c1a66e", plus mottled lighter and darker patches in the dirt and short grass blades and crumbs fraying the edge. VERSION 2026-10-28zzzd.
 Sale tag over custom boards (owner 2026-10-28): the GIAM n percent tag (giamgia.js c4SaleTag sat at a fixed spot over the old board) is drawn by c4LookSale (trangtri.js) at the top right corner of OUR board, last, for a dressed stall (sign at -171) and a dressed house (sign on the ridge, -211), so a custom board never covers it. VERSION 2026-10-28zzzd.
+VERSION now 2026-10-28zzze (zzzd was used by two commits).
