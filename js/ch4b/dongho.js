@@ -210,5 +210,8 @@ function w4TownLine() {
   if (P4.w4day !== SAVE4.day || !P4.today) return '';
   const T = P4.today, shops = Object.values(P4.shopDay || {}), n = (T.sold || 0) + shops.reduce((s, x) => s + (x.n || 0), 0);
   if (!(T.take > 0) && !n) return '<br>Phố huyện hôm nay chưa bán được gì (nhà trầu hết hàng, hoặc các quán đang đóng).';
-  return `<br>Phố huyện bán ngầm trong lúc bạn ở quê: ${n} phần, thu ${c4Money(Math.round(T.take))}${T.spent ? ' (vốn ' + c4Money(Math.round(T.spent)) + ')' : ''}.`;
+  // each house on its own line (a player's report could then be read: which house sold what, which was shut or out)
+  const per = Object.entries(p4Shops()).map(([key, R0]) => `${p4Esc(R0.name)}: ${R0.shut ? 'đóng cửa' : ((P4.shopDay[key] || {}).n || 0) + ' phần'}`);
+  if (SAVE4B.house) per.unshift('nhà trầu: ' + (SAVE4B.shut ? 'đóng cửa' : SAVE4B.stock < 1 && !(T.sold > 0) ? 'hết trầu' : (T.sold || 0) + ' phần'));
+  return `<br>Phố huyện bán ngầm trong lúc bạn ở quê: ${n} phần, thu ${c4Money(Math.round(T.take))}${T.spent ? ' (vốn ' + c4Money(Math.round(T.spent)) + ')' : ''}.<br><small>${per.join(' · ')}</small>`;
 }
