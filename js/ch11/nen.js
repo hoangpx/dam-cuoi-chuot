@@ -28,13 +28,16 @@ function c11BgLane(g, list, at, S, w, h, rnd, ptiles) {
   // a dark rim in the turf just outside the track
   g.save(); g.globalAlpha = .4; g.drawImage(tint(m, 'rgb(36,56,28)', 1, 2, 5), 0, 0); g.restore();
   // the dirt: a warm base, a paler worn middle, grit
-  const d = tint(m, '#c11a66e'), dg = d.getContext('2d'); dg.globalCompositeOperation = 'source-atop';
+  const d = tint(m, '#c1a66e'), dg = d.getContext('2d'); dg.globalCompositeOperation = 'source-atop';   // (was '#c11a66e', not a colour: the fill stayed black, hence the black edge on phones)
+  for (let i = 0, n = w * h / 900; i < n; i++) { const x = rnd() * w, y = rnd() * h, r = S * (.25 + rnd() * .5), gr = dg.createRadialGradient(x, y, 0, x, y, r), v = rnd(); gr.addColorStop(0, v < .5 ? 'rgba(224,198,140,.5)' : 'rgba(150,112,64,.4)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); dg.fillStyle = gr; dg.fillRect(x - r, y - r, r * 2, r * 2); }   // mottled patches of lighter and darker dirt
   dg.filter = 'blur(5px)'; strokeAll(dg, .5, 'rgba(238,214,160,.6)'); dg.filter = 'none';
   for (let i = 0, n = w * h / 45; i < n; i++) { const x = rnd() * w, y = rnd() * h, r = .6 + rnd() * 1.4, v = rnd(); dg.fillStyle = v < .45 ? 'rgba(120,84,46,.45)' : v < .8 ? 'rgba(246,230,190,.5)' : 'rgba(90,64,36,.5)'; dg.beginPath(); dg.arc(x, y, r, 0, 6.283); dg.fill(); }
   // sunk into the turf: shade under the top-left edge, a sunlit lip on the bottom-right edge
   const shade = (col, dx, dy, blur, alpha) => { const c = c11Can(w, h), cg = c.getContext('2d'); cg.fillStyle = col; cg.fillRect(0, 0, w, h); cg.globalCompositeOperation = 'destination-out'; cg.filter = `blur(${blur}px)`; cg.drawImage(m, dx, dy); cg.filter = 'none'; cg.globalCompositeOperation = 'destination-in'; cg.drawImage(m, 0, 0); dg.globalAlpha = alpha; dg.drawImage(c, 0, 0); dg.globalAlpha = 1; };
   shade('rgb(70,44,20)', 6, 7, 4, .55); shade('rgb(255,242,205)', -3, -4, 3, .4);
   g.drawImage(d, 0, 0);
+  // the turf frays into the track: short blades and a few crumbs along its edge, so the border is not a clean line
+  { const ma = m.getContext('2d').getImageData(0, 0, w, h).data; for (let i = 0, n = w * h / 70, tries = 0; i < n && tries < n * 8; tries++) { const x = (rnd() * w) | 0, y = (rnd() * h) | 0, a = ma[(y * w + x) * 4 + 3]; if (a < 40 || a > 200) continue; i++; const lean = (rnd() - .5) * 5, ln = 3 + rnd() * 5, gr = 80 + rnd() * 50; g.strokeStyle = `rgba(${40 + rnd() * 30 | 0},${gr | 0},${34 + rnd() * 20 | 0},.85)`; g.lineWidth = .9 + rnd() * .7; g.lineCap = 'round'; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + lean * .4, y - ln * .6, x + lean, y - ln); g.stroke(); if (rnd() < .25) { g.fillStyle = 'rgba(176,146,98,.7)'; g.beginPath(); g.arc(x + (rnd() - .5) * 6, y + (rnd() - .5) * 6, .8 + rnd() * 1.2, 0, 6.283); g.fill(); } } }
   for (const [px, py] of ptiles) { for (let i = 0; i < 3; i++) if (rnd() < .7) c11Pebble(g, px + (rnd() - .5) * S * .7, py + (rnd() - .5) * S * .5, 1.8 + rnd() * 2.2, 1.3 + rnd() * 1.4, rnd(), 34, 14, 60 + rnd() * 10); if (rnd() < .3) c11Pebble(g, px + (rnd() - .5) * S * .6, py + (rnd() - .5) * S * .4, 4.5 + rnd() * 2.5, 3 + rnd(), rnd() * .6, 38, 10, 66); }
 }
 /* the water: depth from the distance to the shore, wet sand, a dark waterline, the bank's shadow on the top-left side */
