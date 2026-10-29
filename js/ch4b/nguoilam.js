@@ -32,9 +32,10 @@ const p4Warmth = () => 1 + .25 * p4Hands().reduce((a, h) => a + h.wm, 0);   // w
 // each seller free at the counter takes the next job: a boat's order or the next buyer in the queue, whichever came first
 function p4SellersUpdate(dt) {
   const Q = P4.Q;
+  if (SAVE4B.shut) p4ShutHouse();                                           // a shut house takes no money: not from the queue, not mid-sale, not from a boat
   for (const m of P4.sellers) {
     if (m.say) { m.say.t += dt; if (m.say.t > m.say.life) m.say = null; }
-    if (m.st === 'counter' && !m.serving) {
+    if (m.st === 'counter' && !m.serving && !SAVE4B.shut) {
       const boat = p4NextBoat(), q = Q.find(w => w.st === 'queue' && w.asked && !w.servedBy);
       if (boat && (!q || boat.order.t0 < q.askT)) { boat.order.taken = true; m.st = 'out'; m.job = boat; p4Say(m, p4Pick(['Có ngay, có ngay!', 'Chờ chút nhé!', 'Mang ra đây!'])); }
       else if (q) { m.serving = q; q.servedBy = m; m.t = 2.2 * (1.3 - .6 * m.sp); }
@@ -47,6 +48,14 @@ function p4SellersUpdate(dt) {
     }
     p4Run(m, dt);
   }
+}
+function p4ShutHouse() {
+  for (const m of P4.sellers) {
+    if (m.serving) { m.serving.servedBy = null; m.serving = null; }
+    if (m.job) { if (m.job.order) p4BoatLeave(m.job, '', false); m.job = null; m.st = 'back'; }
+  }
+  for (const b of P4.townBoats || []) if (b.order) p4BoatLeave(b, '', false);
+  p4TurnAway();
 }
 function p4Sale(m, n, fx, fy) {
   const got = m.serving && m.serving.treat ? 0 : p4SalePrice('home', n * SAVE4B.price);   // a sale lowers the price (giamgia.js); an invited guest eats free

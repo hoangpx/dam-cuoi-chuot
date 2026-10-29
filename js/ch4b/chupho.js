@@ -54,7 +54,7 @@ function p4BossSheet() {
   const base = SAVE4B.weekTake || 0, owe = SAVE4B.bossOwe || 0, tax = Math.round(base * P4_BOSS.tax) + owe, guard = Math.max(P4_BOSS.guardMin, Math.round(base * P4_BOSS.guard)), m = c4Money;
   P4.bossAsk = { tax, guard };
   $('#p4bossB').innerHTML = `<p><b>${P4_BOSS.name}</b>, ${P4_BOSS.title}, phe phẩy quạt trước cửa hiệu, hai tay chân đứng sau.</p>`
-    + `<p>"Tuần này các người bán được ${m(base)}. Thuế phố ${m(tax)}${owe ? ' (cả khoản khất tuần trước)' : ''}, tiền bảo kê ${m(guard)}. Nộp đủ thì yên ổn mà làm ăn."</p><p>Trong túi: ${m(Math.round(p4Purse()))}</p>`;
+    + `<p>"Tuần này các người lãi được ${m(base)}. Thuế phố ${m(tax)}${owe ? ' (cả khoản khất tuần trước)' : ''}, tiền bảo kê ${m(guard)}. Nộp đủ thì yên ổn mà làm ăn."</p><p>Trong túi: ${m(Math.round(p4Purse()))}</p>`;
   $('#p4bossAll').textContent = `Nộp đủ · ${m(tax + guard)}`; $('#p4bossAll').disabled = p4Purse() < tax + guard;
   $('#p4bossTax').textContent = `Chỉ nộp thuế · ${m(tax)}`; $('#p4bossTax').disabled = p4Purse() < tax;
   p4Sheets('p4boss');

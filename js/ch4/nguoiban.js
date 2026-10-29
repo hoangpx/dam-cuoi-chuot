@@ -84,6 +84,7 @@ function c4SellersUpdate(dt) {
 function c4ServeUpdate(dt) {
   for (const g of c4Owned()) {
     const q = C4.Q[g], A = C4.SV[g]; if (!q || !A) continue;
+    if (!c4Open(g) || C4.shut > 0) { A.length = 0; continue; }               // a shut stall takes no money, not even from a sale already begun
     if (c4Stock(g) > 0 && c4Open(g) && !(C4.shut > 0)) for (const m of c4Sellers(g)) {
       if (c4SaleBy(m)) continue;
       const w = q.find(w => !w.moving && !A.some(s => s.who === w)); if (!w) break;

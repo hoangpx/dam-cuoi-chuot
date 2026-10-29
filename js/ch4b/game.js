@@ -80,7 +80,7 @@ function p4WalkersUpdate(dt) {
     if (w.food && w.st !== 'leave') continue;                               // on the way to one of our eating houses (thue.js)
     if (w.st === 'walk' || w.st === 'leave') {
       w.x += w.dir * w.sp * dt; w.ph += dt * w.sp / 9; w.face = w.dir;
-      if (w.st === 'walk' && w.buy && Math.abs(w.x - door) < 140 && Q.length < 6) { w.st = 'go'; Q.push(w); }
+      if (w.st === 'walk' && w.buy && !SAVE4B.shut && Math.abs(w.x - door) < 140 && Q.length < 6) { w.st = 'go'; Q.push(w); }
       if ((w.cd -= dt) < 0 && !w.say) { w.cd = 8 + Math.random() * 14; if (Math.random() < .35) p4Say(w, p4Pick(P4_CHAT)); }
     } else if (w.st === 'go' || w.st === 'queue') {
       const i = Q.indexOf(w), tx = door + 40 + i * 34, tz = qz + i * .03, dx = tx - w.x, dz = tz - w.z, d = Math.hypot(dx, dz * 300);
@@ -120,7 +120,7 @@ function p4EndDay(silent) {
   P4.phase = 'night';
   if (!SAVE4B.house) { $('#p4dayT').textContent = `Khuya rồi, ngày ${p4DayNo()} đã hết`; $('#p4dayB').innerHTML = '<p>Phố huyện đã lên đèn hết, hàng quán đóng cửa.</p>' + w4VillageLine(); if (!silent) p4Sheets('p4day'); return; }
   SAVE4B.settled = SAVE4.day; p4SaleDayEnd();                             // sale days in a row (giamgia.js)
-  const kp = typeof cnKeepNPho === 'function' ? cnKeepNPho('trau') : 0, wilt = Math.max(0, SAVE4B.stock - kp); SAVE4B.stock = Math.min(SAVE4B.stock, kp); if (SAVE4B.keep) for (const k of Object.keys(SAVE4B.keep)) if (SAVE4B.keep[k].until <= SAVE4.day + 1) delete SAVE4B.keep[k]; SAVE4B.weekTake = (SAVE4B.weekTake || 0) + P4.today.take; p4Persist();   // the week's takings, for the street master's tax                // betel does not keep overnight
+  const kp = typeof cnKeepNPho === 'function' ? cnKeepNPho('trau') : 0, wilt = Math.max(0, SAVE4B.stock - kp); SAVE4B.stock = Math.min(SAVE4B.stock, kp); if (SAVE4B.keep) for (const k of Object.keys(SAVE4B.keep)) if (SAVE4B.keep[k].until <= SAVE4.day + 1) delete SAVE4B.keep[k]; SAVE4B.weekTake = Math.max(0, (SAVE4B.weekTake || 0) + P4.today.take - P4.today.spent); p4Persist();   // the week's profit (takings less what was spent: goods, wages, rent), for the street master's tax (owner 2026-10-29: tax on the profit, not the takings)                // betel does not keep overnight
   $('#p4dayB').innerHTML = `<p>Bán được <b>${P4.today.sold}</b> miếng trầu: <b>${c4Money(P4.today.take)}</b></p><p>Chi: ${c4Money(P4.today.spent)}</p>`
     + (wilt ? `<p class="bad">Trầu thừa héo mất ${wilt} miếng.</p>` : '') + (P4.today.lost ? `<p>${P4.today.lost} khách đến mà hết trầu.</p>` : '')
     + p4PayHands() + p4ShopsEvening() + (P4.today.smash ? `<p class="bad">Bị tay chân bá hộ phá: mất ${c4Money(P4.today.smash)}.</p>` : '') + (p4Harass() < 1 ? '<p class="bad">Tay chân bá hộ còn quấy, khách ngại ghé.</p>' : '') + w4VillageLine() + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
