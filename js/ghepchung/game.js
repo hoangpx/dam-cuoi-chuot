@@ -22,10 +22,20 @@ for (let k = JG_PUZZLES.length - 1; k >= 0; k--) if (JG_PUZZLES[k].hidden) JG_PU
 const jgLevel = pz => ({ pic: pz.pic, tier: 3, cols: pz.cols, rows: pz.rows, big: true });
 const JG_STRIP = 50, JG_COIN = 10;
 
-// NO background music in the prints (owner, 2026-10-24: "bỏ nhạc đi, ko chạy nhạc nữa"): the track and its code are gone; the game's own songs stay off here (AU.setQuiet), sound effects stay
+// background track of the prints (owner's own song legacy.mp3, 2026-10-28: "cho bài này loop trong ghép tranh làm nhạc nền"): loops while a print is open. A streamed <audio> element (an AudioBuffer of 3 minutes would cost ~65 MB), 80 kbps, fetched only when chapter X opens. The global sound switch rules it (muted = paused); the game's own songs stay off (AU.setQuiet)
+const JG_MUSIC = { el: null, want: false };
+function jgMusic(on) {
+  const M = JG_MUSIC; M.want = on;
+  if (on && !M.el) { try { M.el = new Audio('audio/nhac-nen-ghep-tranh.mp3'); M.el.loop = true; M.el.preload = 'auto'; } catch (e) { M.el = null; } }
+  if (!M.el) return;
+  if (on) { M.el.volume = .45; if (AU.isMuted()) { M.el.pause(); return; } const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } else M.el.pause();
+}
+document.addEventListener('visibilitychange', () => { const M = JG_MUSIC; if (!M.el) return; if (document.hidden) M.el.pause(); else if (M.want && !AU.isMuted()) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
+// a tap before the browser allows sound: try again on the first touch
+document.addEventListener('pointerdown', () => { const M = JG_MUSIC; if (M.want && M.el && M.el.paused && !document.hidden && !AU.isMuted()) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
 function startJG() {
-  trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // the game's own songs stay off in the prints (and no track of ours plays any more)
-  hideChapterHuds();
+  trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // the game's own songs stay off in the prints (one looping track plays instead, jgMusic)
+  hideChapterHuds(); jgMusic(true);
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
@@ -121,6 +131,10 @@ function jgMsg(m) {
 
 /* ---------- update and drawing ---------- */
 function updateJG(dt) {
+  if (JG_MUSIC.el && JG_MUSIC.want) {   // the global sound switch: muted = no track at all (paused), unmuted = it goes on
+    const m = AU.isMuted(), e = JG_MUSIC.el;
+    if (m && !e.paused) e.pause(); else if (!m && e.paused && !document.hidden) { const p = e.play(); if (p && p.catch) p.catch(() => {}); }
+  }
   JG.t += dt; JG.st = safeTop();
   if (!JG.pz) jgListAsk(false);
   if (JG.G) { c9Tick(JG.G, dt); JG.joinedN = JG.G.done ? JG.G.pieces.length : JG.G.pieces.length - JG.G.groups.length; }
@@ -381,7 +395,7 @@ registerChapter({
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,
   album() {},
-  hide() { jgRenameClose(); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
+  hide() { jgMusic(false); jgRenameClose(); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
   update: updateJG, render: renderJG, key: jgKey,
   pointer: { down: jgDown, move: jgMove, up: jgUp },
   next() { showChapters(); }, retry() { startJG(); },
