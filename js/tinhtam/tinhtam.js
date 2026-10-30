@@ -9,7 +9,7 @@
    (the monkey bridge's way of 2.5D: woodblock sprites standing on a perspective ground, the far scenery fading into mist). */
 const TT_URN = { z: 10.6 };
 // evening (owner: "thử làm buổi tối", then "buổi tối chỉ bật lúc 8h tối ở việt nam"): from 20:00 to 6:00 Vietnam time; ?dem forces it for testing
-const TT_NIGHT_FORCE = /[?&]dem/.test(location.search), ttVnHour = () => (new Date(Date.now() + 7 * 3600e3)).getUTCHours();
+const TT_NIGHT_FORCE = /[?&]dem\b/.test(location.search), ttVnHour = () => (new Date(Date.now() + 7 * 3600e3)).getUTCHours();
 let TT_NIGHT = TT_NIGHT_FORCE || ttVnHour() >= 20 || ttVnHour() < 6;
                                                  // the incense urn, on the near bank of the stream (owner)
 const TT_FAR = 16, TT_HC = 2.4, TT_XMAX = 8.2, TT_ZMIN = 5.6, TT_ZMAX = 9.8, TT_SPEED = 3.1;
