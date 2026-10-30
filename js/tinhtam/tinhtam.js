@@ -7,7 +7,8 @@
    are there. Nothing is said or written: no chat, no hints, as the owner asked for quiet.
    World: x across (0 = the middle), z away from the camera, y up. The camera hangs TT_HC above the ground looking down the clearing
    (the monkey bridge's way of 2.5D: woodblock sprites standing on a perspective ground, the far scenery fading into mist). */
-const TT_URN = { z: 10.6 };                                                 // the incense urn, on the near bank of the stream (owner)
+const TT_URN = { z: 10.6 };
+const TT_MO = { x: -2.3, z: 10.15 }, TT_CHUONG = { x: 2.3, z: 10.15 };          // the wooden fish (mõ) and the bowl bell (chuông gia trì) either side of the urn (owner)                                                 // the incense urn, on the near bank of the stream (owner)
 const TT_FAR = 16, TT_HC = 2.4, TT_XMAX = 8.2, TT_ZMIN = 5.6, TT_ZMAX = 9.8, TT_SPEED = 3.1;
 const TT_BOW_EVERY = 10, TT_BOW_LEN = 2.8;                              // after 10 s of sitting, and every 10 s after, a bow of 2.8 s
 const TT_SZ = 17.5, TT_SY = 2.2, TT_SH = 8.8;                           // TT_SY: the top of the rock he sits on                          // the Buddha: where he sits (z, height of his base) and how tall he is, in units
@@ -70,11 +71,12 @@ function startTT() {
   document.documentElement.style.setProperty('--paper', '#cfdccb');
   if (!TT.S) TT.S = ttBuild();
   const id = TT_SAVE.id; TT_SAVE.name = hsName(hsMine()); ttPersist();
-  TT.me = { id, name: TT_SAVE.name, look: ttLook(), x: 0, z: 6.6, face: 1, mv: 0, ph: 0, sitT: 0, tx: null, tz: null, sort: ttSortOf(id), bowK: 0 };
+  // a newcomer comes in at the front left corner (owner: "cho người mới vào thì đứng ở 1 góc"), not in the middle of those sitting
+  TT.me = { id, name: TT_SAVE.name, look: ttLook(), x: -5, z: TT_ZMIN + .2, face: 1, mv: 0, ph: 0, sitT: 0, tx: null, tz: null, sort: ttSortOf(id), bowK: 0 };
   Object.assign(TT, { ready: true, t: 0, peers: new Map(), keys: new Set(), closing: false, tries: 0, cam: 0, camD: 0, chirp: 3 });
   AU.zenStart(); ttConnect(); ttHoaLoad(); cv.focus();
 }
-function ttHide() { ttHoaClose(); ttHoaHold(null); ttRenameClose(); AU.zenStop(); AU.ambient({}); ttLeave(); TT.keys.clear(); }
+function ttHide() { TT.selfKnock = false; if (AU.zenSelf) AU.zenSelf(false); ttHoaClose(); ttHoaHold(null); ttRenameClose(); AU.zenStop(); AU.ambient({}); ttLeave(); TT.keys.clear(); }
 function ttLeave() { TT.closing = true; clearInterval(TT.pollT); const ws = TT.ws; TT.ws = null; TT.on = false; TT.peers.clear(); if (ws) try { ws.close(); } catch (e) {} }
 
 /* ---------- the room (the Worker only relays) ---------- */
@@ -100,7 +102,7 @@ function ttGot(m) {
     case 'move': { const p = TT.peers.get(m.id); if (p) { p.tx = m.x - 50; p.tz = m.y; p.face = m.face; ttSetMv(p, m.mv); } break; }
     case 'who': TT.count = m.count || TT.count; break;
     case 'ttinfo': if (TT_INCENSE_TEST) break;   // testing: the urn keeps this device's own sticks
-      TT.incAll = m.all || 0; TT.inc = m.incense || 0; TT.incTs = Array.isArray(m.ts) ? m.ts : []; TT.incPos = Array.isArray(m.pos) ? m.pos : TT.incTs.map(() => null); TT.lit = !!m.lit || TT_SAVE.litDay === ttDay(); break;
+      TT.incAll = m.all || 0; if (m.visitors) TT.visitors = m.visitors; TT.inc = m.incense || 0; TT.incTs = Array.isArray(m.ts) ? m.ts : []; TT.incPos = Array.isArray(m.pos) ? m.pos : TT.incTs.map(() => null); TT.lit = !!m.lit || TT_SAVE.litDay === ttDay(); break;
     case 'incense':
       TT.inc = m.n; if (m.all) TT.incAll = m.all; if (!m.me && m.ts) { (TT.incTs = TT.incTs || []).push(m.ts); (TT.incPos = TT.incPos || []).push(m.pos || null); }   // mine was added when I planted it
       if (m.me) { if (m.again) toast(lg('Hôm nay bạn đã thắp nhang rồi. Mai quay lại nhé.', 'You have lit incense today already. Come back tomorrow.'), 3); TT.lit = true; TT_SAVE.litDay = ttDay(); ttPersist(); }
@@ -390,6 +392,7 @@ function renderTT() {
   for (const sd of [-1, 1]) {
     items.push({ z: 15.25, d: () => { const [x, y, s] = P(sd * 5.9, 0, 15.25); ttLotusPot(g, A, x, y, s * 1.7 / 150, sd); } });
   }
+  items.push({ z: TT_MO.z, d: () => ttDrawMo(g, L) }, { z: TT_CHUONG.z, d: () => ttDrawChuong(g, L) });
   items.push({ z: TT_URN.z, d: () => { const [x, y, s] = P(0, 0, TT_URN.z), sc = s * 2.5 / 180; dp(g, A.urn, x, y, 0, sc, sc); ttSticks(g, x, y, sc); } });
   items.push({ z: TT_SIGN.z - .5, d: () => { const [x, y, s] = P(TT_SIGN.x, 0, TT_SIGN.z), sc = s * 2.2 / 190; dp(g, A.board, x, y, 0, sc, sc); } });
   ttHoaItems(items, ctx, L);
@@ -435,20 +438,77 @@ function renderTT() {
 /* ---------- the buttons (canvas, like the other places) ---------- */
 function ttTag(g, cx, cy, text, o = {}) {
   const size = o.size || 14; g.font = `${o.weight || 700} ${size}px "Be Vietnam Pro", sans-serif`;
-  const w = Math.ceil(g.measureText(text).width) + (o.pad || 22), h = o.h || size + 16, x = Math.round(cx - w / 2), y = Math.round(cy - h / 2), r = Math.min(12, h / 2);
+  const w = Math.ceil(g.measureText(text).width) + (o.pad || 22), h = o.h || size + 16, x = Math.round(o.left ? cx : cx - w / 2), y = Math.round(cy - h / 2), r = Math.min(12, h / 2);
   g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
   g.fillStyle = 'rgba(0,0,0,.18)'; g.save(); g.translate(2, 3); g.fill(); g.restore();
   g.fillStyle = o.fill || '#f4ead0'; g.fill(); g.lineWidth = 2.4; g.strokeStyle = INK; g.stroke();
   g.fillStyle = o.ink || INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x + w / 2, y + h / 2 + 1);
   return [x, y, w, h];
 }
+// the numbers in the top right (owner 2026-10-29: "đã có xx người ghé thăm, xx que nhang được thắp, xx hoa đăng được thả"): visitors and sticks
+// from the Worker (ttinfo: visitors, all), lanterns = the newest lantern's id in Supabase (ids count every lantern ever set afloat, here and in Phố Huyện)
+function ttStats(g, W, y0) {
+  const f = v => v == null ? '…' : Math.round(v).toLocaleString('vi-VN'), hoa = Math.max(0, ...(TT.hoa || []).map(w => +w.id || 0)) || null;
+  const lines = [lgf('Đã có {n} người ghé thăm', '{n} have visited', { n: f(TT.visitors) }), lgf('{n} que nhang được thắp', '{n} incense sticks lit', { n: f(TT.incAll || null) }), lgf('{n} hoa đăng được thả', '{n} lanterns set afloat', { n: f(hoa) })];
+  const fs = W < 640 ? 11 : 12, lh = fs + 5; g.font = `700 ${fs}px "Be Vietnam Pro", sans-serif`;
+  const w = Math.ceil(Math.max(...lines.map(l => g.measureText(l).width))) + 20, h = lines.length * lh + 10, x = W - 10 - w;
+  g.fillStyle = 'rgba(244,234,208,.82)'; g.strokeStyle = 'rgba(29,25,21,.55)'; g.lineWidth = 1.4; g.beginPath(); g.roundRect ? g.roundRect(x, y0, w, h, 9) : g.rect(x, y0, w, h); g.fill(); g.stroke();
+  g.fillStyle = '#3a2a1a'; g.textAlign = 'right'; g.textBaseline = 'middle';
+  lines.forEach((l, i) => g.fillText(l, W - 20, y0 + 5 + lh * (i + .5)));
+}
+// the mõ and the chuông gia trì (owner 2026-10-29: "làm thêm cái mõ và cái chuông gia trì, khi người chơi chạm vào thì tiếng mõ và tiếng chuông
+// tắt đi để người chơi tự gõ"): the first touch stops the chant's own knocks and bell (AU.zenSelf) for as long as the player stays; each touch
+// then strikes it (AU.zenKnock / AU.zenBell): the fish nods, the bell sends out rings
+function ttCushionAt(g, x, y, k) {
+  g.fillStyle = 'rgba(30,40,24,.28)'; g.beginPath(); g.ellipse(x + 2 * k, y + 3 * k, 46 * k, 11 * k, 0, 0, 6.283); g.fill();
+  const gr = g.createLinearGradient(0, y - 16 * k, 0, y + 4 * k); gr.addColorStop(0, '#c8432f'); gr.addColorStop(1, '#7c1f16');
+  g.fillStyle = gr; g.strokeStyle = '#2a1712'; g.lineWidth = 1.6 * k; g.beginPath(); g.ellipse(x, y - 6 * k, 42 * k, 12 * k, 0, 0, 6.283); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(232,184,58,.85)'; g.lineWidth = 1.4 * k; g.beginPath(); g.ellipse(x, y - 8 * k, 32 * k, 7 * k, 0, 0, 6.283); g.stroke();
+}
+function ttDrawMo(g, L) {
+  const [x, y, s] = L.P(TT_MO.x, 0, TT_MO.z), k = s / 72, hit = TT.t - (TT.moT ?? -9), nod = hit < .35 ? Math.sin(hit / .35 * Math.PI) * .08 : 0;
+  ttCushionAt(g, x, y, k);
+  g.save(); g.translate(x, y - 14 * k); g.rotate(-nod);
+  const gr = g.createRadialGradient(-12 * k, -34 * k, 4 * k, 0, -22 * k, 44 * k); gr.addColorStop(0, '#c0542f'); gr.addColorStop(.6, '#8a2a18'); gr.addColorStop(1, '#4e140c');
+  g.fillStyle = gr; g.strokeStyle = '#1d1915'; g.lineWidth = 2 * k;
+  g.beginPath(); g.ellipse(0, -22 * k, 36 * k, 25 * k, 0, 0, 6.283); g.fill(); g.stroke();       // the round body
+  g.fillStyle = '#1d1915'; g.beginPath(); g.ellipse(4 * k, -14 * k, 22 * k, 3.2 * k, -.05, 0, 6.283); g.fill();   // the slit mouth
+  g.strokeStyle = 'rgba(232,184,58,.9)'; g.lineWidth = 1.5 * k;                                   // gold carving: scales and an eye
+  for (const [a, r] of [[-2.5, 18], [-2.1, 24], [-1.7, 28]]) { g.beginPath(); g.arc(-6 * k, -18 * k, r * k, a, a + .9); g.stroke(); }
+  g.beginPath(); g.arc(20 * k, -30 * k, 4 * k, 0, 6.283); g.stroke();
+  g.fillStyle = 'rgba(255,230,190,.35)'; g.beginPath(); g.ellipse(-12 * k, -36 * k, 12 * k, 5 * k, -.4, 0, 6.283); g.fill();
+  g.restore();
+  g.save(); g.translate(x + 30 * k, y - 8 * k); g.rotate(-.9 + (hit < .25 ? -.5 * (1 - hit / .25) : 0));   // the mallet
+  g.fillStyle = '#6b4520'; g.strokeStyle = '#1d1915'; g.lineWidth = 1.4 * k; g.fillRect(-2 * k, -40 * k, 4 * k, 40 * k); g.strokeRect(-2 * k, -40 * k, 4 * k, 40 * k);
+  g.beginPath(); g.ellipse(0, -44 * k, 7 * k, 6 * k, 0, 0, 6.283); g.fillStyle = '#c99a52'; g.fill(); g.stroke(); g.restore();
+}
+function ttDrawChuong(g, L) {
+  const [x, y, s] = L.P(TT_CHUONG.x, 0, TT_CHUONG.z), k = s / 72, hit = TT.t - (TT.bellT ?? -9);
+  ttCushionAt(g, x, y, k);
+  const by = y - 14 * k, gr = g.createLinearGradient(x - 34 * k, 0, x + 34 * k, 0); gr.addColorStop(0, '#7a5418'); gr.addColorStop(.35, '#e8c25e'); gr.addColorStop(.6, '#b8862e'); gr.addColorStop(1, '#5e3f10');
+  g.fillStyle = gr; g.strokeStyle = '#1d1915'; g.lineWidth = 2 * k;
+  g.beginPath(); g.moveTo(x - 34 * k, by - 40 * k); g.bezierCurveTo(x - 34 * k, by + 2 * k, x + 34 * k, by + 2 * k, x + 34 * k, by - 40 * k); g.closePath(); g.fill(); g.stroke();   // the bowl
+  g.fillStyle = '#3a2808'; g.beginPath(); g.ellipse(x, by - 40 * k, 34 * k, 7 * k, 0, 0, 6.283); g.fill(); g.stroke();             // the dark inside
+  g.strokeStyle = '#f6dc8a'; g.lineWidth = 1.6 * k; g.beginPath(); g.ellipse(x, by - 40 * k, 31 * k, 5.5 * k, 0, Math.PI * .05, Math.PI * .95); g.stroke();   // the rim's light
+  g.strokeStyle = 'rgba(90,60,10,.7)'; g.lineWidth = 1.2 * k; g.beginPath(); g.moveTo(x - 30 * k, by - 28 * k); g.quadraticCurveTo(x, by - 22 * k, x + 30 * k, by - 28 * k); g.stroke();
+  g.save(); g.translate(x - 40 * k, y - 6 * k); g.rotate(.5); g.fillStyle = '#6b4520'; g.strokeStyle = '#1d1915'; g.lineWidth = 1.4 * k; g.fillRect(-3 * k, -36 * k, 6 * k, 36 * k); g.strokeRect(-3 * k, -36 * k, 6 * k, 36 * k); g.restore();   // the striker
+  if (hit < 2.4) for (let i = 0; i < 3; i++) {                                                   // rings going out from the bowl while it sings
+    const u = hit / 2.4 - i * .12; if (u <= 0 || u >= 1) continue;
+    g.strokeStyle = `rgba(255,226,140,${(1 - u) * .7})`; g.lineWidth = 2 * k; g.beginPath(); g.ellipse(x, by - 30 * k, (40 + u * 90) * k, (14 + u * 30) * k, 0, 0, 6.283); g.stroke();
+  }
+}
+function ttStrike(which) {
+  if (!TT.selfKnock) { TT.selfKnock = true; if (AU.zenSelf) AU.zenSelf(true); toast(lg('Tiếng mõ, tiếng chuông giờ là của bạn. Chạm để gõ.', 'The fish and the bell are yours now. Tap to strike them.'), 3); }
+  if (which === 'mo') { TT.moT = TT.t; if (AU.zenKnock) AU.zenKnock(1); } else { TT.bellT = TT.t; AU.zenBell(1); }
+}
 function ttHud(g, W, H) {
   const st = safeTop(), hud = TT.hud = [], m = TT.me, sit = m.mv === 2;
   const back = ttTag(g, 34, st + 28, '←', { size: 20, pad: 14, h: 40 }); hud.push({ r: back, f: () => showChapters() });
-  const n = ttCount(), label = '● ' + lgf('{n} người đang tĩnh tâm', '{n} sitting quietly', { n });
+  const n = ttCount(), label = '● ' + lgf('{n} người đang thiền định', '{n} meditating', { n });
   const cnt = ttTag(g, W / 2, st + 28, label, { size: 13, fill: '#e3efd4' });
-  const ren = ttTag(g, W / 2, st + 66, lg('✎ Đổi tên', '✎ Rename'), { size: 12, h: 28, pad: 14, fill: '#f2ecde' }); hud.push({ r: ren, f: ttRename });   // as in Ghép Tranh
-  if (H > W * 1.15) { const z = ttTag(g, W - 34, st + 28, TT_SAVE.wide ? '+' : '−', { size: 22, pad: 14, h: 40 }); hud.push({ r: z, f: () => { TT_SAVE.wide = !TT_SAVE.wide; ttPersist(); } }); }   // zoom: − the whole clearing, + close again
+  const ren = ttTag(g, 14, st + 72, lg('✎ Đổi tên', '✎ Rename'), { size: 12, h: 28, pad: 14, fill: '#f2ecde', left: true }); hud.push({ r: ren, f: ttRename });   // as in Ghép Tranh
+  if (H > W * 1.15) { const z = ttTag(g, 34, st + 116, TT_SAVE.wide ? '+' : '−', { size: 22, pad: 14, h: 40 }); hud.push({ r: z, f: () => { TT_SAVE.wide = !TT_SAVE.wide; ttPersist(); } }); }   // zoom: − the whole clearing, + close again
+  ttStats(g, W, W < 640 ? st + 54 : st + 8);
   const by = H - 46 - (W > 640 ? 8 : 0);
   const btn = ttTag(g, W / 2, by, sit ? lg('Đứng dậy', 'Stand up') : lg('Ngồi thiền', 'Sit'), { size: 17, h: 48, pad: 52, fill: sit ? '#f7e3a4' : '#d9e6c0' }); hud.push({ r: btn, f: () => ttSit(!sit) });
   if (sit) { const s = Math.floor(m.sitT), tx = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); ttTag(g, W / 2, by - 44, tx, { size: 12, h: 26, pad: 18, fill: 'rgba(244,234,208,.85)' }); }
@@ -498,6 +558,7 @@ function ttDown(e) {
   for (const h of TT.hud) if (x >= h.r[0] && x <= h.r[0] + h.r[2] && y >= h.r[1] && y <= h.r[1] + h.r[3]) { h.f(); return; }
   const W = cv.width / DPR, H = cv.height / DPR, L = ttLay(W, H), m = TT.me, [sx, sy, s] = L.P(m.x, 0, m.z);
   if (Math.abs(x - sx) < s * .5 && y > sy - s * 1.15 && y < sy + s * .2) { ttSit(m.mv !== 2); return; }            // tap yourself: sit or stand
+  for (const [o, w] of [[TT_MO, 'mo'], [TT_CHUONG, 'chuong']]) { const [ox, oy, os] = L.P(o.x, 0, o.z), k = os / 72; if (Math.abs(x - ox) < 50 * k && y < oy + 10 * k && y > oy - 66 * k) { ttStrike(w); return; } }   // the mõ, the bell: strike them
   { const [ux, uy, us] = L.P(0, 0, TT_URN.z), sc = us * 2.5 / 180; if (Math.abs(x - ux) < 70 * sc && y < uy + 8 && y > uy - 175 * sc) { ttIncense(); return; } }   // the urn: light incense
   if (TT.hold && ttHoaDrop(L, x, y)) return;                              // holding a lantern: a tap on the stream sets it down
   { const [bx, by, bs] = L.P(TT_SIGN.x, 0, TT_SIGN.z), sc = bs * 2.2 / 190; if (Math.abs(x - bx) < 74 * sc && y < by + 6 && y > by - 186 * sc) { ttHoaOpen(); return; } }   // the sign: set one afloat

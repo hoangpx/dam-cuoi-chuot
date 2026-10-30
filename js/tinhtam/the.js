@@ -4,7 +4,7 @@
    and, on the first tap, adds TT_FILES as scripts in order; the last of them registers the real place in this one's stead. */
 const TT_FILES = ['js/tinhtam/art.js', 'js/tinhtam/suoi.js', 'js/tinhtam/nhang.js', 'js/tinhtam/tinhtam.js'];
 const TT_BASE = 'https://dcc-lang.dcc-phong-choi.workers.dev';                // the same Worker as the village; /tt/ws and /tt/count are its own room
-const TT_CARD = { num: lg('Nơi tu tập', 'A place to practise'), han: '禪', name: lg('Góc Tĩnh Tâm', 'A Quiet Corner'), desc: lg('Giữa cuộc sống vội vã bộn bề, hãy dành một chút thời gian để tĩnh tâm.', 'Amid the rush and bustle of life, take a little time to find stillness.'), bg: '#cfdccb' };
+const TT_CARD = { num: lg('Nơi tu tập', 'A place to practise'), han: '禪', name: lg('Góc Thiền Định', 'Meditation Corner'), desc: lg('Giữa cuộc sống vội vã bộn bề, hãy dành một chút thời gian để tĩnh tâm.', 'Amid the rush and bustle of life, take a little time to find stillness.'), bg: '#cfdccb' };
 let ttLoading = null;
 function ttLoadFiles() {
   if (ttLoading) return ttLoading;
@@ -18,12 +18,12 @@ function ttLoadFiles() {
   }));
 }
 function ttOpen() {
-  toast(lg('Đang vào góc tĩnh tâm…', 'Entering the quiet corner…'), 30);
+  toast(lg('Đang vào góc thiền định…', 'Entering the meditation corner…'), 30);
   ttLoadFiles().then(() => { toast(lg('Hít thở sâu…', 'Breathe in…'), .8); const ch = chapterById(12); if (ch && ch.direct !== ttOpen) ch.direct(); })
     .catch(() => toast(lg('Không tải được, thử lại nhé', 'Could not load, please try again'), 3));
 }
 let ttOnlineN = null;
-const ttOnlineText = () => ttOnlineN == null ? '' : ttOnlineN > 0 ? '● ' + lgf('{n} người đang tĩnh tâm', '{n} sitting quietly', { n: ttOnlineN }) : lg('Đang vắng, vào ngồi trước nhé', 'Quiet now, come and sit');
+const ttOnlineText = () => ttOnlineN == null ? '' : ttOnlineN > 0 ? '● ' + lgf('{n} người đang thiền định', '{n} meditating', { n: ttOnlineN }) : lg('Đang vắng, vào ngồi trước nhé', 'Quiet now, come and sit');
 function ttPoll() {
   fetch(TT_BASE + '/tt/count', { cache: 'no-store' }).then(r => r.json()).then(j => {
     if (typeof j.count !== 'number') return;

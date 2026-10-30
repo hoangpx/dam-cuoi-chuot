@@ -150,7 +150,7 @@ const AU = (() => {
   }
   // Góc Tĩnh Tâm: a low chant on "Nam mô A Di Đà Phật" over a wooden fish (mõ) and a temple bell now and then. It has its own gain
   // (zenG → master), so the songs' quiet switch does not touch it; AU.zenStart / zenStop turn it on and off, update() schedules it.
-  let zenOn = false, zenG = null, zenEcho = null, zenNext = 0, zenBeat = 0;
+  let zenSelf = false, zenOn = false, zenG = null, zenEcho = null, zenNext = 0, zenBeat = 0;
   const ZEN_BEAT = 60 / 62, ZEN_VOW = { a: [800, 1250], o: [470, 860], i: [320, 2250], u: [350, 780] };
   const ZEN_SYL = [[50, 'a', 'm'], [50, 'o'], [55, 'a'], [57, 'i'], [55, 'a'], [50, 'a', 't']];   // Nam · mô · A · Di · Đà · Phật (D G A, a low monotone that lifts a little)
   function zenInit() {
@@ -178,9 +178,9 @@ const AU = (() => {
     const now = c.currentTime; if (zenNext < now - 1) zenNext = now + .1;
     while (zenNext < now + .15) {
       const b = zenBeat % 8, t = zenNext;
-      zenMo(t, b === 0 ? 1 : b < 6 ? .7 : .45);
+      if (!zenSelf) zenMo(t, b === 0 ? 1 : b < 6 ? .7 : .45);                  // zenSelf: the player strikes the mõ and the bell (Góc Thiền Định)
       if (b < 6) { const [m, v, end] = ZEN_SYL[b]; zenVoice(t, m, ZEN_BEAT * .96, v, end); }
-      if (b === 7 && (zenBeat >> 3) % 4 === 3) zenBellAt(t + ZEN_BEAT * .5, 1);   // the bell after every fourth round
+      if (!zenSelf && b === 7 && (zenBeat >> 3) % 4 === 3) zenBellAt(t + ZEN_BEAT * .5, 1);   // the bell after every fourth round
       zenNext += ZEN_BEAT; zenBeat++;
     }
   }
@@ -190,6 +190,8 @@ const AU = (() => {
     zenStart() { if (!c) return; zenInit(); zenOn = true; zenNext = c.currentTime + .4; zenBeat = 0; zenG.gain.setTargetAtTime(1, c.currentTime, 1.2); },
     zenStop() { zenOn = false; if (c && zenG) zenG.gain.setTargetAtTime(0, c.currentTime, .25); },
     zenBell(v = 1) { if (c) zenInit(); if (c && zenG) zenBellAt(c.currentTime + .02, v); },
+    zenKnock(v = 1) { if (c) zenInit(); if (c && zenG) zenMo(c.currentTime + .01, v); },
+    zenSelf(on) { zenSelf = !!on; },
     update() {
       if (!c || c.state !== 'running') return;
       if (zenOn) zenTick();
