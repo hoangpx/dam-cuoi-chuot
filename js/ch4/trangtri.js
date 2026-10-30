@@ -127,12 +127,17 @@ const lkWallPart = (wall, door, win) => lkPart('W' + wall + door + win, LK_HB, a
 // a custom house stands behind the stall: then the stall in front is only its table and goods (no roof, posts or board of its own: a player saw two roofs)
 const lkHouseOn = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 3 && (L.door || L.win || L.hroof || L.hpost)); };   // (a wall colour alone keeps the house it was: see c4DrawShopLv)
 const lkFull = (g, lv) => { const L = c4LookGet(g); return !!(L && lv <= 2 && (L.roof || L.post || L.table || L.sign)); };
+// the goods on the table: the old art cut off just above the table top; a neighbour's stall we bought (hang* art, low pictures of baskets and heaps) stands whole on the table
+function lkGoods(g, art, x, y, s, ware) {
+  if (C4_GOODS[ware].buy) { dp(g, art, x, y - 52 * s, 0, s, s); return; }
+  g.save(); g.translate(x, y); g.scale(s, s); g.beginPath(); g.rect(-120, -190, 240, 128); g.clip(); dp(g, art, 0, 0, 0, 1, 1); g.restore();
+}
 // a stall drawn whole: posts, table, goods (the old art cut off just above the table top), board, roof. x, y = the stall's foot; s = scale
 function c4LookStall(g, x, y, s, ware, name, alpha = 1) {
   const L = c4LookGet(ware) || {}, c = L.col || 'red', A = c4Art(), art = ware === 'trau' ? A.sap : A[C4_GOODS[ware].art];
   g.save(); g.globalAlpha = alpha;
   dp(g, lkPostPart(L.post || 'tre', 106, 205), x, y, 0, s, s);
-  if (ware !== 'gom') { dp(g, lkTablePart(L.table || 'go'), x, y, 0, s, s); g.save(); g.translate(x, y); g.scale(s, s); g.beginPath(); g.rect(-120, -190, 240, 128); g.clip(); dp(g, art, 0, 0, 0, 1, 1); g.restore(); }
+  if (ware !== 'gom') { dp(g, lkTablePart(L.table || 'go'), x, y, 0, s, s); lkGoods(g, art, x, y, s, ware); }
   else dp(g, art, x, y, 0, s, s);                                            // pottery stands on its own mat, no table
   dp(g, lkSignPart(L.sign || 'vang', c, name), x, y - 68 * s, 0, s, s);
   dp(g, lkRoofPart(L.roof || 'vai', c), x, y - 103 * s, 0, .88 * s, .85 * s);
@@ -149,7 +154,7 @@ function c4LookSale(g, x, y, s, ware, signY) {
 function c4LookHouseFront(g, x, y, s, ware, name, alpha = 1) {
   const L = c4LookGet(ware) || {}, A = c4Art(), art = ware === 'trau' ? A.sap : A[C4_GOODS[ware].art];
   g.save(); g.globalAlpha = alpha;
-  if (ware !== 'gom') { dp(g, lkTablePart(L.table || 'go'), x, y, 0, s, s); g.save(); g.translate(x, y); g.scale(s, s); g.beginPath(); g.rect(-120, -190, 240, 128); g.clip(); dp(g, art, 0, 0, 0, 1, 1); g.restore(); }
+  if (ware !== 'gom') { dp(g, lkTablePart(L.table || 'go'), x, y, 0, s, s); lkGoods(g, art, x, y, s, ware); }
   else dp(g, art, x, y, 0, s, s);
   g.restore();
   dp(g, lkSignPart(L.sign || 'vang', L.col || 'red', name), x, y - 108 * s, 0, s, s);
