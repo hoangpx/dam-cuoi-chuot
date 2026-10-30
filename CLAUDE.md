@@ -244,3 +244,4 @@ Góc Tĩnh Tâm (owner 2026-10-29: "không gọi là chương, chỉ gọi là n
 Hàng gà (muagan.js hangGa): sức chứa tăng từ 16 lên 40 con (owner, 2026-10-29). VERSION 2026-10-29e.
 
 Chương XI online open (owner 2026-10-29: "bật online đi"): c11OUrl no longer needs ?c11online, so everyone who enters the village connects to the Worker (the chapter card count and the Online button now show real players); ?c11srv=ws://... still overrides the server for tests. VERSION 2026-10-29f.
+Default: SAVE11.online starts true, so a player connects on entering; leaving online from the menu keeps it off.

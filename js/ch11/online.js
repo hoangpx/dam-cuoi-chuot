@@ -11,6 +11,7 @@
 const C11_SERVER = 'wss://dcc-lang.dcc-phong-choi.workers.dev/ws';                                                 // the Cloudflare Worker in worker/ (deployed 2026-10-27)
 const C11O = { ws: null, on: false, peers: new Map(), room: null, reqs: [], who: [], onlineF: new Set(), visit: null, pending: null, lines: [], mine: null, sendT: 0, last: '', tries: 0, closing: false, ui: null };
 const C11O_FARM = ['tiles', 'clear', 'cut', 'gone', 'hits', 'herd', 'pens', 'drops'];   // what a guest sees of the host's home
+if (SAVE11.online === undefined) SAVE11.online = true;                       // new players join the village online at once; "Ra khỏi làng online" turns it off for good
 const c11OUrl = () => { const q = /[?&]c11srv=([^&]+)/.exec(location.search); return q ? decodeURIComponent(q[1]) : C11_SERVER; };   // open to everyone (owner 2026-10-29: "bật online đi"); ?c11srv=ws://… still points it at a test server
 SAVE11.oid = SAVE11.oid || (() => { let s = ''; const a = 'abcdefghijkmnpqrstuvwxyz23456789'; for (let i = 0; i < 14; i++) s += a[(Math.random() * a.length) | 0]; return s; })();
 SAVE11.oname = SAVE11.oname || 'Chuột ' + (100 + ((Math.random() * 900) | 0));
