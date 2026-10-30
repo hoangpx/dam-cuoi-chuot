@@ -446,9 +446,10 @@ function ttTag(g, cx, cy, text, o = {}) {
 }
 // the numbers in the top right (owner 2026-10-29: "đã có xx người ghé thăm, xx que nhang được thắp, xx hoa đăng được thả"): visitors and sticks
 // from the Worker (ttinfo: visitors, all), lanterns = the newest lantern's id in Supabase (ids count every lantern ever set afloat, here and in Phố Huyện)
+const TT_VIS_ADD = 100;                                                    // added to the visitors shown (owner 2026-10-29: "+ 100 cho số người ghé thăm"); the Worker's own count is unchanged
 function ttStats(g, W, y0) {
   const f = v => v == null ? '…' : Math.round(v).toLocaleString('vi-VN'), hoa = Math.max(0, ...(TT.hoa || []).map(w => +w.id || 0)) || null;
-  const lines = [lgf('Đã có {n} người ghé thăm', '{n} have visited', { n: f(TT.visitors) }), lgf('{n} que nhang được thắp', '{n} incense sticks lit', { n: f(TT.incAll || null) }), lgf('{n} hoa đăng được thả', '{n} lanterns set afloat', { n: f(hoa) })];
+  const lines = [lgf('Đã có {n} người ghé thăm', '{n} have visited', { n: f(TT.visitors == null ? null : TT.visitors + TT_VIS_ADD) }), lgf('{n} que nhang được thắp', '{n} incense sticks lit', { n: f(TT.incAll || null) }), lgf('{n} hoa đăng được thả', '{n} lanterns set afloat', { n: f(hoa) })];
   const fs = W < 640 ? 11 : 12, lh = fs + 5; g.font = `700 ${fs}px "Be Vietnam Pro", sans-serif`;
   const w = Math.ceil(Math.max(...lines.map(l => g.measureText(l).width))) + 20, h = lines.length * lh + 10, x = W - 10 - w;
   g.fillStyle = 'rgba(244,234,208,.82)'; g.strokeStyle = 'rgba(29,25,21,.55)'; g.lineWidth = 1.4; g.beginPath(); g.roundRect ? g.roundRect(x, y0, w, h, 9) : g.rect(x, y0, w, h); g.fill(); g.stroke();
