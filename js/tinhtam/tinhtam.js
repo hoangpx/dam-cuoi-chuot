@@ -169,6 +169,7 @@ function updateTT(dt) {
     kneelStep(p); if ((p.mv === 1 || d > .12) && !p.kn) p.ph += dt * 9; if (p.mv === 2) p.sitT += dt;
   }
   TT.cam += (ttCurCam() - TT.cam) * Math.min(1, dt * 3);
+  if (TT.selfKnock && TT.t - (TT.strikeT ?? -99) > 10) { TT.selfKnock = false; if (AU.zenSelf) AU.zenSelf(false); }   // 10 s without a strike: the chant's own mõ and bell come back (owner)
   TT.zk = (TT.zk || 0) + ((TT_SAVE.wide ? 1 : 0) - (TT.zk || 0)) * Math.min(1, dt * 4);
   TT.camD += (Math.max(0, Math.min(4.4, (m.z - 7.2) * .75)) - TT.camD) * Math.min(1, dt * 2.2);   // near the Buddha the camera follows, so he and the mouse grow in the view
   if (TT.on) {                                                          // my place goes out about ten times a second, and now and then even when still
@@ -498,7 +499,8 @@ function ttDrawChuong(g, x, y, k) {
   }
 }
 function ttStrike(which) {
-  if (!TT.selfKnock) { TT.selfKnock = true; if (AU.zenSelf) AU.zenSelf(true); toast(lg('Tiếng mõ, tiếng chuông giờ là của bạn. Chạm để gõ.', 'The fish and the bell are yours now. Tap to strike them.'), 3); }
+  TT.strikeT = TT.t;
+  if (!TT.selfKnock) { TT.selfKnock = true; if (AU.zenSelf) AU.zenSelf(true); if (!TT.toldSelf) { TT.toldSelf = true; toast(lg('Tiếng mõ, tiếng chuông giờ là của bạn. Chạm để gõ.', 'The fish and the bell are yours now. Tap to strike them.'), 3); } }
   if (which === 'mo') { TT.moT = TT.t; if (AU.zenKnock) AU.zenKnock(); /* louder than the chant's own knock (owner) */ } else { TT.bellT = TT.t; AU.zenBell(1); }
 }
 function ttHud(g, W, H) {
