@@ -747,7 +747,7 @@ function p4HoaTap(x, y) {
     if (S.t - (P4.hoaCdT ?? -99) < P4_HOA_CD) return true;
     P4.hoaCdT = S.t;
     const L = P4.hoaMine || (P4.hoaMine = []);
-    L.push({ x, y: Math.min(y, p4View().vh - p4View().oy - 10), t0: S.t, c: P4.hoaHold.c, wish: P4.hoaHold.wish });
+    L.push({ x, y: Math.min(y, p4View().vh - p4View().oy - 10), t0: S.t, c: P4.hoaHold.c, wish: P4.hoaHold.wish, from: P4.hoaHold.from });
     if (L.length > 60) L.shift();
     p4HoaSend(L[L.length - 1]);                                             // to the server: other players see it drift (hoadang-net.js)
     // silent (owner: no sound when a lantern is set down)
@@ -801,7 +801,7 @@ const p4HoaWho = id => { const N = C4_NAMES.mouse.concat(C4_NAMES.old); return N
 const p4Esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function p4HoaRead(h) {
   if (h.shared) { p4WishCard(h.shared); return; }
-  if (h.mine) { p4WishCard({ wish: h.mine.wish, shop: p4HoaFrom(), mine: true, c: h.mine.c }); return; }
+  if (h.mine) { p4WishCard({ wish: h.mine.wish, shop: h.mine.from || p4HoaFrom(), mine: true, c: h.mine.c }); return; }
   p4WishCard({ wish: P4_HOA_WISH[(h.id * 5 + 1) % P4_HOA_WISH.length], shop: p4HoaWho(h.id), village: true, c: (h.id >> 4) % P4_HOA_COLS.length });
 }
 {
@@ -820,9 +820,10 @@ function p4HoaShop() {
   $('#p4hoaX').onclick = () => p4Sheets(null);
   if (ok) $('#p4hoaBuy').onclick = () => {
     p4Spend(price); p4Hud(); AU.tap();
-    B.innerHTML = '<p>Viết điều ước lên đèn:</p><textarea id="p4hoaW" maxlength="90" rows="3" placeholder="Cầu cho…"></textarea><div class="row"><button class="btn" id="p4hoaOk">Viết xong</button></div>';
-    const ta = $('#p4hoaW'); setTimeout(() => ta.focus(), 50);
-    $('#p4hoaOk').onclick = () => { const w = ta.value.trim() || 'Cầu bình an.'; if (p4HoaBad(w)) { toast('Lời chúc có chữ không đẹp, viết lại nhé.', 2.6); return; } p4Sheets(null); p4HoaHold({ wish: w, c: (P4.hoaN = (P4.hoaN || 0) + 1) % P4_HOA_COLS.length }); };
+    B.innerHTML = '<p>Viết điều ước lên đèn:</p><textarea id="p4hoaW" maxlength="90" rows="3" placeholder="Cầu cho…"></textarea><p class="from4">Từ:</p><input id="p4hoaF" maxlength="16" autocomplete="off" style="width:100%;box-sizing:border-box;font:16px var(--body);padding:7px 10px;border:2.5px solid var(--ink);background:#fff8e6"><div class="row"><button class="btn" id="p4hoaOk">Viết xong</button></div>';
+    const ta = $('#p4hoaW'), fr = $('#p4hoaF'); fr.value = p4HoaFrom(); setTimeout(() => ta.focus(), 50);   // "Từ": anyone may sign it as they like (owner)
+    for (const el of [ta, fr]) el.addEventListener('keydown', e => e.stopPropagation());
+    $('#p4hoaOk').onclick = () => { const w = ta.value.trim() || 'Cầu bình an.', f = fr.value.replace(/\s+/g, ' ').trim().slice(0, 16) || p4HoaFrom(); if (p4HoaBad(w) || p4HoaBad(f)) { toast('Lời chúc có chữ không đẹp, viết lại nhé.', 2.6); return; } p4Sheets(null); p4HoaHold({ wish: w, from: f, c: (P4.hoaN = (P4.hoaN || 0) + 1) % P4_HOA_COLS.length }); };
   };
   p4Sheets('p4hoa');
 }
