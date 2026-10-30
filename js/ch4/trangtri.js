@@ -3,7 +3,7 @@
    posts + table + (the ware's goods, cut off the old art above the table top) + signboard + roof. A house level (3, 4) gets a house
    drawn from a wall colour, roof, door, window and porch posts. Beside either: up to two things on the ground and a string of lanterns.
    SAVE4.look[g] = { roof, post, table, sign, col, deco[], hroof, hpost, door, win, wall }; SAVE4.lookOwn[g] = what is paid for (switching back is free).
-   Level 0 (mẹt, gánh) has no frame: only the things beside it. Town stalls are not dressed yet. The look rides in the stall snapshot (st.look, st.lv). */
+   Level 0 (mẹt, gánh) and the stalls we bought out are dressed with the stall parts too (2026-10-30). Town stalls are not dressed yet. The look rides in the stall snapshot (st.look, st.lv). */
 const LOOK_ROOF = [['vai', 'Mái vải sọc', 200], ['tranh', 'Mái tranh', 150], ['non', 'Mái nón lá', 250], ['dan', 'Mái tre đan', 300], ['du', 'Mái dù lớn', 400], ['ngoi', 'Mái ngói', 600], ['cong', 'Mái cong đình', 1800]];
 const LOOK_POST = [['tre', 'Cột tre', 60], ['do', 'Cột gỗ sơn đỏ', 200], ['khac', 'Cột gỗ chạm, chân đá', 600], ['day', 'Cột tre đôi buộc dây', 120]];
 const LOOK_TABLE = [['go', 'Bàn gỗ', 100], ['tre', 'Bàn tre', 40], ['son', 'Bàn sơn đỏ', 250], ['da', 'Bàn đá', 500]];
@@ -22,7 +22,7 @@ const LOOK_MAXGROUND = 2;                          // two things on the ground a
 // which parts a level has: 1-2 a framed stall, 3-4 a house; level 0 only the things beside
 const LOOK_FIELDS_STALL = [['roof', LOOK_ROOF, 'Mái'], ['post', LOOK_POST, 'Cột'], ['table', LOOK_TABLE, 'Bàn'], ['sign', LOOK_SIGN, 'Biển hiệu']];
 const LOOK_FIELDS_HOUSE = [['hroof', LOOK_HROOF, 'Mái nhà'], ['hpost', LOOK_POST, 'Cột hiên'], ['door', LOOK_DOOR, 'Cửa ra vào'], ['win', LOOK_WIN, 'Cửa sổ'], ['wall', LOOK_WALL, 'Màu tường']];
-const lkFields = lv => (lv >= 3 ? LOOK_FIELDS_HOUSE : lv >= 1 ? LOOK_FIELDS_STALL : []);
+const lkFields = lv => (lv >= 3 ? LOOK_FIELDS_HOUSE : LOOK_FIELDS_STALL);   // (2026-10-30: a mẹt, a gánh and a stall we bought out are dressed with posts, roof, table and board too: players saw only lanterns)
 let c4LookCtx, c4LookLv = 0;                       // set while drawing someone else's stall (a visit): that stall's look (or null) and level; undefined = my own
 
 const c4LookOf = g => (SAVE4.look || {})[g] || null;
@@ -39,7 +39,7 @@ const c4LookBonus = g => Math.min(.3, c4LookScore(c4LookOf(g)));
 function c4LookCost(g, L, lv) {
   const own = c4LookOwn(g); let t = 0; const add = (key, p) => { if (!own[key]) t += p; };
   for (const [k, list] of lkFields(lv)) if (L[k]) add(k + ':' + L[k], lkPrice(list, L[k]));
-  if (L.col && L.col !== 'red' && (L.roof || L.sign) && lv >= 1 && lv <= 2) add('col:' + L.col, LOOK_COL_PRICE);
+  if (L.col && L.col !== 'red' && (L.roof || L.sign) && lv <= 2) add('col:' + L.col, LOOK_COL_PRICE);
   for (const k of L.deco || []) if (lv < 3 || k === 'day') add('deco:' + k, lkPrice(LOOK_DECO, k));
   return t;
 }
@@ -126,7 +126,7 @@ const lkWallPart = (wall, door, win) => lkPart('W' + wall + door + win, LK_HB, a
 /* ---------- drawing ---------- */
 // a custom house stands behind the stall: then the stall in front is only its table and goods (no roof, posts or board of its own: a player saw two roofs)
 const lkHouseOn = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 3 && (L.door || L.win || L.hroof || L.hpost)); };   // (a wall colour alone keeps the house it was: see c4DrawShopLv)
-const lkFull = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 1 && lv <= 2 && (L.roof || L.post || L.table || L.sign)); };
+const lkFull = (g, lv) => { const L = c4LookGet(g); return !!(L && lv <= 2 && (L.roof || L.post || L.table || L.sign)); };
 // a stall drawn whole: posts, table, goods (the old art cut off just above the table top), board, roof. x, y = the stall's foot; s = scale
 function c4LookStall(g, x, y, s, ware, name, alpha = 1) {
   const L = c4LookGet(ware) || {}, c = L.col || 'red', A = c4Art(), art = ware === 'trau' ? A.sap : A[C4_GOODS[ware].art];
@@ -187,13 +187,15 @@ function c4LookDecoAt(g, sx, sy, ss, L, lv = 1) {
     if (k === 'day') dp(g, lkDecoPart(k), sx, sy - 232 * ss, 0, .62 * ss, .62 * ss);
     else if (lv <= 2 && n < LOOK_MAXGROUND) dp(g, lkDecoPart(k), sx + LOOK_SLOTS[n++] * ss, sy, 0, sc, sc); }
 }
-const c4LookStallX = g => (g === 'trau' ? C4_STALL + ((SAVE4.lv || 0) ? 10 : 30) : C4_GOODS[g].x + 20);
+const c4LookVendor = g => (C4_GOODS[g] && C4_GOODS[g].buy ? (C4.vendors || []).find(v => C4_VENDOR_G[v.ware] === g) : null);
+const c4LookStallX = g => { const v = c4LookVendor(g); return v ? v.x + 50 : g === 'trau' ? C4_STALL + ((SAVE4.lv || 0) ? 10 : 30) : C4_GOODS[g].x + 20; };
+const c4LookStallZ = g => { const v = c4LookVendor(g); return v ? (v.z ? v.z + .01 : .1) : C4_STALL_Z; };
 { const fx0 = c4FxItems;
   c4FxItems = function (items, g, vis) {
     fx0(items, g, vis);
     if (c4LookCtx !== undefined || !SAVE4.look) return;
     for (const w of Object.keys(SAVE4.look)) { const L = SAVE4.look[w]; if (!L || !L.deco || !L.deco.length || !c4Own(w) || !C4_GOODS[w]) continue; const sx = c4LookStallX(w); if (!vis(sx, 260)) continue;
-      const lvw = lkLvOf(w); items.push({ z: C4_STALL_Z + .005, f: () => c4LookDecoAt(g, sx, c4Y(C4_STALL_Z), c4S(C4_STALL_Z), L, lvw) }); }
+      const lvw = lkLvOf(w); const zw = c4LookStallZ(w); items.push({ z: zw + .005, f: () => c4LookDecoAt(g, sx, c4Y(zw), c4S(zw), L, lvw) }); }
   }; }
 // a dressed stall draws a few more customers (never said)
 { const want0 = c4Want; c4Want = function (g, noWx) { const w = want0(g, noWx); return w * (1 + c4LookBonus(g)); }; }
@@ -202,7 +204,7 @@ const c4LookStallX = g => (g === 'trau' ? C4_STALL + ((SAVE4.lv || 0) ? 10 : 30)
 const c4LookSheet = cnSheet('c4look', '<h3 id="lkT">Trang trí quán</h3><canvas id="lkCv" width="880" height="520" style="width:100%;max-width:440px;height:auto;border:2px solid var(--ink);background:#efe3c4"></canvas><div id="lkB" class="lkB"></div><p class="sm" id="lkMsg"></p><div class="row"><button class="btn" id="lkGo">Áp dụng</button><button class="btn alt" id="lkX">Đóng</button></div>');
 let LK = null;
 const lkName = g => (g === 'trau' ? 'TRẦU CAU' : C4_GOODS[g].name.toUpperCase());
-function lkClean(L, lv) { const ok = new Set(lkFields(lv).map(f => f[0])); for (const [k] of [...LOOK_FIELDS_STALL, ...LOOK_FIELDS_HOUSE]) if (!ok.has(k)) delete L[k]; if (L.table && LK && LK.g === 'gom') delete L.table; if (!(L.roof || L.sign) || lv < 1 || lv > 2) delete L.col; if (lv >= 3 && L.deco) L.deco = L.deco.filter(k => k === 'day'); }
+function lkClean(L, lv) { const ok = new Set(lkFields(lv).map(f => f[0])); for (const [k] of [...LOOK_FIELDS_STALL, ...LOOK_FIELDS_HOUSE]) if (!ok.has(k)) delete L[k]; if (L.table && LK && LK.g === 'gom') delete L.table; if (!(L.roof || L.sign) || lv > 2) delete L.col; if (lv >= 3 && L.deco) L.deco = L.deco.filter(k => k === 'day'); }
 function lkDraw() {
   const cv = $('#lkCv'), g = cv.getContext('2d'), w = LK.g, lv = lkLvOf(w), k = lv >= 3 ? .8 : .8, x = 220, y = 240;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 880, 520); g.setTransform(2, 0, 0, 2, 0, 0); g.fillStyle = '#e6d3a0'; g.fillRect(0, y - 8, 440, 60); g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.moveTo(0, y - 8); g.lineTo(440, y - 8); g.stroke();
@@ -214,14 +216,14 @@ function lkRefresh() {
   const w = LK.g, lv = lkLvOf(w), L = LK.look; lkClean(L, lv);
   const own = c4LookOwn(w), cost = c4LookCost(w, L, lv), B = $('#lkB'), fields = lkFields(lv).filter(f => !(f[0] === 'table' && w === 'gom'));
   const sec = ([key, list, title]) => `<h4>${title}</h4><div class="row lkR"><button class="opt${L[key] ? '' : ' on'}" data-k="${key}" data-v="">Như cũ</button>${list.map(([id, nm, p]) => `<button class="opt${L[key] === id ? ' on' : ''}" data-k="${key}" data-v="${id}">${nm}<small>${own[key + ':' + id] ? 'đã có' : c4Money(p)}</small></button>`).join('')}</div>`;
-  const colOk = lv >= 1 && lv <= 2;
+  const colOk = lv <= 2;
   B.innerHTML = fields.map(sec).join('')
     + (colOk ? `<h4>Màu mái, vải, biển</h4><div class="row lkR">${LOOK_COL.map(([id, nm, hex], i) => `<button class="sw${(L.col || 'red') === id ? ' on' : ''}" data-k="col" data-v="${id}" title="${nm}${i && !own['col:' + id] ? ' · ' + c4Money(LOOK_COL_PRICE) : ''}" style="background:${hex}"></button>`).join('')}</div>` : '')
     + `<h4>${lv >= 3 ? 'Dây đèn lồng (nhà không còn chỗ đặt đồ dưới đất)' : 'Đặt cạnh quán (hai món dưới đất, một dây đèn)'}</h4><div class="row lkR">${LOOK_DECO.filter(e => lv < 3 || e[0] === 'day').map(([id, nm, p]) => `<button class="opt${(L.deco || []).includes(id) ? ' on' : ''}" data-d="${id}">${nm}<small>${own['deco:' + id] ? 'đã có' : c4Money(p)}</small></button>`).join('')}</div>`;
   B.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { AU.tap(); const k = b.dataset.k, v = b.dataset.v; if (v) L[k] = v; else delete L[k]; lkRefresh(); }));
   B.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { AU.tap(); const d = L.deco || (L.deco = []), id = b.dataset.d, i = d.indexOf(id); if (i >= 0) d.splice(i, 1); else if (id !== 'day' && d.filter(q => q !== 'day').length >= LOOK_MAXGROUND) toast('Dưới đất chỉ đặt được ' + LOOK_MAXGROUND + ' món cạnh quán.', 2); else d.push(id); lkRefresh(); }));
   $('#lkGo').textContent = cost > 0 ? `Áp dụng · ${c4Money(cost)}` : 'Áp dụng'; $('#lkGo').disabled = cost > SAVE4.money;
-  $('#lkMsg').innerHTML = (lv < 1 ? 'Chưa có khung quán (mẹt, gánh): nâng cấp lên sạp mới chọn được mái, cột, bàn, biển. ' : lv >= 3 ? 'Nhà mặt chợ: chọn mái, cột, cửa, cửa sổ, màu tường. ' : '') + `Trong túi: ${c4Money(Math.round(SAVE4.money))}` + (cost > SAVE4.money ? ' (chưa đủ tiền)' : '');
+  $('#lkMsg').innerHTML = (lv >= 3 ? 'Nhà mặt chợ: chọn mái, cột, cửa, cửa sổ, màu tường. ' : '') + `Trong túi: ${c4Money(Math.round(SAVE4.money))}` + (cost > SAVE4.money ? ' (chưa đủ tiền)' : '');
   lkDraw();
 }
 function c4LookOpen(g) {

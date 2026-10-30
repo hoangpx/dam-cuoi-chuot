@@ -1214,7 +1214,9 @@ function renderC4() {
   for (const v of C4.vendors) if (vis(v.x, 140)) {
     const vz = v.z || .05, wz = v.z ? v.z + .01 : .1, mine = c4VendorMine(v), vg = C4_VENDOR_G[v.ware];   // a stall we bought: our sellers, faded when sold out
     if (!mine) items.push({ z: vz, f: () => c4Mouse(g, v.M, v.x - 40, 1, C4.t * 2 + v.x, false, v.say ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null, null, c4S(vz) * .95, c4Y(vz), v.x) });
-    items.push({ z: wz, f: () => { if (mine) c4DrawShopLv(g, v.x + 50, c4Y(wz), c4S(wz), c4SLvI(vg), vg); g.globalAlpha = mine && c4Stock(vg) <= 0 ? .45 : 1; dp(g, A[v.ware], v.x + 50, c4Y(wz), 0, c4S(wz), c4S(wz)); g.globalAlpha = 1;
+    items.push({ z: wz, f: () => { const al = mine && c4Stock(vg) <= 0 ? .45 : 1;
+      if (mine && lkFull(vg, 0)) c4LookStall(g, v.x + 50, c4Y(wz), c4S(wz), vg, C4_GOODS[vg].name.toUpperCase(), al);   // a stall we bought, dressed whole (trangtri.js)
+      else { if (mine) c4DrawShopLv(g, v.x + 50, c4Y(wz), c4S(wz), c4SLvI(vg), vg); g.globalAlpha = al; dp(g, A[v.ware], v.x + 50, c4Y(wz), 0, c4S(wz), c4S(wz)); g.globalAlpha = 1; }
       if (mine && c4Stock(vg) <= 0 && C4.phase === 'open') { g.font = '900 14px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', v.x + 50, c4Y(wz) - 90 * c4S(wz)); } } });
     if (mine) c4HandItems(items, vg, head); else head(v.x - 40, vz, 168 * .95, v, 0);
   }
