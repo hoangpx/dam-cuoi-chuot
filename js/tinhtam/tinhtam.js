@@ -498,7 +498,7 @@ function ttDrawChuong(g, x, y, k) {
 }
 function ttStrike(which) {
   if (!TT.selfKnock) { TT.selfKnock = true; if (AU.zenSelf) AU.zenSelf(true); toast(lg('Tiếng mõ, tiếng chuông giờ là của bạn. Chạm để gõ.', 'The fish and the bell are yours now. Tap to strike them.'), 3); }
-  if (which === 'mo') { TT.moT = TT.t; if (AU.zenKnock) AU.zenKnock(1); } else { TT.bellT = TT.t; AU.zenBell(1); }
+  if (which === 'mo') { TT.moT = TT.t; if (AU.zenKnock) AU.zenKnock(); /* louder than the chant's own knock (owner) */ } else { TT.bellT = TT.t; AU.zenBell(1); }
 }
 function ttHud(g, W, H) {
   const st = safeTop(), hud = TT.hud = [], m = TT.me, sit = m.mv === 2;
@@ -510,7 +510,7 @@ function ttHud(g, W, H) {
   ttStats(g, W, W < 640 ? st + 54 : st + 8);
   const by = H - 46 - (W > 640 ? 8 : 0);
   // the mõ and the chuông gia trì right in front of the player, above the Ngồi thiền button (owner): a tap strikes them
-  { const k = W < 640 ? 1 : 1.25, oy = by - 36, dx = W < 640 ? 72 : 100;
+  { const k = W < 640 ? 1.5 : 1.875, oy = by - 38, dx = W < 640 ? 108 : 150;   // ×1.5 (owner)
     ttDrawMo(g, W / 2 - dx, oy, k); hud.push({ r: [W / 2 - dx - 48 * k, oy - 70 * k, 96 * k, 82 * k], f: () => ttStrike('mo') });
     ttDrawChuong(g, W / 2 + dx, oy, k); hud.push({ r: [W / 2 + dx - 48 * k, oy - 70 * k, 96 * k, 82 * k], f: () => ttStrike('chuong') }); }
   const btn = ttTag(g, W / 2, by, sit ? lg('Đứng dậy', 'Stand up') : lg('Ngồi thiền', 'Sit'), { size: 17, h: 48, pad: 52, fill: sit ? '#f7e3a4' : '#d9e6c0' }); hud.push({ r: btn, f: () => ttSit(!sit) });

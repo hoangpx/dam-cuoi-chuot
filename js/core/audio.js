@@ -190,7 +190,7 @@ const AU = (() => {
     zenStart() { if (!c) return; zenInit(); zenOn = true; zenNext = c.currentTime + .4; zenBeat = 0; zenG.gain.setTargetAtTime(1, c.currentTime, 1.2); },
     zenStop() { zenOn = false; if (c && zenG) zenG.gain.setTargetAtTime(0, c.currentTime, .25); },
     zenBell(v = 1) { if (c) zenInit(); if (c && zenG) zenBellAt(c.currentTime + .02, v); },
-    zenKnock(v = 1) { if (c) zenInit(); if (c && zenG) zenMo(c.currentTime + .01, v); },
+    zenKnock(v = 1.7) { if (c) zenInit(); if (c && zenG) zenMo(c.currentTime + .01, v); },
     zenSelf(on) { zenSelf = !!on; },
     update() {
       if (!c || c.state !== 'running') return;
