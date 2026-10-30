@@ -41,6 +41,7 @@ export class Hub {
       this.tell(id, 'on'); return;
     }
     if (!p) return;
+    if (this.custom && ['ttinfo', 'incense'].includes(m.t)) { this.custom(p, m); return; }   // Góc Tĩnh Tâm: incense, kept by the Durable Object (index.js)
     const now = Date.now();
     switch (m.t) {
       case 'room': {                                                    // enter an area (or a home farm)
@@ -49,7 +50,7 @@ export class Hub {
         p.x = num(m.x, 0, 200); p.y = num(m.y, 0, 200); this.join(p, room); break;
       }
       case 'move': {
-        if (!p.room) return; p.x = num(m.x, 0, 200); p.y = num(m.y, 0, 200); p.face = m.face < 0 ? -1 : 1; p.mv = m.mv ? 1 : 0;
+        if (!p.room) return; p.x = num(m.x, 0, 200); p.y = num(m.y, 0, 200); p.face = m.face < 0 ? -1 : 1; p.mv = Math.round(num(m.mv, 0, 3));   // 0 stand, 1 walk, 2 sit (Góc Tĩnh Tâm)
         for (const q of this.roomOf(p.room)) if (q !== p) this.send(q, { t: 'move', id: p.id, x: p.x, y: p.y, face: p.face, mv: p.mv });
         break;
       }

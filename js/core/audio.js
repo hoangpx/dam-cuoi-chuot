@@ -148,11 +148,57 @@ const AU = (() => {
     f.type = 'bandpass'; f.frequency.value = filt; f.Q.value = 2.5; o.connect(f);
     env(f, t, .03, vol, dur).connect(sfx); o.start(t); o.stop(t + dur + .02);
   }
+  // Góc Tĩnh Tâm: a low chant on "Nam mô A Di Đà Phật" over a wooden fish (mõ) and a temple bell now and then. It has its own gain
+  // (zenG → master), so the songs' quiet switch does not touch it; AU.zenStart / zenStop turn it on and off, update() schedules it.
+  let zenOn = false, zenG = null, zenEcho = null, zenNext = 0, zenBeat = 0;
+  const ZEN_BEAT = 60 / 62, ZEN_VOW = { a: [800, 1250], o: [470, 860], i: [320, 2250], u: [350, 780] };
+  const ZEN_SYL = [[50, 'a', 'm'], [50, 'o'], [55, 'a'], [57, 'i'], [55, 'a'], [50, 'a', 't']];   // Nam · mô · A · Di · Đà · Phật (D G A, a low monotone that lifts a little)
+  function zenInit() {
+    if (zenG) return;
+    zenG = c.createGain(); zenG.gain.value = 0; zenG.connect(master);
+    zenEcho = c.createDelay(1); zenEcho.delayTime.value = .31; const fb = c.createGain(), lp = c.createBiquadFilter(); fb.gain.value = .42; lp.type = 'lowpass'; lp.frequency.value = 1500;
+    zenEcho.connect(lp); lp.connect(fb); fb.connect(zenEcho); const wet = c.createGain(); wet.gain.value = .5; lp.connect(wet); wet.connect(zenG);
+  }
+  function zenVoice(t, m, dur, vowel, end) {                         // one sung syllable: three slightly detuned voices, two vowel formants, a slow vibrato
+    const out = c.createGain(), lp = c.createBiquadFilter(), vib = c.createOscillator(), vg = c.createGain(), [f1, f2] = ZEN_VOW[vowel];
+    lp.type = 'lowpass'; lp.frequency.value = 2600; vib.frequency.value = 4.7; vg.gain.value = 4; vib.connect(vg);
+    out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(.24, t + .09); out.gain.setValueAtTime(.2, t + dur * .72); out.gain.linearRampToValueAtTime(end === 't' ? .0001 : 0, t + dur);
+    for (const [fc, q, gv] of [[f1, 7, 1], [f2, 9, .5], [f1 * .5, 3, .6]]) {
+      const bp = c.createBiquadFilter(), g = c.createGain(); bp.type = 'bandpass'; bp.Q.value = q; g.gain.value = gv; bp.frequency.setValueAtTime(fc, t);
+      if (end === 'm') bp.frequency.setTargetAtTime(fc * .35, t + dur * .6, .08);                // "Nam" closes to a hum
+      bp.connect(g); g.connect(lp);
+      for (const [dc, oc] of [[-6, 0], [7, 0], [0, -12]]) { const o = c.createOscillator(), og = c.createGain(); o.type = 'sawtooth'; o.frequency.value = mtof(m + oc); o.detune.value = dc; og.gain.value = oc ? .5 : .33; vg.connect(o.detune); o.connect(og); og.connect(bp); o.start(t); o.stop(t + dur + .05); }
+    }
+    vib.start(t); vib.stop(t + dur + .05); lp.connect(out); out.connect(zenG); out.connect(zenEcho);
+    const n = noise(.1), nf = c.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 1800; n.connect(nf); env(nf, t, .02, .02, .12).connect(zenG); n.start(t); n.stop(t + .1);   // a little breath at the start
+  }
+  function zenMo(t, v) {                                              // the wooden fish: a hollow knock
+    const o = c.createOscillator(), f = c.createBiquadFilter(); o.type = 'triangle'; o.frequency.setValueAtTime(720 * (v > .8 ? 1 : .92), t); o.frequency.exponentialRampToValueAtTime(430, t + .07);
+    f.type = 'bandpass'; f.frequency.value = 640; f.Q.value = 4; o.connect(f); env(f, t, .002, .34 * v, .16).connect(zenG); o.start(t); o.stop(t + .18);
+  }
+  function zenBellAt(t, v) {                                          // a temple bell: inharmonic partials that ring a long time
+    const f0 = 311;
+    for (const [k, a, d] of [[1, 1, 7], [2.01, .55, 5], [2.76, .5, 4], [5.4, .25, 2.4], [8.9, .12, 1.4]]) { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f0 * k; env(o, t, .004, .11 * a * v, d).connect(zenG); if (k < 3) env(o, t, .004, .05 * a * v, d).connect(zenEcho); o.start(t); o.stop(t + d + .05); }
+  }
+  function zenTick() {
+    const now = c.currentTime; if (zenNext < now - 1) zenNext = now + .1;
+    while (zenNext < now + .15) {
+      const b = zenBeat % 8, t = zenNext;
+      zenMo(t, b === 0 ? 1 : b < 6 ? .7 : .45);
+      if (b < 6) { const [m, v, end] = ZEN_SYL[b]; zenVoice(t, m, ZEN_BEAT * .96, v, end); }
+      if (b === 7 && (zenBeat >> 3) % 4 === 3) zenBellAt(t + ZEN_BEAT * .5, 1);   // the bell after every fourth round
+      zenNext += ZEN_BEAT; zenBeat++;
+    }
+  }
   const on = fn => (...a) => { if (c) fn(...a); };
   return {
     init,
+    zenStart() { if (!c) return; zenInit(); zenOn = true; zenNext = c.currentTime + .4; zenBeat = 0; zenG.gain.setTargetAtTime(1, c.currentTime, 1.2); },
+    zenStop() { zenOn = false; if (c && zenG) zenG.gain.setTargetAtTime(0, c.currentTime, .25); },
+    zenBell(v = 1) { if (c) zenInit(); if (c && zenG) zenBellAt(c.currentTime + .02, v); },
     update() {
       if (!c || c.state !== 'running') return;
+      if (zenOn) zenTick();
       while (next < c.currentTime + .12) {
         const so = cur(), sp = SP();
         if (!quiet) {

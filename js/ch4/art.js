@@ -174,19 +174,21 @@ const c4StallArt = lv => { const A = c4Art(); return [A.ganh, A.sap, A.gian][lv]
 
 // a mouse: chương I's woodblock rig (legs, tail, arm, body, head), standing on y; the tail sways on the mouse's own
 // beat (seed), never on its position (that jittered as it walked)
+let C4_KNEEL = 0, C4_LEAN = 0, C4_LEANZ = false;                           // Góc Tĩnh Tâm: C4_KNEEL 0…1 folds the legs back (kneeling), C4_LEAN bends the body forward at the hips
 let C4_SIT = false;                                                        // c4Mouse draws the legs folded forward (sitting on a stool)
 function c4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y = GROUND, seed = 0) {
   const sw = moving ? Math.sin(ph) : 0, bob = moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0;
   s *= C4_RIG_SZ.get(M) || 1;                                              // each mouse its own size (c4VarRig)
   g.save(); g.translate(x, y); g.scale(face * s, s);
   const hy = -45 + bob, armN = arm === null ? sw * .4 : arm;
+  const kn = +C4_KNEEL || 0, ln = C4_LEAN || 0, up = (f, head) => { if (!ln) return f(); g.save(); g.translate(0, hy); if (C4_LEANZ) { const c = Math.cos(ln); if (head) g.translate(0, 62 * (1 - c)); else g.scale(1, c); g.rotate(ln * .1); } else g.rotate(ln); g.translate(0, -hy); f(); g.restore(); };   // C4_LEANZ: bowing away from the viewer (foreshortened) instead of sideways
   dp(g, M.tail, -18, hy + 2, Math.sin(C4.t * 2.4 + seed) * .12);
-  dp(g, M.leg, 6, hy, C4_SIT ? -1.25 : sw * .55);
-  if (!M.skirt) dp(g, M.arm, 2, hy - 50, -sw * .4);                         // (a skirted mouse wears it in front of the skirt, below)
-  dp(g, M.body, 0, hy, .04);
-  dp(g, M.leg, -2, hy, C4_SIT ? -1.1 : -sw * .55);
-  if (M.skirt) { dp(g, M.skirt, 0, hy, .04 + sw * .03); dp(g, M.arm, 2, hy - 50, -sw * .4); }   // a skirt drawn as part of the mouse (buildMouse o.skirt), the arm hanging over it (owner: the hand looked to be inside the skirt)
-  dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04);
+  dp(g, M.leg, 6, hy, kn ? (C4_SIT ? -1.25 : sw * .55) * (1 - kn) + 1.45 * kn : C4_SIT ? -1.25 : sw * .55);
+  if (!M.skirt) up(() => dp(g, M.arm, 2, hy - 50, -sw * .4));                         // (a skirted mouse wears it in front of the skirt, below)
+  up(() => dp(g, M.body, 0, hy, .04));
+  dp(g, M.leg, -2, hy, kn ? (C4_SIT ? -1.1 : -sw * .55) * (1 - kn) + 1.3 * kn : C4_SIT ? -1.1 : -sw * .55);
+  if (M.skirt) up(() => { dp(g, M.skirt, 0, hy, .04 + sw * .03); dp(g, M.arm, 2, hy - 50, -sw * .4); });   // a skirt drawn as part of the mouse (buildMouse o.skirt), the arm hanging over it (owner: the hand looked to be inside the skirt)
+  up(() => dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04), true);
   const ax = 10, ay = hy - 52, hx = ax + 16 * Math.cos(armN) - 31 * Math.sin(armN), hyy = ay + 16 * Math.sin(armN) + 31 * Math.cos(armN);
   if (carry) dp(g, carry, hx + 4, hyy + (carry === WP.basket ? -16 : 6), 0, carry === WP.basket ? 1.1 : .9, carry === WP.basket ? 1.1 : .9);
   g.restore();
