@@ -285,9 +285,10 @@ function ttBack(W, H, hor) {
    origin at the hips), rear (the hips on the heels, soles showing), tail. ttDrawBack poses them. */
 const TT_BACKS = {};
 const poly = pts => { const q = new Path2D(); q.moveTo(pts[0][0], pts[0][1]); for (const t of pts.slice(1)) q.lineTo(t[0], t[1]); q.closePath(); return q; };
-function ttBackRig(i) {
-  if (TT_BACKS[i]) return TT_BACKS[i];
-  const S0 = C4_MOUSE_SORTS[i], o = S0.o, B = {}, robe = o.robe, trim = o.trim, fur = o.head;
+function ttBackRig(i, ov) {                                           // ov: { key, o } = the colours of a Hồ sơ mouse instead of a sort's
+  const ck = ov ? ov.key : i;
+  if (TT_BACKS[ck]) return TT_BACKS[ck];
+  const o = ov ? ov.o : C4_MOUSE_SORTS[i].o, B = {}, robe = o.robe, trim = o.trim, fur = o.head;
   // the same mouse as c4Mouse's side view (buildMouse): fur, lilac ears with a red heart, a cap of the trim colour (or the hat with its red knot),
   // the robe with a lilac belly seen only from the front, the trim hem, lilac feet, a tail that is only a line of ink
   B.head = part([-34, -46, 34, 26], a => {
@@ -308,10 +309,10 @@ function ttBackRig(i) {
     for (const s of [-1, 1]) a.fk('lilac', ell(s * 14, 5, 7, 3.4), 1.6);                  // soles under the hem
   });
   B.tail = part([-6, -34, 74, 8], a => { a.key(smooth([[0, 0], [14, -4], [36, -2], [58, -12], [68, -30]], false), 3.2); });
-  return (TT_BACKS[i] = B);
+  return (TT_BACKS[ck] = B);
 }
 function ttDrawBack(g, o, sx, sy, k, bow, alpha) {
-  const B = ttBackRig(o.sort), c = Math.cos(bow * 1.35), lift = -9 * bow, sc = Math.max(.3, c + .08);
+  const B = ttBackRig(o.sort, o.look ? ttLookOv(o) : null), c = Math.cos(bow * 1.35), lift = -9 * bow, sc = Math.max(.3, c + .08);
   g.save(); g.translate(sx, sy); g.scale(k, k); g.globalAlpha *= alpha;
   const hs = .98 - .14 * bow;
   dp(g, B.tail, 10 * o.face, -2 + lift, 0, o.face, 1);                               // the tail lies on the ground behind the robe

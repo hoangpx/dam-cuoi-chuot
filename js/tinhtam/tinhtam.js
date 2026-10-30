@@ -25,6 +25,11 @@ const TT_SAVE = (() => {
 })();
 const ttDay = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);   // a Vietnam day, as the Worker counts it
 const ttPersist = () => { try { localStorage.setItem('dcc.tt', JSON.stringify(TT_SAVE)); localStorage.setItem('dcc.name', TT_SAVE.name); } catch (e) {} };
+// the player's own mouse and name are the Hồ sơ of chương IV (hsMine), as in Ghép Tranh and Hội Làng; others send theirs in hello (look)
+const ttLook = () => { const d = hsMine(); return { role: d.role, age: d.age, body: d.body, fur: d.fur, robe: d.robe, skirt: d.skirt, pants: d.pants, top: d.top }; };
+const ttProf = o => o._d && o._dn === o.name ? o._d : (o._dn = o.name, o._d = hsClean({ ...HS_DEF, ...o.look, name: o.name }));
+const ttRigOf = o => o.look ? hsRig(ttProf(o)) : c4MouseRig(o.sort);
+const ttLookOv = o => { const d = ttProf(o); return { key: 'hs|' + [d.fur, d.robe, d.top].join('|'), o: { robe: d.robe, trim: HS_TRIM[d.robe] || 'yellow', head: d.fur } }; };
 const ttHash = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
 const ttHue = id => ttHash(id) % 360;
 const TT_ADULTS = () => C4_MOUSE_SORTS.map((s, i) => s.role === 'adult' ? i : -1).filter(i => i >= 0);
@@ -64,8 +69,8 @@ function startTT() {
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
   document.documentElement.style.setProperty('--paper', '#cfdccb');
   if (!TT.S) TT.S = ttBuild();
-  const id = TT_SAVE.id;
-  TT.me = { id, name: TT_SAVE.name, x: 0, z: 6.6, face: 1, mv: 0, ph: 0, sitT: 0, tx: null, tz: null, sort: ttSortOf(id), bowK: 0 };
+  const id = TT_SAVE.id; TT_SAVE.name = hsName(hsMine()); ttPersist();
+  TT.me = { id, name: TT_SAVE.name, look: ttLook(), x: 0, z: 6.6, face: 1, mv: 0, ph: 0, sitT: 0, tx: null, tz: null, sort: ttSortOf(id), bowK: 0 };
   Object.assign(TT, { ready: true, t: 0, peers: new Map(), keys: new Set(), closing: false, tries: 0, cam: 0, camD: 0, chirp: 3 });
   AU.zenStart(); ttConnect(); ttHoaLoad(); cv.focus();
 }
@@ -77,7 +82,7 @@ const ttSend = m => { if (TT.ws && TT.ws.readyState === 1) TT.ws.send(JSON.strin
 function ttConnect() {
   if (TT.ws) return; TT.closing = false; let ws; try { ws = new WebSocket(ttServer()); } catch (e) { return; }
   TT.ws = ws;
-  ws.onopen = () => { TT.tries = 0; ttSend({ t: 'hello', id: TT.me.id, name: TT.me.name, friends: [] }); };
+  ws.onopen = () => { TT.tries = 0; ttSend({ t: 'hello', id: TT.me.id, name: TT.me.name, look: TT.me.look, friends: [] }); };
   ws.onmessage = e => { try { ttGot(JSON.parse(e.data)); } catch (err) {} };
   ws.onclose = () => {
     clearInterval(TT.pollT); const was = TT.on; TT.ws = null; TT.on = false; TT.peers.clear();
@@ -104,7 +109,7 @@ function ttGot(m) {
   }
 }
 function ttSetMv(p, mv) { if (mv === 2 && p.mv !== 2) p.sitT = 0; p.mv = mv; }
-function ttAddPeer(p) { if (!p || p.id === TT.me.id) return; const o = { id: p.id, name: p.name, x: p.x - 50, z: p.y, tx: p.x - 50, tz: p.y, face: p.face || 1, mv: 0, ph: Math.random() * 6, sitT: 0, sort: ttSortOf(p.id) }; ttSetMv(o, p.mv || 0); TT.peers.set(p.id, o); }
+function ttAddPeer(p) { if (!p || p.id === TT.me.id) return; const o = { id: p.id, name: p.name, x: p.x - 50, z: p.y, tx: p.x - 50, tz: p.y, face: p.face || 1, mv: 0, ph: Math.random() * 6, sitT: 0, sort: ttSortOf(p.id), look: p.look && typeof p.look === 'object' ? p.look : null }; ttSetMv(o, p.mv || 0); TT.peers.set(p.id, o); }
 const ttCount = () => TT.on ? Math.max(TT.count, TT.peers.size + 1) : 1;
 
 /* ---------- the view ---------- */
@@ -289,7 +294,7 @@ function ttDrawMouse(g, L, o, me) {
   if (sx < -80 || sx > L.W + 80) return;
   g.fillStyle = 'rgba(20,34,20,.28)'; g.beginPath(); g.ellipse(sx, sy, s * .34, s * .1, 0, 0, 6.283); g.fill();
   g.strokeStyle = me ? 'rgba(255,214,90,.95)' : `hsl(${hue} 62% 46%)`; g.lineWidth = Math.max(1.6, s * .03); g.beginPath(); g.ellipse(sx, sy, s * .4, s * .13, 0, 0, 6.283); g.stroke();
-  const M = c4MouseRig(o.sort), kn = o.kn || 0, ke = kn * kn * (3 - 2 * kn);
+  const M = ttRigOf(o), kn = o.kn || 0, ke = kn * kn * (3 - 2 * kn);
   const bk = Math.max(0, Math.min(1, (ke - .3) / .4));                       // kneeling turns it to face the Buddha: the side view fades into the view from behind
   if (bk < 1) { g.save(); g.translate(sx, sy); g.globalAlpha = 1 - bk; C4_KNEEL = ke; c4Mouse(g, M, 0, o.face, o.ph, o.mv === 1 && kn === 0, null, null, k, 18 * k * ke, o.sort); C4_KNEEL = 0; g.restore(); }
   if (bk > 0) ttDrawBack(g, o, sx, sy, k, bow, bk);
@@ -431,9 +436,9 @@ function ttRename() {                                                   // a sma
   if (document.getElementById('ttName')) return;
   const box = document.createElement('div'), inp = document.createElement('input'), ok = document.createElement('button');
   box.id = 'ttName'; box.style.cssText = 'position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:40;display:flex;gap:6px;padding:8px;background:#f4ead0;border:2.4px solid #1d1915;border-radius:12px;font:700 14px "Be Vietnam Pro",sans-serif';
-  inp.maxLength = 18; inp.value = TT.me.name; inp.style.cssText = 'width:min(200px,50vw);padding:6px 8px;border:2px solid #1d1915;border-radius:8px;background:#fff;font:700 14px "Be Vietnam Pro",sans-serif';
+  inp.maxLength = HS_NAME_MAX; inp.value = TT.me.name; inp.style.cssText = 'width:min(200px,50vw);padding:6px 8px;border:2px solid #1d1915;border-radius:8px;background:#fff;font:700 14px "Be Vietnam Pro",sans-serif';
   ok.textContent = lg('Lưu', 'Save'); ok.style.cssText = 'padding:6px 12px;border:2.4px solid #1d1915;border-radius:8px;background:#d9e6c0;font:800 14px "Be Vietnam Pro",sans-serif';
-  const done = save => { const n = inp.value.trim().slice(0, 18); box.remove(); cv.focus(); if (!save || !n) return; TT.me.name = TT_SAVE.name = n; ttPersist(); ttSend({ t: 'hello', id: TT.me.id, name: n, friends: [] }); TT.last = ''; };
+  const done = save => { const n = inp.value.trim().slice(0, HS_NAME_MAX); box.remove(); cv.focus(); if (!save || n.length < 2) return; hsSet('dcc.hoso', hsClean({ ...hsMine(), name: n })); TT.me.name = TT_SAVE.name = n; ttPersist(); ttSend({ t: 'hello', id: TT.me.id, name: n, look: TT.me.look, friends: [] }); TT.last = ''; };
   inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') done(true); else if (e.key === 'Escape') done(false); }); inp.addEventListener('keyup', e => e.stopPropagation());
   ok.addEventListener('click', () => done(true)); box.append(inp, ok); document.body.appendChild(box); inp.focus(); inp.select();
 }

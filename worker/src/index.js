@@ -50,9 +50,9 @@ export default {
     // its old code while anyone is connected: after changing the code, rename it (tinhtam → … → tinhtam4 → …) as for the village
     if (url.pathname === '/tt/ws') {
       if (origin && !ORIGINS.some(o => origin === o || origin.startsWith(o + ':'))) return new Response('forbidden', { status: 403 });
-      return env.VILLAGE.get(env.VILLAGE.idFromName('tinhtam5')).fetch(req);
+      return env.VILLAGE.get(env.VILLAGE.idFromName('tinhtam6')).fetch(req);
     }
-    if (url.pathname === '/tt/count' || url.pathname === '/tt/stats') return env.VILLAGE.get(env.VILLAGE.idFromName('tinhtam5')).fetch(req);
+    if (url.pathname === '/tt/count' || url.pathname === '/tt/stats') return env.VILLAGE.get(env.VILLAGE.idFromName('tinhtam6')).fetch(req);
     return new Response('Làng Vũ Đại online', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   },
 };

@@ -156,29 +156,23 @@ const AU = (() => {
   function zenInit() {
     if (zenG) return;
     zenG = c.createGain(); zenG.gain.value = 0; zenG.connect(master);
-    zenEcho = c.createDelay(1); zenEcho.delayTime.value = .31; const fb = c.createGain(), lp = c.createBiquadFilter(); fb.gain.value = .42; lp.type = 'lowpass'; lp.frequency.value = 1500;
-    zenEcho.connect(lp); lp.connect(fb); fb.connect(zenEcho); const wet = c.createGain(); wet.gain.value = .5; lp.connect(wet); wet.connect(zenG);
+    zenEcho = c.createDelay(1); zenEcho.delayTime.value = .31; const fb = c.createGain(), lp = c.createBiquadFilter(); fb.gain.value = .28; lp.type = 'lowpass'; lp.frequency.value = 1500;
+    zenEcho.connect(lp); lp.connect(fb); fb.connect(zenEcho); const wet = c.createGain(); wet.gain.value = .3; lp.connect(wet); wet.connect(zenG);
   }
-  function zenVoice(t, m, dur, vowel, end) {                         // one sung syllable: three slightly detuned voices, two vowel formants, a slow vibrato
-    const out = c.createGain(), lp = c.createBiquadFilter(), vib = c.createOscillator(), vg = c.createGain(), [f1, f2] = ZEN_VOW[vowel];
-    lp.type = 'lowpass'; lp.frequency.value = 2600; vib.frequency.value = 4.7; vg.gain.value = 4; vib.connect(vg);
-    out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(.24, t + .09); out.gain.setValueAtTime(.2, t + dur * .72); out.gain.linearRampToValueAtTime(end === 't' ? .0001 : 0, t + dur);
-    for (const [fc, q, gv] of [[f1, 7, 1], [f2, 9, .5], [f1 * .5, 3, .6]]) {
-      const bp = c.createBiquadFilter(), g = c.createGain(); bp.type = 'bandpass'; bp.Q.value = q; g.gain.value = gv; bp.frequency.setValueAtTime(fc, t);
-      if (end === 'm') bp.frequency.setTargetAtTime(fc * .35, t + dur * .6, .08);                // "Nam" closes to a hum
-      bp.connect(g); g.connect(lp);
-      for (const [dc, oc] of [[-6, 0], [7, 0], [0, -12]]) { const o = c.createOscillator(), og = c.createGain(); o.type = 'sawtooth'; o.frequency.value = mtof(m + oc); o.detune.value = dc; og.gain.value = oc ? .5 : .33; vg.connect(o.detune); o.connect(og); og.connect(bp); o.start(t); o.stop(t + dur + .05); }
-    }
+  function zenVoice(t, m, dur) {                                      // one soft syllable of the chant: a warm hum of sines and triangles an octave up (owner: the low sawtooth voice sounded scary), slow vibrato, no breath
+    const out = c.createGain(), lp = c.createBiquadFilter(), vib = c.createOscillator(), vg = c.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 1100; vib.frequency.value = 4.2; vg.gain.value = 2.5; vib.connect(vg);
+    out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(.13, t + .28); out.gain.setValueAtTime(.11, t + dur * .6); out.gain.linearRampToValueAtTime(0, t + dur);
+    for (const [oc, dc, gv, ty] of [[12, -5, .5, 'sine'], [12, 6, .45, 'triangle'], [0, 0, .3, 'sine'], [19, 0, .07, 'sine']]) { const o = c.createOscillator(), og = c.createGain(); o.type = ty; o.frequency.value = mtof(m + oc); o.detune.value = dc; og.gain.value = gv; vg.connect(o.detune); o.connect(og); og.connect(lp); o.start(t); o.stop(t + dur + .05); }
     vib.start(t); vib.stop(t + dur + .05); lp.connect(out); out.connect(zenG); out.connect(zenEcho);
-    const n = noise(.1), nf = c.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 1800; n.connect(nf); env(nf, t, .02, .02, .12).connect(zenG); n.start(t); n.stop(t + .1);   // a little breath at the start
   }
   function zenMo(t, v) {                                              // the wooden fish: a hollow knock
     const o = c.createOscillator(), f = c.createBiquadFilter(); o.type = 'triangle'; o.frequency.setValueAtTime(720 * (v > .8 ? 1 : .92), t); o.frequency.exponentialRampToValueAtTime(430, t + .07);
-    f.type = 'bandpass'; f.frequency.value = 640; f.Q.value = 4; o.connect(f); env(f, t, .002, .34 * v, .16).connect(zenG); o.start(t); o.stop(t + .18);
+    f.type = 'bandpass'; f.frequency.value = 640; f.Q.value = 4; o.connect(f); env(f, t, .002, .2 * v, .16).connect(zenG); o.start(t); o.stop(t + .18);
   }
   function zenBellAt(t, v) {                                          // a temple bell: inharmonic partials that ring a long time
     const f0 = 311;
-    for (const [k, a, d] of [[1, 1, 7], [2.01, .55, 5], [2.76, .5, 4], [5.4, .25, 2.4], [8.9, .12, 1.4]]) { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f0 * k; env(o, t, .004, .11 * a * v, d).connect(zenG); if (k < 3) env(o, t, .004, .05 * a * v, d).connect(zenEcho); o.start(t); o.stop(t + d + .05); }
+    for (const [k, a, d] of [[1, 1, 7], [2.01, .55, 5], [2.76, .5, 4], [5.4, .25, 2.4], [8.9, .12, 1.4]]) { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f0 * k; env(o, t, .004, .07 * a * v, d).connect(zenG); if (k < 3) env(o, t, .004, .03 * a * v, d).connect(zenEcho); o.start(t); o.stop(t + d + .05); }
   }
   function zenTick() {
     const now = c.currentTime; if (zenNext < now - 1) zenNext = now + .1;

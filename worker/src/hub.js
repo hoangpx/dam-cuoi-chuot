@@ -3,6 +3,7 @@
    The server trusts the client (owner's choice): it only relays positions, chat, friend requests and visits between players.
    Rooms: every area is a room by its id ('lang', 'cho', 'dinh'…); a home farm is the room 'ruong:<ownerId>'. Players see and
    hear only those in the same room. */
+const cleanLook = l => { if (!l || typeof l !== 'object') return null; const o = {}; for (const k of ['role', 'age', 'body', 'fur', 'robe', 'skirt', 'pants', 'top']) o[k] = clean(l[k], 12); return o; };   // a Hồ sơ mouse's colours (Góc Tĩnh Tâm); the client checks each against its own lists
 export const LIMITS = { name: 18, chat: 90, room: 40, snap: 60000, perRoom: 40, players: 300 };
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, n);
 const num = (v, lo, hi) => { v = +v; return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
@@ -11,7 +12,7 @@ export class Hub {
   constructor() { this.players = new Map(); this.bySock = new Map(); }
   send(p, msg) { try { p.sock.send(JSON.stringify(msg)); } catch (e) { /* a dead socket is dropped by its close event */ } }
   roomOf(room) { const r = []; for (const p of this.players.values()) if (p.room === room) r.push(p); return r; }
-  pub(p) { return { id: p.id, name: p.name, x: p.x, y: p.y, face: p.face, mv: p.mv }; }
+  pub(p) { return { id: p.id, name: p.name, x: p.x, y: p.y, face: p.face, mv: p.mv, look: p.look || null }; }
   add(sock) { this.bySock.set(sock, null); }
   close(sock) {
     const p = this.bySock.get(sock); this.bySock.delete(sock); if (!p) return;
@@ -35,7 +36,7 @@ export class Hub {
       if (!p && this.players.size >= LIMITS.players) { this.send({ sock }, { t: 'full' }); return; }
       const old = this.players.get(id);
       if (old && old.sock !== sock) { this.send(old, { t: 'bye', why: 'Bạn đã vào làng từ chỗ khác' }); this.bySock.delete(old.sock); try { old.sock.close(); } catch (e) {} this.leave(old, old.room); }
-      p = { id, sock, name: clean(m.name, LIMITS.name) || 'Chuột lạ', room: null, x: 0, y: 0, face: 1, mv: 0, last: 0, friends: new Set((Array.isArray(m.friends) ? m.friends : []).slice(0, 200).map(f => clean(f, 24))) };
+      p = { id, sock, name: clean(m.name, LIMITS.name) || 'Chuột lạ', look: cleanLook(m.look), room: null, x: 0, y: 0, face: 1, mv: 0, last: 0, friends: new Set((Array.isArray(m.friends) ? m.friends : []).slice(0, 200).map(f => clean(f, 24))) };
       this.bySock.set(sock, p); this.players.set(id, p);
       this.send(p, { t: 'welcome', id, online: [...p.friends].filter(f => this.players.has(f)), count: this.players.size });
       this.tell(id, 'on'); return;
