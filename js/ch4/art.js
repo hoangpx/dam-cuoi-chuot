@@ -469,11 +469,13 @@ const C4_HOUSE_V = [
   { w: 170, wall: 'rose', roof: 'tile', ridge: 'green', win: 'white', door: 'brown' },                 // soft pink walls, tiles
 ];
 const C4_HOUSE_ART = [];
+let C4_HOUSE_WALL = null;                       // set while a dressed house with only its wall colour changed is drawn (trangtri.js): the same house, that wall
 function c4HouseArt(v) {
   v = ((v | 0) % C4_HOUSE_V.length + C4_HOUSE_V.length) % C4_HOUSE_V.length;
-  if (C4_HOUSE_ART[v]) return C4_HOUSE_ART[v];
-  const o = C4_HOUSE_V[v], w = o.w, H = o.tall ? 215 : 150, top = -H, ry = top + 12, rx = w + 52;
-  return (C4_HOUSE_ART[v] = part([-rx - 4, ry - 124, rx + 4, 8], a => {
+  const key = C4_HOUSE_WALL ? v + C4_HOUSE_WALL : v;
+  if (C4_HOUSE_ART[key]) return C4_HOUSE_ART[key];
+  const o = C4_HOUSE_WALL ? { ...C4_HOUSE_V[v], wall: C4_HOUSE_WALL } : C4_HOUSE_V[v], w = o.w, H = o.tall ? 215 : 150, top = -H, ry = top + 12, rx = w + 52;
+  return (C4_HOUSE_ART[key] = part([-rx - 4, ry - 124, rx + 4, 8], a => {
     a.fk(o.wall, rect(-w, top, w * 2, H), 2.4);
     for (const x of [-w, -w / 2, 0, w / 2, w - 14]) a.fk('brown', rect(x - (x === w - 14 ? 0 : 7), top, 14, H), 1.8);
     a.fk(o.door, rect(-36, -112, 72, 112), 2); a.key(lines([[0, -112, 0, 0]]), 1.6);

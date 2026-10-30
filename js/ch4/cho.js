@@ -1225,12 +1225,14 @@ function renderC4() {
     if (c4Own(sh)) {
       c4HandItems(items, sh, head);
       c4TableItems(items, g, vis, sh);
-      items.push({ z: C4_STALL_Z, f: () => { const al = c4Open(sh) && !(C4.shut > 0) ? 1 : .45;
+      const lvS = c4SLvI(sh);
+      if (lvS >= 3) items.push({ z: C4_WIFE_Z - .01, f: () => c4DrawShopLv(g, sx + 20, sy, ss, lvS, sh) });   // the house stands BEHIND whoever sells (owner: it hid the staff)
+      items.push({ z: C4_STALL_Z, f: () => { C4_HOUSE_SKIP = lvS >= 3; const al = c4Open(sh) && !(C4.shut > 0) ? 1 : .45;
         if (lkFull(sh, c4SLvI(sh))) c4LookStall(g, sx + 20, sy, ss, sh, G.name.toUpperCase(), al);          // dressed whole (trangtri.js)
         else if (lkHouseOn(sh, c4SLvI(sh))) c4LookDrawStall(g, sx + 20, sy, ss, sh, c4SLvI(sh), G.name.toUpperCase(), al);
         else { c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = al; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
         c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase(), sh); }
-        if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } } });
+        if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } C4_HOUSE_SKIP = false; } });
     } else {
       items.push({ z: C4_STALL_Z, f: () => { dp(g, A.lot, sx, sy, 0, ss, ss); g.save(); g.translate(sx, sy); g.scale(ss, ss); g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK;
         const L = c4Landlord(sh); g.fillText('Cho thuê', 0, -102); g.font = '700 13px "Playfair Display", serif'; g.fillText(c4Money(L.price), 0, -83); g.restore(); } });
@@ -1240,7 +1242,8 @@ function renderC4() {
   if (C4.build) items.push({ z: C4_STALL_Z, f: () => { dp(g, A.scaffold, C4_STALL, c4Y(C4_STALL_Z), 0, c4S(C4_STALL_Z), c4S(C4_STALL_Z)); for (let i = 0; i < 3; i++) { const k = (C4.t * .8 + i / 3) % 1; g.globalAlpha = .5 * (1 - k); g.fillStyle = '#c3b596'; g.beginPath(); g.arc(C4_STALL - 60 + i * 60, c4Y(C4_STALL_Z) - 20 - k * 60, 14 + k * 20, 0, 6.283); g.fill(); g.globalAlpha = 1; } } });
   else {
     c4HandItems(items, 'trau', head);
-    items.push({ z: C4_STALL_Z, f: () => { const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
+    if (lv >= 3) items.push({ z: C4_WIFE_Z - .01, f: () => c4DrawShopLv(g, C4_STALL + 10, c4Y(C4_STALL_Z), c4S(C4_STALL_Z), lv, 'trau') });   // the house behind the sellers
+    items.push({ z: C4_STALL_Z, f: () => { C4_HOUSE_SKIP = lv >= 3; const sx = C4_STALL + (lv ? 10 : 30), sy = c4Y(C4_STALL_Z), ss = c4S(C4_STALL_Z);
       if (lkFull('trau', lv)) c4LookStall(g, sx, sy, ss, 'trau', 'TRẦU CAU', C4.shut > 0 ? .45 : 1);        // a stall dressed whole (trangtri.js)
       else if (lkHouseOn('trau', lv)) c4LookDrawStall(g, sx, sy, ss, 'trau', lv, 'TRẦU CAU', C4.shut > 0 ? .45 : 1);   // a dressed house, only table and goods in front
       else {
@@ -1249,6 +1252,7 @@ function renderC4() {
       if (lv < 2) c4SignDraw(g, sx, sy, ss, 'TRẦU CAU', 'trau'); else if (c4SalePct('trau')) { g.save(); g.translate(sx, sy); g.scale(ss, ss); c4SaleTag(g, 'trau'); g.restore(); }
       }
       if (SAVE4.cauDoi) for (const d of [-1, 1]) { const px = sx + d * (lv ? 120 : 112) * ss, py = sy - (lv ? 150 : 80) * ss; g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(px - 7, py - 40 * ss, 14, 60 * ss); g.strokeRect(px - 7, py - 40 * ss, 14, 60 * ss); g.fillStyle = '#f2c640'; for (let k = 0; k < 3; k++) g.fillRect(px - 3, py - 32 * ss + k * 18 * ss, 6, 8 * ss); }
+      C4_HOUSE_SKIP = false;
     } });
   }
   { const W = C4.wife, wx2 = W.x ?? c4SellX('trau', 0), walk = W.st === 'walk', serving = W.at ? c4ServingK(W.at, W) : 0;   // the wife, wherever she is selling

@@ -61,6 +61,7 @@ function p4Sale(m, n, fx, fy) {
   const got = m.serving && m.serving.treat ? 0 : p4SalePrice('home', n * SAVE4B.price);   // a sale lowers the price (giamgia.js); an invited guest eats free
   SAVE4B.stock -= n; SAVE4B.sold = (SAVE4B.sold || 0) + n; P4.today.sold += n; p4Earn(got); m.take += got;
   P4.fx.push({ x: fx, y: fy, s: '+' + got, t: 0 });
+  AU.pluck(84 + (got % 5));                                                  // the coin sound, as in the village (owner: the town sold in silence)
 }
 // running a boat's order: from the counter down to the quay at the boat, hand it over, back to their place
 function p4Run(m, dt) {

@@ -125,7 +125,7 @@ const lkWallPart = (wall, door, win) => lkPart('W' + wall + door + win, LK_HB, a
 
 /* ---------- drawing ---------- */
 // a custom house stands behind the stall: then the stall in front is only its table and goods (no roof, posts or board of its own: a player saw two roofs)
-const lkHouseOn = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 3 && (L.wall || L.door || L.win || L.hroof || L.hpost)); };
+const lkHouseOn = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 3 && (L.door || L.win || L.hroof || L.hpost)); };   // (a wall colour alone keeps the house it was: see c4DrawShopLv)
 const lkFull = (g, lv) => { const L = c4LookGet(g); return !!(L && lv >= 1 && lv <= 2 && (L.roof || L.post || L.table || L.sign)); };
 // a stall drawn whole: posts, table, goods (the old art cut off just above the table top), board, roof. x, y = the stall's foot; s = scale
 function c4LookStall(g, x, y, s, ware, name, alpha = 1) {
@@ -165,9 +165,12 @@ function c4LookHouse(g, x, y, s, L, lv) {
   g.save(); g.translate(x, y); g.scale(s, s); g.font = '900 13px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32'; g.fillText(lv >= 4 ? 'Nhà mình' : 'Nhà thuê', 0, -262); g.restore();
 }
 const _c4DrawShopLv0 = c4DrawShopLv;
+let C4_HOUSE_SKIP = false;                       // set by the market while it draws a stall whose house was already drawn behind the sellers (cho.js)
 c4DrawShopLv = function (g, x, y, s, lv, ware = 'che') {
+  if (lv >= 3 && C4_HOUSE_SKIP) return;
   const L = c4LookGet(ware);
-  if (L && lv >= 3 && (L.wall || L.door || L.win || L.hroof || L.hpost)) { c4LookHouse(g, x, y, s, L, lv); return; }
+  if (L && lv >= 3 && (L.door || L.win || L.hroof || L.hpost)) { c4LookHouse(g, x, y, s, L, lv); return; }
+  if (L && lv >= 3 && L.wall && LOOK_WALL.some(e => e[0] === L.wall)) { C4_HOUSE_WALL = L.wall; try { _c4DrawShopLv0(g, x, y, s, lv, ware); } finally { C4_HOUSE_WALL = null; } return; }   // only the wall colour was bought: the old house, painted that colour (owner: it used to swap the whole house)
   _c4DrawShopLv0(g, x, y, s, lv, ware);
 };
 // the whole stall as the market draws it (used by the dresser and by a visit); ware 'trau' is the betel stall

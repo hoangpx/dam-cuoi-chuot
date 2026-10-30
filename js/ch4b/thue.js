@@ -37,7 +37,7 @@ function p4ShopsUpdate(dt) {
       const w = C.w, got = w.treat ? 0 : p4SalePrice(key, w.n * p4FoodPrice(R)), pre = cnPreLive(R) ? Math.min(w.n, R.pre) : 0, cost = (w.n - pre) * p4FoodCost(key); if (pre) R.pre -= pre; p4Served(w, key);
       SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost; persist4();
       const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 }); T.n += w.n; T.take += got; T.cost += cost;
-      if (Math.abs(x - P4.camX - p4View().vw / 2) < p4View().vw) { P4.fx.push({ x, y: p4Y(.12) - 120, s: '+' + (got - cost), t: 0 }); if (Math.random() < .3) p4Say(C, p4Pick(['Mời bác ngồi!', 'Nóng hổi đây!', 'Ăn ngon lại ghé nhé!'])); }
+      if (Math.abs(x - P4.camX - p4View().vw / 2) < p4View().vw) { AU.pluck(84 + (got % 5)); P4.fx.push({ x, y: p4Y(.12) - 120, s: '+' + (got - cost), t: 0 }); if (Math.random() < .3) p4Say(C, p4Pick(['Mời bác ngồi!', 'Nóng hổi đây!', 'Ăn ngon lại ghé nhé!'])); }
       Q.splice(Q.indexOf(w), 1); w.st = 'leave'; w.dir = Math.random() < .5 ? -1 : 1; C.w = null;
     }
     // queue places: walk up, wait, give up after a while
