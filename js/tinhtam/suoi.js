@@ -104,6 +104,7 @@ function ttHoaItems(items, g, L) {
       g.save(); g.globalAlpha = fade;
       const gl = g.createRadialGradient(sx, sy - 22 * sc, 1, sx, sy - 22 * sc, 70 * sc); gl.addColorStop(0, 'rgba(255,214,120,.55)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(sx - 70 * sc, sy - 92 * sc, 140 * sc, 140 * sc);
       g.fillStyle = 'rgba(255,220,140,.25)'; g.beginPath(); g.ellipse(sx, sy + 4 * sc, 30 * sc, 7 * sc, 0, 0, 6.283); g.fill();   // its light on the water
+      if (TT_NIGHT) TT.lights.push({ k: 'hoa', x: sx, y: sy, w: wpx, img, rot: Math.sin(t * .35 + ph) * .04, a: fade, sc, ph });
       g.translate(sx, sy); g.rotate(Math.sin(t * .35 + ph) * .04); g.drawImage(img, -wpx / 2, -wpx * .55, wpx, wpx * .75); g.restore();   // rocking slowly   // drawn as it is (owner: squeezing it to fake a turn looked bent), only rocking a little
       TT.hoaHit.push({ x: sx, y: sy - 18 * sc, r: Math.max(18, 34 * sc), w });
     } });

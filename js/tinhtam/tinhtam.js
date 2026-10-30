@@ -8,6 +8,9 @@
    World: x across (0 = the middle), z away from the camera, y up. The camera hangs TT_HC above the ground looking down the clearing
    (the monkey bridge's way of 2.5D: woodblock sprites standing on a perspective ground, the far scenery fading into mist). */
 const TT_URN = { z: 10.6 };
+// evening (owner: "thử làm buổi tối", then "buổi tối chỉ bật lúc 8h tối ở việt nam"): from 20:00 to 6:00 Vietnam time; ?dem forces it for testing
+const TT_NIGHT_FORCE = /[?&]dem/.test(location.search), ttVnHour = () => (new Date(Date.now() + 7 * 3600e3)).getUTCHours();
+let TT_NIGHT = TT_NIGHT_FORCE || ttVnHour() >= 20 || ttVnHour() < 6;
                                                  // the incense urn, on the near bank of the stream (owner)
 const TT_FAR = 16, TT_HC = 2.4, TT_XMAX = 8.2, TT_ZMIN = 5.6, TT_ZMAX = 9.8, TT_SPEED = 3.1;
 const TT_BOW_EVERY = 10, TT_BOW_LEN = 2.8;                              // after 10 s of sitting, and every 10 s after, a bow of 2.8 s
@@ -170,6 +173,7 @@ function updateTT(dt) {
   }
   TT.cam += (ttCurCam() - TT.cam) * Math.min(1, dt * 3);
   if (TT.selfKnock && TT.t - (TT.strikeT ?? -99) > 10) { TT.selfKnock = false; if (AU.zenSelf) AU.zenSelf(false); }   // 10 s without a strike: the chant's own mõ and bell come back (owner)
+  if ((TT.nightT = (TT.nightT || 0) + dt) > 5) { TT.nightT = 0; const h = ttVnHour(); TT_NIGHT = TT_NIGHT_FORCE || h >= 20 || h < 6; }   // the clock checked every few seconds
   TT.zk = (TT.zk || 0) + ((TT_SAVE.wide ? 1 : 0) - (TT.zk || 0)) * Math.min(1, dt * 4);
   TT.camD += (Math.max(0, Math.min(4.4, (m.z - 7.2) * .75)) - TT.camD) * Math.min(1, dt * 2.2);   // near the Buddha the camera follows, so he and the mouse grow in the view
   if (TT.on) {                                                          // my place goes out about ten times a second, and now and then even when still
@@ -302,9 +306,17 @@ function ttDrawMouse(g, L, o, me) {
   g.strokeStyle = me ? 'rgba(255,214,90,.95)' : `hsl(${hue} 62% 46%)`; g.lineWidth = Math.max(1.6, s * .03); g.beginPath(); g.ellipse(sx, sy, s * .4, s * .13, 0, 0, 6.283); g.stroke();
   const M = ttRigOf(o), kn = o.kn || 0, ke = kn * kn * (3 - 2 * kn);
   const bk = Math.max(0, Math.min(1, (ke - .3) / .4));                       // kneeling turns it to face the Buddha: the side view fades into the view from behind
-  if (bk < 1) { g.save(); g.translate(sx, sy); g.globalAlpha = 1 - bk; C4_KNEEL = ke; c4Mouse(g, M, 0, o.face, o.ph, o.mv === 1 && kn === 0, null, null, k, 18 * k * ke, o.sort); C4_KNEEL = 0; g.restore(); }
+  const arm = TT_NIGHT ? -1 : null;
+  if (bk < 1) { g.save(); g.translate(sx, sy); g.globalAlpha = 1 - bk; C4_KNEEL = ke; c4Mouse(g, M, 0, o.face, o.ph, o.mv === 1 && kn === 0, arm, null, k, 18 * k * ke, o.sort); C4_KNEEL = 0; g.restore(); }
   if (bk > 0) ttDrawBack(g, o, sx, sy, k, bow, bk);
+  if (TT_NIGHT) {                                                           // a candle: in the raised hand standing, on the ground beside the cushion kneeling
+    const ks = k * (C4_RIG_SZ.get(M) || 1), hx = 10 + 16 * Math.cos(arm) - 31 * Math.sin(arm), hy = -97 + 16 * Math.sin(arm) + 31 * Math.cos(arm);
+    const cx = bk < .5 ? sx + o.face * ks * (hx + 4) : sx + s * .3, cy = bk < .5 ? sy + 18 * k * ke + ks * hy : sy - s * .02, ck = bk < .5 ? ks : k * .9;
+    ttCandle(g, cx, cy, ck, o.ph + o.id.length);
+    TT.lights.push({ k: 'nen', x: cx, y: cy - 30 * ck, r: Math.min(120 * ck, 70), ph: o.ph });
+  }
   const ph = L.W < 640, fs = ph ? Math.max(8, Math.min(11, s * .19)) : Math.max(11, Math.min(16, s * .26)), ny = sy - (168 - 38 * bk) * k;      // the name over the head
+  if (TT_NIGHT) { TT.lights.push({ k: 'name', x: sx, y: ny, fs, ph, txt: o.name, col: me ? '#6b4a0a' : `hsl(${hue} 70% 28%)` }); return; }   // at night the names go on after the dusk
   g.font = `700 ${fs}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = ph ? 3 : 4; g.strokeStyle = 'rgba(251,244,220,.95)'; g.strokeText(o.name, sx, ny);   // on a phone the names are smaller (owner)
   g.fillStyle = me ? '#6b4a0a' : `hsl(${hue} 70% 28%)`; g.fillText(o.name, sx, ny);
 }
@@ -364,10 +376,11 @@ function renderTT() {
   const W = cv.width / DPR, Hf = cv.height / DPR; let g = ctx; g.setTransform(DPR, 0, 0, DPR, 0, 0);
   if (!TT.ready) { g.fillStyle = '#b9c9b0'; g.fillRect(0, 0, W, Hf); return; }
   const L = ttLay(W, Hf), { hor, P } = L, A = ttArt(), S = TT.S, t = TT.t;
+  TT.lights = [];
   // the wide view on a phone was slow (owner: "nhìn toàn cảnh lag quá"): there the camera stands still, so the far layer (sky, clouds,
   // ground, stream, everything from z TT_FAR back: bamboo, rocks, the Buddha, the mist) is painted into TT.far a few times a second and
   // only copied in between; the near things (mice, lanterns, grass, cushions, urn, petals) are drawn every frame
-  const FC = TT.far || (TT.far = { c: document.createElement('canvas'), key: '', at: -9 }), useFar = (TT.zk || 0) > .99;
+  const FC = TT.far || (TT.far = { c: document.createElement('canvas'), key: '', at: -9 }), useFar = (TT.zk || 0) > .99 && !TT_NIGHT;
   const key = [cv.width, cv.height, TT.cam.toFixed(2), TT.camD.toFixed(2)].join(), fresh = useFar && FC.key === key && t - FC.at < .2;
   const back = () => { g.drawImage(ttBack(Math.round(W), Math.round(hor + 4), hor), 0, 0, W, hor + 4); ttClouds(g, L); ttBgGround(g, L); };
   if (useFar && !fresh) { if (FC.c.width !== cv.width || FC.c.height !== cv.height) { FC.c.width = cv.width; FC.c.height = cv.height; } g = FC.c.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0); FC.key = key; FC.at = t; }
@@ -418,7 +431,8 @@ function renderTT() {
   }
   if (far) endFar();
   // light through the trees, falling petals, a vignette
-  for (const q of S.shafts) {
+  if (TT_NIGHT) ttNight(g, L);
+  for (const q of TT_NIGHT ? [] : S.shafts) {
     const x0 = L.W * q.x, a = .05 + .035 * Math.sin(t * .4 + q.ph), gr = g.createLinearGradient(x0, 0, x0 - L.W * .12, hor + L.H * .3); gr.addColorStop(0, `rgba(255,246,206,${a * 2})`); gr.addColorStop(1, 'rgba(255,246,206,0)');
     g.fillStyle = gr; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + L.W * q.w, 0); g.lineTo(x0 + L.W * q.w - L.W * .22, hor + L.H * .3); g.lineTo(x0 - L.W * .12, hor + L.H * .3); g.closePath(); g.fill();
   }
@@ -502,6 +516,84 @@ function ttStrike(which) {
   TT.strikeT = TT.t;
   if (!TT.selfKnock) { TT.selfKnock = true; if (AU.zenSelf) AU.zenSelf(true); if (!TT.toldSelf) { TT.toldSelf = true; toast(lg('Tiếng mõ, tiếng chuông giờ là của bạn. Chạm để gõ.', 'The fish and the bell are yours now. Tap to strike them.'), 3); } }
   if (which === 'mo') { TT.moT = TT.t; if (AU.zenKnock) AU.zenKnock(); /* louder than the chant's own knock (owner) */ } else { TT.bellT = TT.t; AU.zenBell(1); }
+}
+// ---------- the evening (on trial) ----------
+// a candle in the woodblock style: a cream stick with a drip, a small flame that flickers
+function ttCandle(g, x, y, k, ph) {
+  const t = TT.t, fl = 1 + Math.sin(t * 13 + ph * 7) * .08 + Math.sin(t * 7.3 + ph) * .06;
+  g.fillStyle = '#f3e6c4'; g.strokeStyle = '#1d1915'; g.lineWidth = 1.2 * k; g.beginPath(); g.rect(x - 4 * k, y - 26 * k, 8 * k, 26 * k); g.fill(); g.stroke();
+  g.fillStyle = '#e9d6a6'; g.beginPath(); g.ellipse(x, y - 26 * k, 4 * k, 1.6 * k, 0, 0, 6.283); g.fill();
+  g.strokeStyle = '#3a2a1a'; g.lineWidth = 1 * k; g.beginPath(); g.moveTo(x, y - 26 * k); g.lineTo(x, y - 29 * k); g.stroke();
+  const fy = y - 30 * k, fh = 12 * k * fl, gr = g.createLinearGradient(0, fy, 0, fy - fh); gr.addColorStop(0, '#ff9a2a'); gr.addColorStop(.5, '#ffd25a'); gr.addColorStop(1, '#fff6d0');
+  g.fillStyle = gr; g.beginPath(); g.moveTo(x - 3.2 * k, fy); g.quadraticCurveTo(x - 3.6 * k, fy - fh * .6, x + Math.sin(t * 5 + ph) * k, fy - fh); g.quadraticCurveTo(x + 3.6 * k, fy - fh * .6, x + 3.2 * k, fy); g.closePath(); g.fill();
+}
+function ttGlow(g, x, y, r, col, a) {
+  const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(.35, `rgba(${col},${a * .35})`); gr.addColorStop(1, `rgba(${col},0)`);
+  g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+}
+function ttNight(g, L) {
+  const { W, H, hor, P } = L, t = TT.t;
+  // dusk blue over everything, deeper in the sky
+  // the dusk is a tint laid over the scene (multiply), with soft holes where light falls: the Buddha himself (he shines, owner: "phật cũng
+  // phải sáng lên"), the urn, every candle and lantern, so what stands near them is lit too
+  const TC = TT.tint || (TT.tint = document.createElement('canvas')); if (TC.width !== cv.width || TC.height !== cv.height) { TC.width = cv.width; TC.height = cv.height; }
+  const q = TC.getContext('2d'); q.setTransform(DPR, 0, 0, DPR, 0, 0); q.globalCompositeOperation = 'source-over'; q.clearRect(0, 0, W, H);
+  const sky = q.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1d2a52'); sky.addColorStop(Math.min(.95, hor / H + .02), '#33406a'); sky.addColorStop(1, '#2c3a5c');
+  q.fillStyle = sky; q.fillRect(0, 0, W, H);
+  q.globalCompositeOperation = 'destination-out';
+  const hole = (x, y, rx, ry, a) => { q.save(); q.translate(x, y); q.scale(1, ry / rx); const gr = q.createRadialGradient(0, 0, 0, 0, 0, rx); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(.55, `rgba(0,0,0,${a * .75})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); q.fillStyle = gr; q.fillRect(-rx, -rx, rx * 2, rx * 2); q.restore(); };
+  const [bx, by, bs] = P(0, TT_SY, TT_SZ), bsc = bs * TT_SH / 440, breath = 1 + .03 * Math.sin(t * .6);
+  hole(bx, by - bsc * 200, bsc * 300 * breath, bsc * 380 * breath, .97);                // the Buddha, halo to throne
+  { const [x, y, s] = P(0, 0, TT_URN.z), sc = s * 2.5 / 180; hole(x, y - 90 * sc, 120 * sc, 90 * sc, .45); }
+  for (const l of TT.lights) {
+    if (l.k === 'nen') hole(l.x, l.y + 10, l.r * 1.1, l.r * .9, .5 * (.9 + .1 * Math.sin(t * 9 + l.ph * 5)));
+    else if (l.k === 'hoa') hole(l.x, l.y, l.w * 1.2, l.w * .7, .45 * l.a);
+  }
+  g.save(); g.globalCompositeOperation = 'multiply'; g.drawImage(TC, 0, 0, W, H); g.restore();
+  g.save(); g.globalCompositeOperation = 'lighter';
+  // stars and a thin moon in the sky
+  const S = TT.stars || (TT.stars = Array.from({ length: 90 }, (_, i) => ({ x: (Math.sin(i * 91.7) * .5 + .5), y: (Math.sin(i * 37.3) * .5 + .5), r: .6 + (i % 5) * .25, ph: i })));
+  for (const q of S) { const y = q.y * hor * .8; g.fillStyle = `rgba(255,250,225,${.35 + .3 * Math.sin(t * 1.3 + q.ph)})`; g.beginPath(); g.arc(q.x * W, y, q.r, 0, 6.283); g.fill(); }
+  { const mx = W * .72, my = hor * .36, mr = Math.min(W, H) * .028; ttGlow(g, mx, my, mr * 6, '255,240,200', .2); const R = Math.ceil(mr) + 2, mc = TT.moon && TT.moon.width === R * 2 ? TT.moon : (TT.moon = (() => { const c = document.createElement('canvas'); c.width = c.height = R * 2; const q = c.getContext('2d'); q.fillStyle = 'rgba(255,246,214,.95)'; q.beginPath(); q.arc(R, R, mr, 0, 6.283); q.fill(); q.globalCompositeOperation = 'destination-out'; q.beginPath(); q.arc(R + mr * .5, R - mr * .22, mr * .9, 0, 6.283); q.fill(); return c; })());
+    g.drawImage(mc, mx - R, my - R); }   // a crescent
+  // the Buddha's halo stays softly lit
+  { const sc = bsc, cx = bx, cy = by - sc * 300;                                 // the aura: a golden glow round the halo and slow turning rays
+    ttGlow(g, cx, cy, sc * 380 * breath, '255,214,120', .42); ttGlow(g, cx, cy, sc * 210, '255,236,170', .3); ttGlow(g, bx, by - sc * 120, sc * 300, '255,200,110', .16);
+    g.strokeStyle = `rgba(255,226,140,${.35 + .1 * Math.sin(t * .8)})`; g.lineWidth = Math.max(1.5, sc * 5); g.beginPath(); g.arc(cx, cy, sc * 175, 0, 6.283); g.stroke();
+    const R0 = sc * 520;
+    for (let i = 0; i < 18; i++) {
+      const an = i / 18 * 6.283 + t * .03, w0 = .05 + (i % 3) * .02, a0 = .1 + .06 * Math.sin(t * .5 + i * 1.7);
+      const gr = g.createRadialGradient(cx, cy, sc * 150, cx, cy, R0); gr.addColorStop(0, `rgba(255,230,160,${a0})`); gr.addColorStop(1, 'rgba(255,230,160,0)');
+      g.fillStyle = gr; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(an - w0) * R0, cy + Math.sin(an - w0) * R0); g.lineTo(cx + Math.cos(an + w0) * R0, cy + Math.sin(an + w0) * R0); g.closePath(); g.fill();
+    } }
+  // the urn's sticks
+  { const [x, y, s] = P(0, 0, TT_URN.z), sc = s * 2.5 / 180; ttGlow(g, x, y - 120 * sc, 90 * sc, '255,150,70', .35); }
+  // candles and lanterns
+  for (const l of TT.lights) {
+    if (l.k === 'nen') { const f = .85 + .15 * Math.sin(t * 9 + l.ph * 5); ttGlow(g, l.x, l.y, l.r * f, '255,190,90', .7); ttGlow(g, l.x, l.y, l.r * .25 * f, '255,236,170', .8); }
+    else if (l.k === 'hoa') { const f = .8 + .2 * Math.sin(t * 2.2 + l.ph * 3) + .08 * Math.sin(t * 9 + l.ph); ttGlow(g, l.x, l.y - l.w * .2, l.w * 1.3 * f, '255,196,110', .55 * l.a); ttGlow(g, l.x, l.y + l.w * .05, l.w * .9, '255,170,90', .22 * l.a); }
+  }
+  g.restore();
+  // the lanterns themselves drawn again over the dusk, so they glow (lung linh)
+  for (const l of TT.lights) if (l.k === 'hoa') {
+    g.save(); g.globalAlpha = l.a * (.85 + .15 * Math.sin(t * 2.2 + l.ph * 3)); g.translate(l.x, l.y); g.rotate(l.rot); g.drawImage(l.img, -l.w / 2, -l.w * .55, l.w, l.w * .75); g.restore();
+  }
+  for (const l of TT.lights) if (l.k === 'name') {
+    g.font = `700 ${l.fs}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = l.ph ? 3 : 4;
+    g.strokeStyle = 'rgba(251,244,220,.85)'; g.strokeText(l.txt, l.x, l.y); g.fillStyle = l.col; g.fillText(l.txt, l.x, l.y);
+  }
+  // fireflies: wandering little lights over the grass and among the bamboo, blinking slowly
+  const F = TT.ff || (TT.ff = Array.from({ length: 46 }, (_, i) => ({ x: (Math.random() - .5) * 22, y: .3 + Math.random() * 2.4, z: 3.6 + Math.random() * 14, vx: 0, vy: 0, vz: 0, ph: Math.random() * 6.283, sp: .5 + Math.random() * .6 })));
+  const dt = Math.min(.05, t - (TT.ffT ?? t)); TT.ffT = t;
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (const f of F) {
+    f.vx += (Math.sin(t * .7 * f.sp + f.ph) * .6 - f.vx) * dt; f.vy += (Math.cos(t * .9 * f.sp + f.ph * 2) * .25 - f.vy) * dt; f.vz += (Math.sin(t * .5 * f.sp + f.ph * 3) * .4 - f.vz) * dt;
+    f.x += f.vx * dt; f.y = Math.max(.15, Math.min(3.2, f.y + f.vy * dt)); f.z = Math.max(3.4, Math.min(18, f.z + f.vz * dt)); if (Math.abs(f.x) > 12) f.x *= -.95;
+    if (f.z - TT.camD < 1.3) continue;
+    const [x, y, s] = P(f.x, f.y, f.z), b = Math.max(0, Math.sin(t * 1.4 * f.sp + f.ph)) ** 2; if (b < .02 || x < -20 || x > W + 20) continue;
+    const r = Math.max(2.5, s * .05); ttGlow(g, x, y, r * 6, '200,255,120', .5 * b); g.fillStyle = `rgba(240,255,190,${.9 * b})`; g.beginPath(); g.arc(x, y, r * .55, 0, 6.283); g.fill();
+  }
+  g.restore();
 }
 function ttHud(g, W, H) {
   const st = safeTop(), hud = TT.hud = [], m = TT.me, sit = m.mv === 2;
