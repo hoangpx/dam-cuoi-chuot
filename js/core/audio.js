@@ -162,7 +162,7 @@ const AU = (() => {
   function zenVoice(t, m, dur) {                                      // one soft syllable of the chant: a warm hum of sines and triangles an octave up (owner: the low sawtooth voice sounded scary), slow vibrato, no breath
     const out = c.createGain(), lp = c.createBiquadFilter(), vib = c.createOscillator(), vg = c.createGain();
     lp.type = 'lowpass'; lp.frequency.value = 1100; vib.frequency.value = 4.2; vg.gain.value = 2.5; vib.connect(vg);
-    out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(.13, t + .28); out.gain.setValueAtTime(.11, t + dur * .6); out.gain.linearRampToValueAtTime(0, t + dur);
+    out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(.075, t + .28); out.gain.setValueAtTime(.065, t + dur * .6);   /* the voices kept low (owner), the mõ and the bell as they were */ out.gain.linearRampToValueAtTime(0, t + dur);
     for (const [oc, dc, gv, ty] of [[12, -5, .5, 'sine'], [12, 6, .45, 'triangle'], [0, 0, .3, 'sine'], [19, 0, .07, 'sine']]) { const o = c.createOscillator(), og = c.createGain(); o.type = ty; o.frequency.value = mtof(m + oc); o.detune.value = dc; og.gain.value = gv; vg.connect(o.detune); o.connect(og); og.connect(lp); o.start(t); o.stop(t + dur + .05); }
     vib.start(t); vib.stop(t + dur + .05); lp.connect(out); out.connect(zenG); out.connect(zenEcho);
   }

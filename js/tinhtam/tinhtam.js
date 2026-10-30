@@ -59,7 +59,7 @@ function ttBuild() {
   return S;
 }
 
-/* ---------- the music: our own chant (owner: "để nhạc của b"): AU.zenStart in audio.js, a low "Nam mô A Di Đà Phật" over a wooden fish and a bell ---------- */
+/* ---------- the music: our own chant (owner: "để nhạc của b"; the voices kept low, mõ and bell louder): AU.zenStart in audio.js, a low "Nam mô A Di Đà Phật" over a wooden fish and a bell ---------- */
 
 /* ---------- entering and leaving ---------- */
 function startTT() {
@@ -114,11 +114,12 @@ const ttCount = () => TT.on ? Math.max(TT.count, TT.peers.size + 1) : 1;
 
 /* ---------- the view ---------- */
 function ttLay(W, H) {
-  const hor = Math.round(H * .43), f = Math.min(H * .78, W * 1.15), hv = (W / 2) / (f / 9), lim = Math.max(0, TT_XMAX - hv);
+  // a portrait phone stands back (owner: "trên điện thoại không xem được toàn cảnh"): the lens is set by the width so the whole clearing fits, the horizon higher and the camera raised (hc) so the ground fills the tall screen
+  const tall = H > W * 1.15, hor = Math.round(H * (tall ? .47 : .43)), f = tall ? W * .62 : Math.min(H * .78, W * 1.15), hc = tall ? 4.6 : TT_HC, hv = (W / 2) / (f / 9), lim = Math.max(0, TT_XMAX - hv);
   const cx = Math.max(-lim, Math.min(lim, TT.me.x));
-  return { W, H, hor, f, hv, cx, P: (x, y, z) => { const s = f / Math.max(z - TT.camD, .8); return [W / 2 + (x - TT.cam) * s, hor + (TT_HC - y) * s, s]; } };   // camD: the camera walks forward after the mouse
+  return { W, H, hor, f, hc, hv, cx, P: (x, y, z) => { const s = f / Math.max(z - TT.camD, .8); return [W / 2 + (x - TT.cam) * s, hor + (hc - y) * s, s]; } };   // camD: the camera walks forward after the mouse
 }
-const ttInv = (L, sx, sy) => { if (sy <= L.hor + 6) return null; const z = TT_HC * L.f / (sy - L.hor) + TT.camD; return [TT.cam + (sx - L.W / 2) * z / L.f, z]; };
+const ttInv = (L, sx, sy) => { if (sy <= L.hor + 6) return null; const z = L.hc * L.f / (sy - L.hor) + TT.camD; return [TT.cam + (sx - L.W / 2) * z / L.f, z]; };
 
 /* ---------- moving, sitting, bowing ---------- */
 function ttSit(on) {
@@ -224,7 +225,7 @@ function ttLawn(g, L) {
   const pat = TT_LAWN_PAT, U = 128;
   g.fillStyle = '#5f8f48'; g.fillRect(0, hor, W, H - hor);
   for (let y = Math.ceil(hor) + 1; y < H; ) {
-    const z = TT_HC * f / (y - hor) + TT.camD, sc = f / Math.max(z - TT.camD, .8), bh = Math.max(1, Math.min(6, Math.round((y - hor) / 40)));
+    const z = L.hc * f / (y - hor) + TT.camD, sc = f / Math.max(z - TT.camD, .8), bh = Math.max(1, Math.min(6, Math.round((y - hor) / 40)));
     const a = sc / U, m = new DOMMatrix([a, 0, 0, a * .35, W / 2 - TT.cam * sc, y - z * U * a * .35]);
     pat.setTransform(m); g.fillStyle = pat; g.fillRect(0, y, W, bh); y += bh;
   }
