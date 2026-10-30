@@ -137,31 +137,65 @@ function ttHoaRead(w) {
     ttRpc('dcc_hoa_report', { p_id: w.id }).catch(() => {}); TT.hoa = (TT.hoa || []).filter(x => x.id !== w.id); ttHoaClose(); toast(lg('Đã báo. Cảm ơn bạn.', 'Reported. Thank you.'), 2);
   });
 }
+// setting a lantern afloat, the way Phố Huyện of chương IV does it (owner: "chỗ ghi lời ước cũng làm giống bên chương 4"): its sheet (.c4sheet / .card4,
+// "Mua một đèn" then "Viết điều ước lên đèn:"), then two hands hold the lantern (p4HandsSvg; they follow the mouse on a computer, wait low
+// on a phone) until a tap on the stream sets it down there. The first one is free, then 5 quan from chương IV's purse, paid when it floats.
 function ttHoaOpen() {
-  const n = TT_SAVE.hoaN || 0, free = !n, money = typeof SAVE4 !== 'undefined' ? SAVE4.money : 0, fmt = v => typeof c4Money === 'function' ? c4Money(v) : v + ' đồng';
-  const price = free ? lg('Lần đầu được thả miễn phí.', 'Your first lantern is free.') : lgf('Mỗi đèn 5 quan, trừ vào túi tiền ở chương Vợ Chồng Khởi Nghiệp. Trong túi: {m}.', 'Each lantern costs 5 quan from your purse in Chapter IV. In your purse: {m}.', { m: fmt(money) });
-  const box = ttSheet(`<b style="font:900 20px 'Playfair Display',serif;text-align:center">${lg('Thả hoa đăng', 'Set a lantern afloat')}</b>
-    <p style="margin:0;font-size:13px">${lg('Viết một lời chúc, một tâm niệm. Đèn sẽ trôi trên suối trước tượng Phật, ai ở đây cũng đọc được.', 'Write a wish. Your lantern will drift on the stream before the Buddha, and everyone here can read it.')}</p>
-    <textarea id="ttHoaText" maxlength="90" rows="3" placeholder="${lg('Lời chúc của bạn…', 'Your wish…')}" style="resize:none;border:2px solid #1d1915;border-radius:10px;padding:8px;background:#fffaf0;font:500 15px 'Be Vietnam Pro',sans-serif"></textarea>
-    <p id="ttHoaPrice" style="margin:0;font-size:12px;opacity:.8">${price}</p>
-    <div style="display:flex;gap:8px;justify-content:flex-end"><button id="ttX" style="${TT_BTN};background:#f4ead0">${lg('Thôi', 'Cancel')}</button><button id="ttGo" style="${TT_BTN};background:#d9e6c0">${lg('Thả đèn', 'Set it afloat')}</button></div>`);
-  const ta = box.querySelector('#ttHoaText'); setTimeout(() => ta.focus(), 30);
-  box.querySelector('#ttX').addEventListener('click', ttHoaClose);
-  box.querySelector('#ttGo').addEventListener('click', () => {
-    const wish = ta.value.trim().replace(/\s+/g, ' '); if (!wish) return;
-    if (ttHoaBad(wish)) { toast(lg('Lời chúc có chữ không đẹp, bạn viết lại nhé.', 'Please write it without rude words.'), 3); return; }
-    if (!free && (typeof SAVE4 === 'undefined' || SAVE4.money < TT_HOA_PRICE)) { toast(lg('Không đủ 5 quan. Sang chương Vợ Chồng Khởi Nghiệp buôn bán kiếm thêm tiền nhé.', 'Not enough money (5 quan). Earn more in Chapter IV.'), 3.6); return; }
-    const go = box.querySelector('#ttGo'); go.disabled = true; go.textContent = lg('Đang thả…', 'Setting afloat…');
-    ttRpc('dcc_hoa_add', { p_wish: wish, p_shop: (TT.me.name || '').slice(0, 16), p_device: TT_SAVE.id }).then(id => {
-      if (!free) { SAVE4.money -= TT_HOA_PRICE; persist4(); }
-      TT_SAVE.hoaN = n + 1; ttPersist();
-      const w = { id, wish, shop: (TT.me.name || '').slice(0, 16), t: new Date().toISOString() };
-      TT.hoa = [w, ...(TT.hoa || []).filter(x => x.id !== id)];
-      (TT.hoaMine = TT.hoaMine || []).push({ u: ttStreamNear(TT_SIGN.x - .8, TT_SIGN.z + 1.6), w, ph: Math.random() * 6 });
-      ttHoaClose(); AU.zenBell(.6); toast(lg('Đèn hoa đăng của bạn đã trôi trên suối.', 'Your lantern is drifting on the stream.'), 3);
-    }).catch(e => {
-      go.disabled = false; go.textContent = lg('Thả đèn', 'Set it afloat');
-      toast(/too soon/.test(e.message) ? lg('Chờ một chút rồi thả tiếp nhé.', 'Wait a moment, then try again.') : /bad words/.test(e.message) ? lg('Lời chúc có chữ không đẹp, bạn viết lại nhé.', 'Please write it without rude words.') : lg('Chưa thả được, thử lại sau nhé.', 'Could not set it afloat, try again later.'), 3);
-    });
+  if (TT.hold) { toast(lg('Chạm vào dòng suối để thả đèn.', 'Tap the stream to set it afloat.'), 2.4); return; }
+  const n = TT_SAVE.hoaN || 0, free = !n, money = typeof SAVE4 !== 'undefined' ? SAVE4.money : 0, fmt = v => typeof c4Money === 'function' ? c4Money(v) : v + ' đồng', ok = free || money >= TT_HOA_PRICE;
+  ttHoaClose(); const d = document.createElement('div'); d.id = 'ttSheet'; d.className = 'c4sheet'; d.style.zIndex = 40;
+  d.innerHTML = '<div class="card4"><h3>' + lg('Thả đèn hoa đăng', 'Set a lantern afloat') + '</h3><div id="ttHoaB"></div></div>';
+  d.addEventListener('pointerdown', e => { if (e.target === d) ttHoaClose(); });
+  for (const ev of ['keydown', 'keyup']) d.addEventListener(ev, e => e.stopPropagation());
+  document.body.appendChild(d);
+  const B = d.querySelector('#ttHoaB');
+  B.innerHTML = '<p>' + (free ? lg('Chiếc đèn hoa sen giấy đầu tiên được tặng.', 'Your first paper lotus lantern is a gift.') : lgf('Một chiếc đèn hoa sen giấy giá {p}.', 'A paper lotus lantern costs {p}.', { p: '<b>' + fmt(TT_HOA_PRICE) + '</b>' }))
+    + ' ' + lg('Viết điều ước lên đèn rồi thả xuống suối trước tượng Phật, ai ở đây cũng đọc được.', 'Write a wish on it and set it on the stream before the Buddha; everyone here can read it.') + '</p>'
+    + (free ? '' : '<p>' + lg('Trong túi: ', 'In your purse: ') + fmt(Math.round(money)) + '</p>') + (ok ? '' : '<p class="bad">' + lg('Chưa đủ tiền mua đèn.', 'Not enough money for a lantern.') + '</p>')
+    + '<div class="row">' + (ok ? '<button class="btn" id="ttHoaBuy">' + (free ? lg('Nhận một đèn', 'Take a lantern') : lg('Mua một đèn', 'Buy a lantern')) + '</button>' : '') + '<button class="btn alt" id="ttX">' + lg('Thôi', 'Cancel') + '</button></div>';
+  B.querySelector('#ttX').onclick = ttHoaClose;
+  if (ok) B.querySelector('#ttHoaBuy').onclick = () => {
+    if (AU.tap) AU.tap();
+    B.innerHTML = '<p>' + lg('Viết điều ước lên đèn:', 'Write your wish on the lantern:') + '</p><textarea id="ttHoaW" maxlength="90" rows="3" placeholder="' + lg('Cầu cho…', 'May…') + '" style="width:100%;box-sizing:border-box;font:16px var(--body);padding:8px 10px;border:2.5px solid var(--ink);background:#fff8e6;resize:none"></textarea><div class="row"><button class="btn" id="ttHoaOk">' + lg('Viết xong', 'Done') + '</button></div>';
+    const ta = B.querySelector('#ttHoaW'); setTimeout(() => ta.focus(), 50);
+    B.querySelector('#ttHoaOk').onclick = () => {
+      const w = ta.value.trim().replace(/\s+/g, ' ') || lg('Cầu bình an.', 'Peace to all.');
+      if (ttHoaBad(w)) { toast(lg('Lời chúc có chữ không đẹp, viết lại nhé.', 'Please write it without rude words.'), 2.6); return; }
+      ttHoaClose(); ttHoaHold({ wish: w, c: (TT_SAVE.hoaN || 0) % TT_HOA_COLS.length });
+    };
+  };
+}
+// two hands cupping the lantern (chương IV's picture); null puts them away
+function ttHoaHold(h) {
+  TT.hold = h; let el = document.getElementById('ttHands');
+  if (!el) {
+    if (!h) return;
+    el = document.createElement('div'); el.id = 'ttHands'; document.body.appendChild(el);
+    addEventListener('pointermove', e => { if (TT.hold && e.pointerType === 'mouse') { el.style.left = e.clientX + 'px'; el.style.top = e.clientY + 'px'; } }, true);
+  }
+  if (!h) { el.hidden = true; cv.style.cursor = ''; return; }
+  const touch = !matchMedia('(pointer: fine)').matches, [c1, c2] = TT_HOA_COLS[h.c];
+  el.style.cssText = 'position:fixed;z-index:5;pointer-events:none;aspect-ratio:1;filter:drop-shadow(0 0 10px rgba(255,200,110,.6));' + (touch ? 'left:50%;bottom:16%;width:118px;transform:translateX(-50%);animation:p4bob 2.4s ease-in-out infinite' : 'width:clamp(130px,11vw,200px);transform:translate(-50%,-70%);left:50%;top:75%');
+  el.innerHTML = typeof p4HandsSvg === 'function' ? p4HandsSvg(c1, c2) : '';
+  el.hidden = false; if (!touch) cv.style.cursor = 'none';
+}
+// a tap while holding: on the stream the lantern floats from there; anywhere else nothing happens
+function ttHoaDrop(L, x, y) {
+  const h = TT.hold, at = ttInv(L, x, y); if (!h || !at) return false;
+  const u = ttStreamNear(at[0], at[1]), p = ttStreamAt(u); if (Math.hypot(p.x - at[0], p.z - at[1]) > p.w * .7 + .35) return false;
+  ttHoaHold(null);
+  const n = TT_SAVE.hoaN || 0, free = !n;
+  if (!free && (typeof SAVE4 === 'undefined' || SAVE4.money < TT_HOA_PRICE)) { toast(lg('Không đủ 5 quan. Sang chương Vợ Chồng Khởi Nghiệp buôn bán kiếm thêm tiền nhé.', 'Not enough money (5 quan). Earn more in Chapter IV.'), 3.6); return true; }
+  ttRpc('dcc_hoa_add', { p_wish: h.wish, p_shop: (TT.me.name || '').slice(0, 16), p_device: TT_SAVE.id }).then(id => {
+    if (!free) { SAVE4.money -= TT_HOA_PRICE; persist4(); }
+    TT_SAVE.hoaN = n + 1; ttPersist();
+    const w = { id, wish: h.wish, shop: (TT.me.name || '').slice(0, 16), t: new Date().toISOString() };
+    TT.hoa = [w, ...(TT.hoa || []).filter(q => q.id !== id)];
+    (TT.hoaMine = TT.hoaMine || []).push({ u, w, ph: Math.random() * 6 });
+    AU.zenBell(.6); toast(lg('Đèn hoa đăng của bạn đã trôi trên suối.', 'Your lantern is drifting on the stream.'), 3);
+  }).catch(e => {
+    ttHoaHold(h);                                                           // still in hand: try again
+    toast(/too soon/.test(e.message) ? lg('Chờ một chút rồi thả tiếp nhé.', 'Wait a moment, then try again.') : /bad words/.test(e.message) ? lg('Lời chúc có chữ không đẹp, bạn viết lại nhé.', 'Please write it without rude words.') : lg('Chưa thả được, thử lại sau nhé.', 'Could not set it afloat, try again later.'), 3);
   });
+  return true;
 }

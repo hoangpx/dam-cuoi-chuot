@@ -74,7 +74,7 @@ function startTT() {
   Object.assign(TT, { ready: true, t: 0, peers: new Map(), keys: new Set(), closing: false, tries: 0, cam: 0, camD: 0, chirp: 3 });
   AU.zenStart(); ttConnect(); ttHoaLoad(); cv.focus();
 }
-function ttHide() { ttHoaClose(); AU.zenStop(); AU.ambient({}); ttLeave(); TT.keys.clear(); }
+function ttHide() { ttHoaClose(); ttHoaHold(null); ttRenameClose(); AU.zenStop(); AU.ambient({}); ttLeave(); TT.keys.clear(); }
 function ttLeave() { TT.closing = true; clearInterval(TT.pollT); const ws = TT.ws; TT.ws = null; TT.on = false; TT.peers.clear(); if (ws) try { ws.close(); } catch (e) {} }
 
 /* ---------- the room (the Worker only relays) ---------- */
@@ -447,20 +447,35 @@ function ttHud(g, W, H) {
   const back = ttTag(g, 34, st + 28, '←', { size: 20, pad: 14, h: 40 }); hud.push({ r: back, f: () => showChapters() });
   const n = ttCount(), label = '● ' + lgf('{n} người đang tĩnh tâm', '{n} sitting quietly', { n });
   const cnt = ttTag(g, W / 2, st + 28, label, { size: 13, fill: '#e3efd4' });
+  const ren = ttTag(g, W / 2, st + 66, lg('✎ Đổi tên', '✎ Rename'), { size: 12, h: 28, pad: 14, fill: '#f2ecde' }); hud.push({ r: ren, f: ttRename });   // as in Ghép Tranh
   if (H > W * 1.15) { const z = ttTag(g, W - 34, st + 28, TT_SAVE.wide ? '+' : '−', { size: 22, pad: 14, h: 40 }); hud.push({ r: z, f: () => { TT_SAVE.wide = !TT_SAVE.wide; ttPersist(); } }); }   // zoom: − the whole clearing, + close again
   const by = H - 46 - (W > 640 ? 8 : 0);
   const btn = ttTag(g, W / 2, by, sit ? lg('Đứng dậy', 'Stand up') : lg('Ngồi thiền', 'Sit'), { size: 17, h: 48, pad: 52, fill: sit ? '#f7e3a4' : '#d9e6c0' }); hud.push({ r: btn, f: () => ttSit(!sit) });
   if (sit) { const s = Math.floor(m.sitT), tx = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); ttTag(g, W / 2, by - 44, tx, { size: 12, h: 26, pad: 18, fill: 'rgba(244,234,208,.85)' }); }
 }
-function ttRename() {                                                   // a small box in the page (prompt() does not work everywhere, e.g. inside the Claude viewer)
-  if (document.getElementById('ttName')) return;
-  const box = document.createElement('div'), inp = document.createElement('input'), ok = document.createElement('button');
-  box.id = 'ttName'; box.style.cssText = 'position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:40;display:flex;gap:6px;padding:8px;background:#f4ead0;border:2.4px solid #1d1915;border-radius:12px;font:700 14px "Be Vietnam Pro",sans-serif';
-  inp.maxLength = HS_NAME_MAX; inp.value = TT.me.name; inp.style.cssText = 'width:min(200px,50vw);padding:6px 8px;border:2px solid #1d1915;border-radius:8px;background:#fff;font:700 14px "Be Vietnam Pro",sans-serif';
-  ok.textContent = lg('Lưu', 'Save'); ok.style.cssText = 'padding:6px 12px;border:2.4px solid #1d1915;border-radius:8px;background:#d9e6c0;font:800 14px "Be Vietnam Pro",sans-serif';
-  const done = save => { const n = inp.value.trim().slice(0, HS_NAME_MAX); box.remove(); cv.focus(); if (!save || n.length < 2) return; hsSet('dcc.hoso', hsClean({ ...hsMine(), name: n })); TT.me.name = TT_SAVE.name = n; ttPersist(); ttSend({ t: 'hello', id: TT.me.id, name: n, look: TT.me.look, friends: [] }); TT.last = ''; };
-  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') done(true); else if (e.key === 'Escape') done(false); }); inp.addEventListener('keyup', e => e.stopPropagation());
-  ok.addEventListener('click', () => done(true)); box.append(inp, ok); document.body.appendChild(box); inp.focus(); inp.select();
+// rename, the same bar as Ghép Tranh's (owner: "cho nút đổi tên giống bên ghép tranh"): a strip across the top on a phone (the keyboard comes up
+// under it), across the bottom on a computer; it edits the one name of the game (Hồ sơ, dcc.hoso), bad words refused, pushed to the server
+let TT_REN_EL = null;
+function ttRenameClose() { if (TT_REN_EL) { TT_REN_EL.remove(); TT_REN_EL = null; cv.focus(); } }
+function ttRename() {
+  if (TT_REN_EL) { ttRenameClose(); return; }
+  const el = document.createElement('div'), touch = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window), max = HS_NAME_MAX, cur = TT.me.name;
+  el.style.cssText = 'position:fixed;left:0;right:0;' + (touch ? 'top:0;border-bottom:2px solid #1d1915;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;' : 'bottom:0;border-top:2px solid #1d1915;padding:8px 10px;') + 'z-index:60;background:#f2ecde;display:flex;gap:8px;align-items:center;font-family:inherit';
+  el.innerHTML = '<input id="ttRenIn" type="text" maxlength="' + max + '" autocomplete="off" placeholder="' + lg('Tên mới (tối đa ' + max + ' chữ)', 'New name (up to ' + max + ' letters)') + '" style="flex:1;min-width:0;font-size:16px;padding:9px 11px;border:2px solid #1d1915;background:#fbf6ea;border-radius:6px"><button id="ttRenOk" style="font-size:15px;padding:9px 14px;border:2px solid #1d1915;background:#e9b9ae;border-radius:6px;font-weight:700">' + lg('Lưu', 'Save') + '</button><button id="ttRenNo" style="font-size:15px;padding:9px 12px;border:2px solid #1d1915;background:#f2ecde;border-radius:6px">' + lg('Thôi', 'Cancel') + '</button>';
+  document.body.appendChild(el); TT_REN_EL = el;
+  const inp = el.querySelector('#ttRenIn'); inp.value = cur; inp.focus(); inp.select();
+  const save = () => {
+    const v = inp.value.replace(/\s+/g, ' ').trim().slice(0, max);
+    if (v.length < 2) { toast(lg('Tên phải có ít nhất 2 chữ.', 'A name needs at least 2 letters.'), 2.4); return; }
+    if (typeof p4HoaBad === 'function' && p4HoaBad(v)) { toast(lg('Tên có chữ không đẹp, chọn tên khác nhé.', 'That name has a bad word, pick another.'), 2.8); return; }
+    const old = hsGet('dcc.hoso', {}) || {}, d = hsClean({ ...hsMine(), name: v });
+    hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); if (typeof HS_FACE !== 'undefined') HS_FACE.clear();
+    try { hsPush().catch(() => {}); } catch (e) {} try { if (typeof c4RankSend === 'function') c4RankSend(); } catch (e) {}
+    TT.me.name = TT_SAVE.name = v; ttPersist(); ttSend({ t: 'hello', id: TT.me.id, name: v, look: TT.me.look, friends: [] }); TT.last = '';
+    ttRenameClose(); toast(lg('Đã đổi tên thành ' + v + ' ở mọi nơi', 'Renamed to ' + v + ' everywhere'), 2.8);
+  };
+  el.querySelector('#ttRenOk').addEventListener('click', save); el.querySelector('#ttRenNo').addEventListener('click', ttRenameClose);
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') save(); else if (e.key === 'Escape') ttRenameClose(); }); inp.addEventListener('keyup', e => e.stopPropagation());
 }
 
 /* ---------- input ---------- */
@@ -484,6 +499,7 @@ function ttDown(e) {
   const W = cv.width / DPR, H = cv.height / DPR, L = ttLay(W, H), m = TT.me, [sx, sy, s] = L.P(m.x, 0, m.z);
   if (Math.abs(x - sx) < s * .5 && y > sy - s * 1.15 && y < sy + s * .2) { ttSit(m.mv !== 2); return; }            // tap yourself: sit or stand
   { const [ux, uy, us] = L.P(0, 0, TT_URN.z), sc = us * 2.5 / 180; if (Math.abs(x - ux) < 70 * sc && y < uy + 8 && y > uy - 175 * sc) { ttIncense(); return; } }   // the urn: light incense
+  if (TT.hold && ttHoaDrop(L, x, y)) return;                              // holding a lantern: a tap on the stream sets it down
   { const [bx, by, bs] = L.P(TT_SIGN.x, 0, TT_SIGN.z), sc = bs * 2.2 / 190; if (Math.abs(x - bx) < 74 * sc && y < by + 6 && y > by - 186 * sc) { ttHoaOpen(); return; } }   // the sign: set one afloat
   for (const h of TT.hoaHit || []) if (Math.hypot(x - h.x, y - h.y) < h.r) { ttHoaRead(h.w); return; }   // a lantern: read its wish
   const q = ttInv(L, x, y); if (!q) return;
