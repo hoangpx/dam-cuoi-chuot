@@ -100,6 +100,7 @@ function hsRig(d) {
   // their own looks (hair, ear, eye, snout...) from a hash of the name, the hat from the pick, drawn into the head (owner, 2026-10-28; art.js c4VarBuild)
   const hat = { quai: 'quai', van: 'van', xep: 'xep', mu: 'mu' }[d.top] || null, hair = d.top === 'hoa' ? 'bui' : undefined;
   if (!HS_RIGS.has(key)) HS_RIGS.set(key, c4VarBuild({ robe: d.robe, trim: HS_TRIM[d.robe] || 'yellow', head: d.fur, leg: man ? d.pants : undefined, skirt: man ? undefined : d.skirt }, d.age === 'gia' ? 'old' : 'adult', !man, false, key, { hatk: hat, hair, head: d.fur, fat: d.body === 'beo', hatc: 'straw' }));
+  if (HS_RIGS.size > 30) { const k0 = HS_RIGS.keys().next().value; if (k0 !== key) HS_RIGS.delete(k0); }        // other players' mice each hold a head canvas: keep few (memory)
   return HS_RIGS.get(key);
 }
 const hsSort = d => (d.age === 'gia' ? 9 : 0);                             // a base sort for the walk (old ones stoop with a stick); colours come from hsRig

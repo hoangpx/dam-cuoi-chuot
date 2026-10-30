@@ -91,15 +91,16 @@ function mouseHead(o) {
     } else if (!(o.hair || o.hatk)) a.fk(o.trim, smooth([[-18, -19], [-7, -34], [4, -32], [-10, -15]]), 1.6);
   });
 }
-function buildMouse(o) {
-  const P = {};
-  P.tail = part([-96, -66, 12, 22], a => { a.key(smooth([[0, 0], [-28, 10], [-58, -2], [-78, -28], [-70, -54]], false), 3.2); });
-  P.leg = part([-18, -8, 24, 50], a => {
+// base: a finished rig of the same sort (chương IV's individual mice): everything but the head is the same, so those parts are shared, not drawn again (memory: a village of rigs crashed phones)
+function buildMouse(o, base) {
+  const P = {}, sh = base && !o.fat, pp = (k, b, f) => (sh && base[k]) || part(b, f);
+  P.tail = pp('tail', [-96, -66, 12, 22], a => { a.key(smooth([[0, 0], [-28, 10], [-58, -2], [-78, -28], [-70, -54]], false), 3.2); });
+  P.leg = pp('leg', [-18, -8, 24, 50], a => {
     a.fk(o.leg || 'lilac', ell(0, 6, 8, 11), 2);                          // o.leg: trousers of that colour (chương IV profiles: a husband's quần)
     a.key(smooth([[1, 14], [3, 28], [-1, 40]], false), 3);
     a.key(lines([[-1, 40, 12, 44], [-1, 40, 5, 47], [-1, 40, -10, 44]]), 2);
   });
-  P.body = part(o.fat ? [-46, -76, 50, 14] : [-36, -76, 36, 14], a => {
+  P.body = pp('body', o.fat ? [-46, -76, 50, 14] : [-36, -76, 36, 14], a => {
     // o.fat (tranh 6's chú bán ếch, owner): a rounder, wider body with a belly bulging forward
     const b = o.fat ? smooth([[-28, -2], [-36, -24], [-30, -46], [-12, -61], [10, -61], [30, -48], [42, -24], [34, -3], [2, 6]]) : smooth([[-22, -2], [-27, -24], [-19, -48], [-5, -62], [10, -61], [23, -45], [27, -20], [19, -2], [0, 5]]);
     a.fill(o.robe, b);
@@ -114,7 +115,7 @@ function buildMouse(o) {
   // o.skirt (chương IV, owner 2026-10-17: "vẽ luôn 1 chuột với váy"): a váy đụp of that plate, part of the mouse, not laid over it:
   // a sash at the waist, the skirt flaring to just above the feet with its folds, a darker band at the hem. c4Mouse / p4Mouse draw it
   // after the front leg, so only the shins and feet show under it.
-  if (o.skirt) P.skirt = part(o.fat ? [-46, -30, 50, 40] : [-36, -30, 36, 40], a => {
+  if (o.skirt) P.skirt = pp('skirt', o.fat ? [-46, -30, 50, 40] : [-36, -30, 36, 40], a => {
     const W = o.fat ? (pts => pts.map(([x, y]) => [x * 1.3 + 4, y])) : (pts => pts);   // a stout one: a wider skirt over the wider body
     const sk = smooth(W([[-26, -24], [0, -26], [26, -22], [29, 4], [33, 31], [16, 36], [0, 34], [-16, 36], [-33, 31], [-30, 4]]));
     a.fill(o.skirt, sk);
@@ -125,7 +126,7 @@ function buildMouse(o) {
     const sash = smooth(W([[-27, -28], [0, -29], [27, -25], [27, -18], [0, -21], [-27, -20]]));
     a.fk(o.skirt === 'red' ? 'yellow' : 'red', sash, 1.4);
   });
-  P.arm = part([-14, -12, 32, 44], a => {
+  P.arm = pp('arm', [-14, -12, 32, 44], a => {
     a.fk(o.robe, smooth([[-6, -4], [7, -6], [15, 10], [19, 25], [11, 29], [2, 15]]), 2.2);
     a.fk('lilac', ell(16, 31, 5, 4), 1.6);
     a.key(lines([[18, 33, 24, 38], [15, 34, 17, 40]]), 1.3);

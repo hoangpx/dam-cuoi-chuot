@@ -231,17 +231,19 @@ const c4MouseRig = (i, sk) => {
    c4VarRig(sort, skirt, key, female): the sort's rig plus, from a hash of key (a villager's id and the village seed): fur and ear colours, the
    ear's shape, snout, eye, head size, a hairstyle or a hat drawn INTO the head (art/characters.js mouseHead), a body size. Same key, same mouse.
    A hat or long hair hides the ear. C4_RIG_HAT marks a rig that carries its own headgear (the overlay hats are then skipped), C4_RIG_SZ its size. */
-const C4_RIG_HAT = new WeakSet(), C4_RIG_SZ = new WeakMap(), C4_VAR_RIGS = {};
+const C4_RIG_HAT = new WeakSet(), C4_RIG_SZ = new WeakMap(), C4_VAR_RIGS = {}, C4_VAR_MAX = 40;
 const C4_FUR = ['brown', 'dark', 'ash', 'tan', 'grey', 'cream', 'rose', 'ltred', 'brown', 'dark'], C4_EAR_OUT = ['lilac', 'rose', 'ash', 'cream', 'tan', 'white', 'grey', 'lilac'], C4_EAR_IN = ['red', 'pink', 'rose', 'red', 'orange'];
 function c4VarRig(sort, skirt, key, female, hat) {
   if (key === undefined || key === null) return c4MouseRig(sort, skirt);
   const pl = skirt ? (PL[skirt] ? skirt : C4_SKIRT_PL[skirt] || 'dark') : '', ck = sort + '|' + pl + '|' + key + '|' + (female ? 1 : 0) + '|' + (hat || '');
-  if (C4_VAR_RIGS[ck]) return C4_VAR_RIGS[ck];
+  if (C4_VAR_RIGS[ck]) { const r = C4_VAR_RIGS[ck]; delete C4_VAR_RIGS[ck]; C4_VAR_RIGS[ck] = r; return r; }   // (a hit moves it to the end: the least used go first)
   const S = C4_MOUSE_SORTS[sort], o = { ...S.o }; if (skirt) o.skirt = pl;
-  return (C4_VAR_RIGS[ck] = c4VarBuild(o, S.role, !!female || !!skirt, !!S.non, key, hat ? { hatk: hat } : null));
+  const rig = (C4_VAR_RIGS[ck] = c4VarBuild(o, S.role, !!female || !!skirt, !!S.non, key, hat ? { hatk: hat } : null, c4MouseRig(sort, skirt)));
+  const ks = Object.keys(C4_VAR_RIGS); if (ks.length > C4_VAR_MAX) for (const k of ks.slice(0, ks.length - C4_VAR_MAX)) delete C4_VAR_RIGS[k];   // each rig holds its own head canvas (~0.2 MB): keep at most C4_VAR_MAX, as a phone dies of the memory (a player's crash report, 2026-10-30)
+  return rig;
 }
 // the random part, shared with the visitors' profiles (hoso.js hsRig): o = the base buildMouse options, ov = what must be exactly so
-function c4VarBuild(o, role, f, non, key, ov) {
+function c4VarBuild(o, role, f, non, key, ov, base) {
   let h = 2166136261; for (const ch of String(key)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
   const r = () => { h = (Math.imul(h, 1103515245) + 12345) >>> 0; return (h >>> 8) / 16777216; }, pk = a => a[(r() * a.length) | 0], wk = (a, w) => { let t = r() * w.reduce((x, y) => x + y, 0); for (let i = 0; i < a.length; i++) if ((t -= w[i]) <= 0) return a[i]; return a[0]; };
   const kid = role === 'child', old = role === 'old';
@@ -270,7 +272,7 @@ function c4VarBuild(o, role, f, non, key, ov) {
     Object.assign(o, ov); if (!o.hatk) delete o.hatk;
   }
   if (o.hatk && !o.hatc) { o.hatc = pk(['straw', 'straw', 'brown', 'dark']); o.hatc2 = pk(['dark', 'brown', 'blue', 'dark']); }
-  const rig = buildMouse(o);
+  const rig = buildMouse(o, base);
   if (o.hatk) C4_RIG_HAT.add(rig);
   C4_RIG_SZ.set(rig, kid ? 1 : (o.fat ? 1 : .92 + r() * .2));
   return rig;
