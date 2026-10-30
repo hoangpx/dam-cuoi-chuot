@@ -4,7 +4,7 @@
    and, on the first tap, adds TT_FILES as scripts in order; the last of them registers the real place in this one's stead. */
 const TT_FILES = ['js/tinhtam/art.js', 'js/tinhtam/suoi.js', 'js/tinhtam/nhang.js', 'js/tinhtam/tinhtam.js'];
 const TT_BASE = 'https://dcc-lang.dcc-phong-choi.workers.dev';                // the same Worker as the village; /tt/ws and /tt/count are its own room
-const TT_CARD = { num: lg('Nơi tu tập', 'A place to practise'), han: '禪', name: lg('Góc Tĩnh Tâm', 'A Quiet Corner'), desc: lg('Ngồi tĩnh tâm trước tượng Phật Như Lai giữa núi rừng, cùng những người khác. Đi lại, ngồi thiền, cúi vái, nghe tiếng tụng kinh.', 'Sit quietly with others before a great Buddha among the mountains and forest. Walk, sit, bow, and listen to the chanting.'), bg: '#cfdccb' };
+const TT_CARD = { num: lg('Nơi tu tập', 'A place to practise'), han: '禪', name: lg('Góc Tĩnh Tâm', 'A Quiet Corner'), desc: lg('Giữa cuộc sống vội vã bộn bề, hãy dành một chút thời gian để tĩnh tâm.', 'Amid the rush and bustle of life, take a little time to find stillness.'), bg: '#cfdccb' };
 let ttLoading = null;
 function ttLoadFiles() {
   if (ttLoading) return ttLoading;
