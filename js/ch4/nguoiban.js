@@ -88,7 +88,7 @@ function c4ServeUpdate(dt) {
     if (c4Stock(g) > 0 && c4Open(g) && !(C4.shut > 0)) for (const m of c4Sellers(g)) {
       if (c4SaleBy(m)) continue;
       const w = q.find(w => !w.moving && !A.some(s => s.who === w)); if (!w) break;
-      A.push({ who: w, t: 0, by: m }); c4Say(w, g === 'trau' ? c4Pick(C4_BUY).replace('{n}', w.n) : c4Pick(C4_WANT[g]).replace('{n}', w.n));
+      w.waitedBefore = w.wait || 0; A.push({ who: w, t: 0, by: m }); c4Say(w, g === 'trau' ? c4Pick(C4_BUY).replace('{n}', w.n) : c4Pick(C4_WANT[g]).replace('{n}', w.n));
     }
     for (const sv of [...A]) {
       if (q.indexOf(sv.who) < 0 || (sv.by.st === 'walk') || (sv.by === C4.porter && !c4HusbFree())) { A.splice(A.indexOf(sv), 1); continue; }   // the buyer left, or the seller was called away
@@ -101,7 +101,7 @@ function c4ServeUpdate(dt) {
       if (w.kind === 'mouse' && g === 'trau') w.carry = MP.ladong;
       A.splice(A.indexOf(sv), 1);
       c4Say(sv.by, c4Pick(g === 'trau' ? C4_SELL : C4_THANKS)); c4Served(w); c4SaleServed(w, g); c4TreatServed(w, g);
-      if (!w.guest && (w.wait || 0) < 5) C4.today.quick = (C4.today.quick || 0) + 1;     // served without a long wait (task 'hai')
+      if (!w.guest && (w.waitedBefore ?? w.wait ?? 0) < 5) C4.today.quick = (C4.today.quick || 0) + 1;     // served without a long wait (task 'hai')
       { const pp = w.pid !== undefined && c4People().list[w.pid]; if (pp && sv.by.wm !== undefined && R() < sv.by.wm * .5) c4Bump(pp.id, 1); }   // a warm hand wins a little liking (owner)
       c4Leave(w, true); if (!w.guest) c4SitDown(w, g); c4Hud();
     }

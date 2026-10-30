@@ -18,7 +18,7 @@ const C4_BUY_WARES = {
     hours: { 'Mão': 1.2, 'Thìn': 1.1, 'Tỵ': .8, 'Ngọ': .4, 'Mùi': .4, 'Thân': .6, 'Dậu': .5 }, wx: { gat: .8, mua: .8, ret: 1.1, dep: 1 } },
   hangQua: { g: 'qua', name: 'Hoa quả', unit: 'nải', price: 8, cost: 5, keep: 'ever', cap: 50, serve: 1, wage: 8, buy: 800,
     hours: { 'Mão': .8, 'Thìn': 1, 'Tỵ': 1.1, 'Ngọ': .9, 'Mùi': .9, 'Thân': 1, 'Dậu': .8 }, wx: { gat: 1.2, mua: .8, ret: .8, dep: 1 } },
-  hangNon: { g: 'non', name: 'Nón lá', unit: 'chiếc', price: 20, cost: 14, keep: 'ever', cap: 30, serve: 1.6, wage: 8, buy: 960,
+  hangNon: { g: 'non', name: 'Nón lá', unit: 'chiếc', price: 20, cost: 14, keep: 'ever', cap: 50, serve: 1.6, wage: 8, buy: 960,
     hours: { 'Mão': .6, 'Thìn': .9, 'Tỵ': 1.1, 'Ngọ': 1.2, 'Mùi': 1, 'Thân': .8, 'Dậu': .6 }, wx: { gat: 1.6, mua: 1.4, ret: .7, dep: 1 } },
   hangCa: { g: 'ca', name: 'Cá', unit: 'con', price: 10, cost: 6, keep: 'day', cap: 50, serve: 1.2, wage: 8, buy: 960,
     hours: { 'Mão': 1.6, 'Thìn': 1.3, 'Tỵ': .9, 'Ngọ': .5, 'Mùi': .4, 'Thân': .6, 'Dậu': .5 }, wx: { gat: .7, mua: 1, ret: 1, dep: 1 } },
