@@ -98,7 +98,7 @@ function ttHoaItems(items, g, L) {
   const one = (u, w, ph) => {
     const p = ttStreamAt(u), lat = (Math.sin(ph * 3.1) * .45 + Math.sin(t * .23 + ph * 2) * .25) * p.w, x = p.x - p.tz * lat, z = p.z + p.tx * lat;   // drifting slowly from side to side
     if (z - TT.camD < 1.4) return;
-    items.push({ z, d: () => {
+    items.push({ z, live: true, d: () => {                              // live: never painted into the far layer (it moves, and it is tapped)
       const fade = Math.min(1, u / .04, (1 - u) / .06); if (fade <= 0) return;
       const [sx, sy, s] = L.P(x, .04 + Math.sin(t * .9 + ph) * .015, z), sc = s * .95 / 70, wpx = s * 1.15, img = ttHoaSprite(...TT_HOA_COLS[Math.abs(w.id || Math.round(ph * 7)) % TT_HOA_COLS.length]);
       g.save(); g.globalAlpha = fade;

@@ -8,7 +8,7 @@
    World: x across (0 = the middle), z away from the camera, y up. The camera hangs TT_HC above the ground looking down the clearing
    (the monkey bridge's way of 2.5D: woodblock sprites standing on a perspective ground, the far scenery fading into mist). */
 const TT_URN = { z: 10.6 };                                                 // the incense urn, on the near bank of the stream (owner)
-const TT_HC = 2.4, TT_XMAX = 8.2, TT_ZMIN = 5.6, TT_ZMAX = 9.8, TT_SPEED = 3.1;
+const TT_FAR = 16, TT_HC = 2.4, TT_XMAX = 8.2, TT_ZMIN = 5.6, TT_ZMAX = 9.8, TT_SPEED = 3.1;
 const TT_BOW_EVERY = 10, TT_BOW_LEN = 2.8;                              // after 10 s of sitting, and every 10 s after, a bow of 2.8 s
 const TT_SZ = 17.5, TT_SY = 2.2, TT_SH = 8.8;                           // TT_SY: the top of the rock he sits on                          // the Buddha: where he sits (z, height of his base) and how tall he is, in units
 const TT_VIET = 'wss://dcc-lang.dcc-phong-choi.workers.dev/tt/ws';
@@ -114,8 +114,9 @@ const ttCount = () => TT.on ? Math.max(TT.count, TT.peers.size + 1) : 1;
 
 /* ---------- the view ---------- */
 function ttLay(W, H) {
-  // a portrait phone stands back (owner: "trên điện thoại không xem được toàn cảnh"): the lens is set by the width so the whole clearing fits, the horizon higher and the camera raised (hc) so the ground fills the tall screen
-  const tall = H > W * 1.15, hor = Math.round(H * (tall ? .47 : .43)), f = tall ? W * .62 : Math.min(H * .78, W * 1.15), hc = tall ? 4.6 : TT_HC, hv = (W / 2) / (f / 9), lim = Math.max(0, TT_XMAX - hv);
+  // the wide view on a phone (owner: "trên điện thoại không xem được toàn cảnh"): the lens set by the width so the whole clearing fits, the camera raised (hc) so the ground fills the tall screen
+  // a + / − button on a tall screen (owner: "có 1 nút zoom out/zoom in"): close (the old view, light to draw) or wide; TT.zk eases between them
+  const tall = H > W * 1.15, k = tall ? (TT.zk || 0) : 0, mix = (p, q) => p + (q - p) * k, hor = Math.round(H * mix(.43, .47)), f = mix(Math.min(H * .78, W * 1.15), W * .62), hc = mix(TT_HC, 4.6), hv = (W / 2) / (f / 9), lim = Math.max(0, TT_XMAX - hv);
   const cx = Math.max(-lim, Math.min(lim, TT.me.x));
   return { W, H, hor, f, hc, hv, cx, P: (x, y, z) => { const s = f / Math.max(z - TT.camD, .8); return [W / 2 + (x - TT.cam) * s, hor + (hc - y) * s, s]; } };   // camD: the camera walks forward after the mouse
 }
@@ -166,6 +167,7 @@ function updateTT(dt) {
     kneelStep(p); if ((p.mv === 1 || d > .12) && !p.kn) p.ph += dt * 9; if (p.mv === 2) p.sitT += dt;
   }
   TT.cam += (ttCurCam() - TT.cam) * Math.min(1, dt * 3);
+  TT.zk = (TT.zk || 0) + ((TT_SAVE.wide ? 1 : 0) - (TT.zk || 0)) * Math.min(1, dt * 4);
   TT.camD += (Math.max(0, Math.min(4.4, (m.z - 7.2) * .75)) - TT.camD) * Math.min(1, dt * 2.2);   // near the Buddha the camera follows, so he and the mouse grow in the view
   if (TT.on) {                                                          // my place goes out about ten times a second, and now and then even when still
     TT.sendT -= dt; const sig = m.x.toFixed(2) + ',' + m.z.toFixed(2) + ',' + m.face + ',' + m.mv;
@@ -356,12 +358,17 @@ function ttSeat(g, L, part) {
   }
 }
 function renderTT() {
-  const W = cv.width / DPR, Hf = cv.height / DPR, g = ctx; g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const W = cv.width / DPR, Hf = cv.height / DPR; let g = ctx; g.setTransform(DPR, 0, 0, DPR, 0, 0);
   if (!TT.ready) { g.fillStyle = '#b9c9b0'; g.fillRect(0, 0, W, Hf); return; }
   const L = ttLay(W, Hf), { hor, P } = L, A = ttArt(), S = TT.S, t = TT.t;
-  g.drawImage(ttBack(Math.round(W), Math.round(hor + 4), hor), 0, 0, W, hor + 4);
-  ttClouds(g, L);
-  ttBgGround(g, L);
+  // the wide view on a phone was slow (owner: "nhìn toàn cảnh lag quá"): there the camera stands still, so the far layer (sky, clouds,
+  // ground, stream, everything from z TT_FAR back: bamboo, rocks, the Buddha, the mist) is painted into TT.far a few times a second and
+  // only copied in between; the near things (mice, lanterns, grass, cushions, urn, petals) are drawn every frame
+  const FC = TT.far || (TT.far = { c: document.createElement('canvas'), key: '', at: -9 }), useFar = (TT.zk || 0) > .99;
+  const key = [cv.width, cv.height, TT.cam.toFixed(2), TT.camD.toFixed(2)].join(), fresh = useFar && FC.key === key && t - FC.at < .2;
+  const back = () => { g.drawImage(ttBack(Math.round(W), Math.round(hor + 4), hor), 0, 0, W, hor + 4); ttClouds(g, L); ttBgGround(g, L); };
+  if (useFar && !fresh) { if (FC.c.width !== cv.width || FC.c.height !== cv.height) { FC.c.width = cv.width; FC.c.height = cv.height; } g = FC.c.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0); FC.key = key; FC.at = t; }
+  if (!fresh) back();
   // everything standing, far to near
   const items = [];
   for (const q of S.trees) items.push({ z: q.z, d: () => { const [x, y, s] = P(q.x, 0, q.z), part = (q.k ? A.bamboo.truc : A.bamboo.tre)[q.v], sc = s * q.h / 480; if (x < -260 * sc || x > W + 260 * sc) return;
@@ -385,7 +392,7 @@ function renderTT() {
   }
   items.push({ z: TT_URN.z, d: () => { const [x, y, s] = P(0, 0, TT_URN.z), sc = s * 2.5 / 180; dp(g, A.urn, x, y, 0, sc, sc); ttSticks(g, x, y, sc); } });
   items.push({ z: TT_SIGN.z - .5, d: () => { const [x, y, s] = P(TT_SIGN.x, 0, TT_SIGN.z), sc = s * 2.2 / 190; dp(g, A.board, x, y, 0, sc, sc); } });
-  ttHoaItems(items, g, L);
+  ttHoaItems(items, ctx, L);
   for (const row of S.rows) if (row.z - TT.camD > 1.3) items.push({ z: row.z, d: () => ttGrassRow(g, L, row) });
   const all = [TT.me, ...TT.peers.values()];
   for (const o of all) items.push({ z: o.z + .001 - ((o.kn || 0) > .15 ? .14 : 0), d: () => ttDrawMouse(g, L, o, o === TT.me) });   // kneeling: drawn after its cushion, so it sits on it
@@ -394,8 +401,19 @@ function renderTT() {
   // a cushion rests on the grass: drawn a little above the ground, over the blades just in front of it
   for (const c of S.cush) items.push({ z: c.z - .12, d: () => { const [x, y, s] = P(c.x, .05, c.z), sc = s * .95 / 76; g.fillStyle = 'rgba(30,40,24,.25)'; g.beginPath(); g.ellipse(x + 2, y + 3, s * .45, s * .12, 0, 0, 6.283); g.fill(); dp(g, A.cushion, x, y, 0, sc, sc); } });
   items.sort((a, b) => b.z - a.z);
-  const fogs = [[38, .6], [29, .38], [22, .22]]; let fi = 0;
-  for (const it of items) { if (it.z - TT.camD < 1.3) continue; while (fi < fogs.length && it.z < fogs[fi][0]) { ttFog(g, L, fogs[fi][1]); fi++; } it.d(); }
+  const fogs = [[38, .6], [29, .38], [22, .22]], late = []; let fi = 0, far = useFar;
+  const endFar = () => {                                                    // the far layer is done: finish its mist, copy it, draw the lanterns that floated in it, go on live
+    far = false; if (!fresh) while (fi < fogs.length) { ttFog(g, L, fogs[fi][1]); fi++; } fi = fogs.length;
+    g = ctx; ctx.drawImage(FC.c, 0, 0, W, Hf); for (const it of late) it.d();
+  };
+  for (const it of items) {
+    if (it.z - TT.camD < 1.3) continue;
+    if (far && it.z < TT_FAR) endFar();
+    if (far && it.live) { late.push(it); continue; }
+    if (far && fresh) continue;
+    while (fi < fogs.length && it.z < fogs[fi][0]) { ttFog(g, L, fogs[fi][1]); fi++; } it.d();
+  }
+  if (far) endFar();
   // light through the trees, falling petals, a vignette
   for (const q of S.shafts) {
     const x0 = L.W * q.x, a = .05 + .035 * Math.sin(t * .4 + q.ph), gr = g.createLinearGradient(x0, 0, x0 - L.W * .12, hor + L.H * .3); gr.addColorStop(0, `rgba(255,246,206,${a * 2})`); gr.addColorStop(1, 'rgba(255,246,206,0)');
@@ -429,6 +447,7 @@ function ttHud(g, W, H) {
   const back = ttTag(g, 34, st + 28, '←', { size: 20, pad: 14, h: 40 }); hud.push({ r: back, f: () => showChapters() });
   const n = ttCount(), label = '● ' + lgf('{n} người đang tĩnh tâm', '{n} sitting quietly', { n });
   const cnt = ttTag(g, W / 2, st + 28, label, { size: 13, fill: '#e3efd4' });
+  if (H > W * 1.15) { const z = ttTag(g, W - 34, st + 28, TT_SAVE.wide ? '+' : '−', { size: 22, pad: 14, h: 40 }); hud.push({ r: z, f: () => { TT_SAVE.wide = !TT_SAVE.wide; ttPersist(); } }); }   // zoom: − the whole clearing, + close again
   const by = H - 46 - (W > 640 ? 8 : 0);
   const btn = ttTag(g, W / 2, by, sit ? lg('Đứng dậy', 'Stand up') : lg('Ngồi thiền', 'Sit'), { size: 17, h: 48, pad: 52, fill: sit ? '#f7e3a4' : '#d9e6c0' }); hud.push({ r: btn, f: () => ttSit(!sit) });
   if (sit) { const s = Math.floor(m.sitT), tx = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); ttTag(g, W / 2, by - 44, tx, { size: 12, h: 26, pad: 18, fill: 'rgba(244,234,208,.85)' }); }
