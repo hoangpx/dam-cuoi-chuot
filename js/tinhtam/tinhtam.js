@@ -301,8 +301,8 @@ function ttDrawMouse(g, L, o, me) {
   const bk = Math.max(0, Math.min(1, (ke - .3) / .4));                       // kneeling turns it to face the Buddha: the side view fades into the view from behind
   if (bk < 1) { g.save(); g.translate(sx, sy); g.globalAlpha = 1 - bk; C4_KNEEL = ke; c4Mouse(g, M, 0, o.face, o.ph, o.mv === 1 && kn === 0, null, null, k, 18 * k * ke, o.sort); C4_KNEEL = 0; g.restore(); }
   if (bk > 0) ttDrawBack(g, o, sx, sy, k, bow, bk);
-  const fs = Math.max(11, Math.min(16, s * .26)), ny = sy - (168 - 38 * bk) * k;      // the name over the head
-  g.font = `700 ${fs}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = 4; g.strokeStyle = 'rgba(251,244,220,.95)'; g.strokeText(o.name, sx, ny);
+  const ph = L.W < 640, fs = ph ? Math.max(8, Math.min(11, s * .19)) : Math.max(11, Math.min(16, s * .26)), ny = sy - (168 - 38 * bk) * k;      // the name over the head
+  g.font = `700 ${fs}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = ph ? 3 : 4; g.strokeStyle = 'rgba(251,244,220,.95)'; g.strokeText(o.name, sx, ny);   // on a phone the names are smaller (owner)
   g.fillStyle = me ? '#6b4a0a' : `hsl(${hue} 70% 28%)`; g.fillText(o.name, sx, ny);
 }
 /* clouds far away, drifting very slowly (owner: they looked cut off; now soft, real-looking): each cumulus is a dome of round puffs, every puff
