@@ -8,7 +8,7 @@
    World: x across (0 = the middle), z away from the camera, y up. The camera hangs TT_HC above the ground looking down the clearing
    (the monkey bridge's way of 2.5D: woodblock sprites standing on a perspective ground, the far scenery fading into mist). */
 const TT_URN = { z: 10.6 };
-const TT_MO = { x: -2.3, z: 10.15 }, TT_CHUONG = { x: 2.3, z: 10.15 };          // the wooden fish (mõ) and the bowl bell (chuông gia trì) either side of the urn (owner)                                                 // the incense urn, on the near bank of the stream (owner)
+                                                 // the incense urn, on the near bank of the stream (owner)
 const TT_FAR = 16, TT_HC = 2.4, TT_XMAX = 8.2, TT_ZMIN = 5.6, TT_ZMAX = 9.8, TT_SPEED = 3.1;
 const TT_BOW_EVERY = 10, TT_BOW_LEN = 2.8;                              // after 10 s of sitting, and every 10 s after, a bow of 2.8 s
 const TT_SZ = 17.5, TT_SY = 2.2, TT_SH = 8.8;                           // TT_SY: the top of the rock he sits on                          // the Buddha: where he sits (z, height of his base) and how tall he is, in units
@@ -392,7 +392,6 @@ function renderTT() {
   for (const sd of [-1, 1]) {
     items.push({ z: 15.25, d: () => { const [x, y, s] = P(sd * 5.9, 0, 15.25); ttLotusPot(g, A, x, y, s * 1.7 / 150, sd); } });
   }
-  items.push({ z: TT_MO.z, d: () => ttDrawMo(g, L) }, { z: TT_CHUONG.z, d: () => ttDrawChuong(g, L) });
   items.push({ z: TT_URN.z, d: () => { const [x, y, s] = P(0, 0, TT_URN.z), sc = s * 2.5 / 180; dp(g, A.urn, x, y, 0, sc, sc); ttSticks(g, x, y, sc); } });
   items.push({ z: TT_SIGN.z - .5, d: () => { const [x, y, s] = P(TT_SIGN.x, 0, TT_SIGN.z), sc = s * 2.2 / 190; dp(g, A.board, x, y, 0, sc, sc); } });
   ttHoaItems(items, ctx, L);
@@ -465,8 +464,8 @@ function ttCushionAt(g, x, y, k) {
   g.fillStyle = gr; g.strokeStyle = '#2a1712'; g.lineWidth = 1.6 * k; g.beginPath(); g.ellipse(x, y - 6 * k, 42 * k, 12 * k, 0, 0, 6.283); g.fill(); g.stroke();
   g.strokeStyle = 'rgba(232,184,58,.85)'; g.lineWidth = 1.4 * k; g.beginPath(); g.ellipse(x, y - 8 * k, 32 * k, 7 * k, 0, 0, 6.283); g.stroke();
 }
-function ttDrawMo(g, L) {
-  const [x, y, s] = L.P(TT_MO.x, 0, TT_MO.z), k = s / 72, hit = TT.t - (TT.moT ?? -9), nod = hit < .35 ? Math.sin(hit / .35 * Math.PI) * .08 : 0;
+function ttDrawMo(g, x, y, k) {
+  const hit = TT.t - (TT.moT ?? -9), nod = hit < .35 ? Math.sin(hit / .35 * Math.PI) * .08 : 0;
   ttCushionAt(g, x, y, k);
   g.save(); g.translate(x, y - 14 * k); g.rotate(-nod);
   const gr = g.createRadialGradient(-12 * k, -34 * k, 4 * k, 0, -22 * k, 44 * k); gr.addColorStop(0, '#c0542f'); gr.addColorStop(.6, '#8a2a18'); gr.addColorStop(1, '#4e140c');
@@ -482,8 +481,8 @@ function ttDrawMo(g, L) {
   g.fillStyle = '#6b4520'; g.strokeStyle = '#1d1915'; g.lineWidth = 1.4 * k; g.fillRect(-2 * k, -40 * k, 4 * k, 40 * k); g.strokeRect(-2 * k, -40 * k, 4 * k, 40 * k);
   g.beginPath(); g.ellipse(0, -44 * k, 7 * k, 6 * k, 0, 0, 6.283); g.fillStyle = '#c99a52'; g.fill(); g.stroke(); g.restore();
 }
-function ttDrawChuong(g, L) {
-  const [x, y, s] = L.P(TT_CHUONG.x, 0, TT_CHUONG.z), k = s / 72, hit = TT.t - (TT.bellT ?? -9);
+function ttDrawChuong(g, x, y, k) {
+  const hit = TT.t - (TT.bellT ?? -9);
   ttCushionAt(g, x, y, k);
   const by = y - 14 * k, gr = g.createLinearGradient(x - 34 * k, 0, x + 34 * k, 0); gr.addColorStop(0, '#7a5418'); gr.addColorStop(.35, '#e8c25e'); gr.addColorStop(.6, '#b8862e'); gr.addColorStop(1, '#5e3f10');
   g.fillStyle = gr; g.strokeStyle = '#1d1915'; g.lineWidth = 2 * k;
@@ -510,8 +509,12 @@ function ttHud(g, W, H) {
   if (H > W * 1.15) { const z = ttTag(g, 34, st + 116, TT_SAVE.wide ? '+' : '−', { size: 22, pad: 14, h: 40 }); hud.push({ r: z, f: () => { TT_SAVE.wide = !TT_SAVE.wide; ttPersist(); } }); }   // zoom: − the whole clearing, + close again
   ttStats(g, W, W < 640 ? st + 54 : st + 8);
   const by = H - 46 - (W > 640 ? 8 : 0);
+  // the mõ and the chuông gia trì right in front of the player, above the Ngồi thiền button (owner): a tap strikes them
+  { const k = W < 640 ? 1 : 1.25, oy = by - 36, dx = W < 640 ? 72 : 100;
+    ttDrawMo(g, W / 2 - dx, oy, k); hud.push({ r: [W / 2 - dx - 48 * k, oy - 70 * k, 96 * k, 82 * k], f: () => ttStrike('mo') });
+    ttDrawChuong(g, W / 2 + dx, oy, k); hud.push({ r: [W / 2 + dx - 48 * k, oy - 70 * k, 96 * k, 82 * k], f: () => ttStrike('chuong') }); }
   const btn = ttTag(g, W / 2, by, sit ? lg('Đứng dậy', 'Stand up') : lg('Ngồi thiền', 'Sit'), { size: 17, h: 48, pad: 52, fill: sit ? '#f7e3a4' : '#d9e6c0' }); hud.push({ r: btn, f: () => ttSit(!sit) });
-  if (sit) { const s = Math.floor(m.sitT), tx = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); ttTag(g, W / 2, by - 44, tx, { size: 12, h: 26, pad: 18, fill: 'rgba(244,234,208,.85)' }); }
+  if (sit) { const s = Math.floor(m.sitT), tx = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); ttTag(g, W / 2, by - 40, tx, { size: 12, h: 26, pad: 18, fill: 'rgba(244,234,208,.85)' }); }
 }
 // rename, the same bar as Ghép Tranh's (owner: "cho nút đổi tên giống bên ghép tranh"): a strip across the top on a phone (the keyboard comes up
 // under it), across the bottom on a computer; it edits the one name of the game (Hồ sơ, dcc.hoso), bad words refused, pushed to the server
@@ -558,7 +561,6 @@ function ttDown(e) {
   for (const h of TT.hud) if (x >= h.r[0] && x <= h.r[0] + h.r[2] && y >= h.r[1] && y <= h.r[1] + h.r[3]) { h.f(); return; }
   const W = cv.width / DPR, H = cv.height / DPR, L = ttLay(W, H), m = TT.me, [sx, sy, s] = L.P(m.x, 0, m.z);
   if (Math.abs(x - sx) < s * .5 && y > sy - s * 1.15 && y < sy + s * .2) { ttSit(m.mv !== 2); return; }            // tap yourself: sit or stand
-  for (const [o, w] of [[TT_MO, 'mo'], [TT_CHUONG, 'chuong']]) { const [ox, oy, os] = L.P(o.x, 0, o.z), k = os / 72; if (Math.abs(x - ox) < 50 * k && y < oy + 10 * k && y > oy - 66 * k) { ttStrike(w); return; } }   // the mõ, the bell: strike them
   { const [ux, uy, us] = L.P(0, 0, TT_URN.z), sc = us * 2.5 / 180; if (Math.abs(x - ux) < 70 * sc && y < uy + 8 && y > uy - 175 * sc) { ttIncense(); return; } }   // the urn: light incense
   if (TT.hold && ttHoaDrop(L, x, y)) return;                              // holding a lantern: a tap on the stream sets it down
   { const [bx, by, bs] = L.P(TT_SIGN.x, 0, TT_SIGN.z), sc = bs * 2.2 / 190; if (Math.abs(x - bx) < 74 * sc && y < by + 6 && y > by - 186 * sc) { ttHoaOpen(); return; } }   // the sign: set one afloat
