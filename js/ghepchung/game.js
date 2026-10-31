@@ -369,7 +369,7 @@ async function jgOpenRoom(r, pw) {
   if (r.locked && !r.mine && pw == null) { if (JG.pw[r.id] != null) pw = JG.pw[r.id]; else { jgrAskPass(r); return; } }
   JG.opening = true; toast(lg('Đang mở phòng…', 'Opening the room…'), 1.6);
   const fin = () => { JG.opening = false; };
-  let res; try { res = await fetch(JG_BASE + '/jgr/img?r=' + r.id, { headers: { 'x-dev': p4Device(), 'x-pw': pw || '' } }); } catch (e) { fin(); toast(lg('Không kết nối được máy chủ', 'Can not reach the server'), 2.6); return; }
+  let res; try { res = await fetch(JG_BASE + '/jgr/img?r=' + r.id + '&v=' + r.ver, { headers: { 'x-dev': p4Device(), 'x-pw': pw || '' } }); } catch (e) { fin(); toast(lg('Không kết nối được máy chủ', 'Can not reach the server'), 2.6); return; }
   if (!res.ok) {
     let j = {}; try { j = await res.json(); } catch (e) {} fin();
     if (j.code === 4010) { delete JG.pw[r.id]; toast(lg('Sai mật khẩu', 'Wrong password'), 2.4); jgrAskPass(r); }
