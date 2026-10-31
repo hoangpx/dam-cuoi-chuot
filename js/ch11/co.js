@@ -14,16 +14,16 @@ function c11Grass() {
     p.moveTo(x - w, 0); p.bezierCurveTo(x - w * .7, -h * .45, tx - w * .3 - lean * .2, ty + h * .3, tx, ty);
     p.bezierCurveTo(tx + w * .2 - lean * .15, ty + h * .35, x + w * .8, -h * .4, x + w, 0); p.closePath();
     const gr = g.createLinearGradient(x, 0, tx, ty);
-    gr.addColorStop(0, hsl(hue + 8, 48, 13 + d * 6)); gr.addColorStop(.45, hsl(hue, 46, 27 + d * 9)); gr.addColorStop(1, hsl(hue - 18, 58, 50 + d * 14));
+    gr.addColorStop(0, hsl(hue + 6, 46, 34 + d * 6)); gr.addColorStop(.5, hsl(hue, 52, 50 + d * 8)); gr.addColorStop(1, hsl(hue - 12, 66, 68 + d * 8));
     g.fillStyle = gr; g.fill(p);
-    g.strokeStyle = hsl(70, 70, 82, .22 + d * .3); g.lineWidth = .9;                       // the lit edge
+    g.strokeStyle = hsl(70, 70, 88, .12 + d * .2); g.lineWidth = .7;                       // the lit edge
     g.beginPath(); g.moveTo(x - w * .45, -h * .12); g.bezierCurveTo(x - w * .4, -h * .5, tx - w * .25 - lean * .15, ty + h * .3, tx, ty); g.stroke();
-    g.strokeStyle = hsl(120, 40, 8, .35); g.lineWidth = .55; g.stroke(p);                   // a fine dark edge, so it still sits with the prints
+    // (no dark edge: short soft grass, owner 2026-10-31)
   };
   const tuft = (n, spread, hMin, hMax, extra) => mk([-spread - 30, -hMax - 24, spread + 30, 8], g => {
-    const ao = g.createRadialGradient(0, 0, 0, 0, 0, spread + 10); ao.addColorStop(0, 'rgba(18,40,22,.5)'); ao.addColorStop(1, 'rgba(18,40,22,0)');
+    const ao = g.createRadialGradient(0, 0, 0, 0, 0, spread + 10); ao.addColorStop(0, 'rgba(40,100,40,.28)'); ao.addColorStop(1, 'rgba(40,100,40,0)');
     g.save(); g.scale(1, .32); g.fillStyle = ao; g.beginPath(); g.arc(0, 0, spread + 10, 0, 6.283); g.fill(); g.restore();
-    const B = []; for (let i = 0; i < n; i++) { const u = (rnd() + rnd() + rnd()) / 3 * 2 - 1; B.push({ x: u * spread, d: rnd(), h: hMin + rnd() * (hMax - hMin), hue: 92 + (rnd() - .5) * 22 }); }
+    const B = []; for (let i = 0; i < n; i++) { const u = (rnd() + rnd() + rnd()) / 3 * 2 - 1; B.push({ x: u * spread, d: rnd(), h: hMin + rnd() * (hMax - hMin), hue: 94 + (rnd() - .5) * 16 }); }
     B.sort((a, b) => a.d - b.d);
     for (const b of B) { const hh = b.h * (1 - Math.abs(b.x) / (spread * 2.2)) * (.8 + b.d * .3), lean = b.x * .55 + (rnd() - .5) * 10; blade(g, b.x, hh, lean, 1.7 + rnd() * 1.6, b.d, b.hue); }
     if (extra) extra(g, B);
@@ -31,9 +31,9 @@ function c11Grass() {
   const seeds = (g, B) => { for (let i = 0; i < 3; i++) { const b = B[(i * 5 + 2) % B.length], x = b.x * .6, h = b.h * 1.25, tx = x + b.x * .3 + 4; g.strokeStyle = hsl(60, 35, 45); g.lineWidth = .9; g.beginPath(); g.moveTo(x, -4); g.quadraticCurveTo(x + 2, -h * .6, tx, -h); g.stroke(); const gr = g.createLinearGradient(tx - 3, -h - 8, tx + 3, -h + 4); gr.addColorStop(0, '#f3e6b0'); gr.addColorStop(1, '#a8925a'); g.fillStyle = gr; g.beginPath(); g.ellipse(tx, -h - 2, 2.4, 6, .25, 0, 6.283); g.fill(); } };
   const blooms = cols => (g, B) => { for (let i = 0; i < 4; i++) { const b = B[(i * 7 + 3) % B.length], x = b.x * .7, h = b.h * (.9 + i * .08), c = cols[i % cols.length]; g.strokeStyle = hsl(110, 40, 26); g.lineWidth = 1; g.beginPath(); g.moveTo(x, -3); g.lineTo(x + b.x * .2, -h); g.stroke(); const fx = x + b.x * .2, fy = -h; for (let j = 0; j < 5; j++) { const a = j * 1.257, gr = g.createRadialGradient(fx - 1, fy - 1, 0, fx, fy, 4); gr.addColorStop(0, '#fff'); gr.addColorStop(1, c); g.fillStyle = gr; g.beginPath(); g.arc(fx + Math.cos(a) * 2.6, fy + Math.sin(a) * 2.6, 2.3, 0, 6.283); g.fill(); } g.fillStyle = '#f2c23a'; g.beginPath(); g.arc(fx, fy, 1.5, 0, 6.283); g.fill(); } };
   C11GRASS = {
-    tufts: [tuft(12, 9, 14, 24), tuft(16, 12, 18, 30), tuft(20, 15, 22, 36), tuft(26, 18, 26, 44), tuft(14, 16, 10, 18), tuft(22, 13, 24, 40)],
-    seed: [tuft(18, 13, 22, 36, seeds), tuft(14, 10, 20, 30, seeds)],
-    bloom: [tuft(16, 12, 16, 28, blooms(['#f6f2e8'])), tuft(16, 12, 16, 28, blooms(['#f2d04a'])), tuft(16, 12, 16, 28, blooms(['#f2a2b8', '#f6f2e8']))],
+    tufts: [tuft(12, 9, 7, 12), tuft(16, 12, 8, 14), tuft(20, 15, 9, 16), tuft(24, 17, 10, 18), tuft(14, 16, 5, 9), tuft(20, 13, 9, 15)],   // short, owner 2026-10-31
+    seed: [tuft(18, 13, 12, 18, seeds), tuft(14, 10, 10, 16, seeds)],
+    bloom: [tuft(16, 12, 9, 15, blooms(['#f6f2e8'])), tuft(16, 12, 9, 15, blooms(['#f2d04a'])), tuft(16, 12, 9, 15, blooms(['#f2a2b8', '#f6f2e8']))],
   };
   return C11GRASS;
 }
@@ -43,11 +43,12 @@ function c11BgGrass(g, w, h, rnd) {
     const x = rnd() * w, y = rnd() * h, r = 30 + rnd() * 50, gr = g.createRadialGradient(x - r * .3, y - r * .35, 0, x, y, r);
     gr.addColorStop(0, 'rgba(206,232,140,.26)'); gr.addColorStop(.55, 'rgba(120,170,90,0)'); gr.addColorStop(.85, 'rgba(30,70,40,.12)'); gr.addColorStop(1, 'rgba(30,70,40,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
   }
-  const n = Math.floor(w * h / 50);
+  for (let y = 0; y < h; y += 90) { const gr = g.createLinearGradient(0, y, 0, y + 90); gr.addColorStop(0, 'rgba(214,246,126,0)'); gr.addColorStop(.5, 'rgba(214,246,126,.2)'); gr.addColorStop(1, 'rgba(214,246,126,0)'); g.fillStyle = gr; g.fillRect(0, y, w, 90); }   // soft light bands, like mown turf
+  const n = Math.floor(w * h / 32);
   for (let i = 0; i < n; i++) {
-    const x = rnd() * w, y = rnd() * h, l = 7 + rnd() * 10, lean = (rnd() - .5) * 6, bw = 1 + rnd() * 1.1, hue = 88 + rnd() * 26, d = rnd();
-    g.fillStyle = `hsla(${hue + 6},45%,${20 + d * 8}%,.55)`; g.beginPath(); g.moveTo(x - bw, y); g.lineTo(x + bw, y); g.lineTo(x + lean, y - l); g.closePath(); g.fill();
-    g.fillStyle = `hsla(${hue - 14},55%,${50 + d * 14}%,.55)`; g.beginPath(); g.moveTo(x - bw * .5 + lean * .45, y - l * .45); g.lineTo(x + bw * .5 + lean * .45, y - l * .45); g.lineTo(x + lean, y - l); g.closePath(); g.fill();
+    const x = rnd() * w, y = rnd() * h, l = 4 + rnd() * 5, lean = (rnd() - .5) * 3, bw = .8 + rnd() * .6, hue = 90 + rnd() * 16, d = rnd();
+    g.fillStyle = `hsla(${hue + 6},42%,${34 + d * 8}%,.4)`; g.beginPath(); g.moveTo(x - bw, y); g.lineTo(x + bw, y); g.lineTo(x + lean, y - l); g.closePath(); g.fill();
+    g.fillStyle = `hsla(${hue - 12},66%,${62 + d * 10}%,.5)`; g.beginPath(); g.moveTo(x - bw * .5 + lean * .45, y - l * .45); g.lineTo(x + bw * .5 + lean * .45, y - l * .45); g.lineTo(x + lean, y - l); g.closePath(); g.fill();
   }
 }
 /* the ground where grass was cut (owner: it should match the grass round it): a 128 px tile of short shaded stubble, a few cut blades
@@ -56,15 +57,15 @@ let C11STUB = null;
 function c11Stubble() {
   if (C11STUB) return C11STUB;
   const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), rnd = mulberry(0x5a7b);
-  const gr = g.createLinearGradient(0, 0, 128, 128); gr.addColorStop(0, '#80a85a'); gr.addColorStop(1, '#709a50'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  const gr = g.createLinearGradient(0, 0, 128, 128); gr.addColorStop(0, '#84c055'); gr.addColorStop(1, '#78b64c'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
   const wrap = (f) => { for (const dx of [-128, 0, 128]) for (const dy of [-128, 0, 128]) f(dx, dy); };
-  for (let i = 0; i < 18; i++) { const x = rnd() * 128, y = rnd() * 128, r = 3 + rnd() * 6; wrap((dx, dy) => { const pg = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r); pg.addColorStop(0, 'rgba(150,120,70,.45)'); pg.addColorStop(1, 'rgba(150,120,70,0)'); g.fillStyle = pg; g.fillRect(x + dx - r, y + dy - r, r * 2, r * 2); }); }
-  for (let i = 0; i < 900; i++) {
-    const x = rnd() * 128, y = rnd() * 128, l = 2.5 + rnd() * 4, lean = (rnd() - .5) * 2.4, w = .7 + rnd() * .6, hue = 86 + rnd() * 24, d = rnd();
-    wrap((dx, dy) => { const X = x + dx, Y = y + dy; if (X < -8 || X > 136 || Y < -8 || Y > 136) return; g.fillStyle = `hsla(${hue + 6},44%,${22 + d * 9}%,.8)`; g.beginPath(); g.moveTo(X - w, Y); g.lineTo(X + w, Y); g.lineTo(X + lean, Y - l); g.closePath(); g.fill(); g.fillStyle = `hsla(${hue - 16},56%,${58 + d * 12}%,.85)`; g.beginPath(); g.moveTo(X + lean * .5 - w * .4, Y - l * .5); g.lineTo(X + lean * .5 + w * .4, Y - l * .5); g.lineTo(X + lean, Y - l); g.closePath(); g.fill(); });
+  for (let i = 0; i < 18; i++) { const x = rnd() * 128, y = rnd() * 128, r = 3 + rnd() * 6; wrap((dx, dy) => { const pg = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r); pg.addColorStop(0, 'rgba(160,150,80,.2)'); pg.addColorStop(1, 'rgba(160,150,80,0)'); g.fillStyle = pg; g.fillRect(x + dx - r, y + dy - r, r * 2, r * 2); }); }
+  for (let i = 0; i < 1100; i++) {
+    const x = rnd() * 128, y = rnd() * 128, l = 2 + rnd() * 2.5, lean = (rnd() - .5) * 1.6, w = .7 + rnd() * .5, hue = 90 + rnd() * 16, d = rnd();
+    wrap((dx, dy) => { const X = x + dx, Y = y + dy; if (X < -8 || X > 136 || Y < -8 || Y > 136) return; g.fillStyle = `hsla(${hue + 6},42%,${34 + d * 8}%,.5)`; g.beginPath(); g.moveTo(X - w, Y); g.lineTo(X + w, Y); g.lineTo(X + lean, Y - l); g.closePath(); g.fill(); g.fillStyle = `hsla(${hue - 12},66%,${62 + d * 10}%,.6)`; g.beginPath(); g.moveTo(X + lean * .5 - w * .4, Y - l * .5); g.lineTo(X + lean * .5 + w * .4, Y - l * .5); g.lineTo(X + lean, Y - l); g.closePath(); g.fill(); });
   }
   g.lineCap = 'round';
-  for (let i = 0; i < 40; i++) { const x = rnd() * 128, y = rnd() * 128, a = rnd() * 3.14, L = 4 + rnd() * 5; wrap((dx, dy) => { g.strokeStyle = rnd() < .5 ? 'rgba(214,214,120,.8)' : 'rgba(170,196,96,.8)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + dx, y + dy); g.lineTo(x + dx + Math.cos(a) * L, y + dy + Math.sin(a) * L * .5); g.stroke(); }); }
+  for (let i = 0; i < 40; i++) { const x = rnd() * 128, y = rnd() * 128, a = rnd() * 3.14, L = 4 + rnd() * 5; wrap((dx, dy) => { g.strokeStyle = rnd() < .5 ? 'rgba(206,232,130,.55)' : 'rgba(150,200,90,.55)'; g.lineWidth = .9; g.beginPath(); g.moveTo(x + dx, y + dy); g.lineTo(x + dx + Math.cos(a) * L, y + dy + Math.sin(a) * L * .5); g.stroke(); }); }
   return (C11STUB = c);
 }
 /* hoed earth (owner: it should match the grass and trees): a 128 px tile of furrows, each ridge lit on top and shaded under, with

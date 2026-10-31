@@ -600,7 +600,7 @@ function c11Bg() {
     for (const [px, py, rr] of L) disc(px, py, rr, fill);
     return L;
   };
-  g.fillStyle = '#87ae69'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#8bc65a'; g.fillRect(0, 0, w, h);
   for (let i = 0; i < 260; i++) {                                    // soft uneven patches of lighter and darker grass, never round
     const x = rnd() * w, y = rnd() * h, r = 24 + rnd() * 60, light = rnd() < .55, sx = 1 + rnd() * 1.8, rot = rnd() * 3.14;
     g.save(); g.translate(x, y); g.rotate(rot); g.scale(sx, .45 + rnd() * .3);
@@ -843,8 +843,12 @@ function c11OpenFood() {
   } })) };
 }
 function c11StartSleep(forced) { if (C11.sleep) return; C11.go = null; C11.sleep = { t: 0, did: false, forced }; }
+const C11_IDLE = 6;
 function c11NewDay() {
   let ripe = 0, died = 0;
+  for (const [k, s] of Object.entries(SAVE11.tiles)) {                // hoed earth left bare for C11_IDLE nights goes back to grass (owner 2026-10-31)
+    if (s.crop || s.dan) s.idle = 0; else if (!k.includes(':') && (s.idle = (s.idle || 0) + 1) >= C11_IDLE) { delete SAVE11.tiles[k]; delete SAVE11.clear[k]; }
+  }
   for (const s of Object.values(SAVE11.tiles)) {                     // a plant not watered for a day dies (owner); a watered one grows a day
     if (s.crop && !s.dead) { if (s.wet) { if (c11Stage(s) < 3) s.age++; } else { s.dead = 1; died++; } }
     s.wet = 0; if (s.crop && !s.dead && c11Stage(s) === 3) ripe++;
@@ -1093,7 +1097,7 @@ function renderC11() {
     // short stubble with volume (co.js c11Stubble), a soft rim that melts into the long grass round it (owner: the cut patch did not match)
     if (ml.length) {
       const pat = g.createPattern(c11Stubble(), 'repeat');
-      g.fillStyle = 'rgba(40,72,30,.22)'; for (const [x, y] of ml) { g.beginPath(); g.roundRect(sx(x) - 3, sy(y) - 1, T + 6, T + 5, mrad(x, y).map(r => r ? r + 3 : 0)); g.fill(); }
+      g.fillStyle = 'rgba(40,100,40,.12)'; for (const [x, y] of ml) { g.beginPath(); g.roundRect(sx(x) - 3, sy(y) - 1, T + 6, T + 5, mrad(x, y).map(r => r ? r + 3 : 0)); g.fill(); }
       g.save(); g.translate(-cx % 128, -cy % 128); g.fillStyle = pat; for (const [x, y] of ml) { g.beginPath(); g.roundRect(sx(x) + cx % 128, sy(y) + cy % 128, T + .6, T + .6, mrad(x, y)); g.fill(); } g.restore();
     }
     const till = (x, y) => C11_AR.id === 'ruong' && !!SAVE11.tiles[x + ',' + y] && !SAVE11.tiles[x + ',' + y].dan, R = T * .42, list = [];
@@ -1172,7 +1176,7 @@ function renderC11() {
       E.push({ y: y + .92, d: () => { c11Shade(g, sx(x + .5), sy(y + .92), 52 * k, 12 * k); c11Spr(g, A.well, sx(x + .5), sy(y + .92), k * .95); } });
     } else if (kd === 'f' || (kd === 'g' && C11_AR.id === 'ruong' && (SAVE11.tiles[x + ',' + y] || SAVE11.clear[x + ',' + y]))) {
       const s = SAVE11.tiles[x + ',' + y];
-      if (kd === 'g') { const GR = c11Grass(); if (!s) for (let i = 0; i < 3; i++) { const fx = x + .2 + i * .3 + (c11Hash(x, y, 500 + i) - .5) * .15, fy = y + .35 + c11Hash(x, y, 510 + i) * .55, sp = GR.tufts[(c11Hash(x, y, 520 + i) * 2) | 0]; E.push({ y: fy, d: () => c11Lean(g, sp, sx(fx), sy(fy), k * .34, c11Wind(fx, fy) * .1) }); }   // a few short tufts growing back
+      if (kd === 'g') { const GR = c11Grass();   // a cut patch is bare: no tufts left on it (owner 2026-10-31)
         for (const [dx, dy] of C11_D4) { const nk = (x + dx) + ',' + (y + dy); if (c11Kind(x + dx, y + dy) !== 'g' || SAVE11.clear[nk] || SAVE11.tiles[nk]) continue;   // the long grass round it leans over the edge, so the cut has no straight line
           for (let i = 0; i < 3; i++) { const t = .15 + i * .35 + (c11Hash(x, y, 530 + i + dx * 3 + dy * 7) - .5) * .12, fx = x + (dx ? (dx > 0 ? .9 : .1) : t), fy = y + (dy ? (dy > 0 ? 1.02 : .2) : t + .2), sp = GR.tufts[(c11Hash(x, y, 540 + i + dx + dy * 5) * 6) | 0], sc = k * (.55 + c11Hash(x, y, 550 + i) * .3); E.push({ y: fy, d: () => c11Lean(g, sp, sx(fx), sy(fy), sc, c11Wind(fx, fy) * .2 + Math.sin(G.t * 2.6 + fx * 5) * .05) }); } } }
       if (kd === 'f' && !s && !SAVE11.clear[x + ',' + y]) for (let i = 0; i < 5; i++) {

@@ -6,7 +6,7 @@
    - SHOOING: tap a wild cow or buffalo with the player within 2.8 tiles and it bolts about 4.5 tiles away from the player (a hen is
      picked up and thrown instead, bong.js).
    - FENCES: the skill "Làm hàng rào" (the carpenter, 2 hearts) and the Búa đục: in its build list "Hàng rào tre" switches to fence mode,
-     then each tap on a free grass tile near the player puts up a piece for RAO_WOOD logs, a tap on a piece takes it down (1 log back);
+     then each tap on a free grass tile near the player puts up a piece for RAO_WOOD logs, a tap on a piece takes it down (nothing back);
      changing tool ends the mode. A fence blocks the animals only: the player steps over it. SAVE11.fences { 'x,y': 1 }, home farm only. */
 const RAO_WOOD = 2, RAO_RAID = ['ga', 'trong', 'bo', 'trau'], RAO_SHOO = ['bo', 'trau'];
 SAVE11.fences = SAVE11.fences || {};
@@ -58,7 +58,7 @@ c11Tap = function (tx, ty, wx, wy) {
   if (C11.fence && C11.area === 'ruong' && c11HandTool() === 'dan') {                         // fence mode: a tap builds or takes down a piece
     if (Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) > 4.5) { c11Msg('Đứng gần hơn một chút', '#5b2f1f'); return; }
     const key = tx + ',' + ty;
-    if (raoOn(tx, ty)) { delete SAVE11.fences[key]; c11Add('go', 1); c11Dots(tx, ty, '#c89a5e', 6); persist11(); return; }
+    if (raoOn(tx, ty)) { delete SAVE11.fences[key]; c11Dots(tx, ty, '#c89a5e', 6); persist11(); return; }
     if (tx < 1 || ty < 1 || tx >= C11_W - 1 || ty >= C11_H - 1 || c11Kind(tx, ty) !== 'g' || SAVE11.tiles[key] || c11PenAt(tx, ty)) { c11Msg('Chỗ này đóng rào không được, chọn ô cỏ trống', '#5b2f1f'); return; }
     if (!c11Take('go', RAO_WOOD)) { c11Msg(`Cần ${RAO_WOOD} gỗ trong túi cho mỗi đoạn rào`, '#a3332a'); return; }
     c11Spend(C11_COST.dan * .5); SAVE11.fences[key] = 1; c11Dots(tx, ty, '#c89a5e', 8); c11Chips && c11Chips(tx, ty - .3, C11.face * -1, 6); persist11(); return;

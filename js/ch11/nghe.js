@@ -151,8 +151,8 @@ function c11BuildMenu(tx, ty) {
 function c11PenMenu(pen) {
   const P = C11_PENS[pen.kind], an = SAVE11.herd.filter(h => h.pen === pen.id);
   C11.menu = { title: P.name, note: '', cols: 1, rows: [{ name: `Đang nuôi ${an.length}/${P.cap} con`, sub: an.map(h => `${h.nm}${h.fed ? '' : ' (đói)'}`).join(', ') || 'Chưa có con nào, mua con giống ở người bán', tag: '', ok: true, f: () => {} },
-    { name: 'Dỡ chuồng', sub: an.length ? 'Phải bán hết súc vật trước' : `lấy lại ${P.wood >> 1} gỗ`, tag: '', ok: !an.length, f: () => {
-      if (an.length) { C11.menu.note = 'Còn súc vật trong chuồng'; return; } SAVE11.pens.splice(SAVE11.pens.indexOf(pen), 1); const left = c11Add('go', P.wood >> 1); persist11(); C11.menu = null; c11Msg(`Dỡ chuồng, được ${(P.wood >> 1) - left} gỗ`, '#5b2f1f'); } }] };
+    { name: 'Dỡ chuồng', sub: an.length ? 'Phải bán hết súc vật trước' : 'dỡ đi, không lấy lại được gỗ', tag: '', ok: !an.length, f: () => {
+      if (an.length) { C11.menu.note = 'Còn súc vật trong chuồng'; return; } SAVE11.pens.splice(SAVE11.pens.indexOf(pen), 1); persist11(); C11.menu = null; c11Msg('Đã dỡ chuồng, gỗ không lấy lại được', '#5b2f1f'); } }] };
 }
 const c11HerdAt = (tx, ty) => (C11.beasts || []).find(b => b.herd && Math.abs(b.x - (tx + .5)) < .95 && Math.abs(b.y - (ty + .5)) < 1.1);
 function c11FeedHerd(b) {
@@ -214,7 +214,8 @@ function c11ActNew(tx, ty, tool, k, key) {
   if (tool === 'dan' && (k === 'g' || k === 'f')) {
     if (C11.area !== 'ruong') { c11Pop(tx, ty - 1, 'Chỉ bắc giàn, đóng chuồng ở nhà mình', '#5b2f1f'); return true; }
     const pen = c11PenAt(tx, ty); if (pen) { c11PenMenu(pen); return true; }
-    const s = SAVE11.tiles[key]; if (s) { c11Pop(tx, ty - 1, s.dan ? 'Đã có giàn rồi' : 'Đất đã cuốc, đóng ở chỗ cỏ', '#5b2f1f'); return true; }
+    const s = SAVE11.tiles[key]; if (s && s.dan) { C11.menu = { title: 'Giàn', note: '', cols: 1, rows: [{ name: 'Dỡ giàn', sub: s.crop ? 'cây leo trên giàn cũng mất · không lấy lại được gỗ' : 'không lấy lại được gỗ', tag: ' ', ok: true, f: () => { delete SAVE11.tiles[key]; C11.menu = null; c11Dots(tx, ty, '#c89a5e', 8); persist11(); c11Msg('Đã dỡ giàn', '#5b2f1f'); } }] }; return true; }
+    if (s) { c11Pop(tx, ty - 1, 'Đất đã cuốc, đóng ở chỗ cỏ', '#5b2f1f'); return true; }
     c11BuildMenu(tx, ty); return true;
   }
   return false;
