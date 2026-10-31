@@ -8,7 +8,7 @@ let JG_SAVE = { pieces: 0 };
 try { const s = JSON.parse(localStorage.getItem('dcc.jg') || 'null'); if (s && typeof s.pieces === 'number') JG_SAVE = Object.assign(JG_SAVE, s); } catch (e) {}
 const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG_SAVE)); } catch (e) {} };
 
-const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0 };
+const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0, rooms: null, roomsMeta: null, room: null, rthumbs: {}, pw: {} };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
   { id: 'lo', after: 'ly', pic: { id: 'lo', src: 'img/ch10/dan-lon-am-duong.jpg', w: 3400, h: 2200, vi: 'Đàn lợn âm dương', en: 'Yin-Yang Pigs' }, thumb: 'img/ch10/thumb-lo.jpg', cols: 68, rows: 44 },   // appears in the list only once Lý ngư vọng nguyệt is finished (owner, 2026-10-27)
@@ -39,22 +39,31 @@ function startJG() {
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
-  Object.assign(JG, { pz: null, L: null, G: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false, gscroll: 0 });
-  JG.chat.clear(); JG.emo.clear(); hlChatClose(); HL_CHAT_NET = null; JG_NET.close();
+  Object.assign(JG, { pz: null, L: null, G: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false, gscroll: 0, room: null });
+  JG.chat.clear(); JG.emo.clear(); hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); jgrClose();
   for (const pz of JG_PUZZLES) if (!JG.thumbs[pz.id]) { const im = new Image(); im.onload = () => { JG.thumbs[pz.id] = im; }; im.src = pz.thumb; }
   jgListAsk(true);
 }
 // one print: its picture, then its own server object (?p=)
 function jgOpen(pz) {
   const me = hsMine(), look = { role: me.role, age: me.age, body: me.body, fur: me.fur, robe: me.robe, skirt: me.skirt, pants: me.pants, top: me.top };
+  JG.room = null;
   Object.assign(JG, { pz, L: jgLevel(pz), G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false });
   JG.chat.clear(); JG.emo.clear(); hlChatClose(); HL_CHAT_NET = JG_NET;
   c9Img(pz.pic, im => { if (JG.pz === pz) { JG.im = im; jgBuild(); } });
-  JG_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look }, jgMsg, s => { JG.conn = s; }, pz.id);
+  JG_NET.open({ t: 'hello', dev: p4Device(), name: hsName(me), look, ...(pz.room ? { pw: pz.pw || '' } : {}) }, jgMsg, s => {
+    JG.conn = s;
+    if (JG.pz !== pz) return;
+    if (s === 'newpic') setTimeout(jgReopenRoom, 600);
+    else if (s === 'hidden') { toast(lg('Tranh này đang chờ admin xem xét', 'This picture is waiting for the admin'), 3.4); jgBack(); }
+    else if (s === 'deleted') { toast(lg('Phòng đã bị xóa', 'The room was deleted'), 3); jgBack(); }
+    else if (s === 'kicked') { toast(lg('Chủ phòng đã mời bạn ra khỏi phòng', 'The owner removed you from the room'), 3.4); jgBack(); }
+    else if (s === 'wrongpass' || s === 'tries') { toast(lg('Không vào được phòng (mật khẩu)', 'Could not enter the room (password)'), 3); jgBack(); }
+  }, pz.room ? { room: pz.room } : pz.id);
 }
 // back to the list of prints
-function jgBack() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); Object.assign(JG, { pz: null, L: null, G: null, im: null, welcome: null, id: null, players: [], ui: null, board: null, tray: false, conf: [], bad: false }); JG.chat.clear(); JG.emo.clear(); jgListAsk(true); }
-function jgLeave() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); showChapters(); }
+function jgBack() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); jgrClose(); Object.assign(JG, { room: null, pz: null, L: null, G: null, im: null, welcome: null, id: null, players: [], ui: null, board: null, tray: false, conf: [], bad: false }); JG.chat.clear(); JG.emo.clear(); jgListAsk(true); }
+function jgLeave() { hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); jgrClose(); showChapters(); }
 // "106 người · 15 giờ 4 phút": how many people put the print together and how long it took
 function jgDur(ms) {
   const m = Math.max(1, Math.round(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mi = m % 60;
@@ -72,7 +81,9 @@ const jgGone = pz => { const i = JG.list && JG.list[pz.id]; return !!(pz.hideMin
 const jgShown = () => JG_PUZZLES.filter(pz => !jgGone(pz) && (!pz.after || jgPeek() || jgFin(JG.list && JG.list[pz.after])));
 function jgListAsk(force) {
   if (JG.listBusy || (!force && Date.now() - JG.listAt < 15000)) return; JG.listBusy = true; JG.listAt = Date.now();
-  fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {}).then(() => { JG.listBusy = false; });
+  const rooms = fetch(JG_BASE + '/jgr/list?dev=' + encodeURIComponent(p4Device())).then(r => r.json()).then(j => { if (j && j.rooms) { JG.rooms = j.rooms; JG.roomsMeta = { canCreate: !!j.canCreate, total: j.total || 0 }; jgrThumbs(); } }).catch(() => {});
+  const prints = fetch(JG_LIST_URL).then(r => r.json()).then(j => { if (j && j.puzzles) JG.list = j.puzzles; }).catch(() => {});
+  Promise.all([rooms, prints]).then(() => { JG.listBusy = false; });
 }
 
 // the engine's view of the network: what to tell the server, the name tags
@@ -104,7 +115,11 @@ function jgBuild() {
 /* ---------- messages from the server ---------- */
 function jgMsg(m) {
   const G = JG.G;
-  if (m.t === 'welcome') { JG.id = m.id; JG.players = m.players; JG.welcome = m; JG.conn = 'up'; jgBuild(); }
+  if (m.t === 'welcome') {
+    if (m.room && JG.pz && JG.pz.room && m.room.ver !== JG.pz.ver) { setTimeout(jgReopenRoom, 100); return; }   // the picture changed while this page was opening it
+    JG.id = m.id; JG.players = m.players; JG.welcome = m; JG.conn = 'up'; if (m.room) JG.room = Object.assign(JG.room || {}, m.room); jgBuild();
+  }
+  else if (m.t === 'room') { if (JG.room) JG.room.locked = !!m.locked; }
   else if (m.t === 'players') JG.players = m.players;
   else if (!G) return;
   else if (m.t === 'lift') { if (m.by !== JG.id) c9NetLift(G, m.g, m.by); }
@@ -223,6 +238,7 @@ function jgReport(g, W, hh) {
   hlText(g, lg('Báo cáo người chơi', 'Report a player'), W / 2, y + 22, 17, { w: 900 });
   const close = () => { JG.ui = null; JG.repPick = null; };
   hlText(g, lg('‹ đóng', '‹ close'), x + w - 44, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a' }); JG.btns.push({ x: x + w - 90, y: y + h - 30, w: 90, h: 30, down: close });
+  if (JG.room && !JG.room.own && !JG.repPick) { hlText(g, lg('⚑ Tranh không phù hợp', '⚑ Inappropriate picture'), x + 14, y + h - 14, 12, { f: hlSans, w: 700, o: false, c: '#a3332a', a: 'left' }); JG.btns.push({ x: x + 6, y: y + h - 30, w: 190, h: 30, down: () => { close(); jgrReportPic(); } }); }
   const pk = JG.repPick;
   if (pk) {
     hlText(g, lg('Báo cáo "' + pk.name + '" vì gian lận?', 'Report "' + pk.name + '" for cheating?'), W / 2, y + 74, 14, { ...sub, w: 800 });
@@ -262,37 +278,116 @@ function jgBoard(g, W, hh) {
   hlText(g, `Mỗi mảnh ghép thành công +${JG_COIN} đồng`, W / 2, y + h - 40, 10.5, { ...sub, al: .75 });
 }
 
-// the list of prints: the picture, its name, how many pieces, how far it is and who is joining now (a tap opens it)
+// the list: the private rooms on top (a button to make one, then the rooms), then the prints of the whole village. A card is a TAP (it opens on release if the finger did not drag),
+// so a finger or the mouse can drag the list (owner, 2026-10-30: the list could not be scrolled, the press opened a print at once)
+function jgGalItems() {
+  const it = [], R = JG.rooms;
+  it.push({ k: 'head', h: 34, s: lg('Phòng ghép tranh riêng', 'Private puzzle rooms') });
+  it.push({ k: 'create', h: 64 });
+  if (R) for (const r of R) it.push({ k: 'room', h: 100, r });
+  it.push({ k: 'head', h: 34, s: lg('Tranh chung của cả làng', 'Village prints') });
+  for (const pz of jgShown()) it.push({ k: 'print', h: 132, pz });
+  return it;
+}
+function jgLock(g, cx, cy, k, col) {   // a small padlock
+  g.save(); g.translate(cx, cy); g.scale(k, k); g.lineWidth = 2; g.strokeStyle = col; g.fillStyle = col;
+  g.beginPath(); g.arc(0, -3, 4, Math.PI, 0); g.stroke(); g.fillRect(-6, -3, 12, 9); g.restore();
+}
+function jgrThumbs() { for (const r of JG.rooms || []) { const k = r.id + ':' + r.ver; if (JG.rthumbs[k] === undefined) { const im = new Image(); im.onload = () => { JG.rthumbs[k] = im; }; JG.rthumbs[k] = false; im.src = JG_BASE + '/jgr/thumb?r=' + r.id + '&v=' + r.ver; } } }
 function jgGallery(g, W, hh) {
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
   hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Tranh', 'Print Puzzles'), 56, 28, 18, { w: 900, a: 'left' });
-  const w = Math.min(W - 24, 540), x = (W - w) / 2, cardH = 132, gap = 14, y0 = 72, endY = y0 + jgShown().length * (cardH + gap);
+  const w = Math.min(W - 24, 540), x = (W - w) / 2, gap = 12, items = jgGalItems(); let endY = 72;
+  for (const it of items) { it.y0 = endY; endY += it.h + gap; }
   JG.gscroll = Math.max(0, Math.min(Math.max(0, endY - hh + 8), JG.gscroll));
   g.save(); g.beginPath(); g.rect(0, 56, W, hh - 56); g.clip();
-  jgShown().forEach((pz, i) => {
-    const y = y0 + i * (cardH + gap) - JG.gscroll, info = JG.list[pz.id], total = pz.cols * pz.rows, fin = !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
-    if (y > hh || y + cardH < 56) return;
-    hlPlate(g, x, y, w, cardH, '#f2ecde', HL_INK, 14);
-    const im = JG.thumbs[pz.id], tw0 = Math.min(170, w * .42), th = Math.min(tw0 * pz.pic.h / pz.pic.w, cardH - 16), tw = th * pz.pic.w / pz.pic.h, tx = x + 12, ty = y + (cardH - th) / 2;
-    if (im) g.drawImage(im, tx, ty, tw, th); else { g.fillStyle = 'rgba(29,25,21,.12)'; g.fillRect(tx, ty, tw, th); }
-    g.lineWidth = 2; g.strokeStyle = HL_INK; g.strokeRect(tx, ty, tw, th);
-    const lx = tx + tw + 14, lw = x + w - 14 - lx, sub = { f: hlSans, w: 700, o: false, a: 'left' };
-    hlText(g, lg(pz.pic.vi, pz.pic.en), lx, y + 30, lw < 170 ? 15.5 : 17, { w: 900, a: 'left' });
-    hlText(g, `${total} ${lg('mảnh', 'pieces')}`, lx, y + 54, 13, sub);
-    if (!info) hlText(g, lg('Đang tải…', 'Loading…'), lx, y + 78, 12.5, { ...sub, al: .7 });
-    else if (fin) {   // finished: who and how long, one line each (no "finished" text: it overflowed the card on a phone)
-      if (info.players) hlText(g, `${info.players} ${lg('người ghép', 'players')}`, lx, y + 82, 14, { ...sub, c: '#2f6a4c' });
-      if (info.took > 0) hlText(g, jgDur(info.took), lx, y + 106, 14, { ...sub, c: HL_INK });
-      else if (!info.players) hlText(g, lg('Đã ghép xong', 'Finished'), lx, y + 82, 13, { ...sub, c: '#2f6a4c' });
-    }
-    else {
-      hlText(g, `${info.n || 0} ${lg('người đang ghép', 'joining now')}`, lx, y + 78, 12.5, { ...sub, c: '#a3332a' });
-      const bw = Math.max(40, lw), pct = Math.max(0, Math.min(1, (info.joined || 0) / total)); g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(lx, y + 92, bw, 8); g.fillStyle = '#2f6a4c'; g.fillRect(lx, y + 92, bw * pct, 8); g.lineWidth = 1.5; g.strokeStyle = HL_INK; g.strokeRect(lx, y + 92, bw, 8);
-      hlText(g, `${info.joined || 0}/${total}` + (info.players ? ` · ${info.players} ${lg('người đã ghép', 'have joined in')}` : ''), lx, y + 114, 11, { ...sub, al: .75 });
-    }
-    JG.btns.push({ x, y: Math.max(56, y), w, h: cardH, down: () => jgOpen(pz) });
-  });
+  for (const it of items) {
+    const y = it.y0 - JG.gscroll, cardH = it.h; if (y > hh || y + cardH < 56) continue;
+    if (it.k === 'head') { hlText(g, it.s, x + 4, y + 18, 15, { w: 900, a: 'left' }); continue; }
+    if (it.k === 'create') { jgCreateCard(g, x, y, w, cardH); continue; }
+    if (it.k === 'room') { jgRoomCard(g, x, y, w, cardH, it.r); continue; }
+    jgPrintCard(g, x, y, w, cardH, it.pz);
+  }
   g.restore();
+}
+function jgCreateCard(g, x, y, w, h) {
+  const m = JG.roomsMeta, mine = (JG.rooms || []).find(r => r.mine && !r.done), can = !!(m && m.canCreate);
+  hlPlate(g, x, y, w, h, can ? '#e9d9a8' : '#f2ecde', HL_INK, 14);
+  if (!m) { hlText(g, lg('Đang tải…', 'Loading…'), x + w / 2, y + h / 2, 13, { f: hlSans, w: 700, o: false, al: .7 }); return; }
+  if (can) {
+    hlText(g, '＋', x + 30, y + h / 2, 30, { w: 900 }); hlText(g, lg('Tạo phòng ghép tranh của bạn', 'Make your own puzzle room'), x + 58, y + h / 2 - 8, 15.5, { w: 900, a: 'left' });
+    hlText(g, lg('Tranh của bạn, mật khẩu của bạn, 100 đến 1000 mảnh', 'Your picture, your password, 100 to 1000 pieces'), x + 58, y + h / 2 + 13, 11, { f: hlSans, w: 600, o: false, a: 'left', al: .8 });
+    JG.btns.push({ x, y: Math.max(56, y), w, h, tap: () => jgrCreateOpen() });
+  } else {
+    hlText(g, lg('Bạn đang có một phòng chưa ghép xong', 'You have a room that is not finished'), x + w / 2, y + h / 2 - 8, 13.5, { f: hlSans, w: 800, o: false });
+    hlText(g, mine ? lg('"' + mine.name + '": ghép xong rồi bạn tạo được phòng mới', '"' + mine.name + '": finish it to make a new room') : '', x + w / 2, y + h / 2 + 13, 11, { f: hlSans, w: 600, o: false, al: .8 });
+  }
+}
+function jgRoomCard(g, x, y, w, h, r) {
+  hlPlate(g, x, y, w, h, r.mine ? '#f1e3b3' : '#f2ecde', HL_INK, 14);
+  const im = JG.rthumbs[r.id + ':' + r.ver], th = 62, tw = Math.min(110, th * r.w / r.h), tx = x + 12, ty = y + (h - th) / 2;
+  const ih = Math.min(th, tw * r.h / r.w), ix = tx + (110 - tw) / 2, iy = ty + (th - ih) / 2;
+  if (im) g.drawImage(im, ix, iy, tw, ih); else { g.fillStyle = 'rgba(29,25,21,.12)'; g.fillRect(ix, iy, tw, ih); }
+  g.lineWidth = 2; g.strokeStyle = HL_INK; g.strokeRect(ix, iy, tw, ih);
+  const lx = tx + 110 + 12, lw = x + w - 14 - lx, sub = { f: hlSans, w: 700, o: false, a: 'left' }, total = r.cols * r.rows;
+  let nm = r.name; g.font = `900 15px ${hlSans}`; while (nm.length > 3 && g.measureText(nm).width > lw - (r.locked ? 22 : 0)) nm = nm.slice(0, -2) + '…';
+  hlText(g, nm, lx, y + 24, 15, { w: 900, a: 'left' });
+  if (r.locked) jgLock(g, x + w - 24, y + 22, .9, r.mine ? '#2f6a4c' : '#a3332a');
+  hlText(g, (r.mine ? lg('Phòng của bạn', 'Your room') : lg('Chủ phòng: ', 'Owner: ') + (r.ownerName || '?')) + ` · ${total} ${lg('mảnh', 'pieces')}`, lx, y + 44, 11.5, { ...sub, al: .85 });
+  if (r.hidden) hlText(g, lg('Đang chờ admin xem xét (bị báo cáo)', 'Waiting for the admin (reported)'), lx, y + 66, 12, { ...sub, c: '#a3332a' });
+  else if (r.done) hlText(g, lg('Đã ghép xong', 'Finished') + (r.took > 0 ? ' · ' + jgDur(r.took) : ''), lx, y + 66, 13, { ...sub, c: '#2f6a4c' });
+  else {
+    hlText(g, `${r.n || 0} ${lg('người đang ghép', 'joining now')} · ${jgDur(Math.max(60000, Date.now() - (r.since || r.created)))}`, lx, y + 66, 12, { ...sub, c: r.n ? '#a3332a' : HL_INK });
+    const bw = Math.max(40, lw), pct = Math.max(0, Math.min(1, (r.joined || 0) / total)); g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(lx, y + 77, bw, 7); g.fillStyle = '#2f6a4c'; g.fillRect(lx, y + 77, bw * pct, 7); g.lineWidth = 1.5; g.strokeStyle = HL_INK; g.strokeRect(lx, y + 77, bw, 7);
+  }
+  JG.btns.push({ x, y: Math.max(56, y), w, h, tap: () => jgOpenRoom(r) });
+}
+function jgPrintCard(g, x, y, w, cardH, pz) {
+  const info = JG.list[pz.id], total = pz.cols * pz.rows, fin = !!(info && (info.done || info.archive || (info.left === 0 && info.joined > 0)));
+  hlPlate(g, x, y, w, cardH, '#f2ecde', HL_INK, 14);
+  const im = JG.thumbs[pz.id], tw0 = Math.min(170, w * .42), th = Math.min(tw0 * pz.pic.h / pz.pic.w, cardH - 16), tw = th * pz.pic.w / pz.pic.h, tx = x + 12, ty = y + (cardH - th) / 2;
+  if (im) g.drawImage(im, tx, ty, tw, th); else { g.fillStyle = 'rgba(29,25,21,.12)'; g.fillRect(tx, ty, tw, th); }
+  g.lineWidth = 2; g.strokeStyle = HL_INK; g.strokeRect(tx, ty, tw, th);
+  const lx = tx + tw + 14, lw = x + w - 14 - lx, sub = { f: hlSans, w: 700, o: false, a: 'left' };
+  hlText(g, lg(pz.pic.vi, pz.pic.en), lx, y + 30, lw < 170 ? 15.5 : 17, { w: 900, a: 'left' });
+  hlText(g, `${total} ${lg('mảnh', 'pieces')}`, lx, y + 54, 13, sub);
+  if (!info) hlText(g, lg('Đang tải…', 'Loading…'), lx, y + 78, 12.5, { ...sub, al: .7 });
+  else if (fin) {   // finished: who and how long, one line each (no "finished" text: it overflowed the card on a phone)
+    if (info.players) hlText(g, `${info.players} ${lg('người ghép', 'players')}`, lx, y + 82, 14, { ...sub, c: '#2f6a4c' });
+    if (info.took > 0) hlText(g, jgDur(info.took), lx, y + 106, 14, { ...sub, c: HL_INK });
+    else if (!info.players) hlText(g, lg('Đã ghép xong', 'Finished'), lx, y + 82, 13, { ...sub, c: '#2f6a4c' });
+  } else {
+    hlText(g, `${info.n || 0} ${lg('người đang ghép', 'joining now')}`, lx, y + 78, 12.5, { ...sub, c: '#a3332a' });
+    const bw = Math.max(40, lw), pct = Math.max(0, Math.min(1, (info.joined || 0) / total)); g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(lx, y + 92, bw, 8); g.fillStyle = '#2f6a4c'; g.fillRect(lx, y + 92, bw * pct, 8); g.lineWidth = 1.5; g.strokeStyle = HL_INK; g.strokeRect(lx, y + 92, bw, 8);
+    hlText(g, `${info.joined || 0}/${total}` + (info.players ? ` · ${info.players} ${lg('người đã ghép', 'have joined in')}` : ''), lx, y + 114, 11, { ...sub, al: .75 });
+  }
+  JG.btns.push({ x, y: Math.max(56, y), w, h: cardH, tap: () => jgOpen(pz) });
+}
+// a private room: the password is asked first (the owner's device and an open room are not asked), the picture is fetched past the door, then the socket
+async function jgOpenRoom(r, pw) {
+  if (JG.opening) return;
+  if (r.locked && !r.mine && pw == null) { if (JG.pw[r.id] != null) pw = JG.pw[r.id]; else { jgrAskPass(r); return; } }
+  JG.opening = true; toast(lg('Đang mở phòng…', 'Opening the room…'), 1.6);
+  const fin = () => { JG.opening = false; };
+  let res; try { res = await fetch(JG_BASE + '/jgr/img?r=' + r.id, { headers: { 'x-dev': p4Device(), 'x-pw': pw || '' } }); } catch (e) { fin(); toast(lg('Không kết nối được máy chủ', 'Can not reach the server'), 2.6); return; }
+  if (!res.ok) {
+    let j = {}; try { j = await res.json(); } catch (e) {} fin();
+    if (j.code === 4010) { delete JG.pw[r.id]; toast(lg('Sai mật khẩu', 'Wrong password'), 2.4); jgrAskPass(r); }
+    else if (j.code === 4007) toast(lg('Chủ phòng đã mời bạn ra khỏi phòng này', 'The owner removed you from this room'), 3.2);
+    else if (j.code === 4012) toast(lg('Tranh này đang chờ admin xem xét', 'This picture is waiting for the admin'), 3.4);
+    else if (j.code === 4011) toast(lg('Nhập sai nhiều lần, đợi ít phút nhé', 'Too many wrong tries, wait a few minutes'), 3.2);
+    else toast(lg('Không mở được phòng', 'Could not open the room'), 2.6);
+    return;
+  }
+  const url = URL.createObjectURL(await res.blob()); JG.pw[r.id] = pw || ''; fin();
+  const pid = 'r' + r.id + 'v' + r.ver;
+  jgOpen({ id: pid, room: r.id, pw: pw || '', ver: r.ver, pic: { id: pid, src: url, w: r.w, h: r.h, vi: r.name, en: r.name }, cols: r.cols, rows: r.rows });
+  JG.room = { id: r.id, name: r.name, ownerName: r.ownerName, own: !!r.mine, locked: !!r.locked };
+}
+// the owner put in a new picture: everybody is sent out with 4008 and comes back to the new one
+function jgReopenRoom() {
+  const id = JG.room && JG.room.id, pw = id && JG.pw[id]; if (!id) return;
+  fetch(JG_BASE + '/jgr/list?dev=' + encodeURIComponent(p4Device())).then(r => r.json()).then(j => { const r = (j.rooms || []).find(x => x.id === id); if (r) { JG.rooms = j.rooms; jgrThumbs(); jgOpenRoom(r, pw); } else jgBack(); }).catch(() => jgBack());
 }
 // the reminder to a player who carries a group somebody wants, and short notes
 function jgHoldNote(g, W, G) {
@@ -317,14 +412,16 @@ function renderJG() {
   if (G) { c9Draw(G, g, W, hh); c9DrawTurnBtn(G, g); }
   // the top bar: back, the title and how far the print is, then four round buttons (sample, face, chat, cup)
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
-  hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg(L.pic.vi, L.pic.en), 56, 20, 16, { w: 900, a: 'left' });
+  hlText(g, '‹', 28, 28, 34, { w: 900 }); let ttl = lg(L.pic.vi, L.pic.en); if (JG.room) { const lim = Math.max(80, W - 56 - (JG.room.own ? 250 : 214)); g.font = `900 16px ${hlSans}`; while (ttl.length > 3 && g.measureText(ttl).width > lim) ttl = ttl.slice(0, -2) + '…'; }
+  hlText(g, ttl, 56, 20, 16, { w: 900, a: 'left' });
   hlText(g, G ? `${JG.joinedN}/${L.cols * L.rows} · ${JG.players.length} ${lg('người', 'people')}` : '', 56, 41, 11, { f: hlSans, w: 600, o: false, al: .8, a: 'left' });
   const cy = 28, X = [W - 20, W - 56, W - 92, W - 128, W - 164];
   if (G) { jgEye(g, X[4], cy, !!G.sv); JG.btns.push({ x: X[4] - 18, y: cy - 19, w: 36, h: 38, down: () => { c9SvToggle(G); } }); }
   if (up) { hlEmoteFace(g, 4, X[3], cy, 16); JG.btns.push({ x: X[3] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.tray = !JG.tray; } }); hlChatIcon(g, X[2], cy, HL.chatOff); JG.btns.push({ x: X[2] - 18, y: cy - 19, w: 36, h: 38, down: () => hlChatOpen() }); jgFlag(g, X[1], cy); JG.btns.push({ x: X[1] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'report'; JG.repPick = null; JG.bscroll = 0; } }); }
+  if (JG.room && JG.room.own && up) { jgGear(g, W - 200, cy); JG.btns.push({ x: W - 218, y: cy - 19, w: 36, h: 38, down: () => jgrManageOpen() }); }
   hlTrophy(g, X[0], cy); JG.btns.push({ x: X[0] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'board'; JG.bscroll = 0; JG_NET.send({ t: 'board' }); } });
   if (!G) {
-    hlText(g, JG.bad ? 'Bức tranh bị lỗi, hãy tải lại trang' : JG.conn === 'blocked' ? lg('Máy bạn tạm bị chặn vì bấm quá nhanh. Đợi ít phút rồi vào lại nhé.', 'Your device is blocked for a while for tapping too fast. Come back in a few minutes.') : JG.conn === 'reported' ? lg('Bạn đã bị nhiều người chơi báo cáo nên không vào lại được nữa.', 'Several players reported you, so you can not come back.') : JG.conn === 'crowded' ? lg('Có quá nhiều máy cùng mạng với bạn đang mở bức tranh. Đóng bớt rồi vào lại nhé.', 'Too many devices on your network have the print open. Close some and come back.') : JG.conn === 'replaced' ? lg('Bức tranh đang mở ở một cửa sổ khác của bạn. Đóng bên kia rồi vào lại.', 'The print is open in another window of yours. Close it and come back.') : JG.conn === 'down' ? lg('Mất kết nối, đang nối lại…', 'Connection lost, reconnecting…') : lg('Đang mở bức tranh chung…', 'Opening the shared print…'), W / 2, hh / 2, 18);
+    hlText(g, JG.bad ? 'Bức tranh bị lỗi, hãy tải lại trang' : JG.conn === 'blocked' ? lg('Máy bạn tạm bị chặn vì bấm quá nhanh. Đợi ít phút rồi vào lại nhé.', 'Your device is blocked for a while for tapping too fast. Come back in a few minutes.') : JG.conn === 'reported' ? lg('Bạn đã bị nhiều người chơi báo cáo nên không vào lại được nữa.', 'Several players reported you, so you can not come back.') : JG.conn === 'crowded' ? lg('Có quá nhiều máy cùng mạng với bạn đang mở bức tranh. Đóng bớt rồi vào lại nhé.', 'Too many devices on your network have the print open. Close some and come back.') : JG.conn === 'replaced' ? lg('Bức tranh đang mở ở một cửa sổ khác của bạn. Đóng bên kia rồi vào lại.', 'The print is open in another window of yours. Close it and come back.') : JG.conn === 'newpic' ? lg('Chủ phòng vừa đổi tranh, đang mở lại…', 'The owner changed the picture, reopening…') : JG.conn === 'down' ? lg('Mất kết nối, đang nối lại…', 'Connection lost, reconnecting…') : lg('Đang mở bức tranh chung…', 'Opening the shared print…'), W / 2, hh / 2, 18);
   } else {
     if (!G.sv) for (const b of jgZoomBtns(G)) { g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fillStyle = '#f2ecde'; g.fill(); g.stroke(); hlText(g, b.t, b.x, b.y + 1, b.k === 'fit' ? 15 : 22, { f: "'Inter', system-ui, sans-serif", w: 800, o: false }); }
     if (G.done) {
@@ -353,8 +450,8 @@ function jgDown(e) {
   if (S.mode !== 'jgplay') return; JG.touch = e.pointerType !== 'mouse'; const [x, y] = jgPos(e), G = JG.G;
   if (x < 52 && y < 56) { if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
   if (JG.tray) { const tb = JG.trayBtns.find(b => jgIn(b, x, y)); JG.tray = false; if (tb) tb.down(e); return; }
-  for (const b of JG.btns) if (jgIn(b, x, y)) { b.down(e); return; }
-  if (!JG.pz) { JG.drag = { y, s: JG.gscroll, gal: true }; return; }
+  for (const b of JG.btns) if (jgIn(b, x, y)) { if (b.tap) { capturePointer(e); JG.drag = { y, s: JG.gscroll, gal: true, tap: b, moved: false }; return; } b.down(e); return; }
+  if (!JG.pz) { capturePointer(e); JG.drag = { y, s: JG.gscroll, gal: true, moved: false }; return; }
   if (JG.ui === 'board' || JG.ui === 'report') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, x, s: JG.bscroll, rep: JG.ui === 'report', moved: false }; else { JG.ui = null; JG.repPick = null; } return; }
   if (!G) return;
   if (G.sv) { capturePointer(e); c9SvDown(G, x, y, e); return; }   // the sample print is open: it takes the pointer
@@ -369,7 +466,7 @@ function jgMove(e) {
   if (JG.G && JG.G.sv && !JG.ui) { c9SvMove(JG.G, x, y, e); return; }
   if (!JG.G || JG.ui) return; c9Move(JG.G, x, y, e); cv.style.cursor = JG.G.held ? 'grabbing' : JG.G.hover ? 'grab' : '';
 }
-function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); if (JG.G.sv) { c9SvUp(JG.G, x, y, e); return; } c9PtrUp(JG.G, x, y, e, () => {}); }
+function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.tap && !d.moved) { d.tap.tap(); return; } if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); if (JG.G.sv) { c9SvUp(JG.G, x, y, e); return; } c9PtrUp(JG.G, x, y, e, () => {}); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'jgplay') e.preventDefault(); });
 cv.addEventListener('touchstart', e => { if (S.mode === 'jgplay') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {
@@ -381,7 +478,7 @@ cv.addEventListener('wheel', e => {
 }, { passive: false });
 function jgKey(e) {
   if (S.mode !== 'jgplay') return;
-  if (e.code === 'Escape') { if (JG.G && JG.G.sv) JG.G.sv = null; else if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
+  if (e.code === 'Escape') { if (jgrOpenNow()) jgrClose(); else if (JG.G && JG.G.sv) JG.G.sv = null; else if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
   const G = JG.G; if (!G) return;
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { c9Zoom(G, 1.25, G.lw / 2, (G.lh + G.top) / 2); return; } if (e.code === 'Minus' || e.code === 'NumpadSubtract') { c9Zoom(G, .8, G.lw / 2, (G.lh + G.top) / 2); return; }
   const grp = G.held; if (!grp) return;
@@ -395,7 +492,7 @@ registerChapter({
   hasProgress: () => JG_SAVE.pieces > 0,
   direct: startJG,
   album() {},
-  hide() { jgMusic(false); jgRenameClose(); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
+  hide() { jgMusic(false); jgRenameClose(); jgrClose(); if (JG_NET.wantOn) JG_NET.close(); cv.style.cursor = ''; },
   update: updateJG, render: renderJG, key: jgKey,
   pointer: { down: jgDown, move: jgMove, up: jgUp },
   next() { showChapters(); }, retry() { startJG(); },

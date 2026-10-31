@@ -25,6 +25,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
 export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3, JigsawLH, JigsawLY, JigsawLO } from './jigsaw.js';
+export { JigsawRoom, JigsawReg } from './jigsawroom.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
 
 const ORIGIN_OK = /^(https:\/\/(www\.)?damcuoichuot\.com|http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?|null)$/;
@@ -98,6 +99,29 @@ export default {
       if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
       const r = await env.ROOM.get(env.ROOM.idFromName('v20')).fetch(new Request(req.url.replace('/online', '/count')));
       return new Response(await r.text(), { headers: h });
+    }
+    if (u.pathname.startsWith('/jgr/')) {   // chương X: private jigsaw rooms (src/jigsawroom.js): /jgr/list /create /thumb /img /admin and the socket /jgr/ws?r=<room>
+      const o = req.headers.get('Origin') || '', h = { 'content-type': 'application/json', 'cache-control': 'no-store', 'access-control-allow-headers': 'content-type, x-dev, x-pw', 'access-control-allow-methods': 'GET, POST, OPTIONS' };
+      if (ORIGIN_OK.test(o)) h['access-control-allow-origin'] = o;
+      if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
+      if (u.pathname === '/jgr/ws' && req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });
+      if (u.pathname !== '/jgr/thumb' && u.pathname !== '/jgr/img' && !ORIGIN_OK.test(o)) return new Response('forbidden', { status: 403 });
+      const reg = env.JIGSAW_REG.get(env.JIGSAW_REG.idFromName('main')), rid = u.searchParams.get('r') || '', room = () => /^[a-z0-9]{8}$/.test(rid) ? env.JIGSAW_ROOM.get(env.JIGSAW_ROOM.idFromName(rid)) : null;
+      const reply = async r => { const hh = new Headers(r.headers); for (const [k, v] of Object.entries(h)) if (k.startsWith('access-control-allow-origin')) hh.set(k, v); return new Response(r.body, { status: r.status, headers: hh }); };
+      if (u.pathname === '/jgr/ws') { const rm = room(); return rm ? rm.fetch(req) : new Response('no room', { status: 404 }); }
+      if (u.pathname === '/jgr/list') return reply(await reg.fetch(new Request(u.origin + '/list?dev=' + encodeURIComponent(u.searchParams.get('dev') || ''))));
+      if (u.pathname === '/jgr/thumb') return reply(await reg.fetch(new Request(u.origin + '/thumb?r=' + encodeURIComponent(rid))));
+      if (u.pathname === '/jgr/create' && req.method === 'POST') { if (+(req.headers.get('content-length') || 0) > 3800000) return new Response('{"error":"big"}', { status: 413, headers: h }); return reply(await reg.fetch(new Request(u.origin + '/create', { method: 'POST', body: req.body }))); }
+      if (u.pathname === '/jgr/img') { const rm = room(); return rm ? reply(await rm.fetch(new Request(u.origin + '/img', { headers: { 'x-dev': req.headers.get('x-dev') || '', 'x-pw': req.headers.get('x-pw') || '', 'CF-Connecting-IP': req.headers.get('CF-Connecting-IP') || '' } }))) : new Response('no room', { status: 404 }); }
+      if (u.pathname === '/jgr/report' && req.method === 'POST') { const rm = room(); if (!rm) return new Response('no room', { status: 404 }); return reply(await rm.fetch(new Request(u.origin + '/report', { method: 'POST', body: req.body, headers: { 'CF-Connecting-IP': req.headers.get('CF-Connecting-IP') || '', 'x-test-ip': req.headers.get('x-test-ip') || '' } }))); }
+      if (u.pathname === '/jgr/admin' && req.method === 'POST') { const rm = room(); if (!rm) return new Response('no room', { status: 404 }); if (+(req.headers.get('content-length') || 0) > 3800000) return new Response('{"error":"big"}', { status: 413, headers: h }); return reply(await rm.fetch(new Request(u.origin + '/admin', { method: 'POST', body: req.body }))); }
+      return new Response('nope', { status: 404, headers: h });
+    }
+    if (u.pathname === '/jgr-admin/hidden' || u.pathname === '/jgr-admin/restore' || u.pathname === '/jgr-admin/delete') {   // the owner's tools for reported pictures: Bearer <ADMIN secret>. /hidden lists them; /restore?r=<id> or /delete?r=<id> settles one
+      if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
+      if (u.pathname === '/jgr-admin/hidden') return env.JIGSAW_REG.get(env.JIGSAW_REG.idFromName('main')).fetch(new Request(u.origin + '/hidden'));
+      const rid = u.searchParams.get('r') || ''; if (!/^[a-z0-9]{8}$/.test(rid)) return new Response('r?', { status: 400 });
+      return env.JIGSAW_ROOM.get(env.JIGSAW_ROOM.idFromName(rid)).fetch(new Request(u.origin + '/sudo', { method: 'POST', body: JSON.stringify({ act: u.pathname.split('/').pop() }) }));
     }
     if (u.pathname === '/jg') {   // chương X: one shared jigsaw a picture (?p=vq: Vinh quy bai to, played; anything else: the first print, finished, answered by the Worker itself)
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 });

@@ -107,13 +107,15 @@ class Jigsaw extends DurableObject {
     this.groups.set(0, { id: 0, x: (WW - BW) / 2, y: (WH - BH) / 2, a: 0, ids: [...Array(N).keys()], by: null, heldAt: 0 }); this.done = true; this.doneAt = Date.now();
   }
   rows() { const out = []; for (const g of this.groups.values()) out.push([g.id, g.x, g.y, g.a, g.ids.join(',')]); return out; }
-  full(c) { return { n: this.n, seed: this.seed, cols: COLS, rows: ROWS, groups: this.rows(), holds: [...this.groups.values()].filter(g => g.by).map(g => [g.id, g.by]), done: this.done, freeze: FREEZE, players: this.playerList() }; }
+  full(c) { return { n: this.n, seed: this.seed, cols: COLS, rows: ROWS, groups: this.rows(), holds: [...this.groups.values()].filter(g => g.by).map(g => [g.id, g.by]), done: this.done, freeze: FREEZE, players: this.playerList(), ...(cfg.info ? { room: cfg.info(c) } : {}) }; }
   save(now) {
+    if (this.dead) return;
     if (now) { clearTimeout(this.saveT); this.saveT = null; this.flush(); return; }
     if (!this.saveT) this.saveT = setTimeout(() => { this.saveT = null; this.flush(true); }, SAVE_EVERY);   // poses only (a drop): rare, and a lost drop costs nothing but a position
   }
   // every write is retried until it sticks; a Durable Object holds its replies until the write is stored, so a join the players see is a join that is saved
   flush(soft) {
+    if (this.dead) return Promise.resolve();
     const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() }, put = { pz, total: this.total };
     if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
     if (Date.now() - (this.purgeAt || 0) > 6 * 3600000) this.purgeLog().catch(() => {});
@@ -147,14 +149,17 @@ class Jigsaw extends DurableObject {
     if (!this.tick) this.tick = setInterval(() => this.step(), 100);
     return new Response(null, { status: 101, webSocket: client });
   }
+  stat() { return { n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, done: this.done, total: N }; }
+  touch(now) { if (cfg.touch) { try { cfg.touch(this, !!now); } catch (e) {} } }
   send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
   all(o, except) { const s = JSON.stringify(o); for (const c of this.conns.values()) if (c.joined && c !== except) try { c.ws.send(s); } catch (e) {} }
-  playerList() { return [...this.conns.values()].filter(c => c.joined).map(c => ({ id: c.id, name: c.name, look: c.look, hold: !!c.holding })); }
+  playerList() { return [...this.conns.values()].filter(c => c.joined).map(c => ({ id: c.id, name: c.name, look: c.look, hold: !!c.holding, ...(cfg.isOwner && cfg.isOwner(c.dev) ? { own: 1 } : {}) })); }
   onClose(c) {
     if (!this.conns.delete(c.id)) return;
     if (c.holding) this.release(c.holding);
     this.all({ t: 'players', players: this.playerList() });
     if (!this.conns.size) { clearInterval(this.tick); this.tick = null; this.save(true); }
+    this.touch(!this.conns.size);
   }
   async user(dev) { let u = this.users.get(dev); if (!u) { u = (await this.ctx.storage.get('u:' + dev)) || { n: '', m: 0 }; this.users.set(dev, u); } return u; }
 
@@ -168,11 +173,12 @@ class Jigsaw extends DurableObject {
       const known = this.users.get(c.dev); let u = known || { n: '', m: 0 }, late = false;
       if (!known) { const got = await Promise.race([this.user(c.dev), new Promise(r => setTimeout(() => r(null), 1500))]); if (got) u = got; else late = true; }
       if (this.banned(c.dev) || (c.ip && this.banned(c.ip))) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
+      if (cfg.gate) { const code = await cfg.gate(c.dev, m, c.ip); if (code) { try { c.ws.close(code, 'room'); } catch (e) {} return; } if (c.joined || !this.conns.has(c.id)) return; }
       for (const o of [...this.conns.values()]) if (o !== c && o.dev === c.dev) { try { o.ws.close(4001, 'replaced'); } catch (e) {} this.onClose(o); }   // one socket a device: the older one is dead or another window
       u.n = c.name; c.joined = true; c.test = isTest(c.dev, c.ip);
       this.send(c, { t: 'welcome', id: c.id, ...this.full(c), me: { m: u.m } });
       if (late) this.user(c.dev).then(r => { r.n = c.name; }).catch(() => {});
-      this.all({ t: 'players', players: this.playerList() }, c);
+      this.all({ t: 'players', players: this.playerList() }, c); this.touch();
       return;
     }
     if (!c.joined) return;
@@ -271,7 +277,7 @@ class Jigsaw extends DurableObject {
     // stored first, then told: nobody ever sees a join that is not kept. The write does not hold the output gate (allowUnconfirmed) and we wait for it
     // ourselves, so a refused write (a storage limit) cannot break the whole object: the join is then told anyway and the write is retried
     clearTimeout(this.saveT); this.saveT = null;
-    const told = () => { joins.forEach((j, k) => this.all({ t: 'join', ...j, by: c.id, paid: k < paid ? 1 : 0, m: u ? u.m : 0 })); if (finished) { this.all({ t: 'done', n: this.n }); this.scheduleNext(); } };
+    const told = () => { const pay = cfg.noPay ? 0 : paid; joins.forEach((j, k) => this.all({ t: 'join', ...j, by: c.id, paid: k < pay ? 1 : 0, m: u ? u.m : 0 })); if (finished) { this.all({ t: 'done', n: this.n }); this.scheduleNext(); } this.touch(finished); };
     this.flush(true).then(told, told);
   }
   // at most 10 paid joins in any 10 seconds for one player (the economy is the client's purse)

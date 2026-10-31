@@ -38,6 +38,14 @@ class_name = "JigsawLY"
 name = "JIGSAW_LO"
 class_name = "JigsawLO"
 
+[[durable_objects.bindings]]
+name = "JIGSAW_ROOM"
+class_name = "JigsawRoom"
+
+[[durable_objects.bindings]]
+name = "JIGSAW_REG"
+class_name = "JigsawReg"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
@@ -90,3 +98,8 @@ new_sqlite_classes = ["JigsawLY"]
 [[migrations]]
 tag = "v11"
 new_sqlite_classes = ["JigsawLO"]
+
+# 2026-10-30: private jigsaw rooms (one object a room) and their list
+[[migrations]]
+tag = "v12"
+new_sqlite_classes = ["JigsawRoom", "JigsawReg"]
