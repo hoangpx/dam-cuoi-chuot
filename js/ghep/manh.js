@@ -41,7 +41,7 @@ const c9Rot = (a, x, y) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) +
 const c9Clip = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 function c9MakeGame(L, img, W, H, seedNum) {
-  const R = c9Rng(seedNum * 7919 + 13), G = { hitCtx: document.createElement('canvas').getContext('2d'), L, img, cols: L.cols, rows: L.rows, big: L.cols * L.rows >= 100, pieces: [], groups: [], order: [], held: null, drag: null, pan: null, pinch: null, tp: new Map(), noDrag: new Set(), hl: [0, 0], cam: { x: 0, y: 0, z: 1 }, t: 0, done: false, win: 0, peek: 0, lw: 0, lh: 0, seed: seedNum, flash: [], zTop: 0, bakeLeft: 1e9, psx: 0, psy: 0 };
+  const R = c9Rng(seedNum * 7919 + 13), G = { hitCtx: document.createElement('canvas').getContext('2d'), L, img, cols: L.cols, rows: L.rows, big: !!L.big || L.cols * L.rows >= 100, pieces: [], groups: [], order: [], held: null, drag: null, pan: null, pinch: null, tp: new Map(), noDrag: new Set(), hl: [0, 0], cam: { x: 0, y: 0, z: 1 }, t: 0, done: false, win: 0, peek: 0, lw: 0, lh: 0, seed: seedNum, flash: [], zTop: 0, bakeLeft: 1e9, psx: 0, psy: 0 };
   const HE = [], VE = [], JH = [], JV = [];
   for (let i = 0; i <= G.rows; i++) { HE[i] = []; JH[i] = []; for (let j = 0; j < G.cols; j++) { HE[i][j] = R() < .5 ? 1 : -1; JH[i][j] = { c: (R() - .5) * .1, s: (R() - .5) * .2 }; } }
   for (let i = 0; i < G.rows; i++) { VE[i] = []; JV[i] = []; for (let j = 0; j <= G.cols; j++) { VE[i][j] = R() < .5 ? 1 : -1; JV[i][j] = { c: (R() - .5) * .1, s: (R() - .5) * .2 }; } }
