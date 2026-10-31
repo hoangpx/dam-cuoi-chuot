@@ -1,7 +1,7 @@
 /* Chương XI · pick up a wild hen or duck (owner 2026-10-31: tap a chicken and it is lifted onto the mouse's head, tap again and it is thrown;
    only the wild hens and ducks, not the animals kept in the player's pens). The tapped bird (C11.carry) rides on the player's head and
    follows it; the next tap throws it in an arc to that spot (a tap on the player puts it down). A thrown bird lands on the nearest free
-   place, then wanders as before. Taps on a tool's own target still use the tool (nongtrai.js c11Tap checks c11ToolWins first). */
+   place, then wanders as before. A bird beats grass, crops and trees under the tap (owner: the hen first, then the tool); for every other animal a held tool still wins (nongtrai.js c11ToolWins). */
 const C11_BIRD = { reach: 1.8, throwMax: 6.5, dur: .7 };
 const c11Wild = b => b && !b.herd && (b.kind === 'ga' || b.kind === 'trong' || b.kind === 'vit');
 const c11BirdAt = (wx, wy) => (C11.beasts || []).find(b => c11Wild(b) && b !== C11.carry && !b.fly && Math.abs(wx - b.x) < .7 && wy > b.y - 1.1 && wy < b.y + .3);
@@ -21,7 +21,7 @@ c11Tap = function (tx, ty, wx, wy) {
     c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 2, b.kind === 'vit' ? 'Quạc!' : 'Cục tác!', '#5b2f1f'); return;
   }
   const g = c11BirdAt(wx, wy);
-  if (g && !['item', 'seed'].includes(c11HandTool()) && !c11ToolWins(tx, ty) && Math.hypot(g.x - C11.px, g.y - C11.py) < C11_BIRD.reach) {
+  if (g && !['item', 'seed'].includes(c11HandTool()) && Math.hypot(g.x - C11.px, g.y - C11.py) < C11_BIRD.reach) {
     C11.carry = g; g.to = null; g.fly = null; c11Pop(Math.floor(g.x), Math.floor(g.y) - 1, g.kind === 'vit' ? 'Cạp cạp!' : 'Cục ta cục tác!', '#5b2f1f'); return;
   }
   return c11TapBase(tx, ty, wx, wy);

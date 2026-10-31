@@ -888,7 +888,7 @@ function c11Tap(tx, ty, wx, wy) {
     if (Math.abs(vt[0] - ptx) + Math.abs(vt[1] - pty) <= 1 || Math.hypot(v.x - C11.px, v.y - C11.py) < 1.6) { C11.go = { path: [], act: { v } }; return; }
     const b = near(vt[0], vt[1]); if (b) C11.go = { path: c11Route(d, b.x, b.y), act: { v } }; return;
   }
-  for (const b of C11.beasts || []) if (Math.abs(wx - b.x) < .7 && wy > b.y - 1.1 && wy < b.y + .3 && !c11ToolWins(tx, ty)) {   // an animal: walk up to it, no tool is used on it
+  for (const b of C11.beasts || []) if (Math.abs(wx - b.x) < .7 && wy > b.y - 1.1 && wy < b.y + .3 && (!c11ToolWins(tx, ty) || (typeof c11Wild === 'function' && c11Wild(b)))) {   // an animal: walk up to it, no tool is used on it
     const bt = [Math.floor(b.x), Math.floor(b.y - .01)], nb = near(bt[0], bt[1]); if (nb) C11.go = { path: c11Route(d, nb.x, nb.y), act: b.herd ? { tx: bt[0], ty: bt[1] } : null }; return;
   }
   for (const sg of c11SignList()) if (Math.abs(wx - sg.gx) < .85 && wy > sg.gy - 1.6 && wy < sg.gy + .3) {   // a signpost: walk to the way out it points to
