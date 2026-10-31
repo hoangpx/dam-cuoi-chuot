@@ -512,8 +512,8 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 #c4noteB .buyRow{cursor:pointer}
 #c4noteB .buyRow.sel{background:rgba(226,177,58,.28);outline:1.5px solid rgba(29,25,21,.45)}
 #c4noteB .buyRow.sel .bnm::after{content:' · đang xem thử (bấm Mua để sắm)';font-size:12px;opacity:.75}
-#c4noteB .roomBox{max-width:min(100%,420px);margin:0 auto}
-#c4noteB .roomBox svg{max-height:34vh}   /* the room, the Sắm sanh button and the list fit one card on a short screen too */
+#c4noteB .roomBox{max-width:min(100%,540px);margin:0 auto;cursor:zoom-in}
+#c4noteB .roomBox svg{max-height:40vh}   /* the room, the Sắm sanh button and the list fit one card on a short screen too */
 /* the Nhà tab: the room keeps its place, the Sắm sanh list takes the rest of the fixed-height card and scrolls itself */
 #c4note .card4:has(.buyList){overflow:hidden}
 #c4note .card4:has(.buyList) #c4noteB{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}

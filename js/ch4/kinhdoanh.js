@@ -336,13 +336,26 @@ function c4HomeTab() {
     + `<div class="row"><button class="btn${shop ? ' alt' : ''}" data-shop>${shop ? 'Thôi' : 'Sắm sanh'}</button></div>`
     + (shop ? c4ShopRowsHtml() : '');
 }
+// the thing being looked at is shown close up (owner, 2026-10-30: the furniture was too small to see in the shop): the room's viewBox is cut to the
+// thing's box, in the room's own proportions; tapping the picture goes back to the whole room and again to the close-up
+function c4NhaZoom(box, id) {
+  const svg = box.querySelector('svg'); if (!svg) return;
+  const W = C4_NHA_W, H = C4_NHA_H, full = '0 0 ' + W + ' ' + H, el = id && svg.querySelector('#hx-' + id);
+  if (!el) { svg.setAttribute('viewBox', full); return; }
+  try {
+    const b = el.getBBox(); let w = Math.max(b.width * 1.5, W * .34), h = w * H / W; if (h < b.height * 1.4) { h = b.height * 1.4; w = h * W / H; }
+    let x = b.x + b.width / 2 - w / 2, y = b.y + b.height / 2 - h / 2; x = Math.max(0, Math.min(W - w, x)); y = Math.max(0, Math.min(H - h, y));
+    svg.setAttribute('viewBox', [x, y, w, h].map(v => Math.round(v)).join(' '));
+  } catch (e) { svg.setAttribute('viewBox', full); }
+}
 function c4HomeTabWire() {
   const B = $('#c4noteB');
+  const rb = B.querySelector('.roomBox'); if (rb) { if (C4.homePreview) c4NhaZoom(rb, C4.homePreview); rb.addEventListener('click', () => { if (!C4.homePreview) return; AU.tap(); C4.homeZoomOff = !C4.homeZoomOff; c4NhaZoom(rb, C4.homeZoomOff ? null : C4.homePreview); }); }
   B.querySelectorAll('[data-shop]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4.homeShop = !C4.homeShop; C4.homePreview = null; c4OpenNotes('home'); }));
   B.querySelectorAll('.buyRow[data-view]').forEach(r => r.addEventListener('click', e => {   // tap a thing: see it in the room (tap again: take it out); the Mua button buys
     if (e.target.closest('button')) return;
     AU.tap(); const id = r.dataset.view; C4.homePreview = C4.homePreview === id ? null : id;
-    B.querySelector('.roomBox').innerHTML = c4RoomSvg(C4.homePreview ? [...c4HomeItems(), C4.homePreview] : c4HomeItems());
+    C4.homeZoomOff = false; const rb2 = B.querySelector('.roomBox'); rb2.innerHTML = c4RoomSvg(C4.homePreview ? [...c4HomeItems(), C4.homePreview] : c4HomeItems()); c4NhaZoom(rb2, C4.homePreview);
     B.querySelectorAll('.buyRow').forEach(x => x.classList.toggle('sel', x.dataset.view === C4.homePreview));
   }));
   B.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => { if (b.disabled) return; c4BuyItem(b.dataset.buy); c4OpenNotes('home'); }));
