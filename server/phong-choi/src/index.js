@@ -117,9 +117,10 @@ export default {
       if (u.pathname === '/jgr/admin' && req.method === 'POST') { const rm = room(); if (!rm) return new Response('no room', { status: 404 }); if (+(req.headers.get('content-length') || 0) > 3800000) return new Response('{"error":"big"}', { status: 413, headers: h }); return reply(await rm.fetch(new Request(u.origin + '/admin', { method: 'POST', body: req.body }))); }
       return new Response('nope', { status: 404, headers: h });
     }
-    if (u.pathname === '/jgr-admin/hidden' || u.pathname === '/jgr-admin/restore' || u.pathname === '/jgr-admin/delete' || u.pathname === '/jgr-admin/unlock') {   // the owner's tools for reported pictures: Bearer <ADMIN secret>. /hidden lists them; /restore?r=<id> or /delete?r=<id> settles one
+    if (u.pathname === '/jgr-admin/hidden' || u.pathname === '/jgr-admin/restore' || u.pathname === '/jgr-admin/delete' || u.pathname === '/jgr-admin/unlock' || u.pathname === '/jgr-admin/sweep') {   // the owner's tools for reported pictures: Bearer <ADMIN secret>. /hidden lists them; /restore?r=<id> or /delete?r=<id> settles one
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
       if (u.pathname === '/jgr-admin/hidden') return env.JIGSAW_REG.get(env.JIGSAW_REG.idFromName('main')).fetch(new Request(u.origin + '/hidden'));
+      if (u.pathname === '/jgr-admin/sweep') return env.JIGSAW_REG.get(env.JIGSAW_REG.idFromName('main')).fetch(new Request(u.origin + '/sweep' + u.search));   // ?age=<ms>: delete the rooms idle that long now (default 7 days)
       const rid = u.searchParams.get('r') || ''; if (!/^[a-z0-9]{8}$/.test(rid)) return new Response('r?', { status: 400 });
       return env.JIGSAW_ROOM.get(env.JIGSAW_ROOM.idFromName(rid)).fetch(new Request(u.origin + '/sudo', { method: 'POST', body: JSON.stringify({ act: u.pathname.split('/').pop() }) }));
     }

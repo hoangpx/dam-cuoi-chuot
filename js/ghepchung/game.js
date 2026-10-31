@@ -8,7 +8,7 @@ let JG_SAVE = { pieces: 0 };
 try { const s = JSON.parse(localStorage.getItem('dcc.jg') || 'null'); if (s && typeof s.pieces === 'number') JG_SAVE = Object.assign(JG_SAVE, s); } catch (e) {}
 const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG_SAVE)); } catch (e) {} };
 
-const JG = { G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0, rooms: null, roomsMeta: null, room: null, rthumbs: {}, pw: {} };
+const JG = { tab: 'chung', gvel: 0, G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0, rooms: null, roomsMeta: null, room: null, rthumbs: {}, pw: {} };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
   { id: 'lo', after: 'ly', pic: { id: 'lo', src: 'img/ch10/dan-lon-am-duong.jpg', w: 3400, h: 2200, vi: 'Đàn lợn âm dương', en: 'Yin-Yang Pigs' }, thumb: 'img/ch10/thumb-lo.jpg', cols: 68, rows: 44 },   // appears in the list only once Lý ngư vọng nguyệt is finished (owner, 2026-10-27)
@@ -39,7 +39,7 @@ function startJG() {
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;
-  Object.assign(JG, { pz: null, L: null, G: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false, gscroll: 0, room: null });
+  Object.assign(JG, { pz: null, L: null, G: null, welcome: null, id: null, players: [], conn: 'connecting', ui: null, board: null, tray: false, flash: null, conf: [], bad: false, gscroll: 0, gvel: 0, tab: 'chung', room: null });
   JG.chat.clear(); JG.emo.clear(); hlChatClose(); HL_CHAT_NET = null; JG_NET.close(); jgrClose();
   for (const pz of JG_PUZZLES) if (!JG.thumbs[pz.id]) { const im = new Image(); im.onload = () => { JG.thumbs[pz.id] = im; }; im.src = pz.thumb; }
   jgListAsk(true);
@@ -124,12 +124,13 @@ function jgMsg(m) {
   else if (!G) return;
   else if (m.t === 'lift') { if (m.by !== JG.id) c9NetLift(G, m.g, m.by); }
   else if (m.t === 'report') JG.note = { t0: JG.t, s: m.ok ? lg('Đã gửi báo cáo. Cảm ơn bạn!', 'Report sent. Thank you!') : ({ new: lg('Bạn cần ghép được ít nhất 3 mảnh mới báo cáo được', 'Join at least 3 pieces before you can report'), dup: lg('Bạn đã báo cáo người này rồi', 'You already reported this player'), limit: lg('Hôm nay bạn đã báo cáo đủ 5 người', 'You have reported 5 players today'), self: lg('Không báo cáo được người này', 'You can not report this player') }[m.err] || lg('Người này vừa rời đi', 'This player just left')) };
-  else if (m.t === 'deny') { c9NetDeny(G, m.g); if (m.cool) JG.note = { t0: JG.t, s: lg(`Bức lớn nhất vừa được dời, ${m.cool} giây nữa mới dời lại được`, `The biggest picture was just moved: ${m.cool} s until it can be moved again`) }; if (m.fixed) JG.note = { t0: JG.t, s: lg('Bức lớn nhất đã đặt yên, không dời được cho tới khi ghép xong', 'The biggest picture stays where it is until the puzzle is finished') }; if (m.lock) JG.note = { t0: JG.t, s: lg(`Mảnh này bạn vừa giữ lâu, nghỉ ${m.lock} giây nữa mới nhấc lại được`, `You held this one too long: wait ${m.lock} s to pick it up again`) }; }
+  else if (m.t === 'deny') { c9NetDeny(G, m.g);  if (m.lock) JG.note = { t0: JG.t, s: lg(`Mảnh này bạn vừa giữ lâu, nghỉ ${m.lock} giây nữa mới nhấc lại được`, `You held this one too long: wait ${m.lock} s to pick it up again`) }; }
+  else if (m.t === 'nodrop') { const g = G.gm.get(m.g); if (g) { const c = c9Centroid(G, g); G.held = g; G.drag = null; g.tx = undefined; G.hl = c9Rot(-g.a, c[0] - g.x, c[1] - g.y); JG.note = { t0: JG.t, s: lg('Chưa đặt xuống được: bức lớn nhất đang đè lên mảnh khác. Dời sang chỗ trống rồi đặt', 'It can not be put down on other pieces: move it to a clear place first') }; } }
   else if (m.t === 'nudge') JG.nudge = { g: m.g, until: JG.t + (m.sec || 30) };
   else if (m.t === 'timeup') { JG.nudge = null; JG.note = { t0: JG.t, s: lg(`Hết giờ, mảnh đã được đặt xuống. ${m.sec || 90} giây nữa mới nhấc lại được`, `Time is up, the piece was put down. ${m.sec || 90} s before you can lift it again`) }; }
   else if (m.t === 'poked') JG.note = { t0: JG.t, s: lg('Đã nhắc bạn đó đặt mảnh xuống', 'Reminded them to put it down') };
   else if (m.t === 'poses') c9NetPoses(G, m.p);
-  else if (m.t === 'drop') { const g = G.gm.get(m.g); if (!g || (m.n && g.pcs.length !== m.n)) { JG_NET.lost(); return; } c9NetDrop(G, m.g, m.x, m.y, m.a); }   // this screen joined differently from the server: reconnect and take the server's picture
+  else if (m.t === 'drop') { const g = G.gm.get(m.g); if (!g || (m.n && g.pcs.length !== m.n)) { JG_NET.lost(); return; } c9NetDrop(G, m.g, m.x, m.y, m.a); if (m.back) JG.note = { t0: JG.t, s: lg('Hết 10 giây mà bức lớn nhất vẫn đè lên mảnh khác nên được trả về chỗ cũ', 'Ten seconds passed with the biggest picture still on other pieces, so it went back') }; }   // this screen joined differently from the server: reconnect and take the server's picture
   else if (m.t === 'join') {
     c9NetJoin(G, m);
     if (m.by === JG.id && m.paid) {
@@ -152,6 +153,7 @@ function updateJG(dt) {
   }
   JG.t += dt; JG.st = safeTop();
   if (!JG.pz) jgListAsk(false);
+  if (!JG.pz && JG.gvel && !JG.drag) { JG.gscroll += JG.gvel * dt; JG.gvel *= Math.exp(-2.8 * dt); if (Math.abs(JG.gvel) < 8) JG.gvel = 0; }   // the glide after a flick
   if (JG.G) { c9Tick(JG.G, dt); JG.joinedN = JG.G.done ? JG.G.pieces.length : JG.G.pieces.length - JG.G.groups.length; }
   for (const p of JG.conf) { p.x += (p.vx + Math.sin(S.t * 3 + p.ph) * 24) * dt; p.y += p.vy * dt; } JG.conf = JG.conf.filter(p => p.y < (JG.G ? JG.G.lh : 800) + 30);
 }
@@ -282,11 +284,11 @@ function jgBoard(g, W, hh) {
 // so a finger or the mouse can drag the list (owner, 2026-10-30: the list could not be scrolled, the press opened a print at once)
 function jgGalItems() {
   const it = [], R = JG.rooms;
-  it.push({ k: 'head', h: 34, s: lg('Phòng ghép tranh riêng', 'Private puzzle rooms') });
-  it.push({ k: 'create', h: 64 });
-  if (R) for (const r of R) it.push({ k: 'room', h: 100, r });
-  it.push({ k: 'head', h: 34, s: lg('Tranh chung của cả làng', 'Village prints') });
-  for (const pz of jgShown()) it.push({ k: 'print', h: 132, pz });
+  if (JG.tab === 'tu') {   // the second tab: the rooms players made (owner, 2026-10-31)
+    it.push({ k: 'create', h: 64 });
+    if (R) for (const r of R) it.push({ k: 'room', h: 100, r });
+    if (R && !R.length) it.push({ k: 'note', h: 56, s: lg('Chưa có phòng nào. Bạn hãy tạo phòng đầu tiên!', 'No rooms yet. Make the first one!') });
+  } else for (const pz of jgShown()) it.push({ k: 'print', h: 132, pz });   // the first tab, the one that opens: the village prints
   return it;
 }
 function jgLock(g, cx, cy, k, col) {   // a small padlock
@@ -297,18 +299,28 @@ function jgrThumbs() { for (const r of JG.rooms || []) { const k = r.id + ':' + 
 function jgGallery(g, W, hh) {
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
   hlText(g, '‹', 28, 28, 34, { w: 900 }); hlText(g, lg('Ghép Tranh', 'Print Puzzles'), 56, 28, 18, { w: 900, a: 'left' });
-  const w = Math.min(W - 24, 540), x = (W - w) / 2, gap = 12, items = jgGalItems(); let endY = 72;
+  const w = Math.min(W - 24, 540), x = (W - w) / 2, gap = 12, items = jgGalItems(); let endY = 112;
   for (const it of items) { it.y0 = endY; endY += it.h + gap; }
-  JG.gscroll = Math.max(0, Math.min(Math.max(0, endY - hh + 8), JG.gscroll));
-  g.save(); g.beginPath(); g.rect(0, 56, W, hh - 56); g.clip();
+  const maxS = Math.max(0, endY - hh + 8), cl = Math.max(0, Math.min(maxS, JG.gscroll)); if (cl !== JG.gscroll) { JG.gscroll = cl; JG.gvel = 0; }
+  g.save(); g.beginPath(); g.rect(0, 102, W, hh - 102); g.clip();
   for (const it of items) {
-    const y = it.y0 - JG.gscroll, cardH = it.h; if (y > hh || y + cardH < 56) continue;
+    const y = it.y0 - JG.gscroll, cardH = it.h; if (y > hh || y + cardH < 102) continue;
     if (it.k === 'head') { hlText(g, it.s, x + 4, y + 18, 15, { w: 900, a: 'left' }); continue; }
+    if (it.k === 'note') { hlText(g, it.s, x + w / 2, y + 28, 13, { f: hlSans, w: 700, o: false, al: .7 }); continue; }
     if (it.k === 'create') { jgCreateCard(g, x, y, w, cardH); continue; }
     if (it.k === 'room') { jgRoomCard(g, x, y, w, cardH, it.r); continue; }
     jgPrintCard(g, x, y, w, cardH, it.pz);
   }
   g.restore();
+  // the two tabs, pinned under the title bar (drawn last so no card shows through; the buttons are first in the list so they win over a card behind)
+  g.fillStyle = 'rgba(242,236,222,.97)'; g.fillRect(0, 56, W, 46);
+  const tw = (w - 8) / 2, nTu = JG.rooms ? ' (' + JG.rooms.length + ')' : '', tabs = [['chung', lg('Ghép tranh chung', 'Village prints')], ['tu', lg('Ghép tranh tự tạo', 'Your rooms') + nTu]];
+  JG.btns.unshift({ x: 0, y: 56, w: W, h: 46, tap: () => {} });
+  tabs.forEach(([k, s], i) => {
+    const tx = x + i * (tw + 8), on = JG.tab === k; hlPlate(g, tx, 62, tw, 34, on ? '#e9d9a8' : '#f2ecde', HL_INK, 12);
+    hlText(g, s, tx + tw / 2, 79, 13, { w: 900, al: on ? 1 : .6 });
+    JG.btns.unshift({ x: tx, y: 62, w: tw, h: 34, tap: () => { if (JG.tab !== k) { JG.tab = k; JG.gscroll = 0; JG.gvel = 0; } } });
+  });
 }
 function jgCreateCard(g, x, y, w, h) {
   const m = JG.roomsMeta, mine = (JG.rooms || []).find(r => r.mine && !r.done), can = !!(m && m.canCreate);
@@ -450,8 +462,8 @@ function jgDown(e) {
   if (S.mode !== 'jgplay') return; JG.touch = e.pointerType !== 'mouse'; const [x, y] = jgPos(e), G = JG.G;
   if (x < 52 && y < 56) { if (JG.ui) JG.ui = null; else if (JG.pz) jgBack(); else jgLeave(); return; }
   if (JG.tray) { const tb = JG.trayBtns.find(b => jgIn(b, x, y)); JG.tray = false; if (tb) tb.down(e); return; }
-  for (const b of JG.btns) if (jgIn(b, x, y)) { if (b.tap) { capturePointer(e); JG.drag = { y, s: JG.gscroll, gal: true, tap: b, moved: false }; return; } b.down(e); return; }
-  if (!JG.pz) { capturePointer(e); JG.drag = { y, s: JG.gscroll, gal: true, moved: false }; return; }
+  for (const b of JG.btns) if (jgIn(b, x, y)) { if (b.tap) { capturePointer(e); JG.gvel = 0; JG.drag = { y, s: JG.gscroll, gal: true, tap: b, moved: false, smp: [[performance.now(), y]] }; return; } b.down(e); return; }
+  if (!JG.pz) { capturePointer(e); JG.gvel = 0; JG.drag = { y, s: JG.gscroll, gal: true, moved: false, smp: [[performance.now(), y]] }; return; }
   if (JG.ui === 'board' || JG.ui === 'report') { if (JG.barea && jgIn(JG.barea, x, y)) JG.drag = { y, x, s: JG.bscroll, rep: JG.ui === 'report', moved: false }; else { JG.ui = null; JG.repPick = null; } return; }
   if (!G) return;
   if (G.sv) { capturePointer(e); c9SvDown(G, x, y, e); return; }   // the sample print is open: it takes the pointer
@@ -462,11 +474,12 @@ function jgDown(e) {
 }
 function jgMove(e) {
   if (S.mode !== 'jgplay') return; const [x, y] = jgPos(e);
-  if (JG.drag) { if (Math.abs(y - JG.drag.y) > 6) JG.drag.moved = true; if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
+  if (JG.drag) { if (Math.abs(y - JG.drag.y) > 6) JG.drag.moved = true; if (JG.drag.smp) { const now = performance.now(); JG.drag.smp.push([now, y]); while (JG.drag.smp.length > 2 && now - JG.drag.smp[0][0] > 120) JG.drag.smp.shift(); } if (JG.drag.gal) JG.gscroll = JG.drag.s - (y - JG.drag.y); else JG.bscroll = JG.drag.s - (y - JG.drag.y); return; }
   if (JG.G && JG.G.sv && !JG.ui) { c9SvMove(JG.G, x, y, e); return; }
   if (!JG.G || JG.ui) return; c9Move(JG.G, x, y, e); cv.style.cursor = JG.G.held ? 'grabbing' : JG.G.hover ? 'grab' : '';
 }
-function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.tap && !d.moved) { d.tap.tap(); return; } if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); if (JG.G.sv) { c9SvUp(JG.G, x, y, e); return; } c9PtrUp(JG.G, x, y, e, () => {}); }
+function jgUp(e) { if (S.mode !== 'jgplay') return; if (JG.drag) { const d = JG.drag; JG.drag = null; if (d.tap && !d.moved) { d.tap.tap(); return; }
+    /* let go while moving: the list glides on and slows down */ if (d.gal && d.moved && d.smp && d.smp.length > 1) { const a0 = d.smp[0], b0 = d.smp[d.smp.length - 1], dtm = (b0[0] - a0[0]) / 1000; if (dtm > .01 && performance.now() - b0[0] < 90) JG.gvel = Math.max(-4500, Math.min(4500, -(b0[1] - a0[1]) / dtm)); }  if (d.rep && !d.moved && JG.ui === 'report') { const r = (JG.repRows || []).find(r => jgIn(r, d.x, d.y)); if (r) JG.repPick = { id: r.p.id, name: r.p.name || '?' }; } return; } if (!JG.G || JG.ui) return; const [x, y] = jgPos(e); if (JG.G.sv) { c9SvUp(JG.G, x, y, e); return; } c9PtrUp(JG.G, x, y, e, () => {}); }
 cv.addEventListener('contextmenu', e => { if (S.mode === 'jgplay') e.preventDefault(); });
 cv.addEventListener('touchstart', e => { if (S.mode === 'jgplay') { e.preventDefault(); const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) ae.blur(); } }, { passive: false });   // no iPhone magnifier on a long press
 cv.addEventListener('wheel', e => {

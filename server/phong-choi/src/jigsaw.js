@@ -21,8 +21,8 @@ const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * RO
 // To keep a few trolls from kicking anyone: the reporter must have joined REPORT_MIN_PIECES pieces, may report REPORT_DAY players a day, each player once, never one on their own network.
 const REPORT_NEED = 3, REPORT_WIN = 24 * 3600000, REPORT_MIN_PIECES = 3, REPORT_DAY = 5, BAN_FOREVER = 3650 * 86400000;
 const ipKey = ip => { ip = String(ip || ''); return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip; };
-const COOL_MS = 60000;   // the biggest group, once moved, cannot be lifted again for this long
-const FIX_MIN = 2;   // the biggest group is fixed (isFixed) from this many pieces on
+const BIG_HOLD_MS = 10000, BIG_LOCK_MS = 60000;   // the biggest group: nobody carries it longer than 10 s, and whoever carried it cannot lift it again for a minute (owner, 2026-10-31)
+const FIX_MIN = 2;   // the biggest group (isBiggest) is meant from this many pieces on
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
 const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 5, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, BAN_STEPS = [30 * 60000, 24 * 3600000, 365 * 86400000], VER = '2026-10-23-log';
@@ -203,35 +203,34 @@ class Jigsaw extends DurableObject {
     if (g.nudgeAt) return; const h = this.conns.get(g.by); if (!h) return;
     g.nudgeAt = now + NUDGE_MS; this.send(h, { t: 'nudge', g: gid, sec: NUDGE_MS / 1000, by: c.name || '' }); this.send(c, { t: 'poked', g: gid });
   }
-  lockPieces(dev, ids) { if (!dev) return; let m = this.locks.get(dev); const now = Date.now(); if (!m) { m = new Map(); this.locks.set(dev, m); } for (const [k, t] of m) if (t < now) m.delete(k); for (const id of ids) m.set(id, now + LOCK_MS); }
+  lockPieces(dev, ids, ms) { if (!dev) return; let m = this.locks.get(dev); const now = Date.now(); if (!m) { m = new Map(); this.locks.set(dev, m); } for (const [k, t] of m) if (t < now) m.delete(k); for (const id of ids) m.set(id, now + (ms || LOCK_MS)); }
   lockLeft(dev, g) { const m = this.locks.get(dev); if (!m || !m.size) return 0; const now = Date.now(); let best = 0; for (const id of g.ids) { const t = m.get(id); if (t && t - now > best) best = t - now; } return best; }
-  // FIXED BIGGEST (owner, 2026-10-24: "bức lớn nhất mà ko đè lên 1 mảnh nào hết thì ko ai di chuyển được trừ khi ghép xong hết rồi"): the group with the most pieces (strictly: no other group is
-  // as big, and at least FIX_MIN pieces) that lies clear of every piece of every other group cannot be lifted by anyone. Others still bring their pieces to it and join; if some piece lies on top
-  // of it (centres closer than .8 of a cell) it can be lifted, to put it right. Overlap is measured piece centre to piece centre with a grid, about 6000 steps a lift.
+  // THE BIGGEST GROUP (owner, 2026-10-31, replaces the 2026-10-24 rule that fixed it): the group with the most pieces (strictly: no other group is as big, and at least FIX_MIN pieces) can be carried,
+  // but it cannot be put down while it lies on a piece of another group (centres closer than .8 of a cell): the drop is refused ('nodrop') and it stays in the carrier's hand; nobody carries it
+  // longer than BIG_HOLD_MS (then it goes back to where it was lifted if it still lies on pieces), and whoever carried it cannot lift it again for BIG_LOCK_MS. Overlap is measured piece centre to piece centre with a grid, about 6000 steps a lift.
   isBiggest(g) {   // strictly the biggest, and at least FIX_MIN pieces
     if (g.ids.length < FIX_MIN) return false;
     for (const o of this.groups.values()) if (o !== g && o.ids.length >= g.ids.length) return false;
     return true;
   }
-  isFixed(g) {
-    if (!this.isBiggest(g)) return false;
+  touches(g) {   // does any piece of another group lie on a piece of this group?
     const R = Math.min(CW, CH) * .8, key = (i, j) => i * 100003 + j, grid = new Map();
     const at = (grp, id) => { const p = rot(grp.a, (id % COLS + .5) * CW, (Math.floor(id / COLS) + .5) * CH); return [grp.x + p[0], grp.y + p[1]]; };
-    for (const id of g.ids) { const [x, y] = at(g, id), k = key(Math.floor(x / R), Math.floor(y / R)); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(x, y); if (x < 0 || y < 0 || x > WW || y > WH) return false; }   // a piece off the table: the group stays movable (owner: out of the screen it must still move)
+    for (const id of g.ids) { const [x, y] = at(g, id), k = key(Math.floor(x / R), Math.floor(y / R)); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(x, y); }
     for (const o of this.groups.values()) {
       if (o === g) continue;
       for (const id of o.ids) {
         const [x, y] = at(o, id), ci = Math.floor(x / R), cj = Math.floor(y / R);
-        for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const a = grid.get(key(ci + di, cj + dj)); if (a) for (let q = 0; q < a.length; q += 2) if (Math.hypot(a[q] - x, a[q + 1] - y) < R) return false; }
+        for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const a = grid.get(key(ci + di, cj + dj)); if (a) for (let q = 0; q < a.length; q += 2) if (Math.hypot(a[q] - x, a[q + 1] - y) < R) return true; }
       }
     }
-    return true;
+    return false;
   }
   lift(c, gid) {
-    const g = this.groups.get(gid); if (!g || this.done || (g.by && g.by !== c.id)) { this.send(c, { t: 'deny', g: gid }); return; }
-    if (!g.by && this.isBiggest(g)) {   // the biggest group: fixed while it lies whole on the table and clear; otherwise movable, but only once a minute (COOL_MS after each put-down)
-      if (this.isFixed(g)) { this.send(c, { t: 'deny', g: gid, fixed: 1 }); return; }
-      const left = (g.coolUntil || 0) - Date.now(); if (left > 0) { this.send(c, { t: 'deny', g: gid, cool: Math.ceil(left / 1000) }); return; }
+    const g = this.groups.get(gid); if (!g || (g.by && g.by !== c.id)) { this.send(c, { t: 'deny', g: gid }); return; }   // a finished picture can be moved freely (owner, 2026-10-31)
+    if (!g.by && !this.done && this.isBiggest(g)) {   // the biggest group: it can be lifted (not by whoever carried it in the last BIG_LOCK_MS), carried for BIG_HOLD_MS at most, and put down only where nothing lies under it
+      const lk = this.lockLeft(c.dev, g); if (lk > 0) { this.send(c, { t: 'deny', g: gid, lock: Math.ceil(lk / 1000) }); return; }
+      g.home = [g.x, g.y, g.a]; g.liftAt = Date.now();
     }
     const lk = this.lockLeft(c.dev, g); if (lk > 0) { this.send(c, { t: 'deny', g: gid, lock: Math.ceil(lk / 1000) }); return; }
     g.nudgeAt = 0;
@@ -248,15 +247,23 @@ class Jigsaw extends DurableObject {
     if (c[0] < m) dx = m - c[0]; if (c[0] > WW - m) dx = WW - m - c[0]; if (c[1] < m) dy = m - c[1]; if (c[1] > WH - m) dy = WH - m - c[1];
     g.x += dx; g.y += dy;
   }
+  // a biggest group that was carried: the carrier cannot lift it again for BIG_LOCK_MS, and if it lies on other pieces it goes back to where it was lifted (true = it went back)
+  settleBig(g, dev) {
+    if (!g.home) return false;
+    const h = g.home; g.home = null; if (dev) this.lockPieces(dev, g.ids, BIG_LOCK_MS);
+    if (!this.touches(g)) return false;
+    g.x = h[0]; g.y = h[1]; g.a = h[2]; return true;
+  }
   release(gid) {
     const g = this.groups.get(gid); if (!g) return; const holder = this.conns.get(g.by); if (holder) holder.holding = null;
     if (g.nudgeAt && holder) this.lockPieces(holder.dev, g.ids); g.nudgeAt = 0; g.by = null; this.clamp(g);
-    if (this.isBiggest(g)) g.coolUntil = Date.now() + COOL_MS;
-    this.all({ t: 'drop', g: gid, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save();
+    const back = this.settleBig(g, holder && holder.dev);
+    this.all({ t: 'drop', g: gid, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length, ...(back ? { back: 1 } : {}) }); this.save();
   }
   drop(c, m, now) {
     const g = this.groups.get(m.g | 0); if (!g || g.by !== c.id) return;
     if (g.nudgeAt) { this.lockPieces(c.dev, g.ids); g.nudgeAt = 0; }   // it was asked for: this player cannot pick it up again for LOCK_MS
+    if (g.home) { const x = +m.x, y = +m.y, a = +m.a; if (isFinite(x) && isFinite(y) && isFinite(a)) { g.x = x; g.y = y; g.a = a; } this.clamp(g); if (this.touches(g)) { g.heldAt = now; this.dirty.add(g.id); this.send(c, { t: 'nodrop', g: g.id }); return; } }   // the biggest: not while it lies on pieces
     const quick = now - c.liftAt < MIN_HOLD;   // lifted and dropped within 180 ms (a double click, or a program): dropped, but it does not join
     const x = +m.x, y = +m.y, a = +m.a; if (isFinite(x) && isFinite(y) && isFinite(a)) { g.x = x; g.y = y; g.a = a; }
     g.by = null; c.holding = null; this.clamp(g); this.dirty.delete(g.id);
@@ -264,11 +271,10 @@ class Jigsaw extends DurableObject {
     c.joinT = c.joinT.filter(t => now - t < 60000);
     const devHot = c.joinT.filter(t => now - t < JOIN_WIN).length >= JOIN_DEV, hot = devHot || ipw.length >= JOIN_IP;   // more joining drops than a person makes: this one just does not join
     if (devHot) this.strike(c);   // only the DEVICE's own speed counts against it (a busy shared address must not get its neighbours banned)
-    const wasBig = this.isBiggest(g);   // the group dropped is the biggest: whatever it becomes (it may merge) rests for COOL_MS
-    this._mg = []; const joins = hot || quick ? [] : this.tryJoin(g); const mg = joins.length ? this._mg : [];
-    if (wasBig) { const fin = this.groups.get(this.pieceG[g.ids[0]]); if (fin) fin.coolUntil = now + COOL_MS; }
+    const back = this.settleBig(g, c.dev);   // the biggest, dropped on top of pieces: back where it was lifted, and it does not join
+    this._mg = []; const joins = hot || quick || back ? [] : this.tryJoin(g); const mg = joins.length ? this._mg : [];
     if (joins.length) { c.joinT.push(now); c.jn += joins.length; if (c.ip) { ipw.push(now); this.ipJ.set(c.ip, ipw); } }
-    if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length }); this.save(); return; }
+    if (!joins.length) { this.all({ t: 'drop', g: g.id, x: r1(g.x), y: r1(g.y), a: r3(g.a), n: g.ids.length, ...(back ? { back: 1 } : {}) }); this.save(); return; }
     const u = this.users.get(c.dev); const paid = c.test ? 0 : this.award(c, joins.length, now);
     if (u && paid) { u.m += paid; this.ppl.add('u:' + c.dev); this.dirtyUsers.add(c.dev); this.board = null; }
     this.total += joins.length;
@@ -444,7 +450,7 @@ class Jigsaw extends DurableObject {
   // every 100 ms: the poses of the groups people are carrying; and release holds nobody has touched for a while
   step() {
     if (this.dirty.size) { const p = []; for (const gid of this.dirty) { const g = this.groups.get(gid); if (g) p.push([gid, r1(g.x), r1(g.y), r3(g.a)]); } this.dirty.clear(); this.all({ t: 'poses', p }); }
-    const now = Date.now(); for (const g of this.groups.values()) if (g.by && (now - g.heldAt > HOLD_IDLE || (g.nudgeAt && now > g.nudgeAt))) { if (g.nudgeAt && now > g.nudgeAt) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: LOCK_MS / 1000 }); } this.release(g.id); }
+    const now = Date.now(); for (const g of this.groups.values()) if (g.by && (now - g.heldAt > HOLD_IDLE || (g.nudgeAt && now > g.nudgeAt) || (g.home && now - g.liftAt > BIG_HOLD_MS))) { if (g.home && now - g.liftAt > BIG_HOLD_MS) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: BIG_LOCK_MS / 1000 }); } else if (g.nudgeAt && now > g.nudgeAt) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: LOCK_MS / 1000 }); } this.release(g.id); }
   }
 
   /* ---- the board: all time only, and only people with at least one piece ---- */

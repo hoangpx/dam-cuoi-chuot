@@ -14,6 +14,7 @@ import { cleanChat } from './chat.js';
 
 const REPORT_NEED = 3;   // reports from this many DIFFERENT networks hide a picture until the admin looks at it
 const ipKey = ip => { ip = String(ip || ''); return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip; };
+export const IDLE_MS = 7 * 86400000, SWEEP_EVERY = 6 * 3600000;   // a room nobody has joined a piece of for 7 days goes (owner, 2026-10-31)
 export const ROOM_PIECES = [100, 200, 500, 1000], IMG_MAX = 1900000, THUMB_MAX = 60000, ROOM_MAX = 400, DEV_RE = /^[a-z0-9]{12,40}$/;
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const sha = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -204,7 +205,20 @@ export class JigsawRoom extends DurableObject {
 export class JigsawReg extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env); this.rooms = {}; this.pT = null;
-    ctx.blockConcurrencyWhile(async () => { this.rooms = (await ctx.storage.get('rooms')) || {}; });
+    ctx.blockConcurrencyWhile(async () => { this.rooms = (await ctx.storage.get('rooms')) || {}; if (!(await ctx.storage.getAlarm())) await ctx.storage.setAlarm(Date.now() + SWEEP_EVERY); });
+  }
+  async alarm() { await this.sweep(IDLE_MS).catch(e => console.log('sweep failed', String(e))); await this.ctx.storage.setAlarm(Date.now() + SWEEP_EVERY); }
+  // delete every room without a join for `age` ms (a room that has no time yet starts counting now); returns the ids
+  async sweep(age) {
+    const now = Date.now(), gone = [];
+    for (const r of Object.values(this.rooms)) {
+      if (!r.act) { r.act = now; continue; }
+      if (now - r.act <= age) continue;
+      await this.env.JIGSAW_ROOM.get(this.env.JIGSAW_ROOM.idFromName(r.id)).fetch('https://room/sudo', { method: 'POST', body: JSON.stringify({ act: 'delete' }) }).catch(() => {});
+      if (this.rooms[r.id]) { delete this.rooms[r.id]; await this.ctx.storage.delete('th:' + r.id); }
+      gone.push(r.id);
+    }
+    await this.persist(true); return gone;
   }
   persist(now) {
     if (now) { clearTimeout(this.pT); this.pT = null; return this.ctx.storage.put('rooms', this.rooms); }
@@ -214,13 +228,14 @@ export class JigsawReg extends DurableObject {
     const u = new URL(req.url);
     if (u.pathname === '/list') return this.list(u.searchParams.get('dev') || '');
     if (u.pathname === '/create') return this.create(req);
-    if (u.pathname === '/stat') { const b = await req.json().catch(() => null), r = b && this.rooms[b.id]; if (r) { for (const k of ['n', 'players', 'joined', 'done', 'since', 'took', 'locked']) if (k in b) r[k] = b[k]; this.persist(); } return json({ ok: 1 }); }
+    if (u.pathname === '/sweep') { const age = Math.max(0, +u.searchParams.get('age') || IDLE_MS); return json({ gone: await this.sweep(age) }); }
+    if (u.pathname === '/stat') { const b = await req.json().catch(() => null), r = b && this.rooms[b.id]; if (r) { if ('joined' in b && b.joined !== r.joined) r.act = Date.now(); for (const k of ['n', 'players', 'joined', 'done', 'since', 'took', 'locked']) if (k in b) r[k] = b[k]; this.persist(); } return json({ ok: 1 }); }
     if (u.pathname === '/hide') { const b = await req.json().catch(() => null), r = b && this.rooms[b.id]; if (r) { if (b.hidden) { r.hidden = b.hidden; r.reports = b.reports || []; } else { delete r.hidden; delete r.reports; } await this.persist(true); } return json({ ok: 1 }); }
     if (u.pathname === '/hidden') return json({ rooms: Object.values(this.rooms).filter(r => r.hidden).map(r => ({ id: r.id, name: r.name, ownerName: r.ownerName, hiddenAt: new Date(r.hidden).toISOString(), reports: r.reports || [], pieces: r.cols * r.rows })) });
     if (u.pathname === '/remove') { const b = await req.json().catch(() => null); if (b && this.rooms[b.id]) { delete this.rooms[b.id]; await this.ctx.storage.delete('th:' + b.id); await this.persist(true); } return json({ ok: 1 }); }
     if (u.pathname === '/meta') {
       const b = await req.json().catch(() => null), r = b && this.rooms[b.id]; if (!r) return json({ error: 'nope' }, 404);
-      Object.assign(r, { cols: b.cols, rows: b.rows, w: b.w, h: b.h, ver: b.ver, n: 0, players: 0, joined: 0, done: false, took: 0, since: Date.now() });
+      Object.assign(r, { act: Date.now(), cols: b.cols, rows: b.rows, w: b.w, h: b.h, ver: b.ver, n: 0, players: 0, joined: 0, done: false, took: 0, since: Date.now() });
       await this.ctx.storage.put({ ['th:' + b.id]: Uint8Array.from(b.thumb), rooms: this.rooms }); return json({ ok: 1 });
     }
     if (u.pathname === '/thumb') {
@@ -250,7 +265,7 @@ export class JigsawReg extends DurableObject {
     const room = this.env.JIGSAW_ROOM.get(this.env.JIGSAW_ROOM.idFromName(id));
     const r = await room.fetch('https://room/init', { method: 'POST', body: JSON.stringify({ meta, img: b.img }) });
     if (!r.ok) return json({ error: 'room' }, 500);
-    this.rooms[id] = { id, owner: dev, ownerName, name, locked: !!pw, cols: p.cols, rows: p.rows, w: p.w, h: p.h, ver: 1, created: Date.now(), n: 0, players: 0, joined: 0, done: false, since: Date.now(), took: 0 };
+    this.rooms[id] = { id, owner: dev, ownerName, name, locked: !!pw, cols: p.cols, rows: p.rows, w: p.w, h: p.h, ver: 1, created: Date.now(), act: Date.now(), n: 0, players: 0, joined: 0, done: false, since: Date.now(), took: 0 };
     await this.ctx.storage.put({ ['th:' + id]: p.thumb, rooms: this.rooms });
     return json({ ok: 1, id });
   }

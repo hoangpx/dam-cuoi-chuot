@@ -426,7 +426,7 @@ function c9Down(G, sx, sy, e, done) {
   if (G.touch) { G.tp.set(e.pointerId, { x: sx, y: sy }); if (G.tp.size >= 2) { c9PinchStart(G); return; } }
   if (G.pinch) return;
   const [wx, wy] = c9S2W(G, sx, sy), fin = r => { if (r === 'win') done('win'); };
-  const view = G.done;   // finished shared print: nothing can be lifted, only panned
+  const view = false;   // a finished shared print can be moved freely like any group (owner, 2026-10-31)
   if (e.button === 2) { if (view) return; const h = G.held ? { grp: G.held } : c9Hit(G, wx, wy); if (h) c9TurnSmooth(G, h.grp, C9_STEP, wx, wy); return; }
   const tb = c9TurnBtns(G).find(b => Math.hypot(sx - b.x, sy - b.y) < b.r + 6); if (tb) { c9TurnSmooth(G, G.held, tb.dir * C9_STEP, null, null); G.thold = { id: e.pointerId, dir: tb.dir, t: 0 }; G.drag = null; return; }
   const hit = view ? null : c9Hit(G, wx, wy);
