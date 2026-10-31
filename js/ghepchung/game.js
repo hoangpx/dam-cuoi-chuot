@@ -424,13 +424,17 @@ function renderJG() {
   if (G) { c9Draw(G, g, W, hh); c9DrawTurnBtn(G, g); }
   // the top bar: back, the title and how far the print is, then four round buttons (sample, face, chat, cup)
   g.fillStyle = 'rgba(242,236,222,.55)'; g.fillRect(0, 0, W, 56);
-  hlText(g, '‹', 28, 28, 34, { w: 900 }); let ttl = lg(L.pic.vi, L.pic.en); if (JG.room) { const lim = Math.max(80, W - 56 - (JG.room.own ? 250 : 214)); g.font = `900 16px ${hlSans}`; while (ttl.length > 3 && g.measureText(ttl).width > lim) ttl = ttl.slice(0, -2) + '…'; }
+  hlText(g, '‹', 28, 28, 34, { w: 900 }); let ttl = lg(L.pic.vi, L.pic.en); if (JG.room) { const lim = Math.max(80, W - 56 - 250); g.font = `900 16px ${hlSans}`; while (ttl.length > 3 && g.measureText(ttl).width > lim) ttl = ttl.slice(0, -2) + '…'; }
   hlText(g, ttl, 56, 20, 16, { w: 900, a: 'left' });
   hlText(g, G ? `${JG.joinedN}/${L.cols * L.rows} · ${JG.players.length} ${lg('người', 'people')}` : '', 56, 41, 11, { f: hlSans, w: 600, o: false, al: .8, a: 'left' });
   const cy = 28, X = [W - 20, W - 56, W - 92, W - 128, W - 164];
   if (G) { jgEye(g, X[4], cy, !!G.sv); JG.btns.push({ x: X[4] - 18, y: cy - 19, w: 36, h: 38, down: () => { c9SvToggle(G); } }); }
   if (up) { hlEmoteFace(g, 4, X[3], cy, 16); JG.btns.push({ x: X[3] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.tray = !JG.tray; } }); hlChatIcon(g, X[2], cy, HL.chatOff); JG.btns.push({ x: X[2] - 18, y: cy - 19, w: 36, h: 38, down: () => hlChatOpen() }); jgFlag(g, X[1], cy); JG.btns.push({ x: X[1] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'report'; JG.repPick = null; JG.bscroll = 0; } }); }
   if (JG.room && JG.room.own && up) { jgGear(g, W - 200, cy); JG.btns.push({ x: W - 218, y: cy - 19, w: 36, h: 38, down: () => jgrManageOpen() }); }
+  if (JG.room && !JG.room.own && up) {   // report this picture: a little red flag, only in somebody else's room (owner, 2026-10-31)
+    const fx = W - 200; g.save(); g.translate(fx, cy); g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.fillStyle = '#a3332a'; g.beginPath(); g.moveTo(-6, 11); g.lineTo(-6, -11); g.stroke(); g.beginPath(); g.moveTo(-6, -11); g.lineTo(9, -6); g.lineTo(-6, -1); g.closePath(); g.fill(); g.stroke(); g.restore();
+    JG.btns.push({ x: fx - 18, y: cy - 19, w: 36, h: 38, down: () => jgrReportPic() });
+  }
   hlTrophy(g, X[0], cy); JG.btns.push({ x: X[0] - 18, y: cy - 19, w: 36, h: 38, down: () => { JG.ui = 'board'; JG.bscroll = 0; JG_NET.send({ t: 'board' }); } });
   if (!G) {
     hlText(g, JG.bad ? 'Bức tranh bị lỗi, hãy tải lại trang' : JG.conn === 'blocked' ? lg('Máy bạn tạm bị chặn vì bấm quá nhanh. Đợi ít phút rồi vào lại nhé.', 'Your device is blocked for a while for tapping too fast. Come back in a few minutes.') : JG.conn === 'reported' ? lg('Bạn đã bị nhiều người chơi báo cáo nên không vào lại được nữa.', 'Several players reported you, so you can not come back.') : JG.conn === 'crowded' ? lg('Có quá nhiều máy cùng mạng với bạn đang mở bức tranh. Đóng bớt rồi vào lại nhé.', 'Too many devices on your network have the print open. Close some and come back.') : JG.conn === 'replaced' ? lg('Bức tranh đang mở ở một cửa sổ khác của bạn. Đóng bên kia rồi vào lại.', 'The print is open in another window of yours. Close it and come back.') : JG.conn === 'newpic' ? lg('Chủ phòng vừa đổi tranh, đang mở lại…', 'The owner changed the picture, reopening…') : JG.conn === 'down' ? lg('Mất kết nối, đang nối lại…', 'Connection lost, reconnecting…') : lg('Đang mở bức tranh chung…', 'Opening the shared print…'), W / 2, hh / 2, 18);
