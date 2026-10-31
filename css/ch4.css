@@ -538,3 +538,15 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 #c4doi .doi b{display:block;font-size:14px}#c4doi .doi small{display:block;font-size:12px;opacity:.75;line-height:1.3}
 #c4doi .doi .btn{flex:none;padding:6px 10px;font-size:13px}
 #cnTools>button.off{opacity:.65}
+/* Sắm sanh on a short screen (owner, 2026-10-30: only one thing of the list showed at a time): the picture shrinks, the title and the count go, the rows are tighter */
+@media (max-height:760px){
+  #c4note .card4:has(.buyList) #c4noteB .tt,#c4note .card4:has(.buyList) #c4noteB .cnt{display:none}
+  #c4noteB .roomBox svg{max-height:26vh}
+  #c4noteB .buyList{min-height:150px}
+  #c4noteB .buyRow{padding:3px 0;gap:8px}
+  #c4noteB .buyRow .bnm{font-size:14px;line-height:1.15}
+  #c4noteB .buyRow .btn{padding:4px 12px;font-size:14px}
+  #c4note .card4:has(.buyList) #c4noteB>.row{margin:2px 0}
+  #c4note .card4:has(.buyList) #c4noteB>.row .btn{padding:4px 18px;font-size:14px}
+}
+@media (max-height:600px){#c4noteB .roomBox svg{max-height:22vh}}
