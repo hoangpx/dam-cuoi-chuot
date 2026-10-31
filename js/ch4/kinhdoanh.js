@@ -332,7 +332,7 @@ function c4HomeTab() {
   const pv = shop && C4.homePreview && !items.includes(C4.homePreview) ? C4.homePreview : null; if (!pv) C4.homePreview = null;
   return `<h4 class="tt">Nhà của vợ chồng chuột</h4><div class="roomBox">${c4RoomSvg(pv ? [...items, pv] : items)}</div>`
     + (items.length ? `<p class="cnt">Đồ đạc trong nhà ${c4Money(c4HomeValue())} · bảng tổng sắp tính cả ví lẫn nhà: <b>${c4Money(c4NetWorth())}</b></p>`
-      : '<p class="cnt">Nhà mới cưới, chưa có nội thất gì.</p>')
+      : '')
     + `<div class="row"><button class="btn${shop ? ' alt' : ''}" data-shop>${shop ? 'Thôi' : 'Sắm sanh'}</button></div>`
     + (shop ? c4ShopRowsHtml() : '');
 }

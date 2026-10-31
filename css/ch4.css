@@ -78,8 +78,9 @@ body.touch #c4hud .mid{position:static;transform:none}
 .card4 .bad{color:var(--son);font-weight:600}
 .card4 .nums .loss{background:#f2d6cf}
 #c4noteB{text-align:left}
-.c4tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:6px}
-.c4tabs button{font-family:var(--display);font-weight:900;font-size:14px;padding:5px 8px;border:2px solid var(--ink);background:#f6f0e2;color:var(--ink);cursor:pointer}
+.c4tabs{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-bottom:6px;padding-bottom:2px}
+.c4tabs::-webkit-scrollbar{display:none}   /* one row that slides sideways, not three rows of buttons (owner, 2026-10-30) */
+.c4tabs button{flex:none;white-space:nowrap;font-family:var(--display);font-weight:900;font-size:13px;padding:4px 7px;border:2px solid var(--ink);background:#f6f0e2;color:var(--ink);cursor:pointer}
 .c4tabs button.on{background:var(--son);color:var(--diep)}
 #c4noteB .cnt{text-align:center;font-size:13px;opacity:.75;margin:0 0 6px}
 .card4 .folk{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}

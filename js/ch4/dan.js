@@ -371,6 +371,7 @@ function c4OpenNotes(tab) {
   if (C4_TAB === 'hoso') hsProfileInto($('#c4hsTab'), () => c4OpenNotes('hoso'));
   if (C4_TAB === 'quen' && C4_WHO === null && !C4_PICK) hsBookWire($('#c4noteB'), () => c4OpenNotes('quen'));
   $('#c4note .card4').classList.toggle('wide', C4_TAB === 'web' || C4_TAB === 'nha' || C4_TAB === 'home');
+  { const on = $('#c4noteB').querySelector('.c4tabs .on'), bar = $('#c4noteB').querySelector('.c4tabs'); if (on && bar) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2; }   // the open tab stays in view in the sliding row
   $('#c4noteB').querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_WHO = null; C4_PICK = null; c4OpenNotes(b.dataset.tab); }));
   $('#c4noteB').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { const id = +b.dataset.pick; AU.tap(); C4_PICK.sel.has(id) ? C4_PICK.sel.delete(id) : C4_PICK.sel.add(id); const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
   $('#c4noteB').querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4_PICK.deal = b.dataset.deal; const y = $('#c4note').scrollTop; c4OpenNotes('quen'); $('#c4note').scrollTop = y; }));
