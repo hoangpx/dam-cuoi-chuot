@@ -80,18 +80,16 @@ c11BuildMenu = function (tx, ty) {
     C11.menu = null; C11.fence = true; c11Msg('Bấm từng ô cỏ để đóng rào, bấm vào đoạn rào để dỡ. Đổi dụng cụ thì thôi.', '#2f6a4c'); } });
 };
 const raoDraw0 = c11NewDraw;
-c11NewDraw = function (E, g, sx, sy, k, T) {
+c11NewDraw = function (E, g, sx, sy, k, T) {                                         // the same green bamboo fence as round the village houses (dinhba.js, tile 'R')
   raoDraw0(E, g, sx, sy, k, T);
   if (C11.area !== 'ruong') return;
-  const INK = '#1d1915';
+  const pole = (x0, y0, x1, y1, w) => { g.strokeStyle = '#5e7a34'; g.lineWidth = (w + 1.4) * k; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.strokeStyle = '#c4cc7a'; g.lineWidth = w * .45 * k; g.beginPath(); g.moveTo(x0 - .8 * k, y0 - .8 * k); g.lineTo(x1 - .8 * k, y1 - .8 * k); g.stroke(); };
+  const post = (px, py) => { pole(px, py, px, py - 30 * k, 2.6); g.fillStyle = '#e4dca0'; g.beginPath(); g.ellipse(px, py - 30 * k, 2 * k, 1 * k, 0, 0, 6.283); g.fill(); };
   for (const key of Object.keys(SAVE11.fences)) {
-    const [x, y] = key.split(',').map(Number), L = raoOn(x - 1, y), R = raoOn(x + 1, y);
-    E.push({ y: y + .9, d: () => {
-      const x0 = sx(x), x1 = sx(x + 1), yb = sy(y + .86), h = T * .56, xl = L ? x0 : x0 + T * .16, xr = R ? x1 : x1 - T * .16;
-      g.save(); g.lineCap = 'round'; g.fillStyle = 'rgba(29,25,21,.18)'; g.beginPath(); g.ellipse((x0 + x1) / 2, yb + 2, T * .46, T * .07, 0, 0, 6.283); g.fill();
-      for (const [ry, col] of [[.22, '#c8a45c'], [.43, '#d6b46c']]) { g.strokeStyle = INK; g.lineWidth = Math.max(4, T * .095); g.beginPath(); g.moveTo(xl, yb - T * ry); g.lineTo(xr, yb - T * ry); g.stroke(); g.strokeStyle = col; g.lineWidth = Math.max(2.2, T * .055); g.beginPath(); g.moveTo(xl, yb - T * ry); g.lineTo(xr, yb - T * ry); g.stroke(); }
-      for (const px of [x0 + T * .22, x0 + T * .78]) { g.strokeStyle = INK; g.lineWidth = Math.max(5, T * .12); g.beginPath(); g.moveTo(px, yb); g.lineTo(px, yb - h); g.stroke(); g.strokeStyle = '#a8c070'; g.lineWidth = Math.max(3, T * .075); g.beginPath(); g.moveTo(px, yb); g.lineTo(px, yb - h); g.stroke(); }
-      g.restore(); } });
+    const [x, y] = key.split(',').map(Number), R = (dx, dy) => raoOn(x + dx, y + dy), X = sx(x + .5), Y = sy(y + .7);
+    if (R(1, 0)) E.push({ y: y + .7, d: () => { const X2 = sx(x + 1.5); for (const h of [8, 18, 26]) pole(X, Y - h * k, X2, Y - h * k, 1.5); for (let i = 1; i < 6; i++) { const xx = X + (X2 - X) * i / 6; g.strokeStyle = 'rgba(120,140,60,.8)'; g.lineWidth = 1.2 * k; g.beginPath(); g.moveTo(xx, Y - 2 * k); g.lineTo(xx, Y - 28 * k); g.stroke(); } post(X, Y); post(X2, Y); } });
+    if (R(0, 1)) E.push({ y: y + 1.68, d: () => { const Y2 = sy(y + 1.7); for (const h of [8, 18, 26]) pole(X, Y - h * k, X, Y2 - h * k, 1.5); post(X, Y); post(X, Y2); } });
+    if (!R(1, 0) && !R(0, 1) && !R(-1, 0) && !R(0, -1)) E.push({ y: y + .7, d: () => post(X, Y) });
   }
 };
 const raoEnter0 = c11Enter;
