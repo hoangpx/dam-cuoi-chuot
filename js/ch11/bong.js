@@ -20,6 +20,12 @@ c11Tap = function (tx, ty, wx, wy) {
     b.fly = { x0: C11.px, y0: C11.py, x1, y1, t: 0 }; b.face = x1 >= C11.px ? 1 : -1; C11.carry = null; C11.face = b.face; C11.swing = C11.swing || 0;
     c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 2, b.kind === 'vit' ? 'Quạc!' : 'Cục tác!', '#5b2f1f'); return;
   }
+  for (const d of SAVE11.drops) {                                      // a tap on something lying on the ground picks it up (also what a tree trunk or a fence hides from the feet)
+    if ((d.a || 'ruong') !== C11.area || d.t < d.dur || Math.abs(wx - d.x) > .75 || wy < d.y - 1 || wy > d.y + .45) continue;
+    if (Math.hypot(d.x - C11.px, d.y - C11.py) > 8) { c11Msg('Ở xa quá, lại gần hơn một chút', '#5b2f1f'); return; }
+    if (c11Add(d.k, 1)) { c11Msg('Túi đầy rồi! Về cất vào rương hoặc đem bán', '#a3332a'); return; }
+    SAVE11.drops.splice(SAVE11.drops.indexOf(d), 1); c11Pop(Math.floor(d.x), Math.floor(d.y) - 1, '+1 ' + c11Info(d.k).name, c11Info(d.k).col); c11Dots(Math.floor(d.x), Math.floor(d.y) - .3, d.k === 'go' ? '#c89a5e' : c11Info(d.k).col, 4, .6); persist11(); return;
+  }
   const g = c11BirdAt(wx, wy);
   if (g && !['item', 'seed'].includes(c11HandTool()) && Math.hypot(g.x - C11.px, g.y - C11.py) < C11_BIRD.reach) {
     C11.carry = g; g.to = null; g.fly = null; c11Pop(Math.floor(g.x), Math.floor(g.y) - 1, g.kind === 'vit' ? 'Cạp cạp!' : 'Cục ta cục tác!', '#5b2f1f'); return;

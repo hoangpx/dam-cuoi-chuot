@@ -958,7 +958,7 @@ function updateC11(dt) {
   if (SAVE11.stamina > 40 && SAVE11.hp < 100) SAVE11.hp = Math.min(100, SAVE11.hp + dt * .4);   // rested, the body mends slowly
   for (let i = SAVE11.drops.length - 1; i >= 0; i--) {
     const d = SAVE11.drops[i]; if ((d.a || 'ruong') !== G.area) continue; if (d.t < d.dur) { d.t += dt; continue; }
-    if (Math.hypot(G.px - d.x, G.py - .25 - d.y) < .6) {
+    if (Math.hypot(G.px - d.x, G.py - .25 - d.y) < .9) {
       if (c11Add(d.k, 1)) { if (!G.fullT || G.t - G.fullT > 3) { G.fullT = G.t; c11Msg('Túi đầy rồi! Về cất vào rương hoặc đem bán', '#a3332a'); } continue; } SAVE11.drops.splice(i, 1); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(d.x), Math.floor(d.y) - 1, `+1 ${c11Info(d.k).name}`, c11Info(d.k).col); c11Dots(Math.floor(d.x), Math.floor(d.y) - .3, d.k === 'go' ? '#c89a5e' : c11Info(d.k).col, 4, .6);
     }
   }
