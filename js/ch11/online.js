@@ -125,7 +125,7 @@ c11Enter = function (id, x, y, quiet) {
   if (C11O.visit && id !== 'ruong') c11OEndVisit();                      // leaving the friend's farm puts my own back before the area is built
   c11OEnter0(id, x, y, quiet);
   if (C11O.visit && id === 'ruong') c11Msg(`Nhà bạn ${C11O.visit.name} · chỉ tưới giúp được`, '#2f6a4c');
-  if (SAVE11.online && !C11O.ws && !C11O.on && !C11O.closing) c11OConnect();
+  if (SAVE11.online && !C11O.ws && !C11O.on) { C11O.closing = false; c11OConnect(); }   // closing is left true by the chapter hide() that runs just before every start, so it must not block this
   c11OEnterRoom();
 };
 const c11ONewDay0 = c11NewDay;
