@@ -262,3 +262,5 @@ Hàng gà (muagan.js hangGa): sức chứa tăng từ 16 lên 40 con (owner, 202
 
 Chương XI online open (owner 2026-10-29: "bật online đi"): c11OUrl no longer needs ?c11online, so everyone who enters the village connects to the Worker (the chapter card count and the Online button now show real players); ?c11srv=ws://... still overrides the server for tests. VERSION 2026-10-29f.
 Default: SAVE11.online starts true, so a player connects on entering; leaving online from the menu keeps it off.
+
+Stall keepers and jobs (player report 2026-10-31: "gặp cô Duyên" never completed, the tap only opened the tea menu): a keeper standing at a stall (C11.sellers: N hạt giống, Q quán ăn, U thu mua, T hàng nước cô Duyên) is not in C11.vill, so c11TalkTo/c11QuestTalk never ran for them; c11Act now calls c11QuestTalk on the seller first (a step to hand in, or a request they make), and opens the shop only if that returns false. VERSION 2026-10-31e.

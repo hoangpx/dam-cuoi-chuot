@@ -750,6 +750,7 @@ function c11Act(tx, ty) {
   if (k === 'C') { c11OpenChest(); return; }
   if (k === 'B') { c11OpenSell('Thùng bán hàng', 1, 'Thương lái tối nay sẽ ghé lấy'); return; }
   if ('UQNT'.includes(k) && !C11.sellers[k]) { c11Msg('Quán đóng cửa rồi, mai quay lại nhé', '#5b2f1f'); return; }
+  if ('UQNT'.includes(k) && (C11.sellers[k].wait = C11.sellers[k].wait || 0, c11QuestTalk(C11.sellers[k]))) return;      // a stall keeper is a villager too: a job to hand in to them (or one they ask for) comes before the shop
   if (k === 'U') { C11.say = { who: C11.sellers.U, text: 'Đưa đây xem nào, hàng tốt tôi trả cao hơn thùng gỗ nhà bạn.', t: 0 }; c11OpenSell('Thu mua', 1.25, 'Giá cao hơn thùng bán ở nhà một phần tư'); return; }
   if (k === 'Q') { c11OpenFood(); return; }
   if (k === 'N') { C11.say = { who: C11.sellers.N, text: 'Chọn hạt đi nào, giống nhà tôi nảy mầm tốt lắm.', t: 0 }; c11OpenShop(); return; }
