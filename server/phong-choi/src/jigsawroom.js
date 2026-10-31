@@ -162,6 +162,7 @@ export class JigsawRoom extends DurableObject {
     const b = await req.json().catch(() => null), M = this.meta;
     if (b && b.act === 'restore') { delete M.hidden; M.reports = []; await this.ctx.storage.put('meta', M); await this.pushHidden(); return json({ ok: 'restored' }); }
     if (b && b.act === 'delete') { await this.destroy(); return json({ ok: 'deleted' }); }
+    if (b && b.act === 'unlock') { delete M.salt; delete M.hash; await this.ctx.storage.put('meta', M); this.inner.all({ t: 'room', locked: false }); this.touch(true); return json({ ok: 'unlocked' }); }   // the admin takes a password off
     return json({ error: 'act' }, 400);
   }
   async admin(req) {
