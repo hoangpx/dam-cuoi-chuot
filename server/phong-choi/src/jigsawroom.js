@@ -140,12 +140,12 @@ export class JigsawRoom extends DurableObject {
     const b = await req.json().catch(() => null), M = this.meta, inner = this.inner;
     if (!b || !DEV_RE.test(String(b.dev || ''))) return json({ error: 'dev' }, 400);
     if (b.dev === M.owner) return json({ error: 'self' }, 400);
-    const c = [...inner.conns.values()].find(x => x.joined && x.dev === b.dev); if (!c) return json({ error: 'who' }, 403);
+    const c = [...inner.conns.values()].find(x => x.joined && x.dev === b.dev);   // somebody in the room, or not: a locked room can not be entered, so the list outside reports too (owner, 2026-10-31)
     let ip = req.headers.get('CF-Connecting-IP') || ''; if (!ip || ip === '127.0.0.1' || ip === '::1') ip = req.headers.get('x-test-ip') || ip;   // the test header counts only on a local server
     const key = ipKey(ip) || 'local:' + b.dev;
     M.reports = M.reports || [];
     if (M.reports.some(r => r[0] === key || r[1] === b.dev)) return json({ error: 'dup' }, 409);
-    M.reports.push([key, b.dev, Date.now(), c.name]);
+    M.reports.push([key, b.dev, Date.now(), c ? c.name : 'ngoài phòng']);
     if (!M.hidden && new Set(M.reports.map(r => r[0])).size >= REPORT_NEED) {
       M.hidden = Date.now();
       for (const x of [...inner.conns.values()]) if (x.dev !== M.owner) { try { x.ws.close(4012, 'hidden'); } catch (e) {} }

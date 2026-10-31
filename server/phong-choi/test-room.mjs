@@ -85,7 +85,7 @@ const o2 = client(id, owner, 'Chủ', ''); await sleep(1000); const w2 = o2.last
 {
   let nip = 0; const rep = async (dev, ip) => { const r = await fetch(BASE + '/jgr/report?r=' + id, { method: 'POST', headers: { 'content-type': 'application/json', ...O, 'x-test-ip': ip || '10.0.0.' + (++nip) }, body: JSON.stringify({ dev }) }); return { s: r.status, j: await r.json().catch(() => ({})) }; };
   const ra = client(id, guest, 'Khách', ''), rb = client(id, guest2, 'Khách 2', ''), rc = client(id, 'guestdev00000000004', 'Khách 3', ''); await sleep(1000);
-  r = await rep('guestdev00000000099'); ok(r.s === 403, 'a report from somebody not in the room is refused');
+  r = await rep('x'); ok(r.s === 400, 'a report without a valid device is refused');
   r = await rep(owner); ok(r.s === 400, 'the owner cannot report their own picture');
   r = await rep(guest); ok(r.j.ok && !r.j.hidden, 'first report counted');
   r = await rep(guest); ok(r.s === 409, 'the same device cannot report twice');
@@ -105,6 +105,14 @@ const o2 = client(id, owner, 'Chủ', ''); await sleep(1000); const w2 = o2.last
   r = await (await fetch(BASE + '/jgr-admin/restore?r=' + id, { headers: A })).json(); ok(r.ok === 'restored', 'admin restores it');
   l = await (await get('/jgr/list?dev=' + guest)).json(); ok(l.rooms.some(x => x.id === id && !x.hidden), 'listed again');
   im = await get('/jgr/img?r=' + id, { 'x-dev': guest }); ok(im.status === 200, 'picture served again');
+}
+// a report from the list outside, by somebody who never entered (a locked room can not be entered)
+{
+  const od = 'reptestowner0000001', mk = await post('/jgr/create', { dev: od, ownerName: 'Chủ 2', name: 'Phòng khóa', pw: 'khoa123', pieces: 100, img, thumb });
+  const rr = await fetch(BASE + '/jgr/report?r=' + mk.j.id, { method: 'POST', headers: { 'content-type': 'application/json', ...O, 'x-test-ip': '10.9.9.1' }, body: JSON.stringify({ dev: 'outsider000000000001' }) });
+  ok(rr.status === 200 && (await rr.json()).ok, 'somebody outside a locked room can report its picture');
+  const r2 = await fetch(BASE + '/jgr/report?r=' + mk.j.id, { method: 'POST', headers: { 'content-type': 'application/json', ...O, 'x-test-ip': '10.9.9.2' }, body: JSON.stringify({ dev: 'outsider000000000001' }) }); ok(r2.status === 409, 'the same device reports once');
+  await post('/jgr/admin?r=' + mk.j.id, { dev: od, act: 'delete' });
 }
 r = await post('/jgr/admin?r=' + id, { dev: guest, act: 'delete' }); ok(r.s === 403, 'a guest cannot delete');
 r = await post('/jgr/admin?r=' + id, { dev: owner, act: 'delete' }); await sleep(600); ok(r.j.ok && o2.closed === 4009, 'owner deletes the room, everybody out with 4009 (' + o2.closed + ')');

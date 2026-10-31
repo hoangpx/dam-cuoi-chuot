@@ -123,9 +123,9 @@ function jgrCreateOpen(mode) {
 }
 
 /* ---- report the picture (three different networks hide it until the admin looks) ---- */
-function jgrReportPic() {
-  const R = JG.room; if (!R || R.own) return;
-  jgrConfirm(lg('Báo cáo tranh này là không phù hợp? Khi có 3 người ở 3 mạng khác nhau báo cáo, tranh sẽ tạm ẩn chờ admin xem.', 'Report this picture as inappropriate? When 3 people on 3 different networks report it, it is hidden until the admin looks.'), lg('Báo cáo', 'Report'), async () => {
+function jgrReportPic(rid, name) {
+  const R = rid ? { id: rid, name } : JG.room; if (!R || R.own) return; const nm = R.name ? ' "' + R.name + '"' : '';
+  jgrConfirm(lg('Báo cáo tranh' + nm + ' là không phù hợp? Khi có 3 người ở 3 mạng khác nhau báo cáo, tranh sẽ tạm ẩn chờ admin xem.', 'Report the picture' + nm + ' as inappropriate? When 3 people on 3 different networks report it, it is hidden until the admin looks.'), lg('Báo cáo', 'Report'), async () => {
     let j = {}; try { const r = await fetch(JG_BASE + '/jgr/report?r=' + encodeURIComponent(R.id), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dev: p4Device() }) }); j = await r.json().catch(() => ({})); } catch (e) { j = { error: 'net' }; }
     toast(j.ok ? lg('Đã gửi báo cáo. Cảm ơn bạn!', 'Report sent. Thank you!') : j.error === 'dup' ? lg('Bạn (hoặc mạng của bạn) đã báo cáo tranh này rồi', 'You (or your network) already reported this picture') : lg('Chưa gửi được báo cáo', 'Could not send the report'), 2.8);
   });

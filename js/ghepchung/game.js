@@ -352,6 +352,10 @@ function jgRoomCard(g, x, y, w, h, r) {
     hlText(g, `${r.n || 0} ${lg('người đang ghép', 'joining now')} · ${jgDur(Math.max(60000, Date.now() - (r.since || r.created)))}`, lx, y + 66, 12, { ...sub, c: r.n ? '#a3332a' : HL_INK });
     const bw = Math.max(40, lw), pct = Math.max(0, Math.min(1, (r.joined || 0) / total)); g.fillStyle = 'rgba(29,25,21,.15)'; g.fillRect(lx, y + 77, bw, 7); g.fillStyle = '#2f6a4c'; g.fillRect(lx, y + 77, bw * pct, 7); g.lineWidth = 1.5; g.strokeStyle = HL_INK; g.strokeRect(lx, y + 77, bw, 7);
   }
+  if (!r.mine && !r.hidden) {   // report the picture from the list: a locked room can not be entered (owner, 2026-10-31)
+    const fx = x + w - 24, fy = y + 52; g.save(); g.translate(fx, fy); g.scale(.8, .8); g.lineWidth = 2.4; g.strokeStyle = HL_INK; g.fillStyle = '#a3332a'; g.beginPath(); g.moveTo(-6, 11); g.lineTo(-6, -11); g.stroke(); g.beginPath(); g.moveTo(-6, -11); g.lineTo(9, -6); g.lineTo(-6, -1); g.closePath(); g.fill(); g.stroke(); g.restore();
+    JG.btns.push({ x: x + w - 46, y: Math.max(56, y + 34), w: 44, h: 36, tap: () => jgrReportPic(r.id, r.name) });
+  }
   JG.btns.push({ x, y: Math.max(56, y), w, h, tap: () => jgOpenRoom(r) });
 }
 function jgPrintCard(g, x, y, w, cardH, pz) {
