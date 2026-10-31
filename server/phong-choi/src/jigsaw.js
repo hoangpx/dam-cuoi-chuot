@@ -227,7 +227,7 @@ class Jigsaw extends DurableObject {
     return false;
   }
   lift(c, gid) {
-    const g = this.groups.get(gid); if (!g || (g.by && g.by !== c.id)) { this.send(c, { t: 'deny', g: gid }); return; }   // a finished picture can be moved freely (owner, 2026-10-31)
+    const g = this.groups.get(gid); if (!g || FREEZE || (g.by && g.by !== c.id)) { this.send(c, { t: 'deny', g: gid }); return; }   // a finished picture can be moved freely (owner, 2026-10-31), except the frozen first print, kept to be looked at
     if (!g.by && !this.done && this.isBiggest(g)) {   // the biggest group: it can be lifted (not by whoever carried it in the last BIG_LOCK_MS), carried for BIG_HOLD_MS at most, and put down only where nothing lies under it
       const lk = this.lockLeft(c.dev, g); if (lk > 0) { this.send(c, { t: 'deny', g: gid, lock: Math.ceil(lk / 1000) }); return; }
       g.home = [g.x, g.y, g.a]; g.liftAt = Date.now();
