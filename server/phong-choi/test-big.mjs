@@ -1,5 +1,5 @@
-// Test of the biggest-group rule (owner, 2026-10-31) against a LOCAL server: `npx wrangler dev --port 8787 --local`, then `node test-big.mjs`.
-// The biggest group can be lifted, is not put down while it lies on another piece ('nodrop'), is taken from the carrier after 10 s, and the carrier cannot lift it again for a minute.
+// Test that a PRIVATE room has no biggest-group rule (owner, 2026-10-31; the shared prints keep it) against a LOCAL server: `npx wrangler dev --port 8787 --local`, then `node test-big.mjs`.
+// The biggest group can be lifted, put down on other pieces, held longer than 10 s and lifted again by the same player.
 const BASE = process.env.BASE || 'http://127.0.0.1:8787', WS = BASE.replace(/^http/, 'ws');
 const O = { Origin: 'http://localhost:8000' };
 let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
@@ -42,37 +42,14 @@ const onTop = (() => { const lc = rot(lk[3], ck[0], ck[1]), o = rot(lk[3], c0[0]
 // 1. any player can lift it
 a.send({ t: 'lift', g: big[0] }); await sleep(400);
 ok(a.last('lift') || a.msgs.some(m => m.t === 'lift' && m.g === big[0]) , 'the biggest group can be lifted');
-// 2. putting it down on a piece is refused and it stays in the hand
+// 2. private rooms have no biggest-group rule (owner, 2026-10-31): it can be put down on top of a piece, nothing is refused
 let n = a.msgs.length; a.send({ t: 'drop', g: big[0], x: onTop[0], y: onTop[1], a: onTop[2] }); await sleep(500);
-ok(a.since('nodrop', n).length === 1, 'dropped on top of a piece: refused (nodrop)');
-ok(a.since('drop', n).length === 0, 'no drop was broadcast');
-// 3. still held: another player cannot lift it
-n = b2.msgs.length; b2.send({ t: 'lift', g: big[0] }); await sleep(400);
-ok(b2.since('deny', n).length === 1, 'still in the first hand: the other player is denied');
-// 4. move it to a clear place and put it down
-const clear = (() => {   // the spot whose two pieces are farthest from every loose piece (the server's limit is .8 of the smaller cell)
-  let best = null;
-  for (let t = 0; t < 20000; t++) {
-    const x = 20 + ((t * 7919) % 9973) / 9973 * (cols * CW * 1.5 - 120), y = 20 + ((t * 6007) % 9967) / 9967 * (rows * CH * 1.5 - 100);
-    const pcs = [[x + c0[0], y + c0[1]], [x + cell(1)[0], y + cell(1)[1]]]; let d = 1e9;
-    for (const l of loose) { const lc = rot(l[3], cell(+l[4])[0], cell(+l[4])[1]), p = [l[1] + lc[0], l[2] + lc[1]]; for (const q of pcs) d = Math.min(d, Math.hypot(q[0] - p[0], q[1] - p[1])); }
-    if (!best || d > best.d) best = { d, p: [x, y, 0] };
-  }
-  return best.d > Math.min(CW, CH) * 1.1 ? best.p : null;
-})();
-ok(clear, 'found a clear place on the table');
-n = a.msgs.length; a.send({ t: 'drop', g: big[0], x: clear[0], y: clear[1], a: clear[2] }); await sleep(500);
-const dr = a.since('drop', n); ok(dr.length === 1 && !dr[0].back && Math.abs(dr[0].x - clear[0]) < 25, 'dropped on a clear place: accepted ' + JSON.stringify(dr[0]));
-// 5. the carrier cannot lift it again for a minute, another player can
+ok(a.since('nodrop', n).length === 0, 'dropped on top of a piece: no nodrop in a private room');
+ok(a.since('drop', n).length === 1 && !a.since('drop', n)[0].back, 'the drop was accepted where it was put');
+// 3. no lock for the carrier, and no 10 s limit
 n = a.msgs.length; a.send({ t: 'lift', g: big[0] }); await sleep(400);
-const dn = a.since('deny', n); ok(dn.length === 1 && dn[0].lock > 50 && dn[0].lock <= 60, 'the carrier is locked out for about a minute: ' + JSON.stringify(dn[0]));
-n = b2.msgs.length; b2.send({ t: 'lift', g: big[0] }); await sleep(400);
-ok(b2.since('deny', n).length === 0 && b2.msgs.slice(n).some(m => m.t === 'lift'), 'another player can lift it');
-// 6. held for 10 s: taken, and back where it was lifted because it lies on a piece
-n = b2.msgs.length; b2.send({ t: 'move', g: big[0], x: onTop[0], y: onTop[1], a: onTop[2] });
-await sleep(11500);
-const tu = b2.since('timeup', n), dd = b2.since('drop', n);
-ok(tu.length === 1 && tu[0].sec === 60, 'after 10 s the carrier is told time is up');
-ok(dd.length === 1 && dd[0].back === 1 && Math.abs(dd[0].x - clear[0]) < 25, 'it went back to where it was lifted: ' + JSON.stringify(dd[0]));
+ok(a.since('deny', n).length === 0, 'the carrier can lift it again at once');
+n = a.msgs.length; await sleep(11500);
+ok(a.since('timeup', n).length === 0 && a.since('drop', n).length === 0, 'held for 11 s: nothing takes it from the hand');
 a.ws.close(); b.ws.close(); b2.ws.close();
 console.log(fails ? fails + ' FAILED' : 'all ok'); process.exit(fails ? 1 : 0);

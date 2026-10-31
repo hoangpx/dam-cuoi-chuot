@@ -68,7 +68,7 @@ export class JigsawRoom extends DurableObject {
   build() {
     const M = this.meta, room = this;
     const cfg = {
-      pic: M.pic, cols: M.cols, rows: M.rows, pw: M.w, ph: M.h, freeze: false, noPay: true, startAt: M.created,
+      pic: M.pic, cols: M.cols, rows: M.rows, pw: M.w, ph: M.h, freeze: false, noPay: true, noBig: true, startAt: M.created,
       gate: (dev, m, ip) => room.gate(dev, m, ip),
       info: c => ({ id: M.id, name: M.name, ownerName: M.ownerName, own: !!(c && c.dev === M.owner), locked: !!M.hash, w: M.w, h: M.h, ver: M.ver, cols: M.cols, rows: M.rows }),
       isOwner: dev => dev === M.owner,

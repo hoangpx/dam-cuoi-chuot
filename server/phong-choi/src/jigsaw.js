@@ -208,7 +208,8 @@ class Jigsaw extends DurableObject {
   // THE BIGGEST GROUP (owner, 2026-10-31, replaces the 2026-10-24 rule that fixed it): the group with the most pieces (strictly: no other group is as big, and at least FIX_MIN pieces) can be carried,
   // but it cannot be put down while it lies on a piece of another group (centres closer than .8 of a cell): the drop is refused ('nodrop') and it stays in the carrier's hand; nobody carries it
   // longer than BIG_HOLD_MS (then it goes back to where it was lifted if it still lies on pieces), and whoever carried it cannot lift it again for BIG_LOCK_MS. Overlap is measured piece centre to piece centre with a grid, about 6000 steps a lift.
-  isBiggest(g) {   // strictly the biggest, and at least FIX_MIN pieces
+  isBiggest(g) {   // strictly the biggest, and at least FIX_MIN pieces; private rooms have no such rule (cfg.noBig, owner 2026-10-31)
+    if (cfg.noBig) return false;
     if (g.ids.length < FIX_MIN) return false;
     for (const o of this.groups.values()) if (o !== g && o.ids.length >= g.ids.length) return false;
     return true;
