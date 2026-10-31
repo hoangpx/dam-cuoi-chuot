@@ -889,7 +889,7 @@ function c11Tap(tx, ty, wx, wy) {
     if (Math.abs(vt[0] - ptx) + Math.abs(vt[1] - pty) <= 1 || Math.hypot(v.x - C11.px, v.y - C11.py) < 1.6) { C11.go = { path: [], act: { v } }; return; }
     const b = near(vt[0], vt[1]); if (b) C11.go = { path: c11Route(d, b.x, b.y), act: { v } }; return;
   }
-  for (const b of C11.beasts || []) if (Math.abs(wx - b.x) < .7 && wy > b.y - 1.1 && wy < b.y + .3) {   // an animal: walk up to it, no tool is used on it
+  for (const b of C11.beasts || []) if (Math.abs(wx - b.x) < .7 && wy > b.y - 1.1 && wy < b.y + .3 && (!c11ToolWins(tx, ty) || (typeof c11Wild === 'function' && c11Wild(b)))) {   // an animal: walk up to it, no tool is used on it
     const bt = [Math.floor(b.x), Math.floor(b.y - .01)], nb = near(bt[0], bt[1]); if (nb) C11.go = { path: c11Route(d, nb.x, nb.y), act: b.herd ? { tx: bt[0], ty: bt[1] } : null }; return;
   }
   for (const sg of c11SignList()) if (Math.abs(wx - sg.gx) < .85 && wy > sg.gy - 1.6 && wy < sg.gy + .3) {   // a signpost: walk to the way out it points to
@@ -913,6 +913,8 @@ function c11Tap(tx, ty, wx, wy) {
 }
 /* does the thing in hand fit what is there? (owner: the sickle cuts only grass, the axe only a trunk, the hoe only cut ground, the can only
    soil or water, a seed only ground made for it; otherwise a tap only walks) */
+/* a held tool whose own target is the tapped tile beats an animal standing over it (a hen in front of the crop no longer eats the tap) */
+const c11ToolWins = (tx, ty) => !['none', 'item', 'seed'].includes(c11HandTool()) && c11CanAct(tx, ty);
 function c11CanAct(tx, ty) {
   const k = c11Kind(tx, ty), tool = c11HandTool(), key = c11Pre() + tx + ',' + ty;
   { const r = c11CanNew(tx, ty, tool, k, key); if (r !== undefined) return r; }
@@ -982,6 +984,7 @@ function updateC11(dt) {
   { const [ex0, ey0] = c11Tile(); if (c11Kind(ex0, ey0) === 'E') { const ex = C11_AR.exits[ex0 + ',' + ey0]; if (ex) c11GoArea(ex[0], ex[1], ex[2]); } }
   // the animals wander about the grass; hens peck, cows and horses graze, a pig roots about
   for (const b of G.beasts || []) {
+    if (b.fly || b === C11.carry) continue;                              // being carried or thrown (bong.js)
     b.moving = false; const small = b.kind === 'ga' || b.kind === 'trong' || b.kind === 'vit', grazer = !small;
     if (b.wait > 0) { b.wait -= dt; b.dn += ((small ? (Math.sin(G.t * 9 + b.x) > .3 ? 1 : 0) : (Math.sin(G.t * .7 + b.x) > -.3 ? 1 : 0)) - b.dn) * Math.min(1, dt * (small ? 14 : 3)); continue; }
     b.dn += (0 - b.dn) * Math.min(1, dt * 6);
