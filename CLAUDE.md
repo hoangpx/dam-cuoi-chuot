@@ -258,3 +258,7 @@ Chương IV, trang trí quán rà lại (owner, 2026-10-30; a player saw only la
 Nhà > Sắm sanh (kinhdoanh.js c4NhaZoom): the thing tapped in the list is shown close up (the room's viewBox cut to its box), tap the picture to see the whole room again; the picture may be 540 wide, 40vh high (owner: the furniture was too small to see). VERSION 2026-10-30a.
 Sắm sanh on a short screen (css/ch4.css, max-height 760 / 600): the picture shrinks to 26 / 22 vh, the title and count are hidden, rows and buttons are tighter, so 3-4 things show at once on a 560 px high window (owner: only one showed). VERSION 2026-10-30b.
 Sổ tay tabs (css .c4tabs, dan.js): one row that slides sideways (the open tab scrolled into view) instead of three rows on a phone; the Nhà tab no longer says 'Nhà mới cưới, chưa có nội thất gì' (owner, 2026-10-30). VERSION 2026-10-30c.
+Hàng gà (muagan.js hangGa): sức chứa tăng từ 16 lên 40 con (owner, 2026-10-29). VERSION 2026-10-29e.
+
+Chương XI online open (owner 2026-10-29: "bật online đi"): c11OUrl no longer needs ?c11online, so everyone who enters the village connects to the Worker (the chapter card count and the Online button now show real players); ?c11srv=ws://... still overrides the server for tests. VERSION 2026-10-29f.
+Default: SAVE11.online starts true, so a player connects on entering; leaving online from the menu keeps it off.
