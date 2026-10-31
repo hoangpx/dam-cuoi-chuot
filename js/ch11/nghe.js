@@ -159,8 +159,11 @@ function c11FeedHerd(b) {
   const h = b.herd, A = C11_ANIMALS[h.kind], it = c11HandItem(), tool = c11HandTool(), at = A.adult - h.age;
   if (it && (tool === 'item' || tool === 'seed')) {
     if (!A.feed.includes(it.id)) { c11Pop(Math.floor(b.x), Math.floor(b.y) - 1, `${h.nm} không ăn ${C11_ITEMS[it.id].name.toLowerCase()}`, '#5b2f1f'); return; }
-    if (h.fed) { c11Pop(Math.floor(b.x), Math.floor(b.y) - 1, `${h.nm} no rồi`, '#5b2f1f'); return; }
-    c11Take(it.id, 1); h.fed = 1; h.hung = 0; c11Spend(.5); c11Dots(Math.floor(b.x), Math.floor(b.y) - .3, '#c8a060', 6, .6); c11Pop(Math.floor(b.x), Math.floor(b.y) - 1, `${h.nm} ăn ngon lành`, '#2f6a4c'); persist11(); return;
+    // feed the whole pen at once (a player: animals stand on top of each other, so one tap kept hitting the same one): the tapped animal first, then every hungry one of its pen, one portion each while the held stack lasts
+    const hungry = (C11.beasts || []).filter(q => q.herd && q.herd.pen === h.pen && !q.herd.fed).sort((p, q) => (p === b ? -1 : q === b ? 1 : 0)).slice(0, c11Count(it.id));
+    if (!hungry.length) { c11Pop(Math.floor(b.x), Math.floor(b.y) - 1, `${h.nm} no rồi`, '#5b2f1f'); return; }
+    for (const q of hungry) { c11Take(it.id, 1); q.herd.fed = 1; q.herd.hung = 0; c11Spend(.5); c11Dots(Math.floor(q.x), Math.floor(q.y) - .3, '#c8a060', 6, .6); c11Pop(Math.floor(q.x), Math.floor(q.y) - 1, `${q.herd.nm} ăn ngon lành`, '#2f6a4c'); }
+    if (hungry.length > 1) c11Msg(`Cho ${hungry.length} con ăn một lượt`, '#2f6a4c'); persist11(); return;
   }
   c11Msg(`${h.nm}: ${h.fed ? 'đã ăn' : 'đang đói, cho ăn ' + A.feed.slice(0, 3).map(i => C11_ITEMS[i].name.toLowerCase()).join(', ')} · ${h.age} ngày${at > 0 ? `, còn ${at} ngày nữa mới lớn` : ', đã lớn'}`, h.fed ? '#2f6a4c' : '#a3332a');
 }
