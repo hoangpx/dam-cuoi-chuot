@@ -48,6 +48,7 @@ class Jigsaw extends DurableObject {
     super(ctx, env);
     this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0; this.startAt = 0; this.ppl = new Set();
     this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map(); this.locks = new Map(); this.jl = [];
+    if (cfg.hib) this.rewake();   // hibernating sockets (private rooms): the object may have been out of memory while they stayed open
     ctx.blockConcurrencyWhile(async () => {
       // The picture must never be lost: the saved state is checked piece by piece, a damaged one falls back to the backup copy, and nothing is ever
       // thrown away without being kept under another key first (a different picture = a fresh puzzle, the old one stays as 'old:<pic>').
@@ -141,14 +142,35 @@ class Jigsaw extends DurableObject {
       const pair = new WebSocketPair(), [cl, sv] = Object.values(pair); sv.accept(); sv.close(this.banned(ip) ? 4003 : 4005, 'busy'); return new Response(null, { status: 101, webSocket: cl });
     }
     if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, done: this.done, n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
-    const pair = new WebSocketPair(), [client, server] = Object.values(pair); server.accept();
+    const pair = new WebSocketPair(), [client, server] = Object.values(pair); if (cfg.hib) this.ctx.acceptWebSocket(server); else server.accept();
     const c = { ws: server, id: 'j' + (this.nextId++), dev: '', name: '', look: null, joined: false, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], ip, at: Date.now(), liftAt: 0, joinT: [], jn: 0, strikes: 0, act: Date.now() };
-    this.conns.set(c.id, c);
-    server.addEventListener('message', e => this.onMsg(c, e.data));
-    server.addEventListener('close', () => this.onClose(c)); server.addEventListener('error', () => this.onClose(c));
-    if (!this.tick) this.tick = setInterval(() => this.step(), 100);
+    this.conns.set(c.id, c); this.keep(c);
+    if (!cfg.hib) {
+      server.addEventListener('message', e => this.onMsg(c, e.data));
+      server.addEventListener('close', () => this.onClose(c)); server.addEventListener('error', () => this.onClose(c));
+      if (!this.tick) this.tick = setInterval(() => this.step(), 100);
+    }
     return new Response(null, { status: 101, webSocket: client });
   }
+  // HIBERNATING SOCKETS (private rooms, owner 2026-11-01): the sockets are accepted with ctx.acceptWebSocket, so while nobody sends anything Cloudflare takes the object out of memory and stops
+  // billing it; the next message (or close) runs these handlers on a fresh object. What a connection is (id, device, name, look, joined) is kept in the socket's attachment and read again in rewake().
+  // The 100 ms tick runs only while a group is carried (a timer would keep the object awake), and an object never sleeps with a pending save.
+  keep(c) { if (cfg.hib) try { c.ws.serializeAttachment({ id: c.id, dev: c.dev, name: c.name, look: c.look, joined: c.joined, ip: c.ip, test: !!c.test, at: c.at }); } catch (e) {} }
+  rewake() {
+    let top = 0, k = 0;
+    for (const ws of this.ctx.getWebSockets()) {
+      let a = null; try { a = ws.deserializeAttachment(); } catch (e) {}
+      if (!a || !a.id) { try { ws.close(1011, 'lost'); } catch (e) {} continue; }
+      const n = +String(a.id).slice(1) || 0; if (n > top) top = n;
+      this.conns.set(a.id, { ...a, ws, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], joinT: [], jn: 0, strikes: 0, liftAt: 0, act: Date.now() }); k++;
+    }
+    this.nextId = top + 1; if (k) console.log('jigsaw: woke with', k, 'sockets');
+  }
+  connOf(ws) { for (const c of this.conns.values()) if (c.ws === ws) return c; let a = null; try { a = ws.deserializeAttachment(); } catch (e) {} return a && this.conns.get(a.id) || null; }
+  webSocketMessage(ws, data) { const c = this.connOf(ws); if (c) return this.onMsg(c, typeof data === 'string' ? data : new TextDecoder().decode(data)); }
+  webSocketClose(ws) { const c = this.connOf(ws); if (c) this.onClose(c); }
+  webSocketError(ws) { this.webSocketClose(ws); }
+  wakeTick() { if (!this.tick) this.tick = setInterval(() => this.step(), 100); }
   stat() { return { n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, done: this.done, total: N }; }
   touch(now) { if (cfg.touch) { try { cfg.touch(this, !!now); } catch (e) {} } }
   send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
@@ -176,7 +198,7 @@ class Jigsaw extends DurableObject {
       if (this.banned(c.dev) || (c.ip && this.banned(c.ip))) { try { c.ws.close(4003, 'busy'); } catch (e) {} return; }
       if (cfg.gate) { const code = await cfg.gate(c.dev, m, c.ip); if (code) { try { c.ws.close(code, 'room'); } catch (e) {} return; } if (c.joined || !this.conns.has(c.id)) return; }
       for (const o of [...this.conns.values()]) if (o !== c && o.dev === c.dev) { try { o.ws.close(4001, 'replaced'); } catch (e) {} this.onClose(o); }   // one socket a device: the older one is dead or another window
-      u.n = c.name; c.joined = true; c.test = isTest(c.dev, c.ip);
+      u.n = c.name; c.joined = true; c.test = isTest(c.dev, c.ip); this.keep(c);
       this.send(c, { t: 'welcome', id: c.id, ...this.full(c), me: { m: u.m } });
       if (late) this.user(c.dev).then(r => { r.n = c.name; }).catch(() => {});
       this.all({ t: 'players', players: this.playerList() }, c); this.touch();
@@ -191,7 +213,7 @@ class Jigsaw extends DurableObject {
     else if (m.t === 'chat') { if (now - c.chatAt < CHAT_GAP) return; const s = cleanChat(m.s); if (!s) return; c.chatAt = now; this.all({ t: 'chat', id: c.id, s }); }
     else if (m.t === 'name') {   // the player changed their name in the page (the Hồ sơ name, shared by every chapter): same cleaning as hello, once every 10 s
       if (now - (c.nameAt || 0) < 10000) return; let nm = String(m.s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12); nm = cleanChat(nm) || nm; if (!nm) return;
-      c.nameAt = now; c.name = nm; const u = this.users.get(c.dev); if (u) { u.n = nm; if (!c.test) this.dirtyUsers.add(c.dev); this.board = null; } this.all({ t: 'players', players: this.playerList() });
+      c.nameAt = now; c.name = nm; this.keep(c); const u = this.users.get(c.dev); if (u) { u.n = nm; if (!c.test) this.dirtyUsers.add(c.dev); this.board = null; } this.all({ t: 'players', players: this.playerList() });
     }
     else if (m.t === 'emote') { const k = m.k | 0; if (now - c.emoAt < 2000 || k < 0 || k > 5) return; c.emoAt = now; this.all({ t: 'emote', id: c.id, k }); }
     else if (m.t === 'board') this.sendBoard(c);
@@ -237,7 +259,7 @@ class Jigsaw extends DurableObject {
     const lk = this.lockLeft(c.dev, g); if (lk > 0) { this.send(c, { t: 'deny', g: gid, lock: Math.ceil(lk / 1000) }); return; }
     g.nudgeAt = 0;
     if (c.holding && c.holding !== gid) this.release(c.holding);
-    g.by = c.id; g.heldAt = c.liftAt = Date.now(); c.holding = gid; this.all({ t: 'lift', g: gid, by: c.id });
+    g.by = c.id; g.heldAt = c.liftAt = Date.now(); c.holding = gid; this.wakeTick(); this.all({ t: 'lift', g: gid, by: c.id });
   }
   move(c, m) {
     const g = this.groups.get(m.g | 0); if (!g || g.by !== c.id) return; const x = +m.x, y = +m.y, a = +m.a; if (!isFinite(x) || !isFinite(y) || !isFinite(a)) return;
@@ -454,6 +476,7 @@ class Jigsaw extends DurableObject {
     if (cfg.idleMs) { const now = Date.now(); if (now - (this.idleAt || 0) > Math.min(30000, cfg.idleMs / 2)) { this.idleAt = now; for (const c of [...this.conns.values()]) if (!c.holding && now - c.act > cfg.idleMs) { this.send(c, { t: 'idle' }); try { c.ws.close(4013, 'idle'); } catch (e) {} this.onClose(c); } } }   // a tab left open keeps the room running all day: send it away after cfg.idleMs without a single move (owner, 2026-11-01)
     if (this.dirty.size) { const p = []; for (const gid of this.dirty) { const g = this.groups.get(gid); if (g) p.push([gid, r1(g.x), r1(g.y), r3(g.a)]); } this.dirty.clear(); this.all({ t: 'poses', p }); }
     const now = Date.now(); for (const g of this.groups.values()) if (g.by && (now - g.heldAt > HOLD_IDLE || (g.nudgeAt && now > g.nudgeAt) || (g.home && now - g.liftAt > BIG_HOLD_MS))) { if (g.home && now - g.liftAt > BIG_HOLD_MS) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: BIG_LOCK_MS / 1000 }); } else if (g.nudgeAt && now > g.nudgeAt) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: LOCK_MS / 1000 }); } this.release(g.id); }
+    if (cfg.hib && !this.dirty.size && ![...this.groups.values()].some(g => g.by)) { clearInterval(this.tick); this.tick = null; }   // nobody carries anything: stop the timer so the object can sleep
   }
 
   /* ---- the board: all time only, and only people with at least one piece ---- */

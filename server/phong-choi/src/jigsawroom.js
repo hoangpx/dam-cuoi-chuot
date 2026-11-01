@@ -68,7 +68,7 @@ export class JigsawRoom extends DurableObject {
   build() {
     const M = this.meta, room = this;
     const cfg = {
-      pic: M.pic, cols: M.cols, rows: M.rows, pw: M.w, ph: M.h, freeze: false, noPay: true, noBig: true, idleMs: +this.env.IDLE_MS || 15 * 60000, startAt: M.created,
+      pic: M.pic, cols: M.cols, rows: M.rows, pw: M.w, ph: M.h, freeze: false, noPay: true, noBig: true, hib: true, startAt: M.created,
       gate: (dev, m, ip) => room.gate(dev, m, ip),
       info: c => ({ id: M.id, name: M.name, ownerName: M.ownerName, own: !!(c && c.dev === M.owner), locked: !!M.hash, w: M.w, h: M.h, ver: M.ver, cols: M.cols, rows: M.rows }),
       isOwner: dev => dev === M.owner,
@@ -86,6 +86,10 @@ export class JigsawRoom extends DurableObject {
     if (await sha(M.salt + String(m.pw || '').slice(0, 40)) === M.hash) return 0;
     recent.push(now); this.fails.set(k, recent); return 4010;
   }
+  // the sockets hibernate (see jigsaw.js): the runtime calls these on a fresh object after a sleep
+  webSocketMessage(ws, data) { if (!this.meta) return; if (!this.inner) this.build(); return this.inner.webSocketMessage(ws, data); }
+  webSocketClose(ws) { if (!this.meta) return; if (!this.inner) this.build(); return this.inner.webSocketClose(ws); }
+  webSocketError(ws) { return this.webSocketClose(ws); }
   async fetch(req) {
     const u = new URL(req.url);
     if (u.pathname === '/init') return this.init(req);
