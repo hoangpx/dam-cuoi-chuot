@@ -280,9 +280,9 @@ const c4HasHome = () => !!(SAVE4.home && SAVE4.home.own);
 const c4HomePrice = () => c4HousePrice(C4_HOME_BASE);
 // the couple's own house (owner, 2026-10-22): the book's Nhà tab shows it from the first morning, empty — "nhà mới cưới,
 // chưa có nội thất gì" — with a Sắm sanh button: sắm sanh is what the old folks called kitting a house out for a new
-// household. Every thing costs twice the sheet's price and keeps what it cost, and the board of the richest counts the
+// household. Every thing costs its listed price (it was twice, until 2026-10-31), and the board of the richest counts the
 // purse and the house together: buying a cửa võng empties the purse and leaves the place on the board where it was.
-const C4_ITEM_X2 = 2;
+const C4_ITEM_X2 = 1;   // the listed price as is (owner, 2026-10-31: it was doubled, and nobody was told)
 const c4HomeItems = () => (SAVE4.home && SAVE4.home.items) || [];
 const c4ItemPrice = it => it[2] * C4_QUAN * C4_ITEM_X2;
 const c4HomeValue = () => C4_SHOP_ITEMS.reduce((n, it) => n + (c4HomeItems().includes(it[0]) ? c4ItemPrice(it) : 0), 0);
@@ -307,7 +307,7 @@ function c4HomeHtml() {
     ? `<p>Đồ đạc trong nhà ${c4Money(c4HomeValue())} · bảng tổng sắp tính cả ví lẫn nhà: ${c4Money(c4NetWorth())}.</p>`
     : '<p>Chưa có gì. Bấm Sắm sanh để mua.</p>');
 }
-// the list to buy from: the name, the price (twice the sheet's) and a Mua button
+// the list to buy from: the name, the listed price and a Mua button
 function c4ShopRowsHtml() {
   const items = c4HomeItems();
   return '<div class="buyList">' + C4_SHOP_ITEMS.map(it => {
