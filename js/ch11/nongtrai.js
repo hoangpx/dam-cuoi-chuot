@@ -820,9 +820,10 @@ function c11EatSlot(i) {
   c11Take(sl.id, 1); SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + it.food); SAVE11.hp = Math.min(C11_HP, (SAVE11.hp ?? C11_HP) + it.food / 2); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${it.food} sức`, '#2f6a4c'); persist11();
 }
 const c11Price = (id, mult) => C11_ITEMS[id].cat === 'truyen' ? 0 : Math.round(C11_ITEMS[id].price * mult);
-function c11SellSlot(i, mult) {
+function c11SellSlot(i, mult, q0) {
   const sl = SAVE11.bag[i]; if (!sl) return 0; const p = c11Price(sl.id, mult); if (!p) { C11.menu.note = 'Vật này không bán được'; return 0; }
-  const got = p * sl.n; SAVE11.money += got; SAVE11.bag[i] = null; persist11(); c11Sfx.pluck && c11Sfx.pluck(); C11.menu.note = `Bán ${sl.n} ${C11_ITEMS[sl.id].name}: ${c4Money(got)}`; return got;
+  const q = Math.max(1, Math.min(sl.n, q0 || sl.n)), got = p * q; SAVE11.money += got; sl.n -= q; if (sl.n <= 0) SAVE11.bag[i] = null;   // q0: how many (default the whole stack)
+  persist11(); c11Sfx.pluck && c11Sfx.pluck(); C11.menu.note = `Bán ${q} ${C11_ITEMS[sl.id].name}: ${c4Money(got)}`; return got;
 }
 function c11OpenSell(title, mult, note) { C11.menu = { grid: 'sell', title, mult, note }; }
 function c11OpenChest() { C11.menu = { grid: 'chest', title: 'Rương đồ', note: 'Chạm một ô để chuyển đồ giữa túi và rương' }; }
@@ -1296,9 +1297,9 @@ function c11DrawMenu(g, W, H) {
 function c11DrawGrid(g, W, H, m) {                                   // the bag beside the chest, or the bag at a selling place
   g.fillStyle = 'rgba(20,16,30,.55)'; g.fillRect(0, 0, W, H);
   const chest = m.grid === 'chest', cols = chest ? 6 : 5, gap = 6, bagRows = Math.ceil(C11_BAG / cols), chestRows = chest ? Math.ceil(C11_CHEST / cols) : 0;   // rows follow the bag and chest sizes
-  const cs = Math.max(26, Math.min(52, Math.floor((Math.min(W - 28, 420) - 24 - (cols - 1) * 6) / cols), Math.floor((H - 16 - 60 - (chest ? 30 : 44) - 58) / (bagRows + chestRows)) - gap));
+  const cs = Math.max(26, Math.min(52, Math.floor((Math.min(W - 28, 420) - 24 - (cols - 1) * 6) / cols), Math.floor((H - 16 - 60 - (chest ? 30 : 90) - 58) / (bagRows + chestRows)) - gap));
   const gw = cols * cs + (cols - 1) * gap, pw = gw + 32;
-  const ph = 60 + bagRows * (cs + gap) + (chest ? 30 + chestRows * (cs + gap) : 44) + 58, px = (W - pw) / 2, py = Math.max(8, (H - ph) / 2);
+  const ph = 60 + bagRows * (cs + gap) + (chest ? 30 + chestRows * (cs + gap) : 44 + 46) + 58, px = (W - pw) / 2, py = Math.max(8, (H - ph) / 2);
   g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.roundRect(px, py, pw, ph, 14); g.fill(); g.stroke();
   g.fillStyle = INK; g.font = '900 20px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(m.title, W / 2, py + 24);
   let y = py + 50;
@@ -1306,19 +1307,41 @@ function c11DrawGrid(g, W, H, m) {                                   // the bag 
     g.fillStyle = 'rgba(29,25,21,.7)'; g.font = '700 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'left'; g.fillText(label, px + 16, y0 - 2);
     for (let i = 0; i < n; i++) {
       const x = px + 16 + (i % cols) * (cs + gap), yy = y0 + 8 + Math.floor(i / cols) * (cs + gap), sl = box[i];
-      g.fillStyle = '#efe3c4'; g.strokeStyle = 'rgba(29,25,21,.55)'; g.lineWidth = 1.4; g.beginPath(); g.roundRect(x, yy, cs, cs, 7); g.fill(); g.stroke();
+      const on = !chest && box === SAVE11.bag && m.pick === i && sl;
+      g.fillStyle = on ? '#f8e7a8' : '#efe3c4'; g.strokeStyle = on ? '#a3332a' : 'rgba(29,25,21,.55)'; g.lineWidth = on ? 3 : 1.4; g.beginPath(); g.roundRect(x, yy, cs, cs, 7); g.fill(); g.stroke();
       if (sl) { c11ItemIcon(g, sl.id, x + cs / 2, yy + cs / 2, cs * .78, sl.n); if (!chest) { const p = c11Price(sl.id, m.mult); g.fillStyle = p ? '#2f6a4c' : '#a3332a'; g.font = '700 9px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText(p ? `${p}đ` : '—', x + cs / 2, yy + 2); } }
       C11.hud.push({ r: [x, yy, cs, cs], modal: true, f: () => { if (sl) { m.sel = { id: sl.id }; tap(i); } } });
     }
     return y0 + 8 + Math.ceil(n / cols) * (cs + gap);
   };
-  y = grid(SAVE11.bag, C11_BAG, y, `Túi đồ (${SAVE11.bag.filter(Boolean).length}/${C11_BAG})`, i => chest ? c11Move(SAVE11.bag, i, SAVE11.chest) : c11SellSlot(i, m.mult));
+  y = grid(SAVE11.bag, C11_BAG, y, `Túi đồ (${SAVE11.bag.filter(Boolean).length}/${C11_BAG})`, i => { if (chest) { c11Move(SAVE11.bag, i, SAVE11.chest); return; }   // selling: a tap picks the stack, a second tap sells the amount chosen
+    const sl = SAVE11.bag[i]; if (!c11Price(sl.id, m.mult)) { m.pick = null; m.note = 'Vật này không bán được'; return; }
+    if (m.pick === i && m.pickId === sl.id) { c11SellSlot(i, m.mult, m.q); m.pick = null; return; }
+    m.pick = i; m.pickId = sl.id; m.q = sl.n; m.note = ''; });
   if (chest) y = grid(SAVE11.chest, C11_CHEST, y + 18, `Rương (${SAVE11.chest.filter(Boolean).length}/${C11_CHEST})`, i => c11Move(SAVE11.chest, i, SAVE11.bag));
   else {
+    const ps = m.pick != null && SAVE11.bag[m.pick]; if (!ps || ps.id !== m.pickId) m.pick = null;
+    const qy = y + 6, bh = 32, btn = (x, w, label, on, f, col) => {
+      g.fillStyle = on ? (col || '#efe3c4') : '#d8ccb0'; g.strokeStyle = on ? INK : 'rgba(29,25,21,.4)'; g.lineWidth = 2; g.beginPath(); g.roundRect(x, qy, w, bh, 8); g.fill(); g.stroke();
+      g.fillStyle = col ? '#fbf4dc' : on ? INK : 'rgba(29,25,21,.45)'; g.font = '800 13px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, x + w / 2, qy + bh / 2, w - 6);
+      if (on) C11.hud.push({ r: [x, qy, w, bh], modal: true, f });
+    };
+    if (m.pick != null) {                                                // how many of the picked stack: − n + · Nửa · Hết · Bán
+      const sl = SAVE11.bag[m.pick], n = sl.n, p = c11Price(sl.id, m.mult); m.q = Math.max(1, Math.min(n, m.q || n));
+      const aw = Math.min(gw, 300), ax = W / 2 - aw / 2, sw = 34, nw = 40, hw = 40, gp = 4, sellW = aw - (sw * 2 + nw + hw * 2 + gp * 5);
+      let x = ax;
+      btn(x, sw, '−', m.q > 1, () => { m.q = Math.max(1, m.q - 1); }); x += sw + gp;
+      g.fillStyle = INK; g.font = '900 15px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(m.q, x + nw / 2, qy + bh / 2); x += nw + gp;
+      btn(x, sw, '+', m.q < n, () => { m.q = Math.min(n, m.q + 1); }); x += sw + gp;
+      btn(x, hw, 'Nửa', n > 1, () => { m.q = Math.max(1, Math.floor(n / 2)); }); x += hw + gp;
+      btn(x, hw, 'Hết', m.q < n, () => { m.q = n; }); x += hw + gp;
+      btn(x, sellW, `Bán · ${c4Money(p * m.q)}`, true, () => { c11SellSlot(m.pick, m.mult, m.q); m.pick = null; }, '#2f6a4c');
+    } else { g.fillStyle = 'rgba(29,25,21,.6)'; g.font = '600 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Chạm một ô để chọn số lượng bán', W / 2, qy + bh / 2, pw - 24); }
+    y = qy + bh + 8;
     const tot = SAVE11.bag.reduce((t, sl) => t + (sl ? c11Price(sl.id, m.mult) * sl.n : 0), 0), bw = 150, bx = W / 2 - bw / 2, byy = y + 6;
     g.fillStyle = tot ? '#a3332a' : '#c8b8a0'; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.roundRect(bx, byy, bw, 32, 9); g.fill(); g.stroke();
-    g.fillStyle = '#fbf4dc'; g.font = '800 13px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`Bán hết · ${c4Money(tot)}`, W / 2, byy + 16);
-    C11.hud.push({ r: [bx, byy, bw, 32], modal: true, f: () => { let got = 0; for (let i = 0; i < C11_BAG; i++) if (SAVE11.bag[i] && c11Price(SAVE11.bag[i].id, m.mult)) got += c11SellSlot(i, m.mult); m.note = got ? `Bán được ${c4Money(got)}` : 'Không có gì bán được'; } });
+    g.fillStyle = '#fbf4dc'; g.font = '800 13px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`Bán cả túi · ${c4Money(tot)}`, W / 2, byy + 16);
+    C11.hud.push({ r: [bx, byy, bw, 32], modal: true, f: () => { let got = 0; for (let i = 0; i < C11_BAG; i++) if (SAVE11.bag[i] && c11Price(SAVE11.bag[i].id, m.mult)) got += c11SellSlot(i, m.mult); m.pick = null; m.note = got ? `Bán được ${c4Money(got)}` : 'Không có gì bán được'; } });
     y = byy + 32;
   }
   const I = m.sel && C11_ITEMS[m.sel.id];
