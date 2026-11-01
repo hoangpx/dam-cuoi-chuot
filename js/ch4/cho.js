@@ -352,7 +352,7 @@ function c4Morning() {
     if (c4AmClock()) return;                                                // too late today: nothing is bought (players 2026-10-18)
     C4.today.m0 = SAVE4.money;                                              // the purse before the morning's buying (for the evening ledger)
     SAVE4.lastOrder = { ...orders };                                         // "Như hôm qua" tomorrow (c4OrderRows)
-    for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; } }
+    for (const [g, q] of Object.entries(orders)) { if (q) c4Receive(g, q, c4Cost(g), 'sang'); if (g === 'che' && q) { SAVE4.money -= C4_GOODS.che.fuel; C4.today.spent += C4_GOODS.che.fuel; c4SpNote('Củi nấu chè', C4_GOODS.che.fuel); } }
     if (typeof w4VillageOpened === 'function') w4VillageOpened();
     c4Sheets(null); C4.phase = 'open'; if (typeof c4OpenAt === 'function') C4.mins = c4OpenAt();   // the market opens at the world's hour (the one clock with the town, dongho.js)
     c4PlanEvents(); if (C4.mins > C4_OPEN) C4.events = C4.events.filter(e => e.at > C4.mins); c4ShipOrders(); c4Hud();
@@ -587,7 +587,7 @@ const c4DropHand = (g, s) => { const H = c4Hands(g); H.splice(H.indexOf(s), 1); 
 const c4Someone = () => c4Pick([...C4.walkers.filter(w => w.kind === 'mouse' && C4_MOUSE_SORTS[w.sort].role !== 'child').map(w => w.name), 'bà Ba', 'chú Năm', 'cô Tư']);
 const c4Cap1 = s => s[0].toUpperCase() + s.slice(1);
 function c4Event(kind) {
-  const who = C4.evWho || c4Someone(), E = { kind, title: '', text: '', opts: [] }, sp = n => { SAVE4.money -= n; C4.today.spent += n; }, own = c4Owned();
+  const who = C4.evWho || c4Someone(), E = { kind, title: '', text: '', opts: [] }, sp = n => { SAVE4.money -= n; C4.today.spent += n; c4SpNote('Chuyện bất ngờ: ' + E.title, n); }, own = c4Owned();
   const helped = own.filter(g => c4HandsOn(g).length);
   if (kind === 'meo' && (!C4.cat || C4.cat.st !== 'ask')) { AU.meow(); C4.cat = { t: 0, st: 'roof' }; return; }   // first it shows itself on the roof
   if (kind === 'meo') {
@@ -999,7 +999,7 @@ function c4EndDay() {
     + (lines.length || d.wiltLoss ? `<br><span class="bad">Hàng hỏng phải bỏ${lines.length ? ' (' + lines.join(', ') + ')' : ''}: mất ${c4Money(d.wiltLoss)}</span>` : '')
     + (d.wages ? `<br>Trả công người phụ: ${c4Money(d.wages)}` : '')
        // (owner: the player reckons whether it adds up)
-    + (d.spent ? `<br>Chi khác (củi, lễ, tiền chợ, cho vay…): ${c4Money(d.spent)}` : '')
+    + c4SpHtml(d)
     + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '')
     + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '') + c4LedgerHtml(d)
     + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
@@ -1143,7 +1143,7 @@ const c4Ware = g => ({ banhcuon: 'Đông nhất lúc sáng sớm, trưa chiều 
 function c4KheRaise(g, who, name) { const now = c4RentOf(g); c4Khe({ title: 'Tăng tiền thuê', a: ['Chủ nhà', c4Cap1(who)], what: 'Tiền thuê nhà bán ' + name + ' tăng lên', money: Math.round(now * 1.1), per: 'mỗi tối', k: .8 }, null); }
 function c4Rent(g) {
   const G = C4_GOODS[g], L = c4Landlord(g); if (SAVE4.money < L.price) return;
-  SAVE4.money -= L.price; C4.today.spent += L.price;
+  SAVE4.money -= L.price; C4.today.spent += L.price; c4SpNote('Thuê chỗ bán hàng', L.price);
   SAVE4.shops[g] = { own: true, stock: 0, rentK: L.k };
   C4.Q[g] = []; C4.SV[g] = [];
   c4Sheets(null); AU.stamp(); AU.pluck(88); persist4(); c4Hud();
@@ -1152,7 +1152,7 @@ function c4Rent(g) {
 function c4DoUp() {
   const nx = C4_LV[SAVE4.lv + 1]; if (!nx || !c4UpAllowed(nx) || SAVE4.money < c4UpPrice(nx, nx.up) || C4.build) return;
   if (nx.house) { const L = c4Landlord('trau'); if (!L.known) { toast('Không biết chủ căn nhà là ai mà hỏi thuê hay mua.', 3.4); return; } SAVE4.rentKTrau = L.k; }
-  const price = c4UpPrice(nx, nx.up); SAVE4.money -= price; C4.today.spent += price; C4.build = { to: SAVE4.lv + 1, t: 0 };
+  const price = c4UpPrice(nx, nx.up); SAVE4.money -= price; C4.today.spent += price; c4SpNote('Nâng cấp quầy trầu', price); C4.build = { to: SAVE4.lv + 1, t: 0 };
   for (const w of [...C4.Q.trau]) c4Leave(w, false); C4.SV.trau = [];
   c4Sheets(null); persist4(); c4Hud(); AU.stamp();
 }

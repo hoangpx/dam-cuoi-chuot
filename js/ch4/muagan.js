@@ -53,7 +53,7 @@ function c4BuyOpen(v) {
     $('#c4upGo').onclick = () => { if (SAVE4.money < O.price) return; c4Khe({ title: 'Nhượng lại gánh ' + G.name.toLowerCase(), a: ['Bên bán', c4Cap1(O.p.name)], what: 'Nhượng đứt gánh ' + G.name.toLowerCase() + ' cùng chỗ bán', money: O.price }, buyDo); };
     const buyDo = () => {
       if (SAVE4.money < O.price) return;
-      SAVE4.money -= O.price; if (C4.today) C4.today.spent += O.price;
+      SAVE4.money -= O.price; if (C4.today) C4.today.spent += O.price; c4SpNote('Mua lại quầy hàng', O.price);
       SAVE4.shops[g] = { own: true, stock: 0, buy: true }; C4.Q[g] = []; C4.SV[g] = [];
       c4Bump(O.p.id, 6); c4Sheets(null); AU.stamp(); AU.pluck(88); persist4(); c4Hud();
       toast(`Đã mua lại gánh ${G.name.toLowerCase()} của ${O.p.name}. Chạm vào gánh để nhập hàng!`, 3.6);
@@ -102,7 +102,7 @@ function c4RivalTap(x, y) {
   $('#c4upT').textContent = 'Gánh trầu đối diện'; $('#c4upB').innerHTML = '';
   box.innerHTML = `<p>Gánh trầu của ${who} bán rẻ một đồng, ${SAVE4.cheap > 0 ? 'nhà mình đã hạ giá giữ khách.' : 'đang kéo khách của nhà mình.'} Còn ${SAVE4.rival} ngày nữa họ mới dẹp.</p><p class="hint">Mua đứt gánh ấy thì hết người tranh khách, trầu nhà mình lại bán đủ giá.</p>`;
   $('#c4upGo').hidden = false; $('#c4upGo').disabled = SAVE4.money < price; $('#c4upGo').innerHTML = `Mua đứt gánh ấy · ${c4Money(price)}`;
-  $('#c4upGo').onclick = () => { if (SAVE4.money < price) return; SAVE4.money -= price; if (C4.today) C4.today.spent += price; SAVE4.rival = 0; SAVE4.cheap = 0; c4Sheets(null); AU.stamp(); persist4(); c4Hud(); toast(`Đã mua đứt gánh trầu của ${who}. Hết người tranh khách!`, 3.4); };
+  $('#c4upGo').onclick = () => { if (SAVE4.money < price) return; SAVE4.money -= price; if (C4.today) C4.today.spent += price; c4SpNote('Mua đứt quầy đối thủ', price); SAVE4.rival = 0; SAVE4.cheap = 0; c4Sheets(null); AU.stamp(); persist4(); c4Hud(); toast(`Đã mua đứt gánh trầu của ${who}. Hết người tranh khách!`, 3.4); };
   c4Sheets('c4up'); return true;
 }
 // what buyers say at a bought stall ({n} = how many)

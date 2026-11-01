@@ -55,7 +55,7 @@ function c4DoiRefresh() {
   B.innerHTML = C4_DOI_KINDS.map(([k, nm, p, d]) => `<div class="doi"><div><b>${nm}</b><small>${d}</small></div><button class="btn${cur === k ? ' alt' : ''}" data-k="${k}"${cur === k || SAVE4.money < p ? ' disabled' : ''}>${cur === k ? 'Đang có' : c4Money(p)}</button></div>`).join('')
     + (cur ? '<div class="row"><button class="btn alt" id="dsClear">Dọn đi (không hoàn tiền)</button></div>' : '');
   B.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { AU.tap(); const k = b.dataset.k, e = C4_DOI_KINDS.find(q => q[0] === k); if (SAVE4.money < e[2]) return;
-    SAVE4.money -= e[2]; C4.today.spent += e[2]; (SAVE4.doi || (SAVE4.doi = {}))[i] = k; persist4(); AU.pluck(84); AU.stamp(); if (typeof c4Hud === 'function') c4Hud(); toast(`Đã dựng ${e[1].toLowerCase()}, tốn ${c4Money(e[2])}.`, 2.6); cnHide(c4DoiSheet); DS = null; }));
+    SAVE4.money -= e[2]; C4.today.spent += e[2]; c4SpNote('Khu đối diện: ' + e[1], e[2]); (SAVE4.doi || (SAVE4.doi = {}))[i] = k; persist4(); AU.pluck(84); AU.stamp(); if (typeof c4Hud === 'function') c4Hud(); toast(`Đã dựng ${e[1].toLowerCase()}, tốn ${c4Money(e[2])}.`, 2.6); cnHide(c4DoiSheet); DS = null; }));
   const cl = $('#dsClear'); if (cl) cl.addEventListener('click', () => { AU.tap(); delete SAVE4.doi[i]; persist4(); cnHide(c4DoiSheet); DS = null; });
   $('#dsM').textContent = 'Trong túi: ' + c4Money(Math.round(SAVE4.money)).replace(/<[^>]*>/g, '');
 }
