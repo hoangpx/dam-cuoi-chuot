@@ -270,11 +270,11 @@ const C4_HOME_BASE = 20000;
 // the thirteen things the altar room is furnished with, as the branch's design sheet lists them (docs/thiet-ke/nha-the-ky-17.html),
 // cheapest first. The sheet prices them in quan; the shop takes twice that (owner's rule) and the purse keeps đồng, 600 the quan.
 const C4_QUAN = 600;
-const C4_SHOP_ITEMS = [['chieu', 'Chiếu hoa chữ hỉ cạp điều', 8], ['denlong', 'Đôi đèn lồng lụa Phúc Thọ', 10], ['tranh', 'Đôi tranh Đông Hồ chăn trâu', 12],
-  ['channen', 'Đôi chân nến đồng có đĩa hứng', 20], ['caudoi', 'Đôi câu đối đen chữ vàng', 25], ['cuavong', 'Cửa võng chạm rồng', 40],
-  ['hoanhphi', 'Hoành phi nền đen, mũ rồng thếp vàng', 45], ['luhuong', 'Đỉnh đồng ba chân nghê, hạc nhỏ, lọ đồng', 55],
-  ['anthờ', 'Án gian và sập thờ chạm thủng, bát hương, mâm quả', 60], ['tuche', 'Tủ chè khảm ốc, gốm men lam', 60],
-  ['sap', 'Sập gụ khảm ốc, cơi trầu bạc', 70], ['lucbinh', 'Đôi lục bình chim công đắp hoa vàng', 90], ['hac', 'Đôi hạc đồng thếp vàng đứng rùa', 120]];
+const C4_SHOP_ITEMS = [['chieu', 'Chiếu hoa chữ hỉ cạp điều', 16], ['denlong', 'Đôi đèn lồng lụa Phúc Thọ', 20], ['tranh', 'Đôi tranh Đông Hồ chăn trâu', 24],
+  ['channen', 'Đôi chân nến đồng có đĩa hứng', 40], ['caudoi', 'Đôi câu đối đen chữ vàng', 50], ['cuavong', 'Cửa võng chạm rồng', 80],
+  ['hoanhphi', 'Hoành phi nền đen, mũ rồng thếp vàng', 90], ['luhuong', 'Đỉnh đồng ba chân nghê, hạc nhỏ, lọ đồng', 110],
+  ['anthờ', 'Án gian và sập thờ chạm thủng, bát hương, mâm quả', 120], ['tuche', 'Tủ chè khảm ốc, gốm men lam', 120],
+  ['sap', 'Sập gụ khảm ốc, cơi trầu bạc', 140], ['lucbinh', 'Đôi lục bình chim công đắp hoa vàng', 180], ['hac', 'Đôi hạc đồng thếp vàng đứng rùa', 240]];
 const c4HasLastHouse = () => C4_HOUSE_ON && ((C4_LV[SAVE4.lv] && C4_LV[SAVE4.lv].house === 'own') || c4Owned().some(g => g !== 'trau' && c4SLv(g).house === 'own'));
 const c4HasHome = () => !!(SAVE4.home && SAVE4.home.own);
 const c4HomePrice = () => c4HousePrice(C4_HOME_BASE);
@@ -282,7 +282,7 @@ const c4HomePrice = () => c4HousePrice(C4_HOME_BASE);
 // chưa có nội thất gì" — with a Sắm sanh button: sắm sanh is what the old folks called kitting a house out for a new
 // household. Every thing costs its listed price (it was twice, until 2026-10-31), and the board of the richest counts the
 // purse and the house together: buying a cửa võng empties the purse and leaves the place on the board where it was.
-const C4_ITEM_X2 = 1;   // the listed price as is (owner, 2026-10-31: it was doubled, and nobody was told)
+const C4_ITEM_X2 = 1;   // the prices in C4_SHOP_ITEMS are the real ones, in quan (owner, 2026-10-31: they used to be halved and doubled here, unseen)
 const c4HomeItems = () => (SAVE4.home && SAVE4.home.items) || [];
 const c4ItemPrice = it => it[2] * C4_QUAN * C4_ITEM_X2;
 const c4HomeValue = () => C4_SHOP_ITEMS.reduce((n, it) => n + (c4HomeItems().includes(it[0]) ? c4ItemPrice(it) : 0), 0);
