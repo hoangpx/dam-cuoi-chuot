@@ -580,8 +580,9 @@ const C11_TREE_AT = C11_AREAS.ruong.treeAt = { '1,3': 'dao', '1,8': 'xoai', '1,1
 function c11TreeType(x, y) {
   const s = (C11_AR.treeAt || {})[x + ',' + y]; if (s) return s;
   const h = c11Hash(x, y, 5);
-  if (C11_AR.id === 'rung') return h < .42 ? 'bamboo' : h < .58 ? 'phuong' : h < .72 ? 'xoai' : h < .82 ? 'cau' : h < .92 ? 'phuong' : 'dao';
-  return h < .16 ? 'xoai' : h < .28 ? 'dao' : h < .38 ? 'xoai' : h < .5 ? 'cau' : h < .62 ? 'bamboo' : h < .7 ? 'banana' : h < .8 ? 'dao' : h < .9 ? 'phuong' : 'dua';
+  // mostly bamboo and bananas in place of the other trees (owner 2026-10-31): round the village 4 in 10 bananas, 3 in 10 bamboo; in the wood half bamboo, a quarter bananas
+  if (C11_AR.id === 'rung') return h < .5 ? 'bamboo' : h < .75 ? 'banana' : h < .84 ? 'phuong' : h < .92 ? 'xoai' : 'cau';
+  return h < .3 ? 'bamboo' : h < .7 ? 'banana' : h < .78 ? 'xoai' : h < .86 ? 'dao' : h < .92 ? 'cau' : h < .97 ? 'phuong' : 'dua';
 }
 
 /* the ground is painted once: mottled grass, forest floor, a lane, the field's earth, the pond with its sand and stones. Soft edges
