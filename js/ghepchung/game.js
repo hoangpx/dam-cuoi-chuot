@@ -57,6 +57,7 @@ function jgOpen(pz) {
     if (s === 'newpic') setTimeout(jgReopenRoom, 600);
     else if (s === 'hidden') { toast(lg('Tranh này đang chờ admin xem xét', 'This picture is waiting for the admin'), 3.4); jgBack(); }
     else if (s === 'deleted') { toast(lg('Phòng đã bị xóa', 'The room was deleted'), 3); jgBack(); }
+    else if (s === 'idle') { toast(lg('Bạn nghỉ lâu nên phòng đã ngắt kết nối. Bấm vào phòng để vào lại nhé', 'You were away a while, so the room let go. Tap the room to come back'), 4); jgBack(); }
     else if (s === 'kicked') { toast(lg('Chủ phòng đã mời bạn ra khỏi phòng', 'The owner removed you from the room'), 3.4); jgBack(); }
     else if (s === 'wrongpass' || s === 'tries') { toast(lg('Không vào được phòng (mật khẩu)', 'Could not enter the room (password)'), 3); jgBack(); }
   }, pz.room ? { room: pz.room } : pz.id);

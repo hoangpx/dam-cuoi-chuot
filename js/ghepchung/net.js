@@ -22,7 +22,7 @@ const JG_NET = {
     ws.onerror = () => { if (this.ws === ws) this.lost(); };
     ws.onclose = ev => {
       if (this.ws !== ws) return;
-      if (ev && (ev.code === 4003 || ev.code === 4001 || ev.code === 4005 || ev.code === 4006 || (ev.code >= 4007 && ev.code <= 4012))) { this.up = false; this.wantOn = false; clearTimeout(this.retry); this.ws = null; this.status({ 4006: 'reported', 4003: 'blocked', 4005: 'crowded', 4007: 'kicked', 4009: 'deleted', 4012: 'hidden', 4008: 'newpic', 4010: 'wrongpass', 4011: 'tries' }[ev.code] || 'replaced'); return; }   // told to go away: no retrying
+      if (ev && (ev.code === 4003 || ev.code === 4001 || ev.code === 4005 || ev.code === 4006 || (ev.code >= 4007 && ev.code <= 4013))) { this.up = false; this.wantOn = false; clearTimeout(this.retry); this.ws = null; this.status({ 4006: 'reported', 4003: 'blocked', 4005: 'crowded', 4007: 'kicked', 4009: 'deleted', 4012: 'hidden', 4008: 'newpic', 4010: 'wrongpass', 4011: 'tries', 4013: 'idle' }[ev.code] || 'replaced'); return; }   // told to go away: no retrying
       this.lost();
     };
   },

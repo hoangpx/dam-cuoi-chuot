@@ -142,7 +142,7 @@ class Jigsaw extends DurableObject {
     }
     if (u.pathname === '/count') return new Response(JSON.stringify({ ver: VER, freeze: FREEZE, done: this.done, n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, left: this.groups.size - 1, puzzle: this.n, total: this.total }));
     const pair = new WebSocketPair(), [client, server] = Object.values(pair); server.accept();
-    const c = { ws: server, id: 'j' + (this.nextId++), dev: '', name: '', look: null, joined: false, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], ip, at: Date.now(), liftAt: 0, joinT: [], jn: 0, strikes: 0 };
+    const c = { ws: server, id: 'j' + (this.nextId++), dev: '', name: '', look: null, joined: false, holding: null, win: 0, cnt: 0, chatAt: 0, emoAt: 0, awards: [], ip, at: Date.now(), liftAt: 0, joinT: [], jn: 0, strikes: 0, act: Date.now() };
     this.conns.set(c.id, c);
     server.addEventListener('message', e => this.onMsg(c, e.data));
     server.addEventListener('close', () => this.onClose(c)); server.addEventListener('error', () => this.onClose(c));
@@ -166,6 +166,7 @@ class Jigsaw extends DurableObject {
   async onMsg(c, raw) {
     const now = Date.now(); if (now - c.win > 1000) { c.win = now; c.cnt = 0; } if (++c.cnt > 60) return;
     let m; try { m = JSON.parse(raw); } catch (e) { return; } if (!m || typeof m.t !== 'string') return;
+    if (m.t !== 'board') c.act = now;   // somebody is doing something: the idle clock (cfg.idleMs) starts again
     if (m.t === 'hello' && !c.joined) {
       let name = String(m.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12); if (!name) name = 'Chuột ' + c.id.slice(1);
       c.name = cleanChat(name) || name; c.look = cleanLook(m.look); c.dev = /^[a-z0-9]{12,40}$/.test(m.dev || '') ? m.dev : 'x' + c.id + Math.random().toString(36).slice(2, 10);
@@ -450,6 +451,7 @@ class Jigsaw extends DurableObject {
   }
   // every 100 ms: the poses of the groups people are carrying; and release holds nobody has touched for a while
   step() {
+    if (cfg.idleMs) { const now = Date.now(); if (now - (this.idleAt || 0) > Math.min(30000, cfg.idleMs / 2)) { this.idleAt = now; for (const c of [...this.conns.values()]) if (!c.holding && now - c.act > cfg.idleMs) { this.send(c, { t: 'idle' }); try { c.ws.close(4013, 'idle'); } catch (e) {} this.onClose(c); } } }   // a tab left open keeps the room running all day: send it away after cfg.idleMs without a single move (owner, 2026-11-01)
     if (this.dirty.size) { const p = []; for (const gid of this.dirty) { const g = this.groups.get(gid); if (g) p.push([gid, r1(g.x), r1(g.y), r3(g.a)]); } this.dirty.clear(); this.all({ t: 'poses', p }); }
     const now = Date.now(); for (const g of this.groups.values()) if (g.by && (now - g.heldAt > HOLD_IDLE || (g.nudgeAt && now > g.nudgeAt) || (g.home && now - g.liftAt > BIG_HOLD_MS))) { if (g.home && now - g.liftAt > BIG_HOLD_MS) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: BIG_LOCK_MS / 1000 }); } else if (g.nudgeAt && now > g.nudgeAt) { const h = this.conns.get(g.by); if (h) this.send(h, { t: 'timeup', g: g.id, sec: LOCK_MS / 1000 }); } this.release(g.id); }
   }
