@@ -971,6 +971,7 @@ function updateC11(dt) {
   if (G.pend) { G.pend.t -= dt; if (G.pend.t <= 0) { const a = G.pend.a; G.pend = null; if (a.v) { if (G.vill.includes(a.v)) c11TalkTo(a.v); } else c11Act(a.tx, a.ty); } }
   // walking: keys first, else the route a tap made
   const K = G.keys; let dx = (K.ArrowRight || K.KeyD ? 1 : 0) - (K.ArrowLeft || K.KeyA ? 1 : 0), dy = (K.ArrowDown || K.KeyS ? 1 : 0) - (K.ArrowUp || K.KeyW ? 1 : 0);
+  if (G.joy) { dx += G.joy.x; dy += G.joy.y; }                          // the on-screen joystick on phones (nutdi.js)
   const sp = SAVE11.stamina <= 0 ? 1.5 : 2.8; G.moving = false;
   if (dx || dy) {
     G.go = null; G.kbd = true; const l = Math.hypot(dx, dy); dx /= l; dy /= l;
