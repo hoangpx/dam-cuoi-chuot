@@ -286,4 +286,4 @@ const C11_ITEM_ROWS = [
 ];
 const C11_ITEMS = {};
 for (const [id, name, cat, price, food, col, desc] of C11_ITEM_ROWS) C11_ITEMS[id] = { id, name, cat, price, food, col, desc };
-const C11_STACK = 99, C11_BAG = 10, C11_CHEST = 30;
+const C11_STACK = 99; let C11_BAG = 10, C11_CHEST = 30;      // grow with upgrades and levels (tiendo.js c11Caps)

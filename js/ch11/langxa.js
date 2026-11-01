@@ -446,11 +446,16 @@ function c11DrawBook(g, W, H, m) {
   const met = C11_PPL.filter(p => c11PP(p.id).met).sort((a, b) => c11PP(b.id).f - c11PP(a.id).f || a.n - b.n);
   g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK; g.font = '900 22px "Playfair Display", serif'; g.fillText('Sổ tay', W / 2, py + 26);
   const x0 = c11Tag(g, px + pw - 12, py + 12, '✕', { right: true, size: 13, h: 28, pad: 18 }); btn.push({ r: x0, f: () => { C11.menu = null; } });
-  const t1 = c11Tag(g, W / 2 - 5, py + 42, `Dân làng · ${met.length}`, { right: true, size: 12, h: 28, pad: 20, fill: tab === 'dan' ? '#f2cf5a' : '#f4ead0' });
-  const t2 = c11Tag(g, W / 2 + 5, py + 42, `Việc làng${Q.act.length ? ` · ${Q.act.length}` : ''}`, { size: 12, h: 28, pad: 20, fill: tab === 'viec' ? '#f2cf5a' : '#f4ead0' });
-  btn.push({ r: t1, f: () => { m.tab = 'dan'; m.sel = null; c11Sfx.tap(); } }, { r: t2, f: () => { m.tab = 'viec'; m.sel = null; c11Sfx.tap(); } });
+  /* four tabs in a row: villagers, jobs, the fish notebook and oneself (tiendo.js) */
+  const tabs = [['dan', `Dân làng · ${met.length}`], ['viec', `Việc làng${Q.act.length ? ` · ${Q.act.length}` : ''}`], ['ca', 'Cá'], ['ban', 'Bản thân']];
+  let fs = 12, pad = 18; g.font = `700 ${fs}px "Be Vietnam Pro", sans-serif`; const tw = () => tabs.reduce((s, t) => s + g.measureText(t[1]).width + pad, 0) + 6 * (tabs.length - 1);
+  while (tw() > pw - 20 && fs > 9) { fs -= .5; pad = Math.max(10, pad - 1); g.font = `700 ${fs}px "Be Vietnam Pro", sans-serif`; }
+  let tx = W / 2 - tw() / 2;
+  for (const [id, label] of tabs) { const r = c11Tag(g, tx, py + 42, label, { size: fs, h: 28, pad, fill: tab === id ? '#f2cf5a' : '#f4ead0' }); tx += r[2] + 6; btn.push({ r, f: () => { m.tab = id; m.sel = null; c11Sfx.tap(); } }); }
   const top = py + 80;
-  if (tab === 'viec') c11DrawJobs(g, W, px, py, pw, ph, top, m, btn, Q);
+  if (tab === 'ca' && typeof c11DrawFishDex === 'function') c11DrawFishDex(g, W, px, py, pw, ph, top, m, btn);
+  else if (tab === 'ban' && typeof c11DrawSelf === 'function') c11DrawSelf(g, W, px, py, pw, ph, top);
+  else if (tab === 'viec') c11DrawJobs(g, W, px, py, pw, ph, top, m, btn, Q);
   else if (m.sel) c11DrawPerson(g, px, py, pw, ph, m, btn);
   else if (!met.length) { g.fillStyle = INK; g.font = '600 13px "Be Vietnam Pro", sans-serif'; g.fillText('Chưa quen ai trong làng.', W / 2, py + ph / 2); }
   else {

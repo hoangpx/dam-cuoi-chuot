@@ -103,10 +103,14 @@ const C11_BANANA = (() => {
   let built = null;
   const build = () => {
     if (built) return built;
-    const leaves = SPEC.map(leaf), bunches = { nho: bunch('nho'), xanh: bunch('xanh'), chin: bunch('chin') }, tr = trunk(), cw = 270, chh = 280, c = document.createElement('canvas'); c.width = cw * R; c.height = chh * R;
-    const g = c.getContext('2d'); g.setTransform(R, 0, 0, R, 135 * R, 250 * R);
+    const leaves = SPEC.map(leaf), bunches = { nho: bunch('nho'), xanh: bunch('xanh'), chin: bunch('chin') }, tr = trunk();
+    /* the still picture is cut tight round the leaves: the renderer fades a tree whose crown box covers the mouse, and a loose box
+       made bananas fade in and out whenever the mouse walked anywhere near behind them (players: "chuối lúc ẩn lúc hiện") */
+    const ux0 = Math.min(...leaves.map(l => l.x0)), uy0 = Math.min(...leaves.map(l => l.y0)), ux1 = Math.max(...leaves.map(l => l.x0 + l.w)), uy1 = Math.max(...leaves.map(l => l.y0 + l.h));
+    const cw = ux1 - ux0, chh = uy1 - uy0, c = document.createElement('canvas'); c.width = Math.ceil(cw * R); c.height = Math.ceil(chh * R);
+    const g = c.getContext('2d'); g.setTransform(R, 0, 0, R, -ux0 * R, -uy0 * R);
     leaves.forEach(l => g.drawImage(l.c, l.x0, l.y0, l.w, l.h));
-    return (built = { leaves, bunches, trunk: tr, still: { c, x0: -135, y0: -250, w: cw, h: chh } });
+    return (built = { leaves, bunches, trunk: tr, still: { c, x0: ux0, y0: uy0, w: cw, h: chh } });
   };
   /* the bunch a tree carries comes from how many days ago it was last cut (SAVE11.chuoi[key] = that day): none for 3 days, a small
      green bunch, a full green one, then ripe from day 7 on until someone cuts it. A tree never cut counts from a made-up day spread
@@ -180,8 +184,8 @@ const C11_BANANA = (() => {
   const oldIcon = c11ItemIcon;
   c11ItemIcon = function (g, id, cx, cy, sz, n) {
     if (id !== 'buong_chuoi') return oldIcon(g, id, cx, cy, sz, n);
-    const b = C11_BANANA.build().bunches.chin, s = sz / 62;
-    g.drawImage(b.c, cx - (b.x0 + b.w / 2) * s, cy - (b.y0 + b.h / 2) * s, b.w * s, b.h * s);
+    const b = C11_BANANA.build().bunches.chin, s = sz * .92 / Math.max(b.w, b.h);       // fits inside the slot, centred on it
+    g.drawImage(b.c, cx - b.w * s / 2, cy - b.h * s / 2, b.w * s, b.h * s);
     if (n > 1) { g.font = `800 ${Math.max(9, Math.round(sz * .28))}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'right'; g.textBaseline = 'alphabetic'; g.lineWidth = 3; g.strokeStyle = '#fbf4dc'; g.strokeText(n, cx + sz * .56, cy + sz * .58); g.fillStyle = INK; g.fillText(n, cx + sz * .56, cy + sz * .58); }
   };
   const visiting = () => typeof C11O !== 'undefined' && C11O.visit;

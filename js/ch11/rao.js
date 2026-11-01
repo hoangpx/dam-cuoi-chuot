@@ -1,6 +1,6 @@
 /* Chương XI · animals raid the crops, fences keep them out (owner 2026-10-31: "trâu, bò, gà có thể vào ăn rau, nên người chơi phải đứng canh;
    ấn vào con trâu mà đứng gần thì nó chạy đi một đoạn ra xa; muốn bảo vệ rau thì phải học đóng hàng rào và tốn gỗ").
-   - RAIDERS: the wild hens, cocks, cows and buffalo on the home farm (not the ones kept in pens). Every 30-70 s an idle one picks the nearest
+   - RAIDERS: the wild hens, cocks, cows and buffalo on the home farm (not the ones kept in pens). Every 3-6 minutes an idle one picks the nearest
      crop within 9 tiles, walks to it, grazes 2.5 s and the plant is gone (the soil stays). Harvesting it, shooing the animal or a fence in
      the way stops the raid.
    - SHOOING: tap a wild cow or buffalo with the player within 2.8 tiles and it bolts about 4.5 tiles away from the player (a hen is
@@ -12,20 +12,24 @@ const RAO_WOOD = 2, RAO_RAID = ['ga', 'trong', 'bo', 'trau'], RAO_SHOO = ['bo', 
 SAVE11.fences = SAVE11.fences || {};
 C11_SKILLS.rao = { name: 'Làm hàng rào', who: 'trade:thợ mộc', alt: 'tho', hearts: 2, fee: 50, desc: 'Đóng hàng rào tre quanh ruộng cho trâu bò gà không vào ăn rau.', say: ['Rào phải cắm cọc sát nhau, buộc lạt hai tầng, trâu húc cũng không đổ.', 'Rào kín quanh ruộng thì ngủ yên, anh ạ, khỏi phải ngồi canh.'] };
 const raoOn = (x, y) => !!SAVE11.fences[x + ',' + y];
+/* the animal's body, not only its middle, touches a fence (players saw a buffalo slip through where two pieces meet only at a corner) */
+const raoHit = (x, y) => [[0, 0], [-.3, 0], [.3, 0], [0, -.14], [0, .14]].some(([dx, dy]) => raoOn(Math.floor(x + dx), Math.floor(y + dy)));
+/* the nearest free spot for an animal a fence was built on, so it is never left stuck inside the fence */
+const raoOut = b => { let best = null, bd = 1e9; for (let ty = Math.floor(b.y) - 3; ty <= Math.floor(b.y) + 3; ty++) for (let tx = Math.floor(b.x) - 3; tx <= Math.floor(b.x) + 3; tx++) { const x = tx + .5, y = ty + .6, d = (x - b.x) ** 2 + (y - b.y) ** 2; if (d < bd && c11Free(x, y) && !raoHit(x, y)) { bd = d; best = [x, y]; } } return best; };
 const raoRaider = b => !b.herd && !b.fly && b !== C11.carry && RAO_RAID.includes(b.kind);
 function raoTarget(b) {                                                                    // the nearest planted tile within 9 tiles
   let best = null, bd = 81;
   for (const key of Object.keys(SAVE11.tiles)) { const t = SAVE11.tiles[key]; if (!t || !t.crop || key.includes(':')) continue; const [x, y] = key.split(',').map(Number), d = (x + .5 - b.x) ** 2 + (y + .6 - b.y) ** 2; if (d < bd) { bd = d; best = [x, y]; } }
   return best;
 }
-const raoCancel = b => { b.raid = null; b.rc = 20 + Math.random() * 45; };
+const raoCancel = b => { b.raid = null; b.rc = 180 + Math.random() * 180; };          // raids are rare (players: too often): 3-6 minutes between tries
 const raoHome = (b, dt) => {                                                                // ---- one raider per frame
   const r = b.raid;
   if (b.flee) { const f = b.flee; f.t -= dt; const nx = b.x + f.dx * 3.4 * dt, ny = b.y + f.dy * 3.4 * dt;
-    if (f.t <= 0 || !c11Free(nx, ny) || raoOn(Math.floor(nx), Math.floor(ny))) b.flee = null; else { b.x = nx; b.y = ny; b.face = f.dx >= 0 ? 1 : -1; b.moving = true; b.ph += dt * 12; b.wait = Math.max(b.wait, .3); b.to = null; }
+    if (f.t <= 0 || !c11Free(nx, ny) || raoHit(nx, ny)) b.flee = null; else { b.x = nx; b.y = ny; b.face = f.dx >= 0 ? 1 : -1; b.moving = true; b.ph += dt * 12; b.wait = Math.max(b.wait, .3); b.to = null; }
     return; }
-  if (!r) { b.rc = (b.rc === undefined ? 25 + Math.random() * 40 : b.rc) - dt;
-    if (b.rc <= 0) { const t = raoTarget(b); if (t) { b.raid = { tx: t[0], ty: t[1], st: 'go', bump: 0 }; b.wait = 0; b.to = t; } else b.rc = 15 + Math.random() * 20; }
+  if (!r) { b.rc = (b.rc === undefined ? 150 + Math.random() * 180 : b.rc) - dt;
+    if (b.rc <= 0) { const t = raoTarget(b); if (t) { b.raid = { tx: t[0], ty: t[1], st: 'go', bump: 0 }; b.wait = 0; b.to = t; } else b.rc = 60 + Math.random() * 60; }
     return; }
   const tile = SAVE11.tiles[r.tx + ',' + r.ty];
   if (!tile || !tile.crop) { raoCancel(b); return; }                                       // harvested meanwhile
@@ -44,8 +48,10 @@ c11NewUpdate = function (dt) {
   const G = C11;
   if (G.area === 'ruong') for (const b of G.beasts || []) {
     if (b.herd || b.fly || b === G.carry) { b.lx = b.x; b.ly = b.y; continue; }
-    if (raoOn(Math.floor(b.x), Math.floor(b.y)) && b.lx !== undefined) {                    // walked into a fence: back off
+    const inF = raoHit(b.x, b.y), wasF = b.lx !== undefined && raoHit(b.lx, b.ly);
+    if (inF && b.lx !== undefined && !wasF) {                                                // walked into a fence: back off
       b.x = b.lx; b.y = b.ly; b.to = null; b.wait = Math.max(b.wait, 1.2); b.blocked = 1; b.moving = false; }
+    else if (inF) { const p = raoOut(b); if (p) { b.x = p[0]; b.y = p[1]; b.to = null; } b.lx = b.x; b.ly = b.y; }   // a fence went up on it: step out (it used to be stuck there for good)
     else { b.lx = b.x; b.ly = b.y; }
     if (raoRaider(b) && !G.sleep && SAVE11.day >= 1) raoHome(b, dt);
   }

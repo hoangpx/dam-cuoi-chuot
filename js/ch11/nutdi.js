@@ -23,6 +23,8 @@
   setInterval(() => {
     const vis = touch.matches && typeof S !== 'undefined' && S.mode === 'c11play' && typeof C11 !== 'undefined' && !C11.menu && !C11.fade && !C11.sleep;
     if (pad.style.display !== (vis ? 'block' : 'none')) pad.style.display = vis ? 'block' : 'none';
+    const rows = typeof C11_BAG !== 'undefined' ? Math.ceil(C11_BAG / 10) : 1, bot = `calc(${132 + (rows - 1) * 50}px + env(safe-area-inset-bottom,0px))`;   // above every row of a bigger bag
+    if (pad.style.bottom !== bot) pad.style.bottom = bot;
     if (!vis && id !== null) { id = null; C11.joy = null; knob.style.transform = ''; }
   }, 150);
 })();

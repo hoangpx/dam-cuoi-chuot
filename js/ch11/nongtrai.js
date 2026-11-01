@@ -30,7 +30,8 @@ const C11_DAY0 = 6 * 60, C11_DAY1 = 26 * 60, C11_MPS = 3.2;          // 6:00 unt
    (loses a tenth of the purse, wakes at half energy). Sleeping at the bed restores all, sleeping past 22:00 only three quarters;
    eating a crop restores some at once. */
 const c11Sfx = { tap() {}, pluck() {}, plop() {}, thump() {} };   // chương IX makes no sound at all (owner 2026-10-27: "bỏ tiếng trong game này")
-const C11_WALK = 1, C11_EN = 100, C11_FAINT = -15, C11_COST = { sickle: .5, hoe: 1.5, axe: 2, can: 1, seed: .5, dan: 1.5 }, C11_FOOD = { ca: 12, bi: 20, ngo: 16, lua: 14, muong: 8, cai: 8, khoai: 18, dau: 10, muop: 12, ot: 3, nam: 10, rau: 6, qua: 12 };
+let C11_EN = 100, C11_HP = 100;                                  // max sức / máu, raised by levels and clothes (tiendo.js c11Caps)
+const C11_WALK = 1, C11_FAINT = -15, C11_COST = { sickle: .5, hoe: 1.5, axe: 2, can: 1, seed: .5, dan: 1.5 }, C11_FOOD = { ca: 12, bi: 20, ngo: 16, lua: 14, muong: 8, cai: 8, khoai: 18, dau: 10, muop: 12, ot: 3, nam: 10, rau: 6, qua: 12 };
 const C11_FORAGE = { nam: { name: 'Nấm', sell: 18, col: '#b0523a' }, rau: { name: 'Rau dại', sell: 9, col: '#4f8a3e' }, qua: { name: 'Quả rừng', sell: 14, col: '#c8402f' } };
 const c11Info = k => k === 'go' ? { name: 'gỗ', col: '#8a5a38' } : k === 'co' ? { name: 'cỏ', col: '#4f8a3e' } : C11_CROPS[k] || C11_FORAGE[k] || (C11_ITEMS[k] ? { name: C11_ITEMS[k].name.toLowerCase(), col: '#a3332a' } : { name: k, col: INK });
 const C11_NEW = () => ({ v: 1, money: 0, day: 1, mins: C11_DAY0, stamina: 100, hp: 100, water: 6, tiles: {}, seeds: { ca: 6, bi: 3, ngo: 0, lua: 4, muong: 4, cai: 0, khoai: 0, dau: 0, muop: 0, ot: 0 }, sel: 'ca', inv: { ca: 0, bi: 0, ngo: 0, lua: 0, muong: 0, cai: 0, khoai: 0, dau: 0, muop: 0, ot: 0, go: 0, co: 0, nam: 0, rau: 0, qua: 0 }, cut: {}, gone: {}, hits: {}, drops: [], clear: {} });
@@ -815,8 +816,8 @@ function c11Spend(n) {
 function c11EatSlot(i) {
   const sl = SAVE11.bag[i]; if (!sl || C11.sleep) return; const it = C11_ITEMS[sl.id];
   if (!it.food) { c11Msg(`${it.name}: ${it.desc}`, '#5b2f1f'); return; }
-  if (SAVE11.stamina >= C11_EN && SAVE11.hp >= 100) { c11Msg('Còn khoẻ lắm, chưa cần ăn', '#5b2f1f'); return; }
-  c11Take(sl.id, 1); SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + it.food); SAVE11.hp = Math.min(100, (SAVE11.hp ?? 100) + it.food / 2); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${it.food} sức`, '#2f6a4c'); persist11();
+  if (SAVE11.stamina >= C11_EN && SAVE11.hp >= C11_HP) { c11Msg('Còn khoẻ lắm, chưa cần ăn', '#5b2f1f'); return; }
+  c11Take(sl.id, 1); SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + it.food); SAVE11.hp = Math.min(C11_HP, (SAVE11.hp ?? C11_HP) + it.food / 2); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${it.food} sức`, '#2f6a4c'); persist11();
 }
 const c11Price = (id, mult) => C11_ITEMS[id].cat === 'truyen' ? 0 : Math.round(C11_ITEMS[id].price * mult);
 function c11SellSlot(i, mult) {
@@ -839,8 +840,8 @@ function c11OpenFood() {
   const dishes = [['Xôi vò', 'dẻo thơm', 12, 20, 0], ['Bún riêu', 'nóng hổi', 30, 45, 10], ['Cơm nếp thịt', 'bữa đủ đầy', 55, 100, 30]];
   C11.menu = { title: 'Quán ăn', rows: dishes.map(([name, sub, price, en, hp]) => ({ name, sub: `${sub} · +${en} sức${hp ? ` · +${hp} máu` : ''}`, price, f: () => {
     if (SAVE11.money < price) { c11Msg('Không đủ tiền', '#a3332a'); return; }
-    if (SAVE11.stamina >= C11_EN && SAVE11.hp >= 100) { c11Msg('Đang no căng rồi', '#5b2f1f'); return; }
-    SAVE11.money -= price;  SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + en); SAVE11.hp = Math.min(100, SAVE11.hp + hp); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${en} sức`, '#2f6a4c'); persist11();
+    if (SAVE11.stamina >= C11_EN && SAVE11.hp >= C11_HP) { c11Msg('Đang no căng rồi', '#5b2f1f'); return; }
+    SAVE11.money -= price;  SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + en); SAVE11.hp = Math.min(C11_HP, SAVE11.hp + hp); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${en} sức`, '#2f6a4c'); persist11();
   } })) };
 }
 function c11StartSleep(forced) { if (C11.sleep) return; C11.go = null; C11.sleep = { t: 0, did: false, forced }; }
@@ -860,7 +861,7 @@ function c11NewDay() {
   if (C11.area !== 'ruong') c11Enter('ruong', 4.5, 5.7, true);
   c11NewDayNew();
   const late = c11QuestNewDay();
-  SAVE11.day++; SAVE11.mins = C11_DAY0; SAVE11.hp = C11.fainted ? 50 : 100; SAVE11.stamina = C11.fainted ? C11_EN / 2 : (C11.late || C11.passed) ? C11_EN * .75 : C11_EN; C11.px = 4.5; C11.py = 5.7; C11.face = 1; persist11();
+  SAVE11.day++; SAVE11.mins = C11_DAY0; SAVE11.hp = C11.fainted ? C11_HP / 2 : C11_HP; SAVE11.stamina = C11.fainted ? C11_EN / 2 : (C11.late || C11.passed) ? C11_EN * .75 : C11_EN; C11.px = 4.5; C11.py = 5.7; C11.face = 1; persist11();
   c11Msg(C11.faintMsg || (died ? `Ngày ${SAVE11.day} · ${died} cây chết khô vì không được tưới` : late ? `Ngày ${SAVE11.day} · ${late} việc của đình đã quá hạn` : ripe ? `Ngày ${SAVE11.day} · ${ripe} cây đã chín` : `Ngày ${SAVE11.day}`), C11.faintMsg ? '#a3332a' : '#2f6a4c'); C11.faintMsg = null; C11.fainted = false; C11.late = false; C11.passed = false; C11.warnLate = false;
 }
 
@@ -960,7 +961,7 @@ function updateC11(dt) {
   G.saveT += dt; if (G.saveT > 8) { G.saveT = 0; persist11(); }
   if (G.swing > 0) G.swing -= dt; if (G.hurt > 0) G.hurt -= dt;
   if (SAVE11.hp === undefined) SAVE11.hp = 100;
-  if (SAVE11.stamina > 40 && SAVE11.hp < 100) SAVE11.hp = Math.min(100, SAVE11.hp + dt * .4);   // rested, the body mends slowly
+  if (SAVE11.stamina > 40 && SAVE11.hp < C11_HP) SAVE11.hp = Math.min(C11_HP, SAVE11.hp + dt * .4);   // rested, the body mends slowly
   for (let i = SAVE11.drops.length - 1; i >= 0; i--) {
     const d = SAVE11.drops[i]; if ((d.a || 'ruong') !== G.area) continue; if (d.t < d.dur) { d.t += dt; continue; }
     if (Math.hypot(G.px - d.x, G.py - .25 - d.y) < .9) {
@@ -1294,8 +1295,9 @@ function c11DrawMenu(g, W, H) {
 }
 function c11DrawGrid(g, W, H, m) {                                   // the bag beside the chest, or the bag at a selling place
   g.fillStyle = 'rgba(20,16,30,.55)'; g.fillRect(0, 0, W, H);
-  const chest = m.grid === 'chest', cols = chest ? 6 : 5, cs = Math.min(52, Math.floor((Math.min(W - 28, 420) - 24 - (cols - 1) * 6) / cols)), gap = 6;
-  const gw = cols * cs + (cols - 1) * gap, pw = gw + 32, bagRows = 2, chestRows = chest ? 5 : 0;
+  const chest = m.grid === 'chest', cols = chest ? 6 : 5, gap = 6, bagRows = Math.ceil(C11_BAG / cols), chestRows = chest ? Math.ceil(C11_CHEST / cols) : 0;   // rows follow the bag and chest sizes
+  const cs = Math.max(26, Math.min(52, Math.floor((Math.min(W - 28, 420) - 24 - (cols - 1) * 6) / cols), Math.floor((H - 16 - 60 - (chest ? 30 : 44) - 58) / (bagRows + chestRows)) - gap));
+  const gw = cols * cs + (cols - 1) * gap, pw = gw + 32;
   const ph = 60 + bagRows * (cs + gap) + (chest ? 30 + chestRows * (cs + gap) : 44) + 58, px = (W - pw) / 2, py = Math.max(8, (H - ph) / 2);
   g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.roundRect(px, py, pw, ph, 14); g.fill(); g.stroke();
   g.fillStyle = INK; g.font = '900 20px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(m.title, W / 2, py + 24);
@@ -1722,10 +1724,10 @@ function c11Hud(g, W, H, st) {
   c11Tag(g, W - 10, 10, c11Money(), { right: true, fill: '#f7e3a4' });
   c11Tag(g, W - 10, 46, `Ngày ${SAVE11.day} · ${hh}:${String(mm).padStart(2, '0')}`, { right: true, size: 12, h: 26, pad: 18 });
   // health
-  { const hw = 120, hx = W - 10 - hw, hy0 = 80, hf = Math.max(0, SAVE11.hp ?? 100) / 100;
+  { const hw = 120, hx = W - 10 - hw, hy0 = 80, hf = Math.max(0, SAVE11.hp ?? C11_HP) / C11_HP;
     g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.roundRect(hx, hy0, hw, 14, 7); g.fill(); g.stroke();
     if (hf > 0) { g.fillStyle = G.hurt > 0 && Math.floor(G.t * 12) % 2 ? '#f08070' : '#c8402f'; g.beginPath(); g.roundRect(hx + 2, hy0 + 2, Math.max(8, (hw - 4) * hf), 10, 5); g.fill(); }
-    g.fillStyle = INK; g.font = '700 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText('Máu', hx - 6, hy0 + 8); g.textAlign = 'center'; g.fillText(Math.round(Math.max(0, SAVE11.hp ?? 100)) + '/100', hx + hw / 2, hy0 + 8); }
+    g.fillStyle = INK; g.font = '700 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText('Máu', hx - 6, hy0 + 8); g.textAlign = 'center'; g.fillText(Math.round(Math.max(0, SAVE11.hp ?? C11_HP)) + '/' + C11_HP, hx + hw / 2, hy0 + 8); }
   // stamina
   const bw = 120, bx = W - 10 - bw, by = 100;
   g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.roundRect(bx, by, bw, 14, 7); g.fill(); g.stroke();
@@ -1734,16 +1736,16 @@ function c11Hud(g, W, H, st) {
   g.restore();
   // the bar: five tools, then the ten slots of the bag (two rows on a narrow screen); tap a slot to hold it, tap a held food again to eat it
   const own = c11OwnSlots(), nT = own.length, wide = W >= 760, bs = wide ? 48 : Math.min(46, Math.floor((W - 24 - 9 * 4) / 10)), ts = wide ? 50 : Math.min(48, bs + 6), gap = 4;
-  const bagW = C11_BAG * bs + (C11_BAG - 1) * gap, toolW = nT * ts + (nT - 1) * gap;
-  const bby = H - bs - (isTouch ? 18 : 12), bx0 = wide ? (W - (bagW + toolW + 18)) / 2 + toolW + 18 : (W - bagW) / 2;
+  const bcols = Math.min(10, C11_BAG), brows = Math.ceil(C11_BAG / bcols), bagW = bcols * bs + (bcols - 1) * gap, bagH = brows * bs + (brows - 1) * gap, toolW = nT * ts + (nT - 1) * gap;   // ten a row; a bigger bag adds rows
+  const bby = H - bagH - (isTouch ? 18 : 12), bx0 = wide ? (W - (bagW + toolW + 18)) / 2 + toolW + 18 : (W - bagW) / 2;
   const ty0 = wide ? H - ts - (isTouch ? 18 : 12) : bby - ts - 8, tx0 = wide ? (W - (bagW + toolW + 18)) / 2 : (W - toolW) / 2;
   own.forEach((si, k) => { const x = tx0 + k * (ts + gap); c11Slot(g, si, x, ty0, ts, si === G.slot); G.hud.push({ r: [x, ty0 - 8, ts, ts + 8], f: () => { G.slot = si; c11Sfx.tap(); } }); });   // only the tools you own show
-  g.fillStyle = 'rgba(244,234,208,.85)'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(bx0 - 6, bby - 6, bagW + 12, bs + 12, 10); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(244,234,208,.85)'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(bx0 - 6, bby - 6, bagW + 12, bagH + 12, 10); g.fill(); g.stroke();
   for (let i = 0; i < C11_BAG; i++) {
-    const x = bx0 + i * (bs + gap), sel = G.slot === C11_SLOTS.length + i, sl = SAVE11.bag[i];
-    g.fillStyle = sel ? '#f7e3a4' : '#efe3c4'; g.strokeStyle = sel ? '#a3332a' : 'rgba(29,25,21,.6)'; g.lineWidth = sel ? 3 : 1.4; g.beginPath(); g.roundRect(x, bby - (sel ? 5 : 0), bs, bs, 7); g.fill(); g.stroke();
-    if (sl) c11ItemIcon(g, sl.id, x + bs / 2, bby - (sel ? 5 : 0) + bs / 2, bs * .78, sl.n);
-    G.hud.push({ r: [x, bby - 6, bs, bs + 6], f: () => { if (G.slot === C11_SLOTS.length + i && sl) c11EatSlot(i); G.slot = C11_SLOTS.length + i; c11Sfx.tap(); } });
+    const x = bx0 + (i % bcols) * (bs + gap), ry = bby + Math.floor(i / bcols) * (bs + gap), sel = G.slot === C11_SLOTS.length + i, sl = SAVE11.bag[i];
+    g.fillStyle = sel ? '#f7e3a4' : '#efe3c4'; g.strokeStyle = sel ? '#a3332a' : 'rgba(29,25,21,.6)'; g.lineWidth = sel ? 3 : 1.4; g.beginPath(); g.roundRect(x, ry - (sel ? 5 : 0), bs, bs, 7); g.fill(); g.stroke();
+    if (sl) c11ItemIcon(g, sl.id, x + bs / 2, ry - (sel ? 5 : 0) + bs / 2, bs * .78, sl.n);
+    G.hud.push({ r: [x, ry - 6, bs, bs + 6], f: () => { if (G.slot === C11_SLOTS.length + i && sl) c11EatSlot(i); G.slot = C11_SLOTS.length + i; c11Sfx.tap(); } });
   }
   { const it = c11HandItem(); if (it) { const I = C11_ITEMS[it.id]; c11TagC(g, W / 2, (wide ? bby : ty0) - 40, `${I.name}${I.food ? ` · ăn: +${I.food} sức` : ''}`, { size: 11, h: 24, pad: 16, right: false, fill: '#fbf4dc' }); } }
   { const n = SAVE11.bag.filter(Boolean).length; g.fillStyle = n >= C11_BAG ? '#a3332a' : 'rgba(29,25,21,.7)'; g.font = '700 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'bottom'; g.fillText(`Túi ${n}/${C11_BAG}`, bx0, bby - 8); }

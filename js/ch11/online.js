@@ -229,7 +229,7 @@ function c11OHud(g, st) {
 function c11OUi() {
   if (C11O.ui) return C11O.ui;
   const box = document.createElement('div'), log = document.createElement('div'), row = document.createElement('div'), inp = document.createElement('input'), btn = document.createElement('button');
-  box.style.cssText = 'position:fixed;right:10px;top:calc(124px + env(safe-area-inset-top,0px));width:min(230px,50vw);z-index:30;display:none;font:600 12px "Be Vietnam Pro",sans-serif';
+  box.style.cssText = 'position:fixed;right:10px;top:calc(136px + env(safe-area-inset-top,0px));width:min(230px,50vw);z-index:30;display:none;font:600 12px "Be Vietnam Pro",sans-serif';
   log.style.cssText = 'margin-top:4px;text-align:right;pointer-events:none;color:#1d1915;text-shadow:0 0 3px #fbf4dc,0 0 3px #fbf4dc,0 0 5px #fbf4dc';
   row.style.cssText = 'display:flex;gap:4px';
   inp.maxLength = 90; inp.placeholder = 'Nói gì đó…'; inp.enterKeyHint = 'send'; inp.autocomplete = 'off';
