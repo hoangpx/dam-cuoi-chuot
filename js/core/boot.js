@@ -5,7 +5,9 @@ const cv = $('#cv'), ctx = cv.getContext('2d');
 const isTouch = matchMedia('(pointer: coarse)').matches;
 if (isTouch) document.body.classList.add('touch');
 const DPR = Math.min(devicePixelRatio || 1, isTouch ? 1.5 : 2);
-const RES = isTouch ? 1.25 : 2;                        // part pre-render resolution
+// part pre-render resolution. A weak phone gets fewer pixels per drawing (owner, 2026-11-01: lag, then mice losing their bodies and then vanishing in chương IV,
+// which is a browser running out of canvas memory): deviceMemory (Chrome / Android, GB, rounded) 2 or less -> 1, 4 or less -> 1.1; a part's canvas is RES squared
+const RES = !isTouch ? 2 : (navigator.deviceMemory && navigator.deviceMemory <= 2) ? 1 : (navigator.deviceMemory && navigator.deviceMemory <= 4) ? 1.1 : 1.25;
 const VIEW_H = 430, GROUND = 352;
 const INK = '#1d1915';
 // where the iPhone's notch / status bar ends (CSS safe area): canvas-drawn top bars (chương VI, VII) start below it (owner: the
