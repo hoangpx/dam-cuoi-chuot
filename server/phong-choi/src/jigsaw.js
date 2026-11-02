@@ -49,7 +49,7 @@ class Jigsaw extends DurableObject {
     this.conns = new Map(); this.nextId = 1; this.groups = new Map(); this.pieceG = new Int32Array(N); this.n = 1; this.seed = 1; this.done = false; this.doneAt = 0; this.startAt = 0; this.ppl = new Set();
     this.users = new Map(); this.dirty = new Set(); this.dirtyUsers = new Set(); this.saveT = null; this.tick = null; this.board = null; this.boardAt = 0; this.total = 0; this.bans = new Map(); this.ipJ = new Map(); this.locks = new Map(); this.jl = [];
     if (cfg.hib) this.rewake();   // hibernating sockets (private rooms): the object may have been out of memory while they stayed open
-    ctx.blockConcurrencyWhile(async () => {
+    this.ready = ctx.blockConcurrencyWhile(async () => {
       // The picture must never be lost: the saved state is checked piece by piece, a damaged one falls back to the backup copy, and nothing is ever
       // thrown away without being kept under another key first (a different picture = a fresh puzzle, the old one stays as 'old:<pic>').
       const st = await ctx.storage.get('pz'), bak = await ctx.storage.get('bak');
@@ -116,7 +116,7 @@ class Jigsaw extends DurableObject {
   }
   // every write is retried until it sticks; a Durable Object holds its replies until the write is stored, so a join the players see is a join that is saved
   flush(soft) {
-    if (this.dead) return Promise.resolve();
+    if (this.dead || !this.groups.size) return Promise.resolve();   // never write an empty picture over the saved one (a message handled before the state was read once did)
     const pz = { pic: PIC, n: this.n, seed: this.seed, done: this.done, doneAt: this.doneAt, startAt: this.startAt, g: this.rows() }, put = { pz, total: this.total };
     if (Date.now() - (this.bakAt || 0) > 300000 || this.done) { put.bak = pz; this.bakAt = Date.now(); }
     if (Date.now() - (this.purgeAt || 0) > 6 * 3600000) this.purgeLog().catch(() => {});
@@ -167,8 +167,8 @@ class Jigsaw extends DurableObject {
     this.nextId = top + 1; if (k) console.log('jigsaw: woke with', k, 'sockets');
   }
   connOf(ws) { for (const c of this.conns.values()) if (c.ws === ws) return c; let a = null; try { a = ws.deserializeAttachment(); } catch (e) {} return a && this.conns.get(a.id) || null; }
-  webSocketMessage(ws, data) { const c = this.connOf(ws); if (c) return this.onMsg(c, typeof data === 'string' ? data : new TextDecoder().decode(data)); }
-  webSocketClose(ws) { const c = this.connOf(ws); if (c) this.onClose(c); }
+  async webSocketMessage(ws, data) { await this.ready; const c = this.connOf(ws); if (c) return this.onMsg(c, typeof data === 'string' ? data : new TextDecoder().decode(data)); }
+  async webSocketClose(ws) { await this.ready; const c = this.connOf(ws); if (c) this.onClose(c); }
   webSocketError(ws) { this.webSocketClose(ws); }
   wakeTick() { if (!this.tick) this.tick = setInterval(() => this.step(), 100); }
   stat() { return { n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, done: this.done, total: N }; }

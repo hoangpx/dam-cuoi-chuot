@@ -87,8 +87,8 @@ export class JigsawRoom extends DurableObject {
     recent.push(now); this.fails.set(k, recent); return 4010;
   }
   // the sockets hibernate (see jigsaw.js): the runtime calls these on a fresh object after a sleep
-  webSocketMessage(ws, data) { if (!this.meta) return; if (!this.inner) this.build(); return this.inner.webSocketMessage(ws, data); }
-  webSocketClose(ws) { if (!this.meta) return; if (!this.inner) this.build(); return this.inner.webSocketClose(ws); }
+  async webSocketMessage(ws, data) { if (!this.meta) return; if (!this.inner) this.build(); return this.inner.webSocketMessage(ws, data); }
+  async webSocketClose(ws) { if (!this.meta) return; if (!this.inner) this.build(); return this.inner.webSocketClose(ws); }
   webSocketError(ws) { return this.webSocketClose(ws); }
   async fetch(req) {
     const u = new URL(req.url);
