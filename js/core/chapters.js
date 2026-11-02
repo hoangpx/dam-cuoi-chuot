@@ -8,6 +8,7 @@
        next(), retry()  → end-screen buttons, locked() → true to show its card greyed and closed (optional),
        direct() → start it straight from its chapter card, no album (optional),
        hidden() → true to leave its card out of the picker (optional), lockText → the greyed card's note (default "Sắp mở"),
+       fps → at most this many frames a second while it plays (optional; default: every screen refresh),
      })
    Menus, the loop and input only ever talk to chapters through this object. */
 

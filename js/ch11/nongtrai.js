@@ -657,6 +657,8 @@ function c11Bg() {
     const dir = C11_D4.find(([dx, dy]) => c11Kind(x + dx, y + dy) === 'w');
     if (dir && c11Hash(x, y, 38) < .55) { const [px, py] = at(x, y); for (let i = 0; i < 2; i++) { const sx = px + dir[0] * S * .46 + (rnd() - .5) * S * .5, sy = py + dir[1] * S * .46 + (rnd() - .5) * S * .5; c11Pebble(g, sx, sy, 7 + rnd() * 4, 5 + rnd() * 2, (rnd() - .5) * .5, 40, 7, 60 + rnd() * 8); } }
   }
+  // keep only this place and the last one: each painted ground is ~10 MB of canvas, and phones that kept all eleven ran hot and slow
+  const keep = Object.keys(C11BGS).filter(id => id !== C11_AR.id); for (const id of keep.slice(0, -1)) { C11BGS[id].width = C11BGS[id].height = 0; delete C11BGS[id]; }
   return (C11BGS[C11_AR.id] = c);
 }
 
@@ -1071,7 +1073,7 @@ function renderC11() {
   const W = cv.width / DPR, Hf = cv.height / DPR, st = safeTop(), H = Hf - st, G = C11;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = PAPERS.sage.base; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  for (let px = 0; px < W; px += PAPER.width) ctx.drawImage(PAPER, px, 0, PAPER.width, Math.max(Hf, PAPER.height));
+  if (!G.ready || st > 0) for (let px = 0; px < W; px += PAPER.width) ctx.drawImage(PAPER, px, 0, PAPER.width, Math.max(Hf, PAPER.height));   // the village covers it all but the notch band
   if (!G.ready) return;
   const g = ctx, A = c11Art(), V = G.v = c11Layout(W, H), { T, cx, cy, k } = V;
   g.save(); g.translate(0, st);
@@ -1157,9 +1159,11 @@ function renderC11() {
   }
   // things that stand up, back to front: trees (crowns sway), bamboo, bushes, reeds, grass and flowers (lean in the wind), crops
   const E = [], wide = 3;
+  // only what can show is queued (players: phones ran hot): grass on the tiles in view, trees whose picture reaches the screen
+  const seen = (X, Y, p, s) => X + (p.x0 - 12) * s < W && X + (p.x0 + p.w + 12) * s > 0 && Y + (p.y0 - 12) * s < H && Y + (p.y0 + p.h) * s > 0;
   for (let y = y0 - 2; y <= y1 + 4; y++) for (let x = x0 - wide; x <= x1 + wide; x++) {
     if (x < -C11_PAD || y < -C11_PAD || x >= C11_W + C11_PAD || y >= C11_H + C11_PAD) continue;
-    const kd = c11Kind(x, y), h7 = c11Hash(x, y, 7);
+    const kd = c11Kind(x, y), h7 = c11Hash(x, y, 7), near = x >= x0 - 1 && x <= x1 + 1 && y >= y0 && y <= y1 + 1;
     if (kd === 't') {
       const ty = c11TreeType(x, y), X = sx(x + .5), Y = sy(y + 1), wv = c11Wind(x, y), tk = c11Pre() + x + ',' + y, shk = G.shake && G.shake.key === tk ? Math.sin(G.shake.t * 46) * .05 * (1 - G.shake.t / .5) : 0, fl = G.fall && G.fall.key === tk ? G.fall : null;
       if (fl) E.push({ y: y + 1, d: () => {
@@ -1169,10 +1173,10 @@ function renderC11() {
       else if (SAVE11.gone[tk]) { }
       else if (SAVE11.cut[tk]) E.push({ y: y + 1, d: () => c11Stump(g, X, Y, k) });
       else if (ty === 'bamboo') E.push({ y: y + 1, d: () => { c11Shade(g, X, Y, 36 * k, 9 * k); g.globalAlpha = behind(X - 20 * k, Y, A.bamboo[1], k * .62 * 1.6, y + 1) ? .4 : 1; [[-18, 0], [2, 1], [20, 2]].forEach(([dx, i]) => c11Sway(g, A.bamboo[i], X + dx * k * .6, Y - i * 2, k * .62, shk + wv * .07 + Math.sin(G.t * 1.7 + i * 2 + x) * .012, 0)); g.globalAlpha = 1; } });
-      else E.push({ y: y + 1, d: () => { const tr = A.trees[ty], s = k * tr.sc * (.92 + h7 * .16); c11Shade(g, X, Y, 68 * s, 17 * s); g.globalAlpha = behind(X, Y, tr.crown, s, y + 1) ? .4 : 1; c11Spr(g, tr.trunk, X, Y, s); c11Sway(g, tr.crown, X, Y, s, shk + wv * tr.amp + Math.sin(G.t * 1.1 + x * 1.7 + y) * .008, tr.py); g.globalAlpha = 1; } });
+      else if (seen(X, Y, A.trees[ty].crown, k * A.trees[ty].sc * 1.08) || seen(X, Y, A.trees[ty].trunk, k * A.trees[ty].sc * 1.08)) E.push({ y: y + 1, d: () => { const tr = A.trees[ty], s = k * tr.sc * (.92 + h7 * .16); c11Shade(g, X, Y, 68 * s, 17 * s); g.globalAlpha = behind(X, Y, tr.crown, s, y + 1) ? .4 : 1; c11Spr(g, tr.trunk, X, Y, s); c11Sway(g, tr.crown, X, Y, s, shk + wv * tr.amp + Math.sin(G.t * 1.1 + x * 1.7 + y) * .008, tr.py); g.globalAlpha = 1; } });
       if (!C11_TREE_AT[x + ',' + y] && c11Hash(x, y, 90) < .85 && ty !== 'bamboo') {            // a second, smaller tree behind: the forest is deep
         const t2 = c11TreeType(x + 41, y + 13), ex = x + .5 + (c11Hash(x, y, 91) - .5) * .9, ey = y + .55 + c11Hash(x, y, 92) * .2;
-        if (t2 !== 'bamboo') E.push({ y: ey, d: () => { const tr = A.trees[t2], s2 = k * tr.sc * .8, X2 = sx(ex), Y2 = sy(ey); c11Shade(g, X2, Y2, 68 * s2, 17 * s2, .2); g.globalAlpha = behind(X2, Y2, tr.crown, s2, ey) ? .4 : 1; c11Spr(g, tr.trunk, X2, Y2, s2); c11Sway(g, tr.crown, X2, Y2, s2, c11Wind(ex, ey) * tr.amp + Math.sin(G.t * 1.3 + ex * 2) * .008, tr.py); g.globalAlpha = 1; } });
+        if (t2 !== 'bamboo' && seen(sx(ex), sy(ey), A.trees[t2].crown, k * A.trees[t2].sc * .8)) E.push({ y: ey, d: () => { const tr = A.trees[t2], s2 = k * tr.sc * .8, X2 = sx(ex), Y2 = sy(ey); c11Shade(g, X2, Y2, 68 * s2, 17 * s2, .2); g.globalAlpha = behind(X2, Y2, tr.crown, s2, ey) ? .4 : 1; c11Spr(g, tr.trunk, X2, Y2, s2); c11Sway(g, tr.crown, X2, Y2, s2, c11Wind(ex, ey) * tr.amp + Math.sin(G.t * 1.3 + ex * 2) * .008, tr.py); g.globalAlpha = 1; } });
       }
     } else if (kd === 'H') {
       const fx = x + .5, fy = y + .92, sz = 1.05 + c11Hash(x, y, 120) * .3; E.push({ y: fy, d: () => { c11Shade(g, sx(fx), sy(fy), 52 * k * sz, 12 * k * sz); c11Spr(g, A.hay, sx(fx), sy(fy), k * sz); } });
@@ -1183,7 +1187,7 @@ function renderC11() {
       if (kd === 'g') { const GR = c11Grass();   // a cut patch is bare: no tufts left on it (owner 2026-10-31)
         for (const [dx, dy] of C11_D4) { const nk = (x + dx) + ',' + (y + dy); if (c11Kind(x + dx, y + dy) !== 'g' || SAVE11.clear[nk] || SAVE11.tiles[nk]) continue;   // the long grass round it leans over the edge, so the cut has no straight line
           for (let i = 0; i < 3; i++) { const t = .15 + i * .35 + (c11Hash(x, y, 530 + i + dx * 3 + dy * 7) - .5) * .12, fx = x + (dx ? (dx > 0 ? .9 : .1) : t), fy = y + (dy ? (dy > 0 ? 1.02 : .2) : t + .2), sp = GR.tufts[(c11Hash(x, y, 540 + i + dx + dy * 5) * 6) | 0], sc = k * (.55 + c11Hash(x, y, 550 + i) * .3); E.push({ y: fy, d: () => c11Lean(g, sp, sx(fx), sy(fy), sc, c11Wind(fx, fy) * .2 + Math.sin(G.t * 2.6 + fx * 5) * .05) }); } } }
-      if (kd === 'f' && !s && !SAVE11.clear[x + ',' + y]) for (let i = 0; i < 5; i++) {
+      if (kd === 'f' && near && !s && !SAVE11.clear[x + ',' + y]) for (let i = 0; i < 5; i++) {
         const fx = x + .14 + ((i * .37 + c11Hash(x, y, 210 + i) * .3) % .74), fy = y + .34 + c11Hash(x, y, 220 + i) * .6, tf = c11Grass().tufts[(i + x) % 6], X = sx(fx), Y = sy(fy), sc = k * (1.05 + c11Hash(x, y, 230 + i) * .4);
         E.push({ y: fy, d: () => c11Lean(g, tf, X, Y, sc, c11Wind(fx, fy) * .28 + Math.sin(G.t * 2.6 + fx * 5 + fy * 3) * .07) });
       }
@@ -1192,6 +1196,7 @@ function renderC11() {
       else if (s && s.crop) { const st = c11Stage(s); E.push({ y: y + .7, d: () => c11Lean(g, A.crop[s.crop][st], sx(x + .5), sy(y + .68), k * 1.32 * (C11_CSCALE[s.crop] || 1), st ? c11Wind(x, y) * .05 * st + Math.sin(G.t * 2.2 + x * 3 + y) * .01 : 0) }); }
     } else if (kd === 'r' || kd === 'x' || kd === 'y') c11FieldE(E, g, x, y, sx, sy, k);
     else if (kd === 'g') {
+      if (!near) continue;
       // thick grass with volume (co.js): 4–6 shaded tufts on every grass tile, one in each quarter and more between, now and then a seed head or flowers
       const GR = c11Grass(), hh = c11Hash(x, y, 1), n = 4 + (hh < .6 ? 1 : 0) + (hh < .25 ? 1 : 0);
       for (let i = 0; i < n; i++) {
@@ -1804,6 +1809,7 @@ addEventListener('blur', () => { C11.keys = {}; });
 
 registerChapter({
   id: 11, modes: ['c11play'], direct: startC11, hidden: () => !C11_DEV,
+  fps: isTouch ? 30 : 60,                                                  // players: phones ran hot and laggy; 30 a second is plenty for walking a farm
   card: { num: lg('Chương XI', 'Chapter XI'), han: '田', name: lg('Làng Vũ Đại', 'Vu Dai Village'), desc: lg('Về làng Vũ Đại làm ruộng: cuốc đất, gieo hạt, chặt cây, hái lượm, nuôi gà lợn, ra chợ bán hàng, làm quen dân làng và nghe chuyện từng người. (Bản thử)', 'Farm in Vu Dai village: hoe, sow, chop, forage, keep animals, sell at the market, and get to know the villagers and their stories. (Demo)'), bg: '#d3e0b4' },
   progress: () => SAVE11.day > 1 || Object.keys(SAVE11.tiles).length ? lgf('Ngày {d}', 'Day {d}', { d: SAVE11.day }) : lg('Bản thử', 'Demo'),
   hasProgress: () => false,

@@ -19,6 +19,8 @@ let last = performance.now();
 function step(dt) { tick(dt); draw(); }
 function frame(now) {
   requestAnimationFrame(frame);
+  const fps = activeChapter().fps;                                            // a chapter may ask for fewer frames (heavy scenes on phones run hot)
+  if (fps && now - last < 1000 / fps - 4) return;
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   try { step(dt); }
   catch (err) { if (!frame.failed) { frame.failed = true; const el = $('#err'); el.hidden = false; el.textContent = 'Lỗi khi vẽ màn chơi: ' + err.message; } }
