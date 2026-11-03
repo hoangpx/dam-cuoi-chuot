@@ -1,0 +1,66 @@
+{
+ "id": "meo-cong",
+ "score": 116.33104007128651,
+ "moves": "DLLULLDLLLUUURRRLLLDDDRRUUDRRRDRRURURUULLLLLDDULLDDRRUUURRRRRDDDLLDLLULLDLLLUUURRRLDDRRRDRRURRDLLLRURURUULLLLLDDULLDDRRURRR",
+ "len": 123,
+ "states": 59843,
+ "map": [
+  "M=1W=3C=5.",
+  "G=6w......",
+  ".C...ww.w.",
+  ".w.w...c..",
+  ".w..=.wm..",
+  "....w...G."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": []
+}

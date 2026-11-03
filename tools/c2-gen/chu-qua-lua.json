@@ -1,0 +1,66 @@
+{
+ "id": "chu-qua-lua",
+ "score": 117.26971533431819,
+ "moves": "RRRRRRURULDLLLLLLLURRRRRRRURULDLLLLLLLLURRRRRRRURULDLUDDDDLL",
+ "len": 60,
+ "states": 1230,
+ "map": [
+  "T=1O=3F=5.",
+  "o.T=......",
+  "o..#.....o",
+  "ffffffffff",
+  "..........",
+  "G=6.g....."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ]
+ ],
+ "dirs": []
+}

@@ -657,6 +657,257 @@ const C2LEVELS = [
     map: ["wwwwwwwww", "w..c..R.w", "w..C....w", "w.w..mG.w", "ww.M=1www", "w.=.....w", "wRr..w.gw", "w.w..=6.w", "wwwwwwwww", "W=3......"],
     fixed: [[4,4], [5,4], [5,7], [6,7], [0,9], [1,9], [2,9]],
   },
+  /* ---- Siêu khó (sieu): found by tools/c2-gen.js, written by tools/c2-sk-build.js ---- */
+  {
+    han: "牆行", name: "Tường biết đi", paper: "yellow", key: 0, sieu: true,
+    map: ["W=3G=6M=1.", ".wwwww....", ".w..mw....", ".w.W=w...g", ".w.1.w....", ".wwwww...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "貓化", name: "Mèo hoá nước", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3C=5.", "wm.w..w...", "C=.N......", "wwwwww.www", "H.w..Scc.g", "G=6wwwwwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "水傾", name: "Nước đổ", paper: "blue", key: -3, sieu: true,
+    map: ["M=1W=3N=4.", "wm.wN~....", "...w=~....", ".....~...g", "..w$.~....", "G=6..~...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "水雲", name: "Sông hoá mây", paper: "white", key: 0, sieu: true,
+    map: ["M=1W=3N=4.", "w..wm~....", ".N.w.~....", ".....~...g", "..w=.~....", "G=6O.~...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "不沉", name: "Không chìm", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3N=4..", "w..w~~~~...", ".-..~~~~...", ".N..~~~~.g.", ".mw4~~~~...", "G=6.~~~~..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "不落", name: "Không rơi", paper: "lilac", key: -1, sieu: true,
+    map: ["M=1M=$W=3.", "...m...wg.", "w..w....w.", "..$.....w.", ".wwM-.w...", ".......G=6"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[7,5],[8,5],[9,5]],
+  },
+  {
+    han: "門走", name: "Cổng chạy", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1W=3G=6.", "w.Gw..w.g.", "......w...", ".w=.w..w..", "..^w....w.", "ww.mw....."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "水石", name: "Sông hoá đá", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3R=2.", "ww.w.~~...", "..=.w~~...", "N....~~..g", "..R..~~...", "N=4..~~...", "G=6...mww."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5],[0,6],[1,6],[2,6]],
+  },
+  {
+    han: "牆通", name: "Xuyên tường", paper: "blue", key: -3, sieu: true,
+    map: ["M=1W=3G=6.", "w..w..w...", "......-.w.", "mw...w..3.", "..W......w", ".....w..wg"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "貓弱", name: "Mèo yếu", paper: "white", key: 0, sieu: true,
+    map: ["M=1W=3C=5.", "C+GG=6w.=.", "w.ww.w....", ".mC...Sc..", ".w...w.!..", "..ww..w..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1]],
+  },
+  {
+    han: "水飛", name: "Sông bay", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3N=4.", "..w.w~....", "..9..~....", "..w=.~...g", ".w.N.~....", "G=6m.~...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "字填", name: "Chữ lấp sông", paper: "lilac", key: -1, sieu: true,
+    map: ["M=1W=3T=$.", "w..w~~w...", "....~~..w.", ".w..~~..=.", ".G..~~..6.", "ww..~~mHSg", "N=4wwwwwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,6],[1,6],[2,6]],
+  },
+  {
+    han: "字固", name: "Chữ bền", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1W=3N=4..", "....~~~~~..", "=WT.~~~~~..", "m...~~~~~.g", "..#.~~~~~..", "G=6.~~~~~.."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "字走", name: "Chữ chạy", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3T=^.", "w..w..www.", "..........", "w.m.w.wwG.", "w.w=...w..", ".w.6.....g"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "落固", name: "Rơi mà không chìm", paper: "blue", key: -3, sieu: true,
+    map: ["M=1N=4W=3.", "wwwwwwwgww", "F=5wwwwfww", "ww....wfww", ".m..$w.~ww", "..&....www", ".G=..#.G=6"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,2],[1,2],[2,2],[7,6],[8,6],[9,6]],
+  },
+  {
+    han: "貓走", name: "Mèo chạy", paper: "white", key: 0, sieu: true,
+    map: ["M=1W=3C=^.", "w..w.ww...", "w..w...c..", "wm.....=w.", ".G...ww.w.", "...w..6.wg"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "貓換", name: "Đổi chỗ với mèo", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3C=5.", "m=...C....", "....w...*.", "wwwwww.www", "..w...cc.g", "G=6wwwwwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "貓沉", name: "Mèo rơi xuống ao", paper: "lilac", key: -1, sieu: true,
+    map: ["M=1W=3C=5.", "..ww.mwwww", "..$...cc.g", "w...=.~~ww", "G=6..Cwwww", ".w.....w.."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,4],[1,4],[2,4]],
+  },
+  {
+    han: "換棄", name: "Đổi rồi bỏ", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1W=3F=5.", ".....fw...", "..w*.f....", ".M...f...g", "..w.=f....", "G=6m.f...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "火飛", name: "Lửa bay", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3F=5.", "wm.w.f....", "w..9.f....", "....Ff...g", "..w=.f....", "G=6..f...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "缸鼠", name: "Chum có chuột", paper: "blue", key: -3, sieu: true,
+    map: ["M=1W=3J=!.", "F=5..f....", "..+J.f....", ".S..Cfj..g", "M...mf....", "G=6..f...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "石填", name: "Đá lấp sông", paper: "white", key: 0, sieu: true,
+    map: ["M=1N=4W=3.", "wwwwwrwwww", "..w.m~....", ".=R.w~....", "....w~...g", "...$w~....", "..w..~....", "G=6..~...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,7],[1,7],[2,7]],
+  },
+  {
+    han: "鑰固", name: "Chìa bền", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3D=8.", "K=7&2wG=6.", "wm..K.wwww", ".=.#k.dddg", "......wwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[3,1],[4,1],[6,1],[7,1],[8,1]],
+  },
+  {
+    han: "火魚", name: "Lửa hoá cá", paper: "lilac", key: -1, sieu: true,
+    map: ["M=1W=3F=5.", "S=6ww.wfff", "w..=...f.f", "w......fff", "w..SFww...", "...w....wm"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1]],
+  },
+  {
+    han: "雙飛", name: "Sông và lửa", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1W=3N=4.", "F=5w~Nwf..", "w...~&.f..", "..F.~=.f.g", "..w.~9.f..", "G=6w~m.f.."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "火崩", name: "Tường lửa đổ", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3F=5.", "....ww.m..", "..$F....=.", "ffffffffff", "..........", ".......g..", "G=6......."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,6],[1,6],[2,6]],
+  },
+  {
+    han: "魚鑰", name: "Cá hoá chìa", paper: "blue", key: -3, sieu: true,
+    map: ["M=1W=3D=8.", "K=7&2.d...", "w.s...d...", "..s.K.d..g", "m.w=.Sd...", "G=6...d..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[3,1],[4,1],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "字火", name: "Chữ đi qua lửa", paper: "white", key: 0, sieu: true,
+    map: ["T=1O=3F=5.", "o.T=......", "o..#.....o", "ffffffffff", "..........", "G=6.g....."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "牽貓", name: "Dắt mèo", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3C=5.", "w..w..w...", "....=...m.", "..w.<.wwww", "w.wC.c...g", "G=6...wwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "字溺", name: "Chữ rơi xuống nước", paper: "lilac", key: -1, sieu: true,
+    map: ["M=1W=3T=$.", "wwwww.w...", ".mG.w...=w", "..w..w..6.", "w.w.ww.ww.", "~~~~~~~~~g"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "字落", name: "Chữ rơi", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1W=3T=$.", "..........", ".6.w.w.=..", "ww..w...w.", ".m...w....", "..ww.w.G..", ".........g"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "推戶", name: "Đẩy cửa", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3D=8.", "K=7wG=6...", "w...w.....", "w.wD2.wwww", ".=m.w.dk.g", "......wwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[4,1],[5,1],[6,1]],
+  },
+  {
+    han: "火冷", name: "Lửa nguội", paper: "blue", key: -3, sieu: true,
+    map: ["M=1W=3F=5.", "....w.mfff", "..w.w.wfgf", "....-5.fff", ".w.....F..", "G=6....w.."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "缸鑰", name: "Chum có chìa", paper: "white", key: 0, sieu: true,
+    map: ["M=1W=3J=!.", "K=7&2D=8..", "m...j.d...", "J.....d...", "w.+Kw.d..g", "G=6...d..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "門落", name: "Cổng rơi", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3F=5.", "wwwwwwwgww", "G=6w..wfw.", "..G=..wfw.", "..w.m.....", ".....w..$."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,2],[1,2],[2,2]],
+  },
+  {
+    han: "不飛", name: "Không bay", paper: "lilac", key: -1, sieu: true,
+    map: ["M=1M=9W=3.", "w..w..w.ww", "..-w...M..", "..mw..w.g.", "......ww.w", ".9.w...G=6"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[7,5],[8,5],[9,5]],
+  },
+  {
+    han: "共字", name: "Chung một chữ", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1W=3N=4.", "w..wN.~...", "....G.~...", "9...=.~.g.", "w6.m..~...", ".ww.w.~..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "魚行", name: "Cá cùng đi", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3G=6.", "w.mw.wwwww", "w1=..ws.ww", ".....ww.ww", ".w.w.w..ww", "..S..wgwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "貓隨", name: "Mèo theo bước", paper: "blue", key: -3, sieu: true,
+    map: ["M=1W=3G=6.", "w..w.wwwww", "...1.wc.ww", "wCww.ww.ww", ".=...w..ww", "..m..wgwww"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "水門", name: "Sông hoá cổng", paper: "white", key: 0, sieu: true,
+    map: ["M=1W=3N=4.", "ww.w.~....", "...=.~....", ".Gm..~....", "..wN.~....", "G=6..~...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "弱門", name: "Cổng mỏng", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3G=!.", "G=6ww.ww..", "wwww......", "ww.m.ww...", "......=.gG", "w...w.#..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1]],
+  },
+  {
+    han: "開固", name: "Mở mà không vỡ", paper: "lilac", key: -1, sieu: true,
+    map: ["W=3D=8G=6.", "M=1&7..d..", "w......d..", ".mw.w..d.g", ".&S.w#.d..", "w.w....d.."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[3,1],[4,1]],
+  },
+  {
+    han: "滅火", name: "Dập lửa tìm cổng", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1F=5N=4.", "F+GW=3w...", "w.www.~...", ".....N2f..", "m.w.w=w...", "G=6......."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "字換", name: "Chữ đổi chỗ", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3G=6.", "w.mw..w...", "w.Hw....T*", "...w.w.w..", ".w......w.", "..w.S..=.g"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "草通", name: "Vách rơm", paper: "blue", key: -3, sieu: true,
+    map: ["M=1H=3G=6.", "h..h.hh...", "....H..-m.", ".h.....hhh", "....h..hgh", "..h..3.hhh"],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]],
+  },
+  {
+    han: "門冷", name: "Cổng nguội", paper: "white", key: 0, sieu: true,
+    map: ["M=1W=3G=5.", "G=6w..w..w", "wm....G...", "..ww.w.w..", "..5.-ww.g.", "..w......."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1]],
+  },
+  {
+    han: "石換", name: "Đá đổi chỗ", paper: "sage", key: -2, sieu: true,
+    map: ["M=1W=3R=3.", "w.ww..r...", "m.*...r...", "....=Rr..g", "..ww..r...", "G=6...r..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,5],[1,5],[2,5]],
+  },
+  {
+    han: "字河", name: "Chữ rơi bên sông", paper: "lilac", key: -1, sieu: true,
+    map: ["M=1W=3T=$.", "w..ww.~...", "..m...~...", ".www..~..g", ".N....~...", ".=.=.G~...", "N=49.6~..."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,6],[1,6],[2,6]],
+  },
+  {
+    han: "貓門", name: "Mèo hoá cổng", paper: "yellow", key: 0, sieu: true,
+    map: ["M=1W=3C=5.", "G=6w......", ".C...ww.w.", ".w.w...c..", ".w..=.wm..", "....w...G."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1]],
+  },
+  {
+    han: "燒門", name: "Cổng nóng", paper: "pink", key: 2, sieu: true,
+    map: ["M=1W=3G=5.", "G=6.......", "w..ww#..w.", ".....=w.w.", "Mm.w...wg.", "w....w...."],
+    fixed: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[0,1],[1,1],[2,1]],
+  },
 ];
 // the bought hint (owner): just the chain of rules to make, map by map
 const C2_CHAIN = [
@@ -752,8 +1003,60 @@ const C2_CHAIN = [
   "Ghép CHUỘT CÓ CỔNG → dắt con chuột bên phải chìm xuống ao → phá CHUỘT CÓ CỔNG → đặt chữ CỔNG lên ô cổng mới → ghép CỔNG LÀ THẮNG (đẩy chữ xuống, bước lên cổng)",
   "Thả xuống giếng lần lượt ĐÁ, THẮNG, LÀ, CHỮ → ghép CHỮ LÀ THẮNG → theo đường hầm xuống đáy giếng, rút chữ ĐÁ ra cho cả câu rơi trúng đầu chuột",
   "Phá CHUỘT LÀ ĐI → ghép MÈO LÀ ĐI → phá MÈO LÀ ĐI → ghép CỔNG LÀ ĐI → phá CỔNG LÀ ĐI → ghép MÈO LÀ ĐI → phá MÈO LÀ ĐI → ghép CỔNG LÀ ĐI → phá CỔNG LÀ ĐI → ghép MÈO LÀ ĐI → phá MÈO LÀ ĐI → ghép CỔNG LÀ ĐI → ghép CHUỘT LÀ THẮNG → phá CỔNG LÀ ĐI → ghép MÈO LÀ ĐI → mèo tới chỗ chuột",
+  // Siêu khó
+  "Ghép TƯỜNG LÀ ĐI",
+  "Ghép MÈO LÀ NƯỚC",
+  "Ghép NƯỚC LÀ RƠI",
+  "Ghép NƯỚC LÀ MÂY → Phá NƯỚC LÀ MÂY",
+  "Ghép NƯỚC KHÔNG CHÌM",
+  "Ghép CHUỘT KHÔNG RƠI",
+  "Ghép CỔNG LÀ CHẠY → Phá CỔNG LÀ CHẠY",
+  "Ghép NƯỚC LÀ ĐÁ",
+  "Ghép TƯỜNG KHÔNG CHẶN",
+  "Ghép MÈO LÀ YẾU",
+  "Ghép NƯỚC LÀ BAY",
+  "Ghép CỔNG LÀ THẮNG",
+  "Ghép CHỮ LÀ BỀN",
+  "Ghép CỔNG LÀ THẮNG",
+  "Ghép CỔNG LÀ RƠI → Ghép CỔNG LÀ BỀN",
+  "Ghép CỔNG LÀ THẮNG",
+  "Ghép MÈO LÀ ĐỔI",
+  "Ghép MÈO LÀ RƠI",
+  "Ghép CHUỘT LÀ ĐỔI → Phá CHUỘT LÀ ĐỔI",
+  "Ghép LỬA LÀ BAY",
+  "Ghép CHUM CÓ CHUỘT",
+  "Ghép ĐÁ LÀ RƠI → Phá ĐÁ LÀ RƠI",
+  "Ghép CHÌA LÀ BỀN → Phá CHÌA LÀ BỀN",
+  "Ghép LỬA LÀ CÁ → Phá LỬA LÀ CÁ",
+  "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY",
+  "Ghép LỬA LÀ RƠI → Phá LỬA LÀ RƠI",
+  "Ghép CÁ LÀ CHÌA",
+  "Phá MÂY LÀ BỀN → Ghép CHỮ LÀ BỀN",
+  "Ghép MÈO LÀ KÉO",
+  "Ghép CỔNG LÀ THẮNG",
+  "Ghép CỔNG LÀ THẮNG",
+  "Ghép CỬA LÀ ĐẨY",
+  "Ghép LỬA KHÔNG NÓNG",
+  "Ghép CHUM CÓ CHÌA",
+  "Ghép CỔNG LÀ RƠI",
+  "Ghép CHUỘT KHÔNG BAY",
+  "Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG → Ghép CỔNG LÀ THẮNG",
+  "Ghép CÁ LÀ ĐI",
+  "Ghép MÈO LÀ ĐI",
+  "Ghép CỔNG LÀ NƯỚC → Phá CỔNG LÀ NƯỚC → Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG",
+  "Ghép CỔNG LÀ BỀN",
+  "Ghép CHUỘT LÀ BỀN",
+  "Ghép NƯỚC LÀ ĐẨY → Phá NƯỚC LÀ ĐẨY",
+  "Ghép CHỮ LÀ ĐỔI → Phá CHỮ LÀ ĐỔI",
+  "Ghép RƠM KHÔNG CHẶN",
+  "Ghép CỔNG KHÔNG NÓNG",
+  "Ghép ĐÁ LÀ ĐỔI → Phá ĐÁ LÀ ĐỔI",
+  "Ghép NƯỚC LÀ BAY → Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ BAY → Phá NƯỚC LÀ CỔNG → Ghép CỔNG LÀ THẮNG",
+  "Ghép MÈO LÀ CỔNG → Phá MÈO LÀ CỔNG",
+  "Ghép CHUỘT LÀ BỀN"
 ];
 const C2_FIRST_HARD = C2LEVELS.findIndex(l => l.hard);
 const C2_FIRST_BH = C2LEVELS.findIndex(l => l.bh);   // Biến hoá: the Baba-style words (owner)
 const C2_FIRST_SK = C2LEVELS.findIndex(l => l.sk);   // Hơi khó: 30 hard maps, open after the last Biến hoá map
+const C2_FIRST_XK = C2LEVELS.findIndex(l => l.sieu);  // Siêu khó: 50 maps found by tools/c2-gen.js (each idea's rule proven needed), open after the last Thần thông map
 const C2_FIRST_TT = C2LEVELS.findIndex(l => l.tt);   // Thần thông: 30 maps with the new words (CHUYỂN TRÔI ĐỔI TAN BỀN RƠI, TRÊN GẦN), open after the last Hơi khó map

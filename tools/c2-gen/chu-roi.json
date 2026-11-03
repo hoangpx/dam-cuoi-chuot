@@ -1,0 +1,55 @@
+{
+ "id": "chu-roi",
+ "score": 89.27346884532196,
+ "moves": "RUUULLDRRDRDRDDLLLUURLDDRRRRRURRRDLLLUUUUULLLLDDDRULUURRRRDDDDDLLRRRRR",
+ "len": 70,
+ "states": 26576,
+ "map": [
+  "M=1W=3T=$.",
+  "..........",
+  ".6.w.w.=..",
+  "ww..w...w.",
+  ".m...w....",
+  "..ww.w.G..",
+  ".........g"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ]
+ ],
+ "dirs": []
+}

@@ -1,0 +1,66 @@
+{
+ "id": "cong-yeu",
+ "score": 110.1248291836982,
+ "moves": "RURRRDDDRRUULULLLLDDRRLDRRUURRDDLLUURUURDDLLDLLLUURRRDRRUULDLDDDRRUUDDLLUURUURDLDLDLLDRRRU",
+ "len": 90,
+ "states": 51083,
+ "map": [
+  "M=1W=3G=!.",
+  "G=6ww.ww..",
+  "wwww......",
+  "ww.m.ww...",
+  "......=.gG",
+  "w...w.#..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": []
+}

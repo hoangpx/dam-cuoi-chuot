@@ -1,0 +1,66 @@
+{
+ "id": "lua-khong-nong",
+ "score": 87.29172085256944,
+ "moves": "LDDLDDRURRRDRULLLLLLULLUURRDDLDRRRRRRDRULLLULLDLULLUURRDDLDRRRRRRUU",
+ "len": 67,
+ "states": 58064,
+ "map": [
+  "M=1W=3F=5.",
+  "....w.mfff",
+  "..w.w.wfgf",
+  "....-5.fff",
+  ".w.....F..",
+  "G=6....w.."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ]
+ ],
+ "dirs": []
+}

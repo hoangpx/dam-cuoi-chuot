@@ -1,0 +1,1 @@
+{"id":"nuoc-la-cong","ok":true,"len":41,"states":108379,"moves":"ULLDDRURRRULDRDDLUULLLURRRRRRDRRULRRULLLL","ess":[{"op":"+","r":"gate:is:water"},{"op":"+","r":"water:is:gate"}],"chain":"Ghép CỔNG LÀ NƯỚC → Phá CỔNG LÀ NƯỚC → Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG","unsure":[]}

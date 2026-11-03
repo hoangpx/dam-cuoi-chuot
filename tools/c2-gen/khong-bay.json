@@ -1,0 +1,66 @@
+{
+ "id": "khong-bay",
+ "score": 103.9441427909668,
+ "moves": "DRRUURRRDRRULLLLULDDRDLLLULUURDDLLDDRULURDRRRDRUULURRRDRRULLLLULDDRDLLRUURRRDR",
+ "len": 78,
+ "states": 44468,
+ "map": [
+  "M=1M=9W=3.",
+  "w..w..w.ww",
+  "..-w...M..",
+  "..mw..w.g.",
+  "......ww.w",
+  ".9.w...G=6"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   7,
+   5
+  ],
+  [
+   8,
+   5
+  ],
+  [
+   9,
+   5
+  ]
+ ],
+ "dirs": []
+}

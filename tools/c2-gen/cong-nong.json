@@ -1,0 +1,66 @@
+{
+ "id": "cong-nong",
+ "score": 205.34393301670684,
+ "moves": "URRRDRRDRRRUUUULLLLDURRRRDDDDLLLULULLLDDRRURRDRRRUUUULLLLDDLLRDDLLULUURDRRRUURRRRDDDDLLLULULLLLDDRULURRRLLDDRRURRDRRRUUUULLDLLDLLRDDLLULUURDRRRUURRRRDDDDLLLULULLLLDDRRRURULLLULDRRRDRRDRRU",
+ "len": 187,
+ "states": 13021,
+ "map": [
+  "M=1W=3G=5.",
+  "G=6.......",
+  "w..ww#..w.",
+  ".....=w.w.",
+  "Mm.w...wg.",
+  "w....w...."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": []
+}

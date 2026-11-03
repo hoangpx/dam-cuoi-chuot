@@ -1,0 +1,302 @@
+[
+ {
+  "id": "da-la-chuot",
+  "han": "石鼠",
+  "name": "Đá hoá chuột",
+  "chain": "Ghép ĐÁ LÀ CHUỘT"
+ },
+ {
+  "id": "tuong-di",
+  "han": "牆行",
+  "name": "Tường biết đi",
+  "chain": "Ghép TƯỜNG LÀ ĐI"
+ },
+ {
+  "id": "meo-la-nuoc",
+  "han": "貓水",
+  "name": "Mèo hoá nước",
+  "chain": "Ghép MÈO LÀ NƯỚC"
+ },
+ {
+  "id": "nuoc-do",
+  "han": "水傾",
+  "name": "Nước đổ",
+  "chain": "Ghép NƯỚC LÀ RƠI"
+ },
+ {
+  "id": "nuoc-la-may",
+  "han": "水雲",
+  "name": "Sông hoá mây",
+  "chain": "Ghép NƯỚC LÀ MÂY → Phá NƯỚC LÀ MÂY"
+ },
+ {
+  "id": "khong-chim",
+  "han": "不沉",
+  "name": "Không chìm",
+  "chain": "Ghép NƯỚC KHÔNG CHÌM"
+ },
+ {
+  "id": "khong-roi",
+  "han": "不落",
+  "name": "Không rơi",
+  "chain": "Ghép CHUỘT KHÔNG RƠI"
+ },
+ {
+  "id": "cong-chay",
+  "han": "門走",
+  "name": "Cổng chạy",
+  "chain": "Ghép CỔNG LÀ CHẠY → Phá CỔNG LÀ CHẠY"
+ },
+ {
+  "id": "nuoc-la-da",
+  "han": "水石",
+  "name": "Sông hoá đá",
+  "chain": "Ghép NƯỚC LÀ ĐÁ"
+ },
+ {
+  "id": "tuong-khong-chan",
+  "han": "牆通",
+  "name": "Xuyên tường",
+  "chain": "Ghép TƯỜNG KHÔNG CHẶN"
+ },
+ {
+  "id": "meo-co-cong",
+  "han": "貓弱",
+  "name": "Mèo yếu",
+  "chain": "Ghép MÈO LÀ YẾU"
+ },
+ {
+  "id": "nuoc-bay",
+  "han": "水飛",
+  "name": "Sông bay",
+  "chain": "Ghép NƯỚC LÀ BAY"
+ },
+ {
+  "id": "chu-ben",
+  "han": "字固",
+  "name": "Chữ bền",
+  "chain": "Ghép CHỮ LÀ BỀN"
+ },
+ {
+  "id": "chu-chay",
+  "han": "字走",
+  "name": "Chữ chạy",
+  "chain": "Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "roi-ben",
+  "han": "落固",
+  "name": "Rơi mà không chìm",
+  "chain": "Ghép CỔNG LÀ RƠI → Ghép CỔNG LÀ BỀN"
+ },
+ {
+  "id": "meo-chay",
+  "han": "貓走",
+  "name": "Mèo chạy",
+  "chain": "Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "meo-doi",
+  "han": "貓換",
+  "name": "Đổi chỗ với mèo",
+  "chain": "Ghép MÈO LÀ ĐỔI"
+ },
+ {
+  "id": "meo-roi",
+  "han": "貓沉",
+  "name": "Mèo rơi xuống ao",
+  "chain": "Ghép MÈO LÀ RƠI"
+ },
+ {
+  "id": "doi-roi-bo",
+  "han": "換棄",
+  "name": "Đổi rồi bỏ",
+  "chain": "Ghép CHUỘT LÀ ĐỔI → Phá CHUỘT LÀ ĐỔI"
+ },
+ {
+  "id": "lua-bay",
+  "han": "火飛",
+  "name": "Lửa bay",
+  "chain": "Ghép LỬA LÀ BAY"
+ },
+ {
+  "id": "chum-co-chuot",
+  "han": "缸鼠",
+  "name": "Chum có chuột",
+  "chain": "Ghép CHUM CÓ CHUỘT"
+ },
+ {
+  "id": "da-lap",
+  "han": "石填",
+  "name": "Đá lấp sông",
+  "chain": "Ghép ĐÁ LÀ RƠI → Phá ĐÁ LÀ RƠI"
+ },
+ {
+  "id": "chia-ben",
+  "han": "鑰固",
+  "name": "Chìa bền",
+  "chain": "Ghép CHÌA LÀ BỀN → Phá CHÌA LÀ BỀN"
+ },
+ {
+  "id": "lua-la-ca",
+  "han": "火魚",
+  "name": "Lửa hoá cá",
+  "chain": "Ghép LỬA LÀ CÁ → Phá LỬA LÀ CÁ"
+ },
+ {
+  "id": "va-song-lua",
+  "han": "雙飛",
+  "name": "Sông và lửa",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY"
+ },
+ {
+  "id": "chu-roi-hai",
+  "han": "字河",
+  "name": "Chữ rơi bên sông",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "lua-roi",
+  "han": "火崩",
+  "name": "Tường lửa đổ",
+  "chain": "Ghép LỬA LÀ RƠI → Phá LỬA LÀ RƠI"
+ },
+ {
+  "id": "ca-la-chia",
+  "han": "魚鑰",
+  "name": "Cá hoá chìa",
+  "chain": "Ghép CÁ LÀ CHÌA"
+ },
+ {
+  "id": "chu-qua-lua",
+  "han": "字火",
+  "name": "Chữ đi qua lửa",
+  "chain": "Phá MÂY LÀ BỀN → Ghép CHỮ LÀ BỀN"
+ },
+ {
+  "id": "keo-meo",
+  "han": "牽貓",
+  "name": "Dắt mèo",
+  "chain": "Ghép MÈO LÀ KÉO"
+ },
+ {
+  "id": "chia-roi",
+  "han": "鑰落",
+  "name": "Chìa rơi",
+  "chain": "Ghép CHÌA LÀ RƠI → Ghép CHÌA LÀ BỀN → Phá CHÌA LÀ BỀN"
+ },
+ {
+  "id": "chu-roi-nuoc",
+  "han": "字溺",
+  "name": "Chữ rơi xuống nước",
+  "chain": "Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "chu-roi",
+  "han": "字落",
+  "name": "Chữ rơi",
+  "chain": "Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "day-cua",
+  "han": "推戶",
+  "name": "Đẩy cửa",
+  "chain": "Ghép CỬA LÀ ĐẨY"
+ },
+ {
+  "id": "lua-khong-nong",
+  "han": "火冷",
+  "name": "Lửa nguội",
+  "chain": "Ghép LỬA KHÔNG NÓNG"
+ },
+ {
+  "id": "co-chia",
+  "han": "缸鑰",
+  "name": "Chum có chìa",
+  "chain": "Ghép CHUM CÓ CHÌA"
+ },
+ {
+  "id": "cong-roi",
+  "han": "門落",
+  "name": "Cổng rơi",
+  "chain": "Ghép CỔNG LÀ RƠI"
+ },
+ {
+  "id": "khong-bay",
+  "han": "不飛",
+  "name": "Không bay",
+  "chain": "Ghép CHUỘT KHÔNG BAY"
+ },
+ {
+  "id": "chung-chu",
+  "han": "共字",
+  "name": "Chung một chữ",
+  "chain": "Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "ca-di",
+  "han": "魚行",
+  "name": "Cá cùng đi",
+  "chain": "Ghép CÁ LÀ ĐI"
+ },
+ {
+  "id": "meo-di",
+  "han": "貓隨",
+  "name": "Mèo theo bước",
+  "chain": "Ghép MÈO LÀ ĐI"
+ },
+ {
+  "id": "nuoc-la-cong",
+  "han": "水門",
+  "name": "Sông hoá cổng",
+  "chain": "Ghép CỔNG LÀ NƯỚC → Phá CỔNG LÀ NƯỚC → Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG"
+ },
+ {
+  "id": "cong-yeu",
+  "han": "弱門",
+  "name": "Cổng mỏng",
+  "chain": "Ghép CỔNG LÀ BỀN"
+ },
+ {
+  "id": "mo-ben",
+  "han": "開固",
+  "name": "Mở mà không vỡ",
+  "chain": "Ghép CHUỘT LÀ BỀN"
+ },
+ {
+  "id": "lua-co-cong",
+  "han": "滅火",
+  "name": "Dập lửa tìm cổng",
+  "chain": "Ghép NƯỚC LÀ ĐẨY → Phá NƯỚC LÀ ĐẨY"
+ },
+ {
+  "id": "chu-roi-lap",
+  "han": "字填",
+  "name": "Chữ lấp sông",
+  "chain": "Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "rom-khong-chan",
+  "han": "草通",
+  "name": "Vách rơm",
+  "chain": "Ghép RƠM KHÔNG CHẶN"
+ },
+ {
+  "id": "cong-khong-nong",
+  "han": "門冷",
+  "name": "Cổng nguội",
+  "chain": "Ghép CỔNG KHÔNG NÓNG"
+ },
+ {
+  "id": "meo-cong",
+  "han": "貓門",
+  "name": "Mèo hoá cổng",
+  "chain": "Ghép MÈO LÀ CỔNG → Phá MÈO LÀ CỔNG"
+ },
+ {
+  "id": "cong-nong",
+  "han": "熱門",
+  "name": "Cổng nóng",
+  "chain": "Ghép CHUỘT LÀ BỀN"
+ }
+]

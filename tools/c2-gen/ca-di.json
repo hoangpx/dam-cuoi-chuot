@@ -1,0 +1,54 @@
+{
+ "id": "ca-di",
+ "score": 108.89727921708511,
+ "moves": "DDLLDDRRUDLLUURRUULDRDDDLLUURURRRDDDLLUULURDDDRRUULRDDLLUULUURDDDURRULDRDDLLUULUURDDDRDDLD",
+ "len": 90,
+ "states": 19911,
+ "map": [
+  "M=1W=3G=6.",
+  "w.mw.wwwww",
+  "w1=..ws.ww",
+  ".....ww.ww",
+  ".w.w.w..ww",
+  "..S..wgwww"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ]
+ ],
+ "dirs": []
+}

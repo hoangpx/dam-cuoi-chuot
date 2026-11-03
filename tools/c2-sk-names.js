@@ -1,0 +1,23 @@
+/* Chương II · Siêu khó: Hán title and Vietnamese name of each map found by tools/c2-gen.js (id = spec id). */
+module.exports = {
+  'cong-roi': ['門落', 'Cổng rơi'], 'da-lap': ['石填', 'Đá lấp sông'], 'roi-ben': ['落固', 'Rơi mà không chìm'],
+  'meo-doi': ['貓換', 'Đổi chỗ với mèo'], 'doi-roi-bo': ['換棄', 'Đổi rồi bỏ'], 'cong-nong': ['燒門', 'Cổng nóng'],
+  'chu-ben': ['字固', 'Chữ bền'], 'chu-roi': ['字落', 'Chữ rơi'], 'chu-qua-lua': ['字火', 'Chữ đi qua lửa'],
+  'chum-co-chuot': ['缸鼠', 'Chum có chuột'], 'co-chia': ['缸鑰', 'Chum có chìa'], 'khong-roi': ['不落', 'Không rơi'],
+  'lua-khong-nong': ['火冷', 'Lửa nguội'], 'lua-roi': ['火崩', 'Tường lửa đổ'], 'meo-cong': ['貓門', 'Mèo hoá cổng'],
+  'meo-roi': ['貓沉', 'Mèo rơi xuống ao'], 'nuoc-bay': ['水飛', 'Sông bay'], 'nuoc-do': ['水傾', 'Nước đổ'],
+  'tuong-di': ['牆行', 'Tường biết đi'], 'da-la-chuot': ['石鼠', 'Đá hoá chuột'], 'meo-chay': ['貓走', 'Mèo chạy'],
+  'day-cua': ['推戶', 'Đẩy cửa'], 'chu-roi-nuoc': ['字溺', 'Chữ rơi xuống nước'], 'lua-bay': ['火飛', 'Lửa bay'],
+  'meo-co-cong': ['貓弱', 'Mèo yếu'], 'nuoc-la-da': ['水石', 'Sông hoá đá'], 'cong-chay': ['門走', 'Cổng chạy'],
+  'lua-la-ca': ['火魚', 'Lửa hoá cá'], 'cong-yeu': ['弱門', 'Cổng mỏng'], 'chu-chay': ['字走', 'Chữ chạy'],
+  'doi-nuoc': ['換水', 'Lội nước'], 'keo-chu': ['牽字', 'Chữ níu nhau'], 'khong-day': ['不推', 'Không đẩy'],
+  'ca-chay': ['魚走', 'Cá chạy'], 'tuong-khong-chan': ['牆通', 'Xuyên tường'], 'chung-chu': ['共字', 'Chung một chữ'],
+  'va-song-lua': ['雙飛', 'Sông và lửa'], 'meo-la-nuoc': ['貓化', 'Mèo hoá nước'], 'meo-di': ['貓隨', 'Mèo theo bước'],
+  'keo-meo': ['牽貓', 'Dắt mèo'], 'chu-roi-hai': ['字河', 'Chữ rơi bên sông'], 'khong-bay': ['不飛', 'Không bay'],
+  'khong-chim': ['不沉', 'Không chìm'], 'mo-ben': ['開固', 'Mở mà không vỡ'], 'chia-ben': ['鑰固', 'Chìa bền'],
+  'lua-co-cong': ['滅火', 'Dập lửa tìm cổng'], 'nuoc-la-cong': ['水門', 'Sông hoá cổng'], 'chu-roi-pha': ['字崩', 'Chữ rơi phá luật'],
+  'da-ben': ['石渡', 'Đá qua sông'], 'chia-roi': ['鑰落', 'Chìa rơi'], 'ca-la-chia': ['魚鑰', 'Cá hoá chìa'],
+  'cong-khong-nong': ['門冷', 'Cổng nguội'], 'chu-roi-lap': ['字填', 'Chữ lấp sông'], 'nuoc-la-may': ['水雲', 'Sông hoá mây'],
+  'rom-khong-chan': ['草通', 'Vách rơm'], 'ca-di': ['魚行', 'Cá cùng đi'],
+  'chu-doi': ['字換', 'Chữ đổi chỗ'], 'da-doi': ['石換', 'Đá đổi chỗ'],
+};

@@ -1,0 +1,66 @@
+{
+ "id": "keo-meo",
+ "score": 84.64302881166408,
+ "moves": "LLLDLDDLURURUULDLDULULDRRRRDLDDLURUULLULDRRRDDLURULLRDDRLURRDRRRR",
+ "len": 65,
+ "states": 35292,
+ "map": [
+  "M=1W=3C=5.",
+  "w..w..w...",
+  "....=...m.",
+  "..w.<.wwww",
+  "w.wC.c...g",
+  "G=6...wwww"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ]
+ ],
+ "dirs": []
+}

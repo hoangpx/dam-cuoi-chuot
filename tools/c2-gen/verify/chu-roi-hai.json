@@ -1,0 +1,1 @@
+{"id":"chu-roi-hai","ok":true,"len":67,"states":58610,"moves":"RRDDDLURUULLLLDDRLDRURLLUURRRRDDDDRRLUUUULLLLLDDDRRURLDRURRRDRRDLUL","ess":[{"op":"+","r":"water:is:float"},{"op":"+","r":"water:is:gate"},{"op":"+","r":"gate:is:win"}],"chain":"Ghép NƯỚC LÀ BAY → Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ BAY → Phá NƯỚC LÀ CỔNG → Ghép CỔNG LÀ THẮNG","unsure":[]}

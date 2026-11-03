@@ -1,0 +1,54 @@
+{
+ "id": "meo-di",
+ "score": 108.69944540307931,
+ "moves": "LLURDRRURUULLULDRRRDDDLLLLURDRRRUUULLLDDLDRRLUUURRRDDLRUULLLDDUURRRDDLLDLURRRDLURUULLLDDRDDLD",
+ "len": 93,
+ "states": 17106,
+ "map": [
+  "M=1W=3G=6.",
+  "w..w.wwwww",
+  "...1.wc.ww",
+  "wCww.ww.ww",
+  ".=...w..ww",
+  "..m..wgwww"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ]
+ ],
+ "dirs": []
+}

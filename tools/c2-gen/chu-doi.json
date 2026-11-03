@@ -1,0 +1,61 @@
+{
+ "id": "chu-doi",
+ "score": 105.48402583319013,
+ "moves": "LDDRDRDRURRDRULLLDRURUURURRDLLLLULDDURRDDLDLLURUURRDDRDLLLURLUURRDDLDRUUURRRDDD",
+ "len": 79,
+ "states": 67299,
+ "map": [
+  "M=1W=3G=6.",
+  "w.mw..w...",
+  "w.Hw....T*",
+  "...w.w.w..",
+  ".w......w.",
+  "..w.S..=.g"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "text:is:swap"
+  }
+ ],
+ "chain": "Ghép CHỮ LÀ ĐỔI → Phá CHỮ LÀ ĐỔI"
+}

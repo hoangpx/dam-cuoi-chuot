@@ -1,0 +1,66 @@
+{
+ "id": "meo-doi",
+ "score": 78.84089130477572,
+ "moves": "DRRURRRDRRURRDLLULLLLDLLLURRRRRRRDRRUDLLURLLLDRRRLLDDRRR",
+ "len": 56,
+ "states": 4108,
+ "map": [
+  "M=1W=3C=5.",
+  "m=...C....",
+  "....w...*.",
+  "wwwwww.www",
+  "..w...cc.g",
+  "G=6wwwwwww"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ]
+ ],
+ "dirs": []
+}

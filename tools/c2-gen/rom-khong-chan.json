@@ -1,0 +1,54 @@
+{
+ "id": "rom-khong-chan",
+ "score": 110.23330143765332,
+ "moves": "LLLLDLDLLLUURURDRDDDRRUUULLDDLLLUURURDRDDLRUULDULLDDRLUURRDRRRDDLLULUULLDDRRURRRURDLDDLLULURRRURRDDR",
+ "len": 100,
+ "states": 55518,
+ "map": [
+  "M=1H=3G=6.",
+  "h..h.hh...",
+  "....H..-m.",
+  ".h.....hhh",
+  "....h..hgh",
+  "..h..3.hhh"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ]
+ ],
+ "dirs": []
+}

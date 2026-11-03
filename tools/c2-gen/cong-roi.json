@@ -1,0 +1,66 @@
+{
+ "id": "cong-roi",
+ "score": 96.00230281946705,
+ "moves": "DLLLUURLDDRRURRRRRRDLULLLUULDLDDLLUURRRURDLLDDRURRRRDRULLLLUULDLDRRRRRLLDRRL",
+ "len": 76,
+ "states": 46498,
+ "map": [
+  "M=1W=3F=5.",
+  "wwwwwwwgww",
+  "G=6w..wfw.",
+  "..G=..wfw.",
+  "..w.m.....",
+  ".....w..$."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "dirs": []
+}

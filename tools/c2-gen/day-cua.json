@@ -1,0 +1,78 @@
+{
+ "id": "day-cua",
+ "score": 92.86489719317527,
+ "moves": "DLLURUURRDULLDDDRRRRUULRDDLLLLUUURRDRRDDLLLLUUURRDDLRUULLDDRRURRDDLLRRURRRR",
+ "len": 75,
+ "states": 9015,
+ "map": [
+  "M=1W=3D=8.",
+  "K=7wG=6...",
+  "w...w.....",
+  "w.wD2.wwww",
+  ".=m.w.dk.g",
+  "......wwww"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   4,
+   1
+  ],
+  [
+   5,
+   1
+  ],
+  [
+   6,
+   1
+  ]
+ ],
+ "dirs": []
+}
