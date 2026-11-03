@@ -9,15 +9,15 @@ function anySolution(N, reg){ let sol=null; const uc=new Array(N).fill(false), u
   (function rec(r,prev){ if(sol) return; if(r===N){sol=q.slice();return;} for(let c=0;c<N;c++){ if(uc[c]||(prev>=0&&Math.abs(c-prev)<=1)) continue; const g=reg[r*N+c]; if(ur[g]) continue; uc[c]=ur[g]=true; q.push(c); rec(r+1,c); q.pop(); uc[c]=ur[g]=false; } })(0,-1); return sol; }
 // the logic solver: returns { solved, score, maxRule }
 function logic(N, reg){
-  const cand=new Uint8Array(N*N).fill(1), placed=[]; let score=0, maxRule=0;
+  const cand=new Uint8Array(N*N).fill(1), placed=[]; let score=0, maxRule=0; const u=[0,0,0,0,0];
   const R=i=>(i/N)|0, C=i=>i%N;
   const groups=[]; for(let r=0;r<N;r++) groups.push([...Array(N).keys()].map(c=>r*N+c)); for(let c=0;c<N;c++) groups.push([...Array(N).keys()].map(r=>r*N+c));
   for(let g=0;g<N;g++) groups.push([...Array(N*N).keys()].filter(i=>reg[i]===g));
   const place=i=>{ placed.push(i); for(let j=0;j<N*N;j++) if(j!==i&&cand[j]&&(R(j)===R(i)||C(j)===C(i)||reg[j]===reg[i]||(Math.abs(R(j)-R(i))<=1&&Math.abs(C(j)-C(i))<=1))) cand[j]=0; cand[i]=2; };
   const live=gr=>gr.filter(i=>cand[i]===1), done=gr=>gr.some(i=>cand[i]===2);
-  const use=(k,w)=>{ score+=w; if(k>maxRule) maxRule=k; };
+  const use=(k,w)=>{ score+=w; u[k]++; if(k>maxRule) maxRule=k; };
   for(let guard=0;guard<500;guard++){
-    if(placed.length===N) return {solved:true,score,maxRule};
+    if(placed.length===N) return {solved:true,score,maxRule,u};
     let moved=false;
     // 1: a group with one place left
     for(const gr of groups){ if(done(gr)) continue; const l=live(gr); if(l.length===0) return {solved:false}; if(l.length===1){ place(l[0]); use(1,1); moved=true; break; } }
@@ -76,9 +76,16 @@ if (require.main === module) {
   }
   const out = [];
   for (const N of Object.keys(PLAN)) { const p = dir + '/' + N + '.json'; if (fs.existsSync(p)) out.push(...JSON.parse(fs.readFileSync(p, 'utf8'))); }
+  // the "Siêu khó" set (owner): the 50 hardest fields of tools/mice-cache/sk-*.json (made by tools/gen-mice-sieukho.js), after the rest
+  let sk = []; for (const f of fs.readdirSync(dir)) if (/^sk-/.test(f)) sk.push(...JSON.parse(fs.readFileSync(dir + '/' + f, 'utf8')));
+  const seen = new Set(); sk = sk.filter(l => !seen.has(l.reg) && seen.add(l.reg));
+  sk.sort((a, b) => b.hard - a.hard || b.score - a.score); sk = sk.slice(0, 50).sort((a, b) => a.N - b.N || a.hard - b.hard || a.score - b.score);
+  for (const l of sk) { const L = logic(l.N, [...l.reg].map(ch => parseInt(ch, 36))); if (!L.solved || L.maxRule < 4 || count(l.N, [...l.reg].map(ch => parseInt(ch, 36))) !== 1) throw new Error('bad sk field ' + l.reg); }
+  out.push(...sk.map(l => ({ N: l.N, reg: l.reg, sol: l.sol, d: 4, sk: 1 })));
+  console.error('sieu kho', sk.length, sk.map(l => l.N + ':' + l.hard).join(' '));
   const head = '/* Chương VI · Tìm Chuột: the levels, made by tools/gen-mice-levels.js (do not edit by hand). reg: the plot of each\n' +
-    '   cell, row by row, base 36; sol: the column of the mouse in each row; d: the hardest rule needed (1 easiest … 4). */\n';
-  const rows = out.map(l => "  { N: " + l.N + ", reg: '" + l.reg + "', sol: '" + l.sol + "', d: " + l.d + " },");
+    '   cell, row by row, base 36; sol: the column of the mouse in each row; d: the hardest rule needed (1 easiest … 4); sk: the Siêu khó set. */\n';
+  const rows = out.map(l => "  { N: " + l.N + ", reg: '" + l.reg + "', sol: '" + l.sol + "', d: " + l.d + (l.sk ? ", sk: 1" : "") + " },");
   fs.writeFileSync(__dirname + '/../js/ch6/levels.js', head + 'const C6_LEVELS = [\n' + rows.join('\n') + '\n];\n');
   console.error('levels', out.length);
 }

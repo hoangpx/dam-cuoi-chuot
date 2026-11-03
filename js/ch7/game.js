@@ -5,16 +5,16 @@
 let SAVE7 = { done: [], best: [], how: false };
 try { const s = JSON.parse(localStorage.getItem('dcc.c7') || 'null'); if (s && Array.isArray(s.done)) SAVE7 = Object.assign(SAVE7, s); } catch (e) {}
 const persist7 = () => { try { localStorage.setItem('dcc.c7', JSON.stringify(SAVE7)); } catch (e) {} };
-const C7_LEVEL = ['Dễ', 'Vừa', 'Khó', 'Rất khó'];
+const C7_LEVEL = ['Dễ', 'Vừa', 'Khó', 'Rất khó', 'Siêu khó'];
 const C7 = { i: 0, G: null, geo: null, drag: false, page: -1 };
 
 function buildAlbum7() {
   const box = $('#cards'); box.textContent = ''; let lv = -1;
   C7_CASES.forEach((K, i) => {
-    if (K.lv !== lv) { lv = K.lv; const h = document.createElement('div'); h.className = 'sec'; h.textContent = `${C7_LEVEL[lv]} · ${K.N} × ${K.N}`; box.appendChild(h); }
+    if (K.lv !== lv || (K.lv === 4 && K.N !== C7_CASES[i - 1].N)) { lv = K.lv; const h = document.createElement('div'); h.className = 'sec'; h.textContent = `${C7_LEVEL[lv]} · ${K.N} × ${K.N}`; box.appendChild(h); }
     const open = i === 0 || SAVE7.done[i - 1] || SAVE7.done[i];
     const b = document.createElement('button');
-    b.className = 'card'; b.style.background = ['#e9dcc0', '#e6d3c9', '#d3dbe6', '#e4d6ea'][K.lv]; b.disabled = !open;
+    b.className = 'card'; b.style.background = ['#e9dcc0', '#e6d3c9', '#d3dbe6', '#e4d6ea', '#e6c9c9'][K.lv]; b.disabled = !open;
     b.innerHTML = `<div class="num">Vụ ${i + 1}</div><div class="ch">${K.N}×${K.N}</div><b>${K.title}</b><span class="st${SAVE7.done[i] ? ' done' : ''}">${SAVE7.done[i] ? 'Đã phá án · ' + c7Clock(SAVE7.best[i] || 0) : open ? 'Phá án' : 'Chưa mở'}</span>`;
     b.addEventListener('click', () => { if (open) startC7(i); });
     box.appendChild(b);

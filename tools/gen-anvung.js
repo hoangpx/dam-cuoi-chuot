@@ -206,4 +206,4 @@ if (require.main === module) {
   fs.writeFileSync(__dirname + '/../js/ch7/cases.js', head + 'const C7_CASES = ' + JSON.stringify(out).replace(/\},\{"N"/g, '},\n{"N"') + ';\n');
   console.error('cases', out.length);
 }
-module.exports = { makeCase, solve, mulberry };
+module.exports = { makeCase, solve, mulberry, sayAll, TITLES };

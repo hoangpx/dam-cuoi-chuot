@@ -29,7 +29,7 @@ function c7Floors(G) {
   }
   return (G.K._floor = col);
 }
-const C7_TOK = ['#a3332a', '#2f5f8f', '#2f6a4c', '#c98a1c', '#7a4aa0', '#c0567a', '#8a5a2a', '#3f9e93'];
+const C7_TOK = ['#a3332a', '#2f5f8f', '#2f6a4c', '#c98a1c', '#7a4aa0', '#c0567a', '#8a5a2a', '#3f9e93', '#5a6a1c'];   // a ninth for the 9×9 Siêu khó cases
 const C7_BLOCK = new Set(['chum', 'coi', 'cau', 'rom', 'gieng']);
 const C7_THING = { chum: 'Chum nước', coi: 'Cối giã gạo', cau: 'Cây cau', rom: 'Đống rơm', gieng: 'Giếng nước', chong: 'Giường tre', phan: 'Ghế băng', chieu: 'Chiếu hoa', ghe: 'Ghế đẩu' };
 const C7_TOOLS = [['notes', 'Ghi chú'], ['cross', 'Gạch'], ['place', 'Đặt'], ['erase', 'Xoá'], ['hint', 'Gợi ý']];
