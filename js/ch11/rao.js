@@ -6,7 +6,7 @@
    - SHOOING: tap a wild cow or buffalo with the player within 2.8 tiles and it bolts about 4.5 tiles away from the player (a hen is
      picked up and thrown instead, bong.js).
    - FENCES: the skill "Làm hàng rào" (the carpenter, 2 hearts) and the Búa đục: in its build list "Hàng rào tre" switches to fence mode,
-     then each tap on any free ground tile (grass, lane, hoed earth) near the player puts up a piece for RAO_WOOD logs, a tap on a piece breaks it (nothing back; outside fence mode the Búa đục breaks one too, raoBreak);
+     then each tap on any free ground tile (grass, lane, hoed earth) near the player puts up a piece for RAO_WOOD logs, a tap on a piece offers "Phá đoạn rào" (raoAsk → raoBreak, nothing back; outside fence mode a tap with the Búa đục does too);
      changing tool ends the mode. A fence blocks the animals only: the player steps over it. SAVE11.fences { 'x,y': 1 }, home farm only. */
 const RAO_WOOD = 2, RAO_RAID = ['ga', 'trong', 'bo', 'trau'], RAO_SHOO = ['bo', 'trau'];
 SAVE11.fences = SAVE11.fences || {};
@@ -61,19 +61,20 @@ c11NewUpdate = function (dt) {
 /* a piece is broken up for good (owner: "hàng rào có thể phá đi, ko lấy lại đc gỗ"): the wood is lost */
 const raoBreak = (tx, ty) => { delete SAVE11.fences[tx + ',' + ty]; c11Spend(C11_COST.dan * .3); c11Dots(tx, ty, '#c89a5e', 10); c11Chips && c11Chips(tx, ty - .3, C11.face * -1, 8);
   c11Msg('Phá đoạn rào, gỗ gãy cả, không dùng lại được', '#5b2f1f'); persist11(); };
+const raoAsk = (tx, ty) => { C11.menu = { title: 'Hàng rào', note: '', cols: 1, rows: [{ name: 'Phá đoạn rào', sub: 'không lấy lại được gỗ', tag: ' ', ok: true, f: () => { C11.menu = null; raoBreak(tx, ty); } }] }; };   // a tap on a piece offers to break it (owner: "bấm vào hàng rào thì hiện option phá")
 const raoTap0 = c11Tap;
 c11Tap = function (tx, ty, wx, wy) {
   if (C11.sleep || C11.menu) return raoTap0(tx, ty, wx, wy);
   if (C11.fence && C11.area === 'ruong' && c11HandTool() === 'dan') {                         // fence mode: a tap builds or takes down a piece
     if (Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) > 4.5) { c11Msg('Đứng gần hơn một chút', '#5b2f1f'); return; }
     const key = tx + ',' + ty;
-    if (raoOn(tx, ty)) { raoBreak(tx, ty); return; }
+    if (raoOn(tx, ty)) { raoAsk(tx, ty); return; }
     if (tx < 1 || ty < 1 || tx >= C11_W - 1 || ty >= C11_H - 1 || c11Blocked(tx, ty) || 'tE'.includes(c11Kind(tx, ty)) || (SAVE11.tiles[key] && (SAVE11.tiles[key].dan || SAVE11.tiles[key].crop)) || c11PenAt(tx, ty)) { c11Msg('Chỗ này đóng rào không được', '#5b2f1f'); return; }   // anywhere walkable, hoed earth too (not on a trellis or a crop)
     if (!c11Take('go', RAO_WOOD)) { c11Msg(`Cần ${RAO_WOOD} gỗ trong túi cho mỗi đoạn rào`, '#a3332a'); return; }
     c11Spend(C11_COST.dan * .5); SAVE11.fences[key] = 1; c11Dots(tx, ty, '#c89a5e', 8); c11Chips && c11Chips(tx, ty - .3, C11.face * -1, 6); persist11(); return;
   }
   if (C11.area === 'ruong' && raoOn(tx, ty) && c11HandTool() === 'dan' && !(typeof C11O !== 'undefined' && C11O.visit)
-      && Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) <= 2.5) { raoBreak(tx, ty); return; }   // the Búa đục that built it breaks a piece any time (owner); farther off the tap only walks there
+      && Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) <= 2.5) { raoAsk(tx, ty); return; }   // the Búa đục that built it: a tap on a piece asks (owner); farther off the tap only walks there
   for (const b of C11.beasts || []) if (!b.herd && RAO_SHOO.includes(b.kind) && Math.abs(wx - b.x) < .8 && wy > b.y - 1.2 && wy < b.y + .35) {
     const dx = b.x - C11.px, dy = b.y - C11.py, L = Math.hypot(dx, dy) || 1;
     if (L < 2.8) { b.flee = { dx: dx / L, dy: dy / L * .6, t: 1.3 }; const n = Math.hypot(b.flee.dx, b.flee.dy); b.flee.dx /= n; b.flee.dy /= n; b.raid = null; b.rc = 25 + Math.random() * 40; b.to = null;
@@ -88,7 +89,7 @@ c11BuildMenu = function (tx, ty) {
   const ok = c11Know('rao');
   C11.menu.rows.push({ name: 'Hàng rào tre', sub: ok ? `${RAO_WOOD} gỗ một đoạn · trâu bò gà không bước qua được` : 'Phải học "Làm hàng rào" trước', price: 0, tag: `${RAO_WOOD} gỗ / đoạn`, ok, f: () => {
     if (!c11Know('rao')) { C11.menu.note = 'Phải học "Làm hàng rào" trước'; return; }
-    C11.menu = null; C11.fence = true; c11Msg('Bấm từng ô để đóng rào, bấm vào đoạn rào để phá (không lấy lại gỗ). Đổi dụng cụ thì thôi.', '#2f6a4c'); } });
+    C11.menu = null; C11.fence = true; c11Msg('Bấm từng ô để đóng rào, bấm vào đoạn rào thì có thể phá (không lấy lại gỗ). Đổi dụng cụ thì thôi.', '#2f6a4c'); } });
 };
 const raoDraw0 = c11NewDraw;
 c11NewDraw = function (E, g, sx, sy, k, T) {                                         // the same green bamboo fence as round the village houses (dinhba.js, tile 'R')
