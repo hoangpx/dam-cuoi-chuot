@@ -6,7 +6,7 @@
    - SHOOING: tap a wild cow or buffalo with the player within 2.8 tiles and it bolts about 4.5 tiles away from the player (a hen is
      picked up and thrown instead, bong.js).
    - FENCES: the skill "Làm hàng rào" (the carpenter, 2 hearts) and the Búa đục: in its build list "Hàng rào tre" switches to fence mode,
-     then each tap on any free ground tile (grass, lane, hoed earth) near the player puts up a piece for RAO_WOOD logs, a tap on a piece breaks it (nothing back; outside fence mode the axe or the Búa đục breaks one too, raoBreak);
+     then each tap on any free ground tile (grass, lane, hoed earth) near the player puts up a piece for RAO_WOOD logs, a tap on a piece breaks it (nothing back; outside fence mode the Búa đục breaks one too, raoBreak);
      changing tool ends the mode. A fence blocks the animals only: the player steps over it. SAVE11.fences { 'x,y': 1 }, home farm only. */
 const RAO_WOOD = 2, RAO_RAID = ['ga', 'trong', 'bo', 'trau'], RAO_SHOO = ['bo', 'trau'];
 SAVE11.fences = SAVE11.fences || {};
@@ -72,8 +72,8 @@ c11Tap = function (tx, ty, wx, wy) {
     if (!c11Take('go', RAO_WOOD)) { c11Msg(`Cần ${RAO_WOOD} gỗ trong túi cho mỗi đoạn rào`, '#a3332a'); return; }
     c11Spend(C11_COST.dan * .5); SAVE11.fences[key] = 1; c11Dots(tx, ty, '#c89a5e', 8); c11Chips && c11Chips(tx, ty - .3, C11.face * -1, 6); persist11(); return;
   }
-  if (C11.area === 'ruong' && raoOn(tx, ty) && ['axe', 'dan'].includes(c11HandTool()) && !(typeof C11O !== 'undefined' && C11O.visit)
-      && Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) <= 2.5) { raoBreak(tx, ty); return; }   // the axe or the Búa đục breaks a piece any time (owner); farther off the tap only walks there
+  if (C11.area === 'ruong' && raoOn(tx, ty) && c11HandTool() === 'dan' && !(typeof C11O !== 'undefined' && C11O.visit)
+      && Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) <= 2.5) { raoBreak(tx, ty); return; }   // the Búa đục that built it breaks a piece any time (owner); farther off the tap only walks there
   for (const b of C11.beasts || []) if (!b.herd && RAO_SHOO.includes(b.kind) && Math.abs(wx - b.x) < .8 && wy > b.y - 1.2 && wy < b.y + .35) {
     const dx = b.x - C11.px, dy = b.y - C11.py, L = Math.hypot(dx, dy) || 1;
     if (L < 2.8) { b.flee = { dx: dx / L, dy: dy / L * .6, t: 1.3 }; const n = Math.hypot(b.flee.dx, b.flee.dy); b.flee.dx /= n; b.flee.dy /= n; b.raid = null; b.rc = 25 + Math.random() * 40; b.to = null;
