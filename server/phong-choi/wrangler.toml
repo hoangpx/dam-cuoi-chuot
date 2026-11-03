@@ -39,6 +39,10 @@ name = "JIGSAW_LO"
 class_name = "JigsawLO"
 
 [[durable_objects.bindings]]
+name = "JIGSAW_NH"
+class_name = "JigsawNH"
+
+[[durable_objects.bindings]]
 name = "JIGSAW_ROOM"
 class_name = "JigsawRoom"
 
@@ -103,3 +107,8 @@ new_sqlite_classes = ["JigsawLO"]
 [[migrations]]
 tag = "v12"
 new_sqlite_classes = ["JigsawRoom", "JigsawReg"]
+
+# 2026-11-02: the eighth print (Ngũ hổ, 2520 pieces), its own object and storage
+[[migrations]]
+tag = "v13"
+new_sqlite_classes = ["JigsawNH"]

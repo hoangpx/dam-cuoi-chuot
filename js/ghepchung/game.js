@@ -23,6 +23,7 @@ const jgLevel = pz => ({ pic: pz.pic, tier: 3, cols: pz.cols, rows: pz.rows, big
 const JG_STRIP = 50, JG_COIN = 10;
 
 // background track of the prints (owner's own song legacy.mp3, 2026-10-28: "cho bài này loop trong ghép tranh làm nhạc nền"): loops while a print is open. A streamed <audio> element (an AudioBuffer of 3 minutes would cost ~65 MB), 80 kbps, fetched only when chapter X opens. The global sound switch rules it (muted = paused); the game's own songs stay off (AU.setQuiet)
+const JG_MUSIC_ON = false;   // owner, 2026-11-02: "tắt cái nhạc đi"; set true to bring the track back
 const JG_MUSIC = { el: null, want: false };
 function jgMusic(on) {
   const M = JG_MUSIC; M.want = on;
@@ -35,7 +36,7 @@ document.addEventListener('visibilitychange', () => { const M = JG_MUSIC; if (!M
 document.addEventListener('pointerdown', () => { const M = JG_MUSIC; if (M.want && M.el && M.el.paused && !document.hidden && !AU.isMuted()) { const p = M.el.play(); if (p && p.catch) p.catch(() => {}); } });
 function startJG() {
   trackEnter('chuong-10'); AU.init(); AU.setQuiet(true);   // the game's own songs stay off in the prints (one looping track plays instead, jgMusic)
-  hideChapterHuds(); jgMusic(true);
+  hideChapterHuds(); jgMusic(JG_MUSIC_ON);
   S.chapter = 10; S.mode = 'jgplay';
   PAPER = getPaper('yellow'); document.documentElement.style.setProperty('--paper', PAPERS.yellow.css);
   for (const id of ['#album', '#end', '#title', '#chapters', '#hud', '#abil', '#pad']) $(id).hidden = true;

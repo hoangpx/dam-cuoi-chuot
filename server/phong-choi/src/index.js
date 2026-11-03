@@ -24,7 +24,7 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3, JigsawLH, JigsawLY, JigsawLO } from './jigsaw.js';
+export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3, JigsawLH, JigsawLY, JigsawLO, JigsawNH } from './jigsaw.js';
 export { JigsawRoom, JigsawReg } from './jigsawroom.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
 
@@ -133,6 +133,7 @@ export default {
       if (u.searchParams.get('p') === 'lh') return env.JIGSAW_LH.get(env.JIGSAW_LH.idFromName('main')).fetch(req);
       if (u.searchParams.get('p') === 'ly') return env.JIGSAW_LY.get(env.JIGSAW_LY.idFromName('main')).fetch(req);
       if (u.searchParams.get('p') === 'lo') return env.JIGSAW_LO.get(env.JIGSAW_LO.idFromName('main')).fetch(req);
+      if (u.searchParams.get('p') === 'nh') return env.JIGSAW_NH.get(env.JIGSAW_NH.idFromName('main')).fetch(req);
       return frozenJg();
     }
     if (u.pathname === '/jg-online' || u.pathname === '/jg-list') {   // /jg-online?p=vq: that picture's numbers; /jg-list: every picture's, in one request
@@ -143,13 +144,14 @@ export default {
       const lh = async () => (await env.JIGSAW_LH.get(env.JIGSAW_LH.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
       const ly = async () => (await env.JIGSAW_LY.get(env.JIGSAW_LY.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
       const lo = async () => (await env.JIGSAW_LO.get(env.JIGSAW_LO.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
-      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + ',"dg":' + await dg() + ',"lh":' + await lh() + ',"ly":' + await ly() + ',"lo":' + await lo() + '}}', { headers: h });
+      const nh = async () => (await env.JIGSAW_NH.get(env.JIGSAW_NH.idFromName('main')).fetch(new Request(u.origin + '/count'))).text();
+      if (u.pathname === '/jg-list') return new Response('{"puzzles":{"dcm":' + FROZEN_COUNT + ',"vq":' + await vq() + ',"dg":' + await dg() + ',"lh":' + await lh() + ',"ly":' + await ly() + ',"lo":' + await lo() + ',"nh":' + await nh() + '}}', { headers: h });
       const pp = u.searchParams.get('p');
-      return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : pp === 'lh' ? await lh() : pp === 'ly' ? await ly() : pp === 'lo' ? await lo() : FROZEN_COUNT, { headers: h });
+      return new Response(pp === 'vq' ? await vq() : pp === 'dg' ? await dg() : pp === 'lh' ? await lh() : pp === 'ly' ? await ly() : pp === 'lo' ? await lo() : pp === 'nh' ? await nh() : FROZEN_COUNT, { headers: h });
     }
     if (u.pathname === '/jg-sus' || u.pathname === '/jg-ban' || u.pathname === '/jg-log' || u.pathname === '/jg-reset' || u.pathname === '/jg-who' || u.pathname === '/jg-purge' || u.pathname === '/jg-revert' || u.pathname === '/jg-reports') {   // the owner's tools: who is busy, bans, the join log, a reset; ?p=dg for Đàn gà, else Vinh quy: Bearer <ADMIN secret>
       if (!env.ADMIN || req.headers.get('Authorization') !== 'Bearer ' + env.ADMIN) return new Response('forbidden', { status: 403 });
-      const pq = u.searchParams.get('p'), ns = pq === 'dg' ? env.JIGSAW_DG2 : pq === 'lh' ? env.JIGSAW_LH : pq === 'ly' ? env.JIGSAW_LY : pq === 'lo' ? env.JIGSAW_LO : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
+      const pq = u.searchParams.get('p'), ns = pq === 'dg' ? env.JIGSAW_DG2 : pq === 'lh' ? env.JIGSAW_LH : pq === 'ly' ? env.JIGSAW_LY : pq === 'lo' ? env.JIGSAW_LO : pq === 'nh' ? env.JIGSAW_NH : env.JIGSAW_VQ, path = u.pathname.replace('/jg-', '/');
       return ns.get(ns.idFromName('main')).fetch(new Request(u.origin + path + u.search));
     }
     if (u.pathname === '/hl-sus' || u.pathname === '/hl-ban' || u.pathname === '/hl-who') {   // the owner's tools for Hội Làng: who is in the room (with address), ban / free an address or a device, find a device by name: Bearer <ADMIN secret>
