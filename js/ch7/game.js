@@ -5,7 +5,7 @@
 let SAVE7 = { done: [], best: [], how: false };
 try { const s = JSON.parse(localStorage.getItem('dcc.c7') || 'null'); if (s && Array.isArray(s.done)) SAVE7 = Object.assign(SAVE7, s); } catch (e) {}
 const persist7 = () => { try { localStorage.setItem('dcc.c7', JSON.stringify(SAVE7)); } catch (e) {} };
-const C7_LEVEL = ['Dễ', 'Vừa', 'Khó', 'Rất khó', 'Siêu khó'];
+const C7_LEVEL = ['Dễ', 'Vừa', 'Khó', 'Rất khó', 'Làng bên'];   // lv 4 is the hardest set, named without a word on difficulty (owner)
 const C7 = { i: 0, G: null, geo: null, drag: false, page: -1 };
 
 function buildAlbum7() {

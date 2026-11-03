@@ -112,6 +112,7 @@ const LANG_TR = (() => {
     ['Very hard', 'Sehr schwer', 'Très difficile', 'Muy difícil', '非常难', 'とてもむずかしい'],
     ['Field', 'Feld', 'Champ', 'Campo', '田', '田んぼ'],
     ['Practice', 'Übung', 'Entraînement', 'Práctica', '练习', '練習'],
+    ['Far fields', 'Ferne Felder', 'Champs lointains', 'Campos lejanos', '远田', '遠くの田んぼ'],
     ['Level', 'Level', 'Niveau', 'Nivel', '关卡', 'ステージ'],
     ['All home', 'Alle daheim', 'Tous rentrés', 'Todos en casa', '都回家了', 'みんな帰った'],
     ['Locked', 'Gesperrt', 'Verrouillé', 'Bloqueado', '未解锁', 'ロック中'],
