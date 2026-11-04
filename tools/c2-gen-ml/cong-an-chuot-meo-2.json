@@ -1,0 +1,73 @@
+{
+ "id": "cong-an-chuot-meo",
+ "score": 116.71188937900413,
+ "moves": "DDDRRRRRRRUULLLLDDLLULUURDLDDRRRUULLULDRRRDDLLUDLLURURLDDRULURRRRRLDDRRRUUDDLLLUURRLLDDRRRUDUDL",
+ "len": 95,
+ "states": 80161,
+ "map": [
+  "M=1W=3G)M.",
+  "G=6w..w.wc",
+  "w.m.w.w.w.",
+  ".w....=.1.",
+  "....w..wgC",
+  ".........."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "cat:is:you"
+  }
+ ],
+ "chain": "Ghép MÈO LÀ ĐI"
+}

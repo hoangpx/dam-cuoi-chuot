@@ -1,0 +1,61 @@
+{
+ "id": "chan-chu",
+ "score": 62.99664727945088,
+ "moves": "DLLLDLDRRUURRRRRRDDDLLLRUUDLULDLULDRRRDRRR",
+ "len": 42,
+ "states": 99743,
+ "map": [
+  "M=1W=3T(M.",
+  "w.ww.mwww.",
+  ".w........",
+  "........w.",
+  "w6.=G.....",
+  "....ww...g"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép CỔNG LÀ THẮNG"
+}

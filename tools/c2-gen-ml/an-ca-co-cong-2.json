@@ -1,0 +1,73 @@
+{
+ "id": "an-ca-co-cong",
+ "score": 69.58297136656662,
+ "moves": "DDLLLLLURDRRRUULLDLDRRRDRULUURRRRDDLLLDLLURDRURRU",
+ "len": 49,
+ "states": 72609,
+ "map": [
+  "M=1W=3M)S.",
+  "G=6w.Swww.",
+  "ww...m....",
+  ".+.w..ws..",
+  ".......G..",
+  "......w..w"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "fish:has:gate"
+  }
+ ],
+ "chain": "Ghép CÁ CÓ CỔNG"
+}

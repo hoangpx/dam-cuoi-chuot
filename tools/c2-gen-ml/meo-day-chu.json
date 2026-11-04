@@ -1,0 +1,73 @@
+{
+ "id": "meo-day-chu",
+ "score": 79.05974048948931,
+ "moves": "URURRRRRLLLLDLDDRRRRRRUURUDDLDLLLLLLUUURRRRRRDRRUUULDDRDDD",
+ "len": 58,
+ "states": 104692,
+ "map": [
+  "M=1W=3C(M..",
+  "C=5w..w.w..",
+  "ww.=....G..",
+  "....w.ww...",
+  ".m.wcw.....",
+  ".......6..g"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+?",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": ""
+}

@@ -1,0 +1,85 @@
+{
+ "id": "da-khoan",
+ "score": 85.60462801506064,
+ "moves": "URRLDDRRURRULURDDDLLLLUURLDDRRURRUULDDLDLLUURRRDLDRRUULURDDDRRRUR",
+ "len": 65,
+ "states": 73826,
+ "map": [
+  "M=1W=3N=5.",
+  "R=2G=6ww..",
+  "w.ww..~~N.",
+  ".Rr.).~~.w",
+  "m.w...~~.g",
+  "......~~.."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   1
+  ],
+  [
+   5,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "rock:eat:water"
+  }
+ ],
+ "chain": "Ghép ĐÁ ĂN NƯỚC"
+}

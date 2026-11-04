@@ -1,0 +1,40 @@
+/* Chương II · Muôn loài: Hán title and Vietnamese name of each board found by tools/c2-gen.js (key = file id in
+   tools/c2-gen-ml, e.g. 'chan-chu-2'), and a hand-written hint for the boards that need no rule change. */
+module.exports = {
+  'an-ca-co-cong': ['魚門', 'Cá giấu cổng'], 'an-ca-co-cong-2': ['食魚', 'Ăn cá ra cổng'],
+  'an-ca-khong': ['莫食', 'Đừng ăn cá'], 'an-ca-khong-2': ['忍饑', 'Nhịn đói'],
+  'ca-an-chu': ['魚食', 'Cá ăn chữ'], 'ca-an-chu-2': ['避魚', 'Lách qua bầy cá'],
+  'ca-so-chuot': ['魚怕', 'Cá sợ chuột'], 'ca-so-chuot-2': ['魚化', 'Cá hoá cổng'],
+  'chan-chu': ['牧字', 'Chăn chữ'], 'chan-chu-2': ['驅字', 'Lùa chữ'], 'chan-chu-3': ['趕字', 'Đuổi chữ'],
+  'chan-chu-hai': ['開牆', 'Lùa chữ mở tường'], 'chan-chu-hai-2': ['字怕', 'Chữ sợ, tường mở'],
+  'chan-chu-song': ['岸字', 'Chăn chữ bên sông'], 'chan-chu-song-2': ['渡字', 'Chữ bên bờ nước'],
+  'chu-va-cong-so': ['皆怕', 'Cả làng sợ chuột'], 'chu-va-cong-so-2': ['共走', 'Chữ và cổng cùng chạy'],
+  'chu-so-meo': ['怕貓', 'Chữ sợ mèo'], 'chu-nguoc': ['字逆', 'Chữ đi ngược'],
+  'cong-an-chuot': ['門食', 'Cổng ăn chuột'], 'cong-an-chuot-2': ['鼠固', 'Chuột bền'],
+  'cong-an-chuot-meo': ['唯鼠', 'Cổng chỉ ăn chuột'], 'cong-an-chuot-meo-2': ['貓行', 'Mèo đi thay'],
+  'cong-so': ['門怕', 'Cổng sợ chuột'], 'cong-so-2': ['追門', 'Dồn cổng vào góc'], 'cong-so-3': ['困門', 'Vây cổng'],
+  'cong-so-gan-meo': ['近貓', 'Cổng sợ khi gần mèo'], 'cong-so-gan-meo-2': ['貓守', 'Mèo canh cổng'], 'cong-so-gan-meo-3': ['貓鄰', 'Bên cạnh mèo'],
+  'cong-so-meo': ['避貓', 'Cổng sợ mèo'], 'cong-theo-meo': ['門隨', 'Cổng theo mèo'],
+  'da-khoan': ['石鑽', 'Đá khoan đường'], 'da-khoan-2': ['石食', 'Đá ăn nước'], 'da-khoan-3': ['穿河', 'Xuyên sông'],
+  'da-so': ['石怕', 'Đá sợ chuột'], 'da-so-2': ['驅石', 'Lùa đá lấp sông'],
+  'da-theo-song': ['石隨', 'Đá theo chuột'], 'da-theo-song-2': ['石沉', 'Đá lăn xuống sông'],
+  'guong-ba': ['照鏡', 'Soi gương'], 'guong-ba-2': ['兩岸', 'Hai bờ ngược nhau'], 'guong-ba-3': ['對面', 'Đối diện'],
+  'guong-meo': ['鏡貓', 'Mèo trong gương'],
+  'lua-xuong-ao': ['誘火', 'Dụ lửa xuống ao'], 'lua-xuong-ao-2': ['火隨', 'Lửa theo chuột'],
+  'may-theo': ['雲隨', 'Mây theo chuột'],
+  'meo-day-chu': ['貓推', 'Mèo đẩy chữ'], 'meo-day-chu-2': ['熱貓', 'Mèo nóng sợ chuột'],
+  'meo-duoi': ['貓追', 'Mèo đuổi chuột'],
+  'meo-xuong-song': ['誘貓', 'Dụ mèo xuống sông'], 'meo-xuong-song-2': ['過河', 'Lối qua sông'],
+  'nguoc-gan-meo': ['近逆', 'Gần mèo thì ngược'],
+  'nguoc-rom': ['草逆', 'Rơm ngược'], 'nguoc-rom-2': ['草場', 'Bãi rơm'],
+  'nuoc-re': ['水分', 'Nước rẽ đôi'], 'nuoc-re-2': ['水怕', 'Sông sợ chuột'], 'nuoc-re-3': ['開路', 'Mở lối'],
+  'so-keo': ['石牽', 'Đá kéo nhau'], 'so-keo-2': ['牽石', 'Kéo đá lấp sông'],
+  'so-roi-2': ['階門', 'Cổng rơi xuống bậc'], 'so-roi-2-2': ['落階', 'Bậc thang'],
+  'so-theo': ['貓驅', 'Mèo lùa cổng'],
+};
+// boards whose win needs no rule change: the bought hint says what to do instead
+module.exports.hints = {
+  'da-so': 'Không cần ghép luật nào: đá sợ chuột, lùa đá xuống sông để đá và nước cùng chìm, mở lối qua.',
+  'meo-xuong-song': 'Không cần ghép luật nào: mèo đuổi theo chuột, dụ từng con mèo xuống sông để lấp lối qua.',
+  'so-keo': 'Không cần ghép luật nào: đá sợ chuột và kéo theo đá phía sau, lùa chúng xuống sông để mở lối qua.',
+};

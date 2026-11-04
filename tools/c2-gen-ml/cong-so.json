@@ -1,0 +1,61 @@
+{
+ "id": "cong-so",
+ "score": 63.48367731331849,
+ "moves": "DLLLLULLDLLURRRURURRRDDRDLLLRURURRULLLLULDU",
+ "len": 43,
+ "states": 67281,
+ "map": [
+  "M=1W=3G(M.",
+  "w..w..w.ww",
+  ".www.G....",
+  ".ww.gww6..",
+  "...=.w..mw",
+  "...w......"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép CỔNG LÀ THẮNG"
+}

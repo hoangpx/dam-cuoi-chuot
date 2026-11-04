@@ -1,0 +1,73 @@
+{
+ "id": "chan-chu-song",
+ "score": 85.21296120891652,
+ "moves": "LLLDDDRRRURUUDDLDLLLUUURLDDRDRRURUDLLLLUURRLLDDRRRURDLLLLUURRRDDR",
+ "len": 65,
+ "states": 54658,
+ "map": [
+  "M=1N=4T(M.",
+  "w..w~.w.w.",
+  "....~...m.",
+  "....~.ww=.",
+  "....~.6G.g",
+  "W=3.~....w"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép CỔNG LÀ THẮNG"
+}

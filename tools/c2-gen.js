@@ -8,11 +8,11 @@
 const fs = require('fs'), path = require('path'), root = path.join(__dirname, '..');
 const src = ['js/ch2/levels.js', 'js/ch2/engine.js', 'js/ch2/solver.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 const tmp = path.join(require('os').tmpdir(), 'c2g-' + process.pid + '-' + Math.random().toString(36).slice(2) + '.js');
-fs.writeFileSync(tmp, src + '\nmodule.exports = { C2K, C2P, C2THING, C2NOUN, C2PROP, C2OP, c2Parse, c2Settle, c2Step, c2Snap, c2StKey, C2_DIRS };');
+fs.writeFileSync(tmp, src + '\nmodule.exports = { C2K, C2P, C2OPS, C2THING, C2NOUN, C2PROP, C2OP, c2Parse, c2Settle, c2Step, c2Snap, c2StKey, C2_DIRS };');
 const E = require(tmp); fs.unlinkSync(tmp);
 
 const rk = r => r.a + ':' + r.verb + (r.neg ? '!' : '') + ':' + (r.prop || r.to);
-const rtxt = k => { const [a, v, b] = k.split(':'); return `${E.C2K[a].vi} ${v === 'has' ? 'CÓ' : v === 'is!' ? 'KHÔNG' : 'LÀ'} ${E.C2P[b] ? E.C2P[b].vi : E.C2K[b].vi}`; };
+const rtxt = k => { const [a, v, b] = k.split(':'), n = v.endsWith('!'), w = n ? v.slice(0, -1) : v; return `${E.C2K[a].vi} ${w === 'has' ? 'CÓ' : w === 'is' ? (n ? 'KHÔNG' : 'LÀ') : (n ? 'KHÔNG ' : '') + E.C2OPS[w].vi} ${E.C2P[b] ? E.C2P[b].vi : E.C2K[b].vi}`; };
 const rset = st => new Set(st.rules.map(rk));
 
 // BFS; ok(st) false prunes a state; returns { moves, states, capped, path: [rule sets along the road] }
@@ -142,7 +142,11 @@ function mutate(spec, b, rnd) {
   return settleGrid(spec, nb);
 }
 // 'C=%' → 'cat:is:swap', 'J+G' → 'jar:has:gate', 'F-5' → 'fire:is!:hot'
-const needKey = t => { const a = E.C2NOUN[t[0]], op = E.C2OP[t[1]], b = E.C2PROP[t[2]] || E.C2NOUN[t[2]]; return a + ':' + (op === 'has' ? 'has' : op === 'not' ? 'is!' : 'is') + ':' + b; };
+// 'C)S' → 'cat:eat:fish', 'C-)S' → 'cat:eat!:fish' (KHÔNG ĂN)
+const needKey = t => { const a = E.C2NOUN[t[0]]; let i = 1, n = '';
+  if (E.C2OP[t[1]] === 'not' && /^(eat|fear|follow)$/.test(E.C2OP[t[2]])) { i = 2; n = '!'; }
+  const op = E.C2OP[t[i]], b = E.C2PROP[t[i + 1]] || E.C2NOUN[t[i + 1]];
+  return a + ':' + (op === 'has' ? 'has' : op === 'not' ? 'is!' : op === 'is' ? 'is' : op + n) + ':' + b; };
 // is rule r (a key; '-key' = a starting rule that must go) needed for every win? true / false / null (search capped)
 function needed(def, r, cap) {
   const neg = r[0] === '-', k = neg ? r.slice(1) : r;
@@ -165,7 +169,7 @@ function score(spec, def, cap) {
 
 if (require.main === module) {
   const args = process.argv.slice(2), opt = n => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : null; };
-  const SPECS = require('./c2-specs.js'), spec = SPECS.find(s => s.id === args[0]);
+  const SPECS = require(process.env.SPECS || './c2-specs.js'), spec = SPECS.find(s => s.id === args[0]);   // SPECS=./c2-specs-ml.js for Muôn loài
   if (!spec) { console.log('no spec', args[0]); process.exit(1); }
   const iters = +(opt('iters') || spec.iters || 1500), cap = +(opt('cap') || spec.cap || 120000), seed = +(opt('seed') || 1);
   const rnd = mulberry(seed * 7919 + spec.id.length);
@@ -187,8 +191,9 @@ if (require.main === module) {
   }
   const def = toDef(spec, best), ess = essential(def, bestR.r.moves, cap * 2), chain = chainOf(def, bestR.r.moves, ess);
   const out = { id: spec.id, score: bestS, moves: bestR.r.moves, len: bestR.r.moves.length, states: bestR.r.states, map: def.map, fixed: def.fixed, dirs: def.dirs, ess, chain };
-  fs.mkdirSync(path.join(__dirname, 'c2-gen'), { recursive: true });
-  const f = path.join(__dirname, 'c2-gen', spec.id + (opt('seed') ? '-' + seed : '') + '.json');
+  const OUT = process.env.OUT || 'c2-gen';
+  fs.mkdirSync(path.join(__dirname, OUT), { recursive: true });
+  const f = path.join(__dirname, OUT, spec.id + (opt('seed') ? '-' + seed : '') + '.json');
   let prev = null; try { prev = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) {}
   if (!prev || prev.score < out.score) fs.writeFileSync(f, JSON.stringify(out, null, 1));
   console.log(spec.id, 'score', bestS.toFixed(1), 'len', out.len, 'states', out.states, 'ess', ess.map(e => e.op + rtxt(e.r)).join(', '));

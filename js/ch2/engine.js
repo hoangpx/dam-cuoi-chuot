@@ -13,6 +13,10 @@
    something NÓNG) · BỀN safe (never destroyed) · RƠI fall (drops down until something solid). Conditions between the noun
    and the verb: TRÊN (on: shares the cell with one) and GẦN (near: on it or in one of the 8 cells around):
    CHUỘT TRÊN RƠM LÀ ĐI, ĐÁ GẦN NƯỚC LÀ CHÌA. Turn: ĐI → CHẠY → TRÔI moves → transforms, destruction, RƠI → CHUYỂN.
+   Muôn loài: verbs between two nouns like CÓ: ĂN eat (MÈO ĂN CÁ: a fish sharing a cat's cell is gone), SỢ fear (CỔNG SỢ
+   CHUỘT: after you move, a gate with a mouse in one of its 4 neighbour cells steps away from it), THEO follow (MÈO THEO CHUỘT:
+   the cat turns to face the nearest mouse before CHẠY moves it); KHÔNG before one negates it (MÈO KHÔNG ĂN CÁ); and the
+   property NGƯỢC reverse (a thing that is ĐI and NGƯỢC walks the other way). Turn: ĐI → SỢ → THEO, CHẠY → TRÔI → …
    A grid index (cells by y*W+x) keeps steps quick for the solver (solver.js). */
 function c2Parse(def) {
   const objs = []; let id = 0;
@@ -27,9 +31,10 @@ function c2Parse(def) {
   for (const [x, y] of def.fixed || []) for (const o of objs) if (o.x === x && o.y === y && o.t !== 'thing') o.fix = true;
   for (const [x, y, d] of def.dirs || []) for (const o of objs) if (o.x === x && o.y === y && o.t === 'thing') o.dir = d;
   const dirMatters = objs.some(o => o.t === 'prop' && (o.p === 'move' || o.p === 'pull' || o.p === 'shift'));
+
   return { W: def.map[0].length, H: def.map.length, objs, rules: [], props: {}, won: false, dead: false, nid: id, dirMatters };
 }
-const C2_DXY = { R: [1, 0], L: [-1, 0], U: [0, -1], D: [0, 1] }, C2_BACK = { R: 'L', L: 'R', U: 'D', D: 'U' };
+const C2_DXY = { R: [1, 0], L: [-1, 0], U: [0, -1], D: [0, 1] }, C2_BACK = { R: 'L', L: 'R', U: 'D', D: 'U' }, C2_LOOK = ['R', 'L', 'D', 'U'];
 const c2DirOf = (dx, dy) => dx > 0 ? 'R' : dx < 0 ? 'L' : dy < 0 ? 'U' : 'D';
 const c2Pk = o => o.t === 'thing' ? o.k : 'text';                          // whose properties an object takes
 // properties as bit masks per kind (st.pm), quick for the solver; st.props keeps Sets for reading.
@@ -60,11 +65,14 @@ function c2AnyProp(st, p) {
   if (st.cm) for (const k in st.cm) if (st.cm[k] & b) return true;
   return false;
 }
+const C2_ACT = { eat: 1, fear: 1, follow: 1 }, C2_VERB = { is: 1, has: 1, not: 1, eat: 1, fear: 1, follow: 1 };
+// the verb of a rule as it reads: LÀ, KHÔNG, CÓ, ĂN, KHÔNG ĂN …
+const c2VerbTxt = r => r.verb === 'has' ? 'CÓ' : r.verb === 'is' ? (r.neg ? 'KHÔNG' : 'LÀ') : (r.neg ? 'KHÔNG ' : '') + C2OPS[r.verb].vi;
 function c2ParseRules(st) {
   const W = st.W, H = st.H, txt = new Array(W * H);
   for (const o of st.objs) if (o.t !== 'thing') txt[o.y * W + o.x] = o;
   const rules = [], at = (x, y) => x >= 0 && y >= 0 && x < W && y < H ? txt[y * W + x] : undefined;
-  // NOUN (VÀ NOUN)* [TRÊN|GẦN NOUN] (LÀ (PROP|NOUN) | CÓ NOUN | KHÔNG PROP) (VÀ …)*
+  // NOUN (VÀ NOUN)* [TRÊN|GẦN NOUN] (LÀ (PROP|NOUN) | CÓ NOUN | KHÔNG PROP | [KHÔNG] ĂN|SỢ|THEO NOUN) (VÀ …)*
   const scan = (x, y, dx, dy) => {
     // a noun inside a longer sentence (after VÀ, or the one after TRÊN/GẦN) does not start a sentence of its own
     const pv = at(x - dx, y - dy); if (pv && (pv.t === 'and' || pv.t === 'on' || pv.t === 'near')) { const pp = at(x - 2 * dx, y - 2 * dy); if (pp && pp.t === 'noun') return; }
@@ -81,11 +89,13 @@ function c2ParseRules(st) {
       const cn = at(cx + dx, cy + dy); if (!cn || cn.t !== 'noun') return;
       cond = { c: c.t, k: cn.k }; cells.push(c, cn); cx += 2 * dx; cy += 2 * dy;
     }
-    const v = at(cx, cy); if (!v || (v.t !== 'is' && v.t !== 'has' && v.t !== 'not')) return;
+    let v = at(cx, cy); if (!v || !C2_VERB[v.t]) return;
     cells.push(v); cx += dx; cy += dy;
+    let vneg = false, verb = v.t === 'not' ? 'is' : v.t;
+    if (v.t === 'not') { const w = at(cx, cy); if (w && C2_ACT[w.t]) { cells.push(w); cx += dx; cy += dy; vneg = true; verb = w.t; v = w; } }
     const objsR = [];
     for (;;) {
-      const neg = v.t === 'not', o = at(cx, cy), used = [];
+      const neg = v.t === 'not' || vneg, o = at(cx, cy), used = [];
       if (!o || !(v.t === 'not' ? o.t === 'prop' : o.t === 'noun' || (o.t === 'prop' && v.t === 'is'))) break;
       used.push(o); objsR.push({ o, neg, used }); cx += dx; cy += dy;
       const a = at(cx, cy), nx = at(cx + dx, cy + dy);
@@ -94,7 +104,7 @@ function c2ParseRules(st) {
     }
     if (!objsR.length) return;
     const all = [...cells]; for (const r of objsR) { all.push(...r.used); if (r.and) all.push(r.and); }
-    for (const s of subj) for (const r of objsR) rules.push({ a: s.k, verb: v.t === 'has' ? 'has' : 'is', neg: r.neg, prop: r.o.t === 'prop' ? r.o.p : null, to: r.o.t === 'noun' ? r.o.k : null, cond, cells: all });
+    for (const s of subj) for (const r of objsR) rules.push({ a: s.k, verb, neg: r.neg, prop: r.o.t === 'prop' ? r.o.p : null, to: r.o.t === 'noun' ? r.o.k : null, cond, cells: all });
   };
   for (let i = 0; i < W * H; i++) if (txt[i] && txt[i].t === 'noun') { const x = i % W, y = (i / W) | 0; scan(x, y, 1, 0); scan(x, y, 0, 1); }
   return rules;
@@ -104,6 +114,11 @@ function c2Props(st) {
   for (const r of st.rules) if (r.verb === 'is' && r.prop && !r.neg && !r.cond) st.props[r.a].add(r.prop);
   for (const r of st.rules) if (r.verb === 'is' && r.prop && r.neg && !r.cond) st.props[r.a].delete(r.prop);
   st.pm = {}; for (const k in st.props) { let m = 0; for (const p of st.props[k]) m |= C2PB[p]; st.pm[k] = m; }
+  // ĂN / SỢ / THEO: [{ a, b, cond }], less those KHÔNG takes back (MÈO KHÔNG ĂN CÁ)
+  for (const v in C2_ACT) {
+    const no = new Set(st.rules.filter(r => r.verb === v && r.neg).map(r => r.a + '>' + r.to));
+    st[v] = st.rules.filter(r => r.verb === v && !r.neg && !no.has(r.a + '>' + r.to)).map(r => ({ a: r.a, b: r.to, cond: r.cond }));
+  }
   st.cr = st.rules.filter(r => r.cond && r.verb === 'is' && r.prop); st.cm = null;
   if (st.cr.length) {
     st.cm = {}; st.nm = {};
@@ -137,6 +152,10 @@ function c2Settle(st, keep) {
         const op = g.filter(o => c2OHas(st, o, 'open')), sh = g.filter(o => c2OHas(st, o, 'shut'));
         for (let i = 0; i < Math.min(op.length, sh.length); i++) { if (op[i] === sh[i]) continue; dead.add(op[i]); dead.add(sh[i]); }
         if (g.length > 1) g.forEach(o => { if (c2OHas(st, o, 'weak')) dead.add(o); });
+        if (g.length > 1 && st.eat) for (const e of st.eat) {                                   // ĂN: what shares an eater's cell is gone
+          const by = g.filter(o => c2Pk(o) === e.a && (!e.cond || c2Cond(st, o, e.cond))); if (!by.length) continue;
+          for (const t of g) if (c2Pk(t) === e.b && !(by.length === 1 && by[0] === t)) dead.add(t);
+        }
       }
     }
     for (const o of dead) if (c2OHas(st, o, 'safe')) dead.delete(o);                 // BỀN: nothing destroys it
@@ -240,8 +259,38 @@ function c2Step(st, dx, dy) {
   const wasTele = new Set(); if (teleOn) for (const k in st.pm) if (st.pm[k] & C2PB.tele) wasTele.add(k);
   const you = st.objs.filter(o => !o.fix && c2OHas(st, o, 'you'));   // pinned words never move, even when CHỮ LÀ ĐI
   let changed = false;
-  for (const o of you) if (o.t === 'thing' && o.dir !== d) { o.dir = d; if (st.dirMatters) changed = true; }
-  if (c2MoveGroup(st, g, you, dx, dy)) changed = true;
+  const back = c2AnyProp(st, 'rev') ? you.filter(o => c2OHas(st, o, 'rev')) : [], fwd = back.length ? you.filter(o => !back.includes(o)) : you;
+  for (const o of fwd) if (o.t === 'thing' && o.dir !== d) { o.dir = d; if (st.dirMatters) changed = true; }
+  for (const o of back) if (o.t === 'thing' && o.dir !== C2_BACK[d]) { o.dir = C2_BACK[d]; if (st.dirMatters) changed = true; }
+  if (c2MoveGroup(st, g, fwd, dx, dy)) changed = true;
+  if (back.length && c2MoveGroup(st, g, back, -dx, -dy)) changed = true;            // NGƯỢC: the other way
+  // SỢ: whatever has what it fears in a neighbour cell steps away from it (the first found of right, left, down, up)
+  if (st.fear && st.fear.length) {
+    const jobs = [];
+    for (const o of st.objs) {
+      if (o.fix) continue;
+      const pk = c2Pk(o), fs = st.fear.filter(e => e.a === pk && (!e.cond || c2Cond(st, o, e.cond))); if (!fs.length) continue;
+      for (const fd of C2_LOOK) {
+        const [mx, my] = C2_DXY[fd], x = o.x + mx, y = o.y + my; if (x < 0 || y < 0 || x >= st.W || y >= st.H) continue;
+        if ((g[y * st.W + x] || []).some(t => t !== o && fs.some(e => e.b === c2Pk(t)))) { jobs.push([o, C2_BACK[fd]]); break; }
+      }
+    }
+    for (const [o, fd] of jobs) {
+      if (!st.objs.includes(o)) continue;
+      if (o.t === 'thing' && o.dir !== fd) { o.dir = fd; if (st.dirMatters) changed = true; }
+      if (c2MoveGroup(st, g, [o], ...C2_DXY[fd])) changed = true;
+    }
+  }
+  // THEO: a follower turns to face the nearest thing it follows (the longer way first)
+  if (st.follow && st.follow.length) for (const o of st.objs) {
+    if (o.t !== 'thing') continue;
+    const fs = st.follow.filter(e => e.a === o.k && (!e.cond || c2Cond(st, o, e.cond))); if (!fs.length) continue;
+    let best = null, bd = 1e9;
+    for (const t of st.objs) if (t !== o && fs.some(e => e.b === c2Pk(t))) { const dd = Math.abs(t.x - o.x) + Math.abs(t.y - o.y); if (dd > 0 && dd < bd) { bd = dd; best = t; } }
+    if (!best) continue;
+    const ex = best.x - o.x, ey = best.y - o.y, nd = Math.abs(ex) >= Math.abs(ey) ? (ex > 0 ? 'R' : 'L') : (ey > 0 ? 'D' : 'U');
+    if (o.dir !== nd) { o.dir = nd; if (st.dirMatters) changed = true; }
+  }
   // CHẠY: each mover steps its way; blocked, it turns back and tries once more
   const run = st.objs.filter(o => o.t === 'thing' && c2OHas(st, o, 'move'));
   for (const dirKey of ['R', 'L', 'U', 'D']) {

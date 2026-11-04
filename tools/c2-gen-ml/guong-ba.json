@@ -1,0 +1,85 @@
+{
+ "id": "guong-ba",
+ "score": 85.47126361709235,
+ "moves": "DURUUDRRLLDDRRUDLLUURRRRURRRDLLLLLDDLLULUURDLDDRRRUULLULLDRURDULL",
+ "len": 65,
+ "states": 66643,
+ "map": [
+  "M=1C=1C=[.",
+  "W=3N=4wG.w",
+  "w..w~..c..",
+  "..m.~=w..w",
+  "....~6....",
+  "....~ww..g"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   1
+  ],
+  [
+   5,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép CỔNG LÀ THẮNG"
+}

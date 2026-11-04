@@ -1,0 +1,74 @@
+{
+ "id": "so-roi-2",
+ "score": 80.59366030520356,
+ "moves": "LUUULURRRDDRDRUUDLLUULLDDDLLLLDLLURRRRRDRUUULURRLDDDLLLLLLUURR",
+ "len": 62,
+ "states": 15772,
+ "map": [
+  "M=1W=3G(M..",
+  "G=$w..w.ww.",
+  "w..w..=....",
+  "..gw...w.w.",
+  ".wwwww.w..6",
+  "...G...ww..",
+  "...ww..mw.w"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép CỔNG LÀ THẮNG"
+}

@@ -1,0 +1,73 @@
+{
+ "id": "nuoc-re",
+ "score": 82.9087112296423,
+ "moves": "URURDRDDLUDRRRRULLDLLURULLUURDDRDDLUDRRRULLULRDDLURRRURRRURRDRD",
+ "len": 63,
+ "states": 43275,
+ "map": [
+  "M=1W=3N=4G=6",
+  "w..w..w~~w.w",
+  "w..ww.w~~..w",
+  ".(..w..~~w..",
+  "mw..NM.~~.wg",
+  "ww.....~~..w"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "water:fear:mouse"
+  }
+ ],
+ "chain": "Ghép NƯỚC SỢ CHUỘT"
+}

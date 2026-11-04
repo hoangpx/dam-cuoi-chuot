@@ -1,0 +1,352 @@
+[
+ {
+  "id": "lua-xuong-ao",
+  "file": "lua-xuong-ao.json",
+  "han": "誘火",
+  "name": "Dụ lửa xuống ao",
+  "chain": "Lửa theo chuột: cho lửa chạy rồi dụ nó xuống ao → Ghép LỬA LÀ CHẠY"
+ },
+ {
+  "id": "cong-so-meo",
+  "file": "cong-so-meo.json",
+  "han": "避貓",
+  "name": "Cổng sợ mèo",
+  "chain": "Mèo chạy qua lại, cổng sợ mèo → Ghép MÈO LÀ CHẶN → Phá MÈO LÀ CHẶN"
+ },
+ {
+  "id": "chu-so-meo",
+  "file": "chu-so-meo.json",
+  "han": "怕貓",
+  "name": "Chữ sợ mèo",
+  "chain": "Chữ sợ mèo: để mèo lùa chữ hộ → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "ca-an-chu-2",
+  "file": "ca-an-chu-2.json",
+  "han": "避魚",
+  "name": "Lách qua bầy cá",
+  "chain": "Cá ăn chữ: đẩy chữ qua lúc cá bơi chỗ khác → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "guong-ba-3",
+  "file": "guong-ba-3.json",
+  "han": "對面",
+  "name": "Đối diện",
+  "chain": "Mèo đi ngược chuột: dùng mèo đẩy chữ bên kia sông → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "an-ca-co-cong",
+  "file": "an-ca-co-cong.json",
+  "han": "魚門",
+  "name": "Cá giấu cổng",
+  "chain": "Chuột ăn cá: dặn cá để lại cổng rồi hãy ăn → Ghép CÁ CÓ CỔNG"
+ },
+ {
+  "id": "chu-va-cong-so-2",
+  "file": "chu-va-cong-so-2.json",
+  "han": "共走",
+  "name": "Chữ và cổng cùng chạy",
+  "chain": "Chữ và cổng đều sợ chuột: lùa chữ thành câu rồi dồn cổng vào chỗ hết đường lùi → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "cong-so-gan-meo-2",
+  "file": "cong-so-gan-meo-2.json",
+  "han": "貓守",
+  "name": "Mèo canh cổng",
+  "chain": "Cổng chỉ sợ chuột khi ở gần mèo → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "ca-an-chu",
+  "file": "ca-an-chu.json",
+  "han": "魚食",
+  "name": "Cá ăn chữ",
+  "chain": "Cá ăn chữ: đẩy chữ qua lúc cá bơi chỗ khác → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "da-theo-song",
+  "file": "da-theo-song.json",
+  "han": "石隨",
+  "name": "Đá theo chuột",
+  "chain": "Đá theo chuột: cho đá chạy rồi dụ xuống sông lấp lối → Ghép ĐÁ LÀ CHẠY"
+ },
+ {
+  "id": "ca-so-chuot-2",
+  "file": "ca-so-chuot-2.json",
+  "han": "魚化",
+  "name": "Cá hoá cổng",
+  "chain": "Cá sợ chuột, mà chuột chạm vào là ăn mất cá → Ghép CÁ LÀ CỔNG → Phá CÁ LÀ CỔNG"
+ },
+ {
+  "id": "nuoc-re",
+  "file": "nuoc-re.json",
+  "han": "水分",
+  "name": "Nước rẽ đôi",
+  "chain": "Nước sợ chuột: hai ô nước dồn vào nhau là cùng chìm → Ghép NƯỚC SỢ CHUỘT"
+ },
+ {
+  "id": "da-theo-song-2",
+  "file": "da-theo-song-2.json",
+  "han": "石沉",
+  "name": "Đá lăn xuống sông",
+  "chain": "Đá theo chuột: cho đá chạy rồi dụ xuống sông lấp lối → Ghép ĐÁ LÀ CHẠY"
+ },
+ {
+  "id": "chan-chu-song",
+  "file": "chan-chu-song.json",
+  "han": "岸字",
+  "name": "Chăn chữ bên sông",
+  "chain": "Chữ sợ chuột: lùa chữ thành câu, đừng để chữ chạy xuống sông → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "an-ca-khong-2",
+  "file": "an-ca-khong-2.json",
+  "han": "忍饑",
+  "name": "Nhịn đói",
+  "chain": "Cá là đích, nhưng chuột chạm vào là ăn mất → Ghép CHUỘT KHÔNG ĂN CÁ"
+ },
+ {
+  "id": "chu-va-cong-so",
+  "file": "chu-va-cong-so.json",
+  "han": "皆怕",
+  "name": "Cả làng sợ chuột",
+  "chain": "Chữ và cổng đều sợ chuột: lùa chữ thành câu rồi dồn cổng vào chỗ hết đường lùi → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "meo-day-chu-2",
+  "file": "meo-day-chu-2.json",
+  "han": "熱貓",
+  "name": "Mèo nóng sợ chuột",
+  "chain": "Mèo nóng sợ chuột: lùa mèo đẩy chữ hộ → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "cong-so",
+  "file": "cong-so.json",
+  "han": "門怕",
+  "name": "Cổng sợ chuột",
+  "chain": "Cổng sợ chuột: dồn cổng vào chỗ nó hết đường lùi → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "chan-chu-2",
+  "file": "chan-chu-2.json",
+  "han": "驅字",
+  "name": "Lùa chữ",
+  "chain": "Chữ sợ chuột: lùa chữ như lùa vịt → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "so-keo",
+  "file": "so-keo.json",
+  "han": "石牽",
+  "name": "Đá kéo nhau",
+  "chain": "Không cần ghép luật nào: đá sợ chuột, lại là KÉO nên chặn đường nhưng đi theo sau thứ rời khỏi nó. Lùa đá xuống sông để đá và nước cùng chìm, mở lối qua."
+ },
+ {
+  "id": "nguoc-rom-2",
+  "file": "nguoc-rom-2.json",
+  "han": "草場",
+  "name": "Bãi rơm",
+  "chain": "Đứng trên rơm thì chuột đi ngược → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "da-so",
+  "file": "da-so.json",
+  "han": "石怕",
+  "name": "Đá sợ chuột",
+  "chain": "Không cần ghép luật nào: đá sợ chuột, lùa đá xuống sông để đá và nước cùng chìm, mở lối qua."
+ },
+ {
+  "id": "nguoc-rom",
+  "file": "nguoc-rom.json",
+  "han": "草逆",
+  "name": "Rơm ngược",
+  "chain": "Đứng trên rơm thì chuột đi ngược → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "ca-so-chuot",
+  "file": "ca-so-chuot.json",
+  "han": "魚怕",
+  "name": "Cá sợ chuột",
+  "chain": "Cá sợ chuột, mà chuột chạm vào là ăn mất cá → Ghép CÁ LÀ CỔNG"
+ },
+ {
+  "id": "an-ca-co-cong-2",
+  "file": "an-ca-co-cong-2.json",
+  "han": "食魚",
+  "name": "Ăn cá ra cổng",
+  "chain": "Chuột ăn cá: dặn cá để lại cổng rồi hãy ăn → Ghép CÁ CÓ CỔNG"
+ },
+ {
+  "id": "chan-chu-hai",
+  "file": "chan-chu-hai.json",
+  "han": "開牆",
+  "name": "Lùa chữ mở tường",
+  "chain": "Chữ sợ chuột: lùa chữ KHÔNG vào câu TƯỜNG LÀ CHẶN → Ghép TƯỜNG KHÔNG CHẶN"
+ },
+ {
+  "id": "cong-so-gan-meo-3",
+  "file": "cong-so-gan-meo-3.json",
+  "han": "貓鄰",
+  "name": "Bên cạnh mèo",
+  "chain": "Cổng chỉ sợ chuột khi ở gần mèo → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "da-khoan-3",
+  "file": "da-khoan-3.json",
+  "han": "穿河",
+  "name": "Xuyên sông",
+  "chain": "Nước nóng như lửa: đá ăn nước sẽ khoan đường qua → Ghép ĐÁ ĂN NƯỚC"
+ },
+ {
+  "id": "cong-so-2",
+  "file": "cong-so-2.json",
+  "han": "追門",
+  "name": "Dồn cổng vào góc",
+  "chain": "Cổng sợ chuột: dồn cổng vào chỗ nó hết đường lùi → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "so-roi-2",
+  "file": "so-roi-2.json",
+  "han": "階門",
+  "name": "Cổng rơi xuống bậc",
+  "chain": "Cổng sợ chuột và rơi: lùa cổng xuống từng bậc → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "da-khoan",
+  "file": "da-khoan.json",
+  "han": "石鑽",
+  "name": "Đá khoan đường",
+  "chain": "Nước nóng như lửa: đá ăn nước sẽ khoan đường qua → Ghép ĐÁ ĂN NƯỚC"
+ },
+ {
+  "id": "meo-day-chu",
+  "file": "meo-day-chu.json",
+  "han": "貓推",
+  "name": "Mèo đẩy chữ",
+  "chain": "Mèo nóng sợ chuột: lùa mèo đẩy chữ hộ → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "nuoc-re-3",
+  "file": "nuoc-re-3.json",
+  "han": "開路",
+  "name": "Mở lối",
+  "chain": "Nước sợ chuột: hai ô nước dồn vào nhau là cùng chìm → Ghép NƯỚC SỢ CHUỘT"
+ },
+ {
+  "id": "so-keo-2",
+  "file": "so-keo-2.json",
+  "han": "牽石",
+  "name": "Kéo đá lấp sông",
+  "chain": "Không cần ghép luật nào: đá sợ chuột, lại là KÉO nên chặn đường nhưng đi theo sau thứ rời khỏi nó. Lùa đá xuống sông để đá và nước cùng chìm, mở lối qua."
+ },
+ {
+  "id": "nuoc-re-2",
+  "file": "nuoc-re-2.json",
+  "han": "水怕",
+  "name": "Sông sợ chuột",
+  "chain": "Nước sợ chuột: hai ô nước dồn vào nhau là cùng chìm → Ghép NƯỚC SỢ CHUỘT"
+ },
+ {
+  "id": "da-so-2",
+  "file": "da-so-2.json",
+  "han": "驅石",
+  "name": "Lùa đá lấp sông",
+  "chain": "Không cần ghép luật nào: đá sợ chuột, lùa đá xuống sông để đá và nước cùng chìm, mở lối qua."
+ },
+ {
+  "id": "chan-chu-song-2",
+  "file": "chan-chu-song-2.json",
+  "han": "渡字",
+  "name": "Chữ bên bờ nước",
+  "chain": "Chữ sợ chuột: lùa chữ thành câu, đừng để chữ chạy xuống sông → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "guong-ba",
+  "file": "guong-ba.json",
+  "han": "照鏡",
+  "name": "Soi gương",
+  "chain": "Mèo đi ngược chuột: dùng mèo đẩy chữ bên kia sông → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "da-khoan-2",
+  "file": "da-khoan-2.json",
+  "han": "石食",
+  "name": "Đá ăn nước",
+  "chain": "Nước nóng như lửa: đá ăn nước sẽ khoan đường qua → Ghép ĐÁ ĂN NƯỚC"
+ },
+ {
+  "id": "cong-so-gan-meo",
+  "file": "cong-so-gan-meo.json",
+  "han": "近貓",
+  "name": "Cổng sợ khi gần mèo",
+  "chain": "Cổng chỉ sợ chuột khi ở gần mèo → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "meo-xuong-song-2",
+  "file": "meo-xuong-song-2.json",
+  "han": "過河",
+  "name": "Lối qua sông",
+  "chain": "Không cần ghép luật nào: mèo đuổi theo chuột, dụ từng con mèo xuống sông để lấp lối qua."
+ },
+ {
+  "id": "meo-xuong-song",
+  "file": "meo-xuong-song.json",
+  "han": "誘貓",
+  "name": "Dụ mèo xuống sông",
+  "chain": "Không cần ghép luật nào: mèo đuổi theo chuột, dụ từng con mèo xuống sông để lấp lối qua."
+ },
+ {
+  "id": "cong-an-chuot-2",
+  "file": "cong-an-chuot-2.json",
+  "han": "鼠固",
+  "name": "Chuột bền",
+  "chain": "Cổng ăn chuột: chuột phải không gì phá được → Ghép CHUỘT LÀ BỀN"
+ },
+ {
+  "id": "cong-an-chuot-meo",
+  "file": "cong-an-chuot-meo.json",
+  "han": "唯鼠",
+  "name": "Cổng chỉ ăn chuột",
+  "chain": "Cổng chỉ ăn chuột, không ăn mèo → Ghép MÈO LÀ ĐI"
+ },
+ {
+  "id": "chan-chu-hai-2",
+  "file": "chan-chu-hai-2.json",
+  "han": "字怕",
+  "name": "Chữ sợ, tường mở",
+  "chain": "Chữ sợ chuột: lùa chữ KHÔNG vào câu TƯỜNG LÀ CHẶN → Ghép TƯỜNG KHÔNG CHẶN"
+ },
+ {
+  "id": "cong-an-chuot",
+  "file": "cong-an-chuot.json",
+  "han": "門食",
+  "name": "Cổng ăn chuột",
+  "chain": "Cổng ăn chuột: chuột phải không gì phá được → Ghép CHUỘT LÀ BỀN"
+ },
+ {
+  "id": "chan-chu-3",
+  "file": "chan-chu-3.json",
+  "han": "趕字",
+  "name": "Đuổi chữ",
+  "chain": "Chữ sợ chuột: lùa chữ như lùa vịt → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "cong-an-chuot-meo-2",
+  "file": "cong-an-chuot-meo-2.json",
+  "han": "貓行",
+  "name": "Mèo đi thay",
+  "chain": "Cổng chỉ ăn chuột, không ăn mèo → Ghép MÈO LÀ ĐI"
+ },
+ {
+  "id": "chan-chu",
+  "file": "chan-chu.json",
+  "han": "牧字",
+  "name": "Chăn chữ",
+  "chain": "Chữ sợ chuột: lùa chữ như lùa vịt → Ghép CỔNG LÀ THẮNG"
+ },
+ {
+  "id": "so-roi-2-2",
+  "file": "so-roi-2-2.json",
+  "han": "落階",
+  "name": "Bậc thang",
+  "chain": "Cổng sợ chuột và rơi: lùa cổng xuống từng bậc → Ghép CỔNG LÀ THẮNG"
+ }
+]

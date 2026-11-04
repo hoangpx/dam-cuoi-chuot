@@ -1,0 +1,73 @@
+{
+ "id": "cong-an-chuot",
+ "score": 106.6742888633573,
+ "moves": "ULLLLLULLLDLDRRRDRRRRUDLLLULLLUURRRDDURRURRDLLLRRDDLLLULLDRRULLLUURRRDDURRRDDLLLLRRRRUR",
+ "len": 87,
+ "states": 36149,
+ "map": [
+  "M=1W=3G)M.",
+  "G=6w..w.w.",
+  "w....w....",
+  "..ww......",
+  "M#...ww=gm",
+  ".........w"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:safe"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BỀN"
+}

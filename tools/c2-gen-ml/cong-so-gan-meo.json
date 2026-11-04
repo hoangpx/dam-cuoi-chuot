@@ -1,0 +1,69 @@
+{
+ "id": "cong-so-gan-meo",
+ "score": 94.62068801315485,
+ "moves": "LLULLLUURURDDULLDDRRDRULURRRLLDDRRRURRRRDLUUURDDLDLLLURRUULLDDULLLDDRRRRURU",
+ "len": 75,
+ "states": 34692,
+ "map": [
+  "M=1W=3G?C(M",
+  "w..w..w.w.w",
+  "..=..w.....",
+  ".w.c...wg.6",
+  "....ww.....",
+  ".w...mc..G."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép CỔNG LÀ THẮNG"
+}

@@ -1,0 +1,105 @@
+{
+ "id": "meo-xuong-song",
+ "score": 101.55395853794624,
+ "moves": "UDDDLLDURRUUDLUDDUDLLUULUDRDLDURRDRLRRUUDDLLUUUDLUDDUDLRDRLRRUUDDLULUUUURLDDDDRRUUURURRRDDD",
+ "len": 91,
+ "states": 7101,
+ "map": [
+  "M=1C]MC=^..",
+  "C)MN=4G=6..",
+  "W=3wm.w....",
+  "w..w.w.~ww.",
+  "..cw.w.~.w.",
+  ".w...w.~w.g",
+  "cw.w...~w.."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   1
+  ],
+  [
+   5,
+   1
+  ],
+  [
+   6,
+   1
+  ],
+  [
+   7,
+   1
+  ],
+  [
+   8,
+   1
+  ],
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "dirs": [],
+ "ess": [],
+ "chain": ""
+}
