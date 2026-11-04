@@ -44,7 +44,7 @@ function c7NewGame(i) {
   const K = C7_CASES[i], N = K.N;
   return { i, K, N, room: [...K.room].map(ch => parseInt(ch, 36)), obj: K.obj, ents: K.ents, sol: K.pos,
     placed: K.ents.map(() => -1), notes: {}, cross: new Set(), tool: 'place', sel: 0, hinted: new Set(),
-    time: 0, undo: [], over: false, sheet: null, shake: null, t: 0 };
+    time: 0, undo: [], over: false, sheet: K.liar && typeof SAVE7 !== 'undefined' && !SAVE7.liar ? 'liar' : null, shake: null, t: 0 };   // the liar cases explain their rule once
 }
 // portraits: chương IV's round mouse faces, kept as images
 const C7_IMG = {};
@@ -76,7 +76,7 @@ const c7Who = (G, cell) => G.placed.indexOf(cell);
 function c7Geo(G, W, H) {
   const colW = Math.min(W - 24, 470), x0 = (W - colW) / 2, top = 84;
   // (a player: on another phone only two lines of the statements showed) the statement panel is as tall as the longest set of statements needs, wrapped at THIS screen's width
-  let clueH = 84; { const m = typeof ctx !== 'undefined' ? ctx : null; if (m) { m.save(); m.font = '500 14px "Be Vietnam Pro", sans-serif'; for (const list of G.K.clues) { let n = 0; for (const c of list) { const t = Object.keys(C7_THING).find(k => c.includes(C7_THING[k].toLowerCase())); n += c7Wrap(m, c, colW - 28 - (t ? 26 : 0)).length; } clueH = Math.max(clueH, 32 + n * 18 + 12); } m.restore(); } }
+  let clueH = 84; { const m = typeof ctx !== 'undefined' ? ctx : null; if (m) { m.save(); m.font = '500 14px "Be Vietnam Pro", sans-serif'; for (const list of G.K.clues) { let n = 0; for (const c of list) { const t = Object.keys(C7_THING).find(k => c.includes(C7_THING[k].toLowerCase())); n += c7Wrap(m, c, colW - 28 - (t ? 26 : 0)).length; } clueH = Math.max(clueH, 32 + n * 18 + 12 + (G.K.liar ? 22 : 0)); } m.restore(); } }
   const size = Math.max(200, Math.min(colW, H - top - 300 - (clueH - 84))), cs = size / G.N, ox = (W - size) / 2, by = top + size;
   const toolY = by + 12, stripY = toolY + 64, clueY = stripY + 80, subY = Math.min(H - 56, clueY + clueH + 8);
   return { colW, x0, top, size, cs, ox, toolY, stripY, clueY, clueH, subY, back: [x0 + 24, 38], help: [x0 + 74, 38], undoB: [x0 + colW - 24, 38], legB: [x0 + colW - 74, 38] };
@@ -346,10 +346,12 @@ function c7Draw(en, g, W, H) {
   const e = G.ents[G.sel]; g.textAlign = 'left'; g.textBaseline = 'top';
   g.fillStyle = C7_TOK[G.sel % C7_TOK.length]; g.font = '800 15px "Be Vietnam Pro", sans-serif'; g.fillText(c7Cap(e.name), Gm.x0 + 14, Gm.clueY + 10);
   g.fillStyle = INK; g.font = '500 14px "Be Vietnam Pro", sans-serif';
+  const liarH = G.K.liar ? 22 : 0, lim = Gm.clueY + Gm.clueH - 4 - liarH;
   let ly = Gm.clueY + 32; for (const c of G.K.clues[G.sel]) {   // a statement naming a thing shows that thing beside it
     const t = Object.keys(C7_THING).find(k => c.includes(C7_THING[k].toLowerCase())), ind = t ? 26 : 0;
-    if (t && ly < Gm.clueY + Gm.clueH - 4) c7Thing(g, t, Gm.x0 + 24, ly + 8, 22);
-    for (const l of c7Wrap(g, c, Gm.colW - 28 - ind)) { if (ly < Gm.clueY + Gm.clueH - 4) g.fillText(l, Gm.x0 + 14 + ind, ly); ly += 18; } }
+    if (t && ly < lim) c7Thing(g, t, Gm.x0 + 24, ly + 8, 22);
+    for (const l of c7Wrap(g, c, Gm.colW - 28 - ind)) { if (ly < lim) g.fillText(l, Gm.x0 + 14 + ind, ly); ly += 18; } }
+  if (liarH) { g.fillStyle = '#a3332a'; g.font = 'italic 600 12.5px "Be Vietnam Pro", sans-serif'; g.fillText(C7_LIAR, Gm.x0 + 14, Gm.clueY + Gm.clueH - liarH - 2); }
   g.textBaseline = 'alphabetic';
   // submit
   const ready = G.placed.every(p => p >= 0);
@@ -380,8 +382,23 @@ function c7DrawLegend(en, g, W, H) {
   c7Wood(g, ...b, 'Đóng', 'paper'); btns.push([b[0], b[1], b[2] + 4, 48, () => { G.sheet = null; }]);
   g.textBaseline = 'alphabetic';
 }
+// the rule of the "kẻ nói dối" cases (owner 2026-11-04: new rules allowed): the culprit lies, everyone else tells the truth
+const C7_LIAR = 'Kẻ ăn vụng nói dối: mọi lời khai của kẻ ấy đều sai.';
+function c7DrawLiar(en, g, W, H) {
+  const G = en.G; g.fillStyle = 'rgba(29,25,21,.55)'; g.fillRect(0, 0, W, H);
+  const bw = Math.min(W - 40, 380), bh = 350, bx = (W - bw) / 2, by = (H - bh) / 2;
+  c7Round(g, bx, by, bw, bh, 18); g.fillStyle = '#fbf7ee'; g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = '#a3332a'; g.font = '900 28px "Playfair Display", serif'; g.fillText('Có kẻ nói dối', W / 2, by + 40);
+  g.fillStyle = INK; g.font = '600 15px "Be Vietnam Pro", sans-serif'; let y = by + 82;
+  for (const p of ['Từ vụ này, kẻ ăn vụng không chịu nhận: mọi lời khai của kẻ ăn vụng đều sai.', 'Lời của mọi người khác đều đúng, lời về món ăn cũng đúng.', 'Không ai biết trước ai nói dối. Tìm ra kẻ nói dối là tìm ra kẻ ăn vụng.']) { for (const l of c7Wrap(g, p, bw - 44)) { g.fillText(l, W / 2, y); y += 20; } y += 10; }
+  const btns = en.sheetBtns = [], b = [bx + 20, by + bh - 66, bw - 44, 44];
+  c7Wood(g, ...b, 'Đã hiểu', 'son'); btns.push([b[0], b[1], b[2] + 4, 48, () => { G.sheet = null; SAVE7.liar = true; persist7(); }]);
+  g.textBaseline = 'alphabetic';
+}
 function c7DrawSheet(en, g, W, H) {
   if (en.G.sheet === 'legend') return c7DrawLegend(en, g, W, H);
+  if (en.G.sheet === 'liar') return c7DrawLiar(en, g, W, H);
   const G = en.G, win = G.sheet === 'win';
   g.fillStyle = 'rgba(29,25,21,.55)'; g.fillRect(0, 0, W, H);
   const bw = Math.min(W - 40, 380), bh = win ? 330 : 270, bx = (W - bw) / 2, by = (H - bh) / 2;
@@ -394,8 +411,9 @@ function c7DrawSheet(en, g, W, H) {
     g.fillStyle = '#a3332a'; g.font = '900 30px "Playfair Display", serif'; g.fillText('Phá được án!', W / 2, by + 38);
     c7Token(g, G, c, W / 2, by + 104, 36, '#a3332a');
     g.fillStyle = INK; g.font = '600 15px "Be Vietnam Pro", sans-serif';
-    c7Wrap(g, `Kẻ ăn vụng ${dish} là ${G.ents[c].name}: người duy nhất ở cùng khu với ${dish}.`, bw - 40).forEach((l, k) => g.fillText(l, W / 2, by + 160 + k * 20));
-    g.font = '700 14px "Be Vietnam Pro", sans-serif'; g.fillText('Thời gian ' + c7Clock(G.time) + (G.hinted.size ? ' · có dùng gợi ý' : ''), W / 2, by + 218);
+    const said = c7Wrap(g, `Kẻ ăn vụng ${dish} là ${G.ents[c].name}: người duy nhất ở cùng khu với ${dish}${G.K.liar ? ', và cũng là kẻ đã nói dối' : ''}.`, bw - 40);
+    said.forEach((l, k) => g.fillText(l, W / 2, by + 160 + k * 20));
+    g.font = '700 14px "Be Vietnam Pro", sans-serif'; g.fillText('Thời gian ' + c7Clock(G.time) + (G.hinted.size ? ' · có dùng gợi ý' : ''), W / 2, Math.max(by + 218, by + 160 + said.length * 20 + 14));
     button('Vụ tiếp theo', by + bh - 66, true, () => en.next());
   } else {
     g.fillStyle = '#c0563a'; g.font = '900 30px "Playfair Display", serif'; g.fillText('Chưa đúng rồi', W / 2, by + 44);

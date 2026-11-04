@@ -15,12 +15,12 @@ function buildAlbum6() {
   let size = -1;
   for (let i = 0; i < C6_COUNT(); i++) {
     const L = i ? C6_LEVELS[i - 1] : null, N = L ? L.N : 4;
-    const sec = L && L.sk ? 'sk' + N : N;
-    if (sec !== size) { size = sec; const h = document.createElement('div'); h.className = 'sec'; h.textContent = !i ? lg('Tập chơi', 'Practice') : L.sk ? `${lg('Đồng xa', 'Far fields')} · ${N} × ${N}` : `${lg('Ruộng', 'Field')} ${N} × ${N}`; box.appendChild(h); }
+    const sec = L && L.k > 1 ? 'k2' + N : L && L.sk ? 'sk' + N : N;
+    if (sec !== size) { size = sec; const h = document.createElement('div'); h.className = 'sec'; h.textContent = !i ? lg('Tập chơi', 'Practice') : L.k > 1 ? `${lg('Hai con một hàng', 'Two to a row')} · ${N} × ${N}` : L.sk ? `${lg('Đồng xa', 'Far fields')} · ${N} × ${N}` : `${lg('Ruộng', 'Field')} ${N} × ${N}`; box.appendChild(h); }
     const open = i === 0 || SAVE6.done[i - 1] || SAVE6.done[i];
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = ['#e9dcc0', '#d9e6c9', '#e6d3c9', '#d3dbe6', '#e4d6ea', '#e9e2c4'][Math.max(0, N - 4) % 6]; b.disabled = !open;
-    b.innerHTML = `<div class="num">${lg('Màn', 'Level')} ${i + 1}</div><div class="ch">${N}×${N}</div><b>${!i ? lg('Tập chơi', 'Practice') : L.sk ? lg('Đồng xa', 'Far fields') : C6_WORD[L.d]}</b><span class="st${SAVE6.done[i] ? ' done' : ''}">${SAVE6.done[i] ? lg('Đã gọi đủ con', 'All home') : open ? lg('Chơi', 'Play') : lg('Chưa mở', 'Locked')}</span>`;
+    b.innerHTML = `<div class="num">${lg('Màn', 'Level')} ${i + 1}</div><div class="ch">${N}×${N}</div><b>${!i ? lg('Tập chơi', 'Practice') : L.k > 1 ? lg('Hai con', 'Two each') : L.sk ? lg('Đồng xa', 'Far fields') : C6_WORD[L.d]}</b><span class="st${SAVE6.done[i] ? ' done' : ''}">${SAVE6.done[i] ? lg('Đã gọi đủ con', 'All home') : open ? lg('Chơi', 'Play') : lg('Chưa mở', 'Locked')}</span>`;
     b.addEventListener('click', () => { if (open) startC6(i); });
     box.appendChild(b);
   }

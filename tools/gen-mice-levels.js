@@ -82,10 +82,19 @@ if (require.main === module) {
   sk.sort((a, b) => b.hard - a.hard || b.score - a.score); sk = sk.slice(0, 50).sort((a, b) => a.N - b.N || a.hard - b.hard || a.score - b.score);
   for (const l of sk) { const L = logic(l.N, [...l.reg].map(ch => parseInt(ch, 36))); if (!L.solved || L.maxRule < 4 || count(l.N, [...l.reg].map(ch => parseInt(ch, 36))) !== 1) throw new Error('bad sk field ' + l.reg); }
   out.push(...sk.map(l => ({ N: l.N, reg: l.reg, sol: l.sol, d: 4, sk: 1 })));
+  // the "hai con" fields (owner 2026-11-04): two mice a row, column and plot; the 50 hardest of tools/mice-cache/hai-*.json
+  // (made by tools/gen-mice-hai.js), checked again by its own counting and logic solvers, after the Siêu khó set
+  const H = require('./gen-mice-hai.js');
+  let hai = []; for (const f of fs.readdirSync(dir)) if (/^hai-/.test(f)) hai.push(...JSON.parse(fs.readFileSync(dir + '/' + f, 'utf8')));
+  const seenH = new Set(); hai = hai.filter(l => !seenH.has(l.reg) && seenH.add(l.reg));
+  hai.sort((a, b) => b.hard - a.hard || b.score - a.score); hai = hai.slice(0, 50).sort((a, b) => a.hard - b.hard || a.score - b.score);
+  for (const l of hai) { const reg = [...l.reg].map(ch => parseInt(ch, 36)); if (H.count(l.N, reg, 2) !== 1 || !H.logic(l.N, reg).solved) throw new Error('bad hai field ' + l.reg); }
+  out.push(...hai.map(l => ({ N: l.N, reg: l.reg, sol: l.sol, d: 4, k: 2 })));
+  console.error('hai con', hai.length, hai.map(l => l.hard).join(' '));
   console.error('sieu kho', sk.length, sk.map(l => l.N + ':' + l.hard).join(' '));
   const head = '/* Chương VI · Tìm Chuột: the levels, made by tools/gen-mice-levels.js (do not edit by hand). reg: the plot of each\n' +
-    '   cell, row by row, base 36; sol: the column of the mouse in each row; d: the hardest rule needed (1 easiest … 4); sk: the Siêu khó set. */\n';
-  const rows = out.map(l => "  { N: " + l.N + ", reg: '" + l.reg + "', sol: '" + l.sol + "', d: " + l.d + (l.sk ? ", sk: 1" : "") + " },");
+    '   cell, row by row, base 36; sol: the column of the mouse in each row; d: the hardest rule needed (1 easiest … 4); sk: the Siêu khó set; k: mice a row, column and plot (2 for the hai con fields; sol then has k columns a row). */\n';
+  const rows = out.map(l => "  { N: " + l.N + ", reg: '" + l.reg + "', sol: '" + l.sol + "', d: " + l.d + (l.sk ? ", sk: 1" : "") + (l.k ? ", k: " + l.k : "") + " },");
   fs.writeFileSync(__dirname + '/../js/ch6/levels.js', head + 'const C6_LEVELS = [\n' + rows.join('\n') + '\n];\n');
   console.error('levels', out.length);
 }

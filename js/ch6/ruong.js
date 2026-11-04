@@ -20,7 +20,7 @@ const MD_TUT = [
   { kind: 'free', top: lg('Tìm nốt con chuột cuối cùng!', 'Find the last mouse!'), bot: lg('Mỗi thửa đúng một con chuột.', 'One mouse in every plot.') },
 ];
 function mdTutorial(G) {
-  Object.assign(G, { N: 4, reg: MD_TUT_REG, sol: [2, 0, 3, 1], mice: new Set([2]), dots: new Set(), wrong: new Set(), next: 0, intro: 0, tut: { step: 0, wait: 0 },
+  Object.assign(G, { N: 4, K: 1, reg: MD_TUT_REG, sol: [2, 0, 3, 1], ans: new Set([2, 4, 11, 13]), mice: new Set([2]), dots: new Set(), wrong: new Set(), next: 0, intro: 0, tut: { step: 0, wait: 0 },
     cols: ['#7fb069', '#d9705c', '#e8c547', '#6f9bd1'] });
 }
 // in the practice field only the lit cells answer
@@ -31,8 +31,10 @@ function mdAllowed(G, i, act) {
   return st.cells.includes(i) && (act === 'dot' ? st.kind === 'mark' : st.kind === 'mouse');
 }
 function mdField(G) {
-  const L = C6_LEVELS[G.level - 1], N = L.N, reg = [...L.reg].map(ch => parseInt(ch, 36)), sol = [...L.sol].map(ch => parseInt(ch, 36));
-  Object.assign(G, { N, reg, sol, mice: new Set(), dots: new Set(), wrong: new Set(), next: 0, intro: 1.8, tut: null });
+  const L = C6_LEVELS[G.level - 1], N = L.N, K = L.k || 1, reg = [...L.reg].map(ch => parseInt(ch, 36)), sol = [...L.sol].map(ch => parseInt(ch, 36));
+  // K mice a row, column and plot (the "hai con" fields have K = 2: sol holds K columns a row)
+  const ans = new Set(sol.map((c, j) => ((j / K) | 0) * N + c));
+  Object.assign(G, { N, K, reg, sol, ans, mice: new Set(), dots: new Set(), wrong: new Set(), next: 0, intro: K > 1 ? 3.2 : 1.8, introT: K > 1 ? 3.2 : 1.8, tut: null });
   // the plots get colours in a shuffled order
   const rr = mulberry(G.level * 31 + 7); G.cols = MD_COLS.slice().sort(() => rr() - .5);
 }
@@ -47,15 +49,16 @@ function mdCell(en, x, y) { const G = en.G, Gm = en.geo; if (!Gm) return -1; con
 // a cell is ruled out once a mouse sits in its row, column, plot, or next to it
 function mdBlocked(G, i) {
   const N = G.N, r = (i / N) | 0, c = i % N;
-  for (const m of G.mice) { const mr = (m / N) | 0, mc = m % N; if (m !== i && (mr === r || mc === c || G.reg[m] === G.reg[i] || (Math.abs(mr - r) <= 1 && Math.abs(mc - c) <= 1))) return true; }
-  return false;
+  const K = G.K || 1, nr = new Map(), nc = new Map(), ng = new Map(), up = (m, k) => m.set(k, (m.get(k) || 0) + 1);
+  for (const m of G.mice) { if (m === i) continue; const mr = (m / N) | 0, mc = m % N; if (Math.abs(mr - r) <= 1 && Math.abs(mc - c) <= 1) return true; up(nr, mr); up(nc, mc); up(ng, G.reg[m]); }
+  return (nr.get(r) || 0) >= K || (nc.get(c) || 0) >= K || (ng.get(G.reg[i]) || 0) >= K;
 }
 function mdDown(en, x, y) {
   const G = en.G, Gm = en.geo; if (!Gm) return;
   if (Math.hypot(x - Gm.back[0], y - Gm.back[1]) < 30) { en.close(); return; }
   if (G.over) { en.after(G.result); return; }
   if (G.next) return;
-  if (!G.tut && Math.hypot(x - Gm.tip[0], y - Gm.tip[1]) < 30) { hintBuy('Thả đúng chỗ một con chuột vào một hàng còn trống. Không mất tim.', () => mdHint(G)); return; }
+  if (!G.tut && Math.hypot(x - Gm.tip[0], y - Gm.tip[1]) < 30) { hintBuy('Thả đúng chỗ một con chuột vào một hàng còn thiếu chuột. Không mất tim.', () => mdHint(G)); return; }
   if (G.intro > 0) { G.intro = 0; return; }                                 // a tap skips the 'Tìm N con chuột' card
   const i = mdCell(en, x, y); G.press = i >= 0 ? { i, moved: false, wipe: G.dots.has(i) } : null;
 }
@@ -85,9 +88,9 @@ function mdPlace(G, i) {
   const N = G.N;
   if (G.tut && !mdAllowed(G, i, 'mouse')) return;
   G.dots.delete(i);
-  if (G.sol[(i / N) | 0] === i % N) {
+  if (G.ans.has(i)) {
     G.mice.add(i); AU.pluck(80 + G.mice.size);
-    if (G.mice.size === N) { G.next = 1.4; AU.kenCall(); }
+    if (G.mice.size === N * G.K) { G.next = 1.4; AU.kenCall(); }
   } else {
     if (!G.tut) G.hearts--; G.shake = { i, t: .7 }; G.wrong.add(i); AU.snort();   // the red × stays, to be remembered
     if (G.hearts <= 0) { G.over = true; G.result = 'lose'; }
@@ -96,10 +99,10 @@ function mdPlace(G, i) {
 // a bought hint (js/core/goiy.js): the right mouse in the first row that has none yet
 function mdHint(G) {
   const N = G.N; if (G.over || G.next) return false;
-  for (let r = 0; r < N; r++) {
-    const i = r * N + G.sol[r]; if (G.mice.has(i)) continue;
+  for (let j = 0; j < N * G.K; j++) {
+    const i = ((j / G.K) | 0) * N + G.sol[j]; if (G.mice.has(i)) continue;
     G.pending = null; G.dots.delete(i); G.mice.add(i); G.hinted = (G.hinted || 0) + 1; AU.pluck(80 + G.mice.size);
-    if (G.mice.size === N) { G.next = 1.4; AU.kenCall(); }
+    if (G.mice.size === N * G.K) { G.next = 1.4; AU.kenCall(); }
     return true;
   }
   return false;
@@ -134,10 +137,14 @@ function mdHead(g, x, y, s, col, found) {
   g.globalAlpha = 1; g.restore();
 }
 // the three rule cards: a tiny 3×3 field drawn the rule's way, and its words
-function mdRules(g, Gm) {
+function mdRules(g, Gm, K) {
   const n = 3, gap = 6, w = (Gm.colW - gap * (n - 1)) / n, h = 62, y = 128;
   mdRound(g, Gm.x0 - 6, y - 8, Gm.colW + 12, h + 16, 14); g.fillStyle = '#f2ecde'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2; g.stroke();
-  const cards = [
+  const cards = K > 1 ? [
+    { t: lg('Mỗi thửa hai con chuột', 'Two mice a plot'), m: ['m', 1, 'm', 1, 1, 1, 0, 0, 0], tint: [1, 1, 1, 1, 1, 1, 0, 0, 0] },
+    { t: lg('Mỗi hàng, cột hai con', 'Two a row and column'), m: ['m', 1, 'm', 0, 1, 0, 0, 1, 0] },
+    { t: lg('Không đứng sát nhau', 'Never touching'), m: [1, 1, 1, 1, 'm', 1, 1, 1, 1] },
+  ] : [
     { t: lg('Mỗi thửa một con chuột', 'One mouse a plot'), m: [1, 1, 1, 1, 'm', 0, 1, 0, 0], tint: [1, 1, 1, 1, 1, 0, 1, 0, 0] },
     { t: lg('Mỗi hàng, cột một con', 'One a row and column'), m: [1, 'm', 1, 0, 1, 0, 0, 1, 0] },
     { t: lg('Không đứng sát nhau', 'Never touching'), m: [1, 1, 1, 1, 'm', 1, 1, 1, 1] },
@@ -225,13 +232,14 @@ function mdDraw(en, g, W, H) {
   for (let k = 0; k < MD_HEARTS; k++) mdHeart(g, W / 2 - 32 + k * 32, 94, 1.25, k < G.hearts);
   g.textBaseline = 'alphabetic';
   if (!tut) {
-    mdRules(g, Gm);
-    // the strip of heads, one per plot: filled in once its mouse is found
-    const found = new Set([...G.mice].map(i => G.reg[i])), hs = Math.min(1.3, (Gm.size - 30) / (N * 30)), sw = N * 30 * hs + 20;
+    mdRules(g, Gm, G.K);
+    // the strip of heads, one per plot (two, side by side, on the "hai con" fields): filled in as its mice are found
+    const K = G.K, got = new Array(N).fill(0); for (const i of G.mice) got[G.reg[i]]++;
+    const hs = Math.min(1.3, (Gm.size - 30) / (N * 30)), sw = N * 30 * hs + 20, hk = K > 1 ? hs * .62 : hs;
     mdRound(g, W / 2 - sw / 2, Gm.oy - 40, sw, 48, 14); g.fillStyle = '#f2ecde'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2; g.stroke();
-    for (let k = 0; k < N; k++) mdHead(g, W / 2 - (N - 1) * 15 * hs + k * 30 * hs, Gm.oy - 18, hs, G.cols[k % G.cols.length], found.has(k));
+    for (let k = 0; k < N; k++) for (let q = 0; q < K; q++) mdHead(g, W / 2 - (N - 1) * 15 * hs + k * 30 * hs + (K > 1 ? (q - .5) * 13 * hs : 0), Gm.oy - 18 + (K > 1 ? (q ? 3 : -3) * hs : 0), hk, G.cols[k % G.cols.length], got[k] > q);
     // mẹ chuột beside the strip, a hand to her mouth calling the children home; she claps once they are all back
-    const all = found.size === N, mx = W / 2 - sw / 2 - 26;
+    const all = G.mice.size === N * K, mx = W / 2 - sw / 2 - 26;
     if (mx > 12) c4Mouse(g, c4MouseRig(0), mx, 1, S.pose * 2, false, all ? -1.6 + Math.abs(Math.sin(G.t * 8)) * .4 : -1.25 + Math.sin(G.t * 3) * .12, null, .42, Gm.oy - 2 - (all ? Math.abs(Math.sin(G.t * 7)) * 4 : 0), 5);
   }
   // the field: a rounded panel, rounded cells with gaps
@@ -255,10 +263,10 @@ function mdDraw(en, g, W, H) {
   }
   if (tut) { mdTutDraw(g, G, Gm, W); return; }
   if (G.intro > 0 && !G.over) {
-    const k = Math.min(1, G.intro * 3, (1.8 - G.intro) * 6); g.globalAlpha = k;
+    const k = Math.min(1, G.intro * 3, ((G.introT || 1.8) - G.intro) * 6); g.globalAlpha = k;
     const bw = Math.min(W - 60, 300), bx = (W - bw) / 2, by = Gm.oy + Gm.size / 2 - 50;
     mdRound(g, bx, by, bw, 100, 14); g.fillStyle = 'rgba(242,236,222,.95)'; g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
-    g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 32px "Playfair Display", serif'; g.fillText(lgf('Gọi {n} con về', 'Call {n} little mice home', { n: N }), W / 2, by + 40); g.font = '600 15px "Be Vietnam Pro", sans-serif'; g.fillText(lg('Lũ chuột con trốn chơi khắp ruộng', 'They are hiding all over the field'), W / 2, by + 74);
+    g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 32px "Playfair Display", serif'; g.fillText(lgf('Gọi {n} con về', 'Call {n} little mice home', { n: N * G.K }), W / 2, by + 40); g.font = '600 15px "Be Vietnam Pro", sans-serif'; g.fillText(G.K > 1 ? lg('Mỗi hàng, cột, thửa có hai con', 'Two in every row, column and plot') : lg('Lũ chuột con trốn chơi khắp ruộng', 'They are hiding all over the field'), W / 2, by + 74);
     g.textBaseline = 'alphabetic'; g.globalAlpha = 1;
   }
   if (G.over) {

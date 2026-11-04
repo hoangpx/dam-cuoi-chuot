@@ -1,8 +1,9 @@
 /* Checks js/ch7/cases.js from its words: node tools/check-anvung.js [from]. Each statement is read back into a rule (by
    matching it against every rule's own words), then: exactly one placement fits, it is the stored answer and culprit,
-   every statement of someone who says more than one is needed, the dish's statements leave at least two rooms open, and no title names a room. */
+   (a liar case, liar: 1: the culprit's statements are all false, solved with tools/gen-anvung-noidoi.js solveL), every statement of someone who says more than one is needed, the dish's statements leave at least two rooms open, and no title names a room. */
 const fs = require('fs');
-const { solve, sayAll } = require('./gen-anvung.js');
+const { solve: solve1, sayAll } = require('./gen-anvung.js');
+const { solveL } = require('./gen-anvung-noidoi.js');
 const src = fs.readFileSync(__dirname + '/../js/ch7/cases.js', 'utf8'), CASES = JSON.parse(src.slice(src.indexOf('[')).replace(/;\s*$/, ''));
 const BLOCKS = ['chum', 'coi', 'cau', 'rom', 'gieng'], from = +(process.argv[2] || 0);
 let bad = 0;
@@ -13,7 +14,7 @@ CASES.forEach((K, n) => {
   const opts = [{ t: 'corner' }, { t: 'notcorner' }, { t: 'alone' }, { t: 'with', a: 'm' }, { t: 'with', a: 'f' }];
   for (let k = 0; k < R; k++) opts.push({ t: 'in', a: k }, { t: 'notin', a: k });
   for (const o of new Set(C.obj.filter(Boolean))) opts.push({ t: 'on', a: o }, { t: 'beside', a: o });
-  const errs = [];
+  const errs = [], solve = (C, cl, cap) => K.liar ? solveL(C, cl, cap) : solve1(C, cl, cap);
   const groups = K.clues.map((list, e) => list.map(text => {
     const m = [];
     for (const f of opts) if (sayAll(C, e, [f])[0] === text) m.push([f]);
@@ -25,6 +26,8 @@ CASES.forEach((K, n) => {
   const res = solve(C, clues, 2);
   if (res.n !== 1) errs.push('answers ' + res.n);
   else if (res.first.join() !== K.pos.join()) errs.push('answer differs');
+  else if (K.liar && res.liar !== K.culprit) errs.push('liar is not the culprit');
+  if (K.liar && K.clues[K.culprit].some(t => / nhưng không /.test(t))) errs.push('a two-part lie');
   const M = N - 1, cul = K.ents.slice(0, M).map((_, e) => e).filter(e => room[K.pos[e]] === room[K.pos[M]]);
   if (cul.length !== 1 || cul[0] !== K.culprit) errs.push('culprit');
   // every statement needed (owner: no idle words); everyone keeps at least one, so a lone statement is not tested
