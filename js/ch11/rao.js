@@ -56,12 +56,13 @@ c11NewUpdate = function (dt) {
     if (raoRaider(b) && !G.sleep && SAVE11.day >= 1) raoHome(b, dt);
   }
   if (G.fence && c11HandTool() !== 'dan') G.fence = false;                                   // another tool ends fence mode
+  if (G.raoGo) { const q = G.raoGo; if (G.menu || G.area !== 'ruong' || c11HandTool() !== 'dan' || !raoOn(q.tx, q.ty)) G.raoGo = null; else if (Math.hypot(q.tx + .5 - G.px, q.ty + .5 - G.py) <= 2.2) raoAsk(q.tx, q.ty); }   // arrived by the piece tapped from afar
   return raoNewUpdate0(dt);
 };
 /* a piece is broken up for good (owner: "hàng rào có thể phá đi, ko lấy lại đc gỗ"): the wood is lost */
 const raoBreak = (tx, ty) => { delete SAVE11.fences[tx + ',' + ty]; c11Spend(C11_COST.dan * .3); c11Dots(tx, ty, '#c89a5e', 10); c11Chips && c11Chips(tx, ty - .3, C11.face * -1, 8);
   c11Msg('Phá đoạn rào, gỗ gãy cả, không dùng lại được', '#5b2f1f'); persist11(); };
-const raoAsk = (tx, ty) => { C11.menu = { title: 'Hàng rào', note: '', cols: 1, rows: [{ name: 'Phá đoạn rào', sub: 'không lấy lại được gỗ', tag: ' ', ok: true, f: () => { C11.menu = null; raoBreak(tx, ty); } }] }; };   // a tap on a piece offers to break it (owner: "bấm vào hàng rào thì hiện option phá")
+const raoAsk = (tx, ty) => { C11.raoGo = null; C11.menu = { title: 'Hàng rào', note: '', cols: 1, rows: [{ name: 'Phá đoạn rào', sub: 'không lấy lại được gỗ', tag: ' ', ok: true, f: () => { C11.menu = null; raoBreak(tx, ty); } }] }; };   // a tap on a piece offers to break it (owner: "bấm vào hàng rào thì hiện option phá")
 const raoTap0 = c11Tap;
 c11Tap = function (tx, ty, wx, wy) {
   if (C11.sleep || C11.menu) return raoTap0(tx, ty, wx, wy);
@@ -74,7 +75,7 @@ c11Tap = function (tx, ty, wx, wy) {
     c11Spend(C11_COST.dan * .5); SAVE11.fences[key] = 1; c11Dots(tx, ty, '#c89a5e', 8); c11Chips && c11Chips(tx, ty - .3, C11.face * -1, 6); persist11(); return;
   }
   if (C11.area === 'ruong' && raoOn(tx, ty) && c11HandTool() === 'dan' && !(typeof C11O !== 'undefined' && C11O.visit)
-      && Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) <= 2.5) { raoAsk(tx, ty); return; }   // the Búa đục that built it: a tap on a piece asks (owner); farther off the tap only walks there
+      ) { if (Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) <= 2.5) { raoAsk(tx, ty); return; } C11.raoGo = { tx, ty }; }   // the Búa đục that built it: a tap on a piece asks (owner); from farther off the mouse walks there and then asks (players tapped from afar and saw nothing)
   for (const b of C11.beasts || []) if (!b.herd && RAO_SHOO.includes(b.kind) && Math.abs(wx - b.x) < .8 && wy > b.y - 1.2 && wy < b.y + .35) {
     const dx = b.x - C11.px, dy = b.y - C11.py, L = Math.hypot(dx, dy) || 1;
     if (L < 2.8) { b.flee = { dx: dx / L, dy: dy / L * .6, t: 1.3 }; const n = Math.hypot(b.flee.dx, b.flee.dy); b.flee.dx /= n; b.flee.dy /= n; b.raid = null; b.rc = 25 + Math.random() * 40; b.to = null;
