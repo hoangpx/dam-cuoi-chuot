@@ -1,0 +1,1 @@
+{"id":"lua-song-lua-9","ok":true,"len":115,"states":80985,"moves":"LLDDRRUDRRULDLLLUURURDLLDDRRLLUURRDRRDLRDDLURUULLULLDDRLUURRDRRDLDRUULLULLDDRRURRDDLDRULULURRRURDRDLUURURRRRRURRDDD","ess":[{"op":"+","r":"fire:is:float"},{"op":"+","r":"water:is:float"}],"chain":"Ghép LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá LỬA LÀ BAY","unsure":[]}

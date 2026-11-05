@@ -1,0 +1,98 @@
+{
+ "id": "ca-an-chu-song",
+ "score": 105.15429102824115,
+ "moves": "DLLDLLURRRRLLDRDDRULUURRRDRRULLLLLLULDRDLULDRRRDRULURRRDRRULLLLLLULDRDLURRRRRDRRRRR",
+ "len": 83,
+ "states": 242529,
+ "map": [
+  "M=1W=3N=4F=5.",
+  "w..wm~w..f...",
+  ".9...~...f...",
+  "..s=.~...f.g.",
+  "..wsF~...f...",
+  "S)TN.~...f...",
+  "G=6..~...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "fire:is:fish"
+  }
+ ],
+ "chain": "Ghép LỬA LÀ CÁ"
+}

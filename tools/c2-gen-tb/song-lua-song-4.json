@@ -1,0 +1,86 @@
+{
+ "id": "song-lua-song",
+ "score": 118.56079276261137,
+ "moves": "LDDRRLLUURURDLLDDRRLLUURDURDLLDRRRDDRRURRUDDLLLLUURUURRRDRDDLURULRRRRRRRR",
+ "len": 73,
+ "states": 153791,
+ "map": [
+  "M=1W=3N=4F=5.....",
+  "w..w.~~..f..~~...",
+  ".m=w.~~..f..~~...",
+  ".N9w.~~..f..~~.g.",
+  "..F..~~..f..~~...",
+  "w.w.w~~..f..~~...",
+  "G=6..~~..f..~~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "water:is:float"
+  }
+ ],
+ "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY"
+}

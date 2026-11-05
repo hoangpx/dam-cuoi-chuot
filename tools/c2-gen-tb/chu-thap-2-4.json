@@ -1,0 +1,98 @@
+{
+ "id": "chu-thap-2",
+ "score": 133.01767888328982,
+ "moves": "RRRRDLDDRRRULLUULLLDRURRDDDLURULLRRULLULLDRURRDLULLDRURRDLURDLDRURDLDRRRLLUULULLLDRURDRDDRRRRRUURRRRR",
+ "len": 101,
+ "states": 47050,
+ "map": [
+  "M=1W=3N=4D=8K=7",
+  "w..w..wd.w.~w..",
+  "....w..d...~...",
+  "mk....wd...~.g.",
+  "N..K.w.d...~...",
+  "w2w.=.9d...~...",
+  "G=6....d...~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   12,
+   0
+  ],
+  [
+   13,
+   0
+  ],
+  [
+   14,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "key:is:push"
+  }
+ ],
+ "chain": "Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY"
+}

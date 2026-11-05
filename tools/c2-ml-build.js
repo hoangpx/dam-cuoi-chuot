@@ -15,12 +15,13 @@ const lv = list.map((l, i) => {
 });
 const chains = list.map(l => '  ' + JSON.stringify(l.chain || JSON.parse(fs.readFileSync(path.join(__dirname, 'c2-gen-ml', l.file || l.id + '.json'), 'utf8')).chain) + ',');
 // C2LEVELS: cut the old block (marker → the array's end) and put the new one in
-const endL = s.indexOf('\n];\n// the bought hint');
+// the Thiên biến block (tools/c2-tb-build.js) comes after this one and is kept
+const tbL = s.indexOf('\n  /* ---- Thiên biến (tb)'), endL = tbL >= 0 ? tbL : s.indexOf('\n];\n// the bought hint');
 let a = s.indexOf(MK); if (a < 0 || a > endL) a = endL + 1;
 s = s.slice(0, a) + MK + '\n' + lv.join('\n') + '\n' + s.slice(endL + 1);
-const cs = s.indexOf('const C2_CHAIN = ['), ce = s.indexOf('\n];', cs);
+const cs = s.indexOf('const C2_CHAIN = ['), tbC = s.indexOf('\n  // Thiên biến', cs), ce = tbC >= 0 ? tbC : s.indexOf('\n];', cs);
 let b = s.indexOf(MKC, cs); if (b < 0 || b > ce) b = ce + 1;
 let head = s.slice(0, b); if (!/,\n$/.test(head)) head = head.replace(/"\n$/, '",\n');
-s = head + MKC + '\n' + chains.join('\n').replace(/,$/, '') + s.slice(ce);
+s = head + MKC + '\n' + chains.join('\n').replace(/,$/, tbC >= 0 ? ',' : '') + s.slice(ce);
 fs.writeFileSync(f, s.split('\n').join(NL));
 console.log('wrote', list.length, 'Muôn loài maps');

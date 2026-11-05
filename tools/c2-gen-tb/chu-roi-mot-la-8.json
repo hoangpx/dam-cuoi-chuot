@@ -1,0 +1,74 @@
+{
+ "id": "chu-roi-mot-la",
+ "score": 8.54029137756994,
+ "moves": "RUURRDRDDDLLLLUUUURRRDRDLLRUULLDLDDDRRLLLLULLDRRRRUUUURRRDDLLRRUR",
+ "len": 65,
+ "states": 63237,
+ "map": [
+  "M=1W=3T=$...",
+  "w..w..~...w.",
+  "..w..w~....w",
+  ".w..w.~..w.g",
+  "......~m6G..",
+  "w.....~.w9w.",
+  "N=4..=~..N.."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép CỔNG LÀ THẮNG"
+}

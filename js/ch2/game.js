@@ -27,7 +27,7 @@ const c2Clone = objs => objs.map(o => ({ ...o }));
   el.addEventListener('click', e => { if (e.target === el || e.target.id === 'c2Go') c2HelpClose(); });
 }
 function c2HelpOpen(which) {
-  $('#c2law').hidden = which !== 'law'; $('#c2tip').hidden = which !== 'tip'; $('#c2more').hidden = !C2.def.bh && !C2.def.tt && !C2.def.sieu && !C2.def.ml; $('#c2tt').hidden = !C2.def.tt && !C2.def.sieu && !C2.def.ml; $('#c2ml').hidden = !C2.def.ml;
+  $('#c2law').hidden = which !== 'law'; $('#c2tip').hidden = which !== 'tip'; $('#c2more').hidden = !C2.def.bh && !C2.def.tt && !C2.def.sieu && !C2.def.ml && !C2.def.tb; $('#c2tt').hidden = !C2.def.tt && !C2.def.sieu && !C2.def.ml && !C2.def.tb; $('#c2ml').hidden = !C2.def.ml && !C2.def.tb;
   if (which === 'tip') $('#c2tip p').textContent = C2_CHAIN[C2.i] || '';
   $('#c2help').hidden = false; C2.help = which;
 }
@@ -35,7 +35,7 @@ function c2HelpClose() { $('#c2help').hidden = true; cv.focus(); }
 function c2Hide() { document.body.classList.remove('c2'); $('#c2hud').hidden = true; $('#c2rules').hidden = true; $('#c2pad').hidden = true; $('#c2help').hidden = true; }
 function c2Load() {
   C2.st = c2Parse(C2.def); c2Settle(C2.st);
-  C2.hist = []; C2.moves = 0; C2.over = false; C2.deadToast = false;
+  C2.hist = []; C2.moves = 0; C2.over = false; C2.deadToast = false; C2.camX = null;
   c2ShowRules();
 }
 function startC2(i) {
@@ -93,7 +93,7 @@ function c2Win() {
 function c2ShowEnd() {
   const i = C2.i, last = i === C2LEVELS.length - 1, n = SAVE2.done.filter(Boolean).length;
   $('#endHan').textContent = C2.def.han; $('#endTitle').textContent = C2.def.name;
-  $('#endText').textContent = last ? `Đủ ${C2LEVELS.length} tranh chữ khắc gỗ, kể cả các tranh Cao thủ. Chương II hoàn thành.` : i === C2_FIRST_HARD - 1 ? 'Xong phần Nhập môn. Phần Cao thủ và phần Biến hoá đã mở.' : i === C2_FIRST_SK - 1 ? 'Xong phần Biến hoá. Phần Hơi khó đã mở.' : i === C2_FIRST_TT - 1 ? 'Xong phần Hơi khó. Phần Thần thông với chữ mới đã mở.' : i === C2_FIRST_XK - 1 ? 'Xong phần Thần thông. Phần Làng chữ đã mở.' : i === C2_FIRST_ML - 1 ? 'Xong phần Làng chữ. Phần Muôn loài với chữ mới đã mở.' : C2.def.ml ? 'Chữ biết ăn, biết sợ, biết theo, vẫn nằm trong tay người chơi.' : C2.def.sieu ? 'Thêm một bức tranh chữ đã đóng triện.' : C2.def.tt ? 'Chữ có phép, người chơi có mưu. Thần thông thật!' : C2.def.sk ? 'Hơi khó mà vẫn gỡ ra được. Bậc thầy chữ khắc!' : C2.def.bh ? 'Chữ mới, luật mới, vẫn tìm ra lối. Giỏi!' : C2.def.hard ? 'Tự nghĩ ra được. Cao thủ thật!' : 'Luật đã nằm trong tay người chơi. Tranh tiếp theo khó hơn một chút.';
+  $('#endText').textContent = last ? `Đủ ${C2LEVELS.length} tranh chữ khắc gỗ, kể cả các tranh Cao thủ. Chương II hoàn thành.` : i === C2_FIRST_HARD - 1 ? 'Xong phần Nhập môn. Phần Cao thủ và phần Biến hoá đã mở.' : i === C2_FIRST_SK - 1 ? 'Xong phần Biến hoá. Phần Hơi khó đã mở.' : i === C2_FIRST_TT - 1 ? 'Xong phần Hơi khó. Phần Thần thông với chữ mới đã mở.' : i === C2_FIRST_XK - 1 ? 'Xong phần Thần thông. Phần Làng chữ đã mở.' : i === C2_FIRST_ML - 1 ? 'Xong phần Làng chữ. Phần Muôn loài với chữ mới đã mở.' : i === C2_FIRST_TB - 1 ? 'Xong phần Muôn loài. Phần Thiên biến đã mở.' : C2.def.tb ? 'Chữ phải đẩy đúng từng bước, lệch một nước là tắc. Thiên biến thật!' : C2.def.ml ? 'Chữ biết ăn, biết sợ, biết theo, vẫn nằm trong tay người chơi.' : C2.def.sieu ? 'Thêm một bức tranh chữ đã đóng triện.' : C2.def.tt ? 'Chữ có phép, người chơi có mưu. Thần thông thật!' : C2.def.sk ? 'Hơi khó mà vẫn gỡ ra được. Bậc thầy chữ khắc!' : C2.def.bh ? 'Chữ mới, luật mới, vẫn tìm ra lối. Giỏi!' : C2.def.hard ? 'Tự nghĩ ra được. Cao thủ thật!' : 'Luật đã nằm trong tay người chơi. Tranh tiếp theo khó hơn một chút.';
   $('#endNote').textContent = `Số bước: ${C2.moves} · Kỷ lục: ${SAVE2.best[i]} · Đã đóng triện ${n}/${C2LEVELS.length} tranh`;
   $('#bNext').hidden = last; $('#end').hidden = false; ($('#bNext').hidden ? $('#bAlbum') : $('#bNext')).focus();
 }
@@ -151,8 +151,15 @@ function renderC2() {
   const topPad = isTouch ? Math.max(64, Math.ceil($('#c2hud').getBoundingClientRect().bottom) + 12) : 64, botPad = isTouch ? 250 : 92;
   const chipTop = isTouch ? Math.floor($('#c2rules').getBoundingClientRect().top) - 14 : h;
   let ts = Math.floor(Math.min((w - 32) / st.W, (h - topPad - botPad) / st.H, (chipTop - topPad) / st.H));
-  ts = Math.max(28, Math.min(92, ts));
-  const bw = ts * st.W, bh = ts * st.H, ox = Math.floor((w - bw) / 2);
+  ts = Math.max(isTouch ? 24 : 28, Math.min(92, ts));
+  const bw = ts * st.W, bh = ts * st.H;
+  // a board wider than the screen (Thiên biến maps run to 20 columns): the view slides to keep the mouse in it
+  let ox = Math.floor((w - bw) / 2);
+  if (bw > w - 24) {
+    const you = st.objs.filter(o => o.t === 'thing' && c2OHas(st, o, 'you')), mx = you.length ? you.reduce((t, o) => t + (o.rx ?? o.x), 0) / you.length + .5 : st.W / 2;
+    const want = Math.max(w - bw - 14, Math.min(14, w / 2 - mx * ts));
+    C2.camX = C2.camX == null ? want : C2.camX + (want - C2.camX) * .12; ox = Math.round(C2.camX);
+  } else C2.camX = null;
   let oy = Math.floor(topPad + Math.max(0, (h - topPad - botPad - bh) / 2));
   if (isTouch) oy = Math.max(topPad, Math.min(oy, chipTop - bh));
   ctx.fillStyle = 'rgba(255,250,235,.26)'; ctx.fillRect(ox, oy, bw, bh);
@@ -197,7 +204,7 @@ function renderC2() {
 function buildAlbum2() {
   const box = $('#cards'); box.textContent = '';
   C2LEVELS.forEach((lv, i) => {
-    if (i === 0 || i === C2_FIRST_HARD || i === C2_FIRST_BH || i === C2_FIRST_SK || i === C2_FIRST_TT || i === C2_FIRST_XK || i === C2_FIRST_ML) { const h = document.createElement('div'); h.className = 'sec'; h.textContent = i === 0 ? 'Nhập môn' : i === C2_FIRST_HARD ? 'Cao thủ · mở sau tranh 4' : i === C2_FIRST_BH ? `Biến hoá · chữ mới · mở sau tranh ${C2_FIRST_HARD}` : i === C2_FIRST_SK ? `Hơi khó · mở sau tranh ${C2_FIRST_SK}` : i === C2_FIRST_XK ? `Làng chữ · mở sau tranh ${C2_FIRST_XK}` : i === C2_FIRST_ML ? `Muôn loài · chữ mới · mở sau tranh ${C2_FIRST_ML}` : `Thần thông · chữ mới · mở sau tranh ${C2_FIRST_TT}`; box.appendChild(h); }
+    if (i === 0 || i === C2_FIRST_HARD || i === C2_FIRST_BH || i === C2_FIRST_SK || i === C2_FIRST_TT || i === C2_FIRST_XK || i === C2_FIRST_ML || i === C2_FIRST_TB) { const h = document.createElement('div'); h.className = 'sec'; h.textContent = i === 0 ? 'Nhập môn' : i === C2_FIRST_HARD ? 'Cao thủ · mở sau tranh 4' : i === C2_FIRST_BH ? `Biến hoá · chữ mới · mở sau tranh ${C2_FIRST_HARD}` : i === C2_FIRST_SK ? `Hơi khó · mở sau tranh ${C2_FIRST_SK}` : i === C2_FIRST_XK ? `Làng chữ · mở sau tranh ${C2_FIRST_XK}` : i === C2_FIRST_ML ? `Muôn loài · chữ mới · mở sau tranh ${C2_FIRST_ML}` : i === C2_FIRST_TB ? `Thiên biến · mở sau tranh ${C2_FIRST_TB}` : `Thần thông · chữ mới · mở sau tranh ${C2_FIRST_TT}`; box.appendChild(h); }
     const open = i === 0 || SAVE2.done[i - 1] || (i === C2_FIRST_HARD && SAVE2.done[3]) || (i === C2_FIRST_BH && SAVE2.done[C2_FIRST_HARD - 1]);
     const b = document.createElement('button');
     b.className = 'card'; b.style.background = PAPERS[lv.paper].css; b.disabled = !open;
@@ -221,7 +228,7 @@ function c2PointerUp(e) {
 /* ---------- registration ---------- */
 registerChapter({
   id: 2, modes: ['c2play'],
-  card: { num: lg('Chương II', 'Chapter II'), han: '𡨸羅律', name: lg('Chữ Là Luật', 'Words Are the Law'), desc: lg('Chữ khắc gỗ chính là luật chơi. Đẩy chữ để ghép, phá hay đổi luật rồi đưa chuột tới cổng. Có phần Nhập môn, Cao thủ, Biến hoá, Hơi khó, Thần thông, Làng chữ và Muôn loài.', 'The carved words are the rules. Push them to make, break or change a rule, then get the mouse to the gate. For beginners and masters.'), bg: '#ebe3cd' },
+  card: { num: lg('Chương II', 'Chapter II'), han: '𡨸羅律', name: lg('Chữ Là Luật', 'Words Are the Law'), desc: lg('Chữ khắc gỗ chính là luật chơi. Đẩy chữ để ghép, phá hay đổi luật rồi đưa chuột tới cổng. Có phần Nhập môn, Cao thủ, Biến hoá, Hơi khó, Thần thông, Làng chữ, Muôn loài và Thiên biến.', 'The carved words are the rules. Push them to make, break or change a rule, then get the mouse to the gate. For beginners and masters.'), bg: '#ebe3cd' },
   progress: () => `${SAVE2.done.slice(0, C2LEVELS.length).filter(Boolean).length}/${C2LEVELS.length} ${lg('tranh', 'prints')}`,
   hasProgress: () => SAVE2.done.some(Boolean),
   album() { buildAlbum2(); $('#albumTitle').textContent = 'Chương II · Chữ Là Luật'; $('#albumDesc').textContent = 'Chữ khắc gỗ là luật chơi. Đẩy chữ để ghép, phá hay đổi luật, rồi đưa chuột tới cổng. Qua tranh này mới mở tranh sau.'; },

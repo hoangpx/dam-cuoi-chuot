@@ -1,0 +1,527 @@
+[
+ {
+  "id": "chu-roi-mot-la-10",
+  "han": "溪字",
+  "name": "Chữ rơi bên suối",
+  "chain": "Ghép CỔNG LÀ THẮNG",
+  "len": 60
+ },
+ {
+  "id": "chu-thap-8",
+  "han": "水鑰",
+  "name": "Nước hoá chìa",
+  "chain": "Ghép NƯỚC LÀ CHÌA → Phá NƯỚC LÀ CHÌA → Ghép CHÌA LÀ ĐẨY",
+  "len": 61
+ },
+ {
+  "id": "ca-an-chu-song-2",
+  "han": "魚口",
+  "name": "Miệng cá",
+  "chain": "Phá LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY",
+  "len": 62
+ },
+ {
+  "id": "da-roi-song-7",
+  "han": "石岸",
+  "name": "Đá bên sông",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 62
+ },
+ {
+  "id": "chu-roi-mot-la-6",
+  "han": "沉門",
+  "name": "Cổng chìm rồi nổi",
+  "chain": "Ghép CỔNG LÀ CHÌM → Phá CỔNG LÀ CHÌM → Ghép CỔNG LÀ THẮNG",
+  "len": 63
+ },
+ {
+  "id": "da-roi-song-12",
+  "han": "石堆",
+  "name": "Đống đá",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 63
+ },
+ {
+  "id": "chu-roi-mot-la-5",
+  "han": "字雨",
+  "name": "Mưa chữ",
+  "chain": "Ghép CỔNG LÀ THẮNG",
+  "len": 65
+ },
+ {
+  "id": "mot-la",
+  "han": "一河",
+  "name": "Một dòng sông rộng",
+  "chain": "Ghép ĐÁ LÀ ĐẨY → Phá ĐÁ LÀ ĐẨY → Ghép CỔNG LÀ THẮNG",
+  "len": 65
+ },
+ {
+  "id": "chu-roi-mot-la-8",
+  "han": "散字",
+  "name": "Chữ rơi lả tả",
+  "chain": "Ghép CỔNG LÀ THẮNG",
+  "len": 65
+ },
+ {
+  "id": "da-roi-song-8",
+  "han": "推石",
+  "name": "Đẩy đá",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 66
+ },
+ {
+  "id": "chu-roi-mot-la-11",
+  "han": "墜字",
+  "name": "Chữ rụng",
+  "chain": "Ghép CỔNG LÀ THẮNG",
+  "len": 66
+ },
+ {
+  "id": "mot-la-bay-6",
+  "han": "飛渡",
+  "name": "Bay qua sông rộng",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép CỔNG LÀ THẮNG",
+  "len": 66
+ },
+ {
+  "id": "song-da-song-9",
+  "han": "凝石",
+  "name": "Nước hoá đá",
+  "chain": "Ghép NƯỚC LÀ ĐÁ",
+  "len": 66
+ },
+ {
+  "id": "mot-la-11",
+  "han": "石筏",
+  "name": "Bè đá",
+  "chain": "Ghép ĐÁ LÀ ĐẨY → Phá ĐÁ LÀ ĐẨY → Ghép CỔNG LÀ THẮNG",
+  "len": 67
+ },
+ {
+  "id": "cong-an-meo-di-12",
+  "han": "貓步",
+  "name": "Mèo đi",
+  "chain": "Ghép MÈO LÀ ĐI",
+  "len": 68
+ },
+ {
+  "id": "rom-nguoc-cong-10",
+  "han": "草陣",
+  "name": "Trận rơm",
+  "chain": "Ghép CỔNG LÀ THẮNG",
+  "len": 68
+ },
+ {
+  "id": "lua-song-bay-3",
+  "han": "先火",
+  "name": "Lửa trước, sông sau",
+  "chain": "Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 69
+ },
+ {
+  "id": "song-da-song-8",
+  "han": "兩河",
+  "name": "Hai dòng sông",
+  "chain": "Ghép NƯỚC LÀ ĐÁ",
+  "len": 69
+ },
+ {
+  "id": "ca-an-chu-song",
+  "han": "飛火",
+  "name": "Lửa bay qua cá",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 70
+ },
+ {
+  "id": "cong-so-song-7",
+  "han": "怯門",
+  "name": "Cổng nhút nhát",
+  "chain": "Ghép LỬA LÀ CỔNG",
+  "len": 70
+ },
+ {
+  "id": "cua-bay-8",
+  "han": "暫開",
+  "name": "Chìa tạm mở",
+  "chain": "Ghép CHÌA LÀ MỞ → Phá CHÌA LÀ MỞ",
+  "len": 71
+ },
+ {
+  "id": "song-lua-bay-3",
+  "han": "越火",
+  "name": "Vượt lửa",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 71
+ },
+ {
+  "id": "song-lua-song-10",
+  "han": "河火",
+  "name": "Sông, lửa, sông",
+  "chain": "Ghép NƯỚC LÀ BAY",
+  "len": 72
+ },
+ {
+  "id": "song-lua-bay-4",
+  "han": "火門",
+  "name": "Lửa hoá cổng",
+  "chain": "Ghép LỬA LÀ CỔNG",
+  "len": 72
+ },
+ {
+  "id": "song-lua-song-8",
+  "han": "翔河",
+  "name": "Sông bay",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY",
+  "len": 72
+ },
+ {
+  "id": "ba-lua-7",
+  "han": "三火",
+  "name": "Ba hàng lửa",
+  "chain": "Ghép CHUỘT LÀ BỀN",
+  "len": 73
+ },
+ {
+  "id": "ben-bay-10",
+  "han": "火渡",
+  "name": "Bến lửa",
+  "chain": "Ghép CHUỘT LÀ BỀN",
+  "len": 73
+ },
+ {
+  "id": "song-lua-song-4",
+  "han": "二渡",
+  "name": "Qua hai sông",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY",
+  "len": 73
+ },
+ {
+  "id": "ben-bay-7",
+  "han": "換翼",
+  "name": "Đổi cánh lấy giáp",
+  "chain": "Ghép CHUỘT LÀ BAY → Ghép CHUỘT LÀ BỀN → Phá CHUỘT LÀ BAY",
+  "len": 73
+ },
+ {
+  "id": "song-lua-song-7",
+  "han": "降火",
+  "name": "Hạ lửa",
+  "chain": "Phá LỬA LÀ BAY",
+  "len": 73
+ },
+ {
+  "id": "cong-so-song-9",
+  "han": "鼠飛",
+  "name": "Chuột bay",
+  "chain": "Ghép CHUỘT LÀ BAY → Phá CHUỘT LÀ BAY",
+  "len": 74
+ },
+ {
+  "id": "lua-song-lua-7",
+  "han": "火河",
+  "name": "Lửa, sông, lửa",
+  "chain": "Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 74
+ },
+ {
+  "id": "song-lua-bay-6",
+  "han": "焚門",
+  "name": "Cổng lửa",
+  "chain": "Ghép LỬA LÀ CỔNG",
+  "len": 74
+ },
+ {
+  "id": "ca-an-chu-song-7",
+  "han": "化魚",
+  "name": "Lửa hoá cá",
+  "chain": "Ghép NƯỚC LÀ LỬA → Phá NƯỚC LÀ LỬA → Ghép LỬA LÀ CÁ",
+  "len": 76
+ },
+ {
+  "id": "lua-song-bay-6",
+  "han": "火翼",
+  "name": "Cánh lửa",
+  "chain": "Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 76
+ },
+ {
+  "id": "rom-tren-song-5",
+  "han": "河門",
+  "name": "Sông hoá cổng",
+  "chain": "Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG → Ghép CỔNG LÀ THẮNG",
+  "len": 78
+ },
+ {
+  "id": "ba-lua-12",
+  "han": "不焚",
+  "name": "Chuột không cháy",
+  "chain": "Ghép CHUỘT LÀ BỀN",
+  "len": 79
+ },
+ {
+  "id": "chu-roi-mot-la-7",
+  "han": "承字",
+  "name": "Hứng chữ",
+  "chain": "Ghép CỔNG LÀ THẮNG",
+  "len": 79
+ },
+ {
+  "id": "mot-la-bay",
+  "han": "水翼",
+  "name": "Sông có cánh",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép CỔNG LÀ THẮNG",
+  "len": 79
+ },
+ {
+  "id": "ba-song-5",
+  "han": "三河",
+  "name": "Ba con sông",
+  "chain": "Ghép NƯỚC LÀ BAY",
+  "len": 81
+ },
+ {
+  "id": "ba-lua-11",
+  "han": "耐火",
+  "name": "Chịu lửa",
+  "chain": "Ghép CHUỘT LÀ BỀN",
+  "len": 82
+ },
+ {
+  "id": "lua-song-lua-10",
+  "han": "夾河",
+  "name": "Sông kẹp giữa lửa",
+  "chain": "Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 82
+ },
+ {
+  "id": "song-da-song-7",
+  "han": "填河",
+  "name": "Lấp sông",
+  "chain": "Ghép NƯỚC LÀ ĐÁ",
+  "len": 82
+ },
+ {
+  "id": "ba-song-6",
+  "han": "翼河",
+  "name": "Cánh trên sông",
+  "chain": "Ghép NƯỚC LÀ BAY",
+  "len": 83
+ },
+ {
+  "id": "ca-an-chu-song-4",
+  "han": "魚群",
+  "name": "Bầy cá",
+  "chain": "Ghép LỬA LÀ CÁ",
+  "len": 83
+ },
+ {
+  "id": "song-lua-bay-10",
+  "han": "渡火",
+  "name": "Qua sông lửa",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 83
+ },
+ {
+  "id": "cong-an-meo-di-8",
+  "han": "貓引",
+  "name": "Mèo dẫn đường",
+  "chain": "Ghép MÈO LÀ ĐI",
+  "len": 84
+ },
+ {
+  "id": "da-roi-song",
+  "han": "石路",
+  "name": "Lối đá",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 84
+ },
+ {
+  "id": "lua-song-lua",
+  "han": "火牆",
+  "name": "Tường lửa",
+  "chain": "Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 84
+ },
+ {
+  "id": "ba-song-7",
+  "han": "越河",
+  "name": "Vượt ba sông",
+  "chain": "Ghép NƯỚC LÀ BAY",
+  "len": 85
+ },
+ {
+  "id": "song-lua-bay-12",
+  "han": "熄焰",
+  "name": "Dập lửa",
+  "chain": "Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC",
+  "len": 85
+ },
+ {
+  "id": "ba-song-9",
+  "han": "河鳥",
+  "name": "Chim qua sông",
+  "chain": "Ghép NƯỚC LÀ BAY",
+  "len": 86
+ },
+ {
+  "id": "rom-tren-song-10",
+  "han": "草岸",
+  "name": "Bờ rơm",
+  "chain": "Ghép CỔNG LÀ THẮNG",
+  "len": 86
+ },
+ {
+  "id": "chu-thap-2-6",
+  "han": "撥鑰",
+  "name": "Đẩy chìa",
+  "chain": "Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY",
+  "len": 87
+ },
+ {
+  "id": "lua-song-bay-7",
+  "han": "焰飛",
+  "name": "Lửa bay lên",
+  "chain": "Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 87
+ },
+ {
+  "id": "lua-song-lua-12",
+  "han": "並翼",
+  "name": "Cùng bay",
+  "chain": "Ghép LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 87
+ },
+ {
+  "id": "ba-song-3",
+  "han": "長渡",
+  "name": "Chuyến đò dài",
+  "chain": "Ghép NƯỚC LÀ BAY",
+  "len": 89
+ },
+ {
+  "id": "mot-la-8",
+  "han": "疊石",
+  "name": "Xếp đá",
+  "chain": "Ghép ĐÁ LÀ ĐẨY → Phá ĐÁ LÀ ĐẨY → Ghép CỔNG LÀ THẮNG",
+  "len": 90
+ },
+ {
+  "id": "cong-so-song-5",
+  "han": "驚門",
+  "name": "Cổng giật mình",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY",
+  "len": 92
+ },
+ {
+  "id": "lua-song-bay-10",
+  "han": "火落",
+  "name": "Lửa hạ cánh",
+  "chain": "Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 93
+ },
+ {
+  "id": "ba-lua-9",
+  "han": "穿火",
+  "name": "Xuyên lửa",
+  "chain": "Ghép CHUỘT LÀ BỀN",
+  "len": 94
+ },
+ {
+  "id": "lua-song-bay",
+  "han": "四變",
+  "name": "Bốn lần đổi",
+  "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 96
+ },
+ {
+  "id": "ba-lua-6",
+  "han": "越焰",
+  "name": "Băng qua lửa",
+  "chain": "Ghép CHUỘT LÀ BỀN",
+  "len": 95
+ },
+ {
+  "id": "ba-song-12",
+  "han": "千河",
+  "name": "Nghìn dòng",
+  "chain": "Ghép NƯỚC LÀ BAY",
+  "len": 97
+ },
+ {
+  "id": "song-lua-bay-8",
+  "han": "高飛",
+  "name": "Bay cao",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 98
+ },
+ {
+  "id": "lua-song-lua-4",
+  "han": "火水",
+  "name": "Lửa hoá nước",
+  "chain": "Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC",
+  "len": 100
+ },
+ {
+  "id": "chu-thap-2-4",
+  "han": "鑰轉",
+  "name": "Chìa đẩy rồi thôi",
+  "chain": "Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY",
+  "len": 101
+ },
+ {
+  "id": "cong-so-song",
+  "han": "焰鼠",
+  "name": "Lửa hoá chuột",
+  "chain": "Ghép LỬA LÀ CHUỘT",
+  "len": 113
+ },
+ {
+  "id": "chu-thap-2-7",
+  "han": "鎖門",
+  "name": "Hàng cửa khoá",
+  "chain": "Ghép CHÌA LÀ ĐẨY",
+  "len": 106
+ },
+ {
+  "id": "lua-song-lua-9",
+  "han": "三變",
+  "name": "Ba lần đổi",
+  "chain": "Ghép LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá LỬA LÀ BAY",
+  "len": 115
+ },
+ {
+  "id": "chu-thap-2-8",
+  "han": "開鎖",
+  "name": "Mở khoá",
+  "chain": "Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY",
+  "len": 110
+ },
+ {
+  "id": "ca-an-chu-song-6",
+  "han": "逃魚",
+  "name": "Thoát bầy cá",
+  "chain": "Ghép LỬA LÀ BAY",
+  "len": 122
+ },
+ {
+  "id": "chu-thap-2-2",
+  "han": "化鑰",
+  "name": "Sông hoá chìa",
+  "chain": "Ghép NƯỚC LÀ CHÌA → Phá NƯỚC LÀ CHÌA → Ghép CHÌA LÀ ĐẨY",
+  "len": 112
+ },
+ {
+  "id": "ba-lua-3",
+  "han": "火巷",
+  "name": "Ngõ lửa",
+  "chain": "Ghép CHUỘT LÀ BỀN",
+  "len": 134
+ },
+ {
+  "id": "chu-thap-2-3",
+  "han": "萬鎖",
+  "name": "Muôn cửa khoá",
+  "chain": "Ghép CHÌA LÀ ĐẨY",
+  "len": 135
+ }
+]

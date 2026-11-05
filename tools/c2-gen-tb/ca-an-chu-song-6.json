@@ -1,0 +1,98 @@
+{
+ "id": "ca-an-chu-song",
+ "score": 140.73416696830998,
+ "moves": "RRRDDDDRULUUULLLDDRLUURRRRRRDDDDLLULUDDRRRUUUULLLLLLDDRRLLUURRRRRRDDDDLLULULLLUURRRLLLDDRRRUDLLLUURRRRRRDRRUDLLURURLDRDRRR",
+ "len": 122,
+ "states": 17568,
+ "map": [
+  "M=1W=3N=4F=5.",
+  "w.ww.~w..f...",
+  "m...F~...f...",
+  "sww..~...f.g.",
+  ".9=.w~...f...",
+  "S)Ts.~...f...",
+  "G=6.N~...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "fire:is:float"
+  }
+ ],
+ "chain": "Ghép LỬA LÀ BAY"
+}

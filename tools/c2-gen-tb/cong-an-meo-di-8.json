@@ -1,0 +1,73 @@
+{
+ "id": "cong-an-meo-di",
+ "score": 111.34973358093687,
+ "moves": "URRRDDLURUULLDRURDRRUUDLLLDLLUURDLDRRRURDLLDRRLUUDLLDDDRRRRRURLLULDLDDRRUDLLURRLUURD",
+ "len": 84,
+ "states": 130791,
+ "map": [
+  "M=1W=3G)M...",
+  "G=6w..www.c.",
+  "w.......=&ww",
+  "w.ww........",
+  "....mwC...g1",
+  ".w..w......w"
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "cat:is:you"
+  }
+ ],
+ "chain": "Ghép MÈO LÀ ĐI"
+}

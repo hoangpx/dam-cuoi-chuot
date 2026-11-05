@@ -1,0 +1,1 @@
+{"id":"mot-la-bay-6","ok":true,"len":66,"states":96137,"moves":"RRDRDLUULLLLDDDDRRRULURDLLLUUURRRDDLDDRRRUDLLULURRRRRRRDRRUUUUDDRD","ess":[{"op":"+","r":"water:is:float"},{"op":"+","r":"gate:is:win"}],"chain":"Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép CỔNG LÀ THẮNG","unsure":[]}

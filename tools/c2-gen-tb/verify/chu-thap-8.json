@@ -1,0 +1,1 @@
+{"id":"chu-thap-8","ok":true,"len":61,"states":145303,"moves":"DLULUULLULDLDRRRURDURDURRDDDLLUUDRRUULLLLLULDLDRRRURRRRRRRRRR","ess":[{"op":"+","r":"water:is:key"},{"op":"+","r":"key:is:push"}],"chain":"Ghép NƯỚC LÀ CHÌA → Phá NƯỚC LÀ CHÌA → Ghép CHÌA LÀ ĐẨY","unsure":[]}

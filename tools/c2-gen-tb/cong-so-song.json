@@ -1,0 +1,98 @@
+{
+ "id": "cong-so-song",
+ "score": 133.61774484407303,
+ "moves": "LUUULULLDDRLUURRDRDULULLDDRRUURRRRDRRUULDDDDRDLLLLLUULUURLDDRUDDDRRRUUUULLLDDLLLUURURDRRRRDRRULLLLLDDLLLUURURDRRR",
+ "len": 113,
+ "states": 74573,
+ "map": [
+  "M=1W=3N=4F=5.",
+  "w..ww~w..f...",
+  "...N9~...f...",
+  ".w..w~...f.g.",
+  ".F=.w~...f...",
+  "G(M.w~...f...",
+  "G=6.m~...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "fire:is:mouse"
+  }
+ ],
+ "chain": "Ghép LỬA LÀ CHUỘT"
+}

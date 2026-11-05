@@ -1,0 +1,90 @@
+{
+ "id": "lua-song-bay",
+ "score": 134.60743103442687,
+ "moves": "UUULLULLDDRURRRDDLURULLULLDDRRRDRULULULDLDRRRDRRUUUULDRDLLDDRLUURDULLULDLDRRRDRLUURDLDRRRRRRRUUR",
+ "len": 96,
+ "states": 73985,
+ "map": [
+  "M=1W=3N=4F=5.",
+  "w..w.fw..~...",
+  "...w.f...~...",
+  "N....f...~.g.",
+  ".=9..f...~...",
+  "..w.Ff...~...",
+  "G=6wmf...~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "water:is:float"
+  },
+  {
+   "op": "+",
+   "r": "fire:is:float"
+  }
+ ],
+ "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY"
+}

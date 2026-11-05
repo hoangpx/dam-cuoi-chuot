@@ -1,0 +1,86 @@
+{
+ "id": "song-lua-bay",
+ "score": 92.31589684120928,
+ "moves": "LULULDLDRURRDULLDRDRDRLULUURDRDULLDRDRLUURDLDRRRDRULURDDRUUULUURLDRDRRR",
+ "len": 71,
+ "states": 127438,
+ "map": [
+  "M=1W=3N=4F=5.",
+  "w..ww~w..f...",
+  "..=.w~...f...",
+  "..9.m~...f.g.",
+  "Nw...~...f...",
+  "..w.F~...f...",
+  "G=6w.~...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "fire:is:float"
+  }
+ ],
+ "chain": "Ghép LỬA LÀ BAY"
+}

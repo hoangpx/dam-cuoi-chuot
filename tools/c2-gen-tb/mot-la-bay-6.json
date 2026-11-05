@@ -1,0 +1,74 @@
+{
+ "id": "mot-la-bay",
+ "score": 98.9486716969256,
+ "moves": "RRDRDLUULLLLDDDDRRRULURDLLLUUURRRDDLDDRRRUDLLULURRRRRRRDRRUUUUDDRD",
+ "len": 66,
+ "states": 96137,
+ "map": [
+  "M=1W=3N=4.G.6",
+  "w..w..~~~.w..",
+  "..m..w~~~....",
+  ".ww.N.~~~....",
+  ".w...9~~~...g",
+  "...=w.~~~....",
+  "......~~~...."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   12,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "water:is:float"
+  },
+  {
+   "op": "+",
+   "r": "gate:is:win"
+  }
+ ],
+ "chain": "Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép CỔNG LÀ THẮNG"
+}

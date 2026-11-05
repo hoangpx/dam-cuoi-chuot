@@ -1,0 +1,86 @@
+{
+ "id": "lua-song-lua",
+ "score": 126.52219970383541,
+ "moves": "RUULRDDLURUUULLDLDRUURRDDUULLDDRDDRUULLULLURURDDLDRRLUURRLLDDRDRULLUURRLLDDRRUDLLUURRRRRRRRRURURRDDD",
+ "len": 100,
+ "states": 69300,
+ "map": [
+  "M=1W=3N=4F=5....",
+  "w..w.fw..ff..f..",
+  "..N..f...ff..f..",
+  "...w.f...ff..fg.",
+  "w..F9f...ff..f..",
+  "w.w=.f...ff..f..",
+  "G=6m.f...ff..f.."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "fire:is:water"
+  }
+ ],
+ "chain": "Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC"
+}

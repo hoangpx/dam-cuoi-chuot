@@ -1,0 +1,1 @@
+{"id":"chu-roi-mot-la-6","ok":true,"len":63,"states":22901,"moves":"URRRDDDDRRRRUURRRDDLLLLLLUUUULLLDDLDRURLDRULUURRDRDDRDRRUUURRRR","ess":[{"op":"+","r":"gate:is:sink"},{"op":"+","r":"gate:is:win"}],"chain":"Ghép CỔNG LÀ CHÌM → Phá CỔNG LÀ CHÌM → Ghép CỔNG LÀ THẮNG","unsure":[]}

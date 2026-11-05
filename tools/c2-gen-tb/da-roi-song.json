@@ -1,0 +1,98 @@
+{
+ "id": "da-roi-song",
+ "score": 105.80349265809329,
+ "moves": "LLLDLDRRRRRRURDLLLLLLUURRRDULLLDDRRRRRRDRUDDLLLLUDRRUULLUULLLDDRRRRRRDRUULUURLDRDRRR",
+ "len": 84,
+ "states": 185281,
+ "map": [
+  "M=1W=3N=4F=5.",
+  "ww.w.~w..f...",
+  ".r..m~...f...",
+  ".rww=~...f.g.",
+  "..F..~...f...",
+  "R=2w9~...f...",
+  "G=6..~...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "fire:is:float"
+  }
+ ],
+ "chain": "Ghép LỬA LÀ BAY"
+}

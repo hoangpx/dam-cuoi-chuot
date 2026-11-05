@@ -1,0 +1,90 @@
+ba-lua-10 66 moves 20486 states | Ghép CHUỘT LÀ BỀN
+ba-lua-11 82 moves 27102 states | Ghép CHUỘT LÀ BỀN
+ba-lua-12 79 moves 38216 states | Ghép CHUỘT LÀ BỀN
+ba-lua-2 67 moves 54408 states | Ghép CHUỘT LÀ BỀN
+ba-lua-3 134 moves 19174 states | Ghép CHUỘT LÀ BỀN
+ba-lua-4 61 moves 33113 states | Ghép CHUỘT LÀ BỀN
+ba-lua-6 95 moves 12999 states | Ghép CHUỘT LÀ BỀN
+ba-lua-7 73 moves 52315 states | Ghép CHUỘT LÀ BỀN
+ba-lua-8 63 moves 27425 states | Ghép CHUỘT LÀ BỀN
+ba-lua-9 94 moves 11906 states | Ghép CHUỘT LÀ BỀN
+ba-lua 66 moves 41164 states | Ghép CHUỘT LÀ BỀN
+ba-song-10 64 moves 60523 states | Ghép NƯỚC LÀ BAY
+ba-song-11 74 moves 68361 states | Ghép NƯỚC LÀ BAY
+ba-song-12 97 moves 20713 states | Ghép NƯỚC LÀ BAY
+ba-song-3 89 moves 114724 states | Ghép NƯỚC LÀ BAY
+ba-song-4 76 moves 64776 states | Ghép NƯỚC LÀ BAY
+ba-song-5 81 moves 25764 states | Ghép NƯỚC LÀ BAY
+ba-song-6 83 moves 49924 states | Ghép NƯỚC LÀ BAY
+ba-song-7 85 moves 54735 states | Ghép NƯỚC LÀ BAY
+ba-song-8 74 moves 20291 states | Ghép NƯỚC LÀ BAY
+ba-song-9 86 moves 32519 states | Ghép NƯỚC LÀ BAY
+ba-song 68 moves 54106 states | Ghép NƯỚC LÀ BAY
+ben-bay-10 73 moves 44172 states | Ghép CHUỘT LÀ BỀN
+ben-bay-7 73 moves 113512 states | Ghép CHUỘT LÀ BAY → Ghép CHUỘT LÀ BỀN → Phá CHUỘT LÀ BAY
+ca-an-chu-song-2 62 moves 61284 states | Phá LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY
+ca-an-chu-song-4 83 moves 242529 states | Ghép LỬA LÀ CÁ
+ca-an-chu-song-6 122 moves 17568 states | Ghép LỬA LÀ BAY
+ca-an-chu-song-7 76 moves 67397 states | Ghép NƯỚC LÀ LỬA → Phá NƯỚC LÀ LỬA → Ghép LỬA LÀ CÁ
+ca-an-chu-song 70 moves 34010 states | Ghép LỬA LÀ BAY
+chu-roi-mot-la-10 60 moves 26776 states | Ghép CỔNG LÀ THẮNG
+chu-roi-mot-la-11 66 moves 73396 states | Ghép CỔNG LÀ THẮNG
+chu-roi-mot-la-5 65 moves 120383 states | Ghép CỔNG LÀ THẮNG
+chu-roi-mot-la-6 63 moves 22901 states | Ghép CỔNG LÀ CHÌM → Phá CỔNG LÀ CHÌM → Ghép CỔNG LÀ THẮNG
+chu-roi-mot-la-7 79 moves 104900 states | Ghép CỔNG LÀ THẮNG
+chu-roi-mot-la-8 65 moves 63237 states | Ghép CỔNG LÀ THẮNG
+chu-thap-2-10 74 moves 62471 states | Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY → Ghép NƯỚC LÀ ĐẨY
+chu-thap-2-12 63 moves 205257 states | Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY
+chu-thap-2-2 112 moves 132477 states | Ghép NƯỚC LÀ CHÌA → Phá NƯỚC LÀ CHÌA → Ghép CHÌA LÀ ĐẨY
+chu-thap-2-3 135 moves 118017 states | Ghép CHÌA LÀ ĐẨY
+chu-thap-2-4 101 moves 47050 states | Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY
+chu-thap-2-6 87 moves 126840 states | Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY
+chu-thap-2-7 106 moves 17076 states | Ghép CHÌA LÀ ĐẨY
+chu-thap-2-8 110 moves 231522 states | Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY
+chu-thap-8 61 moves 145303 states | Ghép NƯỚC LÀ CHÌA → Phá NƯỚC LÀ CHÌA → Ghép CHÌA LÀ ĐẨY
+cong-an-meo-di-12 68 moves 103179 states | Ghép MÈO LÀ ĐI
+cong-an-meo-di-8 84 moves 130791 states | Ghép MÈO LÀ ĐI
+cong-so-song-5 92 moves 139443 states | Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY
+cong-so-song-7 70 moves 48352 states | Ghép LỬA LÀ CỔNG
+cong-so-song-9 74 moves 9670 states | Ghép CHUỘT LÀ BAY → Phá CHUỘT LÀ BAY
+cong-so-song 113 moves 74573 states | Ghép LỬA LÀ CHUỘT
+cua-bay-8 71 moves 63659 states | Ghép CHÌA LÀ MỞ → Phá CHÌA LÀ MỞ
+da-roi-song-12 63 moves 182405 states | Ghép LỬA LÀ BAY
+da-roi-song-7 62 moves 227429 states | Ghép LỬA LÀ BAY
+da-roi-song-8 66 moves 243938 states | Ghép LỬA LÀ BAY
+da-roi-song 84 moves 185281 states | Ghép LỬA LÀ BAY
+lua-song-bay-10 93 moves 102062 states | Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+lua-song-bay-3 69 moves 20269 states | Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+lua-song-bay-6 76 moves 75270 states | Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+lua-song-bay-7 87 moves 235535 states | Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+lua-song-bay 96 moves 73985 states | Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+lua-song-lua-10 82 moves 62347 states | Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+lua-song-lua-11 68 moves 207710 states | Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC
+lua-song-lua-12 87 moves 244083 states | Ghép LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá LỬA LÀ BAY
+lua-song-lua-4 100 moves 69300 states | Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC
+lua-song-lua-6 61 moves 249130 states | Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC
+lua-song-lua-7 74 moves 139507 states | Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+lua-song-lua-9 115 moves 80985 states | Ghép LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá LỬA LÀ BAY
+lua-song-lua 84 moves 18958 states | Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY
+mot-la-11 67 moves 226929 states | Ghép ĐÁ LÀ ĐẨY → Phá ĐÁ LÀ ĐẨY → Ghép CỔNG LÀ THẮNG
+mot-la-8 90 moves 268209 states | Ghép ĐÁ LÀ ĐẨY → Phá ĐÁ LÀ ĐẨY → Ghép CỔNG LÀ THẮNG
+mot-la-bay-6 66 moves 96137 states | Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép CỔNG LÀ THẮNG
+mot-la-bay 79 moves 193461 states | Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY → Ghép CỔNG LÀ THẮNG
+mot-la 65 moves 290764 states | Ghép ĐÁ LÀ ĐẨY → Phá ĐÁ LÀ ĐẨY → Ghép CỔNG LÀ THẮNG
+rom-nguoc-cong-10 68 moves 201035 states | Ghép CỔNG LÀ THẮNG
+rom-tren-song-10 86 moves 10317 states | Ghép CỔNG LÀ THẮNG
+rom-tren-song-5 78 moves 25217 states | Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG → Ghép CỔNG LÀ THẮNG
+song-da-song-7 82 moves 162078 states | Ghép NƯỚC LÀ ĐÁ
+song-da-song-8 69 moves 27355 states | Ghép NƯỚC LÀ ĐÁ
+song-da-song-9 66 moves 15206 states | Ghép NƯỚC LÀ ĐÁ
+song-lua-bay-10 83 moves 72878 states | Ghép LỬA LÀ BAY
+song-lua-bay-12 85 moves 13633 states | Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC
+song-lua-bay-3 71 moves 127438 states | Ghép LỬA LÀ BAY
+song-lua-bay-4 72 moves 108035 states | Ghép LỬA LÀ CỔNG
+song-lua-bay-6 74 moves 67713 states | Ghép LỬA LÀ CỔNG
+song-lua-bay-8 98 moves 29358 states | Ghép LỬA LÀ BAY
+song-lua-bay-9 67 moves 190580 states | Ghép LỬA LÀ BAY
+song-lua-song-10 72 moves 127609 states | Ghép NƯỚC LÀ BAY
+song-lua-song-4 73 moves 153791 states | Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY
+song-lua-song-7 73 moves 216979 states | Phá LỬA LÀ BAY
+song-lua-song-8 72 moves 222918 states | Ghép NƯỚC LÀ BAY → Phá NƯỚC LÀ BAY

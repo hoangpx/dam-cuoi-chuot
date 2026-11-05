@@ -1,0 +1,23 @@
+# Thiên biến frames that loop-tb.sh runs with seed 3, 4, … (one id a line; re-read every round, so frames can be added or dropped while it runs)
+cong-so-song
+chu-thap-2
+lua-song-bay
+lua-song-lua
+da-roi-song
+mot-la-bay
+ca-an-chu-song
+ba-song
+ba-lua
+mot-la
+cua-bay
+ca-so-cong
+song-lua-song
+rom-nguoc-cong
+cong-an-meo-di
+song-lua-bay
+ben-bay
+chu-roi-mot-la
+song-da-song
+rom-tren-song
+ca-lang-so-2
+chu-thap

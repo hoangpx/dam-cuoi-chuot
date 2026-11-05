@@ -1,0 +1,1 @@
+{"id":"rom-tren-song-5","ok":true,"len":78,"states":25217,"moves":"LDUURDRRULDLURULULURLDRRULLDDLURULRULUDRRDRRRRUUUULLLLLDDLDDRULRRRULRRUURRRRRR","ess":[{"op":"+","r":"water:is:gate"},{"op":"+","r":"gate:is:win"}],"chain":"Ghép NƯỚC LÀ CỔNG → Phá NƯỚC LÀ CỔNG → Ghép CỔNG LÀ THẮNG","unsure":[]}

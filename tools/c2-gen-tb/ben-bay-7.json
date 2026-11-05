@@ -1,0 +1,90 @@
+{
+ "id": "ben-bay",
+ "score": 106.16512532709763,
+ "moves": "DLULLDLDDRUUURRDDLRUULDLLDDRULURURRDDLULLDDRULURDRRDRRDRUURULLLLRRRRRRRRR",
+ "len": 73,
+ "states": 113512,
+ "map": [
+  "M=1W=3N=4F=5..",
+  "w.Mw.fw..~~...",
+  "w...mf...~~...",
+  "...9.f...~~.g.",
+  ".N=.wf...~~...",
+  "..w.#f...~~...",
+  "G=6.wf...~~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:float"
+  },
+  {
+   "op": "+",
+   "r": "mouse:is:safe"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BAY → Ghép CHUỘT LÀ BỀN → Phá CHUỘT LÀ BAY"
+}

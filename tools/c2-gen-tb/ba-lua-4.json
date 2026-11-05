@@ -1,0 +1,74 @@
+{
+ "id": "ba-lua",
+ "score": 80.55999558735654,
+ "moves": "DLLUUUURRRDDRULULLLDRRURRDULLDRDRLURLLLDLDDRRRRRUURURRRRRRRRR",
+ "len": 61,
+ "states": 33113,
+ "map": [
+  "M=1W=3F=5G=6.....",
+  "w..wwfw..f...f...",
+  ".....f...f...f...",
+  ".=#.Mf...f...f.g.",
+  "..w..f...f...f...",
+  ".wmwwf...f...f...",
+  ".....f...f...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:safe"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BỀN"
+}
