@@ -18,7 +18,7 @@ const C4_W = 5900,                                                          // (
       C4_W_OLD = 3950, C4_STALL = 720, C4_GATE = 390, C4_OFF = 300;           // … how far (at least) the husband goes for goods
 const c4HusbX = () => SAVE4.lv ? C4_STALL + 70 : C4_STALL - 40;           // where he waits: just behind the betel stall
 const C4_Y0 = 300, C4_D = 190;                                            // the lane: its far edge on screen, and its depth
-const c4Y = z => C4_Y0 + z * C4_D, c4S = z => .62 + .42 * z;
+const c4Y = z => C4_Y0 + z * C4_D, c4S = z => .67;   // one size at every depth (owner, 2026-11-06: near folk looked too big; was .62 + .42 z)
 const C4_CROWD = .86;                                                         // passers-by drawn this much smaller (owner: our stalls stand out)              // where depth z stands on screen, and how big
 const C4_STALL_Z = .12, C4_WIFE_Z = .07, C4_Q_Z = .32;
 const C4_OPEN = 5 * 60, C4_CLOSE = 19 * 60, C4_MPS = 4;                 // market hours (game minutes), game minutes per second
