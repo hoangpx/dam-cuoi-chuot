@@ -91,6 +91,14 @@ if (require.main === module) {
   for (const l of hai) { const reg = [...l.reg].map(ch => parseInt(ch, 36)); if (H.count(l.N, reg, 2) !== 1 || !H.logic(l.N, reg).solved) throw new Error('bad hai field ' + l.reg); }
   out.push(...hai.map(l => ({ N: l.N, reg: l.reg, sol: l.sol, d: 4, k: 2 })));
   console.error('hai con', hai.length, hai.map(l => l.hard).join(' '));
+  // the climbed "hai con" fields (owner 2026-11-05: "thêm 50 bài siêu siêu khó"): the 50 hardest of tools/mice-cache/hai2-*.json
+  // (made by tools/gen-mice-hai-leo.js), checked the same way, after the hai con set
+  let hai2 = []; for (const f of fs.readdirSync(dir)) if (/^hai2-/.test(f)) hai2.push(...JSON.parse(fs.readFileSync(dir + '/' + f, 'utf8')));
+  const seenH2 = new Set(); hai2 = hai2.filter(l => !seenH2.has(l.reg) && seenH2.add(l.reg));
+  hai2.sort((a, b) => b.hard - a.hard || b.score - a.score); hai2 = hai2.slice(0, 50).sort((a, b) => a.hard - b.hard || a.score - b.score);
+  for (const l of hai2) { const reg = [...l.reg].map(ch => parseInt(ch, 36)); if (H.count(l.N, reg, 2) !== 1 || !H.logic(l.N, reg).solved) throw new Error('bad hai2 field ' + l.reg); }
+  out.push(...hai2.map(l => ({ N: l.N, reg: l.reg, sol: l.sol, d: 4, k: 2 })));
+  console.error('hai con 2', hai2.length, hai2.map(l => l.hard).join(' '));
   console.error('sieu kho', sk.length, sk.map(l => l.N + ':' + l.hard).join(' '));
   const head = '/* Chương VI · Tìm Chuột: the levels, made by tools/gen-mice-levels.js (do not edit by hand). reg: the plot of each\n' +
     '   cell, row by row, base 36; sol: the column of the mouse in each row; d: the hardest rule needed (1 easiest … 4); sk: the Siêu khó set; k: mice a row, column and plot (2 for the hai con fields; sol then has k columns a row). */\n';

@@ -8,6 +8,7 @@
    opens with "Tìm N con chuột"; the rules are three little cards over the field (owner's reference screen). Fields come from levels.js (C6_LEVELS). */
 const MD_HEARTS = 3;
 const MD_COLS = ['#e8c547', '#7fb069', '#d9705c', '#5b6fb5', '#b48ad6', '#e89a4a', '#9fd4e8', '#3f9e93', '#f0a8c0', '#a8a07a'];   // far apart, so plots never blur together
+const MD_MORE = ['#8c5a3c'];                       // a warm brown for the eleventh plot of the 11 × 11 fields
 function mdNewGame(level) { const G = { level, hearts: MD_HEARTS, over: false, result: null, t: 0, shake: null, next: 0 }; if (level === 0) mdTutorial(G); else mdField(G); return G; }
 // the practice field: plots 0 green, 1 red, 2 yellow, 3 blue; one mouse given; the steps below lead to the answer
 const MD_TUT_REG = [1, 3, 0, 3, 1, 3, 3, 3, 1, 1, 2, 3, 1, 2, 2, 3];
@@ -37,6 +38,7 @@ function mdField(G) {
   Object.assign(G, { N, K, reg, sol, ans, mice: new Set(), dots: new Set(), wrong: new Set(), next: 0, intro: K > 1 ? 3.2 : 1.8, introT: K > 1 ? 3.2 : 1.8, tut: null });
   // the plots get colours in a shuffled order
   const rr = mulberry(G.level * 31 + 7); G.cols = MD_COLS.slice().sort(() => rr() - .5);
+  if (N > MD_COLS.length) G.cols.push(...MD_MORE.slice(0, N - MD_COLS.length));   // 11 × 11 fields: an eleventh colour, the old ones keep theirs
 }
 // the screen (owner's reference): a back button and "Màn N" on top, the hearts, three little rule cards, a strip of mouse
 // heads (one per plot colour, filled in as that plot's mouse is found), then the field in a rounded panel
