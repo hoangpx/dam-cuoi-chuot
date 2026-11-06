@@ -243,7 +243,7 @@ function p4Key(e) {
 }
 
 // ---------- HUD and sheets ----------
-function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); for (const s of ['p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd', 'c4rank', 'c4nhax', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); if (!id || id === 'p4ups') P4.fromList = false; for (const s of ['p4ups', 'p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd', 'c4rank', 'c4nhax', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
 // a sheet opened by a tap on the street (our house, a neighbour's, the lanterns) appears under the finger, and the phone then sends that
 // same tap's click to the button now there (Nhập trầu, Đổi tên, Trả quán…: a player, "nhấn một lần mà như nhấn đúp"): clicks inside a
 // sheet in its first .45 s are dropped (chương IV's village has the same guard in cho.js)
@@ -276,6 +276,7 @@ function p4HomeDraw() {
     + `<div class="row"><button class="btn alt" data-shut="1">${SAVE4B.shut ? 'Mở cửa lại' : 'Tạm đóng cửa hiệu'}</button></div>` + (SAVE4B.shut ? '<p class="sm">Hiệu đang đóng: khách không ghé nữa.</p>' : '')
     + (SAVE4B.sign ? '' : `<div class="row"><button class="btn" data-homesign="1"${p4Purse() < P4_SIGN_PRICE ? ' disabled' : ''}>Làm biển hiệu đẹp · ${c4Money(P4_SIGN_PRICE)} (+10% khách)</button></div>`)
     + `<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>` + p4HandsHtml();
+  p4BackToList($('#p4homeB'));
   $('#p4homeB').appendChild(p4SaleBlock('home', p4HomeOpen));               // a sale at the betel house (giamgia.js)
   { const tb = p4TreatBlock('trau'); $('#p4homeB').appendChild(tb); p4Tabs('p4home', $('#p4homeB'), tb, 'Hiệu trầu'); }   // the Mời khách tab (khachquen.js)
   { const m = SAVE4B.morning === SAVE4.day; $('#p4homeGo').hidden = !m; $('#p4homeVil').hidden = !m; $('#p4homeX').hidden = m; }   // the morning after "Sang ngày mới": stock, then open or go to the village
@@ -295,7 +296,7 @@ function p4HomeDraw() {
   // the bar is the village's (owner, 2026-10-17: "các control cũng giống y như ở làng, chỉ là chưa mua nhà thì chưa ấn đc"): the book (here: Khách quen,
   // Hồ sơ, Tổng sắp: hsOpen in js/ch4/hoso.js), Nâng cấp (the house's sheet), the way back; book and upgrades wait for the house (p4Hud)
   $('#p4Note').addEventListener('click', () => { if (!SAVE4B.house) return; AU.tap(); hsOpen('quen'); });
-  $('#p4Ups').addEventListener('click', () => { if (!SAVE4B.house) return; AU.tap(); p4HomeOpen(); });
+  $('#p4Ups').addEventListener('click', () => { if (!SAVE4B.house) return; AU.tap(); p4OpenUps(); });   // the list of our shops (thue.js)
   $('#p4Back').addEventListener('click', () => { AU.tap(); p4Hide(); startC4(); });
   $('#p4buyX').addEventListener('click', () => p4Sheets(null));
   $('#p4buyGo').addEventListener('click', () => {

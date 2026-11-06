@@ -491,10 +491,18 @@ function c4OpenUps() {
       + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>thuê ${c4Money(L.price)}</span>`) + '</button>';
   };
   $('#c4evB').innerHTML = `<div class="ups">${all.map(card).join('')}</div>`;
-  $('#c4evB').querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => { AU.tap(); c4OpenUp(b.dataset.up); }));
+  $('#c4evB').querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4.upListNext = true; c4OpenUp(b.dataset.up); }));
   const box = $('#c4evO'); box.innerHTML = ''; const b = document.createElement('button'); b.className = 'btn alt'; b.textContent = 'Đóng'; b.addEventListener('click', () => c4Sheets(null)); box.appendChild(b);
   c4Sheets('c4ev');
 }
+// a stall opened from that list gets a button back to it, kept while its sheet is redrawn (owner, 2026-11-06)
+{ const open0 = c4OpenUp;
+  c4OpenUp = function () {
+    if (C4.sheet !== 'c4up') C4.upList = !!C4.upListNext; C4.upListNext = false;
+    const r = open0.apply(this, arguments);
+    if (C4.upList && C4.sheet === 'c4up') { const box = $('#c4upO'); if (box && !box.querySelector('.upback')) { const b = document.createElement('button'); b.className = 'btn alt upback'; b.textContent = '‹ Danh sách cửa hàng'; b.addEventListener('click', () => { AU.tap(); C4.upList = false; c4OpenUps(); }); box.prepend(b); } }
+    return r;
+  }; }
 // the tally, stall by stall: what each brought in after its goods
 const hasHands = g => c4Hands(g).length > 0;
 function c4ByShopHtml(d) {

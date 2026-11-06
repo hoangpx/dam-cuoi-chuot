@@ -99,8 +99,36 @@ function p4ShopSheet() {
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < P4_HOUSE_PRICE ? ' disabled' : ''}>Mua đứt · ${m(P4_HOUSE_PRICE)}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
   }
   $('#p4shopB').innerHTML = h + `<div class="row"><button class="btn alt" data-shopx="1">Đóng</button></div>`;
+  p4BackToList($('#p4shopB'));
   { const rr = $('#p4shopB > .row:last-child'); if (R && rr) { rr.before(p4FoodPriceBlock(R)); rr.before(cnTxnBlock(key)); rr.before(p4SaleBlock(key, () => p4KeepScroll('p4shop', p4ShopSheet))); const tb = p4TreatBlock(key); rr.before(tb); p4Tabs('p4shop', $('#p4shopB'), tb, 'Quán'); } }   // a sale and the Mời khách tab at a shop we run (giamgia.js, khachquen.js)
   p4Sheets('p4shop');
+}
+// the list of our shops on the street (owner, 2026-11-06): the betel house and every eating house we rent or own; a tap opens its sheet,
+// which then has a button back here (P4.fromList, cleared when the sheets close)
+function p4OpenUps() {
+  const S = p4Shops(), keys = Object.keys(S).sort((a, b) => a - b);
+  const cards = [`<button class="upc" data-k="home"><b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b><span class="lv">Hiệu trầu</span><span>${SAVE4B.shut ? 'đang đóng' : 'còn ' + SAVE4B.stock + ' miếng trầu'}</span></button>`,
+    ...keys.map(k => { const R = S[k], T = P4.shopDay[k] || { n: 0 }; return `<button class="upc" data-k="${k}"><b>${p4Esc(R.name)}</b><span class="lv">${R.own === 'buy' ? 'Quán của mình' : 'Quán thuê'}</span><span>${R.shut ? 'đang đóng' : 'hôm nay ' + T.n + ' bát/đĩa'}</span></button>`; })];
+  $('#p4upsB').innerHTML = `<div class="ups">${cards.join('')}</div>` + (keys.length ? '' : '<p class="sm">Chưa thuê quán ăn nào: chạm vào một quán ăn trên phố để thuê.</p>');
+  p4Sheets('p4ups');
+}
+function p4BackToList(el) {
+  if (!P4.fromList || !el) return;
+  const b = document.createElement('button'); b.className = 'btn alt upback'; b.textContent = '‹ Danh sách cửa hàng';
+  b.addEventListener('click', e => { e.stopPropagation(); AU.tap(); p4OpenUps(); });
+  el.prepend(b);
+}
+{
+  const d = document.createElement('div'); d.id = 'p4ups'; d.className = 'c4sheet p4sheet'; d.hidden = true;
+  d.innerHTML = '<div class="card4"><h3>Các hàng của nhà mình</h3><div id="p4upsB"></div><div class="row"><button class="btn alt" id="p4upsX">Đóng</button></div></div>'; document.body.appendChild(d);
+  $('#p4upsX').addEventListener('click', () => { AU.tap(); p4Sheets(null); });
+  $('#p4upsB').addEventListener('click', e => {
+    const b = e.target.closest('[data-k]'); if (!b) return; AU.tap();
+    const k = b.dataset.k;
+    if (k === 'home') { P4.fromList = true; p4HomeOpen(); return; }
+    const R = p4Shops()[k]; if (!R) { p4OpenUps(); return; }
+    P4.shopSel = { key: k, name: R.name }; P4.fromList = true; p4ShopSheet();
+  });
 }
 function p4ShopClick(b) {
   const sel = P4.shopSel; if (!sel) return;
