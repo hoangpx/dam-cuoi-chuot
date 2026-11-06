@@ -551,3 +551,25 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
   #c4note .card4:has(.buyList) #c4noteB>.row .btn{padding:4px 18px;font-size:14px}
 }
 @media (max-height:600px){#c4noteB .roomBox svg{max-height:22vh}}
+
+/* Phố Huyện: a shop we run (js/ch4b/cuahang.js) */
+.card4 .p4tabs{gap:6px;flex-wrap:wrap}
+.card4 .p4tabs .btn{flex:1 1 30%;min-width:0;padding-left:6px;padding-right:6px}
+.card4 .p4ware{border-top:1.5px dashed rgba(29,25,21,.3);padding:6px 0 2px;text-align:left}
+.card4 .p4ware h4{margin:2px 0}
+.card4 .p4ware p{margin:3px 0}
+.card4 .p4ware.off{opacity:.55}
+.card4 .p4wares{text-align:left;margin:4px 0 6px;padding-left:20px}
+.card4.p4mini .mh{display:flex;justify-content:space-between;font-weight:700;margin:4px 0}
+.card4.p4mini .mcs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}
+.card4.p4mini .mc{border:2px solid var(--ink);background:#fffaf0;padding:6px;display:flex;flex-direction:column;gap:2px;text-align:left;font-family:var(--body);color:var(--ink);cursor:pointer;min-height:92px}
+.card4.p4mini .mc.empty{opacity:.35;align-items:center;justify-content:center;cursor:default}
+.card4.p4mini .mc b{font-size:12px}
+.card4.p4mini .mc span{font-family:var(--display);font-weight:900;font-size:14px}
+.card4.p4mini .mc small{font-size:11px;line-height:1.25;opacity:.8}
+.card4.p4mini .mc .pat{display:block;height:6px;border:1px solid var(--ink);margin-top:auto}
+.card4.p4mini .mc .pat i{display:block;height:100%}
+.card4.p4mini .tray{border:2px dashed rgba(29,25,21,.45);min-height:34px;padding:6px;font-weight:700;background:#f6f0e2}
+.card4.p4mini .mm{min-height:1.3em;margin:4px 0;color:#a3332a;font-weight:700}
+.card4.p4mini .pcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.card4.p4mini .pcs .btn{padding:8px 4px;font-size:14px}

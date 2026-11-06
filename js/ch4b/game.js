@@ -189,6 +189,8 @@ function renderP4() {
     items.push({ z: .09, f: () => p4TownCounter(g, P4_HOME + 10, 'trau') });
     items.push({ z: .16, f: () => p4Mouse(g, MICE.groom, P4_HOME - 120, 1, P4.t * 2, false, null, null, p4S(.16) * .95, p4Y(.16), 2) });
   }
+  for (const [key, R] of Object.entries(SAVE4B.shops || {})) { const x = +key; if (!vis(x, 120) || typeof p4ShopCounter !== 'function') continue;   // our other shops: the counter with their goods, the keeper's words (cuahang.js)
+    items.push({ z: .09, f: () => p4ShopCounter(g, x + 10, R) }); if (R.cook) head(x, .04, 168 * P4_CROWD * .95, R.cook, 3); }
   if (SAVE4B.house) for (const m of P4.sellers) if (vis(m.x, 80)) {                          // the wife and the hands: behind the counter, or running a boat's order
     const out = m.st !== 'counter';
     items.push({ z: m.z, f: () => p4Mouse(g, m.M, m.x, m.face || 1, out ? m.ph : P4.t * 2, out && m.moving, m.st === 'out' ? -.9 : m.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, m.st === 'out' ? WP.basket : null, p4S(m.z) * .95, p4Y(m.z), m.slot + 1) });
@@ -243,7 +245,7 @@ function p4Key(e) {
 }
 
 // ---------- HUD and sheets ----------
-function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); if (!id || id === 'p4ups') P4.fromList = false; for (const s of ['p4ups', 'p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd', 'c4rank', 'c4nhax', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
+function p4Sheets(id) { if (id && id !== P4.sheet) P4.sheetT = performance.now(); if (!id || id === 'p4ups') P4.fromList = false; for (const s of ['p4ups', 'p4mini', 'p4buy', 'p4home', 'p4day', 'p4hoa', 'p4name', 'p4wish', 'p4shop', 'p4boss', 'p4temEnd', 'c4rank', 'c4nhax', 'hs', 'hsWho', 'hsEdit']) { const el = $('#' + s); if (el) el.hidden = s !== id; } P4.paused = !!id && id !== 'p4day'; P4.sheet = id; }
 // a sheet opened by a tap on the street (our house, a neighbour's, the lanterns) appears under the finger, and the phone then sends that
 // same tap's click to the button now there (Nhập trầu, Đổi tên, Trả quán…: a player, "nhấn một lần mà như nhấn đúp"): clicks inside a
 // sheet in its first .45 s are dropped (chương IV's village has the same guard in cho.js)

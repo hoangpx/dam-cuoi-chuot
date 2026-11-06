@@ -153,16 +153,7 @@ function w4CatchTown(to) {
     }
   }
   const S2 = p4Shops();
-  for (const key in S2) {                                                   // the eating houses: the cook serves the meals' customers
-    const R = S2[key]; if (R.shut) continue; let cust = 0;
-    for (let m = from; m < to; m += 5) cust += P4_FOOD_CUST / 900 * P4_MEALS(m / 60) / P4_MEAL_NORM * p4SignK(R) * p4Harass() * p4FoodFlow(R) * Math.min(5, to - m);
-    const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0 });
-    const raw = cust * 2.5 * W4_BG * w4Rnd() * p4FoodQty(R), n = Math.floor((T.frac || 0) + raw); T.frac = (T.frac || 0) + raw - n;   // (a half hour is often a fraction of a meal: the rest carries over, else a quiet house never sold while we were in the village — a player's report)
-    if (n < 1) continue;
-    const got = p4SalePrice(key, n * p4FoodPrice(R)), cost = n * p4FoodCost(key);
-    SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost;
-    T.n += n; T.take += got; T.cost += cost;
-  }
+  for (const key in S2) p4ShopBg(S2[key], key, from, to, W4_BG * w4Rnd());   // every shop we run sells on from its own stock (cuahang.js)
   P4.mins = to; W4.pho = to;
   P4.walkers = []; P4.Q = []; P4.FQ = {};                                   // a fresh street when we come back
   for (const s of P4.sellers || []) Object.assign(s, { st: 'counter', job: null, serving: null, t: 0, x: p4SlotX(s.slot), z: .07 });
