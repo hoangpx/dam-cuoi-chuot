@@ -128,7 +128,7 @@ function p4TownFarArt() {
 function p4TownScene(rs) {
   const near = [], far = [];
   const shuf = L => { L = L.slice(); for (let k = L.length - 1; k > 0; k--) { const j = (rs() * (k + 1)) | 0; [L[k], L[j]] = [L[j], L[k]]; } return L; };   // shuffled once, then each used once
-  const names = shuf(P4_SHOP_NAMES.filter(n => n !== 'THUỐC BẮC')), foods = shuf(P4_FOOD_NAMES), lamps = P4_LAMP_NAMES.slice();
+  const names = shuf(P4_SHOP_NAMES.filter(n => n !== 'THUỐC BẮC')), foods = shuf(P4_FOOD_NAMES), lamps = P4_STREET_LAMPS.slice();
   names.splice(1, 0, 'THUỐC BẮC');                                           // the street's one pharmacy, always there (owner)
   const next = n => (n % 6 === 0 && lamps.length) ? lamps.shift() : (n % 2 === 1 && foods.length) ? foods.shift() : names.length ? names.shift() : foods.length ? foods.shift() : lamps.length ? lamps.shift() : 'TẠP HOÁ';   // every other house an eating house
   let hq = false;
@@ -867,6 +867,8 @@ const P4_SHOP_NAMES = ['VẢI LỤA', 'LỤA TƠ TẰM', 'ĐỒ GỐM', 'GỐM B
   'TRANH ĐÔNG HỒ', 'GIẤY BÚT'];
 // the lantern makers: the only trade that comes back along the street, never under the same name
 const P4_LAMP_NAMES = ['ĐÈN LỒNG', 'LỒNG ĐÈN PHÚC', 'ĐÈN HOA SEN', 'ĐÈN LỒNG TÀI LỘC', 'LỒNG ĐÈN AN KHANG'];
+// the houses that used to be lantern makers along the street: one lamp shop, then other trades (owner 2026-11-06: one lamp shop is enough)
+const P4_STREET_LAMPS = ['ĐÈN LỒNG', 'TIỆM VẢI', 'HÀNG GỐM', 'TIỆM VÀNG', 'LỒNG ĐÈN AN KHANG'];
 const p4IsLamp = txt => /ĐÈN|LỒNG/.test(txt || '');
 
 // the order in which the river's lanterns are given real wishes: every lantern of the 34 groups (ids gi*16+i), shuffled once so the

@@ -38,12 +38,17 @@ const P4_KINDS = {
   'GIẤY BÚT': P4_SHOPK([W('giay', 'Giấy dó', 'tập', 10, 25, 3), W('but', 'Bút lông', 'cây', 25, 60, 2), W('muc', 'Mực tàu', 'thỏi', 30, 70, 1.5)], 'sang', { mua: .8 }, 'giay'),
   'HÀNG XÉN': P4_SHOPK([W('kim', 'Kim chỉ', 'gói', 5, 14, 3), W('guong', 'Gương lược', 'bộ', 25, 55, 2), W('khan', 'Khăn vấn', 'chiếc', 35, 75, 1.5)], 'chieu', {}, 'xen'),
   'TRÀ SEN': P4_SHOPK([W('sen', 'Trà sen', 'gói', 80, 160, 1.5), W('man', 'Trà mạn', 'gói', 30, 65, 3), W('am', 'Ấm chén', 'bộ', 120, 220, .6)], 'sang', { mua: .9 }, 'tra'),
+  'TIỆM VẢI': P4_SHOPK([W('lua', 'Lụa tơ tằm', 'tấm', 80, 170, 1.5), W('vai', 'Vải nâu', 'tấm', 30, 65, 3), W('the', 'Vải the', 'tấm', 50, 110, 2)], 'deu', { mua: .8 }, 'vai'),
+  'HÀNG GỐM': P4_SHOPK([W('bat', 'Bát đĩa', 'chồng', 20, 45, 3), W('binh', 'Bình hoa', 'chiếc', 45, 100, 1.5), W('am', 'Ấm tích', 'chiếc', 35, 80, 1.5)], 'sang', { mua: .8 }, 'gom'),
+  'TIỆM VÀNG': P4_SHOPK([W('nhan', 'Nhẫn bạc', 'chiếc', 40, 90, 3), W('khuyen', 'Khuyên tai', 'đôi', 60, 130, 2), W('vong', 'Vòng vàng', 'chiếc', 200, 380, .6)], 'deu', { mua: .9 }, 'vang', { cust: 34 }),
   'MAY ÁO DÀI': P4_SHOPK([W('aodai', 'Áo dài may sẵn', 'bộ', 150, 300, 1), W('sua', 'Sửa áo', 'lần', 10, 35, 3), W('khanxep', 'Khăn xếp', 'chiếc', 30, 70, 1.5)], 'deu', { mua: .8 }, 'may', { cust: 36 }),
 };
 for (const n of P4_LAMP_NAMES) P4_KINDS[n] = P4_LAMPK;
 const p4Kind = R => P4_KINDS[R && R.food] || P4_KINDS['BÚN CHẢ'];
 const p4KindOfName = n => P4_KINDS[n] || null;
-const P4_GAME_WORD = { buncha: 'Nướng chả', banhbao: 'Hấp bánh', comga: 'Chặt gà', pho: 'Chan nước dùng', comtam: 'Bày đĩa cơm', che: 'Múc chè', gao: 'Đong gạo', thuoc: 'Bốc thuốc', giay: 'Gói giấy bút', xen: 'Bày hàng xén', tra: 'Pha trà', may: 'Cắt may', den: 'Làm đèn' };
+// only one lamp shop for the couple (owner): the name of the one they hold, if any
+const p4LampHeld = () => { const S = p4Shops(); for (const k in S) if (p4Kind(S[k]).t === 'den') return S[k].name; return null; };
+const P4_GAME_WORD = { vai: 'Đo cắt vải', gom: 'Gói đồ gốm', vang: 'Bày đồ vàng bạc', buncha: 'Nướng chả', banhbao: 'Hấp bánh', comga: 'Chặt gà', pho: 'Chan nước dùng', comtam: 'Bày đĩa cơm', che: 'Múc chè', gao: 'Đong gạo', thuoc: 'Bốc thuốc', giay: 'Gói giấy bút', xen: 'Bày hàng xén', tra: 'Pha trà', may: 'Cắt may', den: 'Làm đèn' };
 const P4_TYPE_WORD = { an: 'Quán ăn', hieu: 'Cửa hiệu', den: 'Hàng đèn' };
 const P4_AWN = [['', 'Không'], ['red', 'Đỏ'], ['blue', 'Xanh lam'], ['green', 'Xanh lá'], ['yellow', 'Vàng'], ['stripe', 'Sọc đỏ trắng']];
 const P4_AWN_COL = { red: '#a3332a', blue: '#2f5f8f', green: '#2f6a4c', yellow: '#e0b43a', stripe: '#a3332a' };
@@ -51,7 +56,11 @@ const P4_DECO_PRICE = { awn: 1200, lamp: 600, pot: 300, sk: 400, help: 150 };
 const p4RentOf = R => Math.round(P4_RENT_WEEK * p4Kind(R).rentK), p4TaxOf = R => Math.round(P4_TAX_WEEK * p4Kind(R).rentK), p4BuyOf = R => Math.round(P4_HOUSE_PRICE * Math.max(.5, p4Kind(R).rentK));
 const p4WageOf = R => p4Kind(R).wage + (R.help || 0) * P4_DECO_PRICE.help;
 // the shop's own data, filled in for a new shop or an old save (eating houses of the one-dish days keep their price as the first ware's)
+// the three lamp shops that became other trades: a shop rented or bought as one turns into the new trade, its lamps paid back at cost
+const P4_LAMP_SWAP = { 'LỒNG ĐÈN PHÚC': 'TIỆM VẢI', 'ĐÈN HOA SEN': 'HÀNG GỐM', 'ĐÈN LỒNG TÀI LỘC': 'TIỆM VÀNG' };
 function p4ShopFix(R) {
+  const to = R && P4_LAMP_SWAP[R.food];
+  if (to) { let back = 0; for (const w of P4_LAMPK.wares) back += ((R.stock || {})[w.id] || 0) * w.c; SAVE4.money += back; if (R.name === R.food) R.name = to; R.food = to; R.stock = {}; R.prices = {}; R.menu = {}; R.auto = {}; delete R.price; }
   const K = p4Kind(R);
   R.stock = R.stock || {}; if (!R.prices) { R.prices = {}; if (typeof R.price === 'number') R.prices[K.wares[0].id] = R.price; }
   R.menu = R.menu || {}; R.auto = R.auto || {};
@@ -205,7 +214,8 @@ p4ShopSheet = function () {
     h = `<h3>${p4Esc(name)}</h3><p><b>${P4_TYPE_WORD[K.t]}</b> cho thuê. Có ${K.keeper} đứng quán (công ${m(K.wage)} một ngày). Bán:</p><ul class="p4wares">${K.wares.map(w => `<li>${w.n}: nhập ${m(w.c)}, bán chừng ${m(w.p)} một ${w.u}${w.keep === 'day' ? ' (không để qua đêm)' : ''}</li>`).join('')}</ul>`
       + `<p>Đông khách ${{ an: 'giờ ăn sáng, trưa, tối', sang: 'buổi sáng', chieu: 'buổi chiều', dem: 'buổi tối', deu: 'cả ngày' }[K.hours]}. Một ngày chừng ${K.cust} khách.</p>`
       + `<p>Tiền thuê <b>${m(p4RentOf(fake))}</b> một tuần, trả trước tuần đầu. Hoặc mua đứt <b>${m(p4BuyOf(fake))}</b>, rồi mỗi tuần đóng thuế nhà ${m(p4TaxOf(fake))}.</p><p>Trong túi: ${m(Math.round(purse))}</p>`
-      + `<div class="row"><button class="btn" data-rent="1"${purse < p4RentOf(fake) ? ' disabled' : ''}>Thuê · ${m(p4RentOf(fake))}/tuần</button><button class="btn" data-buyshop="1"${purse < p4BuyOf(fake) ? ' disabled' : ''}>Mua đứt · ${m(p4BuyOf(fake))}</button></div>`;
+      + (K.t === 'den' && p4LampHeld() ? `<p class="bad">Nhà mình đã có hàng đèn ${p4Esc(p4LampHeld())} rồi. Mỗi nhà chỉ giữ một hàng đèn.</p>`
+        : `<div class="row"><button class="btn" data-rent="1"${purse < p4RentOf(fake) ? ' disabled' : ''}>Thuê · ${m(p4RentOf(fake))}/tuần</button><button class="btn" data-buyshop="1"${purse < p4BuyOf(fake) ? ' disabled' : ''}>Mua đứt · ${m(p4BuyOf(fake))}</button></div>`);
     $('#p4shopB').innerHTML = h + `<div class="row"><button class="btn alt" data-shopx="1">Đóng</button></div>`;
     p4BackToList($('#p4shopB')); p4Sheets('p4shop'); return;
   }
@@ -245,6 +255,7 @@ p4ShopClick = function (b) {
   const S = p4Shops(), R = S[sel.key], d = +b.dataset.d || 0, m = c4Money;
   if (b.dataset.shopx) { p4Sheets(null); return; }
   if (b.dataset.tab) { P4_SH_TAB[sel.key] = b.dataset.tab; AU.tap(); p4ShopSheet(); return; }
+  if (!R && (b.dataset.rent || b.dataset.buyshop) && (p4KindOfName(sel.name) || {}).t === 'den' && p4LampHeld()) return;   // one lamp shop only
   if (b.dataset.rent && !R) { const fake = { food: sel.name }, c = p4RentOf(fake); if (p4Purse() < c) return; p4Spend(c); S[sel.key] = p4ShopFix({ food: sel.name, name: sel.name, own: 'rent', since: SAVE4B.day, sign: false, day: SAVE4.day }); toast(`Đã thuê ${sel.name}. Tuần đầu trả rồi. Nhập hàng rồi bày bán thôi!`, 3); }
   else if (b.dataset.buyshop) { const fake = R || { food: sel.name }, c = p4BuyOf(fake); if (p4Purse() < c) return; p4Spend(c); S[sel.key] = p4ShopFix({ ...(R || { food: sel.name, name: sel.name, sign: false, day: SAVE4.day }), own: 'buy', since: SAVE4B.day }); toast(`Đã mua đứt ${S[sel.key].name}. Từ nay chỉ đóng thuế nhà mỗi tuần.`, 3); }
   else if (!R) return;
