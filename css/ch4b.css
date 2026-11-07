@@ -88,3 +88,16 @@ body.p4holding #cv{cursor:none}
 /* the village closed while the player was in the town: "Về chợ quê" blinks red (owner, 2026-10-18: the only notice) */
 @keyframes p4blink{0%,100%{background:#a3332a;box-shadow:3px 3px 0 rgba(29,25,21,.3)}50%{background:#e2483a;box-shadow:0 0 0 4px rgba(226,72,58,.45)}}
 #p4hud .bar .tag.pho.blink{animation:p4blink 1s ease-in-out infinite}
+/* every shop's stock on the HUD (cuahang.js p4StockHud): one line a shop, red when out, ochre when low */
+#p4hud #p4Stock{white-space:normal;max-width:min(460px,calc(100vw - 32px));text-align:right;line-height:1.45;display:flex;flex-direction:column;align-items:flex-end}
+#p4hud #p4Stock .w{white-space:nowrap}
+#p4hud #p4Stock .w b{margin-right:.3em}
+#p4hud #p4Stock i{font-style:normal}
+#p4hud #p4Stock i.low{color:#b06a12}
+#p4hud #p4Stock i.out{color:#a3332a}
+#p4hud #p4Stock .w.shut{opacity:.5}
+@media (max-width:520px){#p4hud #p4Stock{font-size:12px}#p4hud #p4Stock .w{white-space:normal}}
+#p4hud #p4Stock .fold{pointer-events:auto;cursor:pointer;font:inherit;font-size:12px;color:#5a5048;background:none;border:0;padding:2px 0 0;text-decoration:underline}
+#p4hud #p4Stock{max-height:calc(100vh - 170px);overflow-y:auto;pointer-events:auto}
+#p4hud #p4Stock i{white-space:nowrap}
+@media (max-width:520px){#p4hud #p4Stock{margin-top:42px;font-size:11.5px;line-height:1.35;max-width:calc(100vw - 32px);max-height:calc(100vh - 260px)}}

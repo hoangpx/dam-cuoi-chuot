@@ -123,7 +123,35 @@ p4ShopsUpdate = function (dt) {
     });
     P4.FQ[key] = QQ.filter(w => !w.gone);
   }
+  if ((P4.stkT = (P4.stkT || 0) + dt) > .5) { P4.stkT = 0; p4StockHud(); }
 };
+/* ---------- the stock of every shop of ours, out on the HUD (like the village's "Trầu 33  Chè 22") ---------- */
+const P4_WSHORT = { 'Bánh bao nhân thịt': 'Nhân thịt', 'Bánh bao chay': 'Chay', 'Gà luộc nửa con': 'Gà luộc', 'Hoành thánh chiên': 'H.thánh chiên', 'Thang thuốc cảm': 'Thuốc cảm', 'Cao hổ cốt': 'Cao', 'Áo dài may sẵn': 'Áo dài', 'Đèn lồng tròn': 'Đèn tròn', 'Đèn kéo quân': 'Kéo quân', 'Cơm tấm sườn': 'Sườn' };
+const p4KindTitle = n => n.toLowerCase().replace(/^./, c => c.toUpperCase());
+function p4StockHud() {
+  const el = $('#p4Stock'); if (!el || $('#p4hud').hidden) return;
+  const S = p4Shops(), keys = Object.keys(S).sort((a, b) => a - b), many = keys.length > P4_STK_FEW, open = many && p4StkOpen();
+  const parts = SAVE4B.house ? [`<span class="w"><b>Trầu</b> ${SAVE4B.stock}</span>`] : [];
+  let hid = 0, shown = 0;
+  for (const key of keys) {
+    const R = p4ShopFix(S[key]), K = p4Kind(R), on = K.wares.filter(w => p4OnMenu(R, w));
+    const low = !R.shut && (!on.length || on.some(w => (R.stock[w.id] || 0) <= P4_STK_LOW));
+    if (many && !open && (!low || shown >= p4StkFold())) { hid++; continue; }   // folded: only the shops running short, at most 4 on a phone, 6 else
+    shown++;
+    const ws = on.map(w => { const n = R.stock[w.id] || 0; return `<i${n < 1 ? ' class="out"' : n <= P4_STK_LOW ? ' class="low"' : ''}>${P4_WSHORT[w.n] || w.n} ${n}</i>`; }).join(' · ');
+    parts.push(`<span class="w${R.shut ? ' shut' : ''}"><b>${p4Esc(p4KindTitle(R.food))}</b> ${ws || '<i class="out">không bày gì</i>'}</span>`);
+  }
+  if (many) parts.push(`<button class="fold" data-stk="1">${open ? 'Thu gọn ▴' : hid ? `Xem thêm ${hid} quán ▾` : `Xem cả ${keys.length} quán ▾`}</button>`);
+  const h = parts.join(''); if (el.innerHTML !== h) el.innerHTML = h;
+  el.hidden = !parts.length;
+}
+const P4_STK_FEW = 4, P4_STK_LOW = 5, p4StkFold = () => innerWidth < 520 ? 4 : 6;                                       // up to 4 shops: every line; more: folded to the ones with a ware at 5 or less
+const p4StkOpen = () => { try { return localStorage.getItem('dcc_p4stk') === '1'; } catch (e) { return false; } };
+addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('#p4Stock [data-stk]'); if (!b) return;
+  e.stopPropagation(); AU.tap(); try { localStorage.setItem('dcc_p4stk', p4StkOpen() ? '0' : '1'); } catch (er) {} p4StockHud();
+}, true);
+{ const f0 = p4Hud; p4Hud = function () { f0(); p4StockHud(); }; }
 p4FoodCustomer = function (x, key, who, opt) {
   const R = p4Shops()[key]; if (!R) return; p4ShopFix(R);
   const ware = p4PickWare(R); if (!ware) return;

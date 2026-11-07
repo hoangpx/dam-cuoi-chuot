@@ -255,7 +255,6 @@ function p4Hud() {
   if ($('#p4hud').hidden) return;
   p4HudTime();                                                             // like part 1: day, the hour's animal, the clock, the weather (thoitiet.js)
   $('#p4Money').innerHTML = c4Money(Math.round(p4Purse()));
-  $('#p4Stock').textContent = `Trầu ${SAVE4B.stock}`; $('#p4Stock').hidden = !SAVE4B.house;
   $('#p4Buy').hidden = !!SAVE4B.house; $('#p4Buy').classList.toggle('off', p4Purse() < P4_HOUSE_PRICE);
   for (const id of ['p4Note', 'p4Ups']) { $('#' + id).disabled = !SAVE4B.house; $('#' + id).classList.toggle('off', !SAVE4B.house); }   // greyed until the house is bought
 }
