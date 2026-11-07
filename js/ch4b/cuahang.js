@@ -130,22 +130,21 @@ const P4_WSHORT = { 'Bánh bao nhân thịt': 'Nhân thịt', 'Bánh bao chay': 
 const p4KindTitle = n => n.toLowerCase().replace(/^./, c => c.toUpperCase());
 function p4StockHud() {
   const el = $('#p4Stock'); if (!el || $('#p4hud').hidden) return;
-  const S = p4Shops(), keys = Object.keys(S).sort((a, b) => a - b), many = keys.length > P4_STK_FEW, open = many && p4StkOpen();
-  const parts = SAVE4B.house ? [`<span class="w"><b>Trầu</b> ${SAVE4B.stock}</span>`] : [];
-  let hid = 0, shown = 0;
-  for (const key of keys) {
-    const R = p4ShopFix(S[key]), K = p4Kind(R), on = K.wares.filter(w => p4OnMenu(R, w));
-    const low = !R.shut && (!on.length || on.some(w => (R.stock[w.id] || 0) <= P4_STK_LOW));
-    if (many && !open && (!low || shown >= p4StkFold())) { hid++; continue; }   // folded: only the shops running short, at most 4 on a phone, 6 else
-    shown++;
-    const ws = on.map(w => { const n = R.stock[w.id] || 0; return `<i${n < 1 ? ' class="out"' : n <= P4_STK_LOW ? ' class="low"' : ''}>${P4_WSHORT[w.n] || w.n} ${n}</i>`; }).join(' · ');
-    parts.push(`<span class="w${R.shut ? ' shut' : ''}"><b>${p4Esc(p4KindTitle(R.food))}</b> ${ws || '<i class="out">không bày gì</i>'}</span>`);
+  const S = p4Shops(), lines = [];
+  for (const key of Object.keys(S).sort((a, b) => a - b)) {
+    const R = p4ShopFix(S[key]); if (R.shut) continue;                       // a shut shop sells nothing: no need to stock it
+    const ws = p4Kind(R).wares.filter(w => p4OnMenu(R, w) && (R.stock[w.id] || 0) <= p4LowAt(R, w));
+    if (ws.length) lines.push(`<span class="w"><b>${p4Esc(p4KindTitle(R.food))}</b> ${ws.map(w => { const n = R.stock[w.id] || 0; return `<i class="${n < 1 ? 'out' : 'low'}">${P4_WSHORT[w.n] || w.n} ${n}</i>`; }).join(' · ')}</span>`);
   }
-  if (many) parts.push(`<button class="fold" data-stk="1">${open ? 'Thu gọn ▴' : hid ? `Xem thêm ${hid} quán ▾` : `Xem cả ${keys.length} quán ▾`}</button>`);
+  const cap = p4StkFold(), open = lines.length > cap && p4StkOpen();
+  const parts = (SAVE4B.house ? [`<span class="w"><b>Trầu</b> ${SAVE4B.stock}</span>`] : []).concat(open ? lines : lines.slice(0, cap));
+  if (lines.length > cap) parts.push(`<button class="fold" data-stk="1">${open ? 'Thu gọn ▴' : `Xem thêm ${lines.length - cap} quán sắp hết ▾`}</button>`);
   const h = parts.join(''); if (el.innerHTML !== h) el.innerHTML = h;
   el.hidden = !parts.length;
 }
-const P4_STK_FEW = 4, P4_STK_LOW = 5, p4StkFold = () => innerWidth < 520 ? 4 : 6;                                       // up to 4 shops: every line; more: folded to the ones with a ware at 5 or less
+// "nearly out": 5 or less, or a fifth of what is set to come each morning when that is more
+const p4LowAt = (R, w) => Math.max(5, Math.round(.2 * (R.auto[w.id] || 0)));
+const p4StkFold = () => innerWidth < 520 ? 4 : 6;                           // lines shown before "Xem thêm"
 const p4StkOpen = () => { try { return localStorage.getItem('dcc_p4stk') === '1'; } catch (e) { return false; } };
 addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('#p4Stock [data-stk]'); if (!b) return;
