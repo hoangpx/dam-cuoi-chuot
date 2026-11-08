@@ -1,7 +1,7 @@
 /* Chương IV phần 2 · Phố Huyện: wages must match the shop (owner, 2026-11-08: "người làm trên phố huyện tiền phải xứng với thu nhập của tiệm
    đó, 10%; nếu trả không xứng thì cứ 4-7 ngày lại đòi tăng một lần, không tăng thì lấy tiền doanh thu của quán đó bỏ trốn, người sau cũng
    vậy, bao giờ tiền xứng với doanh thu của quán thì mới thôi").
-   - Fair pay = 10 % of the shop's takings, averaged over its last 7 evenings (P4_FAIR, at least 3 evenings known). A shop (cuahang.js) pays its
+   - Fair pay = 10 % of the shop's own profit (takings − goods − rent or tax by the day − the wages paid now; owner, 2026-11-08), averaged over its last 7 evenings (P4_FAIR, at least 3 evenings known). A shop (cuahang.js) pays its
      keeper and helpers together (p4WageOf, + R.raise); the betel house's hired hand (nguoilam.js) gets 10 % of the betel takings (shared if more).
    - Paid less than fair: an ask is set 4–7 days ahead (R.wq.ask / h.wq.ask). That evening the ask is raised (wq.pend, a line on the tally), and
      the next time the player is on the street a sheet asks: raise to the fair pay, or refuse. Refused (or not answered by the second evening
@@ -15,6 +15,7 @@ const p4KeeperName = () => p4Cap1(p4Pick(C4_HAND_TITLES) + ' ' + p4Pick(C4_HAND_
 const p4Keeper = R => R.kn || (R.kn = p4KeeperName());
 function p4FairOf(hist, share) {
   if (!hist || hist.length < 3) return 0;
+  const avg = hist.reduce((a, b) => a + b, 0) / hist.length; if (avg <= 0) return 0;   // a shop at a loss: nobody asks
   return p4Round5(P4_FAIR * hist.reduce((a, b) => a + b, 0) / hist.length / (share || 1));
 }
 const p4ShopFair = R => p4FairOf(R.hist);
@@ -38,13 +39,18 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
     const out = [], S = p4Shops(); let shopTake = 0;
     for (const key in S) {
       const R = p4ShopFix(S[key]), T = (P4.shopDay || {})[key] || { take: 0 }; shopTake += T.take || 0;
-      (R.hist = R.hist || []).push(Math.round(T.take || 0)); if (R.hist.length > P4_FAIR_DAYS) R.hist.shift();
+      // the shop's own profit of the day, after every cost: goods, the week's rent or tax by the day, and the wages it pays now
+      if (!R.histP) { R.hist = []; R.histP = 1; }                           // (the first version kept takings: start over)
+      const rentDay = (R.own === 'buy' ? p4TaxOf(R) : p4RentOf(R)) / 7;
+      R.hist.push(Math.round((T.take || 0) - (T.cost || 0) - rentDay - p4WageOf(R))); if (R.hist.length > P4_FAIR_DAYS) R.hist.shift();
       const q = R.wq || (R.wq = {}), who = `${p4Keeper(R)} (${p4Kind(R).keeper} ${R.name})`;
       out.push(p4WageEvening(q, who, T.take || 0, p4WageOf(R), p4ShopFair(R), () => { R.kn = p4KeeperName(); return `<p>${p4Cap1(p4Kind(R).keeper)} mới ${R.kn} đến đứng ${p4Esc(R.name)}, công vẫn như cũ.</p>`; }));
     }
     const trau = Math.max(0, Math.round((P4.today.take || 0) - shopTake));
-    (SAVE4B.trauHist = SAVE4B.trauHist || []).push(trau); if (SAVE4B.trauHist.length > P4_FAIR_DAYS) SAVE4B.trauHist.shift();
     const H = p4Hands();
+    // the betel house's own profit: its takings less the betel (3 đồng a quid) and its hands' wages (the house is ours: no rent)
+    if (!SAVE4B.trauHistP) { SAVE4B.trauHist = []; SAVE4B.trauHistP = 1; }
+    SAVE4B.trauHist.push(Math.round(trau - 3 * (P4.today.sold || 0) - H.reduce((a, h) => a + (h.wage || 0), 0))); if (SAVE4B.trauHist.length > P4_FAIR_DAYS) SAVE4B.trauHist.shift();
     for (const h of H.slice()) {
       const q = h.wq || (h.wq = {});
       out.push(p4WageEvening(q, `${p4Cap1(h.name)} (hiệu trầu)`, trau / H.length, h.wage, p4HandFair(h), () => {
@@ -67,8 +73,8 @@ function p4WageOpen() {
   P4_WAGE_CUR = a; const m = c4Money, q = a.kind === 'shop' ? a.R.wq : a.h.wq, p = q.pend;
   const who = a.kind === 'shop' ? `<b>${p4Esc(p4Keeper(a.R))}</b>, ${p4Kind(a.R).keeper} quán <b>${p4Esc(a.R.name)}</b>` : `<b>${p4Esc(p4Cap1(a.h.name))}</b>, người làm hiệu trầu`;
   const hist = a.kind === 'shop' ? a.R.hist : SAVE4B.trauHist, avg = hist && hist.length ? Math.round(hist.reduce((x, y) => x + y, 0) / hist.length) : 0;
-  $('#p4wageB').innerHTML = `<p>${who} xin gặp:</p><p class="say">“Quán bán mỗi ngày chừng ${m(avg)}, mà công cả ${a.kind === 'shop' ? 'quán' : 'tôi'} có ${m(p.from)}. Xin tăng lên ${m(p.to)} một ngày cho xứng.”</p>`
-    + `<p class="sm">Công xứng là một phần mười tiền bán của quán. Không tăng thì tối nay người này ôm tiền bán hàng hôm nay của quán bỏ trốn.</p>`;
+  $('#p4wageB').innerHTML = `<p>${who} xin gặp:</p><p class="say">“Quán lãi mỗi ngày chừng ${m(Math.max(0, avg))}, mà công cả ${a.kind === 'shop' ? 'quán' : 'tôi'} có ${m(p.from)}. Xin tăng lên ${m(p.to)} một ngày cho xứng.”</p>`
+    + `<p class="sm">Công xứng là một phần mười tiền lãi riêng của quán (tiền bán trừ vốn hàng, tiền thuê hay thuế nhà, tiền công). Không tăng thì tối nay người này ôm tiền bán hàng hôm nay của quán bỏ trốn.</p>`;
   $('#p4wageYes').textContent = `Tăng lên ${m(p.to)}`;
   p4Sheets('p4wage'); return true;
 }
