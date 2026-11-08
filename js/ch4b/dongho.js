@@ -46,8 +46,18 @@ function w4VillageEnter() {
 const c4OpenAt = () => Math.max(C4_OPEN, w4Load().mins);
 // how busy the village is over [a, b) (game minutes), on C4_BUSY's double-hours
 function w4VillageBusy(a, b) { let s = 0; for (let m = a; m < b; m += 5) s += (C4_BUSY[c4Hour(m)] || .3) * Math.min(5, b - m); return s; }
+// after a page reload the village's market is no longer in memory (C4.day unset) although it opened today (SAVE4.openDay): it is set
+// up again out of sight, at the hour it had reached, so it goes on selling while the player is in the town (a player: "ở phố cả ngày
+// thì chợ quê không bán được gì")
+function w4VillageWake() {
+  if (typeof C4 === 'undefined' || S.mode === 'c4play' || W4.waking || C4.day === SAVE4.day || SAVE4.openDay !== SAVE4.day || !SAVE4.intro || c4Talk2Due()) return;
+  W4.waking = true;
+  try { const hud = $('#c4hud').hidden; c4MarketStart(); $('#c4hud').hidden = hud; c4Sheets(null); C4.away = C4.phase === 'night' ? 'c4day' : null; }
+  finally { W4.waking = false; }
+}
 // the village while the player is away: each stall with a hand at it sells, up to the world's hour; at closing it closes
 function w4CatchVillage(to) {
+  w4VillageWake();
   if (!w4VillageLive()) return;
   const from = C4.mins; to = Math.min(to, C4_CLOSE); if (to <= from + .5) return;
   const day = w4VillageBusy(C4_OPEN, C4_CLOSE), share = w4VillageBusy(from, to) / day, H = SAVE4.salesHist || [];
@@ -162,6 +172,7 @@ function w4CatchTown(to) {
 }
 // the town's "Sang ngày mới": the village is run to its closing (if its market is open) and closed, the day turns for both
 function w4TownNextDay() {
+  w4VillageWake();
   if (w4VillageLive()) { w4CatchVillage(C4_CLOSE); if (w4VillageLive()) c4EndDay(); }
   SAVE4B.settled = SAVE4.day;
   c4DayAdvance();                                                           // the day turns
@@ -187,6 +198,7 @@ function w4VillageAutoMorning() {
 function w4VillageOpened() { if (SAVE4B.house && SAVE4B.morning === SAVE4.day) { SAVE4B.morning = 0; p4Persist(); } }
 // the village's part of the town's evening sheet (caught up first, so the hands' sales are in)
 function w4VillageLine() {
+  w4VillageWake();
   if (w4VillageLive()) w4CatchVillage(W4.mins);
   if (typeof C4 === 'undefined' || C4.day !== SAVE4.day || !C4.today || !C4.today.take) return '';
   const d = C4.today; return `<p>Ở chợ làng hôm nay bán được <b>${c4Money(Math.round(d.take))}</b> (${d.sold} phần hàng).</p>`;
