@@ -19,10 +19,11 @@ const P4_HOURS = {
 const P4_HOURS_NORM = {}; for (const k in P4_HOURS) { let s = 0; for (let m = 360; m < 1380; m++) s += P4_HOURS[k](m / 60); P4_HOURS_NORM[k] = s / 1020; }
 // w = how often it is asked for; keep: 'day' = thrown away at night
 const W = (id, n, u, c, p, w, keep = 'ever') => ({ id, n, u, c, p, w, keep });
-const P4_FOODK = (wares, hours, wx, game) => ({ t: 'an', wares, hours, wx, cust: 62, rentK: 1, wage: 300, serve: 1.6, keeper: 'đầu bếp', game });
-const P4_SHOPK = (wares, hours, wx, game, o = {}) => ({ t: 'hieu', wares, hours, wx, cust: 46, rentK: .6, wage: 200, serve: 1.4, keeper: 'người bán', game, ...o });
+const P4_FOODK = (wares, hours, wx, game) => ({ t: 'an', wares, hours, wx, cust: 80, rentK: 1, wage: 300, serve: 1.6, keeper: 'đầu bếp', game });
+// eating houses are busy, shops see few buyers (owner, 2026-11-08: "đồ ăn thì nhiều, còn vàng, thuốc, gốm thì ít khách thôi"); a shop's rent follows its customers
+const P4_SHOPK = (wares, hours, wx, game, cust) => ({ t: 'hieu', wares, hours, wx, cust, rentK: .6 * cust / 46, wage: 200, serve: 1.4, keeper: 'người bán', game });
 const P4_LAMPK = { t: 'den', wares: [W('tron', 'Đèn lồng tròn', 'chiếc', 15, 40, 3), W('sen', 'Đèn hoa sen', 'chiếc', 25, 60, 2), W('keo', 'Đèn kéo quân', 'chiếc', 50, 110, 1), W('hoa', 'Hoa đăng', 'chiếc', 6, 18, 3)],
-  hours: 'dem', wx: { mua: .6, ret: 1, gat: 1, dep: 1.1 }, cust: 40, rentK: .4, wage: 150, serve: 1.2, keeper: 'thợ đèn', game: 'den' };
+  hours: 'dem', wx: { mua: .6, ret: 1, gat: 1, dep: 1.1 }, cust: 24, rentK: .24, wage: 150, serve: 1.2, keeper: 'thợ đèn', game: 'den' };
 const P4_KINDS = {
   'BÚN CHẢ': P4_FOODK([W('buncha', 'Bún chả', 'suất', 24, 60, 4, 'day'), W('nem', 'Nem rán', 'đĩa', 12, 30, 2, 'day'), W('trada', 'Trà đá', 'cốc', 2, 5, 2, 'day')], 'an', { gat: 1.15, mua: .8 }, 'buncha'),
   'BÁNH BAO': P4_FOODK([W('thit', 'Bánh bao nhân thịt', 'chiếc', 10, 25, 4, 'day'), W('chay', 'Bánh bao chay', 'chiếc', 6, 15, 2, 'day'), W('xiumai', 'Xíu mại', 'bát', 14, 35, 2, 'day')], 'sang', { ret: 1.3, gat: .8 }, 'banhbao'),
@@ -33,15 +34,15 @@ const P4_KINDS = {
   'CAO LẦU': P4_FOODK([W('caolau', 'Cao lầu', 'bát', 26, 65, 4, 'day'), W('miquang', 'Mì Quảng', 'bát', 24, 60, 3, 'day')], 'an', {}, 'pho'),
   'PHỞ BÒ': P4_FOODK([W('tai', 'Phở tái', 'bát', 26, 65, 4, 'day'), W('chin', 'Phở chín', 'bát', 24, 60, 3, 'day'), W('quay', 'Quẩy', 'cái', 3, 8, 2, 'day')], 'sang', { ret: 1.3, mua: 1.15, gat: .8 }, 'pho'),
   'BÁNH VẠC': P4_FOODK([W('banhvac', 'Bánh vạc', 'đĩa', 16, 40, 4, 'day'), W('chien', 'Hoành thánh chiên', 'đĩa', 18, 45, 2, 'day')], 'chieu', {}, 'banhbao'),
-  'GẠO MUỐI': P4_SHOPK([W('gao', 'Gạo tám', 'thúng', 60, 95, 3), W('nep', 'Gạo nếp', 'thúng', 75, 115, 1.5), W('muoi', 'Muối', 'hũ', 6, 15, 2)], 'sang', { mua: .7 }, 'gao'),
-  'THUỐC BẮC': P4_SHOPK([W('cam', 'Thang thuốc cảm', 'thang', 20, 50, 3), W('bo', 'Thuốc bổ', 'thang', 50, 110, 1.5), W('cao', 'Cao hổ cốt', 'lọ', 120, 240, .5)], 'deu', { ret: 1.5, mua: 1.3 }, 'thuoc'),
-  'GIẤY BÚT': P4_SHOPK([W('giay', 'Giấy dó', 'tập', 10, 25, 3), W('but', 'Bút lông', 'cây', 25, 60, 2), W('muc', 'Mực tàu', 'thỏi', 30, 70, 1.5)], 'sang', { mua: .8 }, 'giay'),
-  'HÀNG XÉN': P4_SHOPK([W('kim', 'Kim chỉ', 'gói', 5, 14, 3), W('guong', 'Gương lược', 'bộ', 25, 55, 2), W('khan', 'Khăn vấn', 'chiếc', 35, 75, 1.5)], 'chieu', {}, 'xen'),
-  'TRÀ SEN': P4_SHOPK([W('sen', 'Trà sen', 'gói', 80, 160, 1.5), W('man', 'Trà mạn', 'gói', 30, 65, 3), W('am', 'Ấm chén', 'bộ', 120, 220, .6)], 'sang', { mua: .9 }, 'tra'),
-  'TIỆM VẢI': P4_SHOPK([W('lua', 'Lụa tơ tằm', 'tấm', 80, 170, 1.5), W('vai', 'Vải nâu', 'tấm', 30, 65, 3), W('the', 'Vải the', 'tấm', 50, 110, 2)], 'deu', { mua: .8 }, 'vai'),
-  'HÀNG GỐM': P4_SHOPK([W('bat', 'Bát đĩa', 'chồng', 20, 45, 3), W('binh', 'Bình hoa', 'chiếc', 45, 100, 1.5), W('am', 'Ấm tích', 'chiếc', 35, 80, 1.5)], 'sang', { mua: .8 }, 'gom'),
-  'TIỆM VÀNG': P4_SHOPK([W('nhan', 'Nhẫn bạc', 'chiếc', 40, 90, 3), W('khuyen', 'Khuyên tai', 'đôi', 60, 130, 2), W('vong', 'Vòng vàng', 'chiếc', 200, 380, .6)], 'deu', { mua: .9 }, 'vang', { cust: 12 }),   // gold: few buyers (owner, 2026-11-08: 'tiệm vàng bán thì ít người mua thôi')
-  'MAY ÁO DÀI': P4_SHOPK([W('aodai', 'Áo dài may sẵn', 'bộ', 150, 300, 1), W('sua', 'Sửa áo', 'lần', 10, 35, 3), W('khanxep', 'Khăn xếp', 'chiếc', 30, 70, 1.5)], 'deu', { mua: .8 }, 'may', { cust: 36 }),
+  'GẠO MUỐI': P4_SHOPK([W('gao', 'Gạo tám', 'thúng', 60, 95, 3), W('nep', 'Gạo nếp', 'thúng', 75, 115, 1.5), W('muoi', 'Muối', 'hũ', 6, 15, 2)], 'sang', { mua: .7 }, 'gao', 30),
+  'THUỐC BẮC': P4_SHOPK([W('cam', 'Thang thuốc cảm', 'thang', 20, 50, 3), W('bo', 'Thuốc bổ', 'thang', 50, 110, 1.5), W('cao', 'Cao hổ cốt', 'lọ', 120, 240, .5)], 'deu', { ret: 1.5, mua: 1.3 }, 'thuoc', 16),
+  'GIẤY BÚT': P4_SHOPK([W('giay', 'Giấy dó', 'tập', 10, 25, 3), W('but', 'Bút lông', 'cây', 25, 60, 2), W('muc', 'Mực tàu', 'thỏi', 30, 70, 1.5)], 'sang', { mua: .8 }, 'giay', 22),
+  'HÀNG XÉN': P4_SHOPK([W('kim', 'Kim chỉ', 'gói', 5, 14, 3), W('guong', 'Gương lược', 'bộ', 25, 55, 2), W('khan', 'Khăn vấn', 'chiếc', 35, 75, 1.5)], 'chieu', {}, 'xen', 28),
+  'TRÀ SEN': P4_SHOPK([W('sen', 'Trà sen', 'gói', 80, 160, 1.5), W('man', 'Trà mạn', 'gói', 30, 65, 3), W('am', 'Ấm chén', 'bộ', 120, 220, .6)], 'sang', { mua: .9 }, 'tra', 18),
+  'TIỆM VẢI': P4_SHOPK([W('lua', 'Lụa tơ tằm', 'tấm', 80, 170, 1.5), W('vai', 'Vải nâu', 'tấm', 30, 65, 3), W('the', 'Vải the', 'tấm', 50, 110, 2)], 'deu', { mua: .8 }, 'vai', 20),
+  'HÀNG GỐM': P4_SHOPK([W('bat', 'Bát đĩa', 'chồng', 20, 45, 3), W('binh', 'Bình hoa', 'chiếc', 45, 100, 1.5), W('am', 'Ấm tích', 'chiếc', 35, 80, 1.5)], 'sang', { mua: .8 }, 'gom', 16),
+  'TIỆM VÀNG': P4_SHOPK([W('nhan', 'Nhẫn bạc', 'chiếc', 40, 90, 3), W('khuyen', 'Khuyên tai', 'đôi', 60, 130, 2), W('vong', 'Vòng vàng', 'chiếc', 200, 380, .6)], 'deu', { mua: .9 }, 'vang', 12),
+  'MAY ÁO DÀI': P4_SHOPK([W('aodai', 'Áo dài may sẵn', 'bộ', 150, 300, 1), W('sua', 'Sửa áo', 'lần', 10, 35, 3), W('khanxep', 'Khăn xếp', 'chiếc', 30, 70, 1.5)], 'deu', { mua: .8 }, 'may', 18),
 };
 for (const n of P4_LAMP_NAMES) P4_KINDS[n] = P4_LAMPK;
 const p4Kind = R => P4_KINDS[R && R.food] || P4_KINDS['BÚN CHẢ'];
