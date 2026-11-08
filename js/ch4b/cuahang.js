@@ -54,7 +54,7 @@ const P4_AWN = [['', 'Không'], ['red', 'Đỏ'], ['blue', 'Xanh lam'], ['green'
 const P4_AWN_COL = { red: '#a3332a', blue: '#2f5f8f', green: '#2f6a4c', yellow: '#e0b43a', stripe: '#a3332a' };
 const P4_DECO_PRICE = { awn: 1200, lamp: 600, pot: 300, sk: 400, help: 150 };
 const p4RentOf = R => Math.round(P4_RENT_WEEK * p4Kind(R).rentK), p4TaxOf = R => Math.round(P4_TAX_WEEK * p4Kind(R).rentK), p4BuyOf = R => Math.round(P4_HOUSE_PRICE * Math.max(.5, p4Kind(R).rentK));
-const p4WageOf = R => p4Kind(R).wage + (R.help || 0) * P4_DECO_PRICE.help;
+const p4WageOf = R => p4Kind(R).wage + (R.help || 0) * P4_DECO_PRICE.help + (R.raise || 0);   // R.raise: what the keeper won by asking (doicong.js)
 // the shop's own data, filled in for a new shop or an old save (eating houses of the one-dish days keep their price as the first ware's)
 // the three lamp shops that became other trades: a shop rented or bought as one turns into the new trade, its lamps paid back at cost
 const P4_LAMP_SWAP = { 'LỒNG ĐÈN PHÚC': 'TIỆM VẢI', 'ĐÈN HOA SEN': 'HÀNG GỐM', 'ĐÈN LỒNG TÀI LỘC': 'TIỆM VÀNG' };
@@ -230,7 +230,7 @@ p4ShopSheet = function () {
     h += `<div class="row"><button class="btn tem" data-game="1">${P4_GAME_WORD[K.game] || 'Tự tay bán'}</button></div>`
       + `<h4>Giờ mở cửa</h4><p>Từ <b>${R.open}:00</b> đến <b>${R.close}:00</b></p><div class="row"><button class="btn alt" data-hr="open" data-d="-1"${R.open <= 5 ? ' disabled' : ''}>Mở sớm hơn</button><button class="btn alt" data-hr="open" data-d="1"${R.open >= R.close - 3 ? ' disabled' : ''}>Mở muộn hơn</button></div>`
       + `<div class="row"><button class="btn alt" data-hr="close" data-d="-1"${R.close <= R.open + 3 ? ' disabled' : ''}>Đóng sớm hơn</button><button class="btn alt" data-hr="close" data-d="1"${R.close >= 23 ? ' disabled' : ''}>Đóng muộn hơn</button></div>`
-      + `<h4>Người phụ</h4><p>${p4Cap1(K.keeper)} và <b>${R.help || 0}</b> người phụ: bán nhanh hơn, mỗi người thêm ${m(P4_DECO_PRICE.help)} công một ngày. Công cả quán: ${m(p4WageOf(R))} một ngày.</p><div class="row"><button class="btn alt" data-help="-1"${!(R.help > 0) ? ' disabled' : ''}>Bớt một người</button><button class="btn alt" data-help="1"${(R.help || 0) >= 2 ? ' disabled' : ''}>Thêm một người</button></div>`
+      + `<h4>Người phụ</h4><p>${p4Cap1(K.keeper)} và <b>${R.help || 0}</b> người phụ: bán nhanh hơn, mỗi người thêm ${m(P4_DECO_PRICE.help)} công một ngày. Công cả quán: ${m(p4WageOf(R))} một ngày${typeof p4ShopFair === 'function' && p4ShopFair(R) ? ` · xứng với quán (một phần mười tiền bán): ${m(p4ShopFair(R))}` : ''}.</p><div class="row"><button class="btn alt" data-help="-1"${!(R.help > 0) ? ' disabled' : ''}>Bớt một người</button><button class="btn alt" data-help="1"${(R.help || 0) >= 2 ? ' disabled' : ''}>Thêm một người</button></div>`
       + `<div class="row"><button class="btn alt" data-shut="1">${R.shut ? 'Mở cửa lại' : 'Tạm đóng cửa quán'}</button></div>`
       + `<p>${R.own === 'buy' ? 'Thuế nhà ' + m(p4TaxOf(R)) : 'Tiền thuê ' + m(p4RentOf(R))} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).</p>`
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < p4BuyOf(R) ? ' disabled' : ''}>Mua đứt · ${m(p4BuyOf(R))}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
