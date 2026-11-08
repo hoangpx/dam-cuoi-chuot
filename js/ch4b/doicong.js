@@ -8,6 +8,8 @@
      after it was raised): that evening the worker runs off with the shop's day's takings. A shop gets a new keeper at once at the same pay,
      the betel hand is simply gone (hire again); the new one does the same in 4–7 days until the pay is fair. */
 const P4_FAIR = .1, P4_FAIR_DAYS = 7;
+// one ask is at most a tenth more than the pay now (owner, 2026-11-08: "mỗi lần đòi cũng không quá 10% tiền lương hiện tại"); they ask again later
+const p4AskTo = (wage, fair) => Math.min(fair, wage + Math.max(1, Math.floor(wage * .1)));
 const p4Rand47 = () => 4 + ((Math.random() * 4) | 0);
 const p4Round5 = n => Math.max(5, Math.round(n / 5) * 5);
 const p4KeeperName = () => p4Cap1(p4Pick(C4_HAND_TITLES) + ' ' + p4Pick(C4_HAND_NAMES));
@@ -31,7 +33,7 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; return ''; }
   if (q.pend) return `<p>${who} vẫn chờ trả lời việc tăng công lên ${c4Money(q.pend.to)}.</p>`;
   if (!q.ask) { q.ask = SAVE4.day + p4Rand47(); return ''; }
-  if (SAVE4.day >= q.ask) { q.pend = { to: fair, from: wage, day: SAVE4.day }; return `<p class="bad">${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(fair)}.</p>`; }
+  if (SAVE4.day >= q.ask) { const to = p4AskTo(wage, fair); q.pend = { to, from: wage, day: SAVE4.day }; return `<p class="bad">${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.</p>`; }
   return '';
 }
 { const pay0 = p4PayHands;
@@ -73,8 +75,7 @@ function p4WageOpen() {
   P4_WAGE_CUR = a; const m = c4Money, q = a.kind === 'shop' ? a.R.wq : a.h.wq, p = q.pend;
   const who = a.kind === 'shop' ? `<b>${p4Esc(p4Keeper(a.R))}</b>, ${p4Kind(a.R).keeper} quán <b>${p4Esc(a.R.name)}</b>` : `<b>${p4Esc(p4Cap1(a.h.name))}</b>, người làm hiệu trầu`;
   const hist = a.kind === 'shop' ? a.R.hist : SAVE4B.trauHist, avg = hist && hist.length ? Math.round(hist.reduce((x, y) => x + y, 0) / hist.length) : 0;
-  $('#p4wageB').innerHTML = `<p>${who} xin gặp:</p><p class="say">“Quán lãi mỗi ngày chừng ${m(Math.max(0, avg))}, mà công cả ${a.kind === 'shop' ? 'quán' : 'tôi'} có ${m(p.from)}. Xin tăng lên ${m(p.to)} một ngày cho xứng.”</p>`
-    + `<p class="sm">Công xứng là một phần mười tiền lãi riêng của quán (tiền bán trừ vốn hàng, tiền thuê hay thuế nhà, tiền công). Không tăng thì tối nay người này ôm tiền bán hàng hôm nay của quán bỏ trốn.</p>`;
+  $('#p4wageB').innerHTML = `<p>${who} xin gặp:</p><p class="say">“Làm lụng vất vả mà công ${a.kind === 'shop' ? 'cả quán' : 'tôi'} mới có ${m(p.from)} một ngày. Xin ông bà tăng lên ${m(p.to)}.”</p>`;
   $('#p4wageYes').textContent = `Tăng lên ${m(p.to)}`;
   p4Sheets('p4wage'); return true;
 }
