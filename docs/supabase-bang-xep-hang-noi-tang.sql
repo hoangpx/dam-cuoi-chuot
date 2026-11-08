@@ -9,6 +9,18 @@
 --   2) Tăng quá mức thì KHÔNG bỏ qua nữa: lưu tiền cũ + mức được tăng (dòng vẫn nhích lên và đuổi kịp dần sau vài ngày).
 -- Giữ nguyên: ngày qua không nhanh hơn 1 ngày mỗi 3 giây (bỏ qua), khai quá 20 lần trần thì tự khoá máy, dòng mới không giàu hơn trần ngày 120,
 -- gửi dày hơn 10 giây thì bỏ qua, cờ flag = tiền > trần(ngày).
+-- NHẬT KÝ (owner: "log lại ai đã bị chặn"): mỗi lần bị chặn hay bị cắt bớt ghi một dòng vào dcc_rank_block (ai, tiền khai, tiền lưu, mức được, vì sao).
+-- Xem:  select at, name, day, claimed / 600 as khai_quan, stored / 600 as luu_quan, reason from dcc_rank_block order by at desc limit 100;
+-- Gộp theo người:  select name, count(*), max(claimed - stored) / 600 as cat_nhieu_nhat_quan, max(at) from dcc_rank_block group by name order by 4 desc;
+-- Dọn bớt:  delete from dcc_rank_block where at < now() - interval '60 days';
+
+create table if not exists public.dcc_rank_block (
+  id bigserial primary key, at timestamptz not null default now(), device text not null, name text, day int,
+  old_money bigint, old_day int, claimed bigint, stored bigint, allowed bigint, reason text not null);
+create index if not exists dcc_rank_block_at on public.dcc_rank_block (at desc);
+create index if not exists dcc_rank_block_dev on public.dcc_rank_block (device, at desc);
+alter table public.dcc_rank_block enable row level security;   -- không có policy: chỉ hàm dưới đây (security definer) ghi được, đọc bằng SQL Editor
+revoke all on public.dcc_rank_block from anon, authenticated;
 
 create or replace function public.dcc_rank_put(p_device text, p_name text, p_money bigint, p_day int, p_home text default null)
 returns void language plpgsql security definer set search_path = public as $$
@@ -24,11 +36,17 @@ begin
   select updated_at, home, money, day into last, old_home, old_money, old_day from public.dcc_rank where device = p_device;
   if last is not null and last > now() - interval '10 seconds' then return; end if;   -- quá dày: bỏ qua lặng lẽ
   if p_money > 20 * public.dcc_rank_cap(p_day) then   -- vô lý (hơn 20 lần trần): khoá luôn
+    insert into public.dcc_rank_block (device, name, day, old_money, old_day, claimed, stored, allowed, reason)
+    values (p_device, n, p_day, old_money, old_day, p_money, old_money, 20 * public.dcc_rank_cap(p_day), 'khoa: hon 20 lan tran');
     perform public.dcc_auto_ban(p_device, 'khai ' || (p_money / 600) || ' quan o ngay ' || p_day); return;
   end if;
   if last is not null then
     secs := extract(epoch from now() - last);
-    if p_day > old_day + 3 + floor(secs / 3) then return; end if;   -- ngày qua quá nhanh: bỏ qua
+    if p_day > old_day + 3 + floor(secs / 3) then   -- ngày qua quá nhanh: bỏ qua
+      insert into public.dcc_rank_block (device, name, day, old_money, old_day, claimed, stored, allowed, reason)
+      values (p_device, n, p_day, old_money, old_day, p_money, old_money, null, 'ngay qua qua nhanh (' || round(secs) || ' giay)');
+      return;
+    end if;
     grow := 0.10 * greatest(old_money, 0);                           -- 10% tiền đang có, cho một ngày
     if p_day > old_day then
       inc := public.dcc_rank_cap(p_day) - public.dcc_rank_cap(old_day) + floor(grow * (p_day - old_day));
@@ -37,7 +55,13 @@ begin
                    2000 + floor(secs * 20) + floor(grow * secs / 600));
     end if;
     m := least(p_money, old_money + inc + 3000);                     -- tăng quá mức: chỉ nhận phần được phép
+    if m < p_money then
+      insert into public.dcc_rank_block (device, name, day, old_money, old_day, claimed, stored, allowed, reason)
+      values (p_device, n, p_day, old_money, old_day, p_money, m, inc + 3000, case when p_day > old_day then 'tien tang qua nhanh (qua ngay)' else 'tien tang qua nhanh (cung ngay)' end);
+    end if;
   elsif p_money > public.dcc_rank_cap(least(p_day, 120)) then
+    insert into public.dcc_rank_block (device, name, day, claimed, stored, allowed, reason)
+    values (p_device, n, p_day, p_money, null, public.dcc_rank_cap(least(p_day, 120)), 'dong moi giau hon tran ngay 120');
     return;   -- dòng mới không khai giàu hơn trần ngày 120
   end if;
   insert into public.dcc_rank (device, name, money, day, updated_at, flag, home, pub)
