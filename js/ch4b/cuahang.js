@@ -55,6 +55,11 @@ const P4_AWN = [['', 'Không'], ['red', 'Đỏ'], ['blue', 'Xanh lam'], ['green'
 const P4_AWN_COL = { red: '#a3332a', blue: '#2f5f8f', green: '#2f6a4c', yellow: '#e0b43a', stripe: '#a3332a' };
 const P4_DECO_PRICE = { awn: 1200, lamp: 600, pot: 300, sk: 400, help: 150 };
 const p4RentOf = R => Math.round(P4_RENT_WEEK * p4Kind(R).rentK), p4TaxOf = R => Math.round(P4_TAX_WEEK * p4Kind(R).rentK), p4BuyOf = R => Math.round(P4_HOUSE_PRICE * Math.max(.5, p4Kind(R).rentK));
+// the landlord follows the shop's profit (owner, 2026-11-08: "chủ nhà thấy cửa hàng lãi nhiều thì tăng tiền thuê tương ứng với tiền lãi"): each evening the
+// shop's profit before rent (takings − goods − wages) is added to R.wk; on the 7th evening the coming week's rent is the greater of the plain rent
+// and P4_RENT_CUT of that week's profit (R.rentNow); a poorer week brings it back down, never below the plain rent. Bought shops pay the fixed tax.
+const P4_RENT_CUT = .5;
+const p4RentNow = R => Math.max(p4RentOf(R), R.rentNow || 0);
 const p4WageOf = R => p4Kind(R).wage + (R.help || 0) * P4_DECO_PRICE.help + (R.raise || 0);   // R.raise: what the keeper won by asking (doicong.js)
 // the shop's own data, filled in for a new shop or an old save (eating houses of the one-dish days keep their price as the first ware's)
 // the three lamp shops that became other trades: a shop rented or bought as one turns into the new trade, its lamps paid back at cost
@@ -181,12 +186,17 @@ p4ShopsEvening = function () {
   const S = p4Shops(), out = [];
   for (const key in S) {
     const R = p4ShopFix(S[key]), K = p4Kind(R), T = P4.shopDay[key] || { n: 0, take: 0, cost: 0 }, wage = p4WageOf(R);
-    SAVE4.money -= wage; P4.today.spent += wage;
+    SAVE4.money -= wage; P4.today.spent += wage; R.wk = (R.wk || 0) + Math.round(T.take - T.cost - wage);
     const waste = 0;
     let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}, vốn hàng đã bán ${c4Money(T.cost)}, công ${K.keeper} ${c4Money(wage)}` + (waste ? `, <span class="bad">bỏ đi ${c4Money(waste)} đồ không để qua đêm</span>` : '');
     if ((SAVE4B.day - R.since + 1) % 7 === 0) {
-      const due = R.own === 'buy' ? p4TaxOf(R) : p4RentOf(R), what = R.own === 'buy' ? 'thuế nhà' : 'tiền thuê tuần tới';
-      if (SAVE4.money >= due) { SAVE4.money -= due; P4.today.spent += due; line += `, <b>${what} ${c4Money(due)}</b>`; }
+      let note = '';
+      if (R.own !== 'buy') { const was = p4RentNow(R), want = Math.round(P4_RENT_CUT * Math.max(0, R.wk || 0)); R.rentNow = want > p4RentOf(R) ? want : 0; const now = p4RentNow(R);
+        if (now > was) note = ` · <span class="bad">chủ nhà thấy tuần qua quán lãi ${c4Money(R.wk)}, tăng tiền thuê lên ${c4Money(now)} một tuần</span>`;
+        else if (now < was) note = ` · chủ nhà hạ tiền thuê xuống ${c4Money(now)} một tuần`; }
+      R.wk = 0;
+      const due = R.own === 'buy' ? p4TaxOf(R) : p4RentNow(R), what = R.own === 'buy' ? 'thuế nhà' : 'tiền thuê tuần tới';
+      if (SAVE4.money >= due) { SAVE4.money -= due; P4.today.spent += due; line += `, <b>${what} ${c4Money(due)}</b>` + note; }
       else { delete S[key]; delete P4.FQ[key]; line += ` · <span class="bad">không đủ ${c4Money(due)} ${what}, chủ nhà lấy lại cửa hàng</span>`; }
     }
     out.push(`<p>${line}</p>`);
@@ -233,7 +243,7 @@ p4ShopSheet = function () {
       + `<div class="row"><button class="btn alt" data-hr="close" data-d="-1"${R.close <= R.open + 3 ? ' disabled' : ''}>Đóng sớm hơn</button><button class="btn alt" data-hr="close" data-d="1"${R.close >= 23 ? ' disabled' : ''}>Đóng muộn hơn</button></div>`
       + `<h4>Người phụ</h4><p>${p4Cap1(K.keeper)} và <b>${R.help || 0}</b> người phụ: bán nhanh hơn, mỗi người thêm ${m(P4_DECO_PRICE.help)} công một ngày. Công cả quán: ${m(p4WageOf(R))} một ngày${typeof p4ShopFair === 'function' && p4ShopFair(R) ? ` · xứng với quán (một phần mười tiền lãi): ${m(p4ShopFair(R))}` : ''}.</p><div class="row"><button class="btn alt" data-help="-1"${!(R.help > 0) ? ' disabled' : ''}>Bớt một người</button><button class="btn alt" data-help="1"${(R.help || 0) >= 2 ? ' disabled' : ''}>Thêm một người</button></div>`
       + `<div class="row"><button class="btn alt" data-shut="1">${R.shut ? 'Mở cửa lại' : 'Tạm đóng cửa quán'}</button></div>`
-      + `<p>${R.own === 'buy' ? 'Thuế nhà ' + m(p4TaxOf(R)) : 'Tiền thuê ' + m(p4RentOf(R))} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).</p>`
+      + `<p>${R.own === 'buy' ? 'Thuế nhà ' + m(p4TaxOf(R)) : 'Tiền thuê ' + m(p4RentNow(R))} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).${R.own === 'buy' ? '' : ` Chủ nhà lấy ít nhất ${m(p4RentOf(R))}, nhưng nếu quán lãi nhiều thì đòi nửa tiền lãi của tuần (tuần này đến tối qua lãi ${m(Math.max(0, R.wk || 0))}).`}</p>`
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < p4BuyOf(R) ? ' disabled' : ''}>Mua đứt · ${m(p4BuyOf(R))}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
   } else {
     const own = R.owned || (R.owned = {});

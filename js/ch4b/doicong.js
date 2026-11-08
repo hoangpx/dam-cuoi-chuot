@@ -41,7 +41,7 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
       const R = p4ShopFix(S[key]), T = (P4.shopDay || {})[key] || { take: 0 }; shopTake += T.take || 0;
       // the shop's own profit of the day, after every cost: goods, the week's rent or tax by the day, and the wages it pays now
       if (!R.histP) { R.hist = []; R.histP = 1; }                           // (the first version kept takings: start over)
-      const rentDay = (R.own === 'buy' ? p4TaxOf(R) : p4RentOf(R)) / 7;
+      const rentDay = (R.own === 'buy' ? p4TaxOf(R) : p4RentNow(R)) / 7;
       R.hist.push(Math.round((T.take || 0) - (T.cost || 0) - rentDay - p4WageOf(R))); if (R.hist.length > P4_FAIR_DAYS) R.hist.shift();
       const q = R.wq || (R.wq = {}), who = `${p4Keeper(R)} (${p4Kind(R).keeper} ${R.name})`;
       out.push(p4WageEvening(q, who, T.take || 0, p4WageOf(R), p4ShopFair(R), () => { R.kn = p4KeeperName(); return `<p>${p4Cap1(p4Kind(R).keeper)} mới ${R.kn} đến đứng ${p4Esc(R.name)}, công vẫn như cũ.</p>`; }));
