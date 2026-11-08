@@ -131,7 +131,7 @@ function p4ShopIcon(g, k, x, y, r) {
 
 /* ---------- running têm trầu's engine for a shop ---------- */
 const P4_TEM_SAVE = { ing: null, rec: null };
-const p4ShopRecipes = S => S.K.wares.filter(w => p4OnMenu(S.R, w) && (S.R.stock[w.id] || 0) > 0 && S.G.r[w.id]).map(w => ({ id: w.id, name: w.n, need: S.G.r[w.id], fold: false, price: p4WPrice(S.R, w), w: w.w, ware: w }));
+const p4ShopRecipes = S => S.K.wares.filter(w => p4Has(S.R, w) && S.G.r[w.id]).map(w => ({ id: w.id, name: w.n, need: S.G.r[w.id], fold: false, price: p4WPrice(S.R, w), w: w.w, ware: w }));
 function p4MiniStart(key) {
   const R = p4Shops()[key]; if (!R) return; p4ShopFix(R);
   const K = p4Kind(R), G = P4_MINI[K.game];
@@ -231,7 +231,7 @@ function p4MiniRestore() {
   }; }
 // the shift's clock: the shop's stock, not betel
 { const render0 = p4TemRender;
-  p4TemRender = function () { render0(); const S = P4T.shop; if (S && P4T.on) $('#p4temMoney').textContent = `Thu ${c4Money(P4T.earned)} · còn ${p4Left(S.R)} món`; }; }
+  p4TemRender = function () { render0(); const S = P4T.shop; if (S && P4T.on) $('#p4temMoney').textContent = `Thu ${c4Money(P4T.earned)}`; }; }
 // the end: the shop's words, "bán tiếp" starts the same shop again; têm trầu's lists are put back
 { const stop0 = p4TemStop;
   p4TemStop = function () {
@@ -239,7 +239,7 @@ function p4MiniRestore() {
     P4T.shop = null; P4T.on = false; $('#p4temHud').hidden = true; $('#p4hud').hidden = false; p4MiniRestore(); p4Persist(); p4Hud();
     $('#p4temEnd h3').textContent = 'Hết ca · ' + S.R.name;
     $('#p4temEndB').innerHTML = (P4T.early ? '<p class="bad"><b>Hết hàng, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> món · thu <b>${c4Money(P4T.earned)}</b></p>`
-      + (P4T.wrong ? `<p>Đưa nhầm ${P4T.wrong} lần</p>` : '') + (P4T.missed ? `<p class="bad">${P4T.missed} khách chờ lâu bỏ đi</p>` : '') + `<p>Hàng còn: ${p4Left(S.R)} món</p>`;
+      + (P4T.wrong ? `<p>Đưa nhầm ${P4T.wrong} lần</p>` : '') + (P4T.missed ? `<p class="bad">${P4T.missed} khách chờ lâu bỏ đi</p>` : '');
     $('#p4temAgain').hidden = true;
     const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Bán tiếp';
     b.addEventListener('click', () => { AU.tap(); p4Sheets(null); $('#p4temEnd h3').textContent = 'Hết ca têm trầu'; p4MiniStart(S.key); });

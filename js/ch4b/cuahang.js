@@ -5,9 +5,9 @@
      its weather, customers a day, rent (× P4_RENT_WEEK), the keeper's wage and serving time, and its game (js/ch4b/tiemnho.js).
    - R (p4Shops()[x]): { food: the street name, name, own, since, sign, stock{id}, price{id}, menu{id: false = put away}, auto{id: n each morning},
      help 0–2 (more hands: faster, dearer), open/close hours, awn (awning colour), lamp, pots 0–2, sk (a counter cloth), day (stock day) }.
-   - Customers pick a ware on the menu that is in stock (by its weight and how fair its price is), ask for 1–3 (more when cheap), the keeper
-     serves them in turn; out of everything = nobody comes. Wares that do not keep are thrown away at night; the morning restocks what was set
-     to be bought each morning ("tự nhập"), at the morning price, as far as the purse goes.
+   - Customers pick a ware on the menu (by its weight and how fair its price is), ask for 1–3 (more when cheap), the keeper serves them in
+     turn. No stocking (owner, 2026-11-08, after the stocking days left shops empty and the purse flat): each sale pays its goods' cost at
+     once, as the old one-dish houses did; R.stock / R.auto are emptied (old goods paid back once, R.ns).
    Balance as thue.js: a rented shop's week, after goods and wages, nets about 1.2 × its rent at the plain prices. */
 const P4_HOURS = {
   an: h => (h < 6 ? 0 : h < 9 ? 1.5 : h < 11 ? .6 : h < 13.5 ? 1.6 : h < 17 ? .5 : h < 21 ? 1.25 : 0),
@@ -64,7 +64,10 @@ function p4ShopFix(R) {
   const K = p4Kind(R);
   R.stock = R.stock || {}; if (!R.prices) { R.prices = {}; if (typeof R.price === 'number') R.prices[K.wares[0].id] = R.price; }
   R.menu = R.menu || {}; R.auto = R.auto || {};
-  for (const w of K.wares) { if (R.stock[w.id] === undefined) R.stock[w.id] = K.t === 'an' ? 20 : 15; if (!R.prices[w.id]) R.prices[w.id] = w.p; if (R.auto[w.id] === undefined) R.auto[w.id] = K.t === 'an' ? 30 : 0; }
+  // no stocking by hand any more (owner, 2026-11-08: "để tự nhập hàng như trước"): the keeper buys what each sale needs, so goods left
+  // from the stocking days are paid back at cost once
+  if (!R.ns) { let back = 0; for (const w of K.wares) back += Math.max(0, R.stock[w.id] || 0) * w.c; if (back > 0) SAVE4.money += back; R.stock = {}; R.auto = {}; R.ns = 1; }
+  for (const w of K.wares) { if (!R.prices[w.id]) R.prices[w.id] = w.p; }
   R.price = R.prices[K.wares[0].id];                                       // (the old one-dish price, still read by gia.js and the friends' market)
   if (R.open === undefined) { R.open = K.t === 'den' ? 15 : 6; R.close = K.t === 'den' ? 23 : 21; }
   return R;
@@ -72,40 +75,34 @@ function p4ShopFix(R) {
 const p4WPrice = (R, w) => R.prices[w.id] || w.p;
 const p4WRatio = (R, w) => c4TownRatio(p4WPrice(R, w), w.p);
 const p4OnMenu = (R, w) => R.menu[w.id] !== false;
-const p4Left = R => p4Kind(R).wares.filter(w => p4OnMenu(R, w)).reduce((s, w) => s + (R.stock[w.id] || 0), 0);
+const p4Has = (R, w) => p4OnMenu(R, w);                                  // every ware on the menu can be sold: the keeper buys it as it goes
+const p4Left = R => p4Kind(R).wares.some(w => p4OnMenu(R, w)) ? 999 : 0;
 const p4IsOpenHour = (R, h) => h >= (R.open ?? 6) && h < (R.close ?? 21);
 // how many customers a game minute at hour h (before luck): the kind's day, hours, weather, signboard, a sale, the prices on the menu
 function p4ShopRate(R, key, h) {
   const K = p4Kind(R); if (!p4IsOpenHour(R, h)) return 0;
-  const ws = K.wares.filter(w => p4OnMenu(R, w) && (R.stock[w.id] || 0) > 0); if (!ws.length) return 0;
+  const ws = K.wares.filter(w => p4Has(R, w)); if (!ws.length) return 0;
   const tw = K.wares.reduce((s, w) => s + w.w, 0), mw = ws.reduce((s, w) => s + w.w * c4PFlow(p4WRatio(R, w)), 0) / tw;   // a shorter menu or dear prices: fewer come
   const deco = 1 + (R.awn ? .05 : 0) + (R.lamp ? (K.t === 'den' ? .1 : .04) : 0) + (R.pots || 0) * .02 + (R.sk ? .03 : 0);
   return K.cust / 900 * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4Harass() * Math.min(1.3, .45 + .55 * mw) * deco;
 }
 // a customer's order: one ware (by weight, cheaper is likelier) and how many
 function p4PickWare(R) {
-  const K = p4Kind(R), ws = K.wares.filter(w => p4OnMenu(R, w) && (R.stock[w.id] || 0) > 0); if (!ws.length) return null;
+  const K = p4Kind(R), ws = K.wares.filter(w => p4Has(R, w)); if (!ws.length) return null;
   let t = 0; const wt = ws.map(w => (t += w.w * c4PFlow(p4WRatio(R, w)))); const r = Math.random() * t;
   return ws[wt.findIndex(v => v >= r)] || ws[0];
 }
 const p4WantN = (R, w) => Math.max(1, c4RandRound((1 + ((Math.random() * 3) | 0)) * c4PQty(p4WRatio(R, w)) * (w.p > 100 ? .5 : 1)));
-// a sale: take from the stock, the money in (the goods were paid for when bought)
+// a sale: the money in, the cost of the goods out (the keeper buys them as they sell, as before the stocking days)
 function p4ShopSell(R, key, w, n, treat) {
-  const k = Math.min(n, R.stock[w.id] || 0); if (k < 1) return { n: 0, got: 0 };
-  R.stock[w.id] -= k;
-  const got = treat ? 0 : p4SalePrice(key, k * p4WPrice(R, w));
-  SAVE4.money += got; P4.today.take += got;
+  const k = Math.max(0, Math.round(n)); if (k < 1) return { n: 0, got: 0 };
+  const got = treat ? 0 : p4SalePrice(key, k * p4WPrice(R, w)), cost = k * w.c;
+  SAVE4.money += got - cost; P4.today.take += got; P4.today.spent += cost;
   const T = P4.shopDay[key] || (P4.shopDay[key] = { n: 0, take: 0, cost: 0, by: {} }); T.n += k; T.take += got; T.cost += k * w.c; T.by = T.by || {}; T.by[w.id] = (T.by[w.id] || 0) + k;
   return { n: k, got };
 }
-// the morning: what was set to come each morning is bought (as far as the purse goes), once a day
-function p4ShopMorning(R) {
-  if (R.day === SAVE4.day) return; R.day = SAVE4.day;
-  const K = p4Kind(R); let spent = 0, n = 0;
-  for (const w of K.wares) { const want = Math.max(0, (R.auto[w.id] || 0) - (R.stock[w.id] || 0)); const k = Math.min(want, Math.floor((SAVE4.money - spent) / w.c)); if (k > 0) { R.stock[w.id] = (R.stock[w.id] || 0) + k; spent += k * w.c; n += k; } }
-  if (spent) { SAVE4.money -= spent; if (P4.today) P4.today.spent += spent; persist4(); }
-  return n;
-}
+// the morning: nothing to stock any more
+function p4ShopMorning(R) { R.day = SAVE4.day; return 0; }
 
 /* ---------- the street, live: customers come, the keeper serves ---------- */
 p4ShopsUpdate = function (dt) {
@@ -142,7 +139,7 @@ function p4StockHud() {
   const S = p4Shops(), lines = [];
   for (const key of Object.keys(S).sort((a, b) => a - b)) {
     const R = p4ShopFix(S[key]); if (R.shut) continue;                       // a shut shop sells nothing: no need to stock it
-    const ws = p4Kind(R).wares.filter(w => p4OnMenu(R, w) && (R.stock[w.id] || 0) <= p4LowAt(R, w));
+    const ws = [];                                                           // the shops buy their goods themselves now: only the betel shows
     if (ws.length) lines.push(`<span class="w"><b>${p4Esc(p4KindTitle(R.food))}</b> ${ws.map(w => { const n = R.stock[w.id] || 0; return `<i class="${n < 1 ? 'out' : 'low'}">${P4_WSHORT[w.n] || w.n} ${n}</i>`; }).join(' · ')}</span>`);
   }
   const cap = p4StkFold(), open = lines.length > cap && p4StkOpen();
@@ -184,7 +181,7 @@ p4ShopsEvening = function () {
   for (const key in S) {
     const R = p4ShopFix(S[key]), K = p4Kind(R), T = P4.shopDay[key] || { n: 0, take: 0, cost: 0 }, wage = p4WageOf(R);
     SAVE4.money -= wage; P4.today.spent += wage;
-    let waste = 0; for (const w of K.wares) if (w.keep === 'day' && R.stock[w.id] > 0) { waste += R.stock[w.id] * w.c; R.stock[w.id] = 0; }
+    const waste = 0;
     let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}, vốn hàng đã bán ${c4Money(T.cost)}, công ${K.keeper} ${c4Money(wage)}` + (waste ? `, <span class="bad">bỏ đi ${c4Money(waste)} đồ không để qua đêm</span>` : '');
     if ((SAVE4B.day - R.since + 1) % 7 === 0) {
       const due = R.own === 'buy' ? p4TaxOf(R) : p4RentOf(R), what = R.own === 'buy' ? 'thuế nhà' : 'tiền thuê tuần tới';
@@ -225,9 +222,10 @@ p4ShopSheet = function () {
   if (tab === 'hang') {
     h += K.wares.map(w => { const on = p4OnMenu(R, w), st = R.stock[w.id] || 0, p = p4WPrice(R, w), r = p / w.p;
       return `<div class="p4ware${on ? '' : ' off'}"><h4>${w.n} <small>(${w.u}${w.keep === 'day' ? ', không để qua đêm' : ''})</small></h4>`
-        + `<p>Còn <b>${st}</b> · nhập ${m(w.c)} một ${w.u}</p><div class="row"><button class="btn" data-buy="${w.id}" data-q="5"${purse < w.c * 5 ? ' disabled' : ''}>Nhập 5</button><button class="btn" data-buy="${w.id}" data-q="20"${purse < w.c * 20 ? ' disabled' : ''}>Nhập 20</button></div>`
+        + `<p>Vốn ${m(w.c)} một ${w.u}, ${K.keeper} tự mua khi bán ra</p>`
         + `<p>Giá bán <b>${m(p)}</b>${r < .85 ? ' · rẻ' : r > 1.25 ? ' · đắt' : ''}</p><div class="row"><button class="btn alt" data-pr="${w.id}" data-d="-1"${p <= Math.ceil(w.p * .4) ? ' disabled' : ''}>Giảm giá</button><button class="btn alt" data-pr="${w.id}" data-d="1"${p >= w.p * 3 ? ' disabled' : ''}>Tăng giá</button></div>`
-        + `<p>Mỗi sáng tự nhập cho đủ <b>${R.auto[w.id] || 0}</b></p><div class="row"><button class="btn alt" data-au="${w.id}" data-d="-5"${(R.auto[w.id] || 0) <= 0 ? ' disabled' : ''}>−5</button><button class="btn alt" data-au="${w.id}" data-d="5">+5</button><button class="btn alt" data-menu="${w.id}">${on ? 'Cất, thôi bày bán' : 'Bày bán lại'}</button></div></div>`; }).join('');
+        + `<div class="row"><button class="btn alt" data-menu="${w.id}">${on ? 'Cất, thôi bày bán' : 'Bày bán lại'}</button></div></div>`; }).join('')
+      + '<p class="sm">Không phải nhập hàng: mỗi món bán ra, tiền vốn trừ vào túi.</p>';
   } else if (tab === 'ban') {
     h += `<div class="row"><button class="btn tem" data-game="1">${P4_GAME_WORD[K.game] || 'Tự tay bán'}</button></div>`
       + `<h4>Giờ mở cửa</h4><p>Từ <b>${R.open}:00</b> đến <b>${R.close}:00</b></p><div class="row"><button class="btn alt" data-hr="open" data-d="-1"${R.open <= 5 ? ' disabled' : ''}>Mở sớm hơn</button><button class="btn alt" data-hr="open" data-d="1"${R.open >= R.close - 3 ? ' disabled' : ''}>Mở muộn hơn</button></div>`
@@ -256,7 +254,7 @@ p4ShopClick = function (b) {
   if (b.dataset.shopx) { p4Sheets(null); return; }
   if (b.dataset.tab) { P4_SH_TAB[sel.key] = b.dataset.tab; AU.tap(); p4ShopSheet(); return; }
   if (!R && (b.dataset.rent || b.dataset.buyshop) && (p4KindOfName(sel.name) || {}).t === 'den' && p4LampHeld()) return;   // one lamp shop only
-  if (b.dataset.rent && !R) { const fake = { food: sel.name }, c = p4RentOf(fake); if (p4Purse() < c) return; p4Spend(c); S[sel.key] = p4ShopFix({ food: sel.name, name: sel.name, own: 'rent', since: SAVE4B.day, sign: false, day: SAVE4.day }); toast(`Đã thuê ${sel.name}. Tuần đầu trả rồi. Nhập hàng rồi bày bán thôi!`, 3); }
+  if (b.dataset.rent && !R) { const fake = { food: sel.name }, c = p4RentOf(fake); if (p4Purse() < c) return; p4Spend(c); S[sel.key] = p4ShopFix({ food: sel.name, name: sel.name, own: 'rent', since: SAVE4B.day, sign: false, day: SAVE4.day }); toast(`Đã thuê ${sel.name}. Tuần đầu trả rồi. Bày bán thôi!`, 3); }
   else if (b.dataset.buyshop) { const fake = R || { food: sel.name }, c = p4BuyOf(fake); if (p4Purse() < c) return; p4Spend(c); S[sel.key] = p4ShopFix({ ...(R || { food: sel.name, name: sel.name, sign: false, day: SAVE4.day }), own: 'buy', since: SAVE4B.day }); toast(`Đã mua đứt ${S[sel.key].name}. Từ nay chỉ đóng thuế nhà mỗi tuần.`, 3); }
   else if (!R) return;
   else if (b.dataset.buy) { const w = p4Kind(R).wares.find(x => x.id === b.dataset.buy), q = +b.dataset.q, c = q * w.c; if (p4Purse() < c) { toast('Không đủ tiền nhập hàng.', 2); return; } p4Spend(c); R.stock[w.id] = (R.stock[w.id] || 0) + q; toast(`Nhập ${q} ${w.u} ${w.n.toLowerCase()}, tốn ${m(c)}.`, 2); }
