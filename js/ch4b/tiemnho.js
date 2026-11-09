@@ -142,7 +142,7 @@ function p4MiniStart(key) {
   const K = p4Kind(R), G = P4_MINI[K.game];
   if (!G) { toast('Quán này chưa có trò tự tay bán.', 2.4); return; }
   if (R.shut) { toast('Quán đang đóng cửa: mở cửa rồi hẵng bán.', 2.6); return; }
-  const S = { key, R, K, G }; if (!p4ShopRecipes(S).length) { toast(K.wares.some(w => p4Has(R, w)) ? 'Giá cao quá, chẳng ai hỏi mua. Hạ giá rồi hẵng bán.' : 'Quán chưa bày món nào để bán.', 2.8); return; }
+  const S = { key, R, K, G }; if (!p4ShopRecipes(S).length) { toast(K.wares.some(w => p4Has(R, w)) ? 'Chẳng có ai ghé hỏi mua.' : 'Quán chưa bày món nào để bán.', 2.8); return; }
   if (p4MiniLeft() <= 0) { toast(`Hôm nay đã tự tay bán đủ ${P4_MINI_DAY} ca rồi, mai lại bán tiếp.`, 3); return; }
   const M = SAVE4B.mini && SAVE4B.mini.day === SAVE4.day ? SAVE4B.mini : (SAVE4B.mini = { day: SAVE4.day, n: 0 }); M.n++; p4Persist();
   if (!P4_TEM_SAVE.ing) { P4_TEM_SAVE.ing = P4_TEM_ING.slice(); P4_TEM_SAVE.rec = P4_TEM_RECIPES.slice(); }
@@ -246,7 +246,7 @@ function p4MiniRestore() {
     const S = P4T.shop; if (!S) return stop0();
     P4T.shop = null; P4T.on = false; $('#p4temHud').hidden = true; $('#p4hud').hidden = false; p4MiniRestore(); p4Persist(); p4Hud();
     $('#p4temEnd h3').textContent = 'Hết ca · ' + S.R.name;
-    $('#p4temEndB').innerHTML = (P4T.early === 'dear' ? '<p class="bad"><b>Giá cao quá, chẳng ai hỏi mua. Đóng ca sớm.</b></p>' : P4T.early ? '<p class="bad"><b>Hết hàng, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> món · thu <b>${c4Money(P4T.earned)}</b></p><p>Tiền vốn hàng: ${c4Money(P4T.cost || 0)} · <b>lãi vào túi ${c4Money(P4T.earned - (P4T.cost || 0))}</b></p>`
+    $('#p4temEndB').innerHTML = (P4T.early === 'dear' ? '<p class="bad"><b>Chẳng có ai ghé hỏi mua, đóng ca sớm.</b></p>' : P4T.early ? '<p class="bad"><b>Hết hàng, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> món · thu <b>${c4Money(P4T.earned)}</b></p><p>Tiền vốn hàng: ${c4Money(P4T.cost || 0)} · <b>lãi vào túi ${c4Money(P4T.earned - (P4T.cost || 0))}</b></p>`
       + (P4T.wrong ? `<p>Đưa nhầm ${P4T.wrong} lần</p>` : '') + (P4T.missed ? `<p class="bad">${P4T.missed} khách chờ lâu bỏ đi</p>` : '');
     $('#p4temAgain').hidden = true;
     const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Bán tiếp';
