@@ -25,12 +25,13 @@ function p4Mishaps(R, key, T) {
   if (R.own === 'buy' && rnd() < 1 / 30) add((.01 + .01 * rnd()) * p4BuyOf(R), rnd() < .5 ? 'mái dột phải lợp lại' : 'cột kèo mục phải thay');
   return out;
 }
-// the busy time of the counter, a game hour at a time (60 / P4_MPS real seconds)
-function p4TireTick(R, dt, busy) {
-  R.bt = (R.bt || 0) + dt; if (busy) R.bz = (R.bz || 0) + dt;
+// the busy time of the counter, a game hour at a time (60 / P4_MPS real seconds): a hard hour = busy over 90 % with more than 3 waiting on average
+function p4TireTick(R, dt, busy, q) {
+  R.bt = (R.bt || 0) + dt; if (busy) R.bz = (R.bz || 0) + dt; R.bq = (R.bq || 0) + (q || 0) * dt;
   if (R.bt >= 60 / P4_MPS) {
-    if (R.bz / R.bt > .9) { R.tir = Math.min(1, (R.tir || 0) + .15); R.hotH = (R.hotH || 0) + 1; } else R.tir = Math.max(0, (R.tir || 0) - .1);
-    R.bt = 0; R.bz = 0;
+    R.lastQ = R.bq / R.bt;
+    if (R.bz / R.bt > .9 && R.lastQ > 3) { R.tir = Math.min(1, (R.tir || 0) + .15); R.hotH = (R.hotH || 0) + 1; } else R.tir = Math.max(0, (R.tir || 0) - .1);
+    R.bt = 0; R.bz = 0; R.bq = 0;
   }
 }
 function p4TireEvening(R) { R.hot = (R.hotH || 0) >= 4 ? (R.hot || 0) + 1 : 0; R.hotH = 0; R.tir = 0; R.bt = 0; R.bz = 0; }

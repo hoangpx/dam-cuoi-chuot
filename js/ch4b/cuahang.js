@@ -159,7 +159,7 @@ p4ShopsUpdate = function (dt) {
     const Q = P4.FQ[key] || (P4.FQ[key] = []);
     if (R.shut || !p4IsOpenHour(R, h) || p4Left(R) < 1) { R.acc = 0; for (const w of Q) if (C.w !== w) { w.st = 'leave'; w.dir = 1; w.gone = true; } P4.FQ[key] = Q.filter(w => !w.gone); if (R.shut) { for (const w of Q) { w.st = 'leave'; w.dir = 1; } P4.FQ[key] = []; C.w = null; continue; } }
     else { R.acc = (R.acc || 0) + p4ShopRate(R, key, h) * dm; while (R.acc >= 1) { R.acc -= 1; p4FoodCustomer(+key, key); } }
-    R.x = +key; p4TireTick(R, dt, !!C.w);
+    R.x = +key; p4TireTick(R, dt, !!C.w, (P4.FQ[key] || []).length);
     if (!C.w) { const w = (P4.FQ[key] || []).find(q => q.st === 'fq'); if (w) { C.w = w; C.t = K.serve / p4ServeK(R); } }
     else if ((C.t -= dt) <= 0) {
       const w = C.w, ware = K.wares.find(x => x.id === w.ware) || p4PickWare(R), r = ware ? p4ShopSell(R, key, ware, w.n, w.treat) : { n: 0, got: 0 };
