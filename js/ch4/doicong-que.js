@@ -13,10 +13,17 @@ const C4_FAIR = .1, C4_FAIR_DAYS = 7;
 // (owner, 2026-11-08: "ai đòi lương đều tăng mà người làm vẫn ôm tiền bỏ trốn nhiều"): a raise is at most a tenth, so a hand whose every ask is granted
 // is still under the fair pay for many days and used to run off often meanwhile. Being under the fair pay now counts only after a refusal (mad);
 // a hand whose asks are all granted keeps the small everyday chance (~0.2 %).
-function c4RunChance(wage, fair, ho, rel, mad) {
+// (owner, 2026-11-09: "user nói tăng lương nhưng sao vẫn bỏ trốn"): saying yes to an ask clears the grudge (wq.mad = 0) and the 7 evenings after it
+// (wq.ok = the day) nobody runs off at all; a raise used to leave mad from an earlier refusal, so a hand just raised could still run off
+const C4_RAISE_GRACE = 7;
+const c4Grace = q => !!(q && q.ok != null && SAVE4.day - q.ok < C4_RAISE_GRACE);
+function c4RunChance(wage, fair, ho, rel, mad, q) {
+  if (c4Grace(q)) return 0;
   const under = fair > 0 ? Math.max(0, 1 - wage / fair) : 0, h = ho === undefined ? .5 : ho, m = mad || 0;
   return Math.min(.35, (.002 + (m ? .15 * under * m : 0)) * (1.5 - h) * (rel !== undefined && rel <= 20 ? 2 : 1));
 }
+// a hand that may run off with a rich day's takings (the trom_ngay event): refused a raise since last paid fairly, or on bad terms, and not just raised
+const c4Sour = h => !c4Grace(h.wq) && ((h.wq && h.wq.mad > 0) || (h.rel !== undefined && h.rel <= 20));
 function c4HandFair(h) {
   const H = h.hist; if (!H || H.length < 3) return 0;
   const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(C4_FAIR * avg / 5) * 5) : 0;
@@ -50,7 +57,7 @@ function c4WageOpen() {
 }
 function c4WageAnswer(yes) {
   const a = C4_WAGE_CUR; C4_WAGE_CUR = null; const p = a && a.h.wq && a.h.wq.pend; if (!p) { c4Sheets(null); return; }
-  if (yes) { a.h.wageUp = (a.h.wageUp || 0) + Math.max(0, p.to - c4Wage(a.g, a.h)); a.h.wq.pend = null; a.h.wq.ask = null; toast(`Đã tăng công ${c4Cap1(a.h.name)} lên ${c4Money(p.to)} một ngày.`, 2.6); }
+  if (yes) { a.h.wageUp = (a.h.wageUp || 0) + Math.max(0, p.to - c4Wage(a.g, a.h)); a.h.wq.pend = null; a.h.wq.ask = null; a.h.wq.mad = 0; a.h.wq.ok = SAVE4.day; toast(`Đã tăng công ${c4Cap1(a.h.name)} lên ${c4Money(p.to)} một ngày.`, 2.6); }
   else { p.no = true; toast(`Không tăng công. ${c4Cap1(a.h.name)} sầm mặt lại…`, 2.6); }
   persist4(); AU.tap();
   if (!c4WageOpen()) c4Sheets(null);

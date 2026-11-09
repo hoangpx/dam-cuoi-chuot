@@ -560,7 +560,7 @@ function c4PlanEvents() {
   if (!SAVE4.cauDoi) pool.push('do');
   if (['che', 'xoi', 'bun', 'banhcuon', 'ruou'].some(g => own.includes(g))) pool.push('do2', 'do2');
   if (own.length > 1) pool.push('om', 'om');                       // ('bot', the announced skimming, is gone: a hand's skimming is silent now, the player finds it in the tally)
-  if (SAVE4.money >= C4_RICH) { if (SAVE4.kienNext == null) SAVE4.kienNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.kienNext && R() < .35 * Math.pow(.6, SAVE4.kienN || 0)) pool.push('kien'); if (SAVE4.tromNext == null) SAVE4.tromNext = SAVE4.day + 35 + Math.floor(R() * 16); if (SAVE4.day >= SAVE4.tromNext && R() < .06 && own.some(g => c4HandsOn(g).length)) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner); a hand runs off at most once in 20–30 days, rarely (owner: less often)
+  if (SAVE4.money >= C4_RICH) { if (SAVE4.kienNext == null) SAVE4.kienNext = SAVE4.day + 20 + Math.floor(R() * 11); if (SAVE4.day >= SAVE4.kienNext && R() < .35 * Math.pow(.6, SAVE4.kienN || 0)) pool.push('kien'); if (SAVE4.tromNext == null) SAVE4.tromNext = SAVE4.day + 35 + Math.floor(R() * 16); if (SAVE4.day >= SAVE4.tromNext && R() < .06 && own.some(g => c4HandsOn(g).some(c4Sour))) pool.push('trom_ngay'); }   // a rich purse is worth robbing and suing (owner); a hand runs off at most once in 20–30 days, rarely (owner: less often)
   for (let i = 0; i < 3 && pool.length; i++) ev.push({ at: at(7, 16.5), kind: pool.splice((R() * pool.length) | 0, 1)[0] });
   if (SAVE4.day >= 2) for (let i = 0, n = R() < .5 ? 1 : 2; i < n; i++) ev.push({ at: at(8, 16), kind: 'hao' });
   if (SAVE4.day > 5 && R() < .55) ev.push({ at: at(7, 12), kind: c4Pick(['cotiec', 'cotiec', 'cuoi', 'khachla']) });   // an order brought by a visitor (the red '!') on about half the days, not only by luck of the pool, which grows long later on (a player)
@@ -697,9 +697,10 @@ function c4Event(kind) {
       ['Đuổi việc', () => { const H = c4Hands(g); H.splice(H.indexOf(s), 1); for (const k in C4.SV) { const A = C4.SV[k]; if (A) for (const sv of [...A]) if (sv.by === s) A.splice(A.indexOf(sv), 1); } toast(`${c4Cap1(s.name)} bị đuổi. Vợ chồng lại phải tự bán, hoặc thuê người khác.`, 3); }],
       ['Bỏ qua lần này', () => {}]] });
   } else if (kind === 'trom_ngay') {                                       // a hired hand runs off with the day's takings (only when rich)
-    if (SAVE4.money < C4_RICH || !helped.length) return;
+    const sour = helped.filter(g => c4HandsOn(g).some(c4Sour));            // only a hand with a grudge (owner, 2026-11-09: a raised hand ran off)
+    if (SAVE4.money < C4_RICH || !sour.length) return;
     SAVE4.tromNext = SAVE4.day + 20 + Math.floor(R() * 11);                 // the next one only 20–30 days later, and maybe never
-    const g = c4Pick(helped), s = c4PickHonest(c4HandsOn(g)), take = Math.min(Math.max(0, C4.today.take), SAVE4.money);
+    const g = c4Pick(sour), s = c4PickHonest(c4HandsOn(g).filter(c4Sour)), take = Math.min(Math.max(0, C4.today.take), SAVE4.money);
     if (take <= 0) return;
     Object.assign(E, { title: 'Người làm bỏ trốn!', text: `${c4Cap1(s.name)} ôm theo ${c4Money(take)} tiền bán hàng hôm nay rồi biến mất tăm. Làm sao đây?`, opts: [
       ['Báo quan', () => { c4DropHand(g, s); sp(take); const fee = Math.min(SAVE4.money, Math.round(take * .2)); sp(fee); if (R() < .1) { SAVE4.money += take; C4.today.spent -= take; toast(`Quan sai lính lùng được ${s.name} ở bến đò, thu lại được tiền. Phí quan ${c4Money(fee)}.`, 3.8); } else toast(`Quan sai lính đi lùng mãi không thấy. Mất ${c4Money(take)}, còn trả phí quan ${c4Money(fee)}.`, 3.8); c4Hud(); }],
