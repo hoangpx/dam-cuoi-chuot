@@ -226,7 +226,7 @@ function jgRenameOpen() {
     if (p4HoaBad(v)) { toast(lg('Tên có chữ không đẹp, chọn tên khác nhé.', 'That name has a bad word, pick another.'), 2.8); return; }
     const old = hsGet('dcc.hoso', {}) || {}, d = hsClean({ ...hsMine(), name: v });
     hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); HS_FACE.clear();
-    hsPush().catch(() => {}); JG_NET.send({ t: 'name', s: v }); try { if (typeof c4RankSend === 'function') c4RankSend(); } catch (e) {}
+    hsPush().catch(() => {}); JG_NET.send({ t: 'name', s: v });
     jgRenameClose(); toast(lg('Đã đổi tên thành ' + v + ' ở mọi nơi', 'Renamed to ' + v + ' everywhere'), 2.8);
   };
   el.querySelector('#jgRenOk').addEventListener('click', save); el.querySelector('#jgRenNo').addEventListener('click', jgRenameClose);

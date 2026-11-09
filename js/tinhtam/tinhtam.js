@@ -628,7 +628,7 @@ function ttRename() {
     if (typeof p4HoaBad === 'function' && p4HoaBad(v)) { toast(lg('Tên có chữ không đẹp, chọn tên khác nhé.', 'That name has a bad word, pick another.'), 2.8); return; }
     const old = hsGet('dcc.hoso', {}) || {}, d = hsClean({ ...hsMine(), name: v });
     hsSet('dcc.hoso', { ...d, id: old.id, shop: undefined, stats: undefined }); if (typeof HS_FACE !== 'undefined') HS_FACE.clear();
-    try { hsPush().catch(() => {}); } catch (e) {} try { if (typeof c4RankSend === 'function') c4RankSend(); } catch (e) {}
+    try { hsPush().catch(() => {}); } catch (e) {}
     TT.me.name = TT_SAVE.name = v; ttPersist(); ttSend({ t: 'hello', id: TT.me.id, name: v, look: TT.me.look, friends: [] }); TT.last = '';
     ttRenameClose(); toast(lg('Đã đổi tên thành ' + v + ' ở mọi nơi', 'Renamed to ' + v + ' everywhere'), 2.8);
   };

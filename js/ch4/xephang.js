@@ -1,7 +1,7 @@
 /* Chương IV · bảng tổng sắp nhà giàu (owner, 2026-10-16: "xem được tất cả những người chơi và tiền, số ngày, tên tự gen và xếp theo thứ
    tự ai giàu nhất, người chơi có option đổi tên"). Every player has one row on Supabase (table dcc_rank, only through the rpc dcc_rank_put /
    dcc_rank_top / dcc_rank_me, docs/supabase-bang-xep-hang.sql), keyed by the device id dcc.dev (it goes with the cloud save to other
-   devices): the player's one name (the Hồ sơ name, changed only in the Hồ sơ tab; before 2026-10-23 a made-up name in dcc.rankName with its own Đổi tên), the purse SAVE4.money and the day SAVE4.day. The row is sent when a day turns (c4DayAdvance) and when the board is opened. The
+   devices): the player's one name (the Hồ sơ name, changed only in the Hồ sơ tab; before 2026-10-23 a made-up name in dcc.rankName with its own Đổi tên), the purse SAVE4.money and the day SAVE4.day. The row is sent only when a day turns (c4DayAdvance; owner 2026-11-08). The
    board (#c4rank, HUD button "Tổng sắp" in the village and the town) lists the richest 100 and the player's own place. */
 const C4_RANK_MAX = 22;
 // ONE name for the whole game (owner, 2026-10-23: "chỉ cho phép dùng 1 tên toàn game và đổi tên ở 1 chỗ là Hồ sơ"): the Hồ sơ name (dcc.hoso), the same one
@@ -48,7 +48,7 @@ async function c4RankInto(box) {
   // sending my row must never hold the board up: a stalled put once left the sheet on "Đang tải…" for good, so it gets a short
   // wait and then the list is drawn anyway (owner, 2026-10-22: "sao bảng tổng sắp trắng trơn vậy?")
   const C = C4_RANK_CACHE, fresh = C && Date.now() - C.t < 90000;
-  if (!fresh) await Promise.race([c4RankSend(), new Promise(done => setTimeout(done, 2500))]);
+  // my row is sent only when a day turns (owner, 2026-11-08: "bảng tổng sắp chỉ đẩy khi cuối ngày thôi"): opening the board sends nothing
   try {
     let top, me;
     if (fresh) { top = C.top; me = C.me; } else {
@@ -149,7 +149,7 @@ function c4RankWire(B, r) {
     btn.disabled = true;
     try {
       await p4Rpc('dcc_rank_review_put', { p_target: r.pub, p_device: p4Device(), p_name: c4RankName(), p_amount: amt, p_note: note });
-      if (amt > 0) { SAVE4.money = Math.max(0, Math.round(SAVE4.money || 0) - amt); persist4(); c4RankSend(); c4RankHud(); }
+      if (amt > 0) { SAVE4.money = Math.max(0, Math.round(SAVE4.money || 0) - amt); persist4(); c4RankHud(); }
       AU.pluck(84); AU.tap();
       // a gift does not count for the board (owner, 2026-10-23: "cho tiền thì ko tính vào bảng xếp hạng"), so the host's line stays as it is
       const m = B.querySelector('.rvmeta'); if (m) m.innerHTML = c4RankMeta(r);
