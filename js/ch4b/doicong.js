@@ -4,7 +4,7 @@
    - Fair pay = 10 % of the shop's own profit (takings − goods − rent or tax by the day − the wages paid now; owner, 2026-11-08), averaged over its last 7 evenings (P4_FAIR, at least 3 evenings known). A shop (cuahang.js) pays its
      keeper and helpers together (p4WageOf, + R.raise); the betel house's hired hand (nguoilam.js) gets 10 % of the betel takings (shared if more).
    - Paid less than fair: an ask is set 4–7 days ahead (R.wq.ask / h.wq.ask). That evening the ask is raised (wq.pend, a line on the tally), and
-     the next time the player is on the street a sheet asks: raise to the fair pay, or refuse. Refused (or not answered by the second evening
+     the next time the player is on the street a sheet asks: raise to the fair pay, or refuse. Refused (only a refusal; an ask waits until it is answered
      after it was raised): that evening the worker runs off with the shop's day's takings. A shop gets a new keeper at once at the same pay,
      the betel hand is simply gone (hire again); the new one does the same in 4–7 days until the pay is fair. */
 const P4_FAIR = .1, P4_FAIR_DAYS = 7;
@@ -24,7 +24,7 @@ const p4ShopFair = R => p4FairOf(R.hist);
 const p4HandFair = h => p4FairOf(SAVE4B.trauHist, Math.max(1, p4Hands().length));
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
-  if (q.pend && (q.pend.no || SAVE4.day >= q.pend.day + 2)) {
+  if (q.pend && q.pend.no) {   // only a refusal makes them run (owner, 2026-11-08: a player saw them run off without ever being asked)
     const lost = Math.max(0, Math.min(Math.round(take), Math.round(p4Purse())));
     if (lost) { SAVE4.money -= lost; P4.today.spent += lost; }
     q.pend = null; q.ask = SAVE4.day + p4Rand47();
@@ -98,8 +98,12 @@ function p4WageAnswer(yes) {
   $('#p4wageNo').addEventListener('click', () => p4WageAnswer(false));
 }
 { const sh0 = p4Sheets; p4Sheets = function (id) { const el = $('#p4wage'); if (el) el.hidden = id !== 'p4wage'; sh0(id === 'p4wage' ? null : id); if (id === 'p4wage') { P4.sheet = id; P4.paused = true; P4.sheetT = performance.now(); } }; }
-{ const up0 = updateP4;
-  updateP4 = function (dt) {
-    up0(dt);
-    if (S.mode === 'c4bplay' && !P4.sheet && !P4T.on && P4.phase === 'open' && (P4.wageT = (P4.wageT || 0) + dt) > 1.5) { P4.wageT = 0; p4WageOpen(); }
+// the loop calls the chapter's own update (registered in game.js before this file), so the hook goes there; reassigning updateP4 did nothing
+{ const ch = chapterById('4b'), up0 = ch.update;
+  ch.update = function (dt) {
+    up0.call(this, dt);
+    if (S.mode === 'c4bplay' && !P4.sheet && !P4T.on && P4.phase === 'open' && (P4.wageT = (P4.wageT || 0) + dt) > 1.5) {
+      P4.wageT = 0;
+      if (!p4WageOpen() && typeof c4WageAsks === 'function' && c4WageAsks().length && P4.wageTold !== SAVE4.day) { P4.wageTold = SAVE4.day; toast('Có người phụ ở chợ quê đang chờ gặp để xin tăng công.', 3.4); }
+    }
   }; }

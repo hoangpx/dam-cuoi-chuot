@@ -2,7 +2,7 @@
    và chợ huyện"; the town's rule is js/ch4b/doicong.js). Fair pay = 10 % of the stall's own profit averaged over its last 7 evenings (h.hist:
    takings − goods − the stall's rent by the day c4RentOf − the hand's wage now); a stall at a loss: no ask. Paid less: an ask 4–7 days ahead
    (h.wq.ask); that evening the tally says so (wq.pend); on the open market a sheet #c4wage asks: raise (h.wageUp, read by c4Wage) or refuse.
-   Refused, or not answered by the second evening: that evening the hand runs off with that stall's takings of the day. */
+   Refused (an ask waits until it is answered): that evening the hand runs off with that stall's takings of the day. */
 const C4_FAIR = .1, C4_FAIR_DAYS = 7;
 function c4HandFair(h) {
   const H = h.hist; if (!H || H.length < 3) return 0;
@@ -16,7 +16,7 @@ function c4HandFair(h) {
         const wage = c4Wage(g, h), q = h.wq || (h.wq = {}), who = `${c4Cap1(h.name)} (${C4_GOODS[g].name.toLowerCase()})`;
         (h.hist = h.hist || []).push(Math.round(take - (b.cogs || 0) - rent - wage)); if (h.hist.length > C4_FAIR_DAYS) h.hist.shift();
         const fair = c4HandFair(h);
-        if (q.pend && (q.pend.no || SAVE4.day >= q.pend.day + 2)) {
+        if (q.pend && q.pend.no) {   // only a refusal makes them run
           const lost = Math.max(0, Math.min(Math.round(take), Math.round(SAVE4.money)));
           SAVE4.money -= lost; d.theft = (d.theft || 0) + lost;
           quits.push(`${who} không được tăng công, tối nay ôm ${c4Money(lost)} tiền bán hàng của hàng ấy bỏ trốn.`);
@@ -55,8 +55,12 @@ function c4WageAnswer(yes) {
   $('#c4wageNo').addEventListener('click', () => c4WageAnswer(false));
 }
 { const sh0 = c4Sheets; c4Sheets = function (id) { const el = $('#c4wage'); if (el) el.hidden = id !== 'c4wage'; sh0(id === 'c4wage' ? null : id); if (id === 'c4wage') { C4.sheet = id; C4.paused = true; C4.sheetT = performance.now(); } }; }
-{ const up0 = updateC4;
-  updateC4 = function (dt) {
-    up0(dt);
-    if (S.mode === 'c4play' && !C4.sheet && C4.phase === 'open' && (C4.wageT = (C4.wageT || 0) + dt) > 1.5) { C4.wageT = 0; c4WageOpen(); }
+// the loop calls the chapter's own update (registered in cho.js), so the hook goes there; reassigning updateC4 did nothing
+{ const ch = chapterById(4), up0 = ch.update;
+  ch.update = function (dt) {
+    up0.call(this, dt);
+    if (S.mode === 'c4play' && !C4.sheet && C4.phase === 'open' && (C4.wageT = (C4.wageT || 0) + dt) > 1.5) {
+      C4.wageT = 0;
+      if (!c4WageOpen() && typeof p4WageAsks === 'function' && SAVE4B && SAVE4B.house && p4WageAsks().length && C4.wageTold !== SAVE4.day) { C4.wageTold = SAVE4.day; toast('Có người làm trên phố huyện đang chờ gặp để xin tăng công.', 3.4); }
+    }
   }; }
