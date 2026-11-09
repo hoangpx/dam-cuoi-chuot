@@ -79,7 +79,16 @@ function p4ShopFix(R) {
   return R;
 }
 const p4WPrice = (R, w) => R.prices[w.id] || w.p;
-const p4WRatio = (R, w) => c4TownRatio(p4WPrice(R, w), w.p);
+// luxury shops (few buyers) bear a bigger markup (owner, 2026-11-09: "cửa hàng xa xỉ thì ít khách hơn nên biên độ lợi nhuận được cao hơn"): lux 0 for
+// a shop of 46+ customers a day (and every eating house), 1 for the goldsmith (12); the dear side of the demand curve is stretched: buyers start
+// to hold back at 1.1 + .4·lux × the fair price (gold 1.5) and nobody buys at 2 + lux × (gold 3, the top of the price range)
+const p4Lux = R => { const K = p4Kind(R); return K.t === 'hieu' ? c4Clamp((46 - K.cust) / 34, 0, 1) : 0; };
+const p4LuxR = (r, lux) => {
+  if (r <= 1 || !lux) return r;
+  const d0 = C4_DEAR0 + .4 * lux, nb = C4_NOBUY + lux;
+  return r <= d0 ? 1 + (r - 1) * (C4_DEAR0 - 1) / (d0 - 1) : C4_DEAR0 + (r - d0) * (C4_NOBUY - C4_DEAR0) / (nb - d0);
+};
+const p4WRatio = (R, w) => p4LuxR(c4TownRatio(p4WPrice(R, w), w.p), p4Lux(R));
 const p4OnMenu = (R, w) => R.menu[w.id] !== false;
 const p4Has = (R, w) => p4OnMenu(R, w);                                  // every ware on the menu can be sold: the keeper buys it as it goes
 const p4Left = R => p4Kind(R).wares.some(w => p4OnMenu(R, w)) ? 999 : 0;
