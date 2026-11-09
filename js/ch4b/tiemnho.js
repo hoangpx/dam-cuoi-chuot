@@ -149,7 +149,7 @@ function p4MiniStart(key) {
   P4_TEM_ING.splice(0, P4_TEM_ING.length, ...G.pieces.map(([k, name]) => ({ k, name })), { k: 'bo', name: 'Bỏ' });
   P4_TEM_RECIPES.splice(0, P4_TEM_RECIPES.length, ...p4ShopRecipes(S));
   p4Sheets(null); $('#p4hud').hidden = true; $('#p4temHud').hidden = false;
-  Object.assign(P4T, { shop: S, drag: null, on: true, out: 0, fetch: 0, early: false, t: 0, cust: [], boards: [{ items: [], fold: false }, { items: [], fold: false }], sel: 0, next: 1.2, served: 0, wrong: 0, missed: 0, earned: 0, fx: [], shake: null });
+  Object.assign(P4T, { shop: S, drag: null, on: true, out: 0, fetch: 0, early: false, t: 0, cust: [], boards: [{ items: [], fold: false }, { items: [], fold: false }], sel: 0, next: 1.2, served: 0, wrong: 0, missed: 0, earned: 0, cost: 0, fx: [], shake: null });
 }
 function p4MiniRestore() {
   if (P4_TEM_SAVE.ing) { P4_TEM_ING.splice(0, P4_TEM_ING.length, ...P4_TEM_SAVE.ing); P4_TEM_RECIPES.splice(0, P4_TEM_RECIPES.length, ...P4_TEM_SAVE.rec); P4_TEM_SAVE.ing = null; }
@@ -213,7 +213,8 @@ function p4MiniRestore() {
       const r = p4ShopSell(S.R, S.key, c.order.ware, 1, false);
       if (r.n) {
         const tip = Math.round(r.got * .5 * Math.max(0, c.pat / c.patMax)); SAVE4.money += tip; P4.today.take += tip;
-        const got = r.got + tip; P4T.earned += got; P4T.served++; persist4(); p4Persist(); AU.pluck(84 + (got % 5));
+        const got = r.got + tip; P4T.earned += got; P4T.cost = (P4T.cost || 0) + r.n * c.order.ware.c;   // the goods were paid out of the purse as they sold (owner, 2026-11-08: a player saw Thu 30 quan, 20 in the purse)
+        P4T.served++; persist4(); p4Persist(); AU.pluck(84 + (got % 5));
         P4T.fx.push({ x, y, s: '+' + got, t: 0, ok: true }); c.say = { text: tip > r.got * .3 ? 'Nhanh quá, thưởng thêm!' : 'Đúng rồi, cảm ơn!', t: 0, life: 1.2 };
       } else c.say = { text: 'Hết ' + c.order.name.toLowerCase() + ' rồi à?', t: 0, life: 1.3 };
       c.leaving = .01;
@@ -238,14 +239,14 @@ function p4MiniRestore() {
   }; }
 // the shift's clock: the shop's stock, not betel
 { const render0 = p4TemRender;
-  p4TemRender = function () { render0(); const S = P4T.shop; if (S && P4T.on) $('#p4temMoney').textContent = `Thu ${c4Money(P4T.earned)}`; }; }
+  p4TemRender = function () { render0(); const S = P4T.shop; if (S && P4T.on) $('#p4temMoney').textContent = `Lãi ${c4Money(P4T.earned - (P4T.cost || 0))}`; }; }
 // the end: the shop's words, "bán tiếp" starts the same shop again; têm trầu's lists are put back
 { const stop0 = p4TemStop;
   p4TemStop = function () {
     const S = P4T.shop; if (!S) return stop0();
     P4T.shop = null; P4T.on = false; $('#p4temHud').hidden = true; $('#p4hud').hidden = false; p4MiniRestore(); p4Persist(); p4Hud();
     $('#p4temEnd h3').textContent = 'Hết ca · ' + S.R.name;
-    $('#p4temEndB').innerHTML = (P4T.early ? '<p class="bad"><b>Hết hàng, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> món · thu <b>${c4Money(P4T.earned)}</b></p>`
+    $('#p4temEndB').innerHTML = (P4T.early ? '<p class="bad"><b>Hết hàng, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> món · thu <b>${c4Money(P4T.earned)}</b></p><p>Tiền vốn hàng: ${c4Money(P4T.cost || 0)} · <b>lãi vào túi ${c4Money(P4T.earned - (P4T.cost || 0))}</b></p>`
       + (P4T.wrong ? `<p>Đưa nhầm ${P4T.wrong} lần</p>` : '') + (P4T.missed ? `<p class="bad">${P4T.missed} khách chờ lâu bỏ đi</p>` : '');
     $('#p4temAgain').hidden = true;
     const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Bán tiếp';
