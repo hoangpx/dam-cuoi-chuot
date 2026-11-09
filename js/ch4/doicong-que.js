@@ -8,9 +8,11 @@ const C4_FAIR = .1, C4_FAIR_DAYS = 7;
 // đáng thì % ôm tiền bỏ trốn rất ít"): the chance an evening that a hand runs off with the day's takings of where they work. Paid fairly (or no fair pay
 // known yet): about 0.4 %; the further under the fair pay, the likelier (up to ~30 % unpaid by half); honest hands less, dishonest more; in the village a hand
 // on bad terms with the couple (quan hệ ≤ 20) twice as likely.
-function c4RunChance(wage, fair, ho, rel) {
+// a refusal does not make them leave (owner, 2026-11-08: "không tăng thì vẫn làm chứ không bỏ trốn luôn, chỉ là tỷ lệ tăng lên thôi"): each refused ask since they
+// were last paid fairly (wq.mad) adds the chance once more; it is cleared when the pay is fair again
+function c4RunChance(wage, fair, ho, rel, mad) {
   const under = fair > 0 ? Math.max(0, 1 - wage / fair) : 0, h = ho === undefined ? .5 : ho;
-  return Math.min(.35, (.004 + .3 * under) * (1.5 - h) * (rel !== undefined && rel <= 20 ? 2 : 1));
+  return Math.min(.35, (.004 + .3 * under) * (1.5 - h) * (rel !== undefined && rel <= 20 ? 2 : 1) * (1 + (mad || 0)));
 }
 function c4HandFair(h) {
   const H = h.hist; if (!H || H.length < 3) return 0;
@@ -24,13 +26,8 @@ function c4HandFair(h) {
         const wage = c4Wage(g, h), q = h.wq || (h.wq = {}), who = `${c4Cap1(h.name)} (${C4_GOODS[g].name.toLowerCase()})`;
         (h.hist = h.hist || []).push(Math.round(take - (b.cogs || 0) - rent - wage)); if (h.hist.length > C4_FAIR_DAYS) h.hist.shift();
         const fair = c4HandFair(h);
-        if (q.pend && q.pend.no) {   // only a refusal makes them run
-          const lost = Math.max(0, Math.min(Math.round(take), Math.round(SAVE4.money)));
-          SAVE4.money -= lost; d.theft = (d.theft || 0) + lost;
-          quits.push(`${who} không được tăng công, tối nay ôm ${c4Money(lost)} tiền bán hàng của hàng ấy bỏ trốn.`);
-          H.splice(H.indexOf(h), 1); continue;
-        }
-        if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; continue; }
+        if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + 4 + ((Math.random() * 4) | 0); quits.push(`${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.`); continue; }   // keeps working, likelier to run off (c4RunChance)
+        if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; q.mad = 0; continue; }
         if (q.pend) { quits.push(`${who} vẫn chờ trả lời việc tăng công lên ${c4Money(q.pend.to)}.`); continue; }
         if (!q.ask) { q.ask = SAVE4.day + 4 + ((Math.random() * 4) | 0); continue; }
         if (SAVE4.day >= q.ask) { const to = Math.min(fair, wage + Math.max(1, Math.floor(wage * .1))); q.pend = { to, from: wage, day: SAVE4.day, g }; quits.push(`${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.`); }   // at most a tenth more each time (owner)

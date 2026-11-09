@@ -130,7 +130,7 @@ function c4PayHands(d, quits) {
       // owner: a hand only takes from the day's sales of the stall they work at (C4.today.by[g].take), never the whole purse.
       // at 20% relationship they may run off with that day's takings (rarer since 2026-10-16); there is no skimming any more (owner)
       const tk = Math.min(SAVE4.money, (C4.today.by && C4.today.by[g] && C4.today.by[g].take) || 0);
-      if (tk > 0 && R() < (typeof c4RunChance === 'function' ? c4RunChance(c4Wage(g, h), c4HandFair(h), h.ho, h.rel) : (h.rel <= 20 ? .2 * (1 - h.ho) : 0))) {   // the shared rule (doicong-que.js): rare when paid fairly
+      if (tk > 0 && R() < (typeof c4RunChance === 'function' ? c4RunChance(c4Wage(g, h), c4HandFair(h), h.ho, h.rel, h.wq && h.wq.mad) : (h.rel <= 20 ? .2 * (1 - h.ho) : 0))) {   // the shared rule (doicong-que.js): rare when paid fairly
          SAVE4.money -= tk; d.theft = (d.theft || 0) + tk; quits.push(`${c4Cap1(h.name)} ôm theo ${c4Money(tk)} tiền bán hàng hôm nay ở ${C4_GOODS[g].name.toLowerCase()} rồi biến mất.`); H.splice(H.indexOf(h), 1); continue; }
     }
   }
