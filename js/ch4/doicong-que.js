@@ -4,6 +4,14 @@
    (h.wq.ask); that evening the tally says so (wq.pend); on the open market a sheet #c4wage asks: raise (h.wageUp, read by c4Wage) or refuse.
    Refused (an ask waits until it is answered): that evening the hand runs off with that stall's takings of the day. */
 const C4_FAIR = .1, C4_FAIR_DAYS = 7;
+// one rule for every hired hand, village and town (owner, 2026-11-08: "apply hết luật chung người làm cho cả huyện và quê, nhưng nếu được trả lương xứng
+// đáng thì % ôm tiền bỏ trốn rất ít"): the chance an evening that a hand runs off with the day's takings of where they work. Paid fairly (or no fair pay
+// known yet): about 0.4 %; the further under the fair pay, the likelier (up to ~30 % unpaid by half); honest hands less, dishonest more; in the village a hand
+// on bad terms with the couple (quan hệ ≤ 20) twice as likely.
+function c4RunChance(wage, fair, ho, rel) {
+  const under = fair > 0 ? Math.max(0, 1 - wage / fair) : 0, h = ho === undefined ? .5 : ho;
+  return Math.min(.35, (.004 + .3 * under) * (1.5 - h) * (rel !== undefined && rel <= 20 ? 2 : 1));
+}
 function c4HandFair(h) {
   const H = h.hist; if (!H || H.length < 3) return 0;
   const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(C4_FAIR * avg / 5) * 5) : 0;
