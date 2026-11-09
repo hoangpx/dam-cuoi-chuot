@@ -23,7 +23,7 @@ const c4DemandD = r => {
   if (r <= 1) return Math.min(2.6, Math.pow(r, -1.1));
   if (r <= C4_DEAR0) return 1 - (r - 1) * 1;                       // 1 → .9
   if (r >= C4_NOBUY) return 0;
-  const t = (r - C4_DEAR0) / (C4_NOBUY - C4_DEAR0); return .9 * Math.pow(1 - t, 1.6);
+  const t = (r - C4_DEAR0) / (C4_NOBUY - C4_DEAR0); return .9 * Math.pow(1 - t, 1.2);   // (1.6 until 2026-11-09: .64 at 1.2, .39 at 1.3, .17 at 1.4 now)
 };
 const c4PFlow = r => Math.pow(c4DemandD(r), .55), c4PQty = r => Math.pow(c4DemandD(r), .45);
 const c4GiaMood = () => ((SAVE4.plan && SAVE4.plan.gia) || 1) * (typeof c4Slump === 'function' && c4Slump() && !c4Slump().g ? .92 : 1);   // (a village-wide lean spell, which is announced, also tightens purses)
@@ -71,7 +71,10 @@ function c4PriceServed(w) {
 { const served0 = c4Served; c4Served = function (w) { c4PriceServed(w); return served0(w); }; }
 
 /* ---------- the town ---------- */
-const P4_BETEL_BASE = 8, c4TownRatio = (price, base) => c4RatioOf(price, base);
+// the town lives on trade, not on the harvest: the village mood reaches it only by 40 % (.89 … 1.13), so a plain price is never dear there
+// (owner, 2026-11-09: "phố huyện không bán được gì, khách khó tính quá": on a hard day the village mood .72 made a plain price 1.39 × fair)
+const c4TownMood = () => 1 + (c4GiaMood() - 1) * .4;
+const P4_BETEL_BASE = 8, c4TownRatio = (price, base) => price / (base * c4TownMood());
 const p4BetelFlow = () => c4PFlow(c4TownRatio(SAVE4B.price, P4_BETEL_BASE)), p4BetelQty = () => c4PQty(c4TownRatio(SAVE4B.price, P4_BETEL_BASE));
 const p4FoodPrice = R0 => (R0 && R0.price) || P4_FOOD.price;
 const p4FoodFlow = R0 => c4PFlow(c4TownRatio(p4FoodPrice(R0), P4_FOOD.price)), p4FoodQty = R0 => c4PQty(c4TownRatio(p4FoodPrice(R0), P4_FOOD.price));

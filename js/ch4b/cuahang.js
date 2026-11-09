@@ -88,7 +88,8 @@ const p4IsOpenHour = (R, h) => h >= (R.open ?? 6) && h < (R.close ?? 21);
 function p4ShopRate(R, key, h) {
   const K = p4Kind(R); if (!p4IsOpenHour(R, h)) return 0;
   const ws = K.wares.filter(w => p4Has(R, w)); if (!ws.length) return 0;
-  const tw = K.wares.reduce((s, w) => s + w.w, 0), mw = ws.reduce((s, w) => s + w.w * c4PFlow(p4WRatio(R, w)), 0) / tw;   // a shorter menu or dear prices: fewer come
+  const tw = K.wares.reduce((s, w) => s + w.w, 0), hw = ws.reduce((s, w) => s + w.w, 0), pk = ws.reduce((s, w) => s + w.w * c4PFlow(p4WRatio(R, w)), 0) / hw;
+  const mw = (.45 + .55 * hw / tw) * pk;   // a shorter menu: a few fewer come (as before 2026-11-08); dear prices: fewer, nobody when all are far too dear
   const deco = 1 + (R.awn ? .05 : 0) + (R.lamp ? (K.t === 'den' ? .1 : .04) : 0) + (R.pots || 0) * .02 + (R.sk ? .03 : 0);
   return K.cust / 900 * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4Harass() * Math.min(1.8, mw) * deco;   // no floor: prices nobody pays bring nobody (owner, 2026-11-08)
 }
