@@ -3,7 +3,7 @@
    from what the folk say.
    - A fair price: the plain price × the village's MOOD of the day (plan.gia, rolled a day ahead like the weather, drifting from day to day,
      now and then a shock: .72 hard times … 1.32 flush). r = price / fair price.
-   - Demand D(r) (c4DemandD): 1 at the fair price, a rush when cheap (r^-1.1, up to 2.6), falling from 1.1 × fair and NOBODY at 1.5 × (2026-11-08). It splits into how many walk up (c4PFlow = D^.55) and how many each takes (c4PQty = D^.45, c4PriceN):
+   - Demand D(r) (c4DemandD): 1 at the fair price, a rush when cheap (r^-1.1, up to 2.6), falling from 1.1 × fair and NOBODY at 2 × (2026-11-09; 1.5 × on 2026-11-08). It splits into how many walk up (c4PFlow = D^.55) and how many each takes (c4PQty = D^.45, c4PriceN):
      dear still sells, but less and in ones. Cheap sells a lot at little profit; the profit peaks a little above the fair price.
    - Goodwill (c4PriceServed): a cheap price (r < .9) now and then makes the buyer take to the stall (a stranger counts towards knowing
      it, a known one likes it more); a very dear one (r > 1.35) now and then sours a known buyer (the tight-fisted most).
@@ -17,13 +17,13 @@ const c4Flush = () => c4Clamp((c4GiaMood() - 1.08) / .14, 0, 1);
 // up to 10 % over the fair price hardly matters; from there demand falls steeply (.7 at 1.25, .25 at 1.4) and at 1.5 × the fair price NOBODY buys
 // (C4_NOBUY; the old curve never went below .03, so a very dear price still sold a little); cheap is a rush (r^-1.1, 1.3 at .8, 2.1 at .5, up to 2.6).
 // A flush village (c4Flush) forgives up to .3 more (was .6).
-const C4_DEAR0 = 1.1, C4_NOBUY = 1.5;
+const C4_DEAR0 = 1.1, C4_NOBUY = 2;   // nobody at twice the fair price (owner, 2026-11-09: "gấp đôi thì mới không ai mua"; 1.5 on 2026-11-08)
 const c4DemandD = r => {
   if (r > 1) r = 1 + Math.max(0, r - 1 - .3 * c4Flush());
   if (r <= 1) return Math.min(2.6, Math.pow(r, -1.1));
   if (r <= C4_DEAR0) return 1 - (r - 1) * 1;                       // 1 → .9
   if (r >= C4_NOBUY) return 0;
-  const t = (r - C4_DEAR0) / (C4_NOBUY - C4_DEAR0); return .9 * Math.pow(1 - t, 1.2);   // (1.6 until 2026-11-09: .64 at 1.2, .39 at 1.3, .17 at 1.4 now)
+  const t = (r - C4_DEAR0) / (C4_NOBUY - C4_DEAR0); return .9 * Math.pow(1 - t, 1.2);   // .81 at 1.2, .67 at 1.3, .45 at 1.5, .15 at 1.8, 0 at 2
 };
 const c4PFlow = r => Math.pow(c4DemandD(r), .55), c4PQty = r => Math.pow(c4DemandD(r), .45);
 const c4GiaMood = () => ((SAVE4.plan && SAVE4.plan.gia) || 1) * (typeof c4Slump === 'function' && c4Slump() && !c4Slump().g ? .92 : 1);   // (a village-wide lean spell, which is announced, also tightens purses)
