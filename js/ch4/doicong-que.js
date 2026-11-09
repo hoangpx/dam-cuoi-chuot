@@ -24,18 +24,22 @@ function c4RunChance(wage, fair, ho, rel, mad, q) {
 }
 // a hand that may run off with a rich day's takings (the trom_ngay event): refused a raise since last paid fairly, or on bad terms, and not just raised
 const c4Sour = h => !c4Grace(h.wq) && ((h.wq && h.wq.mad > 0) || (h.rel !== undefined && h.rel <= 20));
-function c4HandFair(h) {
-  const H = h.hist; if (!H || H.length < 3) return 0;
-  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(C4_FAIR * avg / 5) * 5) : 0;
+// fair pay by the takings (owner, 2026-11-09, approved proposal, the same rule as the town): a hired hand is a helper beside the wife, so half the
+// trade's share (eating 18 %, staples 8 %, trade 11 %; tamly.js c4GCat) of the stall's takings over its last 7 evenings (h.tk); kept in h.fair
+const C4_VCAT_L = { an: .18, ty: .08, cd: .11, xx: .06, mv: .12 };
+function c4HandFairOf(h, g) {
+  const H = h.tk; if (!H || H.length < 3) return 0;
+  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(.5 * (C4_VCAT_L[c4GCat(g)] || .18) * avg / 5) * 5) : 0;
 }
+const c4HandFair = h => h.fair || 0;
 { const pay0 = c4PayHands;
   c4PayHands = function (d, quits) {
     for (const g of c4Owned()) {
       const H = c4Hands(g), b = (d.by && d.by[g]) || { take: 0, cogs: 0 }, rent = typeof c4RentOf === 'function' ? c4RentOf(g) || 0 : 0, take = b.take || 0;
       for (const h of [...H]) {
         const wage = c4Wage(g, h), q = h.wq || (h.wq = {}), who = `${c4Cap1(h.name)} (${C4_GOODS[g].name.toLowerCase()})`;
-        (h.hist = h.hist || []).push(Math.round(take - (b.cogs || 0) - rent - wage)); if (h.hist.length > C4_FAIR_DAYS) h.hist.shift();
-        const fair = c4HandFair(h);
+        (h.tk = h.tk || []).push(Math.round(take)); if (h.tk.length > C4_FAIR_DAYS) h.tk.shift();
+        const fair = h.fair = c4HandFairOf(h, g);
         if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + 4 + ((Math.random() * 4) | 0); quits.push(`${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.`); continue; }   // keeps working, likelier to run off (c4RunChance)
         if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; q.mad = 0; continue; }
         if (q.pend) { quits.push(`${who} vẫn chờ trả lời việc tăng công lên ${c4Money(q.pend.to)}.`); continue; }

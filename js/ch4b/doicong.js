@@ -20,8 +20,13 @@ function p4FairOf(hist, share) {
   const avg = hist.reduce((a, b) => a + b, 0) / hist.length; if (avg <= 0) return 0;   // a shop at a loss: nobody asks
   return p4Round5(P4_FAIR * hist.reduce((a, b) => a + b, 0) / hist.length / (share || 1));
 }
-const p4ShopFair = R => p4FairOf(R.hist);
-const p4HandFair = h => p4FairOf(SAVE4B.trauHist, Math.max(1, p4Hands().length));
+// fair pay by the takings (owner, 2026-11-09, approved proposal: "công xứng đáng tính theo doanh thu"): the keeper the trade's share (P4_CAT: eating 18 %,
+// staples 8 %, trade 11 %, the goldsmith 6 %, lamps 12 %) of the last 7 evenings' takings (R.tk, cuahang.js), a helper half of it; the betel house's
+// hands share 6 % of its takings (about the old 10 % of its profit). p4FairOf now reads takings.
+const p4FairShare = (hist, k) => { if (!hist || hist.length < 3) return 0; const avg = hist.reduce((a, b) => a + b, 0) / hist.length; return avg > 0 ? p4Round5(k * avg) : 0; };
+const p4ShopFair = R => p4FairShare(R.tk, (P4_CAT[p4Kind(R).cat] || P4_CAT.cd).l);
+const p4HelpFair = R => p4Round5(.5 * p4ShopFair(R));
+const p4HandFair = h => p4FairShare(SAVE4B.trauHist, .06 / Math.max(1, p4Hands().length));
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + p4Rand47(); return `<p>${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.</p>`; }   // keeps working, likelier to run off (owner)
@@ -43,14 +48,26 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
       const q = R.wq || (R.wq = {}), who = `${p4Keeper(R)} (${p4Kind(R).keeper} ${R.name})`;
       const newKeeper = () => { R.kn = p4KeeperName(); R.kho = Math.random(); return `<p>${p4Cap1(p4Kind(R).keeper)} mới ${R.kn} đến đứng ${p4Esc(R.name)}, công vẫn như cũ.</p>`; };
       if (R.kho === undefined) R.kho = Math.random();                       // the keeper's honesty, like a hand's
-      const kn0 = R.kn, line = p4WageEvening(q, who, T.take || 0, p4WageOf(R), p4ShopFair(R), newKeeper);
-      out.push(line || (R.kn === kn0 ? p4RandomRun(who, T.take || 0, p4WageOf(R), p4ShopFair(R), R.kho, newKeeper, q) : ''));
+      const kn0 = R.kn, line = p4WageEvening(q, who, T.take || 0, p4KeeperWage(R), p4ShopFair(R), newKeeper), tired = typeof p4Tired === 'function' && p4Tired(R) ? 2 : 1;
+      out.push(line || (R.kn === kn0 ? p4RandomRun(who, T.take || 0, p4KeeperWage(R), p4ShopFair(R), R.kho, newKeeper, q, tired) : ''));
+      // the helpers: they ask on their own; refused, they leave a few days later instead of running off, and meanwhile now and then take a little
+      for (const h of [...p4ShopHands(R)]) {
+        const hq = h.wq || (h.wq = {}), hw = `Người phụ ${p4Cap1(h.name)} (${R.name})`, fair = p4HelpFair(R), wage = p4HelpWage(R, h);
+        if (h.quit && SAVE4.day >= h.quit) { p4ShopHands(R).splice(p4ShopHands(R).indexOf(h), 1); out.push(`<p class="bad">${hw} đã thôi việc.</p>`); continue; }
+        if (hq.pend && hq.pend.no) { hq.mad = (hq.mad || 0) + 1; hq.pend = null; hq.ask = null; h.quit = h.quit || SAVE4.day + 2 + ((Math.random() * 3) | 0); out.push(`<p class="bad">${hw} không được tăng công, nói mấy hôm nữa sẽ nghỉ.</p>`); continue; }
+        const l2 = h.quit ? '' : p4WageEvening(hq, hw, T.take || 0, wage, fair, () => '');
+        if (l2) { out.push(l2); continue; }
+        if (T.take > 0 && Math.random() < c4RunChance(wage, fair, h.ho, undefined, hq.mad, hq) * tired) {
+          const lost = Math.min(Math.round(p4Purse()), Math.round((.1 + .1 * Math.random()) * T.take)); if (lost > 0) { SAVE4.money -= lost; P4.today.spent += lost; out.push(`<p class="bad">Cuối ngày đếm tiền ${p4Esc(R.name)} thấy hụt ${c4Money(lost)}.</p>`); }
+        }
+      }
     }
     const trau = Math.max(0, Math.round((P4.today.take || 0) - shopTake));
     const H = p4Hands();
     // the betel house's own profit: its takings less the betel (3 đồng a quid) and its hands' wages (the house is ours: no rent)
     if (!SAVE4B.trauHistP) { SAVE4B.trauHist = []; SAVE4B.trauHistP = 1; }
-    SAVE4B.trauHist.push(Math.round(trau - 3 * (P4.today.sold || 0) - H.reduce((a, h) => a + (h.wage || 0), 0))); if (SAVE4B.trauHist.length > P4_FAIR_DAYS) SAVE4B.trauHist.shift();
+    if (SAVE4B.trauHistP !== 2) { SAVE4B.trauHist = []; SAVE4B.trauHistP = 2; }   // (2026-11-09: takings now, not profit)
+    SAVE4B.trauHist.push(Math.round(trau)); if (SAVE4B.trauHist.length > P4_FAIR_DAYS) SAVE4B.trauHist.shift();
     for (const h of H.slice()) {
       const q = h.wq || (h.wq = {});
       const gone = () => { H.splice(H.indexOf(h), 1); const s = P4.sellers && P4.sellers.find(m => m.h === h); if (s) { P4.sellers.splice(P4.sellers.indexOf(s), 1); P4.sellers.forEach((m, k) => { m.slot = k; }); } };
@@ -61,15 +78,15 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
     return pay0() + out.join('');
   }; }
 // the shared rule (c4RunChance, js/ch4/doicong-que.js): now and then a worker runs off with the day's takings anyway, rarely when paid fairly
-function p4RandomRun(who, take, wage, fair, ho, onRun, q) {
-  if (!(take > 0) || Math.random() >= c4RunChance(wage, fair, ho, undefined, q && q.mad, q)) return '';
+function p4RandomRun(who, take, wage, fair, ho, onRun, q, mult) {
+  if (!(take > 0) || Math.random() >= c4RunChance(wage, fair, ho, undefined, q && q.mad, q) * (mult || 1)) return '';
   const lost = Math.max(0, Math.min(Math.round(take), Math.round(p4Purse()))); if (lost) { SAVE4.money -= lost; P4.today.spent += lost; }
   return `<p class="bad">${who} ôm ${c4Money(lost)} tiền bán hàng hôm nay rồi biến mất.</p>` + (onRun() || '');
 }
 // the asks waiting for an answer: shops first, then the betel hand
 function p4WageAsks() {
   const out = [], S = p4Shops();
-  for (const key in S) { const R = S[key]; if (R.wq && R.wq.pend && !R.wq.pend.no) out.push({ kind: 'shop', key, R }); }
+  for (const key in S) { const R = S[key]; if (R.wq && R.wq.pend && !R.wq.pend.no) out.push({ kind: 'shop', key, R }); for (const h of (R.hands || [])) if (h.wq && h.wq.pend && !h.wq.pend.no) out.push({ kind: 'help', key, R, h }); }
   for (const h of p4Hands()) if (h.wq && h.wq.pend && !h.wq.pend.no) out.push({ kind: 'hand', h });
   return out;
 }
@@ -77,9 +94,9 @@ let P4_WAGE_CUR = null;
 function p4WageOpen() {
   const a = p4WageAsks()[0]; if (!a) return false;
   P4_WAGE_CUR = a; const m = c4Money, q = a.kind === 'shop' ? a.R.wq : a.h.wq, p = q.pend;
-  const who = a.kind === 'shop' ? `<b>${p4Esc(p4Keeper(a.R))}</b>, ${p4Kind(a.R).keeper} quán <b>${p4Esc(a.R.name)}</b>` : `<b>${p4Esc(p4Cap1(a.h.name))}</b>, người làm hiệu trầu`;
+  const who = a.kind === 'shop' ? `<b>${p4Esc(p4Keeper(a.R))}</b>, ${p4Kind(a.R).keeper} quán <b>${p4Esc(a.R.name)}</b>` : a.kind === 'help' ? `<b>${p4Esc(p4Cap1(a.h.name))}</b>, người phụ quán <b>${p4Esc(a.R.name)}</b>` : `<b>${p4Esc(p4Cap1(a.h.name))}</b>, người làm hiệu trầu`;
   const hist = a.kind === 'shop' ? a.R.hist : SAVE4B.trauHist, avg = hist && hist.length ? Math.round(hist.reduce((x, y) => x + y, 0) / hist.length) : 0;
-  $('#p4wageB').innerHTML = `<p>${who} xin gặp:</p><p class="say">“Làm lụng vất vả mà công ${a.kind === 'shop' ? 'cả quán' : 'tôi'} mới có ${m(p.from)} một ngày. Xin ông bà tăng lên ${m(p.to)}.”</p>`;
+  $('#p4wageB').innerHTML = `<p>${who} xin gặp:</p><p class="say">“Làm lụng vất vả mà công tôi mới có ${m(p.from)} một ngày. Xin ông bà tăng lên ${m(p.to)}.”</p>`;
   $('#p4wageYes').textContent = `Tăng lên ${m(p.to)}`;
   p4Sheets('p4wage'); return true;
 }
@@ -87,7 +104,7 @@ function p4WageAnswer(yes) {
   const a = P4_WAGE_CUR; P4_WAGE_CUR = null; if (!a) { p4Sheets(null); return; }
   const q = a.kind === 'shop' ? a.R.wq : a.h.wq, p = q.pend; if (!p) { p4Sheets(null); return; }
   if (yes) {
-    if (a.kind === 'shop') a.R.raise = Math.max(0, (a.R.raise || 0) + p.to - p4WageOf(a.R)); else a.h.wage = p.to;
+    if (a.kind === 'shop') a.R.raise = Math.max(0, (a.R.raise || 0) + p.to - p4KeeperWage(a.R)); else if (a.kind === 'help') { a.h.raise = Math.max(0, (a.h.raise || 0) + p.to - p4HelpWage(a.R, a.h)); a.h.quit = null; } else a.h.wage = p.to;
     q.pend = null; q.ask = null; q.mad = 0; q.ok = SAVE4.day; toast(`Đã tăng công lên ${c4Money(p.to)} một ngày.`, 2.6);
   } else { p.no = true; toast('Không tăng công. Người làm sầm mặt lại…', 2.6); }
   p4Persist(); AU.tap();

@@ -34,17 +34,31 @@ const P4_KINDS = {
   'CAO LẦU': P4_FOODK([W('caolau', 'Cao lầu', 'bát', 26, 65, 4, 'day'), W('miquang', 'Mì Quảng', 'bát', 24, 60, 3, 'day')], 'an', {}, 'pho'),
   'PHỞ BÒ': P4_FOODK([W('tai', 'Phở tái', 'bát', 26, 65, 4, 'day'), W('chin', 'Phở chín', 'bát', 24, 60, 3, 'day'), W('quay', 'Quẩy', 'cái', 3, 8, 2, 'day')], 'sang', { ret: 1.3, mua: 1.15, gat: .8 }, 'pho'),
   'BÁNH VẠC': P4_FOODK([W('banhvac', 'Bánh vạc', 'đĩa', 16, 40, 4, 'day'), W('chien', 'Hoành thánh chiên', 'đĩa', 18, 45, 2, 'day')], 'chieu', {}, 'banhbao'),
-  'GẠO MUỐI': P4_SHOPK([W('gao', 'Gạo tám', 'thúng', 60, 95, 3), W('nep', 'Gạo nếp', 'thúng', 75, 115, 1.5), W('muoi', 'Muối', 'hũ', 6, 15, 2)], 'sang', { mua: .7 }, 'gao', 30),
-  'THUỐC BẮC': P4_SHOPK([W('cam', 'Thang thuốc cảm', 'thang', 20, 50, 3), W('bo', 'Thuốc bổ', 'thang', 50, 110, 1.5), W('cao', 'Cao hổ cốt', 'lọ', 120, 240, .5)], 'deu', { ret: 1.5, mua: 1.3 }, 'thuoc', 16),
-  'GIẤY BÚT': P4_SHOPK([W('giay', 'Giấy dó', 'tập', 10, 25, 3), W('but', 'Bút lông', 'cây', 25, 60, 2), W('muc', 'Mực tàu', 'thỏi', 30, 70, 1.5)], 'sang', { mua: .8 }, 'giay', 22),
-  'HÀNG XÉN': P4_SHOPK([W('kim', 'Kim chỉ', 'gói', 5, 14, 3), W('guong', 'Gương lược', 'bộ', 25, 55, 2), W('khan', 'Khăn vấn', 'chiếc', 35, 75, 1.5)], 'chieu', {}, 'xen', 28),
-  'TRÀ SEN': P4_SHOPK([W('sen', 'Trà sen', 'gói', 80, 160, 1.5), W('man', 'Trà mạn', 'gói', 30, 65, 3), W('am', 'Ấm chén', 'bộ', 120, 220, .6)], 'sang', { mua: .9 }, 'tra', 18),
-  'TIỆM VẢI': P4_SHOPK([W('lua', 'Lụa tơ tằm', 'tấm', 80, 170, 1.5), W('vai', 'Vải nâu', 'tấm', 30, 65, 3), W('the', 'Vải the', 'tấm', 50, 110, 2)], 'deu', { mua: .8 }, 'vai', 20),
-  'HÀNG GỐM': P4_SHOPK([W('bat', 'Bát đĩa', 'chồng', 20, 45, 3), W('binh', 'Bình hoa', 'chiếc', 45, 100, 1.5), W('am', 'Ấm tích', 'chiếc', 35, 80, 1.5)], 'sang', { mua: .8 }, 'gom', 16),
-  'TIỆM VÀNG': P4_SHOPK([W('nhan', 'Nhẫn bạc', 'chiếc', 40, 90, 3), W('khuyen', 'Khuyên tai', 'đôi', 60, 130, 2), W('vong', 'Vòng vàng', 'chiếc', 200, 380, .6)], 'deu', { mua: .9 }, 'vang', 12),
-  'MAY ÁO DÀI': P4_SHOPK([W('aodai', 'Áo dài may sẵn', 'bộ', 150, 300, 1), W('sua', 'Sửa áo', 'lần', 10, 35, 3), W('khanxep', 'Khăn xếp', 'chiếc', 30, 70, 1.5)], 'deu', { mua: .8 }, 'may', 18),
+  'GẠO MUỐI': P4_SHOPK([W('gao', 'Gạo tám', 'thúng', 68, 95, 3), W('nep', 'Gạo nếp', 'thúng', 83, 115, 1.5), W('muoi', 'Muối', 'hũ', 11, 15, 2)], 'sang', { mua: .7 }, 'gao', 66),
+  'THUỐC BẮC': P4_SHOPK([W('cam', 'Thang thuốc cảm', 'thang', 25, 50, 3), W('bo', 'Thuốc bổ', 'thang', 55, 110, 1.5), W('cao', 'Cao hổ cốt', 'lọ', 120, 240, .5)], 'deu', { ret: 1.5, mua: 1.3 }, 'thuoc', 16),
+  'GIẤY BÚT': P4_SHOPK([W('giay', 'Giấy dó', 'tập', 12, 25, 3), W('but', 'Bút lông', 'cây', 30, 60, 2), W('muc', 'Mực tàu', 'thỏi', 35, 70, 1.5)], 'sang', { mua: .8 }, 'giay', 22),
+  'HÀNG XÉN': P4_SHOPK([W('kim', 'Kim chỉ', 'gói', 10, 14, 3), W('guong', 'Gương lược', 'bộ', 40, 55, 2), W('khan', 'Khăn vấn', 'chiếc', 54, 75, 1.5)], 'chieu', {}, 'xen', 62),
+  'TRÀ SEN': P4_SHOPK([W('sen', 'Trà sen', 'gói', 80, 160, 1.5), W('man', 'Trà mạn', 'gói', 32, 65, 3), W('am', 'Ấm chén', 'bộ', 110, 220, .6)], 'sang', { mua: .9 }, 'tra', 18),
+  'TIỆM VẢI': P4_SHOPK([W('lua', 'Lụa tơ tằm', 'tấm', 85, 170, 1.5), W('vai', 'Vải nâu', 'tấm', 32, 65, 3), W('the', 'Vải the', 'tấm', 55, 110, 2)], 'deu', { mua: .8 }, 'vai', 20),
+  'HÀNG GỐM': P4_SHOPK([W('bat', 'Bát đĩa', 'chồng', 22, 45, 3), W('binh', 'Bình hoa', 'chiếc', 50, 100, 1.5), W('am', 'Ấm tích', 'chiếc', 40, 80, 1.5)], 'sang', { mua: .8 }, 'gom', 16),
+  'TIỆM VÀNG': P4_SHOPK([W('nhan', 'Nhẫn bạc', 'chiếc', 50, 90, 3), W('khuyen', 'Khuyên tai', 'đôi', 72, 130, 2), W('vong', 'Vòng vàng', 'chiếc', 210, 380, .6)], 'deu', { mua: .9 }, 'vang', 12),
+  'MAY ÁO DÀI': P4_SHOPK([W('aodai', 'Áo dài may sẵn', 'bộ', 150, 300, 1), W('sua', 'Sửa áo', 'lần', 18, 35, 3), W('khanxep', 'Khăn xếp', 'chiếc', 35, 70, 1.5)], 'deu', { mua: .8 }, 'may', 18),
 };
 for (const n of P4_LAMP_NAMES) P4_KINDS[n] = P4_LAMPK;
+/* ---------- the economy (owner, 2026-11-09, approved proposal "kinh tế phố huyện"): shares of the takings at the plain prices, as real trades run
+   (goods / labour / rent / small costs → net): eating houses 40/18/15/7 → 20 %, staples 72/8/6/3 → 11 % (selling a lot: twice the buyers),
+   trade shops 50/11/12/4 → 23 %, the goldsmith 55/6/10/5 → 24 %, the lamp shop 40/12/14/5 → 29 %. P4_ECON = [kind, keeper's wage a day,
+   rent a week] for a house in the middle of the street, from the takings the street's customer rule gives (scratch kt/plan.js); the wage
+   is never below 150. Rent and customers follow the place on the street (p4LocK: busier and dearer by the gate). */
+const P4_CAT = { an: { l: .18, o: .07 }, ty: { l: .08, o: .03 }, cd: { l: .11, o: .04 }, xx: { l: .06, o: .05 }, mv: { l: .12, o: .05 } };
+const P4_ECON = { 'BÚN CHẢ': ['an', 1010, 5915], 'BÁNH BAO': ['an', 815, 4760], 'CƠM GÀ': ['an', 1655, 9660], 'HỦ TIẾU': ['an', 2120, 12390], 'CƠM TẤM': ['an', 1305, 7630],
+  'CHÈ': ['an', 775, 4515], 'CAO LẦU': ['an', 2050, 11970], 'PHỞ BÒ': ['an', 1900, 11095], 'BÁNH VẠC': ['an', 1360, 7945], 'GẠO MUỐI': ['ty', 515, 2730], 'THUỐC BẮC': ['cd', 305, 2310],
+  'GIẤY BÚT': ['cd', 205, 1540], 'HÀNG XÉN': ['ty', 455, 2380], 'TRÀ SEN': ['cd', 300, 2310], 'TIỆM VẢI': ['cd', 265, 2030], 'HÀNG GỐM': ['cd', 215, 1645], 'TIỆM VÀNG': ['xx', 150, 1575],
+  'MAY ÁO DÀI': ['cd', 235, 1785], 'ĐÈN LỒNG': ['mv', 150, 1085] };
+for (const n in P4_KINDS) { const K = P4_KINDS[n], e = P4_ECON[n] || P4_ECON['ĐÈN LỒNG']; K.cat = e[0]; K.wage = e[1]; K.rentW = e[2]; }
+const p4R5 = v => Math.max(5, Math.round(v / 5) * 5);
+// the place: 1.15 by the gate end (x 600), .85 at the far end (x 3600)
+const p4LocK = x => c4Clamp(1.15 - .3 * ((x === undefined || x === null ? 2100 : +x) - 600) / 3000, .85, 1.15);
 const p4Kind = R => P4_KINDS[R && R.food] || P4_KINDS['BÚN CHẢ'];
 const p4KindOfName = n => P4_KINDS[n] || null;
 // only one lamp shop for the couple (owner): the name of the one they hold, if any
@@ -54,13 +68,20 @@ const P4_TYPE_WORD = { an: 'Quán ăn', hieu: 'Cửa hiệu', den: 'Hàng đèn'
 const P4_AWN = [['', 'Không'], ['red', 'Đỏ'], ['blue', 'Xanh lam'], ['green', 'Xanh lá'], ['yellow', 'Vàng'], ['stripe', 'Sọc đỏ trắng']];
 const P4_AWN_COL = { red: '#a3332a', blue: '#2f5f8f', green: '#2f6a4c', yellow: '#e0b43a', stripe: '#a3332a' };
 const P4_DECO_PRICE = { awn: 1200, lamp: 600, pot: 300, sk: 400, help: 150 };
-const p4RentOf = R => Math.round(P4_RENT_WEEK * p4Kind(R).rentK), p4TaxOf = R => Math.round(P4_TAX_WEEK * p4Kind(R).rentK), p4BuyOf = R => Math.round(P4_HOUSE_PRICE * Math.max(.5, p4Kind(R).rentK));
-// the landlord follows the shop's profit (owner, 2026-11-08: "chủ nhà thấy cửa hàng lãi nhiều thì tăng tiền thuê tương ứng với tiền lãi"): each evening the
-// shop's profit before rent (takings − goods − wages) is added to R.wk; on the 7th evening the coming week's rent is the greater of the plain rent
-// and P4_RENT_CUT of that week's profit (R.rentNow); a poorer week brings it back down, never below the plain rent. Bought shops pay the fixed tax.
-const P4_RENT_CUT = .5;
-const p4RentNow = R => Math.max(p4RentOf(R), R.rentNow || 0);
-const p4WageOf = R => p4Kind(R).wage + (R.help || 0) * P4_DECO_PRICE.help + (R.raise || 0);   // R.raise: what the keeper won by asking (doicong.js)
+// rent by the place; buying costs 135 days of rent; a bought shop pays a tax of .3 × the rent a week (the old ratio of tax to rent)
+const p4RentOf = R => p4R5(p4Kind(R).rentW * p4LocK(R && R.x)), p4TaxOf = R => p4R5(.3 * p4RentOf(R)), p4BuyOf = R => p4R5(p4RentOf(R) / 7 * 135);
+// the landlord (2026-11-09, replaces "half the week's profit"): every 4 weeks he looks at the books (R.m4 = the 4 weeks' profit before rent): a profit
+// of 3 × the rent or more → +10 %; under 1.5 × the rent twice running → −10 %, never below the plain rent. R.rent = the rent now (0 = the plain rent).
+const p4RentNow = R => R.rent || p4RentOf(R);
+// wages: the keeper (by the kind and the place, + what he won by asking), each named helper half the keeper's plain wage (+ what they won)
+const p4KeeperBase = R => Math.max(150, p4R5(p4Kind(R).wage * p4LocK(R && R.x)));
+const p4KeeperWage = R => p4KeeperBase(R) + (R.raise || 0);
+const p4HelpBase = R => p4R5(p4KeeperBase(R) * .5);
+const p4HelpWage = (R, h) => p4HelpBase(R) + (h.raise || 0);
+const p4ShopHands = R => R.hands || (R.hands = []);
+const p4WageOf = R => p4KeeperWage(R) + p4ShopHands(R).reduce((a, h) => a + p4HelpWage(R, h), 0);
+// how fast the counter serves: the first helper +60 %, the second +30 %; a keeper worn out by long rushes is slower (R.tir, 0…1)
+const p4ServeK = R => (1 + [0, .6, .9][Math.min(2, p4ShopHands(R).length)]) / (1 + .25 * (R.tir || 0));
 // the shop's own data, filled in for a new shop or an old save (eating houses of the one-dish days keep their price as the first ware's)
 // the three lamp shops that became other trades: a shop rented or bought as one turns into the new trade, its lamps paid back at cost
 const P4_LAMP_SWAP = { 'LỒNG ĐÈN PHÚC': 'TIỆM VẢI', 'ĐÈN HOA SEN': 'HÀNG GỐM', 'ĐÈN LỒNG TÀI LỘC': 'TIỆM VÀNG' };
@@ -70,6 +91,9 @@ function p4ShopFix(R) {
   const K = p4Kind(R);
   R.stock = R.stock || {}; if (!R.prices) { R.prices = {}; if (typeof R.price === 'number') R.prices[K.wares[0].id] = R.price; }
   R.menu = R.menu || {}; R.auto = R.auto || {};
+  // 2026-11-09: the old helper count becomes named helpers; the rent and wages are the new ones from now (what was paid stays paid)
+  if (R.help) { const H = p4ShopHands(R); for (let i = 0; i < R.help; i++) H.push({ name: p4KeeperName(), ho: Math.random() }); R.help = 0; }
+  if (R.ev !== 2) { R.ev = 2; R.rent = 0; R.rentNow = 0; R.raise = 0; R.m4 = 0; R.wk = 0; R.weak = 0; if (R.wq) { R.wq.pend = null; R.wq.ask = null; } }
   // no stocking by hand any more (owner, 2026-11-08: "để tự nhập hàng như trước"): the keeper buys what each sale needs, so goods left
   // from the stocking days are paid back at cost once
   if (!R.ns) { let back = 0; for (const w of K.wares) back += Math.max(0, R.stock[w.id] || 0) * w.c; if (back > 0) SAVE4.money += back; R.stock = {}; R.auto = {}; R.ns = 1; }
@@ -88,7 +112,12 @@ const p4LuxR = (r, lux) => {
   const d0 = C4_DEAR0 + .4 * lux, nb = C4_NOBUY + lux;
   return r <= d0 ? 1 + (r - 1) * (C4_DEAR0 - 1) / (d0 - 1) : C4_DEAR0 + (r - d0) * (C4_NOBUY - C4_DEAR0) / (nb - d0);
 };
-const p4WRatio = (R, w) => p4LuxR(c4TownRatio(p4WPrice(R, w), w.p), p4Lux(R));
+const p4WRatio = (R, w) => p4LuxR(c4TownRatio(p4WPrice(R, w), w.p) * c4RefK(p4WPrice(R, w), (R.ref || {})[w.id]), p4Lux(R));
+// how many walk up for a ware / how many each takes: the demand curve, and (trade shops and the goldsmith) a price far under the plain one looks fake
+const p4Fake = (R, w) => { const c = p4Kind(R).cat, r = p4WPrice(R, w) / w.p; return (c === 'cd' || c === 'xx') && r < .7 ? Math.pow(r / .7, 1.6) : 1; };
+const p4WFlow = (R, w) => c4PFlow(p4WRatio(R, w)) * p4Fake(R, w), p4WQty = (R, w) => c4PQty(p4WRatio(R, w)) * p4Fake(R, w);
+// a dear ware on the menu (3 × the cheapest or more) makes the ones between look cheap: they are asked for 10 % more
+const p4Anchor = (R, w, ws) => { const ps = ws.map(x => p4WPrice(R, x)), lo = Math.min(...ps), hi = Math.max(...ps), p = p4WPrice(R, w); return ws.length > 2 && hi >= 3 * lo && p > lo && p < hi ? 1.1 : 1; };
 const p4OnMenu = (R, w) => R.menu[w.id] !== false;
 const p4Has = (R, w) => p4OnMenu(R, w);                                  // every ware on the menu can be sold: the keeper buys it as it goes
 const p4Left = R => p4Kind(R).wares.some(w => p4OnMenu(R, w)) ? 999 : 0;
@@ -97,18 +126,18 @@ const p4IsOpenHour = (R, h) => h >= (R.open ?? 6) && h < (R.close ?? 21);
 function p4ShopRate(R, key, h) {
   const K = p4Kind(R); if (!p4IsOpenHour(R, h)) return 0;
   const ws = K.wares.filter(w => p4Has(R, w)); if (!ws.length) return 0;
-  const tw = K.wares.reduce((s, w) => s + w.w, 0), hw = ws.reduce((s, w) => s + w.w, 0), pk = ws.reduce((s, w) => s + w.w * c4PFlow(p4WRatio(R, w)), 0) / hw;
+  const tw = K.wares.reduce((s, w) => s + w.w, 0), hw = ws.reduce((s, w) => s + w.w, 0), pk = ws.reduce((s, w) => s + w.w * p4WFlow(R, w) * p4Anchor(R, w, ws), 0) / hw;
   const mw = (.45 + .55 * hw / tw) * pk;   // a shorter menu: a few fewer come (as before 2026-11-08); dear prices: fewer, nobody when all are far too dear
   const deco = 1 + (R.awn ? .05 : 0) + (R.lamp ? (K.t === 'den' ? .1 : .04) : 0) + (R.pots || 0) * .02 + (R.sk ? .03 : 0);
-  return K.cust / 900 * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4Harass() * Math.min(1.8, mw) * deco;   // no floor: prices nobody pays bring nobody (owner, 2026-11-08)
+  return K.cust / 900 * p4LocK(key) * c4CatMood(K.cat, true) * c4CalK(K.cat, p4CalTag(R)) * p4QueueK(key) * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4Harass() * Math.min(1.8, mw) * deco;   // no floor: prices nobody pays bring nobody (owner, 2026-11-08)
 }
 // a customer's order: one ware (by weight, cheaper is likelier) and how many
 function p4PickWare(R) {
   const K = p4Kind(R), ws = K.wares.filter(w => p4Has(R, w)); if (!ws.length) return null;
-  let t = 0; const wt = ws.map(w => (t += w.w * c4PFlow(p4WRatio(R, w)))); if (!(t > 0)) return null; const r = Math.random() * t;
+  let t = 0; const wt = ws.map(w => (t += w.w * p4WFlow(R, w) * p4Anchor(R, w, ws))); if (!(t > 0)) return null; const r = Math.random() * t;
   return ws[wt.findIndex(v => v > 0 && v >= r)] || null;
 }
-const p4WantN = (R, w) => Math.max(1, c4RandRound((1 + ((Math.random() * 3) | 0)) * c4PQty(p4WRatio(R, w)) * (w.p > 100 ? .5 : 1)));
+const p4WantN = (R, w) => Math.max(1, c4RandRound((1 + ((Math.random() * 3) | 0)) * p4WQty(R, w) * (w.p > 100 ? .5 : 1)));
 // a sale: the money in, the cost of the goods out (the keeper buys them as they sell, as before the stocking days)
 function p4ShopSell(R, key, w, n, treat) {
   const k = Math.max(0, Math.round(n)); if (k < 1) return { n: 0, got: 0 };
@@ -130,7 +159,8 @@ p4ShopsUpdate = function (dt) {
     const Q = P4.FQ[key] || (P4.FQ[key] = []);
     if (R.shut || !p4IsOpenHour(R, h) || p4Left(R) < 1) { R.acc = 0; for (const w of Q) if (C.w !== w) { w.st = 'leave'; w.dir = 1; w.gone = true; } P4.FQ[key] = Q.filter(w => !w.gone); if (R.shut) { for (const w of Q) { w.st = 'leave'; w.dir = 1; } P4.FQ[key] = []; C.w = null; continue; } }
     else { R.acc = (R.acc || 0) + p4ShopRate(R, key, h) * dm; while (R.acc >= 1) { R.acc -= 1; p4FoodCustomer(+key, key); } }
-    if (!C.w) { const w = (P4.FQ[key] || []).find(q => q.st === 'fq'); if (w) { C.w = w; C.t = K.serve / (1 + .6 * (R.help || 0)); } }
+    R.x = +key; p4TireTick(R, dt, !!C.w);
+    if (!C.w) { const w = (P4.FQ[key] || []).find(q => q.st === 'fq'); if (w) { C.w = w; C.t = K.serve / p4ServeK(R); } }
     else if ((C.t -= dt) <= 0) {
       const w = C.w, ware = K.wares.find(x => x.id === w.ware) || p4PickWare(R), r = ware ? p4ShopSell(R, key, ware, w.n, w.treat) : { n: 0, got: 0 };
       if (r.n > 0) { p4Served(w, key); if (Math.abs(+key - P4.camX - p4View().vw / 2) < p4View().vw) { AU.pluck(84 + (r.got % 5)); P4.fx.push({ x: +key, y: p4Y(.12) - 120, s: '+' + r.got, t: 0 }); if (Math.random() < .3) p4Say(C, p4Pick(K.t === 'an' ? ['Mời bác ngồi!', 'Nóng hổi đây!', 'Ăn ngon lại ghé nhé!'] : K.t === 'den' ? ['Đèn đẹp lắm bác ạ!', 'Thắp lên là sáng cả nhà!', 'Mua đôi cho đẹp!'] : ['Hàng tốt đây ạ!', 'Cảm ơn bác!', 'Lần sau lại ghé nhé!'])); } }
@@ -141,7 +171,7 @@ p4ShopsUpdate = function (dt) {
     QQ.forEach((w, i) => {
       const x = +key, tx = x + 36 + i * 30, tz = .3 + i * .03, dx = tx - w.x, dz = (tz - w.z) * 300, d = Math.hypot(dx, dz);
       w.moving = d > 3; if (w.moving) { const st = Math.min(d, 70 * dt); w.x += dx / d * st; w.z += dz / d * st / 300; w.ph += dt * 7; w.face = dx > 0 ? 1 : -1; } else { if (w.st !== 'fq' && w.ware) { const ww = K.wares.find(q => q.id === w.ware); if (ww && !w.say) p4Say(w, `Cho ${w.n} ${ww.u} ${ww.n.toLowerCase()}!`); } w.st = 'fq'; w.face = -1; }
-      w.wait += dt; if (w.wait > 35 && C.w !== w) { w.st = 'leave'; w.dir = 1; w.gone = true; }
+      w.wait += dt; if (w.wait > 35 && C.w !== w) { w.st = 'leave'; w.dir = 1; w.gone = true; p4Walkout(w); }
     });
     P4.FQ[key] = QQ.filter(w => !w.gone);
   }
@@ -195,15 +225,22 @@ function p4ShopBg(R, key, from, to, k) {
 p4ShopsEvening = function () {
   const S = p4Shops(), out = [];
   for (const key in S) {
-    const R = p4ShopFix(S[key]), K = p4Kind(R), T = P4.shopDay[key] || { n: 0, take: 0, cost: 0 }, wage = p4WageOf(R);
-    SAVE4.money -= wage; P4.today.spent += wage; R.wk = (R.wk || 0) + Math.round(T.take - T.cost - wage);
-    const waste = 0;
-    let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}, vốn hàng đã bán ${c4Money(T.cost)}, công ${K.keeper} ${c4Money(wage)}` + (waste ? `, <span class="bad">bỏ đi ${c4Money(waste)} đồ không để qua đêm</span>` : '');
+    const R = p4ShopFix(S[key]), K = p4Kind(R), T = P4.shopDay[key] || { n: 0, take: 0, cost: 0 }, wage = p4WageOf(R); R.x = +key;
+    // the small costs (charcoal, lamp oil, water, wrapping), and what goes wrong now and then (p4Mishaps: food thrown away, breakage, theft, repairs)
+    const oh = Math.round((P4_CAT[K.cat] || P4_CAT.cd).o * T.take), mis = p4Mishaps(R, key, T), extra = oh + mis.cost;
+    SAVE4.money -= wage + extra; P4.today.spent += wage + extra; R.wk = (R.wk || 0) + Math.round(T.take - T.cost - wage - extra);
+    (R.tk = R.tk || []).push(Math.round(T.take)); if (R.tk.length > 7) R.tk.shift();                       // the takings of the last 7 evenings (fair pay, doicong.js)
+    (R.nh = R.nh || []).push(T.n); if (R.nh.length > 7) R.nh.shift();
+    p4RefDrift(R); p4TireEvening(R);
+    let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}, vốn hàng đã bán ${c4Money(T.cost)}, công ${c4Money(wage)}, ${K.t === 'an' ? 'than củi, nước' : 'dầu đèn, giấy gói'} ${c4Money(oh)}` + mis.text;
     if ((SAVE4B.day - R.since + 1) % 7 === 0) {
       let note = '';
-      if (R.own !== 'buy') { const was = p4RentNow(R), want = Math.round(P4_RENT_CUT * Math.max(0, R.wk || 0)); R.rentNow = want > p4RentOf(R) ? want : 0; const now = p4RentNow(R);
-        if (now > was) note = ` · <span class="bad">chủ nhà thấy tuần qua quán lãi ${c4Money(R.wk)}, tăng tiền thuê lên ${c4Money(now)} một tuần</span>`;
-        else if (now < was) note = ` · chủ nhà hạ tiền thuê xuống ${c4Money(now)} một tuần`; }
+      R.m4 = (R.m4 || 0) + (R.wk || 0); R.wkN = (R.wkN || 0) + 1;
+      if (R.own !== 'buy' && R.wkN >= 4) { const was = p4RentNow(R), avg = R.m4 / 4;
+        if (avg >= 3 * was) { R.rent = p4R5(was * 1.1); R.weak = 0; note = ` · <span class="bad">chủ nhà xem sổ thấy quán ăn nên làm ra, tăng tiền thuê lên ${c4Money(R.rent)} một tuần</span>`; }
+        else if (avg < 1.5 * was) { R.weak = (R.weak || 0) + 1; if (R.weak >= 2 && was > p4RentOf(R)) { R.rent = Math.max(p4RentOf(R), p4R5(was * .9)); R.weak = 0; note = ` · chủ nhà thấy quán khó khăn, hạ tiền thuê xuống ${c4Money(R.rent)} một tuần`; } }
+        else R.weak = 0;
+        R.m4 = 0; R.wkN = 0; }
       R.wk = 0;
       const due = R.own === 'buy' ? p4TaxOf(R) : p4RentNow(R), what = R.own === 'buy' ? 'thuế nhà' : 'tiền thuê tuần tới';
       if (SAVE4.money >= due) { SAVE4.money -= due; P4.today.spent += due; line += `, <b>${what} ${c4Money(due)}</b>` + note; }
@@ -229,8 +266,9 @@ p4ShopSheet = function () {
   let h = '';
   if (!R0) {
     const K = p4KindOfName(name) || p4Kind(null), fake = { food: name };
-    h = `<h3>${p4Esc(name)}</h3><p><b>${P4_TYPE_WORD[K.t]}</b> cho thuê. Có ${K.keeper} đứng quán (công ${m(K.wage)} một ngày). Bán:</p><ul class="p4wares">${K.wares.map(w => `<li>${w.n}: nhập ${m(w.c)}, bán chừng ${m(w.p)} một ${w.u}${w.keep === 'day' ? ' (không để qua đêm)' : ''}</li>`).join('')}</ul>`
-      + `<p>Đông khách ${{ an: 'giờ ăn sáng, trưa, tối', sang: 'buổi sáng', chieu: 'buổi chiều', dem: 'buổi tối', deu: 'cả ngày' }[K.hours]}. Một ngày chừng ${K.cust} khách.</p>`
+    fake.x = +key;
+    h = `<h3>${p4Esc(name)}</h3><p><b>${P4_TYPE_WORD[K.t]}</b> cho thuê. Có ${K.keeper} đứng quán (công ${m(p4KeeperBase(fake))} một ngày). Bán:</p><ul class="p4wares">${K.wares.map(w => `<li>${w.n}: nhập ${m(w.c)}, bán chừng ${m(w.p)} một ${w.u}${w.keep === 'day' ? ' (không để qua đêm)' : ''}</li>`).join('')}</ul>`
+      + `<p>Đông khách ${{ an: 'giờ ăn sáng, trưa, tối', sang: 'buổi sáng', chieu: 'buổi chiều', dem: 'buổi tối', deu: 'cả ngày' }[K.hours]}. Một ngày chừng ${Math.round(K.cust * p4LocK(key))} khách.</p>`
       + `<p>Tiền thuê <b>${m(p4RentOf(fake))}</b> một tuần, trả trước tuần đầu. Hoặc mua đứt <b>${m(p4BuyOf(fake))}</b>, rồi mỗi tuần đóng thuế nhà ${m(p4TaxOf(fake))}.</p><p>Trong túi: ${m(Math.round(purse))}</p>`
       + (K.t === 'den' && p4LampHeld() ? `<p class="bad">Nhà mình đã có hàng đèn ${p4Esc(p4LampHeld())} rồi. Mỗi nhà chỉ giữ một hàng đèn.</p>`
         : `<div class="row"><button class="btn" data-rent="1"${purse < p4RentOf(fake) ? ' disabled' : ''}>Thuê · ${m(p4RentOf(fake))}/tuần</button><button class="btn" data-buyshop="1"${purse < p4BuyOf(fake) ? ' disabled' : ''}>Mua đứt · ${m(p4BuyOf(fake))}</button></div>`);
@@ -251,9 +289,12 @@ p4ShopSheet = function () {
     h += `<div class="row"><button class="btn tem" data-game="1">${P4_GAME_WORD[K.game] || 'Tự tay bán'}</button></div>` + (typeof p4MiniLeft === 'function' ? `<p class="sm">Mỗi ngày tự tay bán được ${P4_MINI_DAY} ca (chung các quán), hôm nay còn ${Math.max(0, p4MiniLeft())} ca.</p>` : '')
       + `<h4>Giờ mở cửa</h4><p>Từ <b>${R.open}:00</b> đến <b>${R.close}:00</b></p><div class="row"><button class="btn alt" data-hr="open" data-d="-1"${R.open <= 5 ? ' disabled' : ''}>Mở sớm hơn</button><button class="btn alt" data-hr="open" data-d="1"${R.open >= R.close - 3 ? ' disabled' : ''}>Mở muộn hơn</button></div>`
       + `<div class="row"><button class="btn alt" data-hr="close" data-d="-1"${R.close <= R.open + 3 ? ' disabled' : ''}>Đóng sớm hơn</button><button class="btn alt" data-hr="close" data-d="1"${R.close >= 23 ? ' disabled' : ''}>Đóng muộn hơn</button></div>`
-      + `<h4>Người phụ</h4><p>${p4Cap1(K.keeper)} và <b>${R.help || 0}</b> người phụ: bán nhanh hơn, mỗi người thêm ${m(P4_DECO_PRICE.help)} công một ngày. Công cả quán: ${m(p4WageOf(R))} một ngày.</p><div class="row"><button class="btn alt" data-help="-1"${!(R.help > 0) ? ' disabled' : ''}>Bớt một người</button><button class="btn alt" data-help="1"${(R.help || 0) >= 2 ? ' disabled' : ''}>Thêm một người</button></div>`
+      + `<h4>Người làm</h4><p>${p4Cap1(K.keeper)} ${p4Esc(p4Keeper(R).replace(/^./, c => c.toLowerCase()))}: công ${m(p4KeeperWage(R))} một ngày.</p>`
+      + p4ShopHands(R).map((x, i) => `<div class="row"><span class="p4hand">Người phụ ${p4Esc(x.name.replace(/^./, c => c.toLowerCase()))}: công ${m(p4HelpWage(R, x))} một ngày${x.quit ? ' · <span class="bad">đã xin nghỉ</span>' : ''}</span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div>`).join('')
+      + (p4ShopHands(R).length < 2 ? `<div class="row"><button class="btn alt" data-hire="1">Thuê một người phụ · ${m(p4HelpBase(R))} một ngày</button></div>` : '')
+      + `<p class="sm">Thêm người phụ thì bán nhanh hơn. Công cả quán: ${m(p4WageOf(R))} một ngày.</p>`
       + `<div class="row"><button class="btn alt" data-shut="1">${R.shut ? 'Mở cửa lại' : 'Tạm đóng cửa quán'}</button></div>`
-      + `<p>${R.own === 'buy' ? 'Thuế nhà ' + m(p4TaxOf(R)) : 'Tiền thuê ' + m(p4RentNow(R))} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).${R.own === 'buy' ? '' : ` Chủ nhà lấy ít nhất ${m(p4RentOf(R))}, nhưng nếu quán lãi nhiều thì đòi nửa tiền lãi của tuần (tuần này đến tối qua lãi ${m(Math.max(0, R.wk || 0))}).`}</p>`
+      + `<p>${R.own === 'buy' ? 'Thuế nhà ' + m(p4TaxOf(R)) : 'Tiền thuê ' + m(p4RentNow(R))} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).${R.own === 'buy' ? '' : ' Chủ nhà thỉnh thoảng xem sổ rồi tính lại tiền thuê.'}</p>`
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < p4BuyOf(R) ? ' disabled' : ''}>Mua đứt · ${m(p4BuyOf(R))}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
   } else {
     const own = R.owned || (R.owned = {});
@@ -283,7 +324,8 @@ p4ShopClick = function (b) {
   else if (b.dataset.au) { R.auto[b.dataset.au] = Math.max(0, Math.min(120, (R.auto[b.dataset.au] || 0) + d)); }
   else if (b.dataset.menu) { const id = b.dataset.menu; R.menu[id] = !p4OnMenu(R, { id }); }
   else if (b.dataset.hr) { const k = b.dataset.hr; R[k] = Math.max(5, Math.min(23, R[k] + d)); }
-  else if (b.dataset.help) { R.help = Math.max(0, Math.min(2, (R.help || 0) + +b.dataset.help)); }
+  else if (b.dataset.hire) { const H = p4ShopHands(R); if (H.length < 2) { H.push({ name: p4KeeperName(), ho: Math.random() }); toast(`${p4Cap1(H[H.length - 1].name)} đến phụ quán.`, 2.2); } }
+  else if (b.dataset.fire) { const H = p4ShopHands(R), x = H[+b.dataset.fire]; if (x) { H.splice(H.indexOf(x), 1); toast(`Đã cho ${x.name} nghỉ.`, 2.2); } }
   else if (b.dataset.sign && !R.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); R.sign = true; toast('Biển hiệu mới sơn son thếp vàng!', 2.4); }
   else if (b.dataset.shut) { R.shut = !R.shut; if (R.shut) { for (const w of P4.FQ[sel.key] || []) { w.st = 'leave'; w.dir = 1; } P4.FQ[sel.key] = []; if (R.cook) R.cook.w = null; } }
   else if (b.dataset.giveup && R.own === 'rent') { delete S[sel.key]; delete P4.FQ[sel.key]; toast(`Đã trả lại ${sel.name}.`, 2.4); p4Persist(); p4Hud(); AU.tap(); p4Sheets(null); return; }

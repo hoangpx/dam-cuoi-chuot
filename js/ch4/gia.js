@@ -28,7 +28,7 @@ const c4DemandD = r => {
 const c4PFlow = r => Math.pow(c4DemandD(r), .55), c4PQty = r => Math.pow(c4DemandD(r), .45);
 const c4GiaMood = () => ((SAVE4.plan && SAVE4.plan.gia) || 1) * (typeof c4Slump === 'function' && c4Slump() && !c4Slump().g ? .92 : 1);   // (a village-wide lean spell, which is announced, also tightens purses)
 const c4RatioOf = (price, base) => price / (base * c4GiaMood());
-const c4PRatio = g => c4RatioOf(c4Price(g), c4PriceBase(g));
+const c4PRatio = g => c4RatioOf(c4Price(g), c4PriceBase(g)) * (typeof c4RefK === 'function' ? c4RefK(c4Price(g), (SAVE4.ref || {})[g]) : 1);   // a price above the one they are used to feels dearer (tamly.js)
 const c4RandRound = q => { const f = Math.floor(q); return f + (R() < q - f ? 1 : 0); };
 const c4PriceN = (n, g) => g ? Math.max(1, c4RandRound(n * c4PQty(c4PRatio(g)))) : n;
 // the mood of a day (plan.gia): drifts from the day before, now and then a shock
@@ -75,7 +75,8 @@ function c4PriceServed(w) {
 // (owner, 2026-11-09: "phố huyện không bán được gì, khách khó tính quá": on a hard day the village mood .72 made a plain price 1.39 × fair)
 const c4TownMood = () => 1 + (c4GiaMood() - 1) * .4;
 const P4_BETEL_BASE = 8, c4TownRatio = (price, base) => price / (base * c4TownMood());
-const p4BetelFlow = () => c4PFlow(c4TownRatio(SAVE4B.price, P4_BETEL_BASE)), p4BetelQty = () => c4PQty(c4TownRatio(SAVE4B.price, P4_BETEL_BASE));
+const p4BetelR = () => c4TownRatio(SAVE4B.price, P4_BETEL_BASE) * (typeof c4RefK === 'function' ? c4RefK(SAVE4B.price, SAVE4B.ref) : 1);
+const p4BetelFlow = () => c4PFlow(p4BetelR()), p4BetelQty = () => c4PQty(p4BetelR());
 const p4FoodPrice = R0 => (R0 && R0.price) || P4_FOOD.price;
 const p4FoodFlow = R0 => c4PFlow(c4TownRatio(p4FoodPrice(R0), P4_FOOD.price)), p4FoodQty = R0 => c4PQty(c4TownRatio(p4FoodPrice(R0), P4_FOOD.price));
 // the eating house's price on its sheet (a step of 5 đồng, from half to three times the plain price)
