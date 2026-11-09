@@ -133,7 +133,9 @@ function p4ShopIcon(g, k, x, y, r) {
 const P4_TEM_SAVE = { ing: null, rec: null };
 const p4ShopRecipes = S => S.K.wares.filter(w => p4Has(S.R, w) && S.G.r[w.id]).map(w => ({ id: w.id, name: w.n, need: S.G.r[w.id], fold: false, price: p4WPrice(S.R, w), w: w.w * c4PFlow(p4WRatio(S.R, w)), ware: w })).filter(r => r.w > 0);   // dear wares are asked for less (as on the street)
 // how willing the shift's customers are: the menu's flow at its prices (owner, 2026-11-08: at triple price the hand-selling game paid ~25 quan a shift)
-const p4MiniFlow = S => { const ws = S.K.wares.filter(w => p4Has(S.R, w)), t = ws.reduce((a, w) => a + w.w, 0); return (t ? ws.reduce((a, w) => a + w.w * c4PFlow(p4WRatio(S.R, w)), 0) / t : 1) * Math.min(1, S.K.cust / 46); };   // a shop few people visit (the goldsmith) is quiet in the game too
+const p4MiniFlow = S => { const ws = S.K.wares.filter(w => p4Has(S.R, w)), t = ws.reduce((a, w) => a + w.w, 0); return (t ? ws.reduce((a, w) => a + w.w * c4PFlow(p4WRatio(S.R, w)), 0) / t : 1) * 1.2 * Math.min(1, .3 + .7 * S.K.cust / 46); };   // a shop few people visit (the goldsmith) is quieter in the game too
+// standing at the counter oneself draws a few more (owner, 2026-11-09: "đứng ở quầy bán như kiểu têm trầu thì vẫn đông hơn một chút"): ×1.2, and a quiet shop keeps
+// at least .3 of the flow (gold .58 of a busy shop, was .26)
 // shifts a day, all the town's shops together (owner: the street waits during a shift, so without a limit a day had no end of them)
 const P4_MINI_DAY = 3;
 const p4MiniLeft = () => { const M = SAVE4B.mini; return P4_MINI_DAY - (M && M.day === SAVE4.day ? M.n : 0); };
