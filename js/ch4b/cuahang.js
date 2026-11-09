@@ -90,13 +90,13 @@ function p4ShopRate(R, key, h) {
   const ws = K.wares.filter(w => p4Has(R, w)); if (!ws.length) return 0;
   const tw = K.wares.reduce((s, w) => s + w.w, 0), mw = ws.reduce((s, w) => s + w.w * c4PFlow(p4WRatio(R, w)), 0) / tw;   // a shorter menu or dear prices: fewer come
   const deco = 1 + (R.awn ? .05 : 0) + (R.lamp ? (K.t === 'den' ? .1 : .04) : 0) + (R.pots || 0) * .02 + (R.sk ? .03 : 0);
-  return K.cust / 900 * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4Harass() * Math.min(1.3, .45 + .55 * mw) * deco;
+  return K.cust / 900 * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4Harass() * Math.min(1.8, mw) * deco;   // no floor: prices nobody pays bring nobody (owner, 2026-11-08)
 }
 // a customer's order: one ware (by weight, cheaper is likelier) and how many
 function p4PickWare(R) {
   const K = p4Kind(R), ws = K.wares.filter(w => p4Has(R, w)); if (!ws.length) return null;
-  let t = 0; const wt = ws.map(w => (t += w.w * c4PFlow(p4WRatio(R, w)))); const r = Math.random() * t;
-  return ws[wt.findIndex(v => v >= r)] || ws[0];
+  let t = 0; const wt = ws.map(w => (t += w.w * c4PFlow(p4WRatio(R, w)))); if (!(t > 0)) return null; const r = Math.random() * t;
+  return ws[wt.findIndex(v => v > 0 && v >= r)] || null;
 }
 const p4WantN = (R, w) => Math.max(1, c4RandRound((1 + ((Math.random() * 3) | 0)) * c4PQty(p4WRatio(R, w)) * (w.p > 100 ? .5 : 1)));
 // a sale: the money in, the cost of the goods out (the keeper buys them as they sell, as before the stocking days)

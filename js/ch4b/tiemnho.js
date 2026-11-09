@@ -131,7 +131,7 @@ function p4ShopIcon(g, k, x, y, r) {
 
 /* ---------- running têm trầu's engine for a shop ---------- */
 const P4_TEM_SAVE = { ing: null, rec: null };
-const p4ShopRecipes = S => S.K.wares.filter(w => p4Has(S.R, w) && S.G.r[w.id]).map(w => ({ id: w.id, name: w.n, need: S.G.r[w.id], fold: false, price: p4WPrice(S.R, w), w: w.w * c4PFlow(p4WRatio(S.R, w)), ware: w }));   // dear wares are asked for less (as on the street)
+const p4ShopRecipes = S => S.K.wares.filter(w => p4Has(S.R, w) && S.G.r[w.id]).map(w => ({ id: w.id, name: w.n, need: S.G.r[w.id], fold: false, price: p4WPrice(S.R, w), w: w.w * c4PFlow(p4WRatio(S.R, w)), ware: w })).filter(r => r.w > 0);   // dear wares are asked for less (as on the street)
 // how willing the shift's customers are: the menu's flow at its prices (owner, 2026-11-08: at triple price the hand-selling game paid ~25 quan a shift)
 const p4MiniFlow = S => { const ws = S.K.wares.filter(w => p4Has(S.R, w)), t = ws.reduce((a, w) => a + w.w, 0); return (t ? ws.reduce((a, w) => a + w.w * c4PFlow(p4WRatio(S.R, w)), 0) / t : 1) * Math.min(1, S.K.cust / 46); };   // a shop few people visit (the goldsmith) is quiet in the game too
 // shifts a day, all the town's shops together (owner: the street waits during a shift, so without a limit a day had no end of them)
@@ -142,7 +142,7 @@ function p4MiniStart(key) {
   const K = p4Kind(R), G = P4_MINI[K.game];
   if (!G) { toast('Quán này chưa có trò tự tay bán.', 2.4); return; }
   if (R.shut) { toast('Quán đang đóng cửa: mở cửa rồi hẵng bán.', 2.6); return; }
-  const S = { key, R, K, G }; if (!p4ShopRecipes(S).length) { toast('Quán chưa bày món nào để bán.', 2.4); return; }
+  const S = { key, R, K, G }; if (!p4ShopRecipes(S).length) { toast(K.wares.some(w => p4Has(R, w)) ? 'Giá cao quá, chẳng ai hỏi mua. Hạ giá rồi hẵng bán.' : 'Quán chưa bày món nào để bán.', 2.8); return; }
   if (p4MiniLeft() <= 0) { toast(`Hôm nay đã tự tay bán đủ ${P4_MINI_DAY} ca rồi, mai lại bán tiếp.`, 3); return; }
   const M = SAVE4B.mini && SAVE4B.mini.day === SAVE4.day ? SAVE4B.mini : (SAVE4B.mini = { day: SAVE4.day, n: 0 }); M.n++; p4Persist();
   if (!P4_TEM_SAVE.ing) { P4_TEM_SAVE.ing = P4_TEM_ING.slice(); P4_TEM_SAVE.rec = P4_TEM_RECIPES.slice(); }
@@ -172,7 +172,7 @@ function p4MiniRestore() {
     P4T.t += dt;
     if (P4T.t >= P4_TEM_SHIFT && !P4T.cust.some(c => !c.leaving)) { p4TemStop(); return; }
     P4_TEM_RECIPES.splice(0, P4_TEM_RECIPES.length, ...p4ShopRecipes(S));
-    if (!P4_TEM_RECIPES.length && !P4T.cust.some(c => !c.leaving)) { P4T.early = true; p4TemStop(); return; }
+    if (!P4_TEM_RECIPES.length && !P4T.cust.some(c => !c.leaving)) { P4T.early = S.K.wares.some(w => p4Has(S.R, w)) ? 'dear' : true; p4TemStop(); return; }
     if (P4T.t < P4_TEM_SHIFT - 6 && (P4T.next -= dt) <= 0 && P4_TEM_RECIPES.length) {
       const free = p4TemLay().slots.map((_, i) => i).filter(i => !P4T.cust.some(c => c.slot === i && !c.gone));
       if (free.length) {
@@ -246,7 +246,7 @@ function p4MiniRestore() {
     const S = P4T.shop; if (!S) return stop0();
     P4T.shop = null; P4T.on = false; $('#p4temHud').hidden = true; $('#p4hud').hidden = false; p4MiniRestore(); p4Persist(); p4Hud();
     $('#p4temEnd h3').textContent = 'Hết ca · ' + S.R.name;
-    $('#p4temEndB').innerHTML = (P4T.early ? '<p class="bad"><b>Hết hàng, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> món · thu <b>${c4Money(P4T.earned)}</b></p><p>Tiền vốn hàng: ${c4Money(P4T.cost || 0)} · <b>lãi vào túi ${c4Money(P4T.earned - (P4T.cost || 0))}</b></p>`
+    $('#p4temEndB').innerHTML = (P4T.early === 'dear' ? '<p class="bad"><b>Giá cao quá, chẳng ai hỏi mua. Đóng ca sớm.</b></p>' : P4T.early ? '<p class="bad"><b>Hết hàng, đóng ca sớm.</b></p>' : '') + `<p>Đưa đúng <b>${P4T.served}</b> món · thu <b>${c4Money(P4T.earned)}</b></p><p>Tiền vốn hàng: ${c4Money(P4T.cost || 0)} · <b>lãi vào túi ${c4Money(P4T.earned - (P4T.cost || 0))}</b></p>`
       + (P4T.wrong ? `<p>Đưa nhầm ${P4T.wrong} lần</p>` : '') + (P4T.missed ? `<p class="bad">${P4T.missed} khách chờ lâu bỏ đi</p>` : '');
     $('#p4temAgain').hidden = true;
     const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Bán tiếp';
