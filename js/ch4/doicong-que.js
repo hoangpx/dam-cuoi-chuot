@@ -10,9 +10,12 @@ const C4_FAIR = .1, C4_FAIR_DAYS = 7;
 // on bad terms with the couple (quan hệ ≤ 20) twice as likely.
 // a refusal does not make them leave (owner, 2026-11-08: "không tăng thì vẫn làm chứ không bỏ trốn luôn, chỉ là tỷ lệ tăng lên thôi"): each refused ask since they
 // were last paid fairly (wq.mad) adds the chance once more; it is cleared when the pay is fair again
+// (owner, 2026-11-08: "ai đòi lương đều tăng mà người làm vẫn ôm tiền bỏ trốn nhiều"): a raise is at most a tenth, so a hand whose every ask is granted
+// is still under the fair pay for many days and used to run off often meanwhile. Being under the fair pay now counts only after a refusal (mad);
+// a hand whose asks are all granted keeps the small everyday chance (~0.2 %).
 function c4RunChance(wage, fair, ho, rel, mad) {
-  const under = fair > 0 ? Math.max(0, 1 - wage / fair) : 0, h = ho === undefined ? .5 : ho;
-  return Math.min(.35, (.004 + .3 * under) * (1.5 - h) * (rel !== undefined && rel <= 20 ? 2 : 1) * (1 + (mad || 0)));
+  const under = fair > 0 ? Math.max(0, 1 - wage / fair) : 0, h = ho === undefined ? .5 : ho, m = mad || 0;
+  return Math.min(.35, (.002 + (m ? .15 * under * m : 0)) * (1.5 - h) * (rel !== undefined && rel <= 20 ? 2 : 1));
 }
 function c4HandFair(h) {
   const H = h.hist; if (!H || H.length < 3) return 0;
