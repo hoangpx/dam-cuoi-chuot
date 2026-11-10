@@ -396,7 +396,12 @@ function c11TalkTo(v) {
   const p = v.p, s = c11PP(p.id), day = SAVE11.day, tool = c11HandTool(), it = c11HandItem();
   v.path = v.leaving ? v.path : null;
   if (c11QuestTalk(v)) return;                                       // a job to hand in, or a request (viec.js)
-  if (it && (tool === 'item' || tool === 'seed')) { c11Gift(v, it); return; }
+  if (it && (tool === 'item' || tool === 'seed')) {
+    const w = c11NeededBy(it.id, p.id);                                // a job's thing handed to the wrong person is not taken as a gift (a player lost them that way)
+    if (w) { c11Say(v, p.role === 'c' ? `Cái này chú định mang cho ${w.name} mà, cháu không lấy đâu.` : `Cái này anh định mang cho ${w.name} mà. Tôi không nhận đâu, kẻo lỡ việc của anh.`); return; }
+    c11Gift(v, it); return;
+  }
+  if (c11GiftBack(v)) return;
   let text, gain = 0;
   if (!s.met) { s.met = 1; s.td = day; gain = 20; text = c11Intro(p); c11Msg(`Làm quen với ${p.name}`, '#2f6a4c'); }
   else {
@@ -408,6 +413,24 @@ function c11TalkTo(v) {
     s.f += gain; c11Say(v, text); persist11(); return;
   }
   s.f += gain; c11Pop(Math.floor(v.x), Math.floor(v.y) - 2, '♥ +' + gain, '#c8402f'); c11Say(v, text); persist11();
+}
+/* who a held thing is meant for: a running job still needs it (bring: all of the count, carry: the thing itself) and giving one away would leave too few */
+function c11NeededBy(id, pid) {
+  let need = 0, who = null;
+  for (const q of c11Q().act) for (let i = q.si; i < q.steps.length; i++) { const st = q.steps[i]; if ((st.t !== 'bring' && st.t !== 'carry') || st.item !== id) continue; need += st.t === 'bring' ? st.n : 1; const w = c11Who(st.who); if (w !== pid && !who) who = c11P(w); }
+  return who && c11Count(id) - 1 < need ? who : null;
+}
+/* a gift in return (a player: "nhận quà của người khác quài mà không tặng lại cũng ngại"): after two welcome gifts someone at 3 hearts or more
+   hands back a small dish the next time they are greeted on another day; s.gg counts the welcome gifts since their last one */
+const C11_BACK = ['xoi_do', 'chao_hanh', 'com', 'chao'];
+function c11GiftBack(v) {
+  const p = v.p, s = c11PP(p.id), day = SAVE11.day;
+  if (!s.met || (s.gg || 0) < 2 || s.gd === day || c11Hearts(p.id) < 3) return false;
+  const pool = C11_BACK.filter(id => C11_ITEMS[id]), id = pool[(day + p.name.length) % pool.length], nm = C11_ITEMS[id].name.toLowerCase();
+  s.gg = 0; if (s.td !== day) { s.td = day; s.f += 20; c11Pop(Math.floor(v.x), Math.floor(v.y) - 2, '♥ +20', '#c8402f'); }
+  if (c11Add(id, 1)) { c11Put(SAVE11.chest, id, 1); c11Msg('Túi đầy, quà được cất vào rương ở nhà', '#a3332a'); } else c11Msg(`${p.name} tặng lại ${nm}`, '#2f6a4c');
+  c11Sfx.pluck && c11Sfx.pluck();
+  c11Say(v, p.role === 'c' ? `Chú cho cháu nhiều quà rồi. Mẹ cháu bảo mang ${nm} biếu chú ạ.` : `Anh cho tôi mãi, tôi ngại quá. Nhà có chút ${nm}, anh cầm lấy cho tôi vui.`); persist11(); return true;
 }
 function c11Taste(p, id) {
   const I = C11_ITEMS[id];
@@ -425,7 +448,7 @@ function c11Gift(v, it) {
   if (s.gw === wk && s.gn >= 2) { c11Say(v, 'Tuần này anh cho tôi hai lần rồi, để tuần sau nhé.'); return; }
   const r = c11Taste(p, it.id), pts = C11_GIFT_PTS[r] + (s.td !== day ? 20 : 0);
   c11Take(it.id, 1); s.gd = day; s.td = day; if (s.gw !== wk) { s.gw = wk; s.gn = 0; } s.gn++; s.met = 1; s.kn[it.id] = r;
-  s.f = Math.max(0, Math.min(2500, s.f + pts)); c11Sfx.pluck && c11Sfx.pluck();
+  s.f = Math.max(0, Math.min(2500, s.f + pts)); c11Sfx.pluck && c11Sfx.pluck(); if (pts > 0 && (r === 'love' || r === 'like' || r === 'neu')) s.gg = (s.gg || 0) + 1;
   c11Pop(Math.floor(v.x), Math.floor(v.y) - 2, (pts >= 0 ? '♥ +' : '♥ ') + pts, pts >= 0 ? '#c8402f' : '#5b2f1f');
   const L = C11_GIFT_SAY[r]; c11Say(v, L[day % L.length].replace('{i}', I.name.toLowerCase())); persist11();
 }

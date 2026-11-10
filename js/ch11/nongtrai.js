@@ -573,6 +573,14 @@ const c11Spr = (g, p, x, y, k) => g.drawImage(p.c, x + p.x0 * k, y + p.y0 * k, p
 const c11Wind = (x, y) => Math.sin(C11.t * 1.4 - x * .45 + y * .15) * .55 + Math.sin(C11.t * .45 - x * .12) * .35 + Math.sin(C11.t * 3.7 + x * .8 + y * .6) * .1;
 /* grass, flowers, crops: shear about the foot, a > 0 leans to the right */
 function c11Lean(g, p, x, y, k, a) { g.save(); g.translate(x, y); g.transform(1, 0, -a, 1, 0, 0); g.drawImage(p.c, p.x0 * k, p.y0 * k, p.w * k, p.h * k); g.restore(); }
+/* a crop's picture gone yellow-brown for a wilted plant, made once per crop and stage */
+const C11_WILT = {};
+function c11Wilted(p, key) {
+  if (C11_WILT[key]) return C11_WILT[key];
+  const c = document.createElement('canvas'); c.width = p.c.width; c.height = p.c.height; const g = c.getContext('2d');
+  g.drawImage(p.c, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(176,138,58,.62)'; g.fillRect(0, 0, c.width, c.height);
+  return C11_WILT[key] = { c, x0: p.x0, y0: p.y0, w: p.w, h: p.h };
+}
 /* crowns: turn about a pivot py (negative = above the foot) */
 function c11Sway(g, p, x, y, k, a, py) { g.save(); g.translate(x, y + py * k); g.rotate(a); g.drawImage(p.c, p.x0 * k, (p.y0 - py) * k, p.w * k, p.h * k); g.restore(); }
 const c11Shade = (g, x, y, rx, ry, al = .24) => { g.fillStyle = `rgba(22,46,34,${al})`; g.beginPath(); g.ellipse(x + rx * .22, y, rx, ry, 0, 0, 6.283); g.fill(); };
@@ -774,7 +782,7 @@ function c11Act(tx, ty) {
   if (k === 'w' || k === 'K') { if (tool === 'can') { if (SAVE11.water >= 10) return; SAVE11.water = 10; c11Sfx.plop && c11Sfx.plop(); c11Dots(tx, ty, '#7fb0c4', 10); c11Pop(tx, ty - 1, 'Đầy nước', '#2f5f8f'); } return; }
   if (!c11Field(tx, ty)) return;
   let s = SAVE11.tiles[key];
-  if (s && s.dead) { s.crop = null; s.dead = 0; s.age = 0; c11Spend(C11_COST.sickle); c11Dots(tx, ty, '#8a6a3a', 8, 1.2); c11Pop(tx, ty - 1, 'Dọn cây chết', '#5b2f1f'); return; }   // a dead plant is pulled up, the soil stays
+  if (s && s.dead) { s.crop = null; s.dead = 0; s.dry = 0; s.age = 0; c11Spend(C11_COST.sickle); c11Dots(tx, ty, '#8a6a3a', 8, 1.2); c11Pop(tx, ty - 1, 'Dọn cây chết', '#5b2f1f'); return; }   // a dead plant is pulled up, the soil stays
   if (s && s.crop && c11Stage(s) === 3) { const c = s.crop; c11Drop(c, 1, tx, ty); if (C11_CROPS[c].dan) s.age = Math.ceil(C11_CROPS[c].days * 2 / 3); else { s.crop = null; s.age = 0; } c11Sfx.tap(); c11Dots(tx, ty, C11_CROPS[c].col, 8, 1.4); return; }
   const cleared = !!(SAVE11.clear[key] || s);
   if (tool === 'sickle') {
@@ -854,8 +862,9 @@ function c11NewDay() {
   for (const [k, s] of Object.entries(SAVE11.tiles)) {                // hoed earth left bare for C11_IDLE nights goes back to grass (owner 2026-10-31)
     if (s.crop || s.dan) s.idle = 0; else if (!k.includes(':') && (s.idle = (s.idle || 0) + 1) >= C11_IDLE) { delete SAVE11.tiles[k]; delete SAVE11.clear[k]; }
   }
-  for (const s of Object.values(SAVE11.tiles)) {                     // a plant not watered for a day dies (owner); a watered one grows a day
-    if (s.crop && !s.dead) { if (s.wet) { if (c11Stage(s) < 3) s.age++; } else { s.dead = 1; died++; } }
+  let wilt = 0;
+  for (const s of Object.values(SAVE11.tiles)) {                     // a watered plant grows a day; one dry night only wilts it (s.dry, no growth), the second in a row kills it (a player: a single missed day should not kill)
+    if (s.crop && !s.dead) { if (s.wet) { if (c11Stage(s) < 3) s.age++; s.dry = 0; } else if (s.dry) { s.dead = 1; s.dry = 0; died++; } else { s.dry = 1; wilt++; } }
     s.wet = 0; if (s.crop && !s.dead && c11Stage(s) === 3) ripe++;
   }
   for (const m of [SAVE11.cut, SAVE11.gone]) for (const k of Object.keys(m)) if (SAVE11.day + 1 - m[k] >= 5) delete m[k];   // stumps sprout again after 5 days
@@ -865,7 +874,7 @@ function c11NewDay() {
   c11NewDayNew();
   const late = c11QuestNewDay();
   SAVE11.day++; SAVE11.mins = C11_DAY0; SAVE11.hp = C11.fainted ? C11_HP / 2 : C11_HP; SAVE11.stamina = C11.fainted ? C11_EN / 2 : (C11.late || C11.passed) ? C11_EN * .75 : C11_EN; C11.px = 4.5; C11.py = 5.7; C11.face = 1; persist11();
-  c11Msg(C11.faintMsg || (died ? `Ngày ${SAVE11.day} · ${died} cây chết khô vì không được tưới` : late ? `Ngày ${SAVE11.day} · ${late} việc của đình đã quá hạn` : ripe ? `Ngày ${SAVE11.day} · ${ripe} cây đã chín` : `Ngày ${SAVE11.day}`), C11.faintMsg ? '#a3332a' : '#2f6a4c'); C11.faintMsg = null; C11.fainted = false; C11.late = false; C11.passed = false; C11.warnLate = false;
+  c11Msg(C11.faintMsg || (died ? `Ngày ${SAVE11.day} · ${died} cây chết khô vì hai ngày không được tưới` : wilt ? `Ngày ${SAVE11.day} · ${wilt} cây héo vì hôm qua không tưới, hôm nay không tưới là chết` : late ? `Ngày ${SAVE11.day} · ${late} việc của đình đã quá hạn` : ripe ? `Ngày ${SAVE11.day} · ${ripe} cây đã chín` : `Ngày ${SAVE11.day}`), C11.faintMsg ? '#a3332a' : '#2f6a4c'); C11.faintMsg = null; C11.fainted = false; C11.late = false; C11.passed = false; C11.warnLate = false;
 }
 
 /* ---------- movement, taps ---------- */
@@ -1193,6 +1202,7 @@ function renderC11() {
       }
       if (s && s.dan) E.push({ y: y + .66, d: () => { if (s.wet) { g.fillStyle = 'rgba(52,28,14,.4)'; g.beginPath(); g.ellipse(sx(x + .5), sy(y + .7), T * .34, T * .12, 0, 0, 6.283); g.fill(); } c11Spr(g, A.dan, sx(x + .5), sy(y + .7), k * 1.32 * .72); } });
       if (s && s.crop && s.dead) E.push({ y: y + .7, d: () => c11Lean(g, c11Art3().dead[(x + y) % 2], sx(x + .5), sy(y + .68), k * 1.1, c11Wind(x, y) * .03) });
+      else if (s && s.crop && s.dry && !s.wet) { const st = c11Stage(s), sp = c11Wilted(A.crop[s.crop][st], s.crop + st); E.push({ y: y + .7, d: () => c11Lean(g, sp, sx(x + .5), sy(y + .68), k * 1.32 * (C11_CSCALE[s.crop] || 1), ((x + y) % 2 ? .22 : -.22) + c11Wind(x, y) * .02) }); }   // wilted: yellowed, drooping to one side, until it is watered
       else if (s && s.crop) { const st = c11Stage(s); E.push({ y: y + .7, d: () => c11Lean(g, A.crop[s.crop][st], sx(x + .5), sy(y + .68), k * 1.32 * (C11_CSCALE[s.crop] || 1), st ? c11Wind(x, y) * .05 * st + Math.sin(G.t * 2.2 + x * 3 + y) * .01 : 0) }); }
     } else if (kd === 'r' || kd === 'x' || kd === 'y') c11FieldE(E, g, x, y, sx, sy, k);
     else if (kd === 'g') {
