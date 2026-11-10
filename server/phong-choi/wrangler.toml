@@ -47,6 +47,10 @@ name = "JIGSAW_HB"
 class_name = "JigsawHB"
 
 [[durable_objects.bindings]]
+name = "JIGSAW_TB"
+class_name = "JigsawTB"
+
+[[durable_objects.bindings]]
 name = "JIGSAW_ROOM"
 class_name = "JigsawRoom"
 
@@ -121,3 +125,8 @@ new_sqlite_classes = ["JigsawNH"]
 [[migrations]]
 tag = "v14"
 new_sqlite_classes = ["JigsawHB"]
+
+# 2026-11-10: the tenth print (Chim công thiên hạ thái bình, 2200 pieces), its own object and storage
+[[migrations]]
+tag = "v15"
+new_sqlite_classes = ["JigsawTB"]

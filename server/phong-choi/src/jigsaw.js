@@ -511,3 +511,5 @@ export class JigsawLO extends makeJigsaw({ pic: 'lo1', cols: 68, rows: 44, pw: 3
 export class JigsawNH extends makeJigsaw({ pic: 'nh1', cols: 45, rows: 56, pw: 2250, ph: 2800, freeze: false }) {}
 // the ninth print (2026-11-07): Hai Bà Trưng ra trận, 66 x 44 = 2904 pieces of 50 px (3300 x 2200, img/ch10/hai-ba-trung.jpg). Opens in the list once Ngũ hổ is finished. Same guards as every print (all in makeJigsaw)
 export class JigsawHB extends makeJigsaw({ pic: 'hb1', cols: 66, rows: 44, pw: 3300, ph: 2200, freeze: false }) {}
+// the tenth print (2026-11-10): Chim công thiên hạ thái bình, 40 x 55 = 2200 pieces of 50 px (2000 x 2750, img/ch10/chim-cong.jpg). In the list from the start. Same guards as every print
+export class JigsawTB extends makeJigsaw({ pic: 'tb1', cols: 40, rows: 55, pw: 2000, ph: 2750, freeze: false }) {}
