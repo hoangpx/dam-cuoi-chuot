@@ -56,10 +56,6 @@ const P4_ECON = { 'BÚN CHẢ': ['an', 1010, 5915], 'BÁNH BAO': ['an', 815, 476
   'GIẤY BÚT': ['cd', 205, 1540], 'HÀNG XÉN': ['ty', 455, 2380], 'TRÀ SEN': ['cd', 300, 2310], 'TIỆM VẢI': ['cd', 265, 2030], 'HÀNG GỐM': ['cd', 215, 1645], 'TIỆM VÀNG': ['xx', 150, 1575],
   'MAY ÁO DÀI': ['cd', 235, 1785], 'ĐÈN LỒNG': ['mv', 150, 1085] };
 for (const n in P4_KINDS) { const K = P4_KINDS[n], e = P4_ECON[n] || P4_ECON['ĐÈN LỒNG']; K.cat = e[0]; K.wage = e[1]; K.rentW = e[2]; }
-// a wider margin (owner, 2026-11-09: "cho biên độ lợi nhuận cao lên chút"): every ware's cost goes down by 5 % of its plain price, so each trade
-// keeps about 5 points more of its takings (eating houses ~25 %, staples ~16 %, trade shops ~28 %, the goldsmith ~29 %, lamps ~34 %)
-const P4_MARGIN_UP = .05;
-{ const seen = new Set(); for (const n in P4_KINDS) { const K = P4_KINDS[n]; if (seen.has(K)) continue; seen.add(K); for (const w of K.wares) w.c = Math.max(1, Math.round(w.c - P4_MARGIN_UP * w.p)); } }
 const p4R5 = v => Math.max(5, Math.round(v / 5) * 5);
 // the place: 1.15 by the gate end (x 600), .85 at the far end (x 3600)
 const p4LocK = x => c4Clamp(1.15 - .3 * ((x === undefined || x === null ? 2100 : +x) - 600) / 3000, .85, 1.15);
