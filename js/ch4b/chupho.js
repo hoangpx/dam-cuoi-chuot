@@ -23,7 +23,7 @@ function p4BossUpdate(dt) {
     for (const [i, m] of B.men.entries()) { if (m.say) { m.say.t += dt; if (m.say.t > m.say.life) m.say = null; } }
     if (B.st === 'come') {
       B.x += 70 * dt; B.men.forEach((m, i) => { m.x = B.x - i * 46; m.ph += dt * 7; m.st = 'walk'; m.face = 1; });
-      if (B.x >= P4_HOME - 70) { B.st = 'ask'; B.men.forEach(m => { m.st = 'stand'; }); SAVE4B.bossSeen = day; p4Persist(); p4BossSheet(); }
+      if (B.x >= P4_HOME - 70) { B.st = 'ask'; B.men.forEach(m => { m.st = 'stand'; }); p4BossSheet(); }
     } else if (B.st === 'go') {
       B.x -= 80 * dt; B.men.forEach((m, i) => { m.x = B.x + i * 46; m.ph += dt * 7; m.st = 'walk'; m.face = -1; });
       if (B.x < P4.camX - 400) P4.boss = null;
@@ -64,7 +64,7 @@ function p4BossAnswer(how) {
   if (how === 'all') { p4Spend(A.tax + A.guard); SAVE4B.bossOwe = 0; SAVE4B.harass = null; if (lead) p4Say(lead, 'Biết điều đấy. Cứ yên tâm buôn bán!'); }
   else if (how === 'tax') { p4Spend(A.tax); SAVE4B.bossOwe = 0; SAVE4B.harass = { until: day + P4_BOSS.days - 1 }; if (lead) p4Say(lead, 'Không nộp bảo kê à? Rồi xem!'); toast(`Không nộp bảo kê: ${P4_BOSS.days} ngày tới tay chân bá hộ sẽ đến quấy, khách ngại ghé.`, 3.4); }
   else { SAVE4B.bossOwe = Math.round((A.tax + A.guard) * 1.5); SAVE4B.harass = { until: day + P4_BOSS.days - 1, light: true }; if (lead) p4Say(lead, 'Khất à? Tuần sau gấp rưỡi!'); toast(`Xin khất: tuần sau nộp ${c4Money(SAVE4B.bossOwe)}. Mấy hôm tới vẫn bị quấy nhẹ.`, 3.4); }
-  SAVE4B.weekTake = 0; p4Persist(); p4Hud(); p4Sheets(null);
+  SAVE4B.bossSeen = day; SAVE4B.weekTake = 0; p4Persist(); p4Hud(); p4Sheets(null);
   if (P4.boss) P4.boss.st = 'go';
 }
 {

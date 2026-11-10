@@ -462,7 +462,7 @@ function c4FloodMorning(back) {
   const f = c4DikeF();                                                    // (a bank shored up before: fewer floods and smaller ones, for good)
   if (R() < (shore ? .15 : .5) * f) {
     const hit = C4_SHOPS.filter(g => c4Own(g)); let msg = 'Đêm qua nước tràn vào chợ!';
-    const wet = Math.max(1, Math.round(c4Loss(.05, .12) * (shore ? .3 : 1) * f)); SAVE4.money -= wet; C4.today.spent += wet; c4SpNote('Nước lụt làm hỏng hàng', wet); msg += ` Mất ${c4Money(wet)} đồ đạc trôi.`;
+    const wet = Math.min(Math.max(0, Math.round(SAVE4.money)), Math.max(1, Math.round(c4Loss(.05, .12) * (shore ? .3 : 1) * f))); SAVE4.money -= wet; C4.today.spent += wet; c4SpNote('Nước lụt làm hỏng hàng', wet); msg += ` Mất ${c4Money(wet)} đồ đạc trôi.`;
     if (hit.length && !shore) { const g = c4Pick(hit), s = SAVE4.shops[g]; if ((s.lv || 0) > 0 && (s.lv || 0) < 4) { s.lv--; msg += ` Hàng ${C4_GOODS[g].name.toLowerCase()} hư hại, phải làm lại.`; } if (g === 'xen' && s.stock) { msg += ` Ướt mất ${Math.ceil(s.stock / 2)} món hàng xén.`; s.stock = Math.floor(s.stock / 2); } }
     back.push(msg);
   } else back.push('Nước sông rút, chợ thoát lụt trong gang tấc.');

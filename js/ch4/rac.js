@@ -86,4 +86,4 @@ c4FxItems = function (items, g, vis) { c4FxItems0(items, g, vis); if (C4.phase =
 const p4TownBridgeItems0 = p4TownBridgeItems;
 p4TownBridgeItems = function (items, g, vis) { p4TownBridgeItems0(items, g, vis); if (P4.phase === 'open') c4RacItems(items, g, vis, c4RacEnsure().t, p4Y, p4S); };
 // the job: 10 in a day (Việc hôm nay)
-C4_TASKS.push({ k: 'rac', from: () => SAVE4.day >= 2, make: () => ({ n: 10, text: 'Nhặt 10 món rác trong chợ làng và phố huyện (chạm vào rác nằm dưới đường)', prize: 30 }), done: (t, d) => (d.rac || 0) >= t.n });
+C4_TASKS.push({ k: 'rac', from: () => SAVE4.day >= 2, make: () => ({ n: 10, text: 'Nhặt 10 món rác trong chợ làng và phố huyện (chạm vào rác nằm dưới đường)', prize: 30 }), done: t => (SAVE4.rac && SAVE4.rac.day === SAVE4.day ? SAVE4.rac.n : 0) >= t.n });   // the saved count: a reload, or bits picked in the town, still count

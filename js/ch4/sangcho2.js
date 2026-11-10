@@ -101,10 +101,12 @@ function cnStallAt(x, y) {
 const cnBuySh = cnSheet('cnBuy', '<h3 id="cnBuyT"></h3><div id="cnBuyB"></div><div class="row"><button class="btn" id="cnBuyGo">Mua</button><button class="btn alt" id="cnBuyX">Thôi</button></div>');
 function cnStallInfo(g) {
   const v = CN.visit, sn = v.snap || {};
-  if (v.place === 'lang') { const s = (sn.stalls || []).find(q => q.g === g); return s && { nm: s.nm, price: s.price, avail: s.stock, open: s.open, unit: g === 'trau' ? 'miếng' : C4_GOODS[g].unit }; }
-  if (g === 'trau') return sn.house && { nm: 'Hiệu trầu ' + sn.house.name, price: sn.house.price, avail: sn.house.stock, open: sn.house.open, unit: 'miếng' };
-  const s = (sn.shops || []).find(q => q.key === g); return s && { nm: s.nm, price: s.price, avail: s.left, open: s.open, unit: 'suất' };
+  if (v.place === 'lang') { const s = (sn.stalls || []).find(q => q.g === g); return s && cnNum({ nm: s.nm, price: s.price, avail: s.stock, open: s.open, unit: g === 'trau' ? 'miếng' : (C4_GOODS[g] || {}).unit || 'phần' }); }
+  if (g === 'trau') return sn.house && cnNum({ nm: 'Hiệu trầu ' + sn.house.name, price: sn.house.price, avail: sn.house.stock, open: sn.house.open, unit: 'miếng' });
+  const s = (sn.shops || []).find(q => q.key === g); return s && cnNum({ nm: s.nm, price: s.price, avail: s.left, open: s.open, unit: 'suất' });
 }
+// what the host sends is someone else's data: price and stock become whole numbers (they go into the page and into the purse)
+function cnNum(o) { o.price = Math.max(0, Math.round(+o.price || 0)); o.avail = Math.max(0, Math.floor(+o.avail || 0)); return o; }
 const cnCanSell = g => (CN.visit.place === 'lang' ? c4Own(g) && !C4_BUYS.includes(g) : g === 'trau' ? !!SAVE4B.house : !!p4Shops()[g]);
 function cnBuyOpen(g) { CN.buy = { g, n: 1 }; cnBuyRefresh(true); cnBuySh.hidden = false; }
 function cnBuyRefresh(open) {
@@ -118,7 +120,7 @@ function cnBuyRefresh(open) {
     + (can ? '' : '<p class="sm">Nhà bạn không bán món này, nên chỉ ghé ăn một phần để ủng hộ bạn ấy thôi.</p>')
     + (!info.open ? '<p class="bad">Quầy đang đóng cửa.</p>' : '');
   $('#cnN').textContent = b.n;
-  $('#cnBT').innerHTML = `<p>Tiền: <b>${c4Money(b.n * info.price)}</b> · trong túi ${c4Money(Math.round(SAVE4.money))}</p><p class="sm" id="cnBuyMsg">${b.msg || (can ? 'Hàng mang về để được hôm nay và cả ngày mai.' : 'Ăn tại chỗ, không mang về.')}</p>`;
+  $('#cnBT').innerHTML = `<p>Tiền: <b>${c4Money(b.n * info.price)}</b> · trong túi ${c4Money(Math.round(SAVE4.money))}</p><p class="sm" id="cnBuyMsg">${cnEsc(b.msg) || (can ? 'Hàng mang về để được hôm nay và cả ngày mai.' : 'Ăn tại chỗ, không mang về.')}</p>`;
   $('#cnBuyGo').disabled = !info.open || b.n < 1 || !!b.wait;
 }
 // ± 1 a press; held down it repeats, faster and faster (owner 2026-10-28)

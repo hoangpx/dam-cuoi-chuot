@@ -114,7 +114,7 @@ function cnHandleBuy(m) {
       const R0 = p4Shops()[m.g]; if (!R0) return reply(false, 'Quán không bán món ấy'); if (R0.shut) return reply(false, 'Quán đang đóng cửa');
       const left = cnPortionsLeft(R0); if (left < 1) return reply(false, 'Hôm nay hết suất'); const k = Math.min(want, left), price = p4FoodPrice(R0), cost = k * p4FoodCost(m.g), pay = price * k;
       if (SAVE4.money < cost) return reply(false, 'Quán chưa đủ nguyên liệu');
-      R0.cnDay = SAVE4.day; R0.cnN = (R0.cnDay === SAVE4.day ? (R0.cnN || 0) : 0) + k; SAVE4.money += pay - cost; P4.today.take += pay; P4.today.spent += cost; persist4(); p4Persist();
+      R0.cnN = (R0.cnDay === SAVE4.day ? (R0.cnN || 0) : 0) + k; R0.cnDay = SAVE4.day; SAVE4.money += pay - cost; P4.today.take += pay; P4.today.spent += cost; persist4(); p4Persist();
       cnTxn({ dir: 'sold', id: m.from, name: m.name, g: m.g, n: k, p: price, pl: 'pho' }); reply(true, '', { n: k, price });
     }
   }
@@ -123,20 +123,22 @@ function cnHandleBuy(m) {
 /* ---------- my buying in someone's market ---------- */
 function cnBuyAsk(g, n, cb) {
   const id = Math.random().toString(36).slice(2, 10), v = CN.visit; if (!v) return cb(false, 'Chưa ở trong chợ nào');
-  CN.pend[id] = { cb, g, n, t: Date.now() }; cnSend({ t: 'buy', to: v.host, id, g, n });
+  const inf = cnStallInfo(g); CN.pend[id] = { cb, g, n, price: inf ? inf.price : 0, t: Date.now() }; cnSend({ t: 'buy', to: v.host, id, g, n });
   setTimeout(() => { const p = CN.pend[id]; if (p) { delete CN.pend[id]; p.cb(false, 'Chủ chợ không trả lời'); } }, 7000);
 }
 function cnSold(m) {
   const p = CN.pend[m.id]; if (!p) return; delete CN.pend[m.id];
   if (!m.ok) return p.cb(false, m.why || 'Không mua được');
-  const v = CN.visit, k = m.n, total = m.price * k, g = m.g, place = v ? v.place : 'lang';
+  // the host's answer is never trusted beyond what was asked: the ware asked for, no more than asked, no dearer than shown, never more than the purse
+  const v = CN.visit, g = p.g, price = Math.max(0, Math.min(+m.price || 0, p.price)), k = Math.min(m.n | 0, p.n, price ? Math.floor(Math.max(0, SAVE4.money) / price) : p.n), total = price * k, place = v ? v.place : 'lang';
+  if (k < 1) return p.cb(false, 'Không mua được');
   SAVE4.money -= total;
   if (v && !cnCanSell(g)) { /* not one of my wares: eaten there and then */ }
   else if (place === 'lang') { c4SetStock(g, c4Stock(g) + k); cnKeepAdd(SAVE4, g, k); }
   else if (g === 'trau') { SAVE4B.stock += k; cnKeepAdd(SAVE4B, 'trau', k); p4Persist(); }
   else { const R0 = p4Shops()[g]; if (R0) { R0.pre = (cnPreLive(R0) ? R0.pre : 0) + k; R0.preUntil = SAVE4.day + 1; } p4Persist(); }
-  cnTxn({ dir: 'bought', id: v ? v.host : '', name: v ? v.hostName : '', g, n: k, p: m.price, pl: place, home: v && v.snap ? v.snap.home : null });
-  persist4(); p.cb(true, '', { n: k, price: m.price, total });
+  cnTxn({ dir: 'bought', id: v ? v.host : '', name: v ? v.hostName : '', g, n: k, p: price, pl: place, home: v && v.snap ? v.snap.home : null });
+  persist4(); p.cb(true, '', { n: k, price, total });
 }
 // goods carried home keep today and tomorrow
 function cnKeepAdd(S0, g, k) { const K = S0.keep || (S0.keep = {}), e = K[g]; K[g] = { n: (e && e.until >= SAVE4.day ? e.n : 0) + k, until: SAVE4.day + 1 }; }

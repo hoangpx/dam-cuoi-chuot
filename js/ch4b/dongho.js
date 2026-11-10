@@ -109,6 +109,12 @@ function p4EnsureDay() {
   if (P4.day !== SAVE4B.day || !P4.today || P4.w4day !== SAVE4.day) {
     p4NewDay(); P4.w4day = SAVE4.day; w4Load();
     P4.mins = SAVE4B.house ? Math.max(P4_OPEN, W4.pho || P4_OPEN) : Math.max(P4_OPEN, Math.min(P4_CLOSE - 60, W4.mins));
+    // the town's day was already closed and paid (the page was reloaded after it): it stays closed, nothing is paid twice
+    if (SAVE4B.house && SAVE4B.settled === SAVE4.day) {
+      P4.phase = 'night'; P4.mins = P4_CLOSE;
+      $('#p4dayT').textContent = `Tối ngày ${p4DayNo()} trên phố huyện`;
+      $('#p4dayB').innerHTML = `<p>Phố đã lên đèn, hàng quán đóng cửa. Sổ hôm nay đã tính xong.</p>${w4VillageLine()}<p>Trong túi: ${c4Money(Math.round(p4Purse()))}</p>`;
+    }
   }
 }
 // called by part 2 each frame its street is open (updateP4): the world's hour follows the town's; each half hour the village catches up
@@ -123,6 +129,7 @@ function w4TownEnter() {
   if (w4TownLive()) w4CatchTown(W4.mins);
   else if (P4.phase === 'open') P4.mins = Math.max(P4.mins, Math.min(P4_CLOSE, W4.mins));
   if (P4.phase === 'night') p4Sheets('p4day');                              // the evening sheet again (already reckoned)
+  else if (P4.boss && P4.boss.st === 'ask') p4BossSheet();                  // the street's master is still at the door waiting for an answer
   p4BackBlink();
 }
 // how many buyers of betel the street sends a game minute at hour m (p4Spawn's odds, as an average)
