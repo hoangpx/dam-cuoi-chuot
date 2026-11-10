@@ -15,7 +15,7 @@ function p4Mishaps(R, key, T) {
   const add = (c, t) => { c = Math.round(c); if (c > 0) { out.cost += c; out.text += `, <span class="bad">${t} ${c4Money(c)}</span>`; } };
   if (K.t === 'an' && T.cost > 0) {
     const avg = (R.nh || []).length >= 3 ? R.nh.reduce((a, b) => a + b, 0) / R.nh.length : 0;
-    if (wet || (avg && T.n < .6 * avg)) add((.05 + .05 * rnd()) * T.cost, 'đồ ăn ế phải bỏ');
+    if (wet || (avg && T.n < .6 * avg)) add((.05 + .05 * rnd()) * T.cost, wet ? 'trời mưa vắng khách, đồ nấu sẵn từ sáng thừa phải đổ' : 'khách vắng hơn mọi hôm, đồ nấu sẵn từ sáng thừa phải đổ');
   }
   if (R.food === 'HÀNG GỐM' && T.take > 0 && rnd() < .25) add((.01 + .02 * rnd()) * T.take, 'vỡ mấy món gốm');
   if (R.food === 'TIỆM VẢI' && wet && T.take > 0 && rnd() < .4) add((.01 + .02 * rnd()) * T.take, 'vải ẩm mốc');
@@ -68,3 +68,16 @@ function p4RefDrift(R) { const K = p4Kind(R), ref = R.ref = R.ref || {}; for (co
 function p4Walkout(w) { if (w.pid === undefined || w.pid === null || w.treat) return; const f = SAVE4B.folk && SAVE4B.folk[w.pid]; if (f && f.k) f.a = Math.max(0, (f.a || 0) - 3); }
 // the lunar date on the town's clock
 { const t0 = p4HudTime; p4HudTime = function () { t0.apply(this, arguments); const el = $('#p4Time'); if (el) el.textContent = el.textContent.replace(/^Ngày \d+/, m => `${m} · ${c4LunarText()}`); }; }
+
+// the street's mood in words on the morning sheet (players, 2026-11-09: "ở trên phố không được báo trước tình hình kinh tế chung"): the village hears it in
+// whispers; the town reads it off the street in the morning, plain and true, in words only (no numbers)
+function p4MoodLine() {
+  const m = c4TownMood();
+  return m >= 1.07 ? 'Sáng nay phố xá rủng rỉnh: thuyền buôn cập bến đông, người ta chịu chi hơn mọi hôm.'
+    : m >= 1.025 ? 'Sáng nay phố có vẻ khá: người đi chợ thong thả, hầu bao rộng rãi hơn một chút.'
+    : m <= .93 ? 'Sáng nay phố xá túng bấn: người ta than giá gạo, ai cũng thắt hầu bao.'
+    : m <= .975 ? 'Sáng nay phố hơi chùng: người mua cân nhắc từng đồng.'
+    : 'Sáng nay phố như mọi ngày, không khá cũng không túng.';
+}
+{ const hd0 = p4HomeDraw;
+  p4HomeDraw = function () { hd0.apply(this, arguments); if (SAVE4B.morning === SAVE4.day) { const p = document.createElement('p'); p.className = 'p4mood'; p.innerHTML = `<i>${p4MoodLine()}</i>`; const b = $('#p4homeB'); b.insertBefore(p, b.firstChild); } }; }

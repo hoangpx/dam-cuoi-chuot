@@ -233,6 +233,7 @@ p4ShopsEvening = function () {
     (R.nh = R.nh || []).push(T.n); if (R.nh.length > 7) R.nh.shift();
     p4RefDrift(R); p4TireEvening(R);
     let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}, vốn hàng đã bán ${c4Money(T.cost)}, công ${c4Money(wage)}, ${K.t === 'an' ? 'than củi, nước' : 'dầu đèn, giấy gói'} ${c4Money(oh)}` + mis.text;
+    const byTxt = (T.n ? `<br><span class="sm">Từng món: ${K.wares.filter(w => (T.by || {})[w.id]).map(w => `${w.n.toLowerCase()} ${T.by[w.id]} ${w.u}`).join(', ')}${K.wares.some(w => p4OnMenu(R, w) && !(T.by || {})[w.id]) ? ' · không bán được: ' + K.wares.filter(w => p4OnMenu(R, w) && !(T.by || {})[w.id]).map(w => w.n.toLowerCase()).join(', ') : ''}</span>` : '');   // each ware's count (a player asked: easier to set prices)
     if ((SAVE4B.day - R.since + 1) % 7 === 0) {
       let note = '';
       R.m4 = (R.m4 || 0) + (R.wk || 0); R.wkN = (R.wkN || 0) + 1;
@@ -246,7 +247,7 @@ p4ShopsEvening = function () {
       if (SAVE4.money >= due) { SAVE4.money -= due; P4.today.spent += due; line += `, <b>${what} ${c4Money(due)}</b>` + note; }
       else { delete S[key]; delete P4.FQ[key]; line += ` · <span class="bad">không đủ ${c4Money(due)} ${what}, chủ nhà lấy lại cửa hàng</span>`; }
     }
-    out.push(`<p>${line}</p>`);
+    out.push(`<p>${line}${byTxt}</p>`);
   }
   P4.shopDay = {}; persist4(); p4Persist();
   return out.join('');
