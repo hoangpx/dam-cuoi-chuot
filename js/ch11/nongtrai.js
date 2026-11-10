@@ -874,7 +874,7 @@ function c11NewDay() {
   c11NewDayNew();
   const late = c11QuestNewDay();
   SAVE11.day++; SAVE11.mins = C11_DAY0; SAVE11.hp = C11.fainted ? C11_HP / 2 : C11_HP; SAVE11.stamina = C11.fainted ? C11_EN / 2 : (C11.late || C11.passed) ? C11_EN * .75 : C11_EN; C11.px = 4.5; C11.py = 5.7; C11.face = 1; persist11();
-  c11Msg(C11.faintMsg || (died ? `Ngày ${SAVE11.day} · ${died} cây chết khô vì hai ngày không được tưới` : wilt ? `Ngày ${SAVE11.day} · ${wilt} cây héo vì hôm qua không tưới, hôm nay không tưới là chết` : late ? `Ngày ${SAVE11.day} · ${late} việc của đình đã quá hạn` : ripe ? `Ngày ${SAVE11.day} · ${ripe} cây đã chín` : `Ngày ${SAVE11.day}`), C11.faintMsg ? '#a3332a' : '#2f6a4c'); C11.faintMsg = null; C11.fainted = false; C11.late = false; C11.passed = false; C11.warnLate = false;
+  c11Msg(C11.faintMsg || (died ? `Ngày ${SAVE11.day} · ${died} cây chết khô vì thiếu nước` : wilt ? `Ngày ${SAVE11.day} · ${wilt} cây héo vì hôm qua không tưới, hôm nay không tưới là chết` : late ? `Ngày ${SAVE11.day} · ${late} việc của đình đã quá hạn` : ripe ? `Ngày ${SAVE11.day} · ${ripe} cây đã chín` : `Ngày ${SAVE11.day}`), C11.faintMsg ? '#a3332a' : '#2f6a4c'); C11.faintMsg = null; C11.fainted = false; C11.late = false; C11.passed = false; C11.warnLate = false;
 }
 
 /* ---------- movement, taps ---------- */
@@ -1273,6 +1273,7 @@ function renderC11() {
   // evening light
   const e =Math.max(0, Math.min(1, (SAVE11.mins - 16.5 * 60) / (5.5 * 60)));
   if (e > 0) { g.fillStyle = `rgba(214,90,40,${e * .22})`; g.fillRect(0, 0, W, H); g.fillStyle = `rgba(30,36,80,${Math.max(0, e - .55) * .5})`; g.fillRect(0, 0, W, H); }
+  if (typeof c11WxDraw === 'function') c11WxDraw(g, W, H);                     // rain, or the glare of a scorching day (troi.js)
   if (e > .25) {                                                               // fireflies come out at dusk
     g.globalCompositeOperation = 'lighter';
     for (let i = 0; i < 22; i++) {
@@ -1760,7 +1761,7 @@ function c11Hud(g, W, H, st) {
   if (typeof c11OHud === 'function') c11OHud(g, st);                     // Online button, friend's-farm banner (online.js)
   const mins = Math.floor(SAVE11.mins), hh = Math.floor(mins / 60) % 24, mm = Math.floor(mins % 60 / 10) * 10;
   c11Tag(g, W - 10, 10, c11Money(), { right: true, fill: '#f7e3a4' });
-  c11Tag(g, W - 10, 46, `Ngày ${SAVE11.day} · ${hh}:${String(mm).padStart(2, '0')}`, { right: true, size: 12, h: 26, pad: 18 });
+  c11Tag(g, W - 10, 46, `Ngày ${SAVE11.day} · ${hh}:${String(mm).padStart(2, '0')}${typeof c11WxIcon === 'function' ? ' ' + c11WxIcon() : ''}`, { right: true, size: 12, h: 26, pad: 18 });
   // health
   { const hw = 120, hx = W - 10 - hw, hy0 = 80, hf = Math.max(0, SAVE11.hp ?? C11_HP) / C11_HP;
     g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.roundRect(hx, hy0, hw, 14, 7); g.fill(); g.stroke();
@@ -1777,6 +1778,18 @@ function c11Hud(g, W, H, st) {
   const bcols = Math.min(10, C11_BAG), brows = Math.ceil(C11_BAG / bcols), bagW = bcols * bs + (bcols - 1) * gap, bagH = brows * bs + (brows - 1) * gap, toolW = nT * ts + (nT - 1) * gap;   // ten a row; a bigger bag adds rows
   const bby = H - bagH - (isTouch ? 18 : 12), bx0 = wide ? (W - (bagW + toolW + 18)) / 2 + toolW + 18 : (W - bagW) / 2;
   const ty0 = wide ? H - ts - (isTouch ? 18 : 12) : bby - ts - 8, tx0 = wide ? (W - (bagW + toolW + 18)) / 2 : (W - toolW) / 2;
+  /* on phones the bag folds away (owner 2026-11-10: "điện thoại đang ngắn mà túi đồ thì dài, cần có cơ chế mở to / thu nhỏ túi đồ"): one row of
+     the tools, the thing in hand and a "Túi" button; the button opens the whole bag as before, "Thu túi" folds it again (G.bagOpen) */
+  const foldable = isTouch || !wide, bagBtn = (x, y, w, h, label) => { g.fillStyle = '#f7e3a4'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(x, y, w, h, 8); g.fill(); g.stroke(); g.fillStyle = INK; g.font = '800 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; const L = label.split('\n'); L.forEach((t, i) => g.fillText(t, x + w / 2, y + h / 2 + (i - (L.length - 1) / 2) * 13)); G.hud.push({ r: [x, y - 6, w, h + 12], f: () => { G.bagOpen = !G.bagOpen; c11Sfx.tap(); } }); };
+  if (foldable && !G.bagOpen) {
+    const hi = G.slot - C11_SLOTS.length, held = hi >= 0 && SAVE11.bag[hi] ? hi : -1, n = nT + (held >= 0 ? 1 : 0) + 1, fs = Math.min(48, Math.floor((W - 24 - (n - 1) * gap) / n)), bwid = Math.max(fs, 58);
+    const tot = nT * (fs + gap) + (held >= 0 ? fs + gap : 0) + bwid, fy = H - fs - 18; let x = (W - tot) / 2;
+    own.forEach(si => { const xx = x; c11Slot(g, si, xx, fy, fs, si === G.slot); G.hud.push({ r: [xx, fy - 8, fs, fs + 8], f: () => { G.slot = si; c11Sfx.tap(); } }); x += fs + gap; });
+    if (held >= 0) { const sl = SAVE11.bag[held], xx = x; g.fillStyle = '#f7e3a4'; g.strokeStyle = '#a3332a'; g.lineWidth = 3; g.beginPath(); g.roundRect(xx, fy - 5, fs, fs, 7); g.fill(); g.stroke(); c11ItemIcon(g, sl.id, xx + fs / 2, fy - 5 + fs / 2, fs * .78, sl.n); G.hud.push({ r: [xx, fy - 8, fs, fs + 8], f: () => { c11EatSlot(held); c11Sfx.tap(); } }); x += fs + gap; }
+    const nb = SAVE11.bag.filter(Boolean).length; bagBtn(x, fy, bwid, fs, `Túi\n${nb}/${C11_BAG}`);
+    { const it = c11HandItem(); if (it) { const I = C11_ITEMS[it.id]; c11TagC(g, W / 2, fy - 40, `${I.name}${I.food ? ` · ăn: +${I.food} sức` : ''}`, { size: 11, h: 24, pad: 16, right: false, fill: '#fbf4dc' }); } }
+  } else {
+  if (foldable) bagBtn(bx0 + bagW + 6 - 64, wide ? bby - 36 : ty0 + (ts - 24) / 2, 64, 24, 'Thu túi ▾');
   own.forEach((si, k) => { const x = tx0 + k * (ts + gap); c11Slot(g, si, x, ty0, ts, si === G.slot); G.hud.push({ r: [x, ty0 - 8, ts, ts + 8], f: () => { G.slot = si; c11Sfx.tap(); } }); });   // only the tools you own show
   g.fillStyle = 'rgba(244,234,208,.85)'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(bx0 - 6, bby - 6, bagW + 12, bagH + 12, 10); g.fill(); g.stroke();
   for (let i = 0; i < C11_BAG; i++) {
@@ -1787,6 +1800,7 @@ function c11Hud(g, W, H, st) {
   }
   { const it = c11HandItem(); if (it) { const I = C11_ITEMS[it.id]; c11TagC(g, W / 2, (wide ? bby : ty0) - 40, `${I.name}${I.food ? ` · ăn: +${I.food} sức` : ''}`, { size: 11, h: 24, pad: 16, right: false, fill: '#fbf4dc' }); } }
   { const n = SAVE11.bag.filter(Boolean).length; g.fillStyle = n >= C11_BAG ? '#a3332a' : 'rgba(29,25,21,.7)'; g.font = '700 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'bottom'; g.fillText(`Túi ${n}/${C11_BAG}`, bx0, bby - 8); }
+  }
   if (G.msg) { const a = Math.min(1, (2.4 - G.msg.t) * 2); g.globalAlpha = a; c11Tag(g, W / 2 - 100, H / 2 - 140, G.msg.text, { col: G.msg.col, size: 15, h: 38, pad: 30, right: false }); g.globalAlpha = 1; }
 }
 
