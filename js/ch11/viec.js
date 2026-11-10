@@ -118,11 +118,13 @@ function c11Who(w) {
 }
 const c11P = id => C11_PPL.find(q => q.id === id);
 const c11IName = id => C11_ITEMS[id] ? C11_ITEMS[id].name.toLowerCase() : id;
+const c11AreaName = a => C11_AREAS[a].name.replace(' làng Vũ Đại', '').replace(/^X/, 'x').replace(/^C/, 'c').replace(/^Đ/, 'đ').replace(/^B/, 'b');
 function c11StepText(s) {
   const p = c11P(c11Who(s.who)), nm = p ? p.name : '?';
   if (s.t === 'bring') return `Mang ${s.n} ${c11IName(s.item)} cho ${nm} (có ${Math.min(c11Count(s.item), s.n)}/${s.n})`;
   if (s.t === 'carry') return `Đưa ${c11IName(s.item)} cho ${nm}`;
   if (s.t === 'pay') return `Trả ${c4Money(s.m)} cho ${nm}`;
+  if (s.t === 'guard') return `Sau 21:00 ra ${c11AreaName(s.a)} nấp canh trộm quanh nhà ${nm}, bắt lấy nó`;
   return `Gặp ${nm}`;
 }
 const c11StepReady = s => s.t === 'talk' || (s.t === 'bring' && c11Count(s.item) >= s.n) || (s.t === 'carry' && c11Count(s.item) >= 1) || (s.t === 'pay' && SAVE11.money >= s.m);
@@ -178,6 +180,9 @@ function c11Board() {
   const nPost = 2 + (r(0) < .4 ? 1 : 0);
   for (let j = 0; j < nPost; j++) {
     const p = pool[Math.floor(r(j + 1) * pool.length)], id = `b${day}_${j}`;
+    if (j === 0 && day >= 3 && r(71) < .3 && C11_HOUSES[p.home.key] && C11_AREAS[p.home.a]) {   // a house was robbed: stand watch there tonight (trom.js)
+      posts.push({ id, title: `Canh trộm đêm nay cho nhà ${p.name}`, giver: 'lang', steps: [{ t: 'guard', who: p.id, a: p.home.a }], reward: { m: 90, ff: { [p.id]: 200 } } }); continue;
+    }
     if (r(j + 11) >= .45 && r(j + 11) < .75) {                        // something lost somewhere in the village: find it and take it back
       const L = ['non_la', 'quat_mo', 'guoc_moc', 'ro', 'thung', 'bat_su', 'am_dat', 'dua_tre'].filter(i => C11_ITEMS[i]), it = L[Math.floor(r(j + 41) * L.length)], A = ['lang', 'dong', 'ben', 'dinh', 'cho', 'dongx', 'doai', 'bai'].filter(a => C11_AREAS[a]), a = A[Math.floor(r(j + 51) * A.length)];
       posts.push({ id, title: `${p.name} đánh rơi ${C11_ITEMS[it].name.toLowerCase()} ở ${C11_AREAS[a].name.replace(' làng Vũ Đại', '').replace(/^X/, 'x').replace(/^C/, 'c').replace(/^Đ/, 'đ').replace(/^B/, 'b')}`, giver: 'lang', lost: { it, a }, steps: [{ t: 'bring', who: p.id, item: it, n: 1, say: 'Đúng cái của tôi rồi! Tìm mãi không thấy, cảm ơn anh nhiều.' }], reward: { m: 40 + Math.round(C11_ITEMS[it].price * .5), ff: { [p.id]: 150 } } });
