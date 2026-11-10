@@ -95,8 +95,8 @@ function p4PayHands() {
 // the hands' block on the house sheet: the hands, the applicants while the list is open
 function p4HandsHtml() {
   const H = p4Hands();
-  let s = '<div class="hands"><h4>Người làm</h4><p class="hint">Người làm đứng quầy bán cùng vợ, hoặc chạy ra bến giao trầu cho thuyền, ai rảnh thì làm. Chỉ thuê được một người. Công trả mỗi tối; hai tối không trả là bỏ đi.</p>';
-  s += H.map((h, i) => `<div class="hand"><span><b>${p4Cap1(h.name)}</b> · công ${c4Money(h.wage)}/ngày${h.unpaid ? ' · <span class="bad">nợ công</span>' : ''}<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}</div></span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div>`).join('');
+  let s = '<div class="hands"><h4>Người làm</h4><p class="hint">Người làm đứng quầy bán cùng vợ, hoặc chạy ra bến giao trầu cho thuyền, ai rảnh thì làm. Chỉ thuê được một người. Công do bạn định, trả mỗi tối; hai tối không trả là bỏ đi.</p>';
+  s += H.map((h, i) => `<div class="hand"><span><b>${p4Cap1(h.name)}</b> · công ${c4Money(h.wage)}/ngày${h.unpaid ? ' · <span class="bad">nợ công</span>' : ''}<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}</div></span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div><div class="row">${p4WageBtns(`data-hw="${i}"`, p4WageCan(h.wage, h.w0 || h.wage))}</div>`).join('');
   if (P4.apply) s += `<h4>Người xin việc</h4>` + P4.apply.map((x, i) => `<div class="hand app"><span><b>${p4Cap1(x.name)}</b> · đòi công ${c4Money(x.wage)}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', x.sp)}${c4TraitBar('nhiệt tình', x.wm)}${c4TraitBar('trung thực', x.ho)}</div></span><button class="btn" data-app="${i}">Thuê</button></div>`).join('') + '<button class="btn alt" data-appno="1">Thôi</button>';
   else if (H.length < P4_HANDS_MAX) s += `<button class="btn" data-hire="1">Thuê một người · khoảng ${c4Money(p4NextWage())}/ngày</button>`;
   return s + '</div>';
@@ -107,10 +107,11 @@ function p4HandsClick(b) {
   if (b.dataset.app) {
     const x = P4.apply && P4.apply[+b.dataset.app]; P4.apply = null;
     if (!x || p4Hands().length >= P4_HANDS_MAX) return true;
-    p4Hands().push(x); p4Persist(); toast(`${p4Cap1(x.name)} nhận làm cho hiệu trầu, công ${c4Money(x.wage)}/ngày.`, 3);
+    x.w0 = x.wage; p4Hands().push(x); p4Persist(); toast(`${p4Cap1(x.name)} nhận làm cho hiệu trầu, công ${c4Money(x.wage)}/ngày.`, 3);
     P4.sellers.push({ ...p4MakeSellers()[p4Hands().length], x: p4SlotX(p4Hands().length), z: .07 });   // starts at once
     return true;
   }
+  if (b.dataset.hw) { const h = p4Hands()[+b.dataset.hw]; if (h) { p4HandWage(h, +b.dataset.d || 0); p4Persist(); toast(`Công mới: ${c4Money(h.wage)} một ngày.`, 1.8); } return true; }
   if (b.dataset.fire) {
     const H = p4Hands(), h = H[+b.dataset.fire]; if (!h) return true;
     H.splice(H.indexOf(h), 1); p4Persist(); toast(`${p4Cap1(h.name)} nghỉ việc.`, 2.4);

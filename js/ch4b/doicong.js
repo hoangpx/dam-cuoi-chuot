@@ -104,7 +104,7 @@ function p4WageAnswer(yes) {
   const a = P4_WAGE_CUR; P4_WAGE_CUR = null; if (!a) { p4Sheets(null); return; }
   const q = a.kind === 'shop' ? a.R.wq : a.h.wq, p = q.pend; if (!p) { p4Sheets(null); return; }
   if (yes) {
-    if (a.kind === 'shop') a.R.raise = Math.max(0, (a.R.raise || 0) + p.to - p4KeeperWage(a.R)); else if (a.kind === 'help') { a.h.raise = Math.max(0, (a.h.raise || 0) + p.to - p4HelpWage(a.R, a.h)); a.h.quit = null; } else a.h.wage = p.to;
+    if (a.kind === 'shop') a.R.raise = p.to - p4KeeperBase(a.R); else if (a.kind === 'help') { a.h.raise = p.to - p4HelpBase(a.R); a.h.quit = null; } else { if (!a.h.w0) a.h.w0 = a.h.wage; a.h.wage = p.to; }
     q.pend = null; q.ask = null; q.mad = 0; q.ok = SAVE4.day; toast(`Đã tăng công lên ${c4Money(p.to)} một ngày.`, 2.6);
   } else { p.no = true; toast('Không tăng công. Người làm sầm mặt lại…', 2.6); }
   p4Persist(); AU.tap();
@@ -128,3 +128,30 @@ function p4WageAnswer(yes) {
       if (!p4WageOpen() && typeof c4WageAsks === 'function' && c4WageAsks().length && P4.wageTold !== SAVE4.day) { P4.wageTold = SAVE4.day; toast('Có người phụ ở chợ quê đang chờ gặp để xin tăng công.', 3.4); }
     }
   }; }
+// the player sets each worker's pay (owner, 2026-11-09: "người chơi muốn tự chọn trả tiền thuê người trên phố chứ không muốn áp đặt"): on the shop
+// sheet (keeper, helpers) and the betel house's sheet (hands) a "Bớt công" / "Thêm công" pair moves the pay a step (a tenth of the plain pay, at
+// least 5 đồng), between half and three times the plain pay. The evening rules stay: paid under fair they still ask, paid fairly they do not.
+// A raise that reaches a waiting ask answers it with yes (grudge gone, 7 days of grace); any other raise eases one grudge; a cut adds one grudge,
+// ends the grace and brings the next ask closer. (Nothing of this is told to the player.)
+const p4WageStep = base => Math.max(5, p4R5(base * .1));
+function p4WageSet(q, cur, base, d) {
+  const step = p4WageStep(base), to = Math.max(Math.max(5, p4R5(base * .5)), Math.min(base * 3, cur + d * step));
+  if (to === cur) return cur;
+  if (to > cur) {
+    if (q.pend && !q.pend.no && to >= q.pend.to) { q.pend = null; q.ask = null; q.mad = 0; q.ok = SAVE4.day; }
+    else if (q.mad) q.mad--;
+  } else {
+    q.mad = (q.mad || 0) + 1; q.ok = null; if (q.pend) q.pend.from = to;
+    if (!q.ask || q.ask > SAVE4.day + 2) q.ask = SAVE4.day + 2;
+  }
+  return to;
+}
+// d: +1 / −1; who: 'k' (the keeper) or a helper's index
+function p4ShopWage(R, who, d) {
+  if (who === 'k') { const b = p4KeeperBase(R), to = p4WageSet(R.wq || (R.wq = {}), p4KeeperWage(R), b, d); R.raise = to - b; return to; }
+  const h = p4ShopHands(R)[+who]; if (!h) return 0;
+  const b = p4HelpBase(R), to = p4WageSet(h.wq || (h.wq = {}), p4HelpWage(R, h), b, d); h.raise = to - b; return to;
+}
+function p4HandWage(h, d) { if (!h.w0) h.w0 = h.wage; h.wage = p4WageSet(h.wq || (h.wq = {}), h.wage, h.w0, d); return h.wage; }
+const p4WageBtns = (attr, can) => `<button class="btn alt" ${attr} data-d="-1"${can.dn ? '' : ' disabled'}>Bớt công</button><button class="btn alt" ${attr} data-d="1"${can.up ? '' : ' disabled'}>Thêm công</button>`;
+const p4WageCan = (cur, base) => ({ dn: cur > Math.max(5, p4R5(base * .5)), up: cur < base * 3 });

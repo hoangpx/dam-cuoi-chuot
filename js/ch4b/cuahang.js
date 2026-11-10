@@ -289,10 +289,10 @@ p4ShopSheet = function () {
     h += `<div class="row"><button class="btn tem" data-game="1">${P4_GAME_WORD[K.game] || 'Tự tay bán'}</button></div>` + (typeof p4MiniLeft === 'function' ? `<p class="sm">Mỗi ngày tự tay bán được ${P4_MINI_DAY} ca (chung các quán), hôm nay còn ${Math.max(0, p4MiniLeft())} ca.</p>` : '')
       + `<h4>Giờ mở cửa</h4><p>Từ <b>${R.open}:00</b> đến <b>${R.close}:00</b></p><div class="row"><button class="btn alt" data-hr="open" data-d="-1"${R.open <= 5 ? ' disabled' : ''}>Mở sớm hơn</button><button class="btn alt" data-hr="open" data-d="1"${R.open >= R.close - 3 ? ' disabled' : ''}>Mở muộn hơn</button></div>`
       + `<div class="row"><button class="btn alt" data-hr="close" data-d="-1"${R.close <= R.open + 3 ? ' disabled' : ''}>Đóng sớm hơn</button><button class="btn alt" data-hr="close" data-d="1"${R.close >= 23 ? ' disabled' : ''}>Đóng muộn hơn</button></div>`
-      + `<h4>Người làm</h4><p>${p4Cap1(K.keeper)} ${p4Esc(p4Keeper(R).replace(/^./, c => c.toLowerCase()))}: công ${m(p4KeeperWage(R))} một ngày.</p>`
-      + p4ShopHands(R).map((x, i) => `<div class="row"><span class="p4hand">Người phụ ${p4Esc(x.name.replace(/^./, c => c.toLowerCase()))}: công ${m(p4HelpWage(R, x))} một ngày${x.quit ? ' · <span class="bad">đã xin nghỉ</span>' : ''}</span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div>`).join('')
+      + `<h4>Người làm</h4><p>${p4Cap1(K.keeper)} ${p4Esc(p4Keeper(R).replace(/^./, c => c.toLowerCase()))}: công ${m(p4KeeperWage(R))} một ngày.</p><div class="row">${p4WageBtns('data-wg="k"', p4WageCan(p4KeeperWage(R), p4KeeperBase(R)))}</div>`
+      + p4ShopHands(R).map((x, i) => `<div class="row"><span class="p4hand">Người phụ ${p4Esc(x.name.replace(/^./, c => c.toLowerCase()))}: công ${m(p4HelpWage(R, x))} một ngày${x.quit ? ' · <span class="bad">đã xin nghỉ</span>' : ''}</span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div><div class="row">${p4WageBtns(`data-wg="${i}"`, p4WageCan(p4HelpWage(R, x), p4HelpBase(R)))}</div>`).join('')
       + (p4ShopHands(R).length < 2 ? `<div class="row"><button class="btn alt" data-hire="1">Thuê một người phụ · ${m(p4HelpBase(R))} một ngày</button></div>` : '')
-      + `<p class="sm">Thêm người phụ thì bán nhanh hơn. Công cả quán: ${m(p4WageOf(R))} một ngày.</p>`
+      + `<p class="sm">Thêm người phụ thì bán nhanh hơn. Công mỗi người do bạn định. Công cả quán: ${m(p4WageOf(R))} một ngày.</p>`
       + `<div class="row"><button class="btn alt" data-shut="1">${R.shut ? 'Mở cửa lại' : 'Tạm đóng cửa quán'}</button></div>`
       + `<p>${R.own === 'buy' ? 'Thuế nhà ' + m(p4TaxOf(R)) : 'Tiền thuê ' + m(p4RentNow(R))} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).${R.own === 'buy' ? '' : ' Chủ nhà thỉnh thoảng xem sổ rồi tính lại tiền thuê.'}</p>`
       + (R.own === 'buy' ? '' : `<div class="row"><button class="btn" data-buyshop="1"${purse < p4BuyOf(R) ? ' disabled' : ''}>Mua đứt · ${m(p4BuyOf(R))}</button><button class="btn alt" data-giveup="1">Trả lại cửa hàng</button></div>`);
@@ -324,6 +324,7 @@ p4ShopClick = function (b) {
   else if (b.dataset.au) { R.auto[b.dataset.au] = Math.max(0, Math.min(120, (R.auto[b.dataset.au] || 0) + d)); }
   else if (b.dataset.menu) { const id = b.dataset.menu; R.menu[id] = !p4OnMenu(R, { id }); }
   else if (b.dataset.hr) { const k = b.dataset.hr; R[k] = Math.max(5, Math.min(23, R[k] + d)); }
+  else if (b.dataset.wg) { const to = p4ShopWage(R, b.dataset.wg, d); toast(`Công mới: ${m(to)} một ngày.`, 1.8); }
   else if (b.dataset.hire) { const H = p4ShopHands(R); if (H.length < 2) { H.push({ name: p4KeeperName(), ho: Math.random() }); toast(`${p4Cap1(H[H.length - 1].name)} đến phụ quán.`, 2.2); } }
   else if (b.dataset.fire) { const H = p4ShopHands(R), x = H[+b.dataset.fire]; if (x) { H.splice(H.indexOf(x), 1); toast(`Đã cho ${x.name} nghỉ.`, 2.2); } }
   else if (b.dataset.sign && !R.sign && p4Purse() >= P4_SIGN_PRICE) { p4Spend(P4_SIGN_PRICE); R.sign = true; toast('Biển hiệu mới sơn son thếp vàng!', 2.4); }
