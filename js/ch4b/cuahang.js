@@ -81,7 +81,7 @@ const p4HelpWage = (R, h) => p4HelpBase(R) + (h.raise || 0);
 const p4ShopHands = R => R.hands || (R.hands = []);
 const p4WageOf = R => p4KeeperWage(R) + p4ShopHands(R).reduce((a, h) => a + p4HelpWage(R, h), 0);
 // how fast the counter serves: the first helper +60 %, the second +30 %; a keeper worn out by long rushes is slower (R.tir, 0…1)
-const p4ServeK = R => (1 + [0, .6, .9][Math.min(2, p4ShopHands(R).length)]) / (1 + .25 * (R.tir || 0));
+const p4ServeK = R => p4CrewSpeed(R) / (1 + .25 * (R.tir || 0));   // the people's own speed: tuyennguoi.js
 // the shop's own data, filled in for a new shop or an old save (eating houses of the one-dish days keep their price as the first ware's)
 // the three lamp shops that became other trades: a shop rented or bought as one turns into the new trade, its lamps paid back at cost
 const P4_LAMP_SWAP = { 'LỒNG ĐÈN PHÚC': 'TIỆM VẢI', 'ĐÈN HOA SEN': 'HÀNG GỐM', 'ĐÈN LỒNG TÀI LỘC': 'TIỆM VÀNG' };
@@ -129,7 +129,7 @@ function p4ShopRate(R, key, h) {
   const tw = K.wares.reduce((s, w) => s + w.w, 0), hw = ws.reduce((s, w) => s + w.w, 0), pk = ws.reduce((s, w) => s + w.w * p4WFlow(R, w) * p4Anchor(R, w, ws), 0) / hw;
   const mw = (.45 + .55 * hw / tw) * pk;   // a shorter menu: a few fewer come (as before 2026-11-08); dear prices: fewer, nobody when all are far too dear
   const deco = 1 + (R.awn ? .05 : 0) + (R.lamp ? (K.t === 'den' ? .1 : .04) : 0) + (R.pots || 0) * .02 + (R.sk ? .03 : 0);
-  return K.cust / 900 * p4LocK(key) * c4CatMood(K.cat, true) * c4CalK(K.cat, p4CalTag(R)) * p4QueueK(key) * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4Harass() * Math.min(1.8, mw) * deco;   // no floor: prices nobody pays bring nobody (owner, 2026-11-08)
+  return K.cust / 900 * p4LocK(key) * c4CatMood(K.cat, true) * c4CalK(K.cat, p4CalTag(R)) * p4QueueK(key) * P4_HOURS[K.hours](h) / P4_HOURS_NORM[K.hours] * ((K.wx || {})[p4Wx()] || 1) * p4SignK(R) * p4CrewWarm(R) * p4Harass() * Math.min(1.8, mw) * deco;   // no floor: prices nobody pays bring nobody (owner, 2026-11-08)
 }
 // a customer's order: one ware (by weight, cheaper is likelier) and how many
 function p4PickWare(R) {
@@ -289,9 +289,9 @@ p4ShopSheet = function () {
     h += `<div class="row"><button class="btn tem" data-game="1">${P4_GAME_WORD[K.game] || 'Tự tay bán'}</button></div>` + (typeof p4MiniLeft === 'function' ? `<p class="sm">Mỗi ngày tự tay bán được ${P4_MINI_DAY} ca (chung các quán), hôm nay còn ${Math.max(0, p4MiniLeft())} ca.</p>` : '')
       + `<h4>Giờ mở cửa</h4><p>Từ <b>${R.open}:00</b> đến <b>${R.close}:00</b></p><div class="row"><button class="btn alt" data-hr="open" data-d="-1"${R.open <= 5 ? ' disabled' : ''}>Mở sớm hơn</button><button class="btn alt" data-hr="open" data-d="1"${R.open >= R.close - 3 ? ' disabled' : ''}>Mở muộn hơn</button></div>`
       + `<div class="row"><button class="btn alt" data-hr="close" data-d="-1"${R.close <= R.open + 3 ? ' disabled' : ''}>Đóng sớm hơn</button><button class="btn alt" data-hr="close" data-d="1"${R.close >= 23 ? ' disabled' : ''}>Đóng muộn hơn</button></div>`
-      + `<h4>Người làm</h4><p>${p4Cap1(K.keeper)} ${p4Esc(p4Keeper(R).replace(/^./, c => c.toLowerCase()))}: công ${m(p4KeeperWage(R))} một ngày.</p><div class="row">${p4WageBtns('data-wg="k"', p4WageCan(p4KeeperWage(R), p4KeeperBase(R)))}</div>`
-      + p4ShopHands(R).map((x, i) => `<div class="row"><span class="p4hand">Người phụ ${p4Esc(x.name.replace(/^./, c => c.toLowerCase()))}: công ${m(p4HelpWage(R, x))} một ngày${x.quit ? ' · <span class="bad">đã xin nghỉ</span>' : ''}</span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div><div class="row">${p4WageBtns(`data-wg="${i}"`, p4WageCan(p4HelpWage(R, x), p4HelpBase(R)))}</div>`).join('')
-      + (p4ShopHands(R).length < 2 ? `<div class="row"><button class="btn alt" data-hire="1">Thuê một người phụ · ${m(p4HelpBase(R))} một ngày</button></div>` : '')
+      + `<h4>Người làm</h4><p>${p4Cap1(K.keeper)} ${p4Esc(p4Keeper(R).replace(/^./, c => c.toLowerCase()))}: công ${m(p4KeeperWage(R))} một ngày.${p4Bars({ sp: R.ksp, wm: R.kwm, ho: R.kho })}</p><div class="row">${p4WageBtns('data-wg="k"', p4WageCan(p4KeeperWage(R), p4KeeperBase(R)))}</div><div class="row"><button class="btn alt" data-sapp="k">Đổi người đứng quán</button></div>`
+      + p4ShopHands(R).map((x, i) => `<div class="row"><span class="p4hand">Người phụ ${p4Esc(x.name.replace(/^./, c => c.toLowerCase()))}: công ${m(p4HelpWage(R, x))} một ngày${x.quit ? ' · <span class="bad">đã xin nghỉ</span>' : ''}${p4Bars(x)}</span><button class="btn alt" data-fire="${i}">Cho nghỉ</button></div><div class="row">${p4WageBtns(`data-wg="${i}"`, p4WageCan(p4HelpWage(R, x), p4HelpBase(R)))}</div>`).join('')
+      + p4ApplyHtml(key) + (p4ShopHands(R).length < 2 && !(P4.sapply && P4.sapply.key === key) ? `<div class="row"><button class="btn alt" data-sapp="h">Thuê một người phụ</button></div>` : '')
       + `<p class="sm">Thêm người phụ thì bán nhanh hơn. Công mỗi người do bạn định. Công cả quán: ${m(p4WageOf(R))} một ngày.</p>`
       + `<div class="row"><button class="btn alt" data-shut="1">${R.shut ? 'Mở cửa lại' : 'Tạm đóng cửa quán'}</button></div>`
       + `<p>${R.own === 'buy' ? 'Thuế nhà ' + m(p4TaxOf(R)) : 'Tiền thuê ' + m(p4RentNow(R))} đóng sau ${left} ngày nữa (tối ngày ${p4DayNo() + left - 1}).${R.own === 'buy' ? '' : ' Chủ nhà thỉnh thoảng xem sổ rồi tính lại tiền thuê.'}</p>`
@@ -324,6 +324,7 @@ p4ShopClick = function (b) {
   else if (b.dataset.au) { R.auto[b.dataset.au] = Math.max(0, Math.min(120, (R.auto[b.dataset.au] || 0) + d)); }
   else if (b.dataset.menu) { const id = b.dataset.menu; R.menu[id] = !p4OnMenu(R, { id }); }
   else if (b.dataset.hr) { const k = b.dataset.hr; R[k] = Math.max(5, Math.min(23, R[k] + d)); }
+  else if (p4ApplyClick(R, sel.key, b)) { /* the applicants (tuyennguoi.js) */ }
   else if (b.dataset.wg) { const to = p4ShopWage(R, b.dataset.wg, d); toast(`Công mới: ${m(to)} một ngày.`, 1.8); }
   else if (b.dataset.hire) { const H = p4ShopHands(R); if (H.length < 2) { H.push({ name: p4KeeperName(), ho: Math.random() }); toast(`${p4Cap1(H[H.length - 1].name)} đến phụ quán.`, 2.2); } }
   else if (b.dataset.fire) { const H = p4ShopHands(R), x = H[+b.dataset.fire]; if (x) { H.splice(H.indexOf(x), 1); toast(`Đã cho ${x.name} nghỉ.`, 2.2); } }
