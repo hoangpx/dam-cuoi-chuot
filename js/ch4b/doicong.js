@@ -38,7 +38,9 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
 }
 { const pay0 = p4PayHands;
   p4PayHands = function () {
-    const out = [], S = p4Shops(); let shopTake = 0;
+    const out = [], S = p4Shops(); let shopTake = 0; p4Ran = false;
+    // (2026-11-09) a keeper who replaced one who ran off used to inherit his grudge: clear the grudges of old saves once
+    if (!SAVE4B.madFix) { SAVE4B.madFix = 1; for (const k in S) if (S[k].wq) S[k].wq.mad = 0; }
     for (const key in S) {
       const R = p4ShopFix(S[key]), T = (P4.shopDay || {})[key] || { take: 0 }; shopTake += T.take || 0;
       // the shop's own profit of the day, after every cost: goods, the week's rent or tax by the day, and the wages it pays now
@@ -46,10 +48,10 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
       const rentDay = (R.own === 'buy' ? p4TaxOf(R) : p4RentNow(R)) / 7;
       R.hist.push(Math.round((T.take || 0) - (T.cost || 0) - rentDay - p4WageOf(R))); if (R.hist.length > P4_FAIR_DAYS) R.hist.shift();
       const q = R.wq || (R.wq = {}), who = `${p4Keeper(R)} (${p4Kind(R).keeper} ${R.name})`;
-      const newKeeper = () => { R.kn = p4KeeperName(); R.kho = Math.random(); return `<p>${p4Cap1(p4Kind(R).keeper)} mới ${R.kn} đến đứng ${p4Esc(R.name)}, công vẫn như cũ.</p>`; };
+      const newKeeper = () => { R.kn = p4KeeperName(); R.kho = Math.random(); R.ksp = Math.random(); R.kwm = Math.random(); R.wq = { ask: SAVE4.day + p4Rand47() }; return `<p>${p4Cap1(p4Kind(R).keeper)} mới ${R.kn} đến đứng ${p4Esc(R.name)}, công vẫn như cũ.</p>`; };
       if (R.kho === undefined) R.kho = Math.random();                       // the keeper's honesty, like a hand's
       const kn0 = R.kn, line = p4WageEvening(q, who, T.take || 0, p4KeeperWage(R), p4ShopFair(R), newKeeper), tired = typeof p4Tired === 'function' && p4Tired(R) ? 2 : 1;
-      out.push(line || (R.kn === kn0 ? p4RandomRun(who, T.take || 0, p4KeeperWage(R), p4ShopFair(R), R.kho, newKeeper, q, tired) : ''));
+      out.push(line || (R.kn === kn0 && !p4Ran ? p4RandomRun(who, T.take || 0, p4KeeperWage(R), p4ShopFair(R), R.kho, newKeeper, q, tired) : ''));
       // the helpers: they ask on their own; refused, they leave a few days later instead of running off, and meanwhile now and then take a little
       for (const h of [...p4ShopHands(R)]) {
         const hq = h.wq || (h.wq = {}), hw = `Người phụ ${p4Cap1(h.name)} (${R.name})`, fair = p4HelpFair(R), wage = p4HelpWage(R, h);
@@ -72,14 +74,16 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
       const q = h.wq || (h.wq = {});
       const gone = () => { H.splice(H.indexOf(h), 1); const s = P4.sellers && P4.sellers.find(m => m.h === h); if (s) { P4.sellers.splice(P4.sellers.indexOf(s), 1); P4.sellers.forEach((m, k) => { m.slot = k; }); } };
       const line = p4WageEvening(q, `${p4Cap1(h.name)} (hiệu trầu)`, trau / H.length, h.wage, p4HandFair(h), gone);
-      out.push(line || (H.includes(h) ? p4RandomRun(`${p4Cap1(h.name)} (hiệu trầu)`, trau / H.length, h.wage, p4HandFair(h), h.ho, gone, q) : ''));
+      out.push(line || (H.includes(h) && !p4Ran ? p4RandomRun(`${p4Cap1(h.name)} (hiệu trầu)`, trau / H.length, h.wage, p4HandFair(h), h.ho, gone, q) : ''));
     }
     p4Persist(); persist4();
     return pay0() + out.join('');
   }; }
 // the shared rule (c4RunChance, js/ch4/doicong-que.js): now and then a worker runs off with the day's takings anyway, rarely when paid fairly
+let p4Ran = false;
 function p4RandomRun(who, take, wage, fair, ho, onRun, q, mult) {
-  if (!(take > 0) || Math.random() >= c4RunChance(wage, fair, ho, undefined, q && q.mad, q) * (mult || 1)) return '';
+  if (!(take > 0) || Math.random() >= Math.min(.35, c4RunChance(wage, fair, ho, undefined, q && q.mad, q) * (mult || 1))) return '';
+  p4Ran = true;
   const lost = Math.max(0, Math.min(Math.round(take), Math.round(p4Purse()))); if (lost) { SAVE4.money -= lost; P4.today.spent += lost; }
   return `<p class="bad">${who} ôm ${c4Money(lost)} tiền bán hàng hôm nay rồi biến mất.</p>` + (onRun() || '');
 }
