@@ -10,7 +10,9 @@
 const CACHE = 'dcc-1';
 const ROOT = new URL('./', self.location).href;
 
-const isPage = req => req.mode === 'navigate' || req.url === ROOT || req.url === ROOT + 'index.html';
+// only the game's own page (any query, e.g. ?c8all): other pages of the site such as kinh-te.html go to the network as they are
+// (2026-11-09: every navigation used to get the game, so kinh-te.html opened chương I)
+const isPage = req => { const u = new URL(req.url), p = u.origin + u.pathname; return p === ROOT || p === ROOT + 'index.html'; };
 
 async function keepVersion(html) {
   const v = (html.match(/const VERSION = '([^']+)'/) || [])[1], files = (html.match(/const GAME_FILES = \[([\s\S]*?)\]/) || [])[1];
