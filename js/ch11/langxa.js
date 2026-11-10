@@ -396,11 +396,11 @@ function c11TalkTo(v) {
   const p = v.p, s = c11PP(p.id), day = SAVE11.day, tool = c11HandTool(), it = c11HandItem();
   v.path = v.leaving ? v.path : null;
   if (c11QuestTalk(v)) return;                                       // a job to hand in, or a request (viec.js)
-  if (it && (tool === 'item' || tool === 'seed')) {
-    const w = c11NeededBy(it.id, p.id);                                // a job's thing handed to the wrong person is not taken as a gift (a player lost them that way)
-    if (w) { c11Say(v, p.role === 'c' ? `Cái này chú định mang cho ${w.name} mà, cháu không lấy đâu.` : `Cái này anh định mang cho ${w.name} mà. Tôi không nhận đâu, kẻo lỡ việc của anh.`); return; }
-    c11Gift(v, it); return;
-  }
+  if (it && (tool === 'item' || tool === 'seed')) { c11GiftAsk(v, it); return; }   // something in hand: ask first, never give at once (owner: too easy to give by mistake)
+  c11Chat(v);
+}
+function c11Chat(v) {
+  const p = v.p, s = c11PP(p.id), day = SAVE11.day;
   if (c11GiftBack(v)) return;
   let text, gain = 0;
   if (!s.met) { s.met = 1; s.td = day; gain = 20; text = c11Intro(p); c11Msg(`Làm quen với ${p.name}`, '#2f6a4c'); }
@@ -414,11 +414,21 @@ function c11TalkTo(v) {
   }
   s.f += gain; c11Pop(Math.floor(v.x), Math.floor(v.y) - 2, '♥ +' + gain, '#c8402f'); c11Say(v, text); persist11();
 }
-/* who a held thing is meant for: a running job still needs it (bring: all of the count, carry: the thing itself) and giving one away would leave too few */
+/* the running job step a held thing is meant for (someone else's): a bring / carry step still needs it and giving one away would leave too few */
 function c11NeededBy(id, pid) {
-  let need = 0, who = null;
-  for (const q of c11Q().act) for (let i = q.si; i < q.steps.length; i++) { const st = q.steps[i]; if ((st.t !== 'bring' && st.t !== 'carry') || st.item !== id) continue; need += st.t === 'bring' ? st.n : 1; const w = c11Who(st.who); if (w !== pid && !who) who = c11P(w); }
-  return who && c11Count(id) - 1 < need ? who : null;
+  let need = 0, hit = null;
+  for (const q of c11Q().act) for (let i = q.si; i < q.steps.length; i++) { const st = q.steps[i]; if ((st.t !== 'bring' && st.t !== 'carry') || st.item !== id) continue; need += st.t === 'bring' ? st.n : 1; if (c11Who(st.who) !== pid && !hit) hit = st; }
+  return hit && c11Count(id) - 1 < need ? hit : null;
+}
+/* tapping someone with a thing in hand opens a small sheet instead of giving it (owner 2026-11-10: "phải nghĩ ra cơ chế tặng cho đỡ bị nhầm"):
+   "Tặng <món>" says what is known of their taste, or why it cannot be given (a job needs it, with the job's own line; given today; twice this week), and "Trò chuyện" */
+const C11_KN_TEXT = { love: 'lần trước người này rất thích món này', like: 'lần trước người này thích món này', neu: 'lần trước người này nhận bình thường', dis: 'lần trước người này không thích món này', hate: 'lần trước người này ghét món này' };
+function c11GiftAsk(v, it) {
+  const p = v.p, s = c11PP(p.id), day = SAVE11.day, wk = Math.floor((day - 1) / 7), I = C11_ITEMS[it.id], st = c11NeededBy(it.id, p.id);
+  const no = I.cat === 'truyen' ? 'Vật này để làm việc, không đem tặng được' : st ? 'Đang cần cho việc: ' + c11StepText(st) : s.gd === day ? 'Hôm nay đã tặng người này rồi' : s.gw === wk && s.gn >= 2 ? 'Tuần này đã tặng người này hai lần' : '';
+  C11.menu = { title: p.name, note: `Đang cầm ${I.name.toLowerCase()} (có ${c11Count(it.id)})`, cols: 1, rows: [
+    { name: `Tặng ${I.name.toLowerCase()}`, sub: no || C11_KN_TEXT[s.kn[it.id]] || 'chưa biết người này có thích không', tag: ' ', ok: !no, f: () => { if (no) { C11.menu.note = no; return; } C11.menu = null; if (c11Count(it.id) > 0) c11Gift(v, { id: it.id }); } },
+    { name: 'Trò chuyện', sub: 'chào hỏi, nghe chuyện, không tặng gì', tag: ' ', ok: true, f: () => { C11.menu = null; c11Chat(v); } }] };
 }
 /* a gift in return (a player: "nhận quà của người khác quài mà không tặng lại cũng ngại"): after two welcome gifts someone at 3 hearts or more
    hands back a small dish the next time they are greeted on another day; s.gg counts the welcome gifts since their last one */
