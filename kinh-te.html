@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Kinh tế trong Chương IV · Vợ Chồng Khởi Nghiệp của game Đám Cưới Chuột: tiền lãi, giá và khách, người làm, mặt bằng.">
+<link rel="icon" href="img/icon-192.png">
+<title>Kinh tế chợ chuột · Đám Cưới Chuột</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Be+Vietnam+Pro:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: one column like a folded village almanac; chapters as numbered sheets, secrets as red-sealed slips. */
+:root {
+  --paper: #f3ead3; --sheet: #fbf5e4; --ink: #3b2416; --ink2: #6e5240; --son: #a3332a; --gold: #c99a2e; --rule: #d9c7a0; --seal-ink: #fbf5e4;
+  --display: "Playfair Display", "Times New Roman", serif; --body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #1f1712; --sheet: #2a201a; --ink: #f0e3c6; --ink2: #c7b28f; --son: #e0675a; --gold: #e3b955; --rule: #4a3a2c; --seal-ink: #1f1712; color-scheme: dark } }
+:root[data-theme="dark"] { --paper: #1f1712; --sheet: #2a201a; --ink: #f0e3c6; --ink2: #c7b28f; --son: #e0675a; --gold: #e3b955; --rule: #4a3a2c; --seal-ink: #1f1712; color-scheme: dark }
+body { background: var(--paper); color: var(--ink); font: 16px/1.65 var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 28px; }
+header { padding-block: 40px 8px; display: grid; gap: 10px; }
+.eyebrow { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--son); font-weight: 600; }
+h1 { font: 900 clamp(34px, 7vw, 54px)/1.05 var(--display); margin: 0; text-wrap: balance; }
+h1 .han { display: block; font: 400 20px/1.4 var(--body); color: var(--ink2); margin-top: 6px; letter-spacing: .1em; }
+.lede { font-size: 18px; color: var(--ink2); margin: 0; max-width: 62ch; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+nav.toc a { color: var(--ink); text-decoration: none; border: 1.5px solid var(--ink); border-radius: 3px; padding: 4px 10px; font-size: 14px; background: var(--sheet); }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--ink); color: var(--paper); outline: none; }
+section.sheet { background: var(--sheet); border: 2px solid var(--ink); padding: 24px clamp(16px, 4vw, 32px); display: grid; gap: 12px; position: relative; box-shadow: 5px 5px 0 var(--rule); min-width: 0; }
+.sheet .num { font: 700 13px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--son); }
+h2 { font: 900 clamp(24px, 4.5vw, 32px)/1.15 var(--display); margin: 0; text-wrap: balance; }
+h3 { font: 700 19px/1.3 var(--display); margin: 8px 0 0; }
+p { margin: 0; max-width: 66ch; }
+ul, ol { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; max-width: 66ch; }
+.keys { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 15px; }
+kbd { font: 600 13px/1 var(--body); border: 1.5px solid var(--ink); border-bottom-width: 3px; border-radius: 4px; padding: 3px 7px; background: var(--paper); }
+.secret { border: 2px dashed var(--son); padding: 14px 16px 14px 64px; position: relative; display: grid; gap: 6px; }
+.secret::before { content: "祕"; position: absolute; left: 14px; top: 14px; width: 36px; height: 36px; display: grid; place-items: center; background: var(--son); color: var(--seal-ink); font: 700 20px/1 serif; border-radius: 4px; transform: rotate(-4deg); }
+.secret b { color: var(--son); }
+.secret ul { padding-left: 1.1em; }
+.note { font-size: 14px; color: var(--ink2); }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; color: var(--ink2); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+footer { font-size: 14px; color: var(--ink2); display: grid; gap: 6px; }
+footer a, .sheet a { color: var(--son); }
+@media (prefers-reduced-motion: no-preference) { nav.toc a { transition: background .15s, color .15s; } }
+</style>
+<style>
+figure { margin: 4px 0 0; display: grid; gap: 6px; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 14px; color: var(--ink2); }
+svg text { font-family: var(--body); fill: var(--ink); }
+svg .soft { fill: var(--ink2); }
+svg .box { fill: var(--paper); stroke: var(--ink); stroke-width: 2; }
+svg .gain { fill: var(--gold); stroke: var(--ink); stroke-width: 2; }
+svg .loss { fill: none; stroke: var(--son); stroke-width: 2; stroke-dasharray: 5 4; }
+svg .line { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+svg .line2 { fill: none; stroke: var(--son); stroke-width: 2.5; stroke-dasharray: 7 5; }
+svg .axis { stroke: var(--ink2); stroke-width: 1.5; }
+.law { border-left: 4px solid var(--gold); padding: 4px 0 4px 14px; display: grid; gap: 4px; }
+.law b:first-child { font-family: var(--display); font-size: 17px; }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Chương IV · Vợ Chồng Khởi Nghiệp · 經濟</div>
+  <h1>Kinh tế chợ chuột<span class="han">tiền lãi, khách hàng và người làm vận hành ra sao</span></h1>
+  <p class="lede">Chợ trong game không bán theo may rủi. Khách tính giá, làng có lúc khá lúc túng, người làm biết mình đáng được trả bao nhiêu, chủ nhà biết quán mình làm ăn ra sao. Trang này giải thích các quy luật ấy. Còn mỗi quy luật mạnh đến đâu thì không ghi ở đây: bạn phải tự đo ở chợ.</p>
+  <nav class="toc" aria-label="Các phần">
+    <a href="#dong-tien">Dòng tiền</a><a href="#gia">Giá và khách</a><a href="#tam-ly">Tâm lý người mua</a><a href="#thoi-the">Thời thế</a><a href="#nguoi-lam">Người làm</a><a href="#nganh">Mỗi nghề một kiểu</a><a href="#mat-bang">Mặt bằng</a><a href="#hang">Hàng và thời gian</a><a href="#rui-ro">Vốn và rủi ro</a><a href="#chu-tin">Chữ tín</a><a href="#tu-do">Tự đo</a>
+  </nav>
+</header>
+
+<section class="sheet" id="dong-tien">
+  <div class="num">I · Nền tảng</div>
+  <h2>Đồng tiền chảy đi đâu</h2>
+  <p>Mỗi tối, tờ cuối ngày làm một phép trừ. Tiền khách trả là <b>doanh thu</b>. Phải trừ đi nhiều thứ mới còn lại <b>tiền lãi</b>:</p>
+  <figure>
+    <svg viewBox="0 0 640 230" role="img" aria-label="Doanh thu trừ vốn hàng, tiền công, tiền thuê hoặc thuế, chi vặt và rủi ro thì còn lại tiền lãi">
+      <rect class="box" x="8" y="20" width="624" height="44" rx="4"/>
+      <text x="320" y="48" text-anchor="middle" font-weight="600">Doanh thu: tiền khách trả trong ngày</text>
+      <rect class="box" x="8" y="96" width="150" height="44" rx="4"/><text x="83" y="123" text-anchor="middle" font-size="14">Vốn hàng đã bán</text>
+      <rect class="box" x="166" y="96" width="112" height="44" rx="4"/><text x="222" y="123" text-anchor="middle" font-size="14">Tiền công</text>
+      <rect class="box" x="286" y="96" width="112" height="44" rx="4"/><text x="342" y="123" text-anchor="middle" font-size="14">Thuê / thuế</text>
+      <rect class="box" x="406" y="96" width="86" height="44" rx="4"/><text x="449" y="123" text-anchor="middle" font-size="14">Chi vặt</text>
+      <rect class="loss" x="500" y="96" width="132" height="44" rx="4"/><text x="566" y="123" text-anchor="middle" font-size="14">Hàng hỏng, rủi ro</text>
+      <rect class="gain" x="430" y="172" width="202" height="44" rx="4"/><text x="531" y="199" text-anchor="middle" font-weight="600">Tiền lãi</text>
+      <path class="axis" d="M320 64 V96 M83 64 V96 M222 64 V96 M342 64 V96 M449 64 V96 M566 64 V96"/>
+      <text class="soft" x="12" y="199" font-size="14">Cái gì không trừ được thì mới là của mình.</text>
+    </svg>
+    <figcaption>Chi vặt là than củi, nước, dầu đèn, giấy gói. Nó đi theo doanh thu: bán càng nhiều càng tốn. Ô đỏ là thứ không ngày nào giống ngày nào.</figcaption>
+  </figure>
+  <div class="law"><b>Doanh thu cao chưa chắc là lãi cao.</b><p>Bán rẻ thì đông khách, doanh thu to, nhưng mỗi món lời ít, còn công và chi vặt vẫn phải trả. Một ngày tấp nập vẫn có thể là một ngày lỗ.</p></div>
+  <div class="law"><b>Có khoản trả theo ngày, có khoản trả theo tuần.</b><p>Tiền công trả mỗi tối. Ở phố huyện, tiền thuê trả theo tuần. Ở chợ quê, thuế chợ thu năm ngày một lần. Vì thế một tuần lãi đều vẫn có ngày túi tiền tụt mạnh.</p></div>
+  <div class="law"><b>Mục tiêu tính bằng của để dành, không tính bằng tiền trong túi.</b><p>Tiền trong túi trừ đi nợ lái buôn và tiền vay mới là của mình. Vay thêm thì túi đầy lên nhưng của để dành không tăng.</p></div>
+</section>
+
+<section class="sheet" id="gia">
+  <div class="num">II · Cầu</div>
+  <h2>Giá và khách</h2>
+  <p>Mỗi món đều có một <b>giá phải chăng</b>: mức giá người làng thấy vừa túi tiền hôm ấy. Bạn tự đặt giá, và mọi chuyện bắt đầu từ chỗ giá bạn đặt cao hay thấp so với mức ấy.</p>
+  <figure>
+    <svg viewBox="0 0 640 260" role="img" aria-label="Hai đường cong không có số: lượng bán giảm khi giá tăng, tiền lãi cao nhất ở một mức giá nhỉnh hơn giá phải chăng một chút">
+      <path class="axis" d="M60 220 H620 M60 220 V20"/>
+      <text class="soft" x="620" y="244" text-anchor="end" font-size="14">giá bạn đặt →</text>
+      <text class="soft" x="66" y="18" font-size="14">nhiều</text>
+      <path class="axis" d="M290 220 V30" stroke-dasharray="3 5"/>
+      <text x="290" y="244" text-anchor="middle" font-size="14">giá phải chăng</text>
+      <path class="line" d="M80 34 C150 70 230 118 290 128 C330 135 350 140 380 156 C430 185 480 210 560 219"/>
+      <path class="line2" d="M80 214 C150 195 230 150 290 128 C315 118 330 112 345 112 C370 113 395 135 430 170 C470 205 520 218 560 219"/>
+      <text x="96" y="58" font-size="14" font-weight="600">lượng bán</text>
+      <text x="358" y="100" font-size="14" font-weight="600" fill="var(--son)" style="fill:var(--son)">tiền lãi</text>
+      <text class="soft" x="566" y="208" font-size="13">không ai mua</text>
+    </svg>
+    <figcaption>Hình chỉ để thấy dáng đường cong. Không có con số nào trên trục là cố ý.</figcaption>
+  </figure>
+  <div class="law"><b>Rẻ thì tranh nhau mua.</b><p>Dưới giá phải chăng, khách kéo đến nhiều hơn và mỗi người mua nhiều hơn. Hàng đi nhanh nhưng mỗi món lời mỏng.</p></div>
+  <div class="law"><b>Đắt một chút thì gần như không sao, đắt hơn nữa thì khách tụt nhanh.</b><p>Nhích nhẹ trên giá phải chăng, khách hầu như không để ý. Qua một ngưỡng thì vừa ít người ghé, vừa mỗi người chỉ mua lẻ một món. Đắt quá một mức thì không còn ai mua.</p></div>
+  <div class="law"><b>Lãi cao nhất nằm nhỉnh hơn giá phải chăng một chút.</b><p>Không phải ở giá rẻ nhất, cũng không ở giá đắt nhất. Chỗ ấy ở đâu thì phải thử mới biết, và nó xê dịch theo từng ngày.</p></div>
+  <div class="law"><b>Một người khách là hai quyết định.</b><p>Thứ nhất là có ghé hay không, thứ hai là mua mấy món. Giá đắt làm giảm cả hai, nên hãy nhìn cả số khách lẫn số món trên tờ cuối ngày.</p></div>
+</section>
+
+<section class="sheet" id="tam-ly">
+  <div class="num">III · Lòng người</div>
+  <h2>Tâm lý người mua</h2>
+  <p>Người mua trong game không phải cái máy tính giá. Họ nhớ, so sánh, để bụng và rủ nhau.</p>
+  <div class="law"><b>Giá quen.</b><p>Mỗi món có một giá khách đã quen trả. Giá quen nhích dần theo giá bạn bán, mỗi tối một ít. Bán cao hơn giá quen thì khách thấy đắt hơn thực tế. Bán thấp hơn thì khách chỉ thấy rẻ hơn một chút. Vì thế tăng giá từ từ mất ít khách hơn tăng một lần thật mạnh, còn hạ giá đột ngột thì không được lợi bao nhiêu.</p></div>
+  <div class="law"><b>Thuận mua vừa bán.</b><p>Nhân lúc làng túng hay hôm có hội mà nâng giá thì khách quen thấy bị chặt chém. Họ bớt quý quán, có người nói thẳng ra, và hôm sau ít người ghé hơn.</p></div>
+  <div class="law"><b>Đông kéo đông.</b><p>Thấy có vài người đang xếp hàng, người qua đường dễ tò mò ghé vào. Hàng dài quá thì người mới đến lắc đầu bỏ đi.</p></div>
+  <div class="law"><b>Rẻ quá thì sinh nghi.</b><p>Với vải, đồ buôn và vàng bạc, giá rẻ bất thường làm khách ngờ là hàng giả. Đồ ăn thì không bị như vậy.</p></div>
+  <div class="law"><b>Món đắt làm món giữa trông rẻ.</b><p>Một quán bày cả món rẻ lẫn món rất đắt thì các món ở giữa dễ bán hơn.</p></div>
+  <div class="law"><b>Nhanh tay thì được lòng.</b><p>Khách quen được bán nhanh thì quý quán thêm một chút. Phải chờ lâu quá mà bỏ đi thì họ bớt quý. Đến nơi thấy hết hàng thì họ còn giận hơn.</p></div>
+</section>
+
+<section class="sheet" id="thoi-the">
+  <div class="num">IV · Thời thế</div>
+  <h2>Làng khá, làng túng</h2>
+  <p>Mỗi ngày cả làng có một <b>sức mua</b>: hôm thì rủng rỉnh, hôm thì thắt lưng buộc bụng. Sức mua hôm nay nối tiếp hôm qua, đổi dần dần, thỉnh thoảng có một cú sốc. Giá phải chăng lên xuống theo nó.</p>
+  <div class="law"><b>Hàng thiết yếu vững, hàng xa xỉ chao đảo.</b><p>Gạo, rau, thịt, cá, trầu cau, thuốc thì ngày nào người ta cũng phải mua. Hàng xén, vải, đèn lồng, nhất là vàng bạc, thì lúc làng khá bán chạy, lúc làng túng ế hẳn. Quán ăn nằm ở giữa.</p></div>
+  <div class="law"><b>Làng khá thì dễ tính.</b><p>Những ngày người làng rủng rỉnh, nâng giá lên một chút cũng ít ai kêu.</p></div>
+  <div class="law"><b>Tin đồn báo trước thời thế.</b><p>Người làng hay thì thầm chuyện mai làng khá hay túng, trời mưa hay nắng. Phần nhiều tin đồn là đúng, nhưng không phải tin nào cũng đúng.</p></div>
+  <div class="law"><b>Lịch âm.</b><p>Ngày rằm, mồng một thì đồ lễ bán chạy. Tháng Chạp nhà nào cũng sắm sửa. Tháng Giêng thì ít ai mua vàng. Ngày âm lịch có ghi trên tờ buổi sáng và trên đồng hồ phố huyện.</p></div>
+  <div class="law"><b>Thời tiết.</b><p>Mỗi món hợp một kiểu trời: có món bán chạy ngày rét, có món ế ngày mưa. Nắng gắt thì trầu héo nhanh.</p></div>
+</section>
+
+<section class="sheet" id="nguoi-lam">
+  <div class="num">V · Nhân công</div>
+  <h2>Người làm</h2>
+  <p>Người làm là cách duy nhất để một gian hàng bán nhanh hơn sức một người. Nhưng họ là người, không phải cái máy.</p>
+  <div class="law"><b>Thêm người thì thêm sức, nhưng người sau đỡ ít hơn người trước.</b><p>Người phụ đầu tiên làm quầy bán nhanh hẳn lên. Người thứ hai vẫn có ích, nhưng đỡ ít hơn. Quán vắng mà thuê nhiều người thì chỉ tốn công.</p></div>
+  <div class="law"><b>Quá tải thì kiệt sức.</b><p>Quầy cứ đông nghẹt hết giờ này sang giờ khác thì người đứng quầy mệt dần, bán chậm lại. Mấy ngày liền như thế thì họ than, bụng dạ cũng dễ đổi. Ngủ một đêm thì đỡ.</p></div>
+  <div class="law"><b>Bạn tự chọn người, tự định công.</b><p>Muốn thuê thì vài người đến xin việc, mỗi người một tính: nhanh nhẹn hay chậm, nhiệt tình hay hờ hững, thật thà hay không. Người giỏi đòi công cao hơn. Thuê rồi bạn vẫn tăng hay bớt công cho từng người được, chỉ là người bị bớt công thì để bụng.</p></div>
+  <div class="law"><b>Công xứng đáng đi theo doanh thu.</b><p>Người làm nhìn xem quán thu được bao nhiêu mấy hôm gần đây rồi tự biết công mình đáng bao nhiêu. Mỗi nghề trả cho người làm một phần doanh thu khác nhau, giống như ngoài đời. Người phụ đáng được nửa công người đứng quầy.</p></div>
+  <div class="law"><b>Đòi tăng từng chút một.</b><p>Thấy công mình thấp hơn mức đáng được, người làm sẽ xin tăng, mỗi lần một ít. Đồng ý thì họ yên lòng làm, ít nhất một thời gian. Từ chối thì họ hậm hực. Càng nhiều lần bị từ chối, càng dễ có ngày quầy hụt tiền hay người biến mất cùng tiền bán hàng.</p></div>
+  <div class="law"><b>Không phải ai cũng như ai.</b><p>Người nhanh nhẹn bán nhanh hơn, người nhiệt tình kéo thêm được khách, người thật thà ít khi để hụt tiền. Có người quý chủ, có người không. Trả công đủ cũng không làm rủi ro về hẳn số không, chỉ làm nó rất nhỏ.</p></div>
+  <div class="law"><b>Tiền thưởng Tết mua được lòng cả năm.</b><p>Mấy ngày đầu tháng Giêng có dịp thưởng Tết. Nó tốn đúng một tháng công, đổi lại người làm yên tâm gắn bó suốt năm ấy.</p></div>
+</section>
+
+<section class="sheet" id="nganh">
+  <div class="num">VI · Cơ cấu</div>
+  <h2>Mỗi nghề một kiểu làm ăn</h2>
+  <p>Trên phố huyện, các nghề chia doanh thu rất khác nhau. Bảng dưới chỉ so tương đối, không có tỷ lệ thật.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Nghề</th><th>Vốn hàng</th><th>Công người làm</th><th>Lãi mỗi món</th><th>Theo thời thế</th></tr></thead>
+    <tbody>
+      <tr><td><b>Quán ăn</b></td><td>vừa</td><td>nhiều nhất</td><td>khá</td><td>vừa; đồ nấu không để qua đêm</td></tr>
+      <tr><td><b>Hàng thiết yếu</b> (gạo muối, thuốc)</td><td>rất lớn</td><td>ít</td><td>mỏng, bù bằng bán nhiều</td><td>rất ít</td></tr>
+      <tr><td><b>Hàng buôn</b> (vải, gốm, hàng xén)</td><td>lớn</td><td>vừa</td><td>khá</td><td>nhiều</td></tr>
+      <tr><td><b>Tiệm vàng</b></td><td>rất lớn</td><td>ít nhất</td><td>khá</td><td>nhiều nhất; tháng Giêng ế</td></tr>
+      <tr><td><b>Đèn lồng</b></td><td>vừa</td><td>vừa</td><td>cao</td><td>nhiều; mùa lễ bán chạy</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Mỗi nghề còn có rủi ro riêng: quán ăn đổ bỏ đồ ế ngày mưa hay ngày vắng, gốm vỡ, vải ẩm mốc, tiệm vàng không ai phụ thì dễ bị kẻ gian lấy đồ.</p>
+</section>
+
+<section class="sheet" id="mat-bang">
+  <div class="num">VII · Đất và nhà</div>
+  <h2>Mặt bằng và chủ nhà</h2>
+  <div class="law"><b>Chỗ đông thì đắt.</b><p>Trên phố, càng gần cổng càng đông khách, nhưng tiền thuê và tiền công cũng cao hơn. Cuối phố rẻ hơn nhưng vắng hơn.</p></div>
+  <div class="law"><b>Chủ nhà biết đọc sổ.</b><p>Thỉnh thoảng chủ nhà xem quán làm ăn ra sao. Quán phát đạt thì họ tăng tiền thuê. Quán chật vật mãi thì họ hạ xuống, nhưng không thấp hơn giá ban đầu.</p></div>
+  <div class="law"><b>Thuê hay mua đứt.</b><p>Mua đứt tốn bằng tiền thuê của nhiều tháng. Đổi lại, sau đó mỗi tuần chỉ đóng thuế nhà, ít hơn tiền thuê nhiều, và chủ nhà không còn tăng giá được. Phải giữ quán đủ lâu thì mua mới có lời. Nhà mua rồi thỉnh thoảng phải tu sửa.</p></div>
+  <div class="law"><b>Ở chợ quê thì quen biết là vốn.</b><p>Chủ đất quý mình thì cho thuê rẻ hơn, người lạ thì lấy giá thường. Muốn mua lại sạp hàng xóm thì trước hết phải quen chủ sạp.</p></div>
+</section>
+
+<section class="sheet" id="hang">
+  <div class="num">VIII · Hàng tồn</div>
+  <h2>Hàng và thời gian</h2>
+  <div class="law"><b>Hàng nào cũng có hạn.</b><p>Trầu, chè, bún thì tan chợ là héo, là thiu. Xôi thì quá trưa đã hỏng. Hàng xén để được lâu. Nhập thừa là mất vốn, nhập thiếu là mất khách.</p></div>
+  <div class="law"><b>Biết trước thì rẻ, chạy theo thì đắt.</b><p>Hàng nhập buổi sáng rẻ hơn hàng chạy đi lấy giữa buổi. Đoán đúng sức bán từ sáng là cách tiết kiệm nhất. Mua sỉ còn rẻ hơn, nhưng phải đặt trước và chịu chờ.</p></div>
+  <div class="law"><b>Hết hàng mất nhiều hơn một lần bán.</b><p>Khách quen đến mà gian không còn gì thì họ giận, và lần sau chưa chắc đã quay lại.</p></div>
+</section>
+
+<section class="sheet" id="rui-ro">
+  <div class="num">IX · Tài chính</div>
+  <h2>Vốn, nợ và rủi ro</h2>
+  <div class="law"><b>Có ba nguồn vốn, giá rất khác nhau.</b><p>Mua chịu lái buôn thì không mất lãi nhưng có hạn mức. Vay hàng xóm thì lãi nhẹ, nhưng trả chậm thì mất lòng. Vay cụ Lý thì được nhiều, lãi nặng, quá hạn lâu thì bị siết sạch cơ nghiệp.</p></div>
+  <div class="law"><b>Nợ kéo dài thì phá sản.</b><p>Nợ lái buôn quá nhiều mấy buổi sáng liền thì phải làm lại từ đầu. Tờ buổi sáng có báo trước.</p></div>
+  <div class="law"><b>Lãi nhiều thì thuế nhiều.</b><p>Thuế chợ của cụ Lý tính theo lãi mấy ngày gần đây, lãi càng cao thì tỷ lệ thuế càng cao, lại cộng thêm theo số gian hàng.</p></div>
+  <div class="law"><b>Giàu thì rủi ro cũng to.</b><p>Bão, cháy, lụt, lính tráng thu tiền lấy đi một phần túi tiền, và nhiều gian hàng thì mất nhiều hơn. Túi đầy còn có những tai hoạ riêng: kiện tụng, người làm ôm tiền chạy.</p></div>
+</section>
+
+<section class="sheet" id="chu-tin">
+  <div class="num">X · Vốn vô hình</div>
+  <h2>Chữ tín và quan hệ</h2>
+  <p>Ở chợ quê, mỗi người qua lại là một dân làng thật, có nhà, có họ hàng, có bạn bè và có tính nết. Quan hệ là thứ vốn không hiện trong túi tiền nhưng sinh lãi.</p>
+  <div class="law"><b>Khách quen mua nhiều hơn và hay quay lại.</b><p>Người lạ mới thử thì e dè. Phải mua vài lần mới thành mặt quen, quý nhiều mới thành mối ruột.</p></div>
+  <div class="law"><b>Khách quý thì giới thiệu người khác.</b><p>Ai quý gian hàng có khi rủ họ hàng, bạn bè đến mua. Người khó gần thì lâu mới quen, nhưng đã quen thì rất trung thành.</p></div>
+  <div class="law"><b>Tiếng xấu đi nhanh.</b><p>Người ghét gian hàng nói xấu lúc tối. Người lạ nghe vậy thì ngại đến. Làm lành với người hay đồn là cách chặn miệng.</p></div>
+  <div class="law"><b>Đám cưới, đám ma là chuyện làm ăn.</b><p>Mừng hay phúng thì cả nhà ấy, đôi khi cả bạn bè họ, quý mình hơn. Vắng mặt thì người ta nhớ.</p></div>
+</section>
+
+<section class="sheet" id="tu-do">
+  <div class="num">Phần để dành</div>
+  <h2>Những gì bạn phải tự đo</h2>
+  <div class="secret">
+    <p><b>Trang này cố ý không ghi bất kỳ con số nào.</b> Muốn buôn giỏi, bạn phải tự tìm ra:</p>
+    <ul>
+      <li>Đắt hơn giá phải chăng bao nhiêu thì khách bắt đầu bỏ đi, và bao nhiêu thì không còn ai mua.</li>
+      <li>Giá quen đuổi theo giá bạn bán nhanh hay chậm.</li>
+      <li>Mỗi nghề trả cho người làm bao nhiêu phần doanh thu.</li>
+      <li>Hàng dài bao nhiêu thì kéo khách, bao nhiêu thì đuổi khách.</li>
+      <li>Bao nhiêu phần tin đồn là thật.</li>
+      <li>Chủ nhà tính lại tiền thuê khi nào, và theo mức nào.</li>
+    </ul>
+    <p>Cách đo: giữ mọi thứ như cũ, mỗi lần chỉ đổi một thứ, rồi so tờ cuối ngày.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Đám Cưới Chuột · <a href="https://damcuoichuot.com/">damcuoichuot.com</a></p>
+</footer>
+</div>
+<p style="text-align:center;margin:2rem 0 3rem"><a href="./">Vào chơi Đám Cưới Chuột</a></p>
+</body>
+</html>
