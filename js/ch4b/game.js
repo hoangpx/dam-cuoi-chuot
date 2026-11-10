@@ -81,7 +81,7 @@ function p4WalkersUpdate(dt) {
     if (w.st === 'walk' || w.st === 'leave') {
       w.x += w.dir * w.sp * dt; w.ph += dt * w.sp / 9; w.face = w.dir;
       if (w.st === 'walk' && w.buy && !SAVE4B.shut && Math.abs(w.x - door) < 140 && Q.length < 6) { w.st = 'go'; Q.push(w); }
-      if ((w.cd -= dt) < 0 && !w.say) { w.cd = 8 + Math.random() * 14; if (Math.random() < .35) p4Say(w, p4Pick(P4_CHAT)); }
+      if ((w.cd -= dt) < 0 && !w.say) { w.cd = 8 + Math.random() * 14; if (Math.random() < .35) p4Say(w, typeof p4MoodTalk === 'function' && Math.random() < .3 ? p4MoodTalk() : p4Pick(P4_CHAT)); }   // a third of the chatter is the street's mood (kinhte.js)
     } else if (w.st === 'go' || w.st === 'queue') {
       const i = Q.indexOf(w), tx = door + 40 + i * 34, tz = qz + i * .03, dx = tx - w.x, dz = tz - w.z, d = Math.hypot(dx, dz * 300);
       w.moving = d > 3; if (w.moving) { const st = Math.min(d, 70 * dt); w.x += dx / d * st; w.z += dz * 300 / d * st / 300; w.ph += dt * 7; w.face = dx > 0 ? 1 : -1; }

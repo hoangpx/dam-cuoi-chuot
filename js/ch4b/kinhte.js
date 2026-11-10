@@ -69,15 +69,29 @@ function p4Walkout(w) { if (w.pid === undefined || w.pid === null || w.treat) re
 // the lunar date on the town's clock
 { const t0 = p4HudTime; p4HudTime = function () { t0.apply(this, arguments); const el = $('#p4Time'); if (el) el.textContent = el.textContent.replace(/^Ngày \d+/, m => `${m} · ${c4LunarText()}`); }; }
 
-// the street's mood in words on the morning sheet (players, 2026-11-09: "ở trên phố không được báo trước tình hình kinh tế chung"): the village hears it in
-// whispers; the town reads it off the street in the morning, plain and true, in words only (no numbers)
-function p4MoodLine() {
-  const m = c4TownMood();
-  return m >= 1.07 ? 'Sáng nay phố xá rủng rỉnh: thuyền buôn cập bến đông, người ta chịu chi hơn mọi hôm.'
-    : m >= 1.025 ? 'Sáng nay phố có vẻ khá: người đi chợ thong thả, hầu bao rộng rãi hơn một chút.'
-    : m <= .93 ? 'Sáng nay phố xá túng bấn: người ta than giá gạo, ai cũng thắt hầu bao.'
-    : m <= .975 ? 'Sáng nay phố hơi chùng: người mua cân nhắc từng đồng.'
-    : 'Sáng nay phố như mọi ngày, không khá cũng không túng.';
+// the street's mood is never told outright (owner, 2026-11-09: "phố cũng không nói rõ tình hình kinh tế ra sao, cũng phải hóng như ở chợ quê, nhìn thái
+// độ người dân"): as in the village (whispers there, gia.js buyers' remarks) the town hears it from the street. A third of the passers-by's chatter is
+// talk of how trade goes (p4MoodTalk: true about 72 % of the time, like the village's whispers, else one of the other moods), and a buyer served at
+// one of our shops now and then says how their own purse feels today (true: it is their own money). No numbers anywhere.
+const P4_MOOD_TALK = {
+  good: ['Thuyền buôn về đông quá, bến chật cả chỗ đậu.', 'Dạo này buôn bán được, tôi vừa sắm cái áo mới.', 'Nghe nói giá tơ lên, nhà ai có tằm cũng mừng.',
+    'Hôm nay ai cũng rủng rỉnh, quán nào cũng đông.', 'Lái buôn trên ngược về, tiền nong dễ thở hẳn.'],
+  hard: ['Mấy hôm nay thuyền vắng, bến im như tờ.', 'Giá gạo lên mà hàng thì ế, khổ quá.', 'Nghe nói thuế mới lại tăng, ai cũng lo.',
+    'Hôm nay đi chợ chỉ dám mua cái cần thôi.', 'Buôn bán chậm lắm, chủ hàng nào cũng kêu.'],
+  plain: ['Phố hôm nay cũng thường thường thôi.', 'Chẳng khá chẳng túng, ngày nào như ngày nấy.', 'Bến vẫn đều thuyền, không nhiều không ít.']
+};
+const P4_PURSE_SAY = {
+  good: ['Hôm nay tôi có đồng ra đồng vào, cứ lấy.', 'Đắt rẻ gì, nay vui thì mua.', 'Nay được tiền hàng, mua thêm cho cả nhà.'],
+  hard: ['Nay túi lép lắm, mua ít thôi.', 'Phải dè sẻn, dạo này kiếm khó quá.', 'Lấy cho tôi cái rẻ nhất thôi.']
+};
+const p4MoodKind = () => { const m = c4TownMood(); return m >= 1.04 ? 'good' : m <= .96 ? 'hard' : 'plain'; };
+function p4MoodTalk() {
+  let k = p4MoodKind(); if (Math.random() >= .72) k = p4Pick(['good', 'hard', 'plain'].filter(x => x !== k));
+  return p4Pick(P4_MOOD_TALK[k]);
 }
-{ const hd0 = p4HomeDraw;
-  p4HomeDraw = function () { hd0.apply(this, arguments); if (SAVE4B.morning === SAVE4.day) { const p = document.createElement('p'); p.className = 'p4mood'; p.innerHTML = `<i>${p4MoodLine()}</i>`; const b = $('#p4homeB'); b.insertBefore(p, b.firstChild); } }; }
+{ const sv0 = p4Served;
+  p4Served = function (w, kind) {
+    const k = p4MoodKind();
+    if (k !== 'plain' && !w.treat && !w.say && Math.random() < .08) p4Say(w, p4Pick(P4_PURSE_SAY[k]));
+    return sv0.apply(this, arguments);
+  }; }
