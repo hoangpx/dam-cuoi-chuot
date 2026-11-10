@@ -131,7 +131,10 @@ function p4ShopIcon(g, k, x, y, r) {
 
 /* ---------- running têm trầu's engine for a shop ---------- */
 const P4_TEM_SAVE = { ing: null, rec: null };
-const p4ShopRecipes = S => S.K.wares.filter(w => p4Has(S.R, w) && S.G.r[w.id]).map(w => ({ id: w.id, name: w.n, need: S.G.r[w.id], fold: false, price: p4WPrice(S.R, w), w: w.w * c4PFlow(p4WRatio(S.R, w)), ware: w })).filter(r => r.w > 0);   // dear wares are asked for less (as on the street)
+const p4ShopRecipesAll = S => S.K.wares.filter(w => p4Has(S.R, w) && S.G.r[w.id]).map(w => ({ id: w.id, name: w.n, need: S.G.r[w.id], fold: false, price: p4WPrice(S.R, w), w: w.w * c4PFlow(p4WRatio(S.R, w)), ware: w }));
+// (owner, 2026-11-09: "vẫn tự bán được chứ, chẳng qua sẽ không ai ghé mua"): a shift opens with every ware on the menu; wares nobody wants at
+// their price (w 0) are simply never ordered, so at prices nobody pays the shift runs with nobody coming
+const p4ShopRecipes = S => p4ShopRecipesAll(S).filter(r => r.w > 0);   // dear wares are asked for less (as on the street)
 // how willing the shift's customers are: the menu's flow at its prices (owner, 2026-11-08: at triple price the hand-selling game paid ~25 quan a shift)
 const p4MiniFlow = S => { const ws = S.K.wares.filter(w => p4Has(S.R, w)), t = ws.reduce((a, w) => a + w.w, 0); return (t ? ws.reduce((a, w) => a + w.w * c4PFlow(p4WRatio(S.R, w)), 0) / t : 1) * 1.2 * Math.min(1, .3 + .7 * S.K.cust / 46); };   // a shop few people visit (the goldsmith) is quieter in the game too
 // standing at the counter oneself draws a few more (owner, 2026-11-09: "đứng ở quầy bán như kiểu têm trầu thì vẫn đông hơn một chút"): ×1.2, and a quiet shop keeps
@@ -144,12 +147,12 @@ function p4MiniStart(key) {
   const K = p4Kind(R), G = P4_MINI[K.game];
   if (!G) { toast('Quán này chưa có trò tự tay bán.', 2.4); return; }
   if (R.shut) { toast('Quán đang đóng cửa: mở cửa rồi hẵng bán.', 2.6); return; }
-  const S = { key, R, K, G }; if (!p4ShopRecipes(S).length) { toast(K.wares.some(w => p4Has(R, w)) ? 'Chẳng có ai ghé hỏi mua.' : 'Quán chưa bày món nào để bán.', 2.8); return; }
+  const S = { key, R, K, G }; if (!p4ShopRecipesAll(S).length) { toast('Quán chưa bày món nào để bán.', 2.8); return; }
   if (p4MiniLeft() <= 0) { toast(`Hôm nay đã tự tay bán đủ ${P4_MINI_DAY} ca rồi, mai lại bán tiếp.`, 3); return; }
   const M = SAVE4B.mini && SAVE4B.mini.day === SAVE4.day ? SAVE4B.mini : (SAVE4B.mini = { day: SAVE4.day, n: 0 }); M.n++; p4Persist();
   if (!P4_TEM_SAVE.ing) { P4_TEM_SAVE.ing = P4_TEM_ING.slice(); P4_TEM_SAVE.rec = P4_TEM_RECIPES.slice(); }
   P4_TEM_ING.splice(0, P4_TEM_ING.length, ...G.pieces.map(([k, name]) => ({ k, name })), { k: 'bo', name: 'Bỏ' });
-  P4_TEM_RECIPES.splice(0, P4_TEM_RECIPES.length, ...p4ShopRecipes(S));
+  P4_TEM_RECIPES.splice(0, P4_TEM_RECIPES.length, ...p4ShopRecipesAll(S));
   p4Sheets(null); $('#p4hud').hidden = true; $('#p4temHud').hidden = false;
   Object.assign(P4T, { shop: S, drag: null, on: true, out: 0, fetch: 0, early: false, t: 0, cust: [], boards: [{ items: [], fold: false }, { items: [], fold: false }], sel: 0, next: 1.2, served: 0, wrong: 0, missed: 0, earned: 0, cost: 0, fx: [], shake: null });
 }
@@ -173,12 +176,12 @@ function p4MiniRestore() {
     if (!P4T.on) return;
     P4T.t += dt;
     if (P4T.t >= P4_TEM_SHIFT && !P4T.cust.some(c => !c.leaving)) { p4TemStop(); return; }
-    P4_TEM_RECIPES.splice(0, P4_TEM_RECIPES.length, ...p4ShopRecipes(S));
-    if (!P4_TEM_RECIPES.length && !P4T.cust.some(c => !c.leaving)) { P4T.early = S.K.wares.some(w => p4Has(S.R, w)) ? 'dear' : true; p4TemStop(); return; }
-    if (P4T.t < P4_TEM_SHIFT - 6 && (P4T.next -= dt) <= 0 && P4_TEM_RECIPES.length) {
+    P4_TEM_RECIPES.splice(0, P4_TEM_RECIPES.length, ...p4ShopRecipesAll(S));
+    if (!P4_TEM_RECIPES.length && !P4T.cust.some(c => !c.leaving)) { P4T.early = true; p4TemStop(); return; }
+    if (P4T.t < P4_TEM_SHIFT - 6 && (P4T.next -= dt) <= 0 && P4_TEM_RECIPES.some(r => r.w > 0)) {
       const free = p4TemLay().slots.map((_, i) => i).filter(i => !P4T.cust.some(c => c.slot === i && !c.gone));
       if (free.length) {
-        const tot = P4_TEM_RECIPES.reduce((a, r) => a + r.w, 0); let k = Math.random() * tot, rec = P4_TEM_RECIPES[0];
+        const tot = P4_TEM_RECIPES.reduce((a, r) => a + r.w, 0); let k = Math.random() * tot, rec = P4_TEM_RECIPES.find(r => r.w > 0);
         for (const r of P4_TEM_RECIPES) if ((k -= r.w) <= 0) { rec = r; break; }
         const sort = p4Pick(C4_ADULT_SORTS2), seed = Math.random() * 6, pat = 26 - 9 * P4T.t / P4_TEM_SHIFT;
         P4T.cust.push({ slot: p4Pick(free), sort, M: c4MouseRig(sort), seed, look: p4TownLook({ skirt: Math.random() < .5, hat: Math.random() < .2 ? 'quai' : null }, seed), umb: false,
