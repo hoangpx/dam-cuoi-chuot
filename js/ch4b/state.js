@@ -7,7 +7,10 @@ const P4_W = 3600, P4_HOME = 720, P4_GATE = 390, P4_Y0 = 300, P4_D = 190;   // t
 const P4_OPEN = 5 * 60, P4_CLOSE = 23 * 60, P4_MPS = 4;                     // the day: from 5:00 (with the village) to 23:00 (owner: the town is open late), game minutes per second (slower after 18:00)
 const P4_HOUSE_PRICE = 500 * 600;                                         // 500 quan (600 đồng a quan)
 const P4_CROWD = .86;                                                       // folk drawn a little smaller than the houses' scale
-const p4Y = z => P4_Y0 + z * P4_D, p4S = z => .52 + .34 * z;              // where depth z stands on screen, and how big
+const p4Y = z => P4_Y0 + z * P4_D, p4S = z => .52 + .34 * z;              // where depth z stands on screen, and how big (houses, bridge, counters)
+// the folk on the street are one size at every depth, as in the village since 2026-11-06 (owner 2026-11-11: those out on the street looked
+// bigger than normal; near ones were up to 1.3 times the sellers at the counter): the size of the farthest of them before
+const P4_FOLK_S = .62, p4FS = () => P4_FOLK_S;
 function p4View() {
   const w = innerWidth || 430, h = innerHeight || 800, portrait = h > w, s = portrait ? w / 470 : Math.min(h / 600, w / 760), vh = h / s;
   return { s, vh, vw: w / s, oy: vh * (portrait ? .72 : .81) - (P4_Y0 + P4_D) };

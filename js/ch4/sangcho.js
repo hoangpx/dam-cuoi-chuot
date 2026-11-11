@@ -266,7 +266,7 @@ function cnBubbles(g, p, x, y, s) {
 { const fx0 = c4FxItems;
   c4FxItems = function (items, g, vis) { fx0(items, g, vis); if (CN.hosting === 'lang') { if (CN.guests.size) cnDrawPeople(items, g, vis, [...CN.guests.values()], c4Y, c4S, () => 0, C4_CROWD, C4_TALL.mouse * C4_CROWD * .92); cnOwnItems(items, g, C4_STALL - 40, c4Y(C4_WIFE_Z) - 150 * c4S(C4_WIFE_Z), c4S(C4_WIFE_Z)); } }; }
 { const br0 = p4TownBridgeItems;
-  p4TownBridgeItems = function (items, g, vis) { br0(items, g, vis); if (CN.hosting === 'pho') { if (CN.guests.size) cnDrawPeople(items, g, vis, [...CN.guests.values()], p4Y, p4S, p4TownLift, P4_CROWD, P4_TALL * P4_CROWD * .92); cnOwnItems(items, g, P4_HOME, p4Y(.1) - 150 * p4S(.1), p4S(.1)); } }; }
+  p4TownBridgeItems = function (items, g, vis) { br0(items, g, vis); if (CN.hosting === 'pho') { if (CN.guests.size) cnDrawPeople(items, g, vis, [...CN.guests.values()], p4Y, p4FS, p4TownLift, P4_CROWD, P4_TALL * P4_CROWD * .92); cnOwnItems(items, g, P4_HOME, p4Y(.1) - 150 * p4S(.1), p4S(.1)); } }; }
 /* ---------- chat and the six faces (owner 2026-10-28: "như chương X ghép tranh; chú ý bàn phím không che") ----------
    Two round buttons at the top left under the HUD, in my own market (while a visitor is in it) and in a visit. The chat is Hội Làng's own
    bar (hlChatOpen: on a phone it sits at the TOP, where the keyboard cannot cover it); the faces are Hội Làng's six woodblock faces

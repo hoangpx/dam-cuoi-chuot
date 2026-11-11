@@ -143,7 +143,7 @@ const c4FeelBusy = (w, list, s) => w.say || w.chat || w.st === 'chat' || list.so
     br0(items, g, vis);
     const talkers = [...P4.walkers, ...(P4.sellers || []), ...(P4.townBoats || [])].filter(o => o && (o.say || o.st === 'chat'));
     for (const w of P4.walkers) { if (!w.feel) continue;
-      const q = c4FeelQ(w, P4.t, vis(w.x, 80), c4FeelBusy(w, talkers, p4S(w.z))); if (q < 0) continue;
-      const f = w.feel, tall = P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), s = p4S(w.z);
+      const q = c4FeelQ(w, P4.t, vis(w.x, 80), c4FeelBusy(w, talkers, P4_FOLK_S)); if (q < 0) continue;
+      const f = w.feel, tall = P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), s = P4_FOLK_S;
       items.push({ z: w.z + .002, f: () => c4FeelDraw(g, f.icon, w.x, p4Y(w.z) - p4TownLift(w.x) - tall * s - 30 * s, s, q) }); }
   }; }

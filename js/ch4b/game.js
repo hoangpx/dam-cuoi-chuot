@@ -7,6 +7,7 @@
 const P4_TOOL_ARM = { o: -1.2, quat: -1.5, long: -.5, sach: .35, goi: .15 };
 const P4_TALL = 168;
 function p4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y = GROUND, seed = 0, dress = null) {
+  s *= C4_RIG_SZ.get(M) || 1;
   const G = C4_GAIT && moving ? c4Gait(ph * C4_GAIT_REF / s) : null;     // feet that hold the ground, as in the village (ch4/art.js c4Gait)
   const sw = G ? G.sw : moving ? Math.sin(ph) : 0, bob = G ? C4_GAIT_L - G.h : moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0;
   g.save(); g.translate(x, y); g.scale(face * s, s);
@@ -182,7 +183,7 @@ function renderP4() {
   }
   if (vis(P4_GATE + 60, 160)) { dp(g, p4TownGate(), P4_GATE + 60, P4_Y0 + 6, 0, .88, .88); p4TownGateLanterns(g, P4_GATE + 60, P4_Y0 + 6, .88); }
   const items = [], bubbles = [];
-  const head = (x, z, tall, e, pri = 1) => { if (e && e.say) bubbles.push({ e, x, y: p4Y(z) - p4TownLift(x) - tall * p4S(z) - 8, s: p4S(z), pri }); };
+  const head = (x, z, tall, e, pri = 1, s = p4S(z)) => { if (e && e.say) bubbles.push({ e, x, y: p4Y(z) - p4TownLift(x) - tall * s - 8, s, pri }); };
   // the neighbours: a seller in each open door
   for (const n of P4.scene.near) if (n[1] === 'shop' && (n[4] !== 'home' || !SAVE4B.house) && vis(n[0], 80)) { const r = mulberry(n[0] | 0), M = c4MouseRig(C4_ADULT_SORTS2[(r() * C4_ADULT_SORTS2.length) | 0]), x = n[0] + (r() - .5) * 40, f = r() < .5 ? 1 : -1;
     items.push({ z: .04, f: () => p4Mouse(g, M, x, f, P4.t * 2 + n[0], false, null, null, p4S(.04) * P4_CROWD * .95, p4Y(.04), n[0]) }); }
@@ -195,12 +196,12 @@ function renderP4() {
     items.push({ z: .09, f: () => p4ShopCounter(g, x + 10, R) }); if (R.cook) head(x, .04, 168 * P4_CROWD * .95, R.cook, 3); }
   if (SAVE4B.house) for (const m of P4.sellers) if (vis(m.x, 80)) {                          // the wife and the hands: behind the counter, or running a boat's order
     const out = m.st !== 'counter';
-    items.push({ z: m.z, f: () => p4Mouse(g, m.M, m.x, m.face || 1, out ? m.ph : P4.t * 2, out && m.moving, m.st === 'out' ? -.9 : m.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, m.st === 'out' ? WP.basket : null, p4S(m.z) * .95, p4Y(m.z), m.slot + 1) });
-    head(m.x, m.z, 168 * .95, m, 3);
+    items.push({ z: m.z, f: () => p4Mouse(g, m.M, m.x, m.face || 1, out ? m.ph : P4.t * 2, out && m.moving, m.st === 'out' ? -.9 : m.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, m.st === 'out' ? WP.basket : null, Math.min(p4S(m.z), p4S(.16)) * .95, p4Y(m.z), m.slot + 1) });
+    head(m.x, m.z, 168 * .95, m, 3, Math.min(p4S(m.z), p4S(.16)));
   }
   for (const b of P4.townBoats || []) if (b.say && vis(b.x, 100)) bubbles.push({ e: b, x: b.x, y: P4_Y0 + P4_D + 24 + b.y - 16 - 70, s: .9, pri: 2 });
-  for (const w of P4.walkers) if (vis(w.x, 80) && !(P4.talk && Math.abs(w.x - P4_HOME) < 170)) { items.push({ z: w.z, f: () => p4Folk(g, w, w.x, p4Y(w.z) - p4TownLift(w.x), p4S(w.z) * P4_CROWD) }); head(w.x, w.z, P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), w, w.asked ? 2 : 1); }
-  for (const m of [...(P4.boss ? P4.boss.men : []), ...(P4.thugs || [])]) if (vis(m.x, 80)) { items.push({ z: m.z, f: () => p4Folk(g, m, m.x, p4Y(m.z), p4S(m.z) * P4_CROWD * (m === (P4.boss && P4.boss.men[0]) ? 1.08 : 1)) }); head(m.x, m.z, P4_TALL * P4_CROWD * .92, m, 3); }
+  for (const w of P4.walkers) if (vis(w.x, 80) && !(P4.talk && Math.abs(w.x - P4_HOME) < 170)) { items.push({ z: w.z, f: () => p4Folk(g, w, w.x, p4Y(w.z) - p4TownLift(w.x), P4_FOLK_S * P4_CROWD) }); head(w.x, w.z, P4_TALL * P4_CROWD * .92 * (C4_MOUSE_SORTS[w.sort].role === 'child' ? .7 : 1), w, w.asked ? 2 : 1, P4_FOLK_S); }
+  for (const m of [...(P4.boss ? P4.boss.men : []), ...(P4.thugs || [])]) if (vis(m.x, 80)) { items.push({ z: m.z, f: () => p4Folk(g, m, m.x, p4Y(m.z), P4_FOLK_S * P4_CROWD * (m === (P4.boss && P4.boss.men[0]) ? 1.08 : 1)) }); head(m.x, m.z, P4_TALL * P4_CROWD * .92, m, 3, P4_FOLK_S); }
   p4TownBridgeItems(items, g, vis);
   if (P4.talk) p4TalkItems(items, g);
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
