@@ -270,7 +270,7 @@ const c4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text
 // how many come to the market: weather, a fair, the cat sitting there, the headman's favour, luck, cụ Đồ's scroll, a fire
 const c4Grow = () => 1 + Math.min(.45, Math.max(0, (SAVE4.day - 15) / 60));   // more folk come as the market becomes known (owner: more people, later days less dull)
 const c4Slump = () => (SAVE4.slump && SAVE4.slump.until >= SAVE4.day ? SAVE4.slump : null);
-const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * ({ dep: 1, gat: .85, ret: 1 }[c4Wx()] || (SAVE4.plan.rk || .3)) * (SAVE4.plan.hoi ? (SAVE4.plan.hk || 1.7) : 1) * (SAVE4.plan.cuoi ? (SAVE4.plan.ck || 1.7) : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1) * (typeof c4DoiBonus === 'function' ? 1 + c4DoiBonus() : 1);   // a streak's market luck; the plots across the lane (khudoi.js)
+const c4Flow = () => c4Grow() * (c4Slump() && !c4Slump().g ? c4Slump().k : 1) * ({ dep: 1, gat: .85, ret: 1 }[c4Wx()] || (SAVE4.plan.rk || .3)) * (SAVE4.plan.hoi ? (SAVE4.plan.hk || 1.7) : 1) * (SAVE4.plan.cuoi ? (SAVE4.plan.ck || 1.7) : 1) * (C4.cat && C4.cat.st === 'sit' ? .2 : 1) * (SAVE4.favor > 0 ? 1.15 : 1) * (SAVE4.phuc ? 1.08 : 1) * (SAVE4.cauDoi ? 1.06 : 1) * (C4.fire > 0 ? .1 : 1) * (1 + .04 * (SAVE4.perk || 0)) * (SAVE4.loc === SAVE4.day ? 1.25 : 1) * (typeof c4DoiBonus === 'function' ? 1 + c4DoiBonus() : 1) * (typeof c4TetFlow === 'function' ? c4TetFlow() : 1);   // a streak's market luck; the plots across the lane (khudoi.js); the days round Tết (tet.js)
 // how much a passer-by wants a ware now
 function c4Want(g, noWx) {
   const G = C4_GOODS[g], h = c4Hour(C4.mins), lv = c4Lv();
@@ -931,7 +931,7 @@ function c4ChatStart(a, b) {
   if (a.x > b.x) [a, b] = [b, a];
   const others = [...C4.walkers.filter(w => w !== a && w !== b).map(w => w.name), ...C4.vendors.map(v => v.name)].filter(n => n !== a.name && n !== b.name);
   const fill = s => s.replace(/\{A\}/g, a.name).replace(/\{B\}/g, b.name).replace(/\{X\}/g, () => c4Pick(others.length ? others : ['cụ Lý']));
-  let news = null, pick = C4_CHATS;
+  let news = null, pick = (typeof c4TetChats === 'function' && c4TetChats()) || C4_CHATS;   // round Tết half the talk is about it (tet.js)
   const hunt = SAVE4.day >= 1 && (c4Tasks() || []).some(t => t.k === 'news' && !t.done);   // the task asks for news: whispers come more often
   if (R() < (hunt ? .75 : .38) && SAVE4.next) {
     const truth = k => k === 'mua' ? SAVE4.next.wx === 'mua' : k === 'kha' ? c4GiaMood() > 1.1 : k === 'kho' ? c4GiaMood() < .9 : !!SAVE4.next[k];

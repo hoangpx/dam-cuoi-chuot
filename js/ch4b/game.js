@@ -59,7 +59,7 @@ const p4Pick = a => a[(Math.random() * a.length) | 0];
 
 // ---------- the street ----------
 const P4_BUSY = [[6, .5], [8, 1], [11, .7], [13, .45], [15, .8], [17, .9], [18, 1.15], [19, 1.4], [21, 1.2], [22, .8]];   // how busy the street is through the day (hour, k); evenings the busiest (owner 2026-11-11, was .7 / 1 / .6 from 17:00)
-const p4Busy = () => { const h = P4.mins / 60; for (let i = P4_BUSY.length - 1; i >= 0; i--) if (h >= P4_BUSY[i][0]) return P4_BUSY[i][1]; return .4; };
+const p4Busy = () => { const h = P4.mins / 60, t = typeof c4TetFlow === 'function' ? c4TetFlow() : 1; for (let i = P4_BUSY.length - 1; i >= 0; i--) if (h >= P4_BUSY[i][0]) return P4_BUSY[i][1] * t; return .4 * t; };   // × the days round Tết (js/ch4/tet.js)
 const P4_CHAT = ['Phố hôm nay đông thật!', 'Tối nay có thả đèn không?', 'Hàng vải bên kia mới về lụa đẹp.', 'Nhà chuột trầu cau ngon lắm đấy!',
   'Thuyền buôn vừa cập bến.', 'Đi qua chùa cầu mát ghê.', 'Mua cái đèn lồng về treo Tết nào.', 'Cao lầu ở đây là nhất phố.', 'Chiều nay trời đẹp quá.'];
 const P4_ASK = n => p4Pick([`Cho tôi ${n} miếng trầu.`, `Bán cho ${n} miếng trầu nhé!`, `${n} miếng trầu têm cánh phượng!`]);
@@ -83,7 +83,7 @@ function p4WalkersUpdate(dt) {
     if (w.st === 'walk' || w.st === 'leave') {
       w.x += w.dir * w.sp * dt; w.ph += dt * w.sp / 9; w.face = w.dir;
       if (w.st === 'walk' && w.buy && !SAVE4B.shut && Math.abs(w.x - door) < 140 && Q.length < 6) { w.st = 'go'; Q.push(w); }
-      if ((w.cd -= dt) < 0 && !w.say) { w.cd = 8 + Math.random() * 14; if (Math.random() < .35) p4Say(w, typeof p4MoodTalk === 'function' && Math.random() < .3 ? p4MoodTalk() : p4Pick(P4_CHAT)); }   // a third of the chatter is the street's mood (kinhte.js)
+      if ((w.cd -= dt) < 0 && !w.say) { w.cd = 8 + Math.random() * 14; if (Math.random() < .35) p4Say(w, (typeof p4TetChat === 'function' && p4TetChat()) || (typeof p4MoodTalk === 'function' && Math.random() < .3 ? p4MoodTalk() : p4Pick(P4_CHAT))); }   // a third of the chatter is the street's mood (kinhte.js)
     } else if (w.st === 'go' || w.st === 'queue') {
       const i = Q.indexOf(w), tx = door + 40 + i * 34, tz = qz + i * .03, dx = tx - w.x, dz = tz - w.z, d = Math.hypot(dx, dz * 300);
       w.moving = d > 3; if (w.moving) { const st = Math.min(d, 70 * dt); w.x += dx / d * st; w.z += dz * 300 / d * st / 300; w.ph += st / 9; w.face = dx > 0 ? 1 : -1; }
