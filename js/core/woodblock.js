@@ -54,10 +54,11 @@ function tube(pts, w0, w1) {
 }
 
 /* ---------- woodblock part: colour plates (offset, mottled) + key block (ink) ---------- */
-function part(b, draw, keepKey) {
-  const [x0, y0, x1, y1] = b, W = Math.ceil((x1 - x0) * RES), H = Math.ceil((y1 - y0) * RES);
+function part(b, draw, keepKey, res) {
+  const Rz = res || RES;                                                     // res: this part's own pixels per unit (speech bubbles print their words finer)
+  const [x0, y0, x1, y1] = b, W = Math.ceil((x1 - x0) * Rz), H = Math.ceil((y1 - y0) * Rz);
   const out = mk(W, H), col = mk(W, H), key = mk(W, H), cg = col.getContext('2d'), kg = key.getContext('2d');
-  const T = (g, dx = 0, dy = 0) => g.setTransform(RES, 0, 0, RES, (-x0 + dx) * RES, (-y0 + dy) * RES), late = [], early = [];
+  const T = (g, dx = 0, dy = 0) => g.setTransform(Rz, 0, 0, Rz, (-x0 + dx) * Rz, (-y0 + dy) * Rz), late = [], early = [];
   T(kg); kg.strokeStyle = INK; kg.fillStyle = INK; kg.lineCap = 'round'; kg.lineJoin = 'round';
   const api = {
     fill(pl, path) { const [c, [dx, dy]] = PL[pl]; T(cg, dx, dy); cg.fillStyle = c; cg.fill(path); },

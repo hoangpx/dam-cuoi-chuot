@@ -143,7 +143,7 @@ function updateP4(dt) {
     if ((P4.spawnT -= dt) < 0) { P4.spawnT = (2.2 + Math.random() * 2) / (p4Busy() * p4WxFlow()); p4Spawn(); }
     p4Hud();
   }
-  p4WalkersUpdate(dt); p4FolkTick(dt);                                     // invited guests and a sale's regulars (khachquen.js)
+  p4WalkersUpdate(dt); p4FolkTick(dt); p4CallsUpdate(dt);                                     // invited guests and a sale's regulars (khachquen.js)
   if (typeof hsTownTick === 'function') hsTownTick(dt);                     // far-away guests: other players' profiles (js/ch4/hoso.js)
   for (const f of P4.fx) f.t += dt; P4.fx = P4.fx.filter(f => f.t < 1.2);
   if (P4.drag && P4.drag.moved) {} else { const V = p4View(); P4.camX = Math.max(-260, Math.min(P4_W - V.vw + 200, P4.camX)); }
@@ -187,8 +187,9 @@ function renderP4() {
   const items = [], bubbles = [];
   const head = (x, z, tall, e, pri = 1, s = p4S(z)) => { if (e && e.say) bubbles.push({ e, x, y: p4Y(z) - p4TownLift(x) - tall * s - 8, s, pri }); };
   // the neighbours: a seller in each open door
-  for (const n of P4.scene.near) if (n[1] === 'shop' && (n[4] !== 'home' || !SAVE4B.house) && vis(n[0], 80)) { const r = mulberry(n[0] | 0), M = c4MouseRig(C4_ADULT_SORTS2[(r() * C4_ADULT_SORTS2.length) | 0]), x = n[0] + (r() - .5) * 40, f = r() < .5 ? 1 : -1;
-    items.push({ z: .04, f: () => p4Mouse(g, M, x, f, P4.t * 2 + n[0], false, null, null, p4S(.04) * P4_CROWD * .95, p4Y(.04), n[0]) }); }
+  for (const n of P4.scene.near) if (n[1] === 'shop' && (n[4] !== 'home' || !SAVE4B.house) && vis(n[0], 80)) { const r = mulberry(n[0] | 0), M = c4MouseRig(C4_ADULT_SORTS2[(r() * C4_ADULT_SORTS2.length) | 0]), x = n[0] + (r() - .5) * 40, f = r() < .5 ? 1 : -1, C = P4.calls && P4.calls[n[0]];
+    items.push({ z: .04, f: () => p4Mouse(g, M, x, f, P4.t * 2 + n[0], false, C && C.say ? -.3 - Math.abs(Math.sin(P4.t * 5)) * .4 : null, null, p4S(.04) * P4_CROWD * .95, p4Y(.04), n[0]) });
+    if (C && C.say) head(x, .04, 168 * P4_CROWD * .95, C, 1); }
   // the couple's house: the wife behind the counter, the husband by the door
   if (SAVE4B.house && vis(P4_HOME, 160)) {
     items.push({ z: .09, f: () => p4TownCounter(g, P4_HOME + 10, 'trau') });
@@ -254,6 +255,53 @@ function p4Moon(g, cx, vw, oy) {
   const T = g.getTransform(), P = new DOMPoint(0, 0).matrixTransform(T);
   P4.moon = { x: P.x, y: P.y, r: r * Math.hypot(T.c, T.d), lit: (1 - kx) / 2, k };
   g.restore();
+}
+// The sellers call their wares (owner 2026-11-11: "người bán hàng trên phố huyện cũng phải nói mấy câu chào hàng cho hàng của mình"):
+// each shop's keeper now and then calls out one of its own wares (P4_KINDS by the name on the board), more often in the busy evening;
+// at most two calls on screen at once. Our own shops call through their keeper (R.cook) when not busy with a sale. All lines original.
+const P4_CALL = {
+  an: ['{W} nóng hổi đây, mời vào!', 'Mời bà con vào làm {u} {w}!', '{W} đây! Ăn một lần là nhớ!', 'Còn {w} nóng đây, ai ăn không?', 'Vào ngồi nghỉ chân, làm {u} {w} cho chắc bụng!', 'Ngồi đây, có ngay {u} {w}!'],
+  anDem: ['Đêm rồi, làm {u} {w} nóng cho ấm bụng!', 'Đi chơi phố về, ghé làm {u} {w} đi!'],
+  hieu: ['{W} đây, hàng tốt giá phải chăng!', 'Mời vào xem {w}, xem không mất tiền!', '{W} mới về đây!', 'Ai mua {w} không? Ghé vào xem đi!', 'Hàng thật giá thật, {w} đây!'],
+  lanh: ['{W} mát lạnh đây, uống một cốc là hết khát!', 'Trời nóng thế này, làm {u} {w} cho mát!'],
+  den: ['Đèn lồng đẹp đây, treo lên là sáng cả nhà!', 'Mua {u} {w} về cho các cháu đi!', '{W} đây, đêm rằm rước đèn thì nhất!'],
+};
+const P4_CALL_COLD = ['trada', 'dau', 'thapcam'];                         // wares served cold
+const P4_CALL_SHOP = {
+  'THUỐC BẮC': ['Thuốc bắc gia truyền, cảm sốt ho hen có đủ!'], 'TIỆM VÀNG': ['Vàng bạc tốt, mua để dành lúc trái gió trở trời!'],
+  'GIẤY BÚT': ['Giấy dó, bút lông, mực tàu cho các cậu học trò đây!'], 'MAY ÁO DÀI': ['May áo dài lấy ngay, mặc vừa như in!'],
+  'GẠO MUỐI': ['Gạo mới xay thơm dẻo đây, mua về nấu cơm!'], 'TRÀ SEN': ['Trà ướp sen thơm, pha một ấm thơm cả nhà!'],
+  'CHÈ': ['Chè mát đây, giải khát giải nhiệt!'], 'HÀNG GỐM': ['Bát đĩa men đẹp, gõ nghe kêu boong boong!'],
+  'TIỆM VẢI': ['Lụa tơ tằm mềm như mây đây!'], 'HÀNG XÉN': ['Kim chỉ gương lược, thứ gì cũng có!'],
+};
+function p4CallLine(name) {
+  const K = P4_KINDS[name] || (typeof p4KindOfName === 'function' && p4KindOfName(name)); if (!K || !K.wares || !K.wares.length) return null;
+  const night = P4.mins >= 19 * 60, own = P4_CALL_SHOP[name], kind = K.t === 'an' ? 'an' : K.t === 'den' ? 'den' : 'hieu';
+  let pool = P4_CALL[kind]; if (kind === 'an' && night) pool = pool.concat(P4_CALL.anDem); if (own) pool = pool.concat(own, own);
+  let sum = 0; for (const w of K.wares) sum += w.w || 1; let r = Math.random() * sum, W = K.wares[0]; for (const w of K.wares) { r -= w.w || 1; if (r <= 0) { W = w; break; } }
+  if (P4_CALL_COLD.includes(W.id)) pool = pool.filter(t => !/nóng|bụng/.test(t)).concat(P4_CALL.lanh);   // iced drinks and sweet soups are never "hot"
+  const t = pool[(Math.random() * pool.length) | 0], n = W.n;
+  return t.replace('{W}', n).replace('{w}', n.charAt(0).toLowerCase() + n.slice(1)).replace('{u}', W.u);
+}
+function p4CallsUpdate(dt) {
+  const C0 = P4.calls || (P4.calls = {});
+  for (const k in C0) { const c = C0[k]; if (c.say) { c.say.t += dt; if (c.say.t > c.say.life) c.say = null; } }
+  if (P4.phase !== 'open' || P4.talk || !P4.scene) return;
+  const V = p4View(), lo = P4.camX + 40, hi = P4.camX + V.vw - 40, busy = Math.max(.6, p4Busy());
+  let on = 0; for (const k in C0) if (C0[k].say) on++;
+  for (const R of Object.values(SAVE4B.shops || {})) if (R.cook && R.cook.say) on++;
+  for (const n of P4.scene.near) {
+    if (n[1] !== 'shop' || n[0] < lo || n[0] > hi || (n[4] === 'home' && SAVE4B.house)) continue;
+    const c = C0[n[0]] || (C0[n[0]] = { say: null, next: P4.t + 2 + Math.random() * 10 });
+    if (c.say || P4.t < c.next) continue;
+    c.next = P4.t + (9 + Math.random() * 14) / busy;
+    if (on >= 2) continue;
+    const R = (SAVE4B.shops || {})[String(Math.round(n[0]))];
+    if (R && (R.shut || (R.cook && (R.cook.say || R.cook.w)))) continue;   // ours: shut, or the keeper is busy with a buyer
+    const line = p4CallLine(R ? R.food : n[4]); if (!line) continue;
+    if (R) { const K0 = R.cook || (R.cook = { t: 0, w: null, say: null }); p4Say(K0, line); } else p4Say(c, line);
+    on++;
+  }
 }
 const p4Sunset = () => Math.max(0, Math.min(1, (P4.mins - 15 * 60) / 210)) * (1 - .8 * p4NightK());
 

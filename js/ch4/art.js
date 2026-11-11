@@ -467,21 +467,24 @@ function c4Wrap(text, size, maxW) {
   if (cur) out.push(cur);
   return out;
 }
+// a bubble is drawn at about the view's scale × DPR × .9; printing it at RES (1–1.25 on phones, lowered on weak ones) and stretching it
+// blurred the words. Printed at DPR × 1.3 instead (phones 1.95, computers 2.6), the cache cut from 160 to 40 to keep the memory down.
+const C4_BUB_RES = Math.max(RES, DPR * 1.3);
 function c4Bubble(text, side = 0, size = 16, maxW = 190) {
   const key = text + '|' + side + '|' + size + '|' + maxW; if (C4_BUB.has(key)) return C4_BUB.get(key);
   const lines = Array.isArray(text) ? text : c4Wrap(text, size, maxW);
   C4_MEASURE.font = `900 ${size}px "Playfair Display", serif`;
   const tw = Math.max(...lines.map(l => C4_MEASURE.measureText(l).width)), lh = size * 1.32;
   const w = tw / 2 + 14 + size * .25, h = lines.length * lh / 2 + 8 + size * .2, disp = '"Playfair Display", serif';
-  const p = part([-w - 8, -h - 8, w + 8, h + 32], a => {
+  const p = part([-w - 8, -h - 8, w + 8, h + 32], a => {   // printed at C4_BUB_RES: the words stay sharp on the screen (owner 2026-11-11: "chữ trong bubble cứ bị mờ mờ")
     const shape = smooth([[-w + 4, -h + 4], [0, -h], [w - 3, -h + 5], [w, 0], [w - 4, h - 4], [0, h], [-w + 3, h - 5], [-w, 0]]);
     a.underFill(shape, '#f6f1e4'); a.fk('white', shape, 2.2);                 // a solid paper under the print (owner: easier to read)
     lines.forEach((t, k) => a.solidText(t, 0, (k - (lines.length - 1) / 2) * lh, size, disp, 900));   // solid, not mottled: easy to read (owner)
     const dx = side * Math.min(w * .5, 40);
     for (const [k, r] of [[0, 4], [1, 3], [2, 2.2]]) a.ink(circ(dx * (1 + k * .25), h + 6 + k * 7, r));
-  });
+  }, false, C4_BUB_RES);
   p.bh = h; C4_BUB.set(key, p);
-  if (C4_BUB.size > 160) C4_BUB.delete(C4_BUB.keys().next().value);       // keep the cache small
+  if (C4_BUB.size > 40) { const k0 = C4_BUB.keys().next().value, o = C4_BUB.get(k0); C4_BUB.delete(k0); o.c.width = o.c.height = 0; }   // keep the cache small and give the old canvas back (every drawer looks its bubble up each frame)
   return p;
 }
 
