@@ -91,7 +91,7 @@ function c4TetCrackers(place, dt, mins, xs, yOf, sOf, cam, vw) {
     if (p.k === 'bit') { p.vy += 170 * dt; p.vx *= .985; p.x += p.vx * dt * .5; p.h = Math.max(0, p.h - p.vy * dt); if (p.h <= 0) { p.vx = 0; p.vy = 0; p.t = Math.max(p.t, p.life - .05); } }
     else if (p.k === 'smoke') { p.x += p.vx * dt; p.h += 14 * dt; }
     else if (p.k === 'spark') { p.vy += 40 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
-    else if (p.k === 'day') { p.left -= dt / p.dur; if (p.left > 0 && R() < dt * 26) c4TetPop(place, p.x, p.z, p.h0 * p.left, p.s, 4, .5); }
+    else if (p.k === 'day') { p.left -= dt / p.dur; if (p.left > 0 && R() < dt * 15) c4TetPop(place, p.x, p.z, p.h0 * p.left, p.s, 3, .55); }
   }
   if (!c4TetPhaoOn(place, mins)) return;
   const t = c4TetDay(), eve = mins >= 17 * 60 || t === -1, rate = (t === 0 || t === -1 ? 1.6 : t <= 2 ? 1 : .6) * (eve ? 1.5 : 1);
@@ -112,7 +112,7 @@ function c4TetCrackers(place, dt, mins, xs, yOf, sOf, cam, vw) {
 function c4TetPop(place, x, z, h, s, n, big) {      // a burst: red scraps flying, a flash, a puff of smoke
   const F = C4_TET_FX;
   for (let i = 0; i < n; i++) F.list.push({ k: 'bit', place, x: x + (R() - .5) * 16 * s, z: Math.min(1, Math.max(.05, z + (R() - .5) * .08)), h: h + 4, vx: (R() - .5) * 150 * s * big, vy: (-80 - R() * 140 * big), t: 0, life: 3, r: R() * 6.3, s });
-  F.list.push({ k: 'flash', place, x, z, h, t: 0, life: .22 + .1 * big, s: s * big });
+  F.list.push({ k: 'flash', place, x, z, h, t: 0, life: .12 + .06 * big, s: s * Math.sqrt(big) });
   F.list.push({ k: 'smoke', place, x, z, h: h + 6, vx: (R() - .5) * 10, t: 0, life: 1.6 + big, s: s * Math.sqrt(big) });
 }
 function c4TetDebrisDraw(g, place, yOf, sOf, lo, hi) {   // xác pháo on the road, under everyone's feet
@@ -149,8 +149,11 @@ function c4TetFxDraw(g, place, yOf) {
     if (p.place !== place || p.k === 'spark') continue;
     const a = 1 - p.t / p.life, y = yOf(p.z) - (p.h || 0) * (p.s || 1);
     if (p.k === 'bit') { g.save(); g.translate(p.x, y); g.rotate(p.r + (p.h > 0 ? p.t * 9 : 0)); g.fillStyle = '#c8302a'; g.fillRect(-2.6 * p.s, -1.2 * p.s, 5.2 * p.s, 2.4 * p.s); g.restore(); }
-    else if (p.k === 'smoke') { g.globalAlpha = .3 * a; g.fillStyle = '#ece6da'; g.beginPath(); g.arc(p.x, y, (9 + p.t * 16) * p.s, 0, 6.283); g.fill(); g.globalAlpha = 1; }
-    else if (p.k === 'flash') { g.globalAlpha = a; g.fillStyle = '#fff2b0'; g.beginPath(); g.arc(p.x, y, 14 * p.s * (1 + p.t * 4), 0, 6.283); g.fill(); g.fillStyle = '#ffb347'; g.beginPath(); g.arc(p.x, y, 7 * p.s * (1 + p.t * 3), 0, 6.283); g.fill(); g.globalAlpha = 1; }
+    else if (p.k === 'smoke') { g.globalAlpha = .42 * a; g.fillStyle = '#d8d0c2'; g.beginPath(); g.arc(p.x, y, (7 + p.t * 13) * p.s, 0, 6.283); g.fill(); g.globalAlpha = .3 * a; g.fillStyle = '#eee8dc'; g.beginPath(); g.arc(p.x - 3 * p.s, y - 3 * p.s, (4 + p.t * 9) * p.s, 0, 6.283); g.fill(); g.globalAlpha = 1; }
+    else if (p.k === 'flash') {                                                        // a bang: a jagged burst, white-hot inside, gone in a blink
+      const r = 7 * p.s * (1 + p.t * 3); g.globalAlpha = Math.min(1, a * 1.4); g.beginPath();
+      for (let i = 0; i < 20; i++) { const ang = i / 20 * 6.283 + p.x, rr = i % 2 ? r * .45 : r * (.8 + .4 * Math.abs(Math.sin(i * 7.1 + p.x))); g.lineTo(p.x + Math.cos(ang) * rr, y + Math.sin(ang) * rr); }
+      g.closePath(); g.fillStyle = '#ffb02e'; g.fill(); g.fillStyle = '#fff6c8'; g.beginPath(); g.arc(p.x, y, r * .32, 0, 6.283); g.fill(); g.globalAlpha = 1; }
     else if (p.k === 'day') c4TetString(g, p, yOf);
   }
 }
@@ -167,28 +170,31 @@ function c4TetSparks(g) {               // pháo hoa: in screen space after the 
    couplets either side of its door (gold words, four to a strip, a pair chosen by the house) and, over the village houses' doors, a
    red board; a pot of peach (pink) or apricot (yellow mai) blossom stands at every house, shop and neighbour's stall. All drawn live,
    only what is on screen. */
+// the words are chữ Nho / Nôm as the old scholars wrote them (owner 2026-11-11: "chữ đang bị lòi ra ngoài, để chữ nôm đi"), one character
+// to a square of the strip, so they always fit; the board over a village door has two. Characters added to FONT_CHARS (the font subset).
 const C4_TET_DOI = [
-  [['Xuân', 'sang', 'phúc', 'đến'], ['Tết', 'về', 'lộc', 'đầy'], 'AN KHANG'],
-  [['Năm', 'mới', 'bình', 'an'], ['Làm', 'ăn', 'phát', 'đạt'], 'PHÚC LỘC'],
-  [['Buôn', 'may', 'bán', 'đắt'], ['Vạn', 'sự', 'như', 'ý'], 'THỊNH VƯỢNG'],
-  [['Nhà', 'êm', 'cửa', 'ấm'], ['Con', 'cháu', 'sum', 'vầy'], 'XUÂN VỀ'],
-  [['Hoa', 'nở', 'đón', 'xuân'], ['Người', 'vui', 'đón', 'Tết'], 'CUNG CHÚC'],
+  ['萬事如意', '一本萬利', '恭喜'],                                        // vạn sự như ý / nhất bản vạn lợi · cung hỷ
+  ['生意興隆', '財源廣進', '發財'],                                        // sinh ý hưng long / tài nguyên quảng tiến · phát tài
+  ['五福臨門', '三陽開泰', '迎春'],                                        // ngũ phúc lâm môn / tam dương khai thái · nghênh xuân
+  ['新春快樂', '萬事亨通', '福祿'],                                        // tân xuân khoái lạc / vạn sự hanh thông · phúc lộc
+  ['國泰民安', '春滿乾坤', '吉祥'],                                        // quốc thái dân an / xuân mãn càn khôn · cát tường
 ];
-// a pair of strips at cx ± half (local units × s), from top to bot below the base line, words in gold; a board over the door if asked
+const C4_TET_HAN = '"Han Wang Yan Kai", "Nom Na Tong", "Ma Shan Zheng", KaiTi, serif';
+// a pair of strips at cx ± half (local units × s), from top to bot below the base line, a character to a square; a board over the door if asked
 function c4TetDoi(g, cx, by, s, half, top, bot, k, board) {
-  const D = C4_TET_DOI[((k % C4_TET_DOI.length) + C4_TET_DOI.length) % C4_TET_DOI.length], w = 13 * s, fs = Math.max(4, 6.4 * s);
+  const D = C4_TET_DOI[((k % C4_TET_DOI.length) + C4_TET_DOI.length) % C4_TET_DOI.length], w = 13 * s;
   g.save(); g.lineWidth = 1; g.strokeStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle';
   for (const [i, side] of [[0, -1], [1, 1]]) {
-    const x = cx + side * half * s, y0 = by + top * s, h = (bot - top) * s;
+    const x = cx + side * half * s, y0 = by + top * s, h = (bot - top) * s, ch = [...D[i]], cell = h / ch.length, fs = Math.min(w * .78, cell * .82);
     g.fillStyle = '#c0322a'; g.fillRect(x - w / 2, y0, w, h); g.strokeRect(x - w / 2, y0, w, h);
     g.strokeStyle = '#e8c24a'; g.lineWidth = .8; g.strokeRect(x - w / 2 + 1.6 * s, y0 + 1.6 * s, w - 3.2 * s, h - 3.2 * s); g.strokeStyle = INK; g.lineWidth = 1;
-    g.fillStyle = '#f6d36a'; g.font = `900 ${fs}px "Playfair Display", serif`;
-    D[i].forEach((t, j) => g.fillText(t, x, y0 + h * (j + .5) / 4));
+    g.fillStyle = '#f6d36a'; g.font = `${fs}px ${C4_TET_HAN}`;
+    ch.forEach((t, j) => g.fillText(t, x, y0 + cell * (j + .5)));
   }
   if (board) {
-    const bw = (half * 2 - 4) * s, bh = 13 * s, y0 = by + (top - 17) * s;
+    const bw = Math.min((half * 2 - 4) * s, 40 * s), bh = 15 * s, y0 = by + (top - 18) * s;
     g.fillStyle = '#c0322a'; g.fillRect(cx - bw / 2, y0, bw, bh); g.strokeRect(cx - bw / 2, y0, bw, bh);
-    g.fillStyle = '#f6d36a'; g.font = `900 ${fs * 1.15}px "Playfair Display", serif`; g.fillText(D[2], cx, y0 + bh / 2 + .5);
+    g.fillStyle = '#f6d36a'; g.font = `${bh * .72}px ${C4_TET_HAN}`; g.fillText(D[2], cx, y0 + bh / 2 + .5);
   }
   g.restore();
 }
