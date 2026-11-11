@@ -678,21 +678,34 @@ function p4TownNight(g) {
   ctx.restore();
 }
 
-// wooden lamp posts along the quay, an arm reaching out over the water with a silk lantern hanging from it (owner)
+// lamp posts along the quay, an arm reaching out over the water with a silk lantern hanging from it (owner). Redrawn 2026-11-11 (owner:
+// "cái cột đèn treo đèn lồng trên phố hơi xấu, làm lại đi"): a stepped stone foot, a red lacquered post with dark bands and a gold
+// diamond, a little green-tiled cap with upturned eaves and a gold knob, a carved bracket curling up at its tip with a brace under it;
+// printed once as a woodblock part, the lantern swings live from the bracket's tip (44, -146 at size 1).
+const p4LampPostArt = (() => { let A = null; return () => A || (A = part([-24, -190, 60, 3], a => {
+  const P = pts => { const q = new Path2D(); pts.forEach(([x, y], i) => i ? q.lineTo(x, y) : q.moveTo(x, y)); q.closePath(); return q; };
+  a.fk('white', P([[-15, 0], [15, 0], [15, -8], [-15, -8]]), 1.8);                         // the stone foot, two steps
+  a.fk('white', P([[-10, -8], [10, -8], [10, -20], [-10, -20]]), 1.8);
+  a.key(lines([[-15, -4, -6, -4], [3, -4, 15, -4], [-10, -14, 10, -14]]), .9);
+  const arm = new Path2D(); arm.moveTo(2, -142); arm.quadraticCurveTo(22, -152, 42, -147); arm.quadraticCurveTo(52, -145, 51, -153); arm.quadraticCurveTo(50, -159, 45, -157);
+  a.band('brown', arm, 6.5); a.key(arm, 1.6);                                                // the carved bracket, its tip curled up
+  const brace = new Path2D(); brace.moveTo(3, -112); brace.quadraticCurveTo(10, -134, 28, -148);
+  a.band('brown', brace, 3.6); a.key(brace, 1.3);
+  a.fk('red', P([[-4.5, -20], [4.5, -20], [4.5, -164], [-4.5, -164]]), 2);                  // the lacquered post
+  a.fill('dark', P([[-5, -24], [5, -24], [5, -29], [-5, -29]])); a.fill('dark', P([[-5, -150], [5, -150], [5, -155], [-5, -155]]));
+  a.fk('yellow', P([[0, -106], [4, -100], [0, -94], [-4, -100]]), 1.1);                      // a gold diamond on the post
+  const cap = new Path2D(); cap.moveTo(-19, -163); cap.quadraticCurveTo(-11, -167, -7, -176); cap.lineTo(7, -176); cap.quadraticCurveTo(11, -167, 19, -163); cap.quadraticCurveTo(0, -167, -19, -163); cap.closePath();
+  a.fk('green', cap, 1.8); a.key(lines([[-6, -172, 6, -172]]), .9);                          // the little tiled cap
+  a.fk('yellow', circ(0, -180, 3.4), 1.2);
+  a.ink(circ(44, -146, 1.8));                                                                // the hook
+})); })();
 function p4QuayLamps(items, g, vis) {
   const s = p4S(1), yq = P4_Y0 + P4_D + 10;
   for (let x = 520; x < P4_W; x += 300) {
     if (!vis(x, 60)) continue;
     items.push({ z: 1.05, f: () => {
-      g.save(); g.strokeStyle = INK; g.lineCap = 'round';
-      g.lineWidth = 7 * s; g.beginPath(); g.moveTo(x, yq); g.lineTo(x, yq - 150 * s); g.stroke();
-      g.strokeStyle = '#5b2f1f'; g.lineWidth = 4.2 * s; g.stroke();
-      g.strokeStyle = INK; g.lineWidth = 4 * s; g.beginPath(); g.moveTo(x, yq - 146 * s); g.quadraticCurveTo(x + 18 * s, yq - 160 * s, x + 34 * s, yq - 150 * s); g.stroke();
-      g.strokeStyle = '#7a4a22'; g.lineWidth = 2 * s; g.stroke();
-      g.fillStyle = '#5b2f1f'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(x - 7 * s, yq - 6 * s, 14 * s, 6 * s); g.strokeRect(x - 7 * s, yq - 6 * s, 14 * s, 6 * s);
-      g.fillStyle = '#c4473a'; g.beginPath(); g.moveTo(x - 6 * s, yq - 150 * s); g.lineTo(x, yq - 162 * s); g.lineTo(x + 6 * s, yq - 150 * s); g.closePath(); g.fill(); g.stroke();   // a little cap on the post
-      g.restore();
-      p4DrawLantern(g, x + 32 * s, yq - 150 * s, s * 1.25, ((x / 300) | 0) % 2 ? '#f2c640' : '#c4473a', 8, Math.sin(P4.t * 1.5 + x * .01) * .14);
+      dp(g, p4LampPostArt(), x, yq, 0, s, s);
+      p4DrawLantern(g, x + 44 * s, yq - 146 * s, s * 1.25, ((x / 300) | 0) % 2 ? '#f2c640' : '#c4473a', 7, Math.sin(P4.t * 1.5 + x * .01) * .14);
     } });
   }
 }
