@@ -266,8 +266,14 @@ function hsSpawnPho(P) {
    one thank-you back (dcc_gift_thank), which the inviter reads in theirs (dcc_gift_sent). ---------- */
 const HS_THANKS = ['Cảm ơn nhé, ngon lắm!', 'Đúng món tôi thích, quý hoá quá!', 'Lần sau tôi lại ghé ủng hộ!', 'Hôm nào sang chợ tôi, tôi mời lại!'];
 // the dish a sheet offers: the village ware's key, 'trau' at the town's house, 'pho:NAME' at an eating house we run
-const hsDish = (place, kind) => (place === 'pho' ? (kind === 'trau' ? 'trau' : 'pho:' + p4Shops()[kind].food) : kind);
-const hsDishWord = k => (k.startsWith('pho:') ? 'bát ' + HS_FOOD_NAME[k].toLowerCase() : k === 'trau' ? 'miếng trầu' : C4_FAV_WORD[k] || C4_GOODS[k].name.toLowerCase());
+const hsDish = (place, kind) => (place === 'pho' ? (kind === 'trau' ? 'trau' : 'pho:' + ((p4Shops()[kind] || {}).food || '')) : kind);
+// a player reported "Cannot read properties of undefined (reading 'toLowerCase')" (2026-11-11): the town's shops that are not eating houses
+// (gạo muối, tiệm vàng, hàng gốm…, added 2026-11-06) have no name in HS_FOOD_NAME, so inviting a far-away guest there threw. Now any shop
+// has a word: an eating house's dish ("bát phở bò"), a shop's own trade ("hàng tiệm vàng"), else a plain fallback.
+const hsDishWord = k => { k = String(k || '');
+  if (k.startsWith('pho:')) { const n = k.slice(4), K = typeof P4_KINDS !== 'undefined' && P4_KINDS[n], nm = (HS_FOOD_NAME[k] || n || 'món ăn').toLowerCase(); return K && K.t !== 'an' ? 'hàng ' + nm : 'bát ' + nm; }
+  if (k === 'trau') return 'miếng trầu';
+  return C4_FAV_WORD[k] || (C4_GOODS[k] ? C4_GOODS[k].name.toLowerCase() : 'món ăn'); };
 // the rows for the far-away guests under the "Mời khách" list (null when there are none); redraw() draws the sheet again
 function hsTreatRows(place, kind, has, redraw) {
   const ids = hsGuests(); if (!ids.length) return null;
@@ -281,7 +287,7 @@ function hsInvite(id, place, kind) {
   const f = hsK(id), P = hsProf(id); if (!P || f.treat === SAVE4.day) return;
   f.treat = SAVE4.day; hsSaveK();
   (HS.invQ = HS.invQ || []).push({ id, place, kind, left: 8 + Math.random() * 22, no: Math.random() < (f.k ? .15 : .3), late: Math.random() < .4 });
-  toast(`Đã nhắn ${hsName(P.d)} ra ${place === 'pho' && kind !== 'trau' ? 'quán' : 'hàng'} ăn thử ${hsDishWord(hsDish(place, kind))}. Người ta có đến không thì chưa biết.`, 3.4); AU.tap();
+  toast(`Đã nhắn ${hsName(P.d)} ra ${place === 'pho' && kind !== 'trau' ? 'quán' : 'hàng'} ${hsDishWord(hsDish(place, kind)).startsWith('hàng ') ? 'xem' : 'ăn thử'} ${hsDishWord(hsDish(place, kind))}. Người ta có đến không thì chưa biết.`, 3.4); AU.tap();
 }
 // every frame of that market: the invited come (or send word they cannot)
 function hsInvTick(place, dt) {
