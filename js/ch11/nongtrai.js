@@ -75,8 +75,8 @@ const C11_FARM = (() => {
   m[6][19] = 'E'; m[14][15] = 'E';                                     // ways out: east to the hamlet, south into the bamboo wood
   return m;
 })();
-const C11_BLOCK = 'thDBCSNQUwHKTVJYZLIOnMAWFGRPyX', C11_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const c11Kind = (x, y) => (C11_MAP[y] && C11_MAP[y][x]) || (C11_AR.cave ? 'X' : 't');   // beyond the map: trees, or rock in the cave (rungsau.js)
+const C11_BLOCK = 'thDBCSNQUwHKTVJYZLIOnMAWFGRPyXjikvz', C11_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const c11Kind = (x, y) => (C11_MAP[y] && C11_MAP[y][x]) || (C11_AR.cave ? 'X' : C11_AR.indoor ? 'i' : 't');   // beyond the map: trees, rock in the cave (rungsau.js), wall round the house (nha.js)
 const c11Field = (x, y) => { const kd = c11Kind(x, y); return (kd === 'f' || (kd === 'g' && C11_AR.id === 'ruong')) && !(typeof c11PenAt === 'function' && c11PenAt(x, y)); };   // at home every bit of grass can be made a field (owner)
 const c11Blocked = (x, y) => C11_BLOCK.includes(c11Kind(x, y));
 const c11Hash = (x, y, k = 0) => { let h = (x * 374761393 + y * 668265263 + k * 1274126177) | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
@@ -528,6 +528,16 @@ function c11Art() {
       a.band('bark', lines([[52, -100, 52, -78]]), .8); a.band('bark', lines([[30, -78, 86, -82]]), 2); a.fk('dark', circ(82, -78, 4), .6); a.band('bark', lines([[34, -78, 30, -66], [34, -78, 40, -66]]), .6); a.fk('thatch', ell(35, -65, 8, 2.4), .6); a.fk('orange', circ(35, -68, 3), .4);
       bao(70, 'thatch3');
     }
+    const stove = (x, pot) => {                                          // a clay charcoal stove (hỏa lò) with a pot on it, a red glow under
+      a.fk('bark', c4Poly([[x - 14, -34], [x + 14, -34], [x + 10, -50], [x - 10, -50]]), .9); a.fill('red', ell(x, -46, 6, 2));
+      a.fk(pot, ell(x, -58, 16, 9), 1); a.fill('ash', ell(x, -65, 13, 3)); a.fill('cream', ell(x - 4, -65, 4, 1));
+    };
+    const bowls = (xs, rim) => { for (const x of xs) { a.fk('white', smooth([[x - 7, -40], [x + 7, -40], [x + 4, -34], [x - 4, -34]]), .6); a.band(rim, lines([[x - 6, -39, x + 6, -39]]), .5); } };
+    const greens = x => { nong(x, 20, 'lua'); for (let i = 0; i < 6; i++) a.fill(i % 2 ? 'leafhi' : 'lua', leafP(x - 14 + i * 5, -40, -1.57 + (i - 3) * .2, 10, 3)); };
+    if (kind === 'bun') { stove(-76, 'dark'); a.fill('red', ell(-76, -66, 8, 1.6)); nong(-30, 20, 'white', 'cream'); bowls([4, 20, 36], 'blue'); greens(72); }
+    if (kind === 'com') { stove(-76, 'bark'); a.fill('white', ell(-76, -66, 10, 2)); thung(-40, 'white'); a.fk('bark', ell(-6, -40, 14, 7), .9); a.fill('orange', ell(-6, -46, 9, 2)); bowls([22, 38], 'red'); greens(74); }
+    if (kind === 'chao') { stove(-76, 'dark'); a.fill('cream', ell(-76, -66, 9, 1.8)); nong(-32, 22, 'white', 'paper'); nong(10, 18, 'cream', 'tan'); bowls([42, 58, 74], 'blue'); }
+    if (kind === 'che') { thung(-76, 'red'); thung(-46, 'dark'); thung(-16, 'yellow'); for (const x of [16, 30, 44]) { a.fk('paper', c4Poly([[x - 5, -34], [x + 5, -34], [x + 6, -48], [x - 6, -48]]), .6); a.fill(x === 30 ? 'red' : 'tan', c4Rect(x - 4, -44, x + 4, -36)); } nong(76, 18, 'white', 'paper'); }
     // front poles
     for (const x of [-100, 100]) { a.fill('tan', c4Rect(x - 3.5, -112, x + 3.5, 2)); a.fill('thatch3', c4Rect(x, -112, x + 2, 2)); a.key(c4Rect(x - 3.5, -112, x + 3.5, 2), .9); for (let y = -96; y < 0; y += 26) a.band('bark', lines([[x - 4, y, x + 4, y]]), 1); }
     // the thatched roof: layered strands, a thick eave, a bamboo ridge pole
@@ -548,7 +558,8 @@ function c11Art() {
     a.band('straw', lines([[-30, -24, 30, -24], [-30, -50, 30, -50], [-30, -74, 30, -74], [-30, -4, 30, -60], [30, -4, -30, -60], [-30, -46, 30, -96], [30, -46, -30, -96]]), 1.1);
     for (const y of [-24, -50, -74]) { a.fill('straw', circ(-30, y, 2.4)); a.fill('straw', circ(30, y, 2.4)); }
   });
-  const stalls = { N: stallP('HẠT GIỐNG', 'red', 'N'), Q: stallP('QUÁN ĂN', 'orange', 'Q'), U: stallP('THU MUA', 'teal', 'U'), T: stallP('HÀNG NƯỚC', 'teal', 'Q') };
+  const stalls = { N: stallP('HẠT GIỐNG', 'red', 'N'), Q: stallP('QUÁN ĂN', 'orange', 'Q'), U: stallP('THU MUA', 'teal', 'U'), T: stallP('HÀNG NƯỚC', 'teal', 'Q'),
+    bun: stallP('BÚN RIÊU', 'orange', 'bun'), com: stallP('HÀNG CƠM', 'orange', 'com'), chao: stallP('CHÁO · BÁNH', 'orange', 'chao'), che: stallP('HÀNG CHÈ', 'teal', 'che') };   // the food stalls of the Trạm dừng chân (tram.js)
   /* grass: tapered blades (wide at the foot, curving to a point), dark and light greens, a lit edge on the light ones */
   const blade = (a, x, h, lean, w, pl) => {
     const p = new Path2D(); p.moveTo(x - w, 0); p.quadraticCurveTo(x - w * .3 + lean * .25, -h * .6, x + lean, -h); p.quadraticCurveTo(x + w * .5 + lean * .3, -h * .55, x + w, 0); p.closePath();
@@ -566,7 +577,7 @@ function c11Art() {
   const flower = ['red', 'yellow', 'white', 'pink', 'orange'].map(c => part([-14, -34, 14, 4], a => { a.band('green', lines([[0, 0, 0, -18]]), 2.4); a.band('green', lines([[0, -6, 7, -12]]), 2); for (let i = 0; i < 5; i++) a.fk(c, circ(Math.cos(i * 1.257) * 5.4, -21 + Math.sin(i * 1.257) * 5.4, 4), .9); a.fk('yellow', circ(0, -21, 2.8), .8); }));
   const soil = ['tan', 'brown'].map(pl => part([-34, -34, 34, 34], a => { a.fill(pl, c4Poly([[-33, -24], [-24, -33], [24, -33], [33, -24], [33, 24], [24, 33], [-24, 33], [-33, 24]])); a.key(lines([[-26, -19, 26, -19], [-26, -1, 26, -1], [-26, 17, 26, 17]]), 1.5); }));
   const T3 = c11Trees3();                                            // trees, bamboo and bushes with volume (cay.js) replace the flat prints
-  return (C11ART = { hay, well, crop: C, trees: T3.trees, bamboo: T3.bamboo, bush: T3.bush, rock, reed, house, box, dan, stall: stalls.N, stalls, tuft, clump, flower, soil });
+  return (C11ART = { hay, well, crop: C, trees: T3.trees, bamboo: T3.bamboo, bush: T3.bush, rock, reed, house, box, dan, stall: stalls.N, stalls, stallP, tuft, clump, flower, soil });
 }
 const c11Spr = (g, p, x, y, k) => g.drawImage(p.c, x + p.x0 * k, y + p.y0 * k, p.w * k, p.h * k);
 /* wind: a wave that travels across the farm, with slow gusts and a quick flutter (about -1..1) */
@@ -815,7 +826,7 @@ function c11EatSlot(i) {
   if (SAVE11.stamina >= C11_EN && SAVE11.hp >= C11_HP) { c11Msg('Còn khoẻ lắm, chưa cần ăn', '#5b2f1f'); return; }
   c11Take(sl.id, 1); SAVE11.stamina = Math.min(C11_EN, SAVE11.stamina + it.food); SAVE11.hp = Math.min(C11_HP, (SAVE11.hp ?? C11_HP) + it.food / 2); c11Sfx.pluck && c11Sfx.pluck(); c11Pop(Math.floor(C11.px), Math.floor(C11.py) - 1, `+${it.food} sức`, '#2f6a4c'); persist11();
 }
-const c11Price = (id, mult) => C11_ITEMS[id].cat === 'truyen' ? 0 : Math.round(C11_ITEMS[id].price * mult);
+const c11Price = (id, mult) => C11_ITEMS[id].cat === 'truyen' ? 0 : Math.round(C11_ITEMS[id].price * mult * (typeof c11Phuc === 'function' ? c11Phuc() : 1));   // incense lit at the altar today sells dearer (nha.js)
 function c11SellSlot(i, mult, q0) {
   const sl = SAVE11.bag[i]; if (!sl) return 0; const p = c11Price(sl.id, mult); if (!p) { C11.menu.note = 'Vật này không bán được'; return 0; }
   const q = Math.max(1, Math.min(sl.n, q0 || sl.n)), got = p * q; SAVE11.money += got; sl.n -= q; if (sl.n <= 0) SAVE11.bag[i] = null;   // q0: how many (default the whole stack)
@@ -856,10 +867,10 @@ function c11NewDay() {
   for (const m of [SAVE11.cut, SAVE11.gone]) for (const k of Object.keys(m)) if (SAVE11.day + 1 - m[k] >= 5) delete m[k];   // stumps sprout again after 5 days
   for (const k of Object.keys(SAVE11.clear)) if (!SAVE11.tiles[k] && SAVE11.day + 1 - SAVE11.clear[k] >= 4) delete SAVE11.clear[k];   // mown grass left unhoed grows back in 4 nights
   if (C11.fainted || C11.passed) { const lost = Math.min(Math.floor(SAVE11.money * .1), 100); SAVE11.money -= lost;  C11.faintMsg = C11.fainted ? (lost ? `Ngất giữa ruộng, mất ${c4Money(lost)} tiền thuốc` : 'Ngất giữa ruộng, tỉnh dậy mệt lử') : (lost ? `Ngủ gục ngoài đường, ai đó lấy mất ${c4Money(lost)}` : 'Ngủ gục ngoài đường, sáng ra mệt rã rời'); }
-  if (C11.area !== 'ruong') c11Enter('ruong', 4.5, 5.7, true);
+  if (C11.area !== 'ruong' && C11.area !== 'nha') c11Enter('ruong', 4.5, 5.7, true);   // slept in the house (nha.js): wake by the bed
   c11NewDayNew();
   const late = c11QuestNewDay();
-  SAVE11.day++; SAVE11.mins = C11_DAY0; SAVE11.hp = C11.fainted ? C11_HP / 2 : C11_HP; SAVE11.stamina = C11.fainted ? C11_EN / 2 : (C11.late || C11.passed) ? C11_EN * .75 : C11_EN; C11.px = 4.5; C11.py = 5.7; C11.face = 1; persist11();
+  SAVE11.day++; SAVE11.mins = C11_DAY0; SAVE11.hp = C11.fainted ? C11_HP / 2 : C11_HP; SAVE11.stamina = C11.fainted ? C11_EN / 2 : (C11.late || C11.passed) && !(typeof c11NhaLv === 'function' && c11NhaLv() >= 1) ? C11_EN * .75 : C11_EN;   // a tiled house: a late night costs nothing (nha.js) if (C11.area === 'nha') { C11.px = C11_NHA_WAKE[0]; C11.py = C11_NHA_WAKE[1]; } else { C11.px = 4.5; C11.py = 5.7; } C11.face = 1; persist11();
   c11Msg(C11.faintMsg || (died ? `Ngày ${SAVE11.day} · ${died} cây chết khô vì thiếu nước` : wilt ? `Ngày ${SAVE11.day} · ${wilt} cây héo vì hôm qua không tưới, hôm nay không tưới là chết` : late ? `Ngày ${SAVE11.day} · ${late} việc của đình đã quá hạn` : ripe ? `Ngày ${SAVE11.day} · ${ripe} cây đã chín` : `Ngày ${SAVE11.day}`), C11.faintMsg ? '#a3332a' : '#2f6a4c'); C11.faintMsg = null; C11.fainted = false; C11.late = false; C11.passed = false; C11.warnLate = false;
 }
 
@@ -883,7 +894,7 @@ function c11Solid(tx, ty, px, py) {
 }
 function c11Free(x, y) { for (const dx of [-.2, .2]) for (const dy of [-.15, .03]) if (c11Solid(Math.floor(x + dx), Math.floor(y + dy), x + dx, y + dy)) return false; return true; }
 function c11Tap(tx, ty, wx, wy) {
-  if (C11.sleep) return;
+  if (C11.sleep || C11.eat) return;
   if (c11FishTap()) return;                                            // a bite: any tap pulls the line in
   if (typeof c11OTap === 'function' && c11OTap(wx, wy)) return;        // another player (online.js)
   const [ptx, pty] = c11Tile(), d = c11Dist(Math.max(0, Math.min(C11_W - 1, ptx)), Math.max(0, Math.min(C11_H - 1, pty)));
@@ -969,8 +980,9 @@ function updateC11(dt) {
   if (G.shake) { G.shake.t += dt; if (G.shake.t > .5) G.shake = null; } if (G.fall) { G.fall.t += dt; if (G.fall.t > 1) G.fall = null; }
   if (G.pend) { G.pend.t -= dt; if (G.pend.t <= 0) { const a = G.pend.a; G.pend = null; if (a.v) { if (G.vill.includes(a.v)) c11TalkTo(a.v); } else c11Act(a.tx, a.ty); } }
   // walking: keys first, else the route a tap made
-  const K = G.keys; let dx = (K.ArrowRight || K.KeyD ? 1 : 0) - (K.ArrowLeft || K.KeyA ? 1 : 0), dy = (K.ArrowDown || K.KeyS ? 1 : 0) - (K.ArrowUp || K.KeyW ? 1 : 0);
-  if (G.joy) { dx += G.joy.x; dy += G.joy.y; }                          // the on-screen joystick on phones (nutdi.js)
+  if (G.eat && typeof c11EatUpdate === 'function') c11EatUpdate(dt);   // sitting at a table eating (tram.js): no walking meanwhile
+  const K = G.eat ? {} : G.keys; let dx = (K.ArrowRight || K.KeyD ? 1 : 0) - (K.ArrowLeft || K.KeyA ? 1 : 0), dy = (K.ArrowDown || K.KeyS ? 1 : 0) - (K.ArrowUp || K.KeyW ? 1 : 0);
+  if (G.joy && !G.eat) { dx += G.joy.x; dy += G.joy.y; }                          // the on-screen joystick on phones (nutdi.js)
   const sp = SAVE11.stamina <= 0 ? 1.5 : 2.8; G.moving = false;
   if (dx || dy) {
     G.go = null; G.kbd = true; const l = Math.hypot(dx, dy); dx /= l; dy /= l;
@@ -1233,12 +1245,12 @@ function renderC11() {
       else if (C11_CROPS[d.k]) c11Spr(g, A.crop[d.k][3], 0, T * .1, k * .42);
       else { c11ItemIcon(g, d.k, 0, -T * .12, T * .42); if (d.q) { const tw = .5 + .5 * Math.sin(G.t * 4 + d.x); g.strokeStyle = `rgba(255,236,150,${tw})`; g.lineWidth = 2; for (const a of [0, 1.57]) { g.beginPath(); g.moveTo(Math.cos(a) * -9, -T * .45 + Math.sin(a) * -9); g.lineTo(Math.cos(a) * 9, -T * .45 + Math.sin(a) * 9); g.stroke(); } } }   // anything else: its little picture, a glint on a lost thing
       g.restore(); } }); }
-  for (const b of G.bf) E.push({ y: 30, d: () => { const X = sx(b.x), Y = sy(b.y) - T * (.55 + .12 * Math.sin(b.ph * 2)), fl = Math.abs(Math.sin(G.t * 16 + b.ph)), wy = 9 * fl + 2; g.save(); g.translate(X, Y); g.fillStyle = b.col; g.strokeStyle = 'rgba(29,25,21,.8)'; g.lineWidth = 1.3; for (const sg of [-1, 1]) { g.beginPath(); g.ellipse(sg * 5 * fl, -3, 5.5 * fl + .8, wy, sg * .5, 0, 6.283); g.fill(); g.stroke(); } g.fillStyle = INK; g.fillRect(-.8, -6, 1.6, 10); g.restore(); } });
+  if (!C11_AR.indoor) for (const b of G.bf) E.push({ y: 30, d: () => { const X = sx(b.x), Y = sy(b.y) - T * (.55 + .12 * Math.sin(b.ph * 2)), fl = Math.abs(Math.sin(G.t * 16 + b.ph)), wy = 9 * fl + 2; g.save(); g.translate(X, Y); g.fillStyle = b.col; g.strokeStyle = 'rgba(29,25,21,.8)'; g.lineWidth = 1.3; for (const sg of [-1, 1]) { g.beginPath(); g.ellipse(sg * 5 * fl, -3, 5.5 * fl + .8, wy, sg * .5, 0, 6.283); g.fill(); g.stroke(); } g.fillStyle = INK; g.fillRect(-.8, -6, 1.6, 10); g.restore(); } });
   for (const s9 of Object.values(G.sellers)) E.push({ y: s9.y, d: () => c11Folk1(g, s9.p, sx(s9.x), sy(s9.y), -1, 0, false, T, null, V) });
   for (const b of G.beasts || []) E.push({ y: b.y, d: () => c11Beast(g, b, sx(b.x), sy(b.y), T / 64 * ({ ga: .95, trong: 1.05, vit: .95, lon: .95, bo: 1.02, ngua: 1.4, trau: 1.25, cho: .62, meo: .9 }[b.kind] || 1) * (b.young ? .65 : 1)) });
   for (const v of G.vill) E.push({ y: v.y, d: () => c11DrawVill(g, v, sx(v.x), sy(v.y), T, V) });   // at work, with pose and tool (viecngay.js)
   const arm = G.swing > 0 ? 1 - G.swing / C11_SW : null;
-  E.push({ y: G.py, d: () => c11Folk1(g, { sort: 0, id: 99, groom: true }, sx(G.px), sy(G.py), G.face, G.ph, G.moving, T, arm, V) });
+  E.push({ y: G.py, d: () => { if (G.eat && typeof c11EatDrawMe === 'function') { c11EatDrawMe(g, sx, sy, T, V); return; } c11Folk1(g, { sort: 0, id: 99, groom: true }, sx(G.px), sy(G.py), G.face, G.ph, G.moving, T, arm, V); } });
   E.sort((a, b) => a.y - b.y); for (const e of E) e.d();
   // sparks, words, speech
   for (const f of G.fx) {
@@ -1250,7 +1262,7 @@ function renderC11() {
   c11ChatDraw(g, sx, sy, T);                                          // what the villagers say to each other (viecngay.js)
   if (G.say) { const w = G.say.who; const wx = w.x, wy = w.y; c11Bubble(g, sx(wx), sy(wy) - T * 1.62 * ((w.p && w.p.sc) || 1), G.say.text, w.p.name); }
   // leaves and petals blown across
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < (C11_AR.indoor ? 0 : 16); i++) {               // none inside the house (nha.js)
     const sp = 26 + (i % 5) * 9, x = ((i * 137.5 + G.t * sp) % (W + 80)) - 40, y = (i * 83 + Math.sin(G.t * .9 + i) * 30 + G.t * (9 + (i % 3) * 5)) % (H + 40) - 20, r = G.t * 3 + i;
     g.save(); g.translate(x, y); g.rotate(r); g.fillStyle = i % 4 === 0 ? '#f2a2b4' : i % 3 === 0 ? '#e0b440' : '#5f9a4c'; g.globalAlpha = .8; g.beginPath(); g.ellipse(0, 0, 5, 2.4, 0, 0, 6.283); g.fill(); g.restore();
   }
@@ -1466,12 +1478,13 @@ function c11Rig() {
   R.fore = part([-10, -10, C11_LU + 16, 10], a => { a.fk('green', ell(C11_LU / 2 - 1, 0, C11_LU / 2 + 5, 6.5), 2); a.fk('ltred', circ(C11_LU + 2, 0, 6.5), 1.8); });
   return (C11RIG = R);
 }
+let C11_ME_SIT = false;                                                    // the player sits (legs folded forward): eating at a table (tram.js)
 function c11Player(g, x, y, s, face, ph, moving, p) {
   const R = c11Rig(), tool = C11_SLOTS[C11.slot], sw = moving ? Math.sin(ph) : 0, bob = moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0, hy = -45 + bob;
   let [lean, hx, hyy, phi, drop, hd] = p === null ? [C11_REST[1] + sw * .03, C11_REST[2] + sw * 7, C11_REST[3] - Math.abs(sw) * 2, C11_REST[4] + sw * .1, 0, 0] : c11Pose(tool, p);
   g.save(); g.translate(x, y); g.scale(face * s, s);
   dp(g, R.tail, -18, hy + 2 + drop * .6, Math.sin(C11.t * 2.4) * .12);
-  dp(g, R.leg, 6, hy, sw * .55);
+  dp(g, R.leg, 6, hy, C11_ME_SIT ? -1.25 : sw * .55);
   g.save(); g.translate(0, drop); g.translate(0, hy + 8); g.rotate(lean); g.translate(0, -(hy + 8));
   dp(g, R.body, 0, hy, .04);
   dp(g, R.head, 6 + hd * .5, hy - 60 + hd, hd * .035);
@@ -1483,7 +1496,7 @@ function c11Player(g, x, y, s, face, ph, moving, p) {
   dp(g, R.upper, sx0, sy0, Math.atan2(ey - sy0, ex - sx0));
   dp(g, R.fore, ex, ey, Math.atan2(hy2 - ey, hx2 - ex));
   g.restore();
-  dp(g, R.leg, -2, hy, -sw * .55);
+  dp(g, R.leg, -2, hy, C11_ME_SIT ? -1.1 : -sw * .55);
   g.restore();
 }
 function c11AxeHead(g, y) {                                        // a wood-chopper's axe: a short poll behind the handle, a wide blade with a curved edge in front

@@ -18,7 +18,7 @@ SAVE11.oname = SAVE11.oname || 'Chuột ' + (100 + ((Math.random() * 900) | 0));
 SAVE11.friends = SAVE11.friends || {};
 const c11OFriendIds = () => Object.keys(SAVE11.friends);
 const c11OHue = id => { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360; return h; };
-const c11ORoomKey = () => C11.area === 'ruong' ? 'ruong:' + (C11O.visit ? C11O.visit.id : SAVE11.oid) : C11.area;
+const c11ORoomKey = () => C11.area === 'ruong' ? 'ruong:' + (C11O.visit ? C11O.visit.id : SAVE11.oid) : C11.area === 'nha' ? 'nha:' + SAVE11.oid : C11.area;   // inside one's own house nobody else is seen
 function c11OSend(m) { if (C11O.ws && C11O.ws.readyState === 1) C11O.ws.send(JSON.stringify(m)); }
 
 /* ---------- connection ---------- */

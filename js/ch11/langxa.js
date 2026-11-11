@@ -689,7 +689,7 @@ function c11Art2() {
     a.band('tan', smooth([[20, 30], [60, 22], [100, 20]], false), 2); a.band('tan', smooth([[30, 66], [70, 64], [110, 60]], false), 2);
     for (let i = 1; i < 6; i++) { a.key(lines([[20 + i * 13, 30 - i * 1.6, 30 + i * 13, 66 - i]]), .35); a.key(lines([[20 + i * 1.6, 30 + i * 6, 100 + i * 1.6, 20 + i * 6.6]]), .35); }
   });
-  return (C11ART2 = { dinh, ngoi: nha('cream', 1), ngoiW: nha('gach', 1.3), leu, cong, tru, bang, trong, lu, thuyen, vo });
+  return (C11ART2 = { dinh, ngoi: nha('cream', 1), ngoiW: nha('gach', 1.3), gach: nha('gach', 1), leu, cong, tru, bang, trong, lu, thuyen, vo });
 }
 function c11House2(g, hs, sx, sy, k) {
   const spr = c11Art2()[hs.kind], s = k * (hs.s || 1);

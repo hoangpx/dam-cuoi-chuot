@@ -4,9 +4,9 @@
 (() => {
   /* where each place sits on the sheet (columns, rows): the hamlet in the middle, home to the west with the bamboo wood below it,
      the market and Xóm Đông to the east, the đình, Xóm Đoài and the fields to the north, the landing and Xóm Bãi to the south */
-  const AT = { doai: [0, 0], dinh: [1, 0], dong: [2, 0], ruong: [0, 1], lang: [1, 1], cho: [2, 1], dongx: [3, 1], rung: [0, 2], ben: [1, 2], bai: [2, 2], dinhba: [1.62, .5], rungram: [0, 3], hang: [1, 3] };
-  const NAME = { ruong: 'Nhà mình', lang: 'Xóm làng', cho: 'Chợ làng', dinh: 'Đình làng', ben: 'Bến sông', dong: 'Cánh đồng', rung: 'Rừng trúc', dongx: 'Xóm Đông', doai: 'Xóm Đoài', bai: 'Xóm Bãi', dinhba: 'Dinh cụ Bá', rungram: 'Rừng rậm', hang: 'Hang động' };
-  const FILL = { ruong: '#e6d79a', lang: '#e9d2a8', cho: '#efc49a', dinh: '#e8b4a0', ben: '#a9d2e0', dong: '#cfe39a', rung: '#a9cf8a', dongx: '#e9d2a8', doai: '#e9d2a8', bai: '#e9d2a8', dinhba: '#e7a990', rungram: '#7fb070', hang: '#a79c90' };
+  const AT = { doai: [0, 0], dinh: [1, 0], dong: [2, 0], ruong: [0, 1], lang: [1, 1], cho: [2, 1], dongx: [3, 1], rung: [0, 2], ben: [1, 2], bai: [2, 2], dinhba: [1.62, .5], rungram: [0, 3], hang: [1, 3], tram: [2.62, 1.55], dayhang: [2.62, .45] };
+  const NAME = { ruong: 'Nhà mình', tram: 'Trạm dừng chân', dayhang: 'Dãy hàng thuê', lang: 'Xóm làng', cho: 'Chợ làng', dinh: 'Đình làng', ben: 'Bến sông', dong: 'Cánh đồng', rung: 'Rừng trúc', dongx: 'Xóm Đông', doai: 'Xóm Đoài', bai: 'Xóm Bãi', dinhba: 'Dinh cụ Bá', rungram: 'Rừng rậm', hang: 'Hang động' };
+  const FILL = { tram: '#f0c9a0', dayhang: '#f0d6a0', ruong: '#e6d79a', lang: '#e9d2a8', cho: '#efc49a', dinh: '#e8b4a0', ben: '#a9d2e0', dong: '#cfe39a', rung: '#a9cf8a', dongx: '#e9d2a8', doai: '#e9d2a8', bai: '#e9d2a8', dinhba: '#e7a990', rungram: '#7fb070', hang: '#a79c90' };
   /* a tiny picture on each card so the places are told apart at a glance */
   const icon = (g, id, x, y, s) => {
     g.save(); g.translate(x, y); g.scale(s, s); g.lineWidth = 1.6; g.strokeStyle = INK; g.lineJoin = 'round';
@@ -38,7 +38,7 @@
     const here = C11_AR && C11_AR.id;
     for (const id of Object.keys(AT)) {
       if (!C11_AREAS[id]) continue;
-      const small = id === 'dinhba', w = cw * (small ? .5 : .82), h = ch * (small ? .46 : .72), [cx, cy] = C(id), x = cx - w / 2, y = cy - h / 2, me = id === here;
+      const small = id === 'dinhba' || id === 'tram' || id === 'dayhang', w = cw * (small ? .5 : .82), h = ch * (small ? .46 : .72), [cx, cy] = C(id), x = cx - w / 2, y = cy - h / 2, me = id === here;
       g.fillStyle = FILL[id] || '#e9d2a8'; g.strokeStyle = me ? '#c8402f' : INK; g.lineWidth = me ? 3.6 : 2.2; g.beginPath(); g.roundRect(x, y, w, h, 9); g.fill(); g.stroke();
       icon(g, id, cx, y + h * .36, Math.min(1.3, h / 52) * (small ? .8 : 1));
       let fs = small ? 9.5 : 12; g.font = `800 ${fs}px "Be Vietnam Pro", sans-serif`; while (g.measureText(NAME[id]).width > w - 6 && fs > 8) { fs -= .5; g.font = `800 ${fs}px "Be Vietnam Pro", sans-serif`; }
