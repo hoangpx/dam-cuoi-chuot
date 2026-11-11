@@ -43,7 +43,7 @@ function p4ShopsUpdate(dt) {
     // queue places: walk up, wait, give up after a while
     Q.forEach((w, i) => {
       const tx = x + 36 + i * 30, tz = .3 + i * .03, dx = tx - w.x, dz = (tz - w.z) * 300, d = Math.hypot(dx, dz);
-      w.moving = d > 3; if (w.moving) { const st = Math.min(d, 70 * dt); w.x += dx / d * st; w.z += dz / d * st / 300; w.ph += dt * 7; w.face = dx > 0 ? 1 : -1; } else { w.st = 'fq'; w.face = -1; }
+      w.moving = d > 3; if (w.moving) { const st = Math.min(d, 70 * dt); w.x += dx / d * st; w.z += dz / d * st / 300; w.ph += st / 9; w.face = dx > 0 ? 1 : -1; } else { w.st = 'fq'; w.face = -1; }
       w.wait += dt; if (w.wait > 35 && C.w !== w) { w.st = 'leave'; w.dir = 1; w.gone = true; }
     });
     P4.FQ[key] = Q.filter(w => !w.gone);

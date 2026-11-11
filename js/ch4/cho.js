@@ -919,9 +919,9 @@ function updateC4(dt) {
   c4SellersUpdate(dt); c4ServeUpdate(dt);
   // the husband fetching more (sent from a stall sheet)
   const P = C4.porter;
-  if (P.st === 'out') { P.x -= 150 * dt; P.z = Math.min(.3, P.z + dt * .2); P.ph += dt * 10; if (P.x <= Math.min(C4_OFF, C4.camX - 110)) { P.st = 'away'; P.t = 2; } }
+  if (P.st === 'out') { P.x -= 150 * dt; P.z = Math.min(.3, P.z + dt * .2); P.ph += dt * 150 / 9; if (P.x <= Math.min(C4_OFF, C4.camX - 110)) { P.st = 'away'; P.t = 2; } }
   else if (P.st === 'away') { if ((P.t -= dt) <= 0) { P.st = 'back'; AU.click(); } }
-  else if (P.st === 'back') { P.x += 140 * dt; P.ph += dt * 10; if (P.x >= c4HusbX() - 60) P.z = Math.max(.04, P.z - dt * .5); if (P.x >= c4HusbX()) { P.x = c4HusbX(); P.z = .04; P.st = 'idle'; P.deliv = false; if (P.good) { c4Receive(P.good, P.qty, P.cost); P.good = null; } c4Say(P, c4Pick(C4_HUSBAND)); setTimeout(() => c4Say(C4.wife, c4Pick(C4_WIFE_GOT)), 1300); } }
+  else if (P.st === 'back') { P.x += 140 * dt; P.ph += dt * 140 / 9; if (P.x >= c4HusbX() - 60) P.z = Math.max(.04, P.z - dt * .5); if (P.x >= c4HusbX()) { P.x = c4HusbX(); P.z = .04; P.st = 'idle'; P.deliv = false; if (P.good) { c4Receive(P.good, P.qty, P.cost); P.good = null; } c4Say(P, c4Pick(C4_HUSBAND)); setTimeout(() => c4Say(C4.wife, c4Pick(C4_WIFE_GOT)), 1300); } }
   if (C4.build) { C4.build.t += dt; if (Math.floor(C4.build.t * 3) !== Math.floor((C4.build.t - dt) * 3)) AU.tap(); if (C4.build.t >= 6) { SAVE4.lv = C4.build.to; delete SAVE4.building; if (C4.porter.st === 'idle') C4.porter.x = c4HusbX(); C4.build = null; AU.drumOne(); AU.pluck(88); persist4(); c4Hud(); } }
   C4.camX = Math.max(-140, Math.min(C4_W - c4View().vw + 40, C4.camX));
   if ((C4.hudT = (C4.hudT || 0) - dt) <= 0) { C4.hudT = .25; c4Hud(); }

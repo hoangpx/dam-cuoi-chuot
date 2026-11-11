@@ -247,9 +247,9 @@ function c4SendTrip(c, g, q, cost) {
 }
 function c4TripsUpdate(dt) {
   for (const p of [...(C4.trips || [])]) {
-    if (p.st === 'out') { p.x -= 150 * dt; p.z = Math.min(.3, p.z + dt * .2); p.ph += dt * 10; if (p.x <= Math.min(C4_OFF, C4.camX - 110)) { p.st = 'away'; p.t = 2.4; } }
+    if (p.st === 'out') { p.x -= 150 * dt; p.z = Math.min(.3, p.z + dt * .2); p.ph += dt * 150 / 9; if (p.x <= Math.min(C4_OFF, C4.camX - 110)) { p.st = 'away'; p.t = 2.4; } }
     else if (p.st === 'away') { if ((p.t -= dt) <= 0) p.st = 'back'; }
-    else if (p.st === 'back') { const hx = c4SellX(p.home, 0); p.x += 140 * dt; p.ph += dt * 10; p.z += (C4_WIFE_Z - p.z) * Math.min(1, dt * 2);
+    else if (p.st === 'back') { const hx = c4SellX(p.home, 0); p.x += 140 * dt; p.ph += dt * 140 / 9; p.z += (C4_WIFE_Z - p.z) * Math.min(1, dt * 2);
       if (p.x >= hx) { c4Receive(p.good, p.qty, p.cost, 'giua'); p.h.trip = false; C4.trips.splice(C4.trips.indexOf(p), 1); c4Say(p.h, c4Pick(['Hàng về rồi đây!', 'Đủ cả, bà chủ đếm đi!', 'Nặng mà vui!'])); c4Hud(); } }
   }
 }
