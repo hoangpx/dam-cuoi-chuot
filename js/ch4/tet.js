@@ -32,14 +32,15 @@ const c4TetArt = k => C4_TET_ART[k] || (C4_TET_ART[k] = k === 'neu' ? part([-70,
   a.fk('red', fish, 1.1); a.fk('red', new Path2D('M26 -146 L30 -150 L34 -146 L30 -140 Z'), .9);   // a red paper carp
   a.fk('red', new Path2D('M-3 -292 L-26 -268 L-22 -262 L-1 -284 Z'), 1);                        // a red cloth streamer
   a.fk('white', new Path2D('M-14 0 L14 0 L10 -10 L-10 -10 Z'), 1.4);                             // its stone foot
-}) : k === 'dao' ? part([-70, -170, 70, 4], a => {
+}) : k === 'dao' || k === 'mai' ? part([-70, -170, 70, 4], a => {   // peach (pink) or apricot mai (yellow) in blossom
   a.fk('blue', new Path2D('M-24 0 L24 0 L30 -36 L-30 -36 Z'), 2); a.fk('white', new Path2D('M-31 -36 L31 -36 L31 -44 L-31 -44 Z'), 1.8);   // a blue glazed pot
   a.key(lines([[-18, -18, 18, -18]]), 1);
   const br = [[[0, -44], [-6, -80], [-22, -120], [-40, -140]], [[0, -44], [4, -90], [14, -130], [12, -160]], [[-4, -80], [-34, -96], [-52, -100]], [[6, -96], [34, -118], [50, -122]], [[10, -126], [32, -150]]];
   for (const b of br) { const p = new Path2D(); b.forEach(([x, y], i) => i ? p.lineTo(x, y) : p.moveTo(x, y)); a.band('brown', p, 3.6); a.key(p, 1.1); }
   const R0 = mulberry(31); for (let i = 0; i < 46; i++) {                                        // pink blossoms along the branches
     const b = br[i % br.length], j = 1 + ((R0() * (b.length - 1)) | 0), t = R0(), [x0, y0] = b[j - 1], [x1, y1] = b[j], x = x0 + (x1 - x0) * t + (R0() - .5) * 10, y = y0 + (y1 - y0) * t + (R0() - .5) * 10;
-    a.fk(R0() < .7 ? 'pink' : 'white', circ(x, y, 3.2 + R0() * 1.6), .8); a.fill('red', circ(x, y, 1));
+    if (k === 'mai') { a.fk(R0() < .8 ? 'yellow' : 'paper', circ(x, y, 3.4 + R0() * 1.4), .8); a.fill('orange', circ(x, y, 1.1)); }
+    else { a.fk(R0() < .7 ? 'pink' : 'white', circ(x, y, 3.2 + R0() * 1.6), .8); a.fill('red', circ(x, y, 1)); }
   }
 }) : null);
 
@@ -118,6 +119,31 @@ function c4TetDebrisDraw(g, place, yOf, sOf, lo, hi) {   // xác pháo on the ro
   const D = C4_TET_FX.debris[place]; if (!D) return;
   for (const d of D) if (d.x > lo && d.x < hi) { const y = yOf(d.z), s = sOf(d.z); g.save(); g.translate(d.x, y); g.rotate(d.r); g.fillStyle = d.c ? '#e8c24a' : '#c8302a'; g.fillRect(-2.6 * s, -1.2 * s, 5.2 * s, 2.4 * s); g.restore(); }
 }
+// pháo dây (owner 2026-11-11: "phải có 2 hàng 2 bên"): a braided fuse with a cracker either side at every step, each a little red
+// tube with a gold band, angled out and down in a herringbone, the two rows staggered; a red bow at the top; it burns from the
+// bottom up (p.left), sparks at the burning end, the string swaying a little
+function c4TetString(g, p, yOf) {
+  const s = p.s, top = yOf(p.z) - p.h0 * s, len = p.h0 * s, left = Math.max(0, p.left), bot = top + len * left, sway = Math.sin(p.t * 3 + p.x) * 2 * s;
+  const at = yy => p.x + sway * (yy - top) / len;                                   // the string's x at height yy (hung from the top)
+  g.save(); g.lineCap = 'round';
+  g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(p.x, top - 10 * s); g.lineTo(p.x, top); g.stroke();   // the cord to the hook
+  g.strokeStyle = '#5b2f1f'; g.lineWidth = 1.6 * s; g.beginPath(); g.moveTo(p.x, top); g.lineTo(at(bot), bot); g.stroke();   // the braided fuse
+  const step = 5.2 * s, L = 10 * s, W = 3.4 * s;
+  for (let yy = top + 6 * s, i = 0; yy < bot; yy += step, i++) for (const side of [-1, 1]) {
+    const y0 = yy + (side > 0 ? step / 2 : 0); if (y0 >= bot) continue;
+    const x0 = at(y0); g.save(); g.translate(x0, y0); g.rotate(side * .55); g.scale(side, 1);   // out and down: a herringbone
+    g.fillStyle = (i + (side > 0 ? 1 : 0)) % 3 ? '#c8302a' : '#b02a24'; g.strokeStyle = INK; g.lineWidth = .7;
+    g.beginPath(); g.roundRect ? g.roundRect(1 * s, -W / 2, L, W, W / 2) : g.rect(1 * s, -W / 2, L, W); g.fill(); g.stroke();
+    g.fillStyle = '#e8c24a'; g.fillRect(2.4 * s, -W / 2 + .3, 1.6 * s, W - .6);           // the gold band by the fuse
+    g.restore();
+  }
+  // the red bow at the top
+  g.fillStyle = '#c8302a'; g.strokeStyle = INK; g.lineWidth = .8;
+  for (const side of [-1, 1]) { g.beginPath(); g.moveTo(p.x, top + 1 * s); g.quadraticCurveTo(p.x + side * 9 * s, top - 6 * s, p.x + side * 8 * s, top + 4 * s); g.closePath(); g.fill(); g.stroke(); }
+  g.beginPath(); g.moveTo(p.x - 1.5 * s, top + 2 * s); g.lineTo(p.x - 4 * s, top + 12 * s); g.lineTo(p.x + 4 * s, top + 12 * s); g.lineTo(p.x + 1.5 * s, top + 2 * s); g.closePath(); g.fill(); g.stroke();
+  if (left > 0) { g.globalAlpha = .6 + .4 * Math.sin(p.t * 40); g.fillStyle = '#ffd36a'; g.beginPath(); g.arc(at(bot), bot + 1 * s, 3.2 * s, 0, 6.283); g.fill(); g.globalAlpha = 1; }   // the burning end
+  g.restore();
+}
 function c4TetFxDraw(g, place, yOf) {
   for (const p of C4_TET_FX.list) {
     if (p.place !== place || p.k === 'spark') continue;
@@ -125,11 +151,7 @@ function c4TetFxDraw(g, place, yOf) {
     if (p.k === 'bit') { g.save(); g.translate(p.x, y); g.rotate(p.r + (p.h > 0 ? p.t * 9 : 0)); g.fillStyle = '#c8302a'; g.fillRect(-2.6 * p.s, -1.2 * p.s, 5.2 * p.s, 2.4 * p.s); g.restore(); }
     else if (p.k === 'smoke') { g.globalAlpha = .3 * a; g.fillStyle = '#ece6da'; g.beginPath(); g.arc(p.x, y, (9 + p.t * 16) * p.s, 0, 6.283); g.fill(); g.globalAlpha = 1; }
     else if (p.k === 'flash') { g.globalAlpha = a; g.fillStyle = '#fff2b0'; g.beginPath(); g.arc(p.x, y, 14 * p.s * (1 + p.t * 4), 0, 6.283); g.fill(); g.fillStyle = '#ffb347'; g.beginPath(); g.arc(p.x, y, 7 * p.s * (1 + p.t * 3), 0, 6.283); g.fill(); g.globalAlpha = 1; }
-    else if (p.k === 'day') {                                                        // a red string hanging, burning from the bottom up
-      const top = yOf(p.z) - p.h0 * p.s, bot = top + p.h0 * p.s * Math.max(0, p.left);
-      g.strokeStyle = INK; g.lineWidth = 1; g.beginPath(); g.moveTo(p.x, top - 8 * p.s); g.lineTo(p.x, top); g.stroke();
-      if (p.left > 0) for (let yy = top; yy < bot; yy += 5 * p.s) { g.fillStyle = (((yy - top) / (5 * p.s)) | 0) % 2 ? '#c8302a' : '#a3241e'; g.fillRect(p.x - 4 * p.s, yy, 3 * p.s, 4 * p.s); g.fillRect(p.x + 1 * p.s, yy + 2 * p.s, 3 * p.s, 4 * p.s); }
-    }
+    else if (p.k === 'day') c4TetString(g, p, yOf);
   }
 }
 function c4TetSparks(g) {               // pháo hoa: in screen space after the night, so they glow
@@ -138,6 +160,39 @@ function c4TetSparks(g) {               // pháo hoa: in screen space after the 
   for (const p of L) { const a = 1 - p.t / p.life; g.globalAlpha = a; g.fillStyle = p.col; g.beginPath(); g.arc(p.x, p.y, 2.4, 0, 6.283); g.fill(); g.globalAlpha = a * .35; g.beginPath(); g.arc(p.x - p.vx * .05, p.y - p.vy * .05, 1.6, 0, 6.283); g.fill(); }
   g.restore();
 }
+
+/* ---------- blossoms and red couplets everywhere (owner 2026-11-11: "hoa mai hoa đào phải ở khắp nơi, khắp các cửa hàng, câu đối đỏ
+   các kiểu") ----------
+   From the 20th of tháng Chạp to mồng 7: every house behind the village lane and every shop on the town street gets a pair of red
+   couplets either side of its door (gold words, four to a strip, a pair chosen by the house) and, over the village houses' doors, a
+   red board; a pot of peach (pink) or apricot (yellow mai) blossom stands at every house, shop and neighbour's stall. All drawn live,
+   only what is on screen. */
+const C4_TET_DOI = [
+  [['Xuân', 'sang', 'phúc', 'đến'], ['Tết', 'về', 'lộc', 'đầy'], 'AN KHANG'],
+  [['Năm', 'mới', 'bình', 'an'], ['Làm', 'ăn', 'phát', 'đạt'], 'PHÚC LỘC'],
+  [['Buôn', 'may', 'bán', 'đắt'], ['Vạn', 'sự', 'như', 'ý'], 'THỊNH VƯỢNG'],
+  [['Nhà', 'êm', 'cửa', 'ấm'], ['Con', 'cháu', 'sum', 'vầy'], 'XUÂN VỀ'],
+  [['Hoa', 'nở', 'đón', 'xuân'], ['Người', 'vui', 'đón', 'Tết'], 'CUNG CHÚC'],
+];
+// a pair of strips at cx ± half (local units × s), from top to bot below the base line, words in gold; a board over the door if asked
+function c4TetDoi(g, cx, by, s, half, top, bot, k, board) {
+  const D = C4_TET_DOI[((k % C4_TET_DOI.length) + C4_TET_DOI.length) % C4_TET_DOI.length], w = 13 * s, fs = Math.max(4, 6.4 * s);
+  g.save(); g.lineWidth = 1; g.strokeStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const [i, side] of [[0, -1], [1, 1]]) {
+    const x = cx + side * half * s, y0 = by + top * s, h = (bot - top) * s;
+    g.fillStyle = '#c0322a'; g.fillRect(x - w / 2, y0, w, h); g.strokeRect(x - w / 2, y0, w, h);
+    g.strokeStyle = '#e8c24a'; g.lineWidth = .8; g.strokeRect(x - w / 2 + 1.6 * s, y0 + 1.6 * s, w - 3.2 * s, h - 3.2 * s); g.strokeStyle = INK; g.lineWidth = 1;
+    g.fillStyle = '#f6d36a'; g.font = `900 ${fs}px "Playfair Display", serif`;
+    D[i].forEach((t, j) => g.fillText(t, x, y0 + h * (j + .5) / 4));
+  }
+  if (board) {
+    const bw = (half * 2 - 4) * s, bh = 13 * s, y0 = by + (top - 17) * s;
+    g.fillStyle = '#c0322a'; g.fillRect(cx - bw / 2, y0, bw, bh); g.strokeRect(cx - bw / 2, y0, bw, bh);
+    g.fillStyle = '#f6d36a'; g.font = `900 ${fs * 1.15}px "Playfair Display", serif`; g.fillText(D[2], cx, y0 + bh / 2 + .5);
+  }
+  g.restore();
+}
+const c4TetHash = x => Math.abs(Math.sin(x * 12.9898) * 43758.5453) % 1;
 
 /* ---------- talk ---------- */
 const C4_TET_CHATS_GIAP = [
@@ -168,6 +223,13 @@ const p4TetChat = () => { const ph = c4TetPhase(); if (!ph || Math.random() > .5
     if (c4LookCtx !== undefined || !c4TetPhase()) return;                                       // not in a friend's market, nor in the stall dresser
     for (const [x, z, k, sc] of c4TetSpots('lang')) if (vis(x, 120)) { const s = c4S(z) * sc, P = k === 'quat' ? lkDecoPart('quat') : c4TetArt(k); items.push({ z, f: () => dp(g, P, x, c4Y(z), 0, s, s) }); }
     if (c4TetNeu() && vis(C4_GATE, 140)) items.push({ z: -.5, f: () => c4TetBanner(g, C4_GATE, C4_Y0 + 6 - 176 * .88, .88) });
+    if (c4TetDeco()) {
+      for (const [x, k, s] of (C4.scene ? C4.scene.near : [])) if (k === 'house' && vis(x, 160)) {   // the houses behind the lane: couplets, a board, a pot of blossom
+        const h = c4TetHash(x); items.push({ z: -.4, f: () => c4TetDoi(g, x, C4_Y0, s, 48, -108, -22, (h * 97) | 0, true) });
+        const px = x + (h < .5 ? 70 : -70) * s; items.push({ z: .004, f: () => dp(g, c4TetArt(h < .5 ? 'mai' : 'dao'), px, C4_Y0 + 2, 0, s * .55, s * .55) });
+      }
+      for (const v of [...C4_VENDORS, ...(typeof C4_VENDORS_FRONT !== 'undefined' ? C4_VENDORS_FRONT : [])]) if (vis(v.x + 80, 80)) { const s = c4S(.05) * .55, k = c4TetHash(v.x) < .5 ? 'mai' : 'dao'; items.push({ z: .05, f: () => dp(g, c4TetArt(k), v.x + 80, c4Y(.05), 0, s, s) }); }
+    }
     const lo = C4.camX - 40, hi = C4.camX + c4View().vw + 40;
     if (c4TetDebris('lang', C4_W)) items.push({ z: -.3, f: () => c4TetDebrisDraw(g, 'lang', c4Y, c4S, lo, hi) });
     if (C4_TET_FX.list.length) items.push({ z: 1.2, f: () => c4TetFxDraw(g, 'lang', c4Y) });
@@ -178,6 +240,11 @@ const p4TetChat = () => { const ph = c4TetPhase(); if (!ph || Math.random() > .5
     if (!c4TetPhase() && !c4TetPhaoOn('pho', P4.mins)) return;
     for (const [x, z, k, sc] of c4TetSpots('pho')) if (vis(x, 120)) { const s = p4S(z) * sc, P = k === 'quat' ? lkDecoPart('quat') : c4TetArt(k); items.push({ z, f: () => dp(g, P, x, p4Y(z), 0, s, s) }); }
     if (c4TetNeu() && vis(P4_GATE + 60, 140)) items.push({ z: -.5, f: () => c4TetBanner(g, P4_GATE + 60, P4_Y0 + 6 - 192 * .88, .88) });
+    if (c4TetDeco()) for (const [x, k, s, hv] of P4.scene.near) if (k === 'shop' && vis(x, 160)) {   // every shop: couplets either side of its front, a pot of blossom
+      const o = P4_TOWN_V[((hv | 0) % P4_TOWN_V.length + P4_TOWN_V.length) % P4_TOWN_V.length], h = c4TetHash(x);
+      items.push({ z: -.4, f: () => c4TetDoi(g, x, P4_Y0, s, o.w - 11, -116, -14, (h * 97) | 0, false) });
+      const px = x - (o.w - 30) * s, z = .03; items.push({ z, f: () => dp(g, c4TetArt(h < .5 ? 'mai' : 'dao'), px, p4Y(z), 0, p4S(z) * .55, p4S(z) * .55) });
+    }
     const lo = P4.camX - 40, hi = P4.camX + p4View().vw + 40, fs = () => P4_FOLK_S * P4_CROWD;
     if (c4TetDebris('pho', P4_W)) items.push({ z: -.3, f: () => c4TetDebrisDraw(g, 'pho', p4Y, fs, lo, hi) });
     if (C4_TET_FX.list.length) items.push({ z: 1.2, f: () => c4TetFxDraw(g, 'pho', p4Y) });
