@@ -132,8 +132,8 @@ const c11StepReady = s => s.t === 'talk' || (s.t === 'bring' && c11Count(s.item)
 function c11Offer(p) {
   const Q = c11Q(); if (Q.act.some(q => q.giver === p.id)) return null;
   const h = c11Hearts(p.id), L = c11HQOf(p);
-  for (let i = 0; i < L.length; i++) { const id = p.id + ':' + i; if (Q.done[id]) continue; return h >= L[i].at ? { ...L[i], id, i } : null; }
-  return null;
+  for (let i = 0; i < L.length; i++) { const id = p.id + ':' + i; if (Q.done[id]) continue; if (h >= L[i].at) return { ...L[i], id, i }; break; }
+  return c11Again(p);   // nothing of their own to ask now: a small request again every few days (viecthem.js)
 }
 function c11StepFor(pid) { for (const q of c11Q().act) { const s = q.steps[q.si]; if (s && c11Who(s.who) === pid) return { q, s }; } return null; }
 const c11Mark = p => { const f = c11StepFor(p.id); if (f && c11StepReady(f.s)) return '?'; return c11Offer(p) ? '!' : f ? '…' : null; };
@@ -155,14 +155,14 @@ function c11QuestTalk(v) {
   if (o) {
     if (o.give && SAVE11.bag.every(Boolean)) { c11Say(v, 'Tôi có việc muốn nhờ, mà túi anh đầy quá. Cất bớt đồ rồi quay lại nhé.'); return true; }
     if (o.give) c11Add(o.give, 1);
-    Q.act.push({ id: o.id, title: o.title, giver: p.id, steps: o.steps, si: 0, end: o.end, reward: o.reward, src: 'tim' });
+    Q.act.push({ id: o.id, title: o.title, giver: p.id, steps: o.steps, si: 0, end: o.end, reward: o.reward, src: o.src || 'tim', due: o.due });
     daily(); c11Say(v, o.start); c11Msg(`Nhận việc: ${o.title}`, '#2f6a4c'); c11Sfx.tap(); persist11(); return true;
   }
   return false;
 }
 function c11QuestDone(q, v) {
   const Q = c11Q(), R = q.reward || {}, gp = q.giver && c11P(q.giver) ? q.giver : c11Who(q.steps[q.steps.length - 1].who);
-  Q.act = Q.act.filter(x => x !== q); Q.done[q.id] = SAVE11.day; Q.n = (Q.n || 0) + 1;
+  Q.act = Q.act.filter(x => x !== q); Q.done[q.id] = SAVE11.day; Q.n = (Q.n || 0) + 1; c11TitleCheck();
   if (R.m) { SAVE11.money += R.m;  }
   if (R.f && gp) c11PP(gp).f = Math.min(2500, c11PP(gp).f + R.f);
   for (const [id, pts] of Object.entries(R.ff || {})) { const s = c11PP(id); s.f = Math.min(2500, s.f + pts); s.met = 1; }
@@ -177,7 +177,8 @@ function c11QuestDone(q, v) {
 function c11Board() {
   const Q = c11Q(); if (Q.board && Q.board.day === SAVE11.day) return Q.board;
   const day = SAVE11.day, r = j => c11Hash(day, j, 501), pool = C11_PPL.filter(p => !p.stall && p.role !== 'c' && p.home.a !== 'out'), posts = [];
-  const nPost = 2 + (r(0) < .4 ? 1 : 0);
+  const nPost = 2 + (r(0) < .4 ? 1 : 0) + (day >= 8 ? 1 : 0) + (day >= 20 ? 1 : 0);
+  if (day >= 6 && r(81) < .34) posts.push(c11BigPost(day, `b${day}_big`));   // a bulk order, three days to fill (viecthem.js)
   for (let j = 0; j < nPost; j++) {
     const p = pool[Math.floor(r(j + 1) * pool.length)], id = `b${day}_${j}`;
     if (j === 0 && day >= 3 && r(71) < .3 && C11_HOUSES[p.home.key] && C11_AREAS[p.home.a]) {   // a house was robbed: stand watch there tonight (trom.js)
@@ -197,20 +198,23 @@ function c11Board() {
 }
 function c11OpenBoard() {
   const Q = c11Q(), B = c11Board(), mine = Q.act.filter(q => q.src === 'bang').length;
-  const rows = B.posts.map(b => ({ name: b.title, sub: `Hạn: hết ngày mai · ${c11StepText(b.steps[0]).replace(/ \(có.*\)/, '')}`, tag: `Nhận việc · thưởng ${c4Money(b.reward.m)}`, ok: true, f: () => {
-    if (Q.act.filter(q => q.src === 'bang').length >= 3) { C11.menu.note = 'Đang nhận ba việc của đình rồi, làm xong đã'; return; }
+  const rows = B.posts.map(b => ({ name: b.title, sub: b.big ? `Hạn: ${b.days} ngày · ${b.steps.map(s => `${s.n} ${c11IName(s.item)}`).join(', ')} cho ${c11P(b.steps[0].who).name}` : `Hạn: hết ngày mai · ${c11StepText(b.steps[0]).replace(/ \(có.*\)/, '')}`, tag: `Nhận việc · thưởng ${c4Money(b.reward.m)}`, ok: true, f: () => {
+    if (Q.act.filter(q => q.src === 'bang').length >= 4) { C11.menu.note = 'Đang nhận bốn việc của đình rồi, làm xong đã'; return; }
     if (b.give && SAVE11.bag.every(Boolean)) { C11.menu.note = 'Túi đầy, không cầm thư được'; return; }
     if (b.give) c11Add(b.give, 1);
     if (b.lost) { const M = C11_AREAS[b.lost.a].map, cand = []; for (let y = 2; y < M.length - 2; y++) for (let x = 2; x < M[0].length - 2; x++) if (M[y][x] === 'g') cand.push([x, y]); const [lx, ly] = cand[Math.floor(c11Hash(SAVE11.day, b.id.length + cand.length, 7) * cand.length)]; SAVE11.drops.push({ k: b.lost.it, a: b.lost.a, q: b.id, x: lx + .5, y: ly + .7, x0: lx + .5, y0: ly + .7, t: .01, dur: .01, h: 0 }); }
-    Q.act.push({ id: b.id, title: b.title, giver: 'lang', steps: b.steps, si: 0, reward: b.reward, due: SAVE11.day + 1, src: 'bang' });
+    Q.act.push({ id: b.id, title: b.title, giver: 'lang', steps: b.steps, si: 0, end: b.end, reward: b.reward, due: SAVE11.day + (b.days || 2) - 1, src: 'bang' });
     B.posts = B.posts.filter(x => x !== b); c11Sfx.tap(); persist11(); c11OpenBoard(); C11.menu.note = `Đã nhận: ${b.title}`;
   } }));
-  C11.menu = { title: 'Bảng yết thị', cols: 1, note: rows.length ? `Việc của đình đang làm: ${mine}/3` : 'Hôm nay đình hết việc rồi, mai xem lại', rows };
+  const W = c11WorkNow();   // the village's common work comes first (viecthem.js)
+  if (W) rows.unshift({ name: `Việc chung: ${W.t}`, sub: `${W.why} Đã góp: ${c11WorkLine(W)}`, tag: 'Góp đồ trong túi', ok: true, f: c11WorkGive });
+  C11.menu = { title: 'Bảng yết thị', cols: 1, note: B.posts.length ? `Việc của đình đang làm: ${mine}/4` : 'Hôm nay đình hết việc rồi, mai xem lại', rows };
 }
 /* at night (before the day turns): the board's jobs due today are dropped (heart requests never run out) */
 function c11QuestNewDay() {
   const Q = c11Q(), late = Q.act.filter(q => q.due && SAVE11.day >= q.due);
-  for (const q of late) for (const st of q.steps) if (st.t === 'carry' && st.item === 'thu_tay' && q.src === 'bang') c11Take('thu_tay', 1);
+  for (const q of late) { if (q.src === 'lai') (Q.gone = Q.gone || {})[q.id] = 1; const st = q.steps[q.si]; if (st && st.t === 'carry' && st.item === 'thu_tay') c11Take('thu_tay', 1); }
+  if (Q.gone) for (const k of Object.keys(Q.gone)) { const t = +k.split(':r')[1]; if (t < Math.floor(SAVE11.day / C11_AGAIN_DAYS) - 2) delete Q.gone[k]; }
   Q.act = Q.act.filter(q => !late.includes(q)); SAVE11.drops = SAVE11.drops.filter(d => !d.q || !late.some(q => q.id === d.q));
   return late.length;
 }

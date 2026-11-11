@@ -519,11 +519,11 @@ function c11DrawJobs(g, W, px, py, pw, ph, top, m, btn, Q) {
   if (!Q.act.length) {
     g.fillStyle = INK; g.font = '600 13px "Be Vietnam Pro", sans-serif'; let y = top + 30;
     for (const l of c11Wrap(g, 'Chưa nhận việc nào. Xem bảng yết thị ở đình, hoặc làm thân với dân làng để họ nhờ việc.', pw - 60)) { g.fillText(l, W / 2, y); y += 20; }
-    g.fillStyle = 'rgba(29,25,21,.7)'; g.font = '600 12px "Be Vietnam Pro", sans-serif'; g.fillText(`Đã làm xong ${Q.n || 0} việc`, W / 2, y + 12); return;
+    g.fillStyle = 'rgba(29,25,21,.7)'; g.font = '600 12px "Be Vietnam Pro", sans-serif'; g.fillText(c11JobsLine(), W / 2, y + 12); return;
   }
   const cw = pw - 24, tw = cw - 24, cards = Q.act.map(q => {
     const s = q.steps[q.si], who = c11P(c11Who(s.who)), ready = c11StepReady(s);
-    g.font = '800 14px "Be Vietnam Pro", sans-serif'; const head = c11Wrap(g, q.title + (q.due ? (q.due === SAVE11.day ? ' · hết hạn hôm nay' : ' · hạn ngày mai') : ''), tw);
+    g.font = '800 14px "Be Vietnam Pro", sans-serif'; const head = c11Wrap(g, q.title + c11DueText(q), tw);
     g.font = '600 12px "Be Vietnam Pro", sans-serif'; const body = c11Wrap(g, c11StepText(s), tw), at = c11Wrap(g, who ? `${who.name}: ${c11WhereText(who)}` : '', tw).filter(Boolean);
     return { head, body, at, ready, h: 14 + head.length * 18 + body.length * 16 + at.length * 15 + (ready ? 20 : 0) + 8 };
   });
@@ -540,7 +540,7 @@ function c11DrawJobs(g, W, px, py, pw, ph, top, m, btn, Q) {
     y += c.h + 8;
   }
   g.textAlign = 'center'; g.fillStyle = 'rgba(29,25,21,.7)'; g.font = '600 11px "Be Vietnam Pro", sans-serif';
-  if (pages.length > 1) c11Pager(g, W, py, ph, m, 'vpage', pages.length, btn); else g.fillText(`Đã làm xong ${Q.n || 0} việc`, W / 2, py + ph - 20);
+  if (pages.length > 1) c11Pager(g, W, py, ph, m, 'vpage', pages.length, btn); else g.fillText(c11JobsLine(), W / 2, py + ph - 20);
 }
 function c11DrawPerson(g, px, py, pw, ph, m, btn) {
   const p = C11_PPL.find(q => q.id === m.sel), s = c11PP(p.id), h = c11Hearts(p.id), lx = px + 18;
