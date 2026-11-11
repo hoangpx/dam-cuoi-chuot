@@ -22,10 +22,10 @@ function p4BossUpdate(dt) {
     const lead = B.men[0];
     for (const [i, m] of B.men.entries()) { if (m.say) { m.say.t += dt; if (m.say.t > m.say.life) m.say = null; } }
     if (B.st === 'come') {
-      B.x += 70 * dt; B.men.forEach((m, i) => { m.x = B.x - i * 46; m.ph += dt * 7; m.st = 'walk'; m.face = 1; });
+      B.x += 70 * dt; B.men.forEach((m, i) => { m.x = B.x - i * 46; m.ph += dt * 70 / 9; m.st = 'walk'; m.face = 1; });
       if (B.x >= P4_HOME - 70) { B.st = 'ask'; B.men.forEach(m => { m.st = 'stand'; }); p4BossSheet(); }
     } else if (B.st === 'go') {
-      B.x -= 80 * dt; B.men.forEach((m, i) => { m.x = B.x + i * 46; m.ph += dt * 7; m.st = 'walk'; m.face = -1; });
+      B.x -= 80 * dt; B.men.forEach((m, i) => { m.x = B.x + i * 46; m.ph += dt * 80 / 9; m.st = 'walk'; m.face = -1; });
       if (B.x < P4.camX - 400) P4.boss = null;
     }
   }

@@ -67,7 +67,7 @@ function p4Sale(m, n, fx, fy) {
 function p4Run(m, dt) {
   if (m.st === 'counter') return;
   const b = m.job, sp = 150 * (.8 + .4 * m.sp);
-  const go = (tx, tz) => { const dx = tx - m.x, dz = (tz - m.z) * 300, d = Math.hypot(dx, dz); m.moving = d > 3; if (!m.moving) return true; const st = Math.min(d, sp * dt); m.x += dx / d * st; m.z += dz / d * st / 300; m.ph += dt * 12; m.face = dx >= 0 ? 1 : -1; return false; };
+  const go = (tx, tz) => { const dx = tx - m.x, dz = (tz - m.z) * 300, d = Math.hypot(dx, dz); m.moving = d > 3; if (!m.moving) return true; const st = Math.min(d, sp * dt); m.x += dx / d * st; m.z += dz / d * st / 300; m.ph += st / 9; m.face = dx >= 0 ? 1 : -1; return false; };
   if (m.st === 'out') {
     if (!b || !b.order) { m.st = 'back'; m.job = null; return; }
     if (go(b.x - 30, P4_DOCK_Z)) {

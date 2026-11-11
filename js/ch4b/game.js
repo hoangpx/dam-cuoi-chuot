@@ -7,14 +7,15 @@
 const P4_TOOL_ARM = { o: -1.2, quat: -1.5, long: -.5, sach: .35, goi: .15 };
 const P4_TALL = 168;
 function p4Mouse(g, M, x, face, ph, moving, arm = null, carry = null, s = 1, y = GROUND, seed = 0, dress = null) {
-  const sw = moving ? Math.sin(ph) : 0, bob = moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0;
+  const G = C4_GAIT && moving ? c4Gait(ph * C4_GAIT_REF / s) : null;     // feet that hold the ground, as in the village (ch4/art.js c4Gait)
+  const sw = G ? G.sw : moving ? Math.sin(ph) : 0, bob = G ? C4_GAIT_L - G.h : moving ? -Math.abs(Math.sin(ph)) * 3.5 : 0;
   g.save(); g.translate(x, y); g.scale(face * s, s);
   const hy = -45 + bob, armN = arm === null ? sw * .4 : arm;
   dp(g, M.tail, -18, hy + 2, Math.sin(P4.t * 2.4 + seed) * .12);
-  dp(g, M.leg, 6, hy, sw * .55);
+  if (G) dp(g, M.leg, 6, hy, G.r[0], 1, G.k[0]); else dp(g, M.leg, 6, hy, sw * .55);
   if (!M.skirt) dp(g, M.arm, 2, hy - 50, -sw * .4);                         // (a skirted mouse wears it in front of the skirt, below)
   dp(g, M.body, 0, hy, .04);
-  dp(g, M.leg, -2, hy, -sw * .55);
+  if (G) dp(g, M.leg, -2, hy, G.r[1], 1, G.k[1]); else dp(g, M.leg, -2, hy, -sw * .55);
   if (M.skirt) { dp(g, M.skirt, 0, hy, .04 + sw * .03); dp(g, M.arm, 2, hy - 50, -sw * .4); }   // a skirt drawn as part of the mouse (buildMouse o.skirt), the arm hanging over it (owner: the hand looked to be inside the skirt)
   if (dress) dress(g, hy);                                                  // the town's tunic, between the body and the head
   dp(g, M.head, 6, hy - 60, Math.sin(ph * 2) * .04);
