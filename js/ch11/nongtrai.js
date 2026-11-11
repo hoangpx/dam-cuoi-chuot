@@ -690,20 +690,6 @@ function startC11() {
   for (const d of SAVE11.drops) d.t = d.dur;
   Object.assign(C11, { ready: true, fainted: false, late: false, passed: false, warnLate: false, faintMsg: null, go: null, pend: null, swing: 0, shake: null, fall: null, keys: {}, fx: [], say: null, sleep: null, kbd: false, msg: null, hl: null, menu: null, fade: null });
   cv.focus();
-  c11TrialNotice();
-}
-/* Trial notice (owner 2026-10-28): shown each time the chapter is entered; the game waits behind it. */
-function c11TrialNotice() {
-  if (document.getElementById('c11trial')) return;
-  const d = document.createElement('div'); d.id = 'c11trial';
-  d.style.cssText = 'position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(29,25,21,.55);padding:16px';
-  d.innerHTML = '<div style="max-width:380px;background:#f4ecd6;border:3px solid #1d1915;border-radius:10px;padding:20px 22px;text-align:center;box-shadow:5px 5px 0 #1d1915;font-family:Be Vietnam Pro,sans-serif;color:#1d1915">'
-    + '<div style="font:700 22px Playfair Display,serif;margin-bottom:8px">Đang thử nghiệm</div>'
-    + '<p style="margin:0 0 8px;font-size:15px;line-height:1.5">Chương này chưa chơi được. Bạn chỉ vào <b>khám phá</b> làng Vũ Đại thôi: đi lại, ngắm cảnh, làm quen dân làng.</p>'
-    + '<p style="margin:0 0 14px;font-size:13px;opacity:.75;line-height:1.45">Tiền ở đây tính riêng, bắt đầu từ 0, không dính tới các chương khác.</p>'
-    + '<button style="font:700 16px Be Vietnam Pro,sans-serif;background:#c0392b;color:#fff;border:2px solid #1d1915;border-radius:8px;padding:9px 22px;cursor:pointer">Vào khám phá</button></div>';
-  d.querySelector('button').onclick = () => { d.remove(); cv.focus(); };
-  document.body.appendChild(d);
 }
 function c11Enter(id, x, y, quiet) {
   const a = C11_AREAS[id]; C11_AR = a; C11_MAP = a.map; C11_W = a.map[0].length; C11_H = a.map.length;
