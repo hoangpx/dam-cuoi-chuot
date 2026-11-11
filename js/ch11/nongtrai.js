@@ -75,8 +75,8 @@ const C11_FARM = (() => {
   m[6][19] = 'E'; m[14][15] = 'E';                                     // ways out: east to the hamlet, south into the bamboo wood
   return m;
 })();
-const C11_BLOCK = 'thDBCSNQUwHKTVJYZLIOnMAWFGRPy', C11_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const c11Kind = (x, y) => (C11_MAP[y] && C11_MAP[y][x]) || 't';
+const C11_BLOCK = 'thDBCSNQUwHKTVJYZLIOnMAWFGRPyX', C11_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const c11Kind = (x, y) => (C11_MAP[y] && C11_MAP[y][x]) || (C11_AR.cave ? 'X' : 't');   // beyond the map: trees, or rock in the cave (rungsau.js)
 const c11Field = (x, y) => { const kd = c11Kind(x, y); return (kd === 'f' || (kd === 'g' && C11_AR.id === 'ruong')) && !(typeof c11PenAt === 'function' && c11PenAt(x, y)); };   // at home every bit of grass can be made a field (owner)
 const c11Blocked = (x, y) => C11_BLOCK.includes(c11Kind(x, y));
 const c11Hash = (x, y, k = 0) => { let h = (x * 374761393 + y * 668265263 + k * 1274126177) | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };

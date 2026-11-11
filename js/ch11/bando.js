@@ -4,9 +4,9 @@
 (() => {
   /* where each place sits on the sheet (columns, rows): the hamlet in the middle, home to the west with the bamboo wood below it,
      the market and Xóm Đông to the east, the đình, Xóm Đoài and the fields to the north, the landing and Xóm Bãi to the south */
-  const AT = { doai: [0, 0], dinh: [1, 0], dong: [2, 0], ruong: [0, 1], lang: [1, 1], cho: [2, 1], dongx: [3, 1], rung: [0, 2], ben: [1, 2], bai: [2, 2], dinhba: [1.62, .5] };
-  const NAME = { ruong: 'Nhà mình', lang: 'Xóm làng', cho: 'Chợ làng', dinh: 'Đình làng', ben: 'Bến sông', dong: 'Cánh đồng', rung: 'Rừng trúc', dongx: 'Xóm Đông', doai: 'Xóm Đoài', bai: 'Xóm Bãi', dinhba: 'Dinh cụ Bá' };
-  const FILL = { ruong: '#e6d79a', lang: '#e9d2a8', cho: '#efc49a', dinh: '#e8b4a0', ben: '#a9d2e0', dong: '#cfe39a', rung: '#a9cf8a', dongx: '#e9d2a8', doai: '#e9d2a8', bai: '#e9d2a8', dinhba: '#e7a990' };
+  const AT = { doai: [0, 0], dinh: [1, 0], dong: [2, 0], ruong: [0, 1], lang: [1, 1], cho: [2, 1], dongx: [3, 1], rung: [0, 2], ben: [1, 2], bai: [2, 2], dinhba: [1.62, .5], rungram: [0, 3], hang: [1, 3] };
+  const NAME = { ruong: 'Nhà mình', lang: 'Xóm làng', cho: 'Chợ làng', dinh: 'Đình làng', ben: 'Bến sông', dong: 'Cánh đồng', rung: 'Rừng trúc', dongx: 'Xóm Đông', doai: 'Xóm Đoài', bai: 'Xóm Bãi', dinhba: 'Dinh cụ Bá', rungram: 'Rừng rậm', hang: 'Hang động' };
+  const FILL = { ruong: '#e6d79a', lang: '#e9d2a8', cho: '#efc49a', dinh: '#e8b4a0', ben: '#a9d2e0', dong: '#cfe39a', rung: '#a9cf8a', dongx: '#e9d2a8', doai: '#e9d2a8', bai: '#e9d2a8', dinhba: '#e7a990', rungram: '#7fb070', hang: '#a79c90' };
   /* a tiny picture on each card so the places are told apart at a glance */
   const icon = (g, id, x, y, s) => {
     g.save(); g.translate(x, y); g.scale(s, s); g.lineWidth = 1.6; g.strokeStyle = INK; g.lineJoin = 'round';
@@ -17,12 +17,14 @@
     else if (id === 'dinh' || id === 'dinhba') { g.fillStyle = '#f4ead0'; g.fillRect(-9, -3, 18, 9); g.strokeRect(-9, -3, 18, 9); g.fillStyle = '#a8432f'; g.beginPath(); g.moveTo(-14, -2); g.quadraticCurveTo(-8, -6, -6, -11); g.lineTo(6, -11); g.quadraticCurveTo(8, -6, 14, -2); g.closePath(); g.fill(); g.stroke(); }
     else if (id === 'ben') { g.fillStyle = '#5a9ec0'; g.beginPath(); g.ellipse(0, 2, 13, 6, 0, 0, 6.283); g.fill(); g.fillStyle = '#8a5a34'; g.beginPath(); g.moveTo(-8, 0); g.lineTo(8, 0); g.lineTo(5, 4); g.lineTo(-5, 4); g.closePath(); g.fill(); g.stroke(); }
     else if (id === 'dong') { g.strokeStyle = '#5a8a2a'; for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(i * 5, 6); g.lineTo(i * 5 + 1, -8); g.stroke(); } g.fillStyle = '#e0b83a'; for (let i = -2; i <= 2; i++) { g.beginPath(); g.ellipse(i * 5 + 1, -8, 1.8, 3.4, 0, 0, 6.283); g.fill(); } }
+    else if (id === 'hang') { g.fillStyle = '#6a5f55'; g.beginPath(); g.moveTo(-14, 7); g.lineTo(-9, -6); g.lineTo(-2, -12); g.lineTo(7, -9); g.lineTo(14, 7); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#17120f'; g.beginPath(); g.moveTo(-5, 7); g.quadraticCurveTo(-5, -4, 0, -4); g.quadraticCurveTo(5, -4, 5, 7); g.closePath(); g.fill(); }
+    else if (id === 'rungram') { g.strokeStyle = '#5a3a22'; g.lineWidth = 2.6; for (const dx of [-8, 1, 9]) { g.beginPath(); g.moveTo(dx, 7); g.lineTo(dx, -3); g.stroke(); } g.strokeStyle = INK; g.lineWidth = 1.4; g.fillStyle = '#3f7a3a'; for (const [dx, dy, r] of [[-8, -6, 6], [1, -8, 7], [9, -5, 6]]) { g.beginPath(); g.arc(dx, dy, r, 0, 6.283); g.fill(); g.stroke(); } }
     else if (id === 'rung') { g.strokeStyle = '#3f7a2a'; g.lineWidth = 2.4; for (const dx of [-8, -1, 6]) { g.beginPath(); g.moveTo(dx, 7); g.lineTo(dx + 1, -11); g.stroke(); } g.fillStyle = '#6fb44a'; for (const [dx, dy] of [[-6, -9], [2, -11], [9, -7]]) { g.beginPath(); g.ellipse(dx, dy, 5, 2.2, -.4, 0, 6.283); g.fill(); } }
     g.restore();
   };
   const draw = (g, W, H, m) => {
     g.fillStyle = 'rgba(20,16,30,.55)'; g.fillRect(0, 0, W, H);
-    const pw = Math.min(W - 16, 620), cols = 4, rows = 3, cw = (pw - 24) / cols, ch = Math.min(cw * .78, (H - 150) / rows), ph = ch * rows + 92, px = (W - pw) / 2, py = Math.max(10, (H - ph) / 2);
+    const pw = Math.min(W - 16, 620), cols = 4, rows = 4, cw = (pw - 24) / cols, ch = Math.min(cw * .78, (H - 150) / rows), ph = ch * rows + 92, px = (W - pw) / 2, py = Math.max(10, (H - ph) / 2);
     /* the paper */
     g.fillStyle = '#f6ecd0'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.roundRect(px, py, pw, ph, 14); g.fill(); g.stroke();
     g.strokeStyle = 'rgba(140,100,50,.35)'; g.lineWidth = 1.2; g.beginPath(); g.roundRect(px + 7, py + 7, pw - 14, ph - 14, 9); g.stroke();
