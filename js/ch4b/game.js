@@ -58,7 +58,7 @@ const p4Say = (who, text, life = 1.6 + text.length * .045) => { who.say = { text
 const p4Pick = a => a[(Math.random() * a.length) | 0];
 
 // ---------- the street ----------
-const P4_BUSY = [[6, .5], [8, 1], [11, .7], [13, .45], [15, .8], [17, .7], [19, 1], [21, .6]];   // how busy the street is through the day (hour, k)
+const P4_BUSY = [[6, .5], [8, 1], [11, .7], [13, .45], [15, .8], [17, .9], [18, 1.15], [19, 1.4], [21, 1.2], [22, .8]];   // how busy the street is through the day (hour, k); evenings the busiest (owner 2026-11-11, was .7 / 1 / .6 from 17:00)
 const p4Busy = () => { const h = P4.mins / 60; for (let i = P4_BUSY.length - 1; i >= 0; i--) if (h >= P4_BUSY[i][0]) return P4_BUSY[i][1]; return .4; };
 const P4_CHAT = ['Phố hôm nay đông thật!', 'Tối nay có thả đèn không?', 'Hàng vải bên kia mới về lụa đẹp.', 'Nhà chuột trầu cau ngon lắm đấy!',
   'Thuyền buôn vừa cập bến.', 'Đi qua chùa cầu mát ghê.', 'Mua cái đèn lồng về treo Tết nào.', 'Cao lầu ở đây là nhất phố.', 'Chiều nay trời đẹp quá.'];
@@ -162,8 +162,10 @@ function renderP4() {
   const sun = p4Sunset(), dayK = Math.max(0, Math.min(1, (P4.mins - P4_OPEN) / (19 * 60 - P4_OPEN)));
   // the sun, the sky's warmth at evening, clouds
   g.save(); g.translate(cx * .25 + (P4_HOME - vw / 2) * .75, 0);             // the sun scrolls by at 3/4 of the street's speed; over the house at the start
-  g.fillStyle = sun > .3 ? '#d4471c' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, P4_Y0 + oy - 170), 32, 0, 6.283); g.fill(); g.stroke();
+  const sunK = 1 - p4NightK();                                               // owner 2026-11-11: at night the sun is gone (it stood low over the street till closing)
+  if (sunK > 0) { g.globalAlpha = sunK; g.fillStyle = sun > .3 ? '#d4471c' : '#a3332a'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.arc(80 + dayK * (vw - 160), -oy + 90 + Math.pow(dayK * 2 - 1, 2) * Math.max(110, P4_Y0 + oy - 170) + (1 - sunK) * 90, 32, 0, 6.283); g.fill(); g.stroke(); g.globalAlpha = 1; }
   g.restore();
+  p4Moon(g, cx, vw, oy);
   { const skyH = P4_Y0 + oy; g.save(); g.translate(cx, -oy);
     if (sun > 0) { const gr = g.createLinearGradient(0, 0, 0, skyH); gr.addColorStop(0, `rgba(228,96,34,${.42 * sun})`); gr.addColorStop(1, `rgba(240,150,60,${.12 * sun})`); g.fillStyle = gr; g.fillRect(-10, -10, vw + 20, skyH + 10); }
     const Wd = vw + 360; for (let i = 0; i < 5; i++) { const r = mulberry(i * 31 + 5), base = r() * Wd, sp = 5 + r() * 9, type = i % 3, s = .7 + r() * .6;
@@ -222,6 +224,36 @@ function renderP4() {
   p4WxDraw(); ctx.setTransform(1, 0, 0, 1, 0, 0);
   const k = sun * (1 - .7 * p4NightK()); if (k > 0) { ctx.fillStyle = `rgba(232,110,36,${.2 * k})`; ctx.fillRect(0, 0, cv.width, cv.height); }
   const dawn = Math.max(0, (P4_OPEN + 40 - P4.mins) / 40 * .18); if (dawn > 0) { ctx.fillStyle = `rgba(40,30,60,${dawn})`; ctx.fillRect(0, 0, cv.width, cv.height); }
+}
+// The moon (owner 2026-11-11: "thi thoảng cho thêm trăng tròn trăng khuyết"): its shape follows the lunar day of the calendar (c4Lunar):
+// round on the 15th (rằm), a crescent at the start and end of the month, none for a few nights round the 1st. It rises over the roofs as
+// night falls and crosses the sky; only where there is sky above the tallest roof (a tall phone), never in front of a house. P4.moon (screen coordinates) lets the night's light map leave it bright (art.js p4TownNight).
+function p4SkyTop() {                                                       // the highest thing standing against the sky (world y), once
+  if (P4.skyTop !== undefined && P4.skyScene === P4.scene) return P4.skyTop;
+  let t = P4_Y0;
+  for (const [, k, s, hv] of P4.scene.near) { const A = k === 'shop' ? p4TownArt(hv) : p4TownNear(k); if (A) t = Math.min(t, P4_Y0 + A.y0 * s); }
+  P4.skyScene = P4.scene; return P4.skyTop = t;
+}
+function p4Moon(g, cx, vw, oy) {
+  P4.moon = null;
+  const k = p4NightK(); if (k <= 0 || typeof c4Lunar !== 'function') return;
+  const d = c4Lunar(SAVE4.day).d; if (d <= 2 || d >= 29) return;           // the dark of the moon
+  const r = 22, top = -oy + r + 150 / p4View().s, bot = p4SkyTop() - r - 10; if (top > bot) return;   // below the HUD (its rows reach ~150 px down; it may pass behind the faded far landmarks); no sky, no moon
+  const mk = Math.max(0, Math.min(1, (P4.mins - 18 * 60) / (P4_CLOSE - 18 * 60)));
+  const x = cx + vw * (.16 + .68 * mk), y = top + (bot - top) * Math.min(1, Math.pow(mk * 2 - 1, 2) * .9 + (1 - k));
+  const a = 2 * Math.PI * (d - 1) / 29.5, kx = Math.cos(a), wax = d <= 15;   // the lit edge: a half disc and the shadow's curve (cos 1 = a thin crescent, -1 = full)
+  g.save(); g.translate(x, y); g.globalAlpha = k;
+  g.fillStyle = 'rgba(70,78,120,.35)'; g.beginPath(); g.arc(0, 0, r, 0, 6.283); g.fill();   // the dark part, faintly seen
+  g.scale(wax ? 1 : -1, 1); g.beginPath();
+  for (let i = 0; i <= 24; i++) { const t = -Math.PI / 2 + Math.PI * i / 24; g.lineTo(r * Math.cos(t), r * Math.sin(t)); }
+  for (let i = 0; i <= 24; i++) { const t = Math.PI / 2 - Math.PI * i / 24; g.lineTo(kx * r * Math.cos(t), r * Math.sin(t)); }
+  g.closePath(); g.fillStyle = '#f7efcf'; g.fill(); g.strokeStyle = INK; g.lineWidth = 1.6; g.stroke();
+  g.save(); g.clip(); g.fillStyle = 'rgba(190,176,130,.45)';               // a few soft marks on its face
+  for (const [mx, my, mr] of [[-7, -6, 5], [6, 5, 4], [-2, 11, 3], [9, -9, 2.5]]) { g.beginPath(); g.arc(mx, my, mr, 0, 6.283); g.fill(); }
+  g.restore();
+  const T = g.getTransform(), P = new DOMPoint(0, 0).matrixTransform(T);
+  P4.moon = { x: P.x, y: P.y, r: r * Math.hypot(T.c, T.d), lit: (1 - kx) / 2, k };
+  g.restore();
 }
 const p4Sunset = () => Math.max(0, Math.min(1, (P4.mins - 15 * 60) / 210)) * (1 - .8 * p4NightK());
 

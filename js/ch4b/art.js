@@ -645,6 +645,7 @@ const p4GlowSprite = (() => { const S = {}; return (key, stops) => { if (S[key])
   for (const [o, col] of stops) gr.addColorStop(o, col); x.fillStyle = gr; x.fillRect(0, 0, 128, 128); return S[key] = c; }; })();
 const P4_POOL = [[0, 'rgb(255,196,120)'], [.45, 'rgba(240,150,80,.45)'], [1, 'rgba(200,110,60,0)']];
 const P4_HALO = [[0, 'rgb(255,205,115)'], [.35, 'rgba(255,155,60,.36)'], [1, 'rgba(255,120,40,0)']];
+const P4_MOONGLOW = [[0, 'rgba(235,240,255,.9)'], [.3, 'rgba(190,205,250,.35)'], [1, 'rgba(140,160,230,0)']];
 const P4_CORE = [[0, 'rgb(255,248,220)'], [.55, 'rgba(255,195,95,.53)'], [1, 'rgba(255,150,60,0)']];
 function p4TownNight(g) {
   const k = p4NightK(); if (k <= 0) return;
@@ -663,8 +664,10 @@ function p4TownNight(g) {
     const f = flick(x, y), R = r * (room ? 1.7 : 2.6) * f * Q, cy = (y + (room ? 0 : r * .55)) * Q, ry = R * (room ? .9 : 1.05);   // a lantern's pool reaches down onto the street
     lg.globalAlpha = (room ? .6 : .8) * k * wt; lg.drawImage(pool, x * Q - R, cy - ry, R * 2, ry * 2);
   }
+  const Mo = P4.moon; if (Mo) { lg.globalCompositeOperation = 'source-over'; lg.globalAlpha = 1; lg.fillStyle = '#fff'; lg.beginPath(); lg.arc(Mo.x * Q, Mo.y * Q, Mo.r * Q * 1.08, 0, 6.283); lg.fill(); }   // the moon keeps its own light
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(L, 0, 0, cv.width, cv.height);
+  if (Mo) { const R = Mo.r * (2.6 + 2.2 * Mo.lit); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (.18 + .32 * Mo.lit) * k; ctx.drawImage(p4GlowSprite('moon', P4_MOONGLOW), Mo.x - R, Mo.y - R, R * 2, R * 2); }
   ctx.globalCompositeOperation = 'lighter';
   for (const [x, y, r, col, room, wt = 1] of glows) {                               // the glow in the air, and the lanterns themselves lit from inside
     const f = flick(x, y), R = r * f;
