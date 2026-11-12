@@ -296,3 +296,4 @@ Sửa theo góp ý (owner 2026-11-12): xu bay chậm (1,35 s, tiếng rơi lúc 
 Xu bay thẳng (owner 2026-11-12: "bay thẳng vào giỏ tiền, không cần vổng lên rồi xuống, đến gần giỏ thì chậm lại"): đường thẳng từ quầy tới giỏ, 1,3 s, easing cubic-bezier(.2,.6,.25,1) nhanh lúc đầu chậm dần khi tới, xoay một vòng và nhỏ lại. VERSION 2026-11-12t.
 
 Mục tiêu 200 quan (owner 2026-11-12: "câu chuyện lúc đầu 2 vợ chồng chuột bây giờ từ 2 quan thành 200 quan"): C4_GOAL = 120000 đồng (cho.js), lời thoại mở đầu "để dành đủ hai trăm quan", mô tả thẻ chương, thành tựu "Hai trăm quan", phần giới thiệu trong index.html. Người đã đạt mục tiêu cũ (SAVE4.goal) giữ nguyên, chương V vẫn mở cho họ. VERSION 2026-11-12u.
+Bỏ con số "+x đồng" dưới giỏ tiền (owner 2026-11-12: hiện "+1 đồng" liên tục vì nhặt rác, phố bán ngầm từng chút); rổ tiền và xu bay vẫn giữ. VERSION 2026-11-12v.

@@ -27,7 +27,8 @@ function p4CounterScreen(w, kind) { const V = p4View(), x = kind === 'trau' || i
 // the purse shows a basket, and every change of money floats beside it (+5 green, −20 red)
 function c4PurseTick(el, key, val) {
   if (!el) return;
-  const last = C4UI.last[key]; C4UI.last[key] = val;
+  C4UI.last[key] = val; return;   // (owner 2026-11-12: the +x đồng under the basket is gone: small sums kept popping up all the time)
+  const last = val;
   if (last === null || val === last || el.offsetParent === null) return;
   const d = Math.round(val - last); if (!d) return;
   const t = document.createElement('span'); t.className = 'purseDelta ' + (d > 0 ? 'up' : 'dn'); t.textContent = (d > 0 ? '+' : '−') + c4Money(Math.abs(d)).replace(/^−/, '');
