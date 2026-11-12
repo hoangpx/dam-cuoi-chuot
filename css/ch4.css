@@ -657,11 +657,12 @@ body.c4 #toast{background:#f6efdc;color:#1d1915;border:2px solid #1d1915;box-sha
 /* the town's sheets by night */
 body.p4night .c4sheet .card4{background:#efe0bd;box-shadow:0 0 0 2px rgba(255,190,90,.25),5px 5px 0 rgba(0,0,0,.45)}
 body.p4night .c4sheet{background:rgba(10,8,20,.5)}
-/* on a phone: the sheet comes up from the bottom, with a handle */
-@media (max-width:640px){
-  .c4sheet{align-items:flex-end!important;padding:0!important}
-  .c4sheet>*{margin:0!important}
-  .c4sheet .card4{max-width:none!important;width:100%!important;border-width:3px 0 0!important;border-radius:16px 16px 0 0;box-shadow:0 -4px 0 rgba(29,25,21,.25)!important;padding-top:24px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));max-height:90vh!important;max-height:90dvh!important;animation:sheetUp .22s ease-out}
-  .c4sheet .card4::before{content:'';position:sticky;top:-16px;display:block;width:44px;height:5px;border-radius:3px;background:rgba(29,25,21,.3);margin:-14px auto 10px;z-index:3}
-  @keyframes sheetUp{from{transform:translateY(30%)}to{transform:none}}
-}
+/* every screen the same (owner 2026-11-12: "đồng nhất cả web và đt"): the sheet comes up from the bottom, with a handle; on a wide screen it keeps its width, centred */
+.c4sheet{align-items:flex-end!important;padding:0!important}
+.c4sheet>*{margin:0 auto!important}
+.c4sheet .card4{border-width:3px 3px 0!important;border-radius:16px 16px 0 0;box-shadow:0 -4px 0 rgba(29,25,21,.25)!important;padding-top:24px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));max-height:90vh!important;max-height:90dvh!important;animation:sheetUp .22s ease-out}
+.c4sheet .card4::before{content:'';position:sticky;top:-16px;display:block;width:44px;height:5px;border-radius:3px;background:rgba(29,25,21,.3);margin:-14px auto 10px;z-index:3}
+@keyframes sheetUp{from{transform:translateY(30%)}to{transform:none}}
+@media (max-width:640px){.c4sheet .card4{max-width:none!important;width:100%!important;border-width:3px 0 0!important}}
+
+.card4 .upc .bar{width:auto;max-width:100%;box-sizing:border-box}   /* (a general .card4 .bar is 110 px wide: it stuck out of narrow stall cards on a phone) */

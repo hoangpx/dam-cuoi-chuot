@@ -10,19 +10,20 @@ function c4CoinFrom(sx, sy, toEl) {
   const n = 1 + (Math.random() < .35 ? 1 : 0);
   for (let i = 0; i < n; i++) {
     const c = document.createElement('i'); c.className = 'coinFly'; document.body.appendChild(c);
-    const x0 = sx + (i ? 10 : 0), y0 = sy, mx = (x0 + tx) / 2 + (Math.random() - .5) * 40, my = Math.min(y0, ty) - 60 - Math.random() * 40;
+    const x0 = sx + (i ? 10 : 0), y0 = sy, mx = (x0 + tx) / 2 + (Math.random() - .5) * 40, my = Math.max(14, Math.min(y0, ty) - 40 - Math.random() * 30);   // the arc stays on the screen
     const a = c.animate([{ transform: `translate(${x0}px,${y0}px) scale(.9) rotate(0deg)`, opacity: 0 }, { transform: `translate(${x0}px,${y0 - 14}px) scale(1.05) rotate(40deg)`, opacity: 1, offset: .12 },
       { transform: `translate(${mx}px,${my}px) scale(1) rotate(200deg)`, offset: .55 }, { transform: `translate(${tx}px,${ty}px) scale(.55) rotate(380deg)`, opacity: .9 }],
-      { duration: 720 + i * 90, easing: 'cubic-bezier(.3,.1,.4,1)', delay: i * 90 });
+      { duration: 1350 + i * 160, easing: 'cubic-bezier(.35,.1,.35,1)', delay: i * 160 });   // (owner: slower)
     a.onfinish = () => { c.remove(); toEl.classList.remove('gotCoin'); void toEl.offsetWidth; toEl.classList.add('gotCoin'); };
   }
-  const now = performance.now(); if (now - C4UI.coinT > 110) { C4UI.coinT = now; setTimeout(() => { try { AU.coin(); } catch (e) {} }, 640); }
+  const now = performance.now(); if (now - C4UI.coinT > 110) { C4UI.coinT = now; setTimeout(() => { try { AU.coin(); } catch (e) {} }, 1250); }
 }
 // where a walker stands on the screen (head height)
-function c4WalkerScreen(w) { const V = c4View(); return [(w.x - C4.camX) * V.s, (c4Y(w.z) + V.oy - 70 * c4S(w.z)) * V.s]; }
-function p4WalkerScreen(w) { const V = p4View(); return [(w.x - P4.camX) * V.s, (p4Y(w.z) + V.oy - 70 * p4S(w.z)) * V.s]; }
-{ const s0 = c4Served; c4Served = function (w) { const r = s0.apply(this, arguments); try { if (S.mode === 'c4play' && w && w.x !== undefined) { const [x, y] = c4WalkerScreen(w); c4CoinFrom(x, y, $('#c4Money')); } } catch (e) {} return r; }; }
-{ const s0 = p4Served; p4Served = function (w, kind) { const r = s0.apply(this, arguments); try { if (S.mode === 'c4bplay' && w && w.x !== undefined) { const [x, y] = p4WalkerScreen(w); c4CoinFrom(x, y, $('#p4Money')); } } catch (e) {} return r; }; }
+// the coin rises from the stall's counter (owner: "bay từ quầy lên giỏ tiền ở góc"), not from the buyer
+function c4CounterScreen(w) { const V = c4View(), g = w && w.shop, x = g === 'trau' || !g ? C4_STALL : (C4_GOODS[g] && C4_GOODS[g].x) || w.x; return [(x - C4.camX) * V.s, (c4Y(.04) + V.oy - 70) * V.s]; }
+function p4CounterScreen(w, kind) { const V = p4View(), x = kind === 'trau' || isNaN(+kind) ? (typeof P4_HOME !== 'undefined' ? P4_HOME : w.x) : +kind; return [(x - P4.camX) * V.s, (p4Y(.12) + V.oy - 95) * V.s]; }
+{ const s0 = c4Served; c4Served = function (w) { const r = s0.apply(this, arguments); try { if (S.mode === 'c4play' && w && w.x !== undefined) { const [x, y] = c4CounterScreen(w); c4CoinFrom(x, y, $('#c4Money')); } } catch (e) {} return r; }; }
+{ const s0 = p4Served; p4Served = function (w, kind) { const r = s0.apply(this, arguments); try { if (S.mode === 'c4bplay' && w && w.x !== undefined) { const [x, y] = p4CounterScreen(w, kind); c4CoinFrom(x, y, $('#p4Money')); } } catch (e) {} return r; }; }
 // the purse shows a basket, and every change of money floats beside it (+5 green, −20 red)
 function c4PurseTick(el, key, val) {
   if (!el) return;
@@ -75,7 +76,7 @@ function c4Sections(root, key) {
 {
   let st = null;
   const closeBtn = card => [...card.querySelectorAll('button')].reverse().find(b => b.offsetParent && /^(Đóng|Quay lại|Thôi|‹?\s*Đóng sổ)$/.test(b.textContent.trim()));
-  document.addEventListener('touchstart', e => { const card = e.target.closest && e.target.closest('.c4sheet .card4'); if (!card || card.scrollTop > 2 || innerWidth > 640) { st = null; return; } st = { card, y: e.touches[0].clientY, dy: 0 }; }, { passive: true });
+  document.addEventListener('touchstart', e => { const card = e.target.closest && e.target.closest('.c4sheet .card4'); if (!card || card.scrollTop > 2) { st = null; return; } st = { card, y: e.touches[0].clientY, dy: 0 }; }, { passive: true });
   document.addEventListener('touchmove', e => { if (!st) return; st.dy = e.touches[0].clientY - st.y; if (st.dy > 0 && st.card.scrollTop <= 0) st.card.style.transform = `translateY(${Math.min(st.dy, 260) * .8}px)`; }, { passive: true });
   document.addEventListener('touchend', () => { if (!st) return; const { card, dy } = st; st = null; const b = dy > 110 && closeBtn(card);
     card.style.transition = 'transform .18s ease-out'; card.style.transform = b ? 'translateY(100%)' : ''; setTimeout(() => { card.style.transition = ''; card.style.transform = ''; if (b) b.click(); }, b ? 170 : 190); }, { passive: true });
