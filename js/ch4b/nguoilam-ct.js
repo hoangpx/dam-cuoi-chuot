@@ -74,7 +74,7 @@ function c4WkOpen(id, keepChat) {
     + `<p class="wkMood">Tỏ ra: <b>${c4GwWord(c4Gw(q))}</b>${bad.length ? ` · <span class="bad">${bad.join(' · ')}</span>` : ''}</p>`
     + `<div class="tbars">${bar('nhanh nhẹn', W.tr.sp)}${bar('nhiệt tình', W.tr.wm)}${bar('trung thực', W.tr.ho)}${W.rel !== undefined ? bar('quan hệ', W.rel / 100) : ''}</div>`
     + `<h4>Tiền công</h4><p>Công <b>${m(W.wage)}</b> một ngày, trả mỗi tối.</p>${wageBtns}${c4BonusRow(q, W.wage, id)}`
-    + `<h4>Trò chuyện</h4><div class="wkChat">${chat || '<p class="sm">Hỏi han người làm vài câu.</p>'}</div><div class="row wkSay"><input type="text" maxlength="120" placeholder="Nói gì với ${c4Esc4(c4Cap1(W.name))}…" data-wkin="1"${C4WK.busy ? ' disabled' : ''}><button class="btn" data-wksend="1"${C4WK.busy ? ' disabled' : ''}>${C4WK.busy ? '…' : 'Nói'}</button></div><p class="sm wkHint">Hỏi nhanh:</p><div class="row wkTopics">${C4WK_TOPICS.map(([k, t]) => `<button class="btn alt" data-wkt="${k}">${t}</button>`).join('')}</div>`
+    + `<h4>Trò chuyện</h4><div class="wkChat">${chat || '<p class="sm">Hỏi han người làm vài câu.</p>'}</div><div class="row wkSay"><input type="text" maxlength="120" placeholder="Nói gì với ${c4Esc4(c4Cap1(W.name))}…" data-wkin="1"${C4WK.busy ? ' disabled' : ''}><button class="btn" data-wksend="1"${C4WK.busy ? ' disabled' : ''}>${C4WK.busy ? '…' : 'Nói'}</button></div>`
     + `<details class="wkLog"><summary>Lịch sử</summary><ul>${log}</ul></details>`
     + `<div class="row">${W.R && !W.h ? '' : `<button class="btn alt" data-wkfire="1">${W.place === 'lang' ? 'Đuổi việc' : 'Cho nghỉ'}</button>`}<button class="btn" data-wkback="1">Quay lại</button></div>`;
   const sc = $('#c4wk .card4'); const top = sc ? sc.scrollTop : 0;
