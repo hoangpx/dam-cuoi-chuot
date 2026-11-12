@@ -32,3 +32,33 @@ function c4DayHtml(d, gain, lines, quits, extra, gossip) {
   h += `<details class="dhMoney"><summary>Từng khoản thu chi</summary><table>${rows.filter(r => r[1]).map(([w, n, s]) => `<tr><td>${w}</td><td class="${s > 0 ? 'gain' : 'bad'}">${s > 0 ? '+' : '−'}${m(Math.round(n))}</td></tr>`).join('')}<tr class="sum"><td>${gain >= 0 ? 'Lãi' : 'Lỗ'}</td><td class="${gain >= 0 ? 'gain' : 'bad'}">${m(Math.abs(Math.round(gain)))}</td></tr></table>${led}</details>`;
   return h;
 }
+
+/* ---------- the town's evening, the same way (owner 2026-11-12: "làm cả phố"). eve = the evening's paragraphs (wages, each shop, rent, mishaps,
+   asks, run-offs); a paragraph naming a shop in bold goes under that shop's row, folded; the rest become "Chuyện hôm nay". ---------- */
+function p4DayHtml(wilt, eve, day0) {
+  const SD = day0 || P4.shopDay || {};
+  const m = c4Money, T = P4.today || {}, take = Math.round(T.take || 0), spent = Math.round(T.spent || 0) + Math.round(T.smash || 0), gain = take - spent;
+  let h = `<div class="dhRes ${gain >= 0 ? 'gain' : 'loss'}"><span>${gain >= 0 ? 'Lãi hôm nay ở phố' : 'Lỗ hôm nay ở phố'}</span><b>${m(Math.abs(gain))}</b><small>Thu ${m(take)} · Chi ${m(spent)}</small></div>`;
+  const box = document.createElement('div'); box.innerHTML = eve || '';
+  const S = p4Shops(), byName = {}; for (const k in S) byName[String(S[k].name || '').trim().toUpperCase()] = k;
+  const shopP = {}, other = [];
+  for (const p of box.querySelectorAll('p')) { const b = p.querySelector('b'), k = b && byName[b.textContent.trim().toUpperCase()]; if (k) (shopP[k] = shopP[k] || []).push(p.innerHTML); else other.push(p); }
+  // each house on one line, its details folded
+  const rows = [], shopTake = Object.values(SD).reduce((s, x) => s + (x.take || 0), 0);
+  { const bt = Math.max(0, take - shopTake), wages = p4Hands().reduce((a, h2) => a + (h2.wage || 0), 0); rows.push({ name: SAVE4B.name ? p4Cap1(String(SAVE4B.name).toLowerCase()) : 'Hiệu trầu', sub: `${T.sold || 0} miếng · thu ${m(Math.round(bt))}`, net: Math.round(bt - 3 * (T.sold || 0) - wages), more: '' }); }
+  for (const k in S) { const R = S[k], D = SD[k] || { n: 0, take: 0, cost: 0 }; rows.push({ name: p4Cap1(String(R.name || '').toLowerCase()), sub: R.shut ? 'đóng cửa' : `${D.n || 0} phần · thu ${m(Math.round(D.take || 0))}`, net: R.hist && R.hist.length ? Math.round(R.hist[R.hist.length - 1]) : Math.round((D.take || 0) - (D.cost || 0)), more: (shopP[k] || []).join('<br>') }); }
+  const max = Math.max(1, ...rows.map(r => Math.abs(r.net)));
+  h += `<h4 class="dhH">Từng nhà</h4><div class="byshop">${rows.sort((a, b) => b.net - a.net).map(r => `<div class="bs p"><b>${p4Esc(r.name)}</b><span class="${r.net >= 0 ? 'gain' : 'bad'}">${r.net >= 0 ? '+' : '−'}${m(Math.abs(r.net))}</span><i class="bar${r.net < 0 ? ' neg' : ''}"><i style="width:${Math.abs(r.net) / max * 100}%"></i></i><small>${r.sub}</small>${r.more ? `<details class="dhMore"><summary>chi tiết</summary>${r.more}</details>` : ''}</div>`).join('')}</div>`;
+  // what happened, worst first
+  const it = [], add = (k, t) => it.push([k, t]);
+  if (wilt) add('bad', `Trầu thừa héo mất ${wilt} miếng`);
+  if (T.lost) add('bad', `${T.lost} khách đến mà hết trầu`);
+  if (T.smash) add('bad', `Bị tay chân bá hộ phá: mất ${m(T.smash)}`);
+  if (typeof p4Harass === 'function' && p4Harass() < 1) add('bad', 'Tay chân bá hộ còn quấy, khách ngại ghé');
+  for (const p of other) { const t = p.textContent; add(p.classList.contains('bad') || /đứt|mất|phạt|hụt|nợ|bỏ việc|bỏ trốn|biến mất|thiếu|đòi tăng|tăng tiền|chưa trả/i.test(t) ? 'bad' : /thưởng|giảm tiền|hạ tiền/i.test(t) ? 'good' : '', p.innerHTML); }
+  if (typeof w4VillageLine === 'function') { const v = w4VillageLine().replace(/^<p>|<\/p>$/g, ''); if (v) add('', v); }
+  it.sort((x, y) => (x[0] === 'bad' ? 0 : x[0] === 'good' ? 2 : 1) - (y[0] === 'bad' ? 0 : y[0] === 'good' ? 2 : 1));
+  if (it.length) h += `<h4 class="dhH">Chuyện hôm nay</h4><ul class="dhList">${it.map(([k, t]) => `<li class="${k}">${t}</li>`).join('')}</ul>`;
+  h += `<details class="dhMoney"><summary>Thu chi</summary><table><tr><td>Bán được (trầu và các quán)</td><td class="gain">+${m(take)}</td></tr><tr><td>Đã chi (vốn hàng, công, thuê, chi vặt…)</td><td class="bad">−${m(Math.round(T.spent || 0))}</td></tr>${T.smash ? `<tr><td>Bị phá</td><td class="bad">−${m(T.smash)}</td></tr>` : ''}<tr class="sum"><td>${gain >= 0 ? 'Lãi' : 'Lỗ'}</td><td class="${gain >= 0 ? 'gain' : 'bad'}">${m(Math.abs(gain))}</td></tr></table><p class="dhPurse">Trong túi tối nay: <b>${m(Math.round(p4Purse()))}</b></p></details>`;
+  return h;
+}

@@ -615,3 +615,9 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .dhMoney .gain{color:#2f6a3a}.dhMoney .bad{color:#a3332a}
 .dhMoney tr.sum td{font-weight:700;border-bottom:none}
 .dhPurse{font-size:13px;margin:6px 0 0}
+#p4dayB{text-align:left}
+.card4 .byshop .bs.p{grid-template-columns:1fr auto}
+.card4 .byshop .bs.p .bar{grid-column:1 / 2}
+.card4 .byshop .bs.p details{grid-column:1 / -1;font-size:12px}
+.card4 .byshop .bs.p .gain,.card4 .byshop .bs.p .bad{white-space:nowrap}
+.card4 .byshop .bar.neg i{background:#a3332a}
