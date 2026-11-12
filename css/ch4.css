@@ -586,3 +586,7 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .card4.wk .wkLog ul{margin:6px 0;padding-left:18px;max-height:200px;overflow:auto;font-size:13px}
 .card4.wk .wkLog li span{opacity:.6;margin-right:4px}
 .card4.wk .bonusRow .bmood{display:none}
+.card4.wk .wkSay{flex-wrap:nowrap;gap:6px;margin-top:6px}
+.card4.wk .wkSay input{flex:1;min-width:0;font:inherit;font-size:15px;padding:7px 8px;border:1.5px solid #2b2620;border-radius:6px;background:#fffaf0}
+.card4.wk .wkSay .btn{flex:none;padding:7px 14px}
+.card4.wk .wkHint{margin:8px 0 2px;opacity:.7}

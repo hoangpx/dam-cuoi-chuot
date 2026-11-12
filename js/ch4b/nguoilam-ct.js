@@ -29,8 +29,12 @@ function c4WkBio(W) {
     const [lo, hi] = { anh: [19, 32], chị: [19, 32], cô: [17, 28], cậu: [15, 20], chú: [34, 52], thím: [34, 52] }[t] || [20, 40];
     q.bio = { age: lo + Math.floor(r(1) * (hi - lo + 1)), que: C4WK_QUE[Math.floor(r(3) * C4WK_QUE.length)], nha: (f ? C4WK_NHA_F : C4WK_NHA_M)[Math.floor(r(5) * 7)], thich: C4WK_THICH[Math.floor(r(7) * C4WK_THICH.length)], f };
   }
+  if (!q.bio.kieu) q.bio.kieu = C4WK_KIEUS[c4Hs('k' + W.name + ':' + q.fid) % C4WK_KIEUS.length][0];   // a way of talking of their own (owner)
   return q.bio;
 }
+// the ways of talking (the chat Worker reads the key: worker-nguoilam/src/chat.js KIEU)
+const C4WK_KIEUS = [['it_noi', 'ít nói'], ['nhieu', 'nói nhiều'], ['kho_chiu', 'hay cáu'], ['kho_tinh', 'khó tính'], ['hom_hinh', 'vui tính'], ['hien', 'hiền lành']];
+const c4WkKieuWord = k => (C4WK_KIEUS.find(x => x[0] === k) || C4WK_KIEUS[4])[1];
 function c4WkFace(W) {
   const b = c4WkBio(W), id = 900000 + (c4Hs(W.name + ':' + W.q.fid) % 90000);
   const sort = W.sort !== undefined ? W.sort : C4_HELPERS[id % C4_HELPERS.length];
@@ -57,18 +61,18 @@ const c4Esc4 = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt
 const C4WK = { id: null, chat: [] };
 function c4WkOpen(id, keepChat) {
   const W = c4WkWho(id); if (!W) { C4WK.id = null; return; }
-  if (C4WK.id !== id && !keepChat) C4WK.chat = [];
+  if (C4WK.id !== id) C4WK.chat = (c4WkWho(id).q.chat || []).map(x => [x.me ? 1 : 0, x.t]);   // the last words with this person are kept
   C4WK.id = id;
   const q = W.q, b = c4WkBio(W), m = c4Money, bad = c4WkBadges(W);
   const bar = (l, v) => c4TraitBar(l, v === undefined ? .5 : v);
   const wageBtns = W.place === 'pho' ? `<div class="row">${p4WageBtns(`data-wkw="${id}"`, p4WageCan(W.wage, W.R && !W.h ? p4KeeperBase(W.R) : W.R ? p4HelpBase(W.R) : (W.h.w0 || W.h.wage)))}</div>` : '';
   const chat = C4WK.chat.map(([who, t]) => `<p class="${who ? 'me' : 'them'}"><b>${who ? 'Bạn' : c4Esc4(c4Cap1(W.name))}:</b> ${c4Esc4(t)}</p>`).join('');
   const log = (q.log || []).slice().reverse().map(e => `<li><span>Ngày ${e.d}</span> ${c4Esc4(e.t)}</li>`).join('') || '<li>Chưa có gì.</li>';
-  $('#c4wkB').innerHTML = `<div class="wkHead"><img src="${c4WkFace(W)}" alt=""><div><h3>${c4Esc4(c4Cap1(W.name))}</h3><p>${b.age} tuổi · quê ${b.que}</p><p>${c4Esc4(W.where)}</p></div></div>`
+  $('#c4wkB').innerHTML = `<div class="wkHead"><img src="${c4WkFace(W)}" alt=""><div><h3>${c4Esc4(c4Cap1(W.name))}</h3><p>${b.age} tuổi · quê ${b.que}</p><p>${c4Esc4(W.where)}</p><p>Tính: ${c4WkKieuWord(b.kieu)}</p></div></div>`
     + `<p class="wkMood">Tỏ ra: <b>${c4GwWord(c4Gw(q))}</b>${bad.length ? ` · <span class="bad">${bad.join(' · ')}</span>` : ''}</p>`
     + `<div class="tbars">${bar('nhanh nhẹn', W.tr.sp)}${bar('nhiệt tình', W.tr.wm)}${bar('trung thực', W.tr.ho)}${W.rel !== undefined ? bar('quan hệ', W.rel / 100) : ''}</div>`
     + `<h4>Tiền công</h4><p>Công <b>${m(W.wage)}</b> một ngày, trả mỗi tối.</p>${wageBtns}${c4BonusRow(q, W.wage, id)}`
-    + `<h4>Trò chuyện</h4><div class="wkChat">${chat || '<p class="sm">Hỏi han người làm vài câu.</p>'}</div><div class="row wkTopics">${C4WK_TOPICS.map(([k, t]) => `<button class="btn alt" data-wkt="${k}">${t}</button>`).join('')}</div>`
+    + `<h4>Trò chuyện</h4><div class="wkChat">${chat || '<p class="sm">Hỏi han người làm vài câu.</p>'}</div><div class="row wkSay"><input type="text" maxlength="120" placeholder="Nói gì với ${c4Esc4(c4Cap1(W.name))}…" data-wkin="1"${C4WK.busy ? ' disabled' : ''}><button class="btn" data-wksend="1"${C4WK.busy ? ' disabled' : ''}>${C4WK.busy ? '…' : 'Nói'}</button></div><p class="sm wkHint">Hỏi nhanh:</p><div class="row wkTopics">${C4WK_TOPICS.map(([k, t]) => `<button class="btn alt" data-wkt="${k}">${t}</button>`).join('')}</div>`
     + `<details class="wkLog"><summary>Lịch sử</summary><ul>${log}</ul></details>`
     + `<div class="row">${W.R && !W.h ? '' : `<button class="btn alt" data-wkfire="1">${W.place === 'lang' ? 'Đuổi việc' : 'Cho nghỉ'}</button>`}<button class="btn" data-wkback="1">Quay lại</button></div>`;
   const sc = $('#c4wk .card4'); const top = sc ? sc.scrollTop : 0;
@@ -90,7 +94,8 @@ function c4WkFire(W) {
   return true;
 }
 document.addEventListener('click', e => {
-  const t = e.target.closest && e.target.closest('[data-wk],[data-wkback],[data-wkfire],[data-wkt],[data-wkw]'); if (!t || t.disabled) return;
+  const t = e.target.closest && e.target.closest('[data-wk],[data-wkback],[data-wkfire],[data-wkt],[data-wkw],[data-wksend]'); if (!t || t.disabled) return;
+  if (t.dataset.wksend) { e.stopPropagation(); c4WkSend(); return; }
   e.stopPropagation(); AU.tap();
   if (t.dataset.wk) { c4WkOpen(t.dataset.wk); return; }
   if (t.dataset.wkback) { c4WkBack(); return; }
@@ -104,7 +109,9 @@ document.addEventListener('click', e => {
   if (t.dataset.wkfire) { if (c4WkFire({ ...W, id0: C4WK.id.split('|')[0] }) !== false) c4WkBack(); return; }
   if (t.dataset.wkt) { c4WkTalk(W, t.dataset.wkt); c4WkOpen(C4WK.id, true); }
 }, true);
-addEventListener('keydown', e => { if (e.code === 'Escape' && !$('#c4wk').hidden) { e.stopPropagation(); e.preventDefault(); c4WkBack(); } }, true);
+addEventListener('keydown', e => {
+  if (e.target && e.target.dataset && e.target.dataset.wkin) { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); c4WkSend(); } return; }   // typing: no game keys
+  if (e.code === 'Escape' && !$('#c4wk').hidden) { e.stopPropagation(); e.preventDefault(); c4WkBack(); } }, true);
 {
   const d = document.createElement('div'); d.id = 'c4wk'; d.className = 'c4sheet p4sheet'; d.hidden = true;
   d.innerHTML = '<div class="card4 wk"><div id="c4wkB"></div></div>';
@@ -142,7 +149,7 @@ function c4WkTalk(W, k) {
   } else {
     say = c4WkWish(W, band);
   }
-  C4WK.chat.push([1, C4WK_ASK[k]], [0, say]); if (C4WK.chat.length > 8) C4WK.chat.splice(0, C4WK.chat.length - 8);
+  c4WkSay(W, 1, C4WK_ASK[k]); c4WkSay(W, 0, say);
   persist4(); if (W.place === 'pho') p4Persist();
 }
 // how today went where they work, in words
@@ -205,3 +212,51 @@ function c4WkWish(W, band) {
     }
     return r;
   }; }
+
+/* ---------- free talk through the chat Worker (worker-nguoilam, Claude Haiku 5.5; owner 2026-11-12: "trò chuyện là tự người chơi trò chuyện, kiểu AI
+   thông minh"; only daily work, the worker's life and the owners' life; witty; each person their own way of talking). The worker is told only words
+   (how they seem, what they think), never the hidden numbers. What the player says moves goodwill a little: kind +.02 (at most +.06 a day from
+   talk), rude −.05, off the subject nothing. 15 messages a device a day (the Worker counts). ---------- */
+const C4WK_URL = (() => { try { const u = new URLSearchParams(location.search).get('wkchat'); if (u) return u.replace(/\/$/, '') + '/chat'; } catch (e) {} return 'https://dcc-nguoilam.dcc-phong-choi.workers.dev/chat'; })();
+function c4WkSay(W, me, t) {
+  C4WK.chat.push([me ? 1 : 0, t]); if (C4WK.chat.length > 10) C4WK.chat.splice(0, C4WK.chat.length - 10);
+  W.q.chat = C4WK.chat.slice(-8).map(([m, x]) => ({ me: !!m, t: x }));
+}
+function c4WkDev() {
+  try { let d = localStorage.getItem('dcc_wkdev'); if (!d) { d = (SAVE4.oid || '') + Math.random().toString(36).slice(2, 10); localStorage.setItem('dcc_wkdev', d); } return d; } catch (e) { return 'x' + (SAVE4.oid || ''); }
+}
+// what the worker knows of themself and of today, in words
+function c4WkPersona(W) {
+  const b = c4WkBio(W), q = W.q, word = v => v === undefined ? 'vừa' : v >= .66 ? 'cao' : v >= .33 ? 'vừa' : 'thấp';
+  const mood = W.place === 'pho' ? c4TownMood() : c4GiaMood(), truth = Math.random() < .72, flush = truth ? mood >= 1.04 : mood < 1.04;
+  return { name: c4Cap1(W.name), age: b.age, female: b.f, que: b.que, nha: b.nha, thich: b.thich, where: W.where, place: W.place, wage: W.wage, kieu: b.kieu,
+    mood: c4GwWord(c4Gw(q)), traits: `nhanh nhẹn ${word(W.tr.sp)}, nhiệt tình ${word(W.tr.wm)}, thật thà ${word(W.tr.ho)}`,
+    biz: c4WkBiz(W), news: mood > .96 && mood < 1.04 && truth ? 'dạo này thiên hạ làm ăn cũng như mọi khi' : flush ? 'dạo này thiên hạ rủng rỉnh, làm ăn khá' : 'dạo này nhà nào cũng túng, khó kiếm tiền',
+    wish: c4WkWish(W, c4WkBand(q)) };
+}
+async function c4WkSend() {
+  const inp = $('#c4wkB [data-wkin]'), msg = inp ? inp.value.trim().slice(0, 120) : '';
+  const id = C4WK.id, W = id && c4WkWho(id); if (!msg || !W || C4WK.busy) return;
+  const history = C4WK.chat.slice(-8).map(([m, t]) => ({ me: !!m, t }));
+  c4WkSay(W, 1, msg); C4WK.busy = true; c4WkOpen(id, true);
+  let out = null, err = null;
+  try {
+    const r = await fetch(C4WK_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dev: c4WkDev(), persona: c4WkPersona(W), history, msg }) });
+    const j = await r.json().catch(() => ({})); if (r.ok && j.reply) out = j; else err = j.error || 'net';
+  } catch (e) { err = 'net'; }
+  C4WK.busy = false;
+  const W2 = c4WkWho(id); if (!W2) return;
+  if (out) {
+    c4WkSay(W2, 0, out.reply);
+    const q = W2.q, day = SAVE4.day; if (q.chatD !== day) { q.chatD = day; q.chatG = 0; }
+    if (out.tone === 'lich_su' && q.chatG < .06) { q.chatG += .02; q.gw = Math.min(1, c4Gw(q) + .02); }
+    else if (out.tone === 'ho') q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .05);
+    C4WK.left = out.left;
+  } else {
+    W2.q.chat = (W2.q.chat || []).slice(0, -1);                              // the unanswered line is not sent again as history
+    C4WK.chat.push([0, err === 'limit' ? 'Thôi ông bà ơi, hôm nay nói thế đủ rồi, để em còn làm. Mai chuyện tiếp ạ.' : err === 'busy' ? 'Dạ… em đang dở tay, lát nữa ông bà hỏi lại nhé.' : 'Dạ…? (ồn quá, người làm không nghe rõ)']);
+    if (err !== 'limit') toast('Chưa nói chuyện được lúc này, thử lại sau nhé.', 2.4);
+  }
+  persist4(); if (W2.place === 'pho') p4Persist();
+  if (C4WK.id === id && !$('#c4wk').hidden) { c4WkOpen(id, true); const i2 = $('#c4wkB [data-wkin]'); if (i2) i2.focus(); }
+}
