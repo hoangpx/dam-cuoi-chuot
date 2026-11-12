@@ -108,7 +108,7 @@ function ttLightDrop() {
   const L = TT.light; if (!L || L.st !== 'hold') return; L.drag = false;
   const W = cv.width / DPR, H = cv.height / DPR, G = ttLightGeo(W, H);
   if (Math.abs(L.bx - G.cx) < G.mouthW && L.by > G.mouthY - 50 * G.U && L.by < G.mouthY + 40 * G.U) {   // let go over the mouth: it goes in
-    L.st = 'done'; L.doneT = 0; TT.lit = true; TT_SAVE.litDay = ttDay(); ttPersist();
+    L.st = 'done'; L.doneT = 0; TT.lit = true; { const y = new Date(Date.now() + 7 * 3600e3 - 864e5).toISOString().slice(0, 10); TT_SAVE.litRun = TT_SAVE.litDay === y ? (TT_SAVE.litRun || 1) + 1 : 1; } TT_SAVE.litDay = ttDay(); ttPersist();   // days in a row (js/ch4/phuc.js)
     const px = +Math.max(-44, Math.min(44, (L.bx - G.cx) / G.U)).toFixed(1), pl = +Math.max(-.3, Math.min(.3, L.lean)).toFixed(3);   // exactly where it went in
     (TT.incTs = TT.incTs || []).push(Date.now()); (TT.incPos = TT.incPos || []).push([px, pl]); TT.inc = (TT.inc || 0) + 1; TT.incAll = (TT.incAll || 0) + 1; AU.zenBell(.7);
     if (TT.on && !TT_INCENSE_TEST) ttSend({ t: 'incense', x: px, lean: pl });
