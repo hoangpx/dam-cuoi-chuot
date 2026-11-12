@@ -625,7 +625,7 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .coinFly{position:fixed;left:0;top:0;z-index:40;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a0,#e0b43a 55%,#a8781c);border:1.5px solid #5a3d0c;pointer-events:none;box-sizing:border-box}
 .coinFly::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:#5a3d0c;opacity:.75}
 #c4Money::before,#p4Money::before{content:'';display:inline-block;width:20px;height:16px;margin:0 6px -3px 0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M4 8q8-9 16 0' fill='none' stroke='%231d1915' stroke-width='1.8'/%3E%3Ccircle cx='9' cy='7' r='3' fill='%23e0b43a' stroke='%231d1915' stroke-width='1.2'/%3E%3Ccircle cx='14' cy='6' r='3' fill='%23e0b43a' stroke='%231d1915' stroke-width='1.2'/%3E%3Cpath d='M2 8h20l-2.5 10h-15z' fill='%23c9922b' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M4 12h16M5 15h14' stroke='%231d1915' stroke-width='.9'/%3E%3C/svg%3E") no-repeat center/contain}
-#c4Money.gotCoin,#p4Money.gotCoin{animation:purseBump .35s ease-out}
+/* (owner 2026-11-12: the purse stays still when a coin lands; no bump) */
 @keyframes purseBump{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
 .purseDelta{position:fixed;z-index:41;transform:translateX(-50%);font:700 14px var(--body);padding:1px 7px;border-radius:9px;border:1.5px solid var(--ink);pointer-events:none;animation:deltaUp 1.5s ease-out forwards}
 .purseDelta.up{background:#e3ecd0;color:#2f6a3a}.purseDelta.dn{background:#f2d6cf;color:#a3332a}
