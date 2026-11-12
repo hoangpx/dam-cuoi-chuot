@@ -184,7 +184,7 @@ function c4WkWish(W, band) {
 }
 
 /* ---------- the history: pay each evening, sick days, asks; answers; bonuses ---------- */
-{ const g0 = c4BonusGive; c4BonusGive = function (id, amt) { const W = c4BonusWho(id), bd = W && W.q.bd, m0 = SAVE4.money; g0.apply(this, arguments); if (W && W.q.bd === SAVE4.day && bd !== SAVE4.day) { c4WkHintMet(W.q, (m0 - SAVE4.money) / Math.max(1, W.wage)); if (id[0] !== 'v') W.q.rel = Math.min(100, (W.q.rel ?? 50) + Math.round(10 * Math.pow(Math.min(10, (m0 - SAVE4.money) / Math.max(1, W.wage)), .6)));  c4WkLog(W.q, `Được thưởng ${c4Money(Math.round(m0 - SAVE4.money))}.`); persist4(); if (typeof p4Persist === 'function' && SAVE4B && SAVE4B.house) p4Persist(); } if (C4WK.id === id && !$('#c4wk').hidden) c4WkOpen(id, true); }; }
+{ const g0 = c4BonusGive; c4BonusGive = function (id, amt) { const W = c4BonusWho(id), bd = W && W.q.bd, m0 = SAVE4.money; g0.apply(this, arguments); if (W && W.q.bd === SAVE4.day && bd !== SAVE4.day) { c4WkHintMet(W.q, (m0 - SAVE4.money) / Math.max(1, W.wage)); c4WkWarm(id, (m0 - SAVE4.money) / Math.max(1, W.wage)); if (id[0] !== 'v') W.q.rel = Math.min(100, (W.q.rel ?? 50) + Math.round(10 * Math.pow(Math.min(10, (m0 - SAVE4.money) / Math.max(1, W.wage)), .6)));  c4WkLog(W.q, `Được thưởng ${c4Money(Math.round(m0 - SAVE4.money))}.`); persist4(); if (typeof p4Persist === 'function' && SAVE4B && SAVE4B.house) p4Persist(); } if (C4WK.id === id && !$('#c4wk').hidden) c4WkOpen(id, true); }; }
 { const a0 = c4WageAnswer; c4WageAnswer = function (yes) { const a = C4_WAGE_CUR, p = a && a.h.wq && a.h.wq.pend; if (p && yes) c4WkHintMet(a.h.wq, 1); if (p) c4WkLog(a.h.wq, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
 { const a0 = p4WageAnswer; p4WageAnswer = function (yes) { const a = P4_WAGE_CUR, q = a && (a.kind === 'shop' ? a.R.wq : a.h.wq), p = q && q.pend; if (p && yes) c4WkHintMet(q, 1); if (p) c4WkLog(q, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
 { const pay0 = c4PayHands;
@@ -198,7 +198,7 @@ function c4WkWish(W, band) {
       if (here && !x.nowage && !h.unpaid) c4WkLog(q, `Nhận công ${c4Money(x.wage)}.`);
       else if (here && h.unpaid) c4WkLog(q, 'Chưa được trả công.');
       if (here && q.pend && q.pend !== x.pend && !q.pend.no) c4WkLog(q, `Xin tăng công từ ${c4Money(q.pend.from)} lên ${c4Money(q.pend.to)}.`);
-      if (here) { c4WkMoodEvening(q, x.wage, h.fair || 0, h.name); c4WkGrow(q, h, 'sp', 'ho', h.rel, false); }
+      if (here) { c4WkMoodEvening(q, x.wage, h.fair || 0, h.name); c4WkGrow(q, h, 'sp', 'ho', h.rel, false, 'wm', x.wage, h.fair || 0); }
     }
     return r;
   }; }
@@ -215,7 +215,7 @@ function c4WkWish(W, band) {
       if (x.q.pend && x.q.pend !== x.pend && !x.q.pend.no) c4WkLog(x.q, `Xin tăng công từ ${c4Money(x.q.pend.from)} lên ${c4Money(x.q.pend.to)}.`);
       let fair = 0; try { fair = x.betel ? p4HandFair(x.h) : x.h ? p4HelpFair(x.R) : p4ShopFair(x.R); } catch (e) {}
       c4WkMoodEvening(x.q, x.wage, fair, x.h ? x.h.name : p4Keeper(x.R));
-      if (x.h) c4WkGrow(x.q, x.h, 'sp', 'ho', x.q.rel ?? 50, true); else c4WkGrow(x.q, x.R, 'ksp', 'kho', x.q.rel ?? 50, true);
+      if (x.h) c4WkGrow(x.q, x.h, 'sp', 'ho', x.q.rel ?? 50, true, 'wm', x.wage, fair); else c4WkGrow(x.q, x.R, 'ksp', 'kho', x.q.rel ?? 50, true, 'kwm', x.wage, fair);
     }
     return r;
   }; }
@@ -310,13 +310,22 @@ function c4WkMoodEvening(q, wage, fair, name) {
    dần dần trung thực cũng lên; nhanh nhẹn thì càng làm lâu càng tăng dần"). HIDDEN: the "quan hệ" bar is the village hand's h.rel (as before) and,
    in the town, q.rel (0–100, from 50). Chat on the subject +1, kind +2 (at most +6 a day), rude −3; a bonus +10 × days'-pay^.6 (village: thuong.js);
    three evenings or more without a word −1 an evening. Each evening worked: honesty +.01 at quan hệ ≥ 70, +.02 at ≥ 85, −.01 at ≤ 30; speed +.01
-   in the town (the village's own c4Drift already adds .02). ---------- */
+   in the town (the village's own c4Drift already adds .02). Warmth (nhiệt tình) follows the pay: each evening +.02 when paid 1.2× what they think
+   fair or more, +.01 at about fair, −.01 under .8×; a bonus adds .03 × days'-pay^.6 at once. ---------- */
 const c4WkRel = W => W.place === 'lang' ? (W.h.rel ?? 60) : (W.q.rel ?? 50);
 function c4WkRelAdd(W, d) { if (W.place === 'lang') { if (typeof c4HandRel === 'function') c4HandRel(W.h, d); } else W.q.rel = Math.max(0, Math.min(100, Math.round((W.q.rel ?? 50) + d))); }
-function c4WkGrow(q, o, spK, hoK, rel, town) {
+function c4WkGrow(q, o, spK, hoK, rel, town, wmK, wage, fair) {
   if (!o) return;
   const cl = v => Math.max(0, Math.min(1, v));
   if (town) { o[spK] = cl((o[spK] ?? .5) + .01); if (q.rel === undefined) q.rel = 50; if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 3) q.rel = Math.max(0, q.rel - 1); }
   else if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 3 && typeof c4HandRel === 'function') c4HandRel(o, -1);
   const r = rel ?? 50; o[hoK] = cl((o[hoK] ?? .5) + (r >= 85 ? .02 : r >= 70 ? .01 : r <= 30 ? -.01 : 0));
+  // warmth follows the pay (owner 2026-11-12: "nhiệt tình thì tăng theo lương và thưởng"): paid well over what they think fair +.02, fairly +.01, under −.01
+  if (wmK && fair > 0) { const f = fair * (1 - .25 * c4Gw(q)), k = wage / Math.max(1, f); o[wmK] = cl((o[wmK] ?? .5) + (k >= 1.2 ? .02 : k >= .95 ? .01 : k < .8 ? -.01 : 0)); }
+}
+// a bonus warms them at once: +.03 × days'-pay^.6
+function c4WkWarm(id, days) {
+  const [t, a, b] = id.split('|'), cl = v => Math.max(0, Math.min(1, v)), d = .03 * Math.pow(Math.min(10, Math.max(0, days)), .6);
+  const o = t === 'v' ? c4Hands(a)[+b] : t === 'k' ? p4Shops()[a] : t === 'p' ? p4ShopHands(p4Shops()[a])[+b] : p4Hands()[+a], key = t === 'k' ? 'kwm' : 'wm';
+  if (o) o[key] = cl((o[key] ?? .5) + d);
 }
