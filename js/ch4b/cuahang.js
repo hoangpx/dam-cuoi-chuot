@@ -179,7 +179,7 @@ p4ShopsUpdate = function (dt) {
 };
 /* ---------- the stock of every shop of ours, out on the HUD (like the village's "Trầu 33  Chè 22") ---------- */
 const P4_WSHORT = { 'Bánh bao nhân thịt': 'Nhân thịt', 'Bánh bao chay': 'Chay', 'Gà luộc nửa con': 'Gà luộc', 'Hoành thánh chiên': 'H.thánh chiên', 'Thang thuốc cảm': 'Thuốc cảm', 'Cao hổ cốt': 'Cao', 'Áo dài may sẵn': 'Áo dài', 'Đèn lồng tròn': 'Đèn tròn', 'Đèn kéo quân': 'Kéo quân', 'Cơm tấm sườn': 'Sườn' };
-const p4KindTitle = n => n.toLowerCase().replace(/^./, c => c.toUpperCase());
+const p4KindTitle = n => String(n || '').toLowerCase().replace(/^./, c => c.toUpperCase());
 function p4StockHud() {
   const el = $('#p4Stock'); if (!el || $('#p4hud').hidden) return;
   const S = p4Shops(), lines = [];

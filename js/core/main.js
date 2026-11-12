@@ -26,3 +26,4 @@ function frame(now) {
   catch (err) { if (!frame.failed) { frame.failed = true; const el = $('#err'); el.hidden = false; el.textContent = 'Lỗi khi vẽ màn chơi: ' + err.message; } }
 }
 requestAnimationFrame(t => { last = t; frame(t); });
+window.__dccRun = true;   // the game is up: a later uncaught error shows a closable message (index.html)

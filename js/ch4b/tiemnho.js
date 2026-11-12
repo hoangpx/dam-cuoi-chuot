@@ -221,7 +221,7 @@ function p4MiniRestore() {
         const got = r.got + tip; P4T.earned += got; P4T.cost = (P4T.cost || 0) + r.n * c.order.ware.c;   // the goods were paid out of the purse as they sold (owner, 2026-11-08: a player saw Thu 30 quan, 20 in the purse)
         P4T.served++; persist4(); p4Persist(); AU.pluck(84 + (got % 5));
         P4T.fx.push({ x, y, s: '+' + got, t: 0, ok: true }); c.say = { text: tip > r.got * .3 ? 'Nhanh quá, thưởng thêm!' : 'Đúng rồi, cảm ơn!', t: 0, life: 1.2 };
-      } else c.say = { text: 'Hết ' + c.order.name.toLowerCase() + ' rồi à?', t: 0, life: 1.3 };
+      } else c.say = { text: 'Hết ' + String((c.order && c.order.name) || 'món này').toLowerCase() + ' rồi à?', t: 0, life: 1.3 };
       c.leaving = .01;
     } else { P4T.wrong++; c.pat = Math.max(.5, c.pat - c.patMax * .3); c.say = { text: 'Không phải thế!', t: 0, life: 1.2 }; P4T.fx.push({ x, y, s: '✗', t: 0, ok: false }); }
     b.items = [];

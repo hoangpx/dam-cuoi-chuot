@@ -204,7 +204,9 @@
 // Android Chrome offers its install prompt early, before the game files run: keep it for js/core/install.js
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
 window.addEventListener('unhandledrejection', e => { if (/audio/i.test((e.reason && e.reason.message) || '')) { e.preventDefault(); return; } const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; const ld = document.getElementById('loading'); if (ld) ld.remove(); el.textContent = 'Không khởi động được trò chơi: ' + (e.reason && e.reason.message || 'lỗi không rõ'); } });
-window.addEventListener('error', e => { if (/audio/i.test(e.message || '')) return; const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; const ld = document.getElementById('loading'); if (ld) ld.remove(); el.textContent = 'Không khởi động được trò chơi: ' + (e.message || 'lỗi không rõ'); } });
+window.addEventListener('error', e => { if (/audio/i.test(e.message || '')) return; const el = document.getElementById('err'); if (el && el.hidden) { el.hidden = false; const ld = document.getElementById('loading'); if (ld) ld.remove(); const at = e.filename ? ' [' + String(e.filename).split('/').pop().split('?')[0] + ':' + e.lineno + ']' : '';
+  if (window.__dccRun) { el.textContent = 'Có lỗi: ' + (e.message || 'lỗi không rõ') + at + '. Chụp màn hình này gửi cho chúng tôi, rồi chạm để chơi tiếp.'; el.onclick = () => { el.hidden = true; el.onclick = null; }; }   // (the game runs on: a tap closes it; the file and line say where, for a report)
+  else el.textContent = 'Không khởi động được trò chơi: ' + (e.message || 'lỗi không rõ') + at; } });
 </script>
 <script>
 /* Loader: wait for the fonts (Hán characters are baked into the woodblock parts), then run the game files in order.
