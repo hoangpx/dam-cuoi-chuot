@@ -592,3 +592,16 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .card4.wk .wkSay input{flex:1;min-width:0;font:inherit;font-size:15px;padding:7px 8px;border:1.5px solid #2b2620;border-radius:6px;background:#fffaf0}
 .card4.wk .wkSay .btn{flex:none;padding:7px 14px}
 .card4.wk .wkHint{margin:8px 0 2px;opacity:.7}
+.soPlace{gap:6px;margin:0 0 10px}
+.soTiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 6px}
+.soTiles>div{background:#fffaf0;border:1.5px solid #2b2620;border-radius:6px;padding:8px 10px;text-align:left}
+.soTiles small{display:block;font-size:12px;opacity:.75}
+.soTiles b{display:block;font-size:17px}
+.soTiles em{display:block;font-style:normal;font-size:12px}
+.soTiles .gain,.soDay .gain{color:#2f6a3a}.soTiles .bad,.soDay .bad{color:#a3332a}
+.soChart{width:100%;height:auto;display:block;background:#fffaf0;border:1px solid #c9b88f;border-radius:6px}
+.soChart .soAx{font-size:10px;fill:#5a4a30}
+.soLeg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin:0 0 4px}
+.soLeg i{display:inline-block;width:10px;height:10px;border:1px solid #2b2620;margin-right:4px;vertical-align:-1px}
+.soDay table{width:100%;border-collapse:collapse;font-size:13px}
+.soDay th,.soDay td{text-align:left;padding:3px 4px;border-bottom:1px solid #d8c9a6}
