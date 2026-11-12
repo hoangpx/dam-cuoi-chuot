@@ -1,7 +1,7 @@
 /* Chương IV · Vợ Chồng Khởi Nghiệp 創業 — a village-market trading game.
    It opens with the newly-wed mouse couple talking over how to make a living: he wants to steal food, she says no —
    it is dangerous, and what would their children do? — "phi thương bất phú", so they open a betel stall at the market.
-   THE GOAL: put by C4_GOAL (2 quan); then she is with child, a brood of mice is born, and chương V (their adventures)
+   THE GOAL: put by C4_GOAL (200 quan; was 2 quan until 2026-11-12); then she is with child, a brood of mice is born, and chương V (their adventures)
    opens. The player may keep trading after that, to open more stalls.
    A day: in the morning the player sees the weather and what was overheard and decides how much of each ware to buy
    (most wares do not keep: unsold betel wilts, tea is poured away, sticky rice goes off at noon — losses). Along the lane
@@ -24,7 +24,7 @@ const C4_STALL_Z = .12, C4_WIFE_Z = .07, C4_Q_Z = .32;
 const C4_OPEN = 5 * 60, C4_CLOSE = 19 * 60, C4_MPS = 4;                 // market hours (game minutes), game minutes per second
 let C4_BUY0 = 1;                                                            // a buyer takes 1–3 (C4_BUY0 … +2)
 let C4_PACE = .62;                                                          // how many come (a player: ~20 buyers a day; bots: ~15–30 a day, 2 quan ~day 17 with the stall upgraded)
-const C4_GOAL = 1200;                                                     // 2 quan: then the children come, and chương V
+const C4_GOAL = 120000;                                                   // 200 quan (owner 2026-11-12, was 2 quan): then the children come, and chương V
 // savings towards the goal: the purse less what is owed (borrowed money is not saved money)
 const c4Net = () => SAVE4.money - SAVE4.debt - (SAVE4.loans || []).reduce((a, L) => a + L.owe, 0);
 // the betel stall's three sizes: how much it holds, what the trader charges, how long a sale takes, how many come by
@@ -166,7 +166,7 @@ const C4_TALK = [
   ['w', 'Các cụ dạy rồi: "Phi thương bất phú". Mình ra chợ buôn bán đi anh.'],
   ['h', 'Phải đấy! Vốn chẳng bao nhiêu, mình mở gánh trầu cau trước đã.'],
   ['w', 'Miếng trầu là đầu câu chuyện, chợ nào mà chẳng có người mua!'],
-  ['h', 'Mình để dành đủ hai quan rồi hẵng tính chuyện con cái nhé.'],
+  ['h', 'Mình để dành đủ hai trăm quan rồi hẵng tính chuyện con cái nhé.'],
   ['h', 'Vậy sáng mai mình gánh ra cổng chợ!'],
 ];
 // the morning of day C4_BOOK_DAY: the couple talk over why nobody buys, and start the book of regulars
@@ -1477,7 +1477,7 @@ function c4Key(e) {
 }
 registerChapter({
   id: 4, modes: ['c4play'], direct: startC4,   // no album: the card opens the market
-  card: { num: lg('Chương IV', 'Chapter IV'), han: '創業', name: lg('Vợ Chồng Khởi Nghiệp', 'The Newlyweds\' Shop'), desc: lg('Vợ chồng chuột mới cưới bàn nhau làm ăn: không đi ăn trộm, mà ra chợ buôn bán, để dành đủ hai quan mới tính chuyện con cái.', 'The newlywed mice decide how to make a living: not by stealing, but by trading at the village market, saving up before they start a family.'), bg: '#efcfb8' },
+  card: { num: lg('Chương IV', 'Chapter IV'), han: '創業', name: lg('Vợ Chồng Khởi Nghiệp', 'The Newlyweds\' Shop'), desc: lg('Vợ chồng chuột mới cưới bàn nhau làm ăn: không đi ăn trộm, mà ra chợ buôn bán, để dành đủ hai trăm quan mới tính chuyện con cái.', 'The newlywed mice decide how to make a living: not by stealing, but by trading at the village market, saving up before they start a family.'), bg: '#efcfb8' },
   progress: () => SAVE4.goal ? lg('Đã đạt mục tiêu', 'Goal reached') : SAVE4.started ? `${lgf('Ngày {d}', 'Day {d}', { d: SAVE4.day })} · ${c4Money(SAVE4.money)}` : lg('Mới mở', 'New'),
   hasProgress: () => SAVE4.started,
   hide: c4Hide,
