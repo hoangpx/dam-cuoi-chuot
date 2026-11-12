@@ -50,12 +50,15 @@ for (const n of P4_LAMP_NAMES) P4_KINDS[n] = P4_LAMPK;
    trade shops 50/11/12/4 → 23 %, the goldsmith 55/6/10/5 → 24 %, the lamp shop 40/12/14/5 → 29 %. P4_ECON = [kind, keeper's wage a day,
    rent a week] for a house in the middle of the street, from the takings the street's customer rule gives (scratch kt/plan.js); the wage
    is never below 150. Rent and customers follow the place on the street (p4LocK: busier and dearer by the gate). */
-const P4_CAT = { an: { l: .18, o: .07 }, ty: { l: .08, o: .03 }, cd: { l: .11, o: .04 }, xx: { l: .06, o: .05 }, mv: { l: .12, o: .05 } };
+// owner 2026-11-12 ("công nhân viên cao quá", option 1): an eating house's labour share 18 % → 11 % (P4_AN_L); the keeper's wage in P4_ECON
+// (set for 18 %) is scaled by P4_AN_L / .18 below, rent unchanged, so an eating house now nets about 27 % instead of 20 %.
+const P4_AN_L = .11;
+const P4_CAT = { an: { l: P4_AN_L, o: .07 }, ty: { l: .08, o: .03 }, cd: { l: .11, o: .04 }, xx: { l: .06, o: .05 }, mv: { l: .12, o: .05 } };
 const P4_ECON = { 'BÚN CHẢ': ['an', 1010, 5915], 'BÁNH BAO': ['an', 815, 4760], 'CƠM GÀ': ['an', 1655, 9660], 'HỦ TIẾU': ['an', 2120, 12390], 'CƠM TẤM': ['an', 1305, 7630],
   'CHÈ': ['an', 775, 4515], 'CAO LẦU': ['an', 2050, 11970], 'PHỞ BÒ': ['an', 1900, 11095], 'BÁNH VẠC': ['an', 1360, 7945], 'GẠO MUỐI': ['ty', 515, 2730], 'THUỐC BẮC': ['cd', 305, 2310],
   'GIẤY BÚT': ['cd', 205, 1540], 'HÀNG XÉN': ['ty', 455, 2380], 'TRÀ SEN': ['cd', 300, 2310], 'TIỆM VẢI': ['cd', 265, 2030], 'HÀNG GỐM': ['cd', 215, 1645], 'TIỆM VÀNG': ['xx', 150, 1575],
   'MAY ÁO DÀI': ['cd', 235, 1785], 'ĐÈN LỒNG': ['mv', 150, 1085] };
-for (const n in P4_KINDS) { const K = P4_KINDS[n], e = P4_ECON[n] || P4_ECON['ĐÈN LỒNG']; K.cat = e[0]; K.wage = e[1]; K.rentW = e[2]; }
+for (const n in P4_KINDS) { const K = P4_KINDS[n], e = P4_ECON[n] || P4_ECON['ĐÈN LỒNG']; K.cat = e[0]; K.wage = e[0] === 'an' ? Math.round(e[1] * P4_AN_L / .18 / 5) * 5 : e[1]; K.rentW = e[2]; }
 const p4R5 = v => Math.max(5, Math.round(v / 5) * 5);
 // the place: 1.15 by the gate end (x 600), .85 at the far end (x 3600)
 const p4LocK = x => c4Clamp(1.15 - .3 * ((x === undefined || x === null ? 2100 : +x) - 600) / 3000, .85, 1.15);

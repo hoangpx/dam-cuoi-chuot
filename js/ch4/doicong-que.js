@@ -26,10 +26,10 @@ function c4RunChance(wage, fair, ho, rel, mad, q) {
 const c4Sour = h => !c4Grace(h.wq) && ((h.wq && h.wq.mad > 0) || (h.rel !== undefined && h.rel <= 20));
 // fair pay by the takings (owner, 2026-11-09, approved proposal, the same rule as the town): a hired hand is a helper beside the wife, so half the
 // trade's share (eating 18 %, staples 8 %, trade 11 %; tamly.js c4GCat) of the stall's takings over its last 7 evenings (h.tk); kept in h.fair
-const C4_VCAT_L = { an: .18, ty: .08, cd: .11, xx: .06, mv: .12 };
+const C4_VCAT_L = { an: .11, ty: .08, cd: .11, xx: .06, mv: .12 };
 function c4HandFairOf(h, g) {
   const H = h.tk; if (!H || H.length < 3) return 0;
-  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(.5 * (C4_VCAT_L[c4GCat(g)] || .18) * avg / 5) * 5) : 0;
+  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(.5 * (C4_VCAT_L[c4GCat(g)] || .11) * avg / 5) * 5) : 0;
 }
 const c4HandFair = h => h.fair || 0;
 { const pay0 = c4PayHands;
