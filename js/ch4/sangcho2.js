@@ -140,7 +140,7 @@ $('#cnBuyGo').addEventListener('click', () => {
     b.wait = false; if (!CN.buy) return;
     if (!ok) { b.msg = why; cnBuyRefresh(); return; }
     const info = cnStallInfo(b.g); if (info) info.avail = Math.max(0, info.avail - r.n);
-    toast(`Mua ${r.n} ${info ? info.unit : ''} ${cnWareName(b.g, CN.visit.place)}: ${c4Money(r.total)}`, 2.6); AU.pluck(84); b.msg = `Đã mua ${r.n}. Còn ${c4Money(Math.round(SAVE4.money))} trong túi.`; b.n = 1; cnvMoneyShow(); cnBuyRefresh();
+    toast(`Mua ${r.n} ${info ? info.unit : ''} ${cnWareName(b.g, CN.visit.place)}: ${c4Money(r.total)}`, 2.6); AU.pluck(84); b.msg = `Đã mua ${r.n}.`; b.n = 1; cnvMoneyShow(); cnBuyRefresh();
   });
 });
 

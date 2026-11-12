@@ -333,7 +333,7 @@ function c4BuyItem(id) {
   if (c4HomeItems().includes(id) || SAVE4.money < price) return;
   SAVE4.money -= price; if (C4.today) { C4.today.spent += price; c4SpNote('Sắm nội thất: ' + it[1].toLowerCase(), price); } (SAVE4.home = SAVE4.home || { items: [] }).items.push(id);
   C4.homePreview = null; AU.pluck(84); persist4(); c4Hud();
-  toast(`Đã sắm ${it[1].toLowerCase()}: ví còn ${c4Money(SAVE4.money)}, nhưng của trong nhà vẫn tính đủ ${c4Money(c4NetWorth())}.`, 3.4);
+  toast(`Đã sắm ${it[1].toLowerCase()}.`, 2.6);
 }
 // the book's Nhà tab: the room (empty to begin with), the Sắm sanh button, and the list under it
 function c4HomeTab() {

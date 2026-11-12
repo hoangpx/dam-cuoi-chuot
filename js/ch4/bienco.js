@@ -56,7 +56,10 @@ function c4EvPick(i, auto = false) {
   if (C4_HELP[E.kind] === i && C4.today) C4.today.help = (C4.today.help || 0) + 1;
   const said = (toast.n || 0) !== n0 ? $('#toastTx').innerHTML : '', d = SAVE4.money - m0;
   const n1 = toast.n || 0; c4Hud(); const task = (toast.n || 0) !== n1 ? '<br>' + $('#toastTx').innerHTML : '';   // a task just done: said after the result, not instead
-  const money = d ? ` (${d < 0 ? 'mất' : 'được'} ${c4Money(Math.abs(d))}, còn ${c4Money(SAVE4.money)})` : '';
+  // only what was paid or got, never what is left (owner 2026-11-12: "nộp tiền cho lính thì chỉ cần ghi đã nộp xx đồng"); said once if the answer already named the sum
+  const sum = c4Money(Math.abs(d)), lb = c4Plain(label), named = d && (said.includes(sum) || lb.includes(sum));
+  const verb = /nộp|thuế|đóng|lót|đút|góp/i.test(lb) ? 'đã nộp' : /biếu|mừng|phúng/i.test(lb) ? 'đã biếu' : /trả|đền/i.test(lb) ? 'đã trả' : /^cho|bố thí/i.test(lb) ? 'đã cho' : 'mất';
+  const money = d && !named ? ` (${d < 0 ? verb : 'được'} ${sum})` : '';
   if (auto) toast(`Hết giờ, đành: ${c4Plain(label)}.${said ? ' ' + said : ''}${money}${task}`, 4.4);
   else if (!said) toast(`${c4Plain(label)}.${money}${task}`, 3.4);
   else toast(said + money + task, 4.2);
