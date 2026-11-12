@@ -318,10 +318,11 @@ body.c4 #toast{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}   
 
 /* a stall's sheet: treat the folk you know to its ware (owner: the treats moved from the book to each stall) */
 .card4 .treat h4{margin:12px 0 2px}
-.uptabs{display:flex;gap:6px;margin:0 0 10px}
+.uptabs{display:flex;gap:6px;margin:0 0 14px}
 .uptabs button{flex:1;padding:8px 6px;font:700 15px var(--body);color:var(--ink);background:#e6dccb;border:1.5px solid rgba(29,25,21,.45);border-radius:4px;cursor:pointer}
 .uptabs button.on{background:#a3332a;color:#f2ecde;border-color:#a3332a}
-#c4up.tab-moi #c4upB,#c4up.tab-moi #c4upGo,#c4up.tab-moi #c4upO>:not(.treat):not(.uptabs){display:none!important}
+#c4up.tab-moi #c4upB,#c4up.tab-moi #c4upGo,#c4up.tab-moi #c4upO>:not(.treat):not(.uptabs):not(.upback){display:none!important}
+#c4upO>.upback{display:block;margin:0 auto 14px}   /* (owner 2026-11-12: the tabs stuck to it, and in Mời khách it vanished so the tabs jumped up) */
 #c4up:not(.tab-moi) #c4upO .uptabs~.treat{display:none}
 .card4 .trh{display:block;width:100%;text-align:left;margin:12px 0 4px;padding:8px 10px;font:700 15px var(--body);color:var(--ink);background:#efe3c4;border:1.5px solid rgba(29,25,21,.45);border-radius:4px;cursor:pointer}
 .card4 .trh small{font-weight:400;color:#6b5f52}
