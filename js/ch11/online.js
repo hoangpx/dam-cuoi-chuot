@@ -219,11 +219,11 @@ function c11OMainMenu() {
 }
 function c11OHud(g, st) {
   if (!c11OUrl()) return;                                              // no Online button while it is closed                                              // the Online button under the farm name; a banner on a friend's farm
-  const n = C11O.on ? Math.max(C11O.count || 1, C11O.peers.size + 1) : 0, lab = 'Online', t = c11Tag(g, 10, 108, lab, { size: 12, h: 28, pad: 18, fill: C11O.on ? '#bfe3a8' : '#f4ead0' });
-  C11.hud.push({ r: [t[0], t[1] + st, t[2], t[3]], f: c11OMainMenu });
-  if (C11O.on && !C11.menu) { const W = cv.width / DPR, open = C11O.ui && C11O.ui.open, c = c11Tag(g, W - 10, 118, open ? '✕' : '💬', { right: true, size: 13, h: 26, pad: 14, fill: open ? '#f4ead0' : '#f7e3a4' });   // chat: the box opens only from this button (owner 2026-11-11)
-    C11.hud.push({ r: [c[0] - 4, c[1] - 4 + st, c[2] + 8, c[3] + 8], f: () => c11OChatOpen(!open) }); }
-  if (C11O.reqs.length) { g.fillStyle = '#e5391a'; g.beginPath(); g.arc(t[0] + t[2] - 2, t[1] + 2, 7, 0, 6.283); g.fill(); }
+  /* no Online button (owner 2026-11-11): the chat button under the level opens the chat; while it is open a second one opens the online menu (friends, name, leaving); offline, the chat button opens that menu to come back in */
+  if (!C11.menu) { const W = cv.width / DPR, open = C11O.on && C11O.ui && C11O.ui.open, c = c11Tag(g, W - 10, 118, open ? '✕' : '💬', { right: true, size: 13, h: 26, pad: 14, fill: open ? '#f4ead0' : C11O.on ? '#f7e3a4' : '#e6dcc4' });
+    C11.hud.push({ r: [c[0] - 4, c[1] - 4 + st, c[2] + 8, c[3] + 8], f: () => C11O.on ? c11OChatOpen(!open) : c11OMainMenu() });
+    if (C11O.reqs.length) { g.fillStyle = '#e5391a'; g.beginPath(); g.arc(c[0] + 2, c[1] + 2, 6, 0, 6.283); g.fill(); }
+    if (open || C11O.reqs.length) { const m = c11Tag(g, c[0] - 6, 118, '👥', { right: true, size: 13, h: 26, pad: 14, fill: '#bfe3a8' }); C11.hud.push({ r: [m[0] - 4, m[1] - 4 + st, m[2] + 4, m[3] + 8], f: c11OMainMenu }); } }
   if (C11O.visit) c11TagC(g, (cv.width / DPR) / 2, 10, `Nhà bạn ${C11O.visit.name}`, { size: 12, h: 28, pad: 22, fill: '#d9e6c0' });
 }
 

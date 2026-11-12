@@ -1757,8 +1757,9 @@ function c11Hud(g, W, H, st) {
   const G = C11; G.hud = [];
   g.save(); g.translate(0, st);
   const back = c11Tag(g, 10, 10, '← Chương', { size: 12, h: 28, pad: 18 }); G.hud.push({ r: [back[0], back[1] + st, back[2], back[3]], f: () => showChapters() });
-  const nq = c11Q().act.length, book = c11Tag(g, 10, 44, `Sổ tay${nq ? ` (${nq})` : ''}`, { size: 12, h: 28, pad: 18, fill: nq ? '#f2cf5a' : '#f7e3a4' }); G.hud.push({ r: [book[0], book[1] + st, book[2], book[3]], f: () => { c11OpenBook(); c11Sfx.tap(); } });
-  c11Tag(g, 10, 78, C11_AR.name, { size: 11, h: 24, pad: 16, fill: 'rgba(244,234,208,.85)' });
+  const nq = c11Q().act.length, book = c11Tag(g, 10, 44, '📖', { size: 15, h: 30, pad: 16, fill: nq ? '#f2cf5a' : '#f7e3a4' });   // the notebook is an icon (owner 2026-11-11); a red dot counts the jobs running
+  if (nq) { g.fillStyle = '#c8402f'; g.strokeStyle = INK; g.lineWidth = 1.5; g.beginPath(); g.arc(book[0] + book[2] - 1, book[1] + 2, 8, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.font = '800 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nq, book[0] + book[2] - 1, book[1] + 2.5); } G.hud.push({ r: [book[0], book[1] + st, book[2], book[3]], f: () => { c11OpenBook(); c11Sfx.tap(); } });
+  // the place's name is not kept on screen (owner 2026-11-11): it shows on coming in and on the map
   if (typeof c11OHud === 'function') c11OHud(g, st);                     // Online button, friend's-farm banner (online.js)
   const mins = Math.floor(SAVE11.mins), hh = Math.floor(mins / 60) % 24, mm = Math.floor(mins % 60 / 10) * 10;
   c11Tag(g, W - 10, 10, c11Money(), { right: true, fill: '#f7e3a4' });
