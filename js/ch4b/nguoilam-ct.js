@@ -273,7 +273,7 @@ async function c4WkSend() {
    - Each evening a worker with no worry pending may get one (q.hint { t, day, until, told }): chance .07, +.15 when paid under what they think fair,
      +.10 when not rewarded for 7 days or more. It lasts 2 days. The card says "có vẻ muốn thưa chuyện"; opening the worker's page they tell it
      (once a day) and the AI chat knows it. A bonus of at least half a day's pay, or any raise (town buttons, a granted ask), within the time:
-     goodwill +.05 and "Được chủ hiểu ý" in the history. Let it pass: goodwill −.08.
+     goodwill +.05. Let it pass: goodwill −.08. Nothing of this is written anywhere for the player (owner: "luật ngầm thôi"): they only hear the worry.
    - Not talked to (a quick question or the free chat) for 3 evenings or more: goodwill −.02 each evening. ---------- */
 const C4WK_KHO = [
   'Dạo này gạo lên giá, công em đong không đủ nồi cơm cho cả nhà ạ.',
@@ -288,13 +288,13 @@ const C4WK_KHO = [
 const c4WkHint = q => q && q.hint && SAVE4.day <= q.hint.until ? q.hint : null;
 function c4WkHintMet(q, k) {
   const H = c4WkHint(q); if (!H || !(k >= .5)) return;
-  q.hint = null; q.gw = Math.min(1, c4Gw(q) + .05); c4WkLog(q, 'Được chủ hiểu ý, mừng ra mặt.');
+  q.hint = null; q.gw = Math.min(1, c4Gw(q) + .05);                         // (a hidden rule: nothing is written anywhere, owner)
 }
 function c4WkMoodEvening(q, wage, fair, name) {
   if (!q) return;
   const day = SAVE4.day;
   if (q.talkD === undefined) q.talkD = day;                                  // (workers of old saves start as just talked to)
-  if (q.hint && day >= q.hint.until) { q.hint = null; q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .08); c4WkLog(q, 'Kể khổ mà chủ không hiểu ý, buồn lòng.'); }
+  if (q.hint && day >= q.hint.until) { q.hint = null; q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .08); }
   if (day - q.talkD >= 3) q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .02);       // nobody has asked after them for days
   if (!q.hint) {
     const under = fair && wage < fair * (1 - .25 * c4Gw(q)) - 4, noGift = day - (q.bl || -99) >= 7;
