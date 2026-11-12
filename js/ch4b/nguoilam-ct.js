@@ -47,6 +47,7 @@ function c4WkBadges(W) {
   if (q.pend && !q.pend.no) out.push('đang xin tăng công');
   if (W.h && W.h.quit) out.push('đã xin nghỉ');
   if (W.h && W.h.unpaid) out.push('nợ công');
+  if (c4WkHint(q)) out.push('có vẻ muốn thưa chuyện');
   return out;
 }
 // the small card in a sheet
@@ -63,6 +64,7 @@ function c4WkOpen(id, keepChat) {
   const W = c4WkWho(id); if (!W) { C4WK.id = null; return; }
   if (C4WK.id !== id) C4WK.chat = (c4WkWho(id).q.chat || []).map(x => [x.me ? 1 : 0, x.t]);   // the last words with this person are kept
   C4WK.id = id;
+  { const H = c4WkHint(W.q); if (H && H.told !== SAVE4.day) { H.told = SAVE4.day; c4WkSay(W, 0, H.t); } }   // a worker with a worry brings it up (hints.js below)
   const q = W.q, b = c4WkBio(W), m = c4Money, bad = c4WkBadges(W);
   const bar = (l, v) => c4TraitBar(l, v === undefined ? .5 : v);
   const wageBtns = W.place === 'pho' ? `<div class="row">${p4WageBtns(`data-wkw="${id}"`, p4WageCan(W.wage, W.R && !W.h ? p4KeeperBase(W.R) : W.R ? p4HelpBase(W.R) : (W.h.w0 || W.h.wage)))}</div>` : '';
@@ -103,6 +105,7 @@ document.addEventListener('click', e => {
   if (t.dataset.wkw) {
     const d = +t.dataset.d || 0, before = W.wage, [k, , i] = C4WK.id.split('|');
     const to = k === 'k' ? p4ShopWage(W.R, 'k', d) : k === 'p' ? p4ShopWage(W.R, i, d) : p4HandWage(W.h, d);
+    if (to > before) c4WkHintMet(W.q, 1);
     if (to !== before) c4WkLog(W.q, `${to > before ? 'Chủ tăng công lên' : 'Chủ bớt công còn'} ${c4Money(to)} một ngày.`); p4Persist();
     c4WkOpen(C4WK.id, true); return;
   }
@@ -127,7 +130,7 @@ const c4P = a => a[(Math.random() * a.length) | 0];
 // the mood band: 2 fond, 1 plain, 0 sour
 const c4WkBand = q => { const g = c4Gw(q); return g >= .25 ? 2 : g > -.15 ? 1 : 0; };
 function c4WkTalk(W, k) {
-  const q = W.q, b = c4WkBio(W), band = c4WkBand(q), once = (q.talk || (q.talk = {}))[k] !== SAVE4.day; q.talk[k] = SAVE4.day;
+  const q = W.q, b = c4WkBio(W), band = c4WkBand(q), once = (q.talk || (q.talk = {}))[k] !== SAVE4.day; q.talk[k] = SAVE4.day; q.talkD = SAVE4.day;
   const add = d => { if (once) q.gw = Math.max(C4_GW_MIN, Math.min(1, c4Gw(q) + d)); };
   let say;
   if (k === 'gd') {
@@ -181,9 +184,9 @@ function c4WkWish(W, band) {
 }
 
 /* ---------- the history: pay each evening, sick days, asks; answers; bonuses ---------- */
-{ const g0 = c4BonusGive; c4BonusGive = function (id, amt) { const W = c4BonusWho(id), bd = W && W.q.bd, m0 = SAVE4.money; g0.apply(this, arguments); if (W && W.q.bd === SAVE4.day && bd !== SAVE4.day) { c4WkLog(W.q, `Được thưởng ${c4Money(Math.round(m0 - SAVE4.money))}.`); persist4(); if (typeof p4Persist === 'function' && SAVE4B && SAVE4B.house) p4Persist(); } if (C4WK.id === id && !$('#c4wk').hidden) c4WkOpen(id, true); }; }
-{ const a0 = c4WageAnswer; c4WageAnswer = function (yes) { const a = C4_WAGE_CUR, p = a && a.h.wq && a.h.wq.pend; if (p) c4WkLog(a.h.wq, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
-{ const a0 = p4WageAnswer; p4WageAnswer = function (yes) { const a = P4_WAGE_CUR, q = a && (a.kind === 'shop' ? a.R.wq : a.h.wq), p = q && q.pend; if (p) c4WkLog(q, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
+{ const g0 = c4BonusGive; c4BonusGive = function (id, amt) { const W = c4BonusWho(id), bd = W && W.q.bd, m0 = SAVE4.money; g0.apply(this, arguments); if (W && W.q.bd === SAVE4.day && bd !== SAVE4.day) { c4WkHintMet(W.q, (m0 - SAVE4.money) / Math.max(1, W.wage));  c4WkLog(W.q, `Được thưởng ${c4Money(Math.round(m0 - SAVE4.money))}.`); persist4(); if (typeof p4Persist === 'function' && SAVE4B && SAVE4B.house) p4Persist(); } if (C4WK.id === id && !$('#c4wk').hidden) c4WkOpen(id, true); }; }
+{ const a0 = c4WageAnswer; c4WageAnswer = function (yes) { const a = C4_WAGE_CUR, p = a && a.h.wq && a.h.wq.pend; if (p && yes) c4WkHintMet(a.h.wq, 1); if (p) c4WkLog(a.h.wq, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
+{ const a0 = p4WageAnswer; p4WageAnswer = function (yes) { const a = P4_WAGE_CUR, q = a && (a.kind === 'shop' ? a.R.wq : a.h.wq), p = q && q.pend; if (p && yes) c4WkHintMet(q, 1); if (p) c4WkLog(q, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
 { const pay0 = c4PayHands;
   c4PayHands = function (d, quits) {
     const before = [];
@@ -195,6 +198,7 @@ function c4WkWish(W, band) {
       if (here && !x.nowage && !h.unpaid) c4WkLog(q, `Nhận công ${c4Money(x.wage)}.`);
       else if (here && h.unpaid) c4WkLog(q, 'Chưa được trả công.');
       if (here && q.pend && q.pend !== x.pend && !q.pend.no) c4WkLog(q, `Xin tăng công từ ${c4Money(q.pend.from)} lên ${c4Money(q.pend.to)}.`);
+      if (here) c4WkMoodEvening(q, x.wage, h.fair || 0, h.name);
     }
     return r;
   }; }
@@ -209,6 +213,8 @@ function c4WkWish(W, band) {
       if (!here) continue;
       if (x.betel && x.h.unpaid) c4WkLog(x.q, 'Chưa được trả công.'); else c4WkLog(x.q, `Nhận công ${c4Money(x.wage)}.`);
       if (x.q.pend && x.q.pend !== x.pend && !x.q.pend.no) c4WkLog(x.q, `Xin tăng công từ ${c4Money(x.q.pend.from)} lên ${c4Money(x.q.pend.to)}.`);
+      let fair = 0; try { fair = x.betel ? p4HandFair(x.h) : x.h ? p4HelpFair(x.R) : p4ShopFair(x.R); } catch (e) {}
+      c4WkMoodEvening(x.q, x.wage, fair, x.h ? x.h.name : p4Keeper(x.R));
     }
     return r;
   }; }
@@ -232,7 +238,7 @@ function c4WkPersona(W) {
   return { name: c4Cap1(W.name), age: b.age, female: b.f, que: b.que, nha: b.nha, thich: b.thich, where: W.where, place: W.place, wage: W.wage, kieu: b.kieu,
     mood: c4GwWord(c4Gw(q)), traits: `nhanh nhẹn ${word(W.tr.sp)}, nhiệt tình ${word(W.tr.wm)}, thật thà ${word(W.tr.ho)}`,
     biz: c4WkBiz(W), news: mood > .96 && mood < 1.04 && truth ? 'dạo này thiên hạ làm ăn cũng như mọi khi' : flush ? 'dạo này thiên hạ rủng rỉnh, làm ăn khá' : 'dạo này nhà nào cũng túng, khó kiếm tiền',
-    wish: c4WkWish(W, c4WkBand(q)) };
+    wish: c4WkHint(q) ? c4WkHint(q).t + ' (trong bụng mong chủ hiểu ý mà thưởng thêm hay tăng công, nhưng ngại nói thẳng)' : c4WkWish(W, c4WkBand(q)) };
 }
 async function c4WkSend() {
   const inp = $('#c4wkB [data-wkin]'), msg = inp ? inp.value.trim().slice(0, 120) : '';
@@ -248,7 +254,7 @@ async function c4WkSend() {
   const W2 = c4WkWho(id); if (!W2) return;
   if (out) {
     c4WkSay(W2, 0, out.reply);
-    const q = W2.q, day = SAVE4.day; if (q.chatD !== day) { q.chatD = day; q.chatG = 0; }
+    const q = W2.q, day = SAVE4.day; q.talkD = day; if (q.chatD !== day) { q.chatD = day; q.chatG = 0; }
     const up = { lich_su: .025, binh_thuong: .01 }[out.tone] || 0;          // talking on the subject warms them little by little (owner 2026-11-12: "trò chuyện thì tăng dần hảo cảm")
     if (up && q.chatG < .08) { const d = Math.min(up, .08 - q.chatG); q.chatG += d; q.gw = Math.min(1, c4Gw(q) + d); }
     else if (out.tone === 'ho') q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .05);
@@ -260,4 +266,38 @@ async function c4WkSend() {
   }
   persist4(); if (W2.place === 'pho') p4Persist();
   if (C4WK.id === id && !$('#c4wk').hidden) { c4WkOpen(id, true); const i2 = $('#c4wkB [data-wkin]'); if (i2) i2.focus(); }
+}
+
+/* ---------- worries and neglect (owner 2026-11-12: "thi thoảng người làm kể lể khó khăn nhằm gợi ý thưởng thêm hoặc tăng lương, người chơi phải biết ý,
+   không thì hảo cảm giảm dần; không thường xuyên nói chuyện thì hảo cảm cũng giảm dần"). HIDDEN numbers:
+   - Each evening a worker with no worry pending may get one (q.hint { t, day, until, told }): chance .07, +.15 when paid under what they think fair,
+     +.10 when not rewarded for 7 days or more. It lasts 2 days. The card says "có vẻ muốn thưa chuyện"; opening the worker's page they tell it
+     (once a day) and the AI chat knows it. A bonus of at least half a day's pay, or any raise (town buttons, a granted ask), within the time:
+     goodwill +.05 and "Được chủ hiểu ý" in the history. Let it pass: goodwill −.08.
+   - Not talked to (a quick question or the free chat) for 3 evenings or more: goodwill −.02 each evening. ---------- */
+const C4WK_KHO = [
+  'Dạo này gạo lên giá, công em đong không đủ nồi cơm cho cả nhà ạ.',
+  'Thằng cu nhà em ốm mấy hôm nay, thuốc thang tốn kém quá ông bà ạ.',
+  'Mái nhà em dột mấy chỗ, mưa xuống là phải lấy nồi hứng, chưa có tiền mua tranh lợp.',
+  'Sắp đến giỗ bố em mà trong nhà chẳng còn đồng nào sắm lễ.',
+  'Con em sắp đi học chữ, tiền đóng cho thầy đồ em còn chưa xoay được.',
+  'Em làm quần quật từ sáng đến tối, về nhà mỏi rã rời mà nghĩ đến tiền chợ lại lo.',
+  'Bà nội em yếu lắm rồi, em muốn mua cho bà ít thuốc bổ mà chưa đủ tiền.',
+  'Nhà bên cạnh làm hàng khác, công nghe đâu khá hơn, em nghe mà chạnh lòng.'
+];
+const c4WkHint = q => q && q.hint && SAVE4.day <= q.hint.until ? q.hint : null;
+function c4WkHintMet(q, k) {
+  const H = c4WkHint(q); if (!H || !(k >= .5)) return;
+  q.hint = null; q.gw = Math.min(1, c4Gw(q) + .05); c4WkLog(q, 'Được chủ hiểu ý, mừng ra mặt.');
+}
+function c4WkMoodEvening(q, wage, fair, name) {
+  if (!q) return;
+  const day = SAVE4.day;
+  if (q.talkD === undefined) q.talkD = day;                                  // (workers of old saves start as just talked to)
+  if (q.hint && day >= q.hint.until) { q.hint = null; q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .08); c4WkLog(q, 'Kể khổ mà chủ không hiểu ý, buồn lòng.'); }
+  if (day - q.talkD >= 3) q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .02);       // nobody has asked after them for days
+  if (!q.hint) {
+    const under = fair && wage < fair * (1 - .25 * c4Gw(q)) - 4, noGift = day - (q.bl || -99) >= 7;
+    if (Math.random() < .07 + (under ? .15 : 0) + (noGift ? .1 : 0)) q.hint = { t: C4WK_KHO[(Math.random() * C4WK_KHO.length) | 0], day: day + 1, until: day + 2 };
+  }
 }
