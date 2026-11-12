@@ -215,7 +215,7 @@ function c4WkWish(W, band) {
 
 /* ---------- free talk through the chat Worker (worker-nguoilam, Claude Haiku 5.5; owner 2026-11-12: "trò chuyện là tự người chơi trò chuyện, kiểu AI
    thông minh"; only daily work, the worker's life and the owners' life; witty; each person their own way of talking). The worker is told only words
-   (how they seem, what they think), never the hidden numbers. What the player says moves goodwill a little: kind +.02 (at most +.06 a day from
+   (how they seem, what they think), never the hidden numbers. What the player says moves goodwill a little: kind +.025, plain +.01 (at most +.08 a day from
    talk), rude −.05, off the subject nothing. 15 messages a device a day (the Worker counts). ---------- */
 const C4WK_URL = (() => { try { const u = new URLSearchParams(location.search).get('wkchat'); if (u) return u.replace(/\/$/, '') + '/chat'; } catch (e) {} return 'https://dcc-nguoilam.dcc-phong-choi.workers.dev/chat'; })();
 function c4WkSay(W, me, t) {
@@ -249,7 +249,8 @@ async function c4WkSend() {
   if (out) {
     c4WkSay(W2, 0, out.reply);
     const q = W2.q, day = SAVE4.day; if (q.chatD !== day) { q.chatD = day; q.chatG = 0; }
-    if (out.tone === 'lich_su' && q.chatG < .06) { q.chatG += .02; q.gw = Math.min(1, c4Gw(q) + .02); }
+    const up = { lich_su: .025, binh_thuong: .01 }[out.tone] || 0;          // talking on the subject warms them little by little (owner 2026-11-12: "trò chuyện thì tăng dần hảo cảm")
+    if (up && q.chatG < .08) { const d = Math.min(up, .08 - q.chatG); q.chatG += d; q.gw = Math.min(1, c4Gw(q) + d); }
     else if (out.tone === 'ho') q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .05);
     C4WK.left = out.left;
   } else {
