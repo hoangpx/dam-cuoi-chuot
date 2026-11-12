@@ -103,3 +103,17 @@ function c4AskFace(box, id) { try { const W = c4WkWho(id); if (!box || !W || box
 /* ---------- 6. the town's sheets by night: candle-lit paper ---------- */
 { const ch = chapterById('4b'), up0 = ch.update; ch.update = function (dt) { up0.call(this, dt); try { document.body.classList.toggle('p4night', S.mode === 'c4bplay' && typeof p4NightK === 'function' && p4NightK() > .45); } catch (e) {} }; }
 { const h0 = hideChapterHuds; hideChapterHuds = function () { document.body.classList.remove('p4night'); return h0.apply(this, arguments); }; }
+
+/* ---------- 7. the bottom bar: four tiles of one style, the chat button among them (owner 2026-11-12: "icon chat để cùng chỗ Phố Huyện, bỏ chữ Lên,
+   làm 4 nút dưới cùng phong cách giống nhau"). The chat button (sangcho.js #cnChatB) moves into the market's bar while I am in my own market, and
+   back to its floating place (#cnTools) when I visit a friend's market. ---------- */
+setInterval(() => {
+  try {
+    const b = $('#cnChatB'); if (!b) return;
+    const bar = S.mode === 'c4play' ? $('#c4hud .bar') : S.mode === 'c4bplay' ? $('#p4hud .bar') : null;
+    if (bar) {
+      if (b.parentElement !== bar) { bar.appendChild(b); b.classList.add('tag', 'ic', 'tl'); if (!b.querySelector('span')) b.insertAdjacentHTML('beforeend', '<span>Trò chuyện</span>'); }
+      b.hidden = !cnTools || cnTools.hidden;
+    } else if (cnTools && b.parentElement !== cnTools) { cnTools.appendChild(b); b.classList.remove('tag', 'ic', 'tl'); const s = b.querySelector('span'); if (s) s.remove(); b.hidden = false; }
+  } catch (e) {}
+}, 300);
