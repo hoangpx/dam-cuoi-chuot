@@ -297,3 +297,4 @@ Xu bay thẳng (owner 2026-11-12: "bay thẳng vào giỏ tiền, không cần v
 
 Mục tiêu 200 quan (owner 2026-11-12: "câu chuyện lúc đầu 2 vợ chồng chuột bây giờ từ 2 quan thành 200 quan"): C4_GOAL = 120000 đồng (cho.js), lời thoại mở đầu "để dành đủ hai trăm quan", mô tả thẻ chương, thành tựu "Hai trăm quan", phần giới thiệu trong index.html. Người đã đạt mục tiêu cũ (SAVE4.goal) giữ nguyên, chương V vẫn mở cho họ. VERSION 2026-11-12u.
 Bỏ con số "+x đồng" dưới giỏ tiền (owner 2026-11-12: hiện "+1 đồng" liên tục vì nhặt rác, phố bán ngầm từng chút); rổ tiền và xu bay vẫn giữ. VERSION 2026-11-12v.
+Thông báo hai khung lồng nhau (owner 2026-11-12, "Đã ghi vào sổ tay"): kiểu giấy dán đặt nhầm lên #toast (khung ngoài rộng hết màn hình) trong khi #toastTx đã có khung; giờ chỉ #toast span mang nền giấy và bóng. VERSION 2026-11-12w.

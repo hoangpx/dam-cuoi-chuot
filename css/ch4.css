@@ -653,7 +653,7 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 /* portraits on the wage asks */
 .askFace{display:block;width:72px;height:72px;border-radius:50%;margin:0 auto 6px}
 /* toasts on a pasted slip of paper */
-body.c4 #toast{background:#f6efdc;color:#1d1915;border:2px solid #1d1915;box-shadow:3px 3px 0 rgba(29,25,21,.35);border-radius:4px;font-family:var(--body)}
+body.c4 #toast span{background:#f6efdc;box-shadow:3px 3px 0 rgba(29,25,21,.35);border-radius:4px}   /* (the slip is the text box itself; styling #toast too drew a second, screen-wide box round it) */
 /* the town's sheets by night */
 body.p4night .c4sheet .card4{background:#efe0bd;box-shadow:0 0 0 2px rgba(255,190,90,.25),5px 5px 0 rgba(0,0,0,.45)}
 body.p4night .c4sheet{background:rgba(10,8,20,.5)}
