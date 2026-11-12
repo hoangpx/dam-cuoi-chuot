@@ -2,9 +2,9 @@
 // by the Worker (index.js) and the node test (../test.js): clean what the client sends, build the system prompt, read the model's answer.
 export const MODEL = 'claude-haiku-5-5';
 export const MAX_MSG = 120;              // letters a player may type
-export const PER_DEVICE = 15;            // messages a device may send a Vietnam day
+export const PER_DEVICE = 10;            // messages a device may send a Vietnam day (owner 2026-11-12: 10)
 export const PER_IP = 40;                // and an address
-export const PER_DAY = 30000;            // the whole game a day (about $4.5 at Haiku 5.5's price)
+export const PER_DAY = 5000;             // the whole game a day (about $0.65 at Haiku 5.5's price; owner: keep it cheap)
 
 const BAD = /(^|[^\p{L}])(địt|đụ ?má|lồn|cặc|buồi|đĩ|fuck|shit|dick|pussy)(?=$|[^\p{L}])/iu;   // (\b does not see Vietnamese letters)
 export const isBad = s => BAD.test(String(s || '').normalize('NFC'));
@@ -20,7 +20,7 @@ export function cleanPersona(p) {
 }
 export function cleanHistory(h) {
   if (!Array.isArray(h)) return [];
-  return h.slice(-8).map(x => ({ me: !!(x && x.me), t: clip(x && x.t, 200) })).filter(x => x.t);
+  return h.slice(-4).map(x => ({ me: !!(x && x.me), t: clip(x && x.t, 200) })).filter(x => x.t);
 }
 
 // each worker's way of talking (chosen by the game for that person, js/ch4b/nguoilam-ct.js C4WK_KIEU)

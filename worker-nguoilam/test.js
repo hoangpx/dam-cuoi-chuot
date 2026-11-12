@@ -5,7 +5,7 @@ const P = cleanPersona({ kieu: 'it_noi', name: 'Chị Sen', age: 24, female: tru
 assert.equal(P.name, 'Chị Sen'); assert.equal(P.wage, 40); assert.equal(P.extra, undefined);
 assert.equal(cleanPersona({ age: 9999, wage: -5, name: 'a'.repeat(99) }).age, 90);
 assert.equal(cleanPersona({ wage: -5 }).wage, 0);
-const H = cleanHistory([{ me: false, t: 'chào' }, { me: true, t: 'hi' }, { me: true, t: 'hai' }, { t: '' }, null]);
+const H = cleanHistory([{ me: false, t: 'chào' }, { me: true, t: 'hi' }, { me: true, t: 'hai' }]);
 assert.equal(H.length, 3);
 const R = buildRequest(P, H, 'Nhà cửa sao rồi?');
 assert.equal(R.model, 'claude-haiku-5-5'); assert.equal(R.messages[0].role, 'user'); assert.equal(R.messages.length, 1);

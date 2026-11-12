@@ -237,7 +237,7 @@ function c4WkPersona(W) {
 async function c4WkSend() {
   const inp = $('#c4wkB [data-wkin]'), msg = inp ? inp.value.trim().slice(0, 120) : '';
   const id = C4WK.id, W = id && c4WkWho(id); if (!msg || !W || C4WK.busy) return;
-  const history = C4WK.chat.slice(-8).map(([m, t]) => ({ me: !!m, t }));
+  const history = C4WK.chat.slice(-4).map(([m, t]) => ({ me: !!m, t }));
   c4WkSay(W, 1, msg); C4WK.busy = true; c4WkOpen(id, true);
   let out = null, err = null;
   try {
