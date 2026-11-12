@@ -592,3 +592,26 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .card4.wk .wkSay input{flex:1;min-width:0;font:inherit;font-size:15px;padding:7px 8px;border:1.5px solid #2b2620;border-radius:6px;background:#fffaf0}
 .card4.wk .wkSay .btn{flex:none;padding:7px 14px}
 .card4.wk .wkHint{margin:8px 0 2px;opacity:.7}
+#c4dayN{text-align:left}
+.dhRes{text-align:center;border:2px solid var(--ink);border-radius:8px;padding:10px 8px;margin:0 0 10px;background:#e3ecd0}
+.dhRes.loss{background:#f2d6cf}
+.dhRes span{display:block;font-size:13px;opacity:.8}
+.dhRes b{display:block;font-family:var(--display);font-weight:900;font-size:28px;line-height:1.2}
+.dhRes small{display:block;font-size:13px;opacity:.85}
+.dhGoal{display:flex;align-items:center;gap:8px;font-size:12px;margin:0 0 6px}
+.dhGoal i{flex:1;height:8px;border:1px solid var(--ink);border-radius:4px;background:#f6f0e2;overflow:hidden}
+.dhGoal i b{display:block;height:100%;background:#4f7a3a}
+.dhH{margin:12px 0 4px;text-align:left}
+.dhList{list-style:none;margin:0;padding:0;font-size:14px}
+.dhList li{position:relative;padding:3px 0 3px 16px;line-height:1.35}
+.dhList li::before{content:'';position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:#9a8f7a}
+.dhList li.bad{color:#8c2a22}.dhList li.bad::before{background:#a3332a}
+.dhList li.good::before{background:#4f7a3a}
+.dhMore summary,.dhMoney summary{cursor:pointer;font-size:13px;opacity:.85}
+.dhMoney{margin:12px 0 4px;border-top:1px dashed rgba(29,25,21,.35);padding-top:8px}
+.dhMoney table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.dhMoney td{padding:2px 4px;border-bottom:1px solid #e3d6b8}
+.dhMoney td:last-child{text-align:right;white-space:nowrap}
+.dhMoney .gain{color:#2f6a3a}.dhMoney .bad{color:#a3332a}
+.dhMoney tr.sum td{font-weight:700;border-bottom:none}
+.dhPurse{font-size:13px;margin:6px 0 0}

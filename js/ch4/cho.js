@@ -1001,19 +1001,8 @@ function c4EndDay() {
   if (SAVE4.rival > 0) SAVE4.rival--; if (SAVE4.cheap > 0) SAVE4.cheap--;
   SAVE4.phuc = 0;
   $('#c4dayT').textContent = `Ngày ${SAVE4.day} đã tan chợ`;
-  $('#c4dayB').innerHTML = `<div><b>${c4Money(d.take)}</b><span>Bán được</span></div><div><b>${c4Money(d.cogs)}</b><span>Tiền hàng</span></div><div class="${gain >= 0 ? 'gain' : 'loss'}"><b>${c4Money(Math.abs(gain))}</b><span>${gain >= 0 ? 'Lãi' : 'Lỗ'}</span></div>`;
-  $('#c4dayN').innerHTML = c4ByShopHtml(d) + `${d.served} khách mua${d.lost ? ' · ' + d.lost + ' khách bỏ đi' : ''}` + (typeof w4TownLine === 'function' ? w4TownLine() : '')
-    + (lines.length || d.wiltLoss ? `<br><span class="bad">Hàng hỏng phải bỏ${lines.length ? ' (' + lines.join(', ') + ')' : ''}: mất ${c4Money(d.wiltLoss)}</span>` : '')
-    + (d.wages ? `<br>Trả công người phụ: ${c4Money(d.wages)}` : '')
-       // (owner: the player reckons whether it adds up)
-    + c4SpHtml(d)
-    + (d.theft ? `<br><span class="bad">Bị người phụ cuỗm: ${c4Money(d.theft)}</span>` : '')
-    + (d.got ? `<br>Thu khác: ${c4Money(d.got)}` : '') + c4LedgerHtml(d)
-    + (d.met ? `<br>Quen thêm ${d.met} khách · cả thảy ${c4People().list.filter(p => c4Known(p.id)).length} người quen` : '')
-    + (gossip ? `<br><span class="bad">${gossip.who.length > 1 ? gossip.who.length + ' người' : 'Có người'} không ưa quán, đi nói ra nói vào:${gossip.hurt.length ? ` ${gossip.hurt.length} người quen bớt quý nhà mình (−5)` : ''}${gossip.hurt.length && gossip.cold ? ';' : ''}${gossip.cold ? ` ${gossip.cold} người chưa quen nghe chuyện không hay, sẽ ngại ghé hơn` : ''}. Lấy lòng ${gossip.who.length > 1 ? 'họ' : 'người ấy'} thì hết chuyện.</span>` : '')
-    + (quits.length ? `<br><span class="bad">${quits.join(' ')}</span>` : '')
-    + (extra.length ? `<br>${extra.join('<br>')}` : '')
-    + (SAVE4.goal ? '' : `<br>Mục tiêu ${c4Money(C4_GOAL)}: đã để dành ${c4Money(Math.max(0, c4Net()))} (tiền trong túi trừ nợ)`);
+  $('#c4dayB').innerHTML = ''; $('#c4dayB').hidden = true;                  // (the three boxes are now the big result line of c4DayHtml, tongket.js)
+  $('#c4dayN').innerHTML = c4DayHtml(d, gain, lines, quits, extra, gossip);
   persist4(); c4LoanUI(true); c4HomeOffer();
   if (typeof w4DayButtons === 'function') w4DayButtons();
   setTimeout(() => { if (S.mode === 'c4play' && C4.phase === 'night') c4Sheets('c4day'); }, 900);
@@ -1462,7 +1451,7 @@ function c4Key(e) {
     sheet('c4note', '<h3>Sổ tay</h3><div id="c4noteB"></div><div class="row"><button class="btn alt" id="c4noteX">Đóng</button></div>'),
     sheet('c4home', '<div id="c4homeB"></div><div class="row"><button class="btn" id="c4homeShop">Sắm đồ</button><button class="btn alt" id="c4homeX">Đóng</button></div>'),
     sheet('c4shop', '<div id="c4shopB"></div><div class="row"><button class="btn alt" id="c4shopX">Quay lại</button></div>'),
-    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><p id="c4dayN"></p><div id="c4loanN"></div><div id="c4homeN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn pho" id="c4dayPho" hidden>Lên phố huyện</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'));
+    sheet('c4day', '<h3 id="c4dayT"></h3><div class="nums" id="c4dayB"></div><div id="c4dayN"></div><div id="c4loanN"></div><div id="c4homeN"></div><button class="btn" id="c4dayGo">Sang ngày mới</button><button class="btn pho" id="c4dayPho" hidden>Lên phố huyện</button><button class="btn alt" id="c4daySleep">Đi ngủ, mai cố gắng tiếp</button><button class="c4restart" data-restart="1">Khởi nghiệp lại từ đầu</button>'));
   $('#c4Name').addEventListener('click', () => showChapters());
   $('#c4Invite').addEventListener('click', () => { if (c4CanInvite()) { AU.tap(); C4_PICK = { deal: 'half', sel: new Set() }; C4_WHO = null; c4OpenNotes('quen'); } });
   $('#c4Note').addEventListener('click', () => { if (C4.phase === 'open') { AU.tap(); C4_PICK = null; c4OpenNotes(); } });
