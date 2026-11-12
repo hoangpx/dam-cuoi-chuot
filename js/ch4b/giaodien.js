@@ -14,7 +14,7 @@ function c4CoinFrom(sx, sy, toEl) {
     const a = c.animate([{ transform: `translate(${x0}px,${y0}px) scale(1) rotate(0deg)`, opacity: 0 }, { transform: `translate(${x0 + (tx - x0) * .04}px,${y0 + (ty - y0) * .04}px) scale(1) rotate(30deg)`, opacity: 1, offset: .08 },
       { transform: `translate(${tx}px,${ty}px) scale(.6) rotate(360deg)`, opacity: .95 }],
       { duration: 1300 + i * 160, easing: 'cubic-bezier(.2,.6,.25,1)', delay: i * 160 });   // (owner: slower)
-    a.onfinish = () => c.remove();
+    a.onfinish = () => c.remove(); setTimeout(() => c.remove(), 1300 + i * 160 + i * 160 + 400);   // (also gone if the animation never ends, a hidden tab)
   }
   const now = performance.now(); if (now - C4UI.coinT > 110) { C4UI.coinT = now; setTimeout(() => { try { AU.coin(); } catch (e) {} }, 1250); }
 }
