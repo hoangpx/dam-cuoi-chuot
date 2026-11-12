@@ -271,3 +271,5 @@ toLowerCase in the town, again (player report 2026-11-11, after the hoso.js fix)
 Lịch âm (owner 2026-11-12, một người chơi báo): tháng 11 âm ghi là "tháng Mười Một" (C4_MONTHS trong tamly.js trước ghi nhầm "Một"). VERSION 2026-11-12a.
 
 Công quán ăn hạ (owner 2026-11-12, người chơi kêu công nhân viên cao quá; chọn cách 1): phần công của quán ăn 18 % → 11 % doanh thu, cả phố và quê (cuahang.js P4_AN_L, P4_CAT.an.l; công người đứng quán trong P4_ECON nhân P4_AN_L / .18, ví dụ phở 1.900 → 1.160 đ/ngày, bún chả 1.010 → 615; người phụ vẫn nửa; công xứng đáng = 11 % doanh thu 7 tối; chợ quê doicong-que.js C4_VCAT_L.an .11). Tiền thuê không đổi, quán ăn lãi ròng khoảng 27 % thay vì 20 %. Khoản R.raise người làm đã đòi được trước đây vẫn giữ. VERSION 2026-11-12b.
+
+Không báo đắt/rẻ khi chỉnh giá (owner 2026-11-12: "đừng có nói là đắt hay rẻ, để người chơi tự biết"): bảng cửa hiệu ở phố huyện (cuahang.js, tab Hàng và giá) chỉ ghi "Giá bán X", bỏ chữ "· rẻ" / "· đắt". Chợ quê, quán ăn, nhà trầu vốn không ghi. Lời khách nói thoáng qua (C4_GIA_DEAR / CHEAP) vẫn giữ. VERSION 2026-11-12c.

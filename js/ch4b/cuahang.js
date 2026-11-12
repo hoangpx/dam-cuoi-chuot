@@ -283,10 +283,10 @@ p4ShopSheet = function () {
   h = `<h3>${p4Esc(R.name)}</h3><p>${P4_TYPE_WORD[K.t]} · ${R.own === 'buy' ? 'của mình' : 'thuê'}${R.shut ? ' · <span class="bad">đang đóng cửa</span>' : ''}</p><p>Hôm nay bán ${T.n}, thu ${m(T.take)} · trong túi ${m(Math.round(purse))}</p>`
     + `<div class="row p4tabs">${[['hang', 'Hàng và giá'], ['ban', 'Bán hàng'], ['trang', 'Trang trí']].map(([k, t]) => `<button class="btn ${tab === k ? '' : 'alt'}" data-tab="${k}">${t}</button>`).join('')}</div>`;
   if (tab === 'hang') {
-    h += K.wares.map(w => { const on = p4OnMenu(R, w), st = R.stock[w.id] || 0, p = p4WPrice(R, w), r = p / w.p;
+    h += K.wares.map(w => { const on = p4OnMenu(R, w), st = R.stock[w.id] || 0, p = p4WPrice(R, w);
       return `<div class="p4ware${on ? '' : ' off'}"><h4>${w.n} <small>(${w.u}${w.keep === 'day' ? ', không để qua đêm' : ''})</small></h4>`
         + `<p>Vốn ${m(w.c)} một ${w.u}, ${K.keeper} tự mua khi bán ra</p>`
-        + `<p>Giá bán <b>${m(p)}</b>${r < .85 ? ' · rẻ' : r > 1.25 ? ' · đắt' : ''}</p><div class="row"><button class="btn alt" data-pr="${w.id}" data-d="-1"${p <= Math.ceil(w.p * .4) ? ' disabled' : ''}>Giảm giá</button><button class="btn alt" data-pr="${w.id}" data-d="1"${p >= w.p * 3 ? ' disabled' : ''}>Tăng giá</button></div>`
+        + `<p>Giá bán <b>${m(p)}</b></p><div class="row"><button class="btn alt" data-pr="${w.id}" data-d="-1"${p <= Math.ceil(w.p * .4) ? ' disabled' : ''}>Giảm giá</button><button class="btn alt" data-pr="${w.id}" data-d="1"${p >= w.p * 3 ? ' disabled' : ''}>Tăng giá</button></div>`
         + `<div class="row"><button class="btn alt" data-menu="${w.id}">${on ? 'Cất, thôi bày bán' : 'Bày bán lại'}</button></div></div>`; }).join('')
       + '<p class="sm">Không phải nhập hàng: mỗi món bán ra, tiền vốn trừ vào túi.</p>';
   } else if (tab === 'ban') {
