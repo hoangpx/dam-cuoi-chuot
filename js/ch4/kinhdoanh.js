@@ -194,7 +194,9 @@ function c4DelivPay(D) {
 /* ---------- đợt 4: "Việc hôm nay" ---------- */
 // owner: only things the player does by tapping, never the luck of the crowd (no "serve N customers"); some days none, some days three
 // how many of the village are still strangers (nobody left to meet once it is 0)
-const c4Strangers = () => c4People().list.filter(p => !c4Known(p.id)).length;
+// (only those who could still be met: someone who will not eat any ware the player sells never buys, so never becomes known;
+// a player who knew everyone who comes still got 'Quen thêm một khách mới', 2026-11-11)
+const c4Strangers = () => { const own = c4Owned().filter(g => !c4Shut(g)); return c4People().list.filter(p => !c4Known(p.id) && own.some(g => !(p.nope || []).includes(g))).length; };
 const C4_TASKS = [
   { k: 'news', make: () => { const n = R() < .4 ? 2 : 1; return { n, text: n > 1 ? 'Hóng được hai tin đồn' : 'Hóng được một tin đồn', prize: n > 1 ? 12 : 8 }; }, done: (t, d) => (d.news || 0) >= t.n },
   { k: 'help', make: () => ({ n: 1, text: 'Giúp một người (cho bà cụ ăn xin, trông con hộ, cho vay, đi dập lửa…)', prize: 10 }), done: (t, d) => (d.help || 0) >= 1, from: () => (C4.events || []).some(e => ['xin', 'trong', 'vay', 'chiu', 'lua', 'omdau', 'caicau'].includes(e.kind)) },
