@@ -16,7 +16,7 @@
    Tết bonus: from mồng 1 to mồng 5 tháng Giêng the morning sheet offers to give every hired hand a month's pay; given, they hardly ever run off
    that year (c4RunChance × .15). */
 const C4_LUNAR0 = 60;
-const C4_MONTHS = ['Giêng', 'Hai', 'Ba', 'Tư', 'Năm', 'Sáu', 'Bảy', 'Tám', 'Chín', 'Mười', 'Một', 'Chạp'];
+const C4_MONTHS = ['Giêng', 'Hai', 'Ba', 'Tư', 'Năm', 'Sáu', 'Bảy', 'Tám', 'Chín', 'Mười', 'Mười Một', 'Chạp'];
 function c4Lunar(day) { const L = (day === undefined ? SAVE4.day : day) - 1 + C4_LUNAR0; return { d: L % 30 + 1, m: Math.floor(L / 30) % 12 + 1, y: Math.floor(L / 360) }; }
 function c4LunarText(day) { const { d, m } = c4Lunar(day); return `${d === 15 ? 'rằm' : d <= 10 ? 'mồng ' + d : 'ngày ' + d} tháng ${C4_MONTHS[m - 1]}`; }
 // (a) the reference price
