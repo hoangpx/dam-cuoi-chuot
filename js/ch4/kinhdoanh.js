@@ -66,7 +66,7 @@ function c4DrawShopLv(g, x, y, s, lv, ware = 'che') {
   g.save(); g.translate(x, y); g.scale(s, s);
   if (lv >= 3) {
     dp(g, c4HouseArt(C4_SHOP_HOUSE[ware]), 0, -18, 0, .62, .62);
-    g.font = '900 13px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32';
+    g.font = '900 13px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32';
     g.fillText(lv >= 4 ? 'Nhà mình' : 'Nhà thuê', 0, -232);
   } else {
     const w = lv === 1 ? 120 : 150, top = lv === 1 ? -150 : -165;

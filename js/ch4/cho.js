@@ -1161,7 +1161,7 @@ function c4SignDraw(g, x, y, s, name, ware) {
   g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = INK; g.lineWidth = 2;
   g.fillStyle = '#7a4a22'; g.fillRect(-52, C4_SIGN_Y + 12, 5, -C4_SIGN_Y - 12); g.fillRect(47, C4_SIGN_Y + 12, 5, -C4_SIGN_Y - 12);
   g.fillStyle = '#f2d27a'; g.beginPath(); g.rect(-62, C4_SIGN_Y - 14, 124, 28); g.fill(); g.stroke();
-  g.fillStyle = INK; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, 0, C4_SIGN_Y + 1);
+  g.fillStyle = INK; g.font = '900 15px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, 0, C4_SIGN_Y + 1);
   if (ware) c4SaleTag(g, ware);                                              // GIẢM n% while a sale runs
   g.restore();
 }
@@ -1213,7 +1213,7 @@ function renderC4() {
     items.push({ z: wz, f: () => { const al = mine && c4Stock(vg) <= 0 ? .45 : 1;
       if (mine && lkFull(vg, 0)) c4LookStall(g, v.x + 50, c4Y(wz), c4S(wz), vg, C4_GOODS[vg].name.toUpperCase(), al);   // a stall we bought, dressed whole (trangtri.js)
       else { if (mine) c4DrawShopLv(g, v.x + 50, c4Y(wz), c4S(wz), c4SLvI(vg), vg); g.globalAlpha = al; dp(g, A[v.ware], v.x + 50, c4Y(wz), 0, c4S(wz), c4S(wz)); g.globalAlpha = 1; }
-      if (mine && c4Stock(vg) <= 0 && C4.phase === 'open') { g.font = '900 14px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', v.x + 50, c4Y(wz) - 90 * c4S(wz)); } } });
+      if (mine && c4Stock(vg) <= 0 && C4.phase === 'open') { g.font = '900 14px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', v.x + 50, c4Y(wz) - 90 * c4S(wz)); } } });
     if (mine) c4HandItems(items, vg, head); else head(v.x - 40, vz, 168 * .95, v, 0);
   }
   c4RivalItems(items, g, head, vis); c4TripItems(items, head, vis); c4NvItems(items, g, vis, head);                                      // the rival betel stall across the lane (muagan.js)
@@ -1230,10 +1230,10 @@ function renderC4() {
         else if (lkHouseOn(sh, c4SLvI(sh))) c4LookDrawStall(g, sx + 20, sy, ss, sh, c4SLvI(sh), G.name.toUpperCase(), al);
         else { c4DrawShopLv(g, sx + 20, sy, ss, c4SLvI(sh), sh); g.globalAlpha = al; dp(g, A[G.art], sx + 20, sy, 0, ss, ss); g.globalAlpha = 1;
         c4SignDraw(g, sx + 20, sy, ss, G.name.toUpperCase(), sh); }
-        if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } C4_HOUSE_SKIP = false; } });
+        if (c4Stock(sh) <= 0 && C4.phase === 'open') { g.font = '900 15px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillStyle = '#a3332a'; g.fillText('Hết hàng', sx + 20, sy - 120 * ss); } C4_HOUSE_SKIP = false; } });
     } else {
-      items.push({ z: C4_STALL_Z, f: () => { dp(g, A.lot, sx, sy, 0, ss, ss); g.save(); g.translate(sx, sy); g.scale(ss, ss); g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK;
-        const L = c4Landlord(sh); g.fillText('Cho thuê', 0, -102); g.font = '700 13px "Playfair Display", serif'; g.fillText(c4Money(L.price), 0, -83); g.restore(); } });
+      items.push({ z: C4_STALL_Z, f: () => { dp(g, A.lot, sx, sy, 0, ss, ss); g.save(); g.translate(sx, sy); g.scale(ss, ss); g.font = '900 15px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = INK;
+        const L = c4Landlord(sh); g.fillText('Cho thuê', 0, -102); g.font = '700 13px "Be Vietnam Pro", sans-serif'; g.fillText(c4Money(L.price), 0, -83); g.restore(); } });
     }
   }
   const lv = SAVE4.lv;
@@ -1284,7 +1284,7 @@ function renderC4() {
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
   if (c4CanUp() && C4.phase === 'open' && !C4.build) { const b = Math.sin(C4.t * 4) * 6, ax = C4_STALL + 20, ay = c4Y(C4_STALL_Z) - [200, 270, 310][Math.min(2, lv)] * c4S(C4_STALL_Z) + b; g.fillStyle = '#2f6a4c'; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(ax, ay - 26); g.lineTo(ax + 20, ay); g.lineTo(ax + 8, ay); g.lineTo(ax + 8, ay + 18); g.lineTo(ax - 8, ay + 18); g.lineTo(ax - 8, ay); g.lineTo(ax - 20, ay); g.closePath(); g.fill(); g.stroke(); }
   for (const gq of Object.keys(C4.Q)) for (const w of C4.Q[gq]) { const k = Math.max(0, 1 - w.wait / (c4Lv().wait + C4.Q[gq].indexOf(w) * 2)), y = c4Y(w.z) - C4_TALL[w.kind] * c4S(w.z) - 14; if (w.say) continue; g.fillStyle = '#f2ecde'; g.strokeStyle = INK; g.lineWidth = 1.6; g.fillRect(w.x - 22, y, 44, 7); g.strokeRect(w.x - 22, y, 44, 7); g.fillStyle = k > .4 ? '#2f6a4c' : '#a3332a'; g.fillRect(w.x - 21, y + 1, 42 * k, 5); }
-  for (const f of C4.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 26px "Playfair Display", serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = f.s[0] === '+' ? '#2f6a4c' : INK; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
+  for (const f of C4.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 26px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = f.s[0] === '+' ? '#2f6a4c' : INK; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
   // speech bubbles, each fixed over its speaker's head; once shown a bubble keeps its place; a whisper shows "…" and an ear
   const shown = b => b.e.say.shown ? 1 : 0;
   bubbles.sort((a, b) => shown(b) - shown(a) || b.pri - a.pri || a.e.say.t - b.e.say.t);

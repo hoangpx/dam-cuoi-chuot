@@ -45,7 +45,7 @@ function c4LookCost(g, L, lv) {
 }
 
 /* ---------- the parts ---------- */
-const LK_FD = '"Playfair Display", serif', LK_B = [-160, -280, 160, 10], LK_HB = [-230, -300, 230, 12], lkCache = {};
+const LK_FD = '"Be Vietnam Pro", sans-serif', LK_B = [-160, -280, 160, 10], LK_HB = [-230, -300, 230, 12], lkCache = {};
 const lkPoly = pts => { const p = new Path2D(); p.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) p.lineTo(pts[i][0], pts[i][1]); p.closePath(); return p; };
 const lkPart = (key, b, f) => lkCache[key] || (lkCache[key] = part(b, f));
 const LK_ROOF = {
@@ -167,7 +167,7 @@ function c4LookHouse(g, x, y, s, L, lv) {
   dp(g, lkWallPart(wall, door, win), x, y0, 0, k, k);
   if (L.hpost) dp(g, lkPostPart(L.hpost, 190, 150), x, y0, 0, k, k);
   dp(g, lkRoofPart(hr, 'red'), x, y0 - 23 * k, 0, 1.37 * k, 1.1 * k);
-  g.save(); g.translate(x, y); g.scale(s, s); g.font = '900 13px "Playfair Display", serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32'; g.fillText(lv >= 4 ? 'Nhà mình' : 'Nhà thuê', 0, -262); g.restore();
+  g.save(); g.translate(x, y); g.scale(s, s); g.font = '900 13px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillStyle = lv >= 4 ? '#a3332a' : '#5a4a32'; g.fillText(lv >= 4 ? 'Nhà mình' : 'Nhà thuê', 0, -262); g.restore();
 }
 const _c4DrawShopLv0 = c4DrawShopLv;
 let C4_HOUSE_SKIP = false;                       // set by the market while it draws a stall whose house was already drawn behind the sellers (cho.js)

@@ -104,7 +104,7 @@ function p4TownFarArt() {
       a.fk('dark', smooth([[-40, 0], [-40, -90], [-30, -112], [0, -122], [30, -112], [40, -90], [40, 0]]), 2.2);
       p4TileRoof(a, -150, 150, -214, -150, 26, 'dark');
       p4TileRoof(a, -96, 96, -262, -214, 16, 'dark');
-      a.fk('red', rect(-62, -204, 124, 28), 2); a.text('HUYỆN ĐƯỜNG', 0, -190, 14, 'yellow', '"Playfair Display", serif', 'color', '900');
+      a.fk('red', rect(-62, -204, 124, 28), 2); a.text('HUYỆN ĐƯỜNG', 0, -190, 14, 'yellow', '"Be Vietnam Pro", sans-serif', 'color', '900');
       a.fk('dark', rect(150, -330, 6, 330), 1.6); a.fk('yellow', smooth([[156, -328], [192, -318], [182, -308], [194, -298], [156, -294]]), 1.8);
     }),
     tower: part([-70, -330, 70, 6], a => {
@@ -300,7 +300,7 @@ const p4TownGate = () => P4_TOWN_GATE || (P4_TOWN_GATE = part([-160, -360, 160, 
   p4TileRoof(a, -128, 128, -322, -280, 24, 'dark');
   p4TileRoof(a, -70, 70, -350, -322, 14, 'dark');
   a.fk('red', rect(-86, -270, 172, 50), 2.2);                              // tall enough for the accents (owner: the acute stuck out)
-  a.text('HẢI PHỐ', 0, -242, 23, 'yellow', '"Playfair Display", serif', 'color', '900');
+  a.text('HẢI PHỐ', 0, -242, 23, 'yellow', '"Be Vietnam Pro", sans-serif', 'color', '900');
 }));
 
 // the lanterns under a house's eave, drawn live so they sway a little, hung only either side of the sign board (owner: they hid it)
@@ -327,8 +327,8 @@ function p4TownFront(g, hx, hy, s, v, label) {
   const R = label !== 'home' ? p4ShopAt(hx) : null, fine = R ? R.sign : label === 'home' && SAVE4B.house && SAVE4B.sign;
   const txt = R ? R.name : p4TownSign(label);
   if (fine) p4FineBoard(g, hx, hy, s, txt);
-  else if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    let fs = 12; while (fs > 6 && g.measureText(txt).width > 84) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134); g.restore(); }
+  else if (txt) { g.save(); g.translate(hx, hy); g.scale(s, s); g.fillStyle = '#f2c640'; g.font = '900 12px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    let fs = 12; while (fs > 6 && g.measureText(txt).width > 84) { fs--; g.font = '900 ' + fs + 'px "Be Vietnam Pro", sans-serif'; } g.fillText(txt, 0, -134); g.restore(); }
   const lamp = p4IsLamp(txt) && label !== 'home';
   if (txt && txt !== 'CHO THUÊ' && txt !== 'NHÀ BÁN') p4TownInterior(g, hx, hy, s, v, R ? R.food : txt, label === 'home' ? 'betel' : lamp ? 'lamp' : null);   // the shop is open: its goods show inside (owner)
   if (lamp) P4.glowW = .45; p4TownLanterns(g, hx, hy, s, v, lamp); P4.glowW = 0;
@@ -355,7 +355,7 @@ function p4TownCounter(g, x, ware, full = false) {
   g.strokeStyle = 'rgba(42,34,29,.45)'; g.lineWidth = 1; g.beginPath(); for (const dx of [-30, 0, 30]) { g.moveTo(dx, -32); g.lineTo(dx, -2); } g.stroke();
   if (open) { g.strokeStyle = INK; g.lineWidth = 1.6; const col = ware === 'trau' ? '#2f6a4c' : '#e8d8a8';
     for (const dx of [-38, 0, 38]) { g.fillStyle = '#5b2f1f'; g.beginPath(); g.ellipse(dx, -42, 16, 5, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = col; g.beginPath(); g.ellipse(dx, -47, 12, 7, 0, Math.PI, 0); g.fill(); g.stroke(); } }
-  else if (P4.phase === 'open') { g.fillStyle = '#a3332a'; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.fillText('Hết hàng', 0, -52); }
+  else if (P4.phase === 'open') { g.fillStyle = '#a3332a'; g.font = '900 15px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillText('Hết hàng', 0, -52); }
   g.restore();
 }
 
@@ -426,7 +426,7 @@ const p4HoiQuanArt = () => P4_HQ_ART || (P4_HQ_ART = part([-240, -400, 240, 6], 
   a.fk('red', circ(0, -58, 3), 1);
   for (const x of [-140, 140]) { a.fk('dark', rect(x - 28, -110, 56, 110), 2); a.fk('red', rect(x - 24, -106, 48, 102), 1.6); a.fk('yellow', circ(x - 10, -58, 3), .8); a.fk('yellow', circ(x + 10, -58, 3), .8); }
   for (const x of [-196, -86, 86, 196]) a.fk('red', rect(x - 10, -170, 20, 170), 2);
-  a.fk('red', rect(-90, -166, 180, 28), 2.2); a.text('HỘI QUÁN', 0, -152, 17, 'yellow', '"Playfair Display", serif', 'color', '900');
+  a.fk('red', rect(-90, -166, 180, 28), 2.2); a.text('HỘI QUÁN', 0, -152, 17, 'yellow', '"Be Vietnam Pro", sans-serif', 'color', '900');
   p4TileRoof(a, -224, 224, -228, -170, 22, 'green');                         // three tiers of green tiles, the middle one highest
   p4TileRoof(a, -150, 150, -290, -238, 18, 'green');
   p4TileRoof(a, -80, 80, -346, -298, 14, 'green');

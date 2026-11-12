@@ -152,8 +152,8 @@ function p4FineBoard(g, hx, hy, s, txt) {
   g.fillStyle = '#8f1f18'; g.strokeStyle = '#e2b43c'; g.lineWidth = 3; g.beginPath(); g.rect(-52, -150, 104, 30); g.fill(); g.stroke();
   g.strokeStyle = '#f2c640'; g.lineWidth = 1; g.strokeRect(-47, -146, 94, 22);
   g.fillStyle = '#e2b43c'; for (const x of [-52, 52]) { g.beginPath(); g.arc(x, -135, 4, 0, 6.283); g.fill(); }
-  g.fillStyle = '#ffd86a'; g.textAlign = 'center'; g.textBaseline = 'middle'; let fs = 13; g.font = '900 13px "Playfair Display", serif';
-  while (fs > 6 && g.measureText(txt).width > 88) { fs--; g.font = '900 ' + fs + 'px "Playfair Display", serif'; } g.fillText(txt, 0, -134);
+  g.fillStyle = '#ffd86a'; g.textAlign = 'center'; g.textBaseline = 'middle'; let fs = 13; g.font = '900 13px "Be Vietnam Pro", sans-serif';
+  while (fs > 6 && g.measureText(txt).width > 88) { fs--; g.font = '900 ' + fs + 'px "Be Vietnam Pro", sans-serif'; } g.fillText(txt, 0, -134);
   g.restore();
 }
 {

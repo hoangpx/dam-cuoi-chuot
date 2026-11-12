@@ -62,7 +62,7 @@ function c4TetBanner(g, x, y, s) {     // a red banner under a gate, gold edged
   g.beginPath(); g.moveTo(-w / 2 + 4 * s, -h / 2 - 22 * s); g.lineTo(-w / 2 + 6 * s, -h / 2); g.moveTo(w / 2 - 4 * s, -h / 2 - 22 * s); g.lineTo(w / 2 - 6 * s, -h / 2); g.stroke();   // hung on cords from the board above
   g.fillStyle = '#b8352b'; g.fillRect(-w / 2, -h / 2, w, h); g.strokeRect(-w / 2, -h / 2, w, h);
   g.strokeStyle = '#e8c24a'; g.lineWidth = 1.2; g.strokeRect(-w / 2 + 3 * s, -h / 2 + 3 * s, w - 6 * s, h - 6 * s);
-  g.fillStyle = '#f6d36a'; g.font = `900 ${15 * s}px "Playfair Display", serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('CHÚC MỪNG NĂM MỚI', 0, 1 * s);
+  g.fillStyle = '#f6d36a'; g.font = `900 ${15 * s}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('CHÚC MỪNG NĂM MỚI', 0, 1 * s);
   g.restore();
 }
 

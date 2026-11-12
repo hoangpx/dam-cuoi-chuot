@@ -97,7 +97,7 @@ function c4VisitItems(items, g, vis) {
     if (!v.visit || !vis(v.x, 60)) continue;
     const s = c4S(v.z) * C4_CROWD, y = c4Y(v.z) - C4_TALL.mouse * s * .9 - 10 - Math.abs(Math.sin(C4.t * 3)) * 4;   // just over the head (owner)
     items.push({ z: v.z + .001, f: () => { g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.arc(v.x, y, 13, 0, 6.283); g.fill(); g.stroke();
-      g.fillStyle = '#f2ecde'; g.font = '900 18px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', v.x, y + 1); } });
+      g.fillStyle = '#f2ecde'; g.font = '900 18px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', v.x, y + 1); } });
   }
 }
 // tapped: open their sheet (no timer: the player chose to listen)

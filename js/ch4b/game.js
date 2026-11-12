@@ -206,7 +206,7 @@ function renderP4() {
   p4TownBridgeItems(items, g, vis);
   if (P4.talk) p4TalkItems(items, g);
   items.sort((a, b) => a.z - b.z); for (const it of items) it.f();
-  for (const f of P4.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 26px "Playfair Display", serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = '#2f6a4c'; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
+  for (const f of P4.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = '900 26px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = '#2f6a4c'; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
   p4TownNight(g);
   // speech bubbles over the speakers
   bubbles.sort((a, b) => b.pri - a.pri);

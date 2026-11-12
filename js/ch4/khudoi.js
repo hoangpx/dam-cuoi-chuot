@@ -34,7 +34,7 @@ function c4DoiItems(items, g, vis) {
   C4_DOI_X.forEach((x, i) => { if (!vis(x, 220)) return;
     items.push({ z: 2.05, f: () => {
       if (doi[i]) c4DoiDrawAt(g, x, y, s, doi[i], C4.mins);
-      else { g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = INK; g.lineWidth = 2; g.fillStyle = '#7a4a22'; g.fillRect(-3, -46, 6, 46); g.strokeRect(-3, -46, 6, 46); g.fillStyle = '#f2d27a'; g.fillRect(-34, -70, 68, 26); g.strokeRect(-34, -70, 68, 26); g.fillStyle = INK; g.font = '900 13px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Đất trống', 0, -57); g.restore(); } } });
+      else { g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = INK; g.lineWidth = 2; g.fillStyle = '#7a4a22'; g.fillRect(-3, -46, 6, 46); g.strokeRect(-3, -46, 6, 46); g.fillStyle = '#f2d27a'; g.fillRect(-34, -70, 68, 26); g.strokeRect(-34, -70, 68, 26); g.fillStyle = INK; g.font = '900 13px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Đất trống', 0, -57); g.restore(); } } });
   });
 }
 const c4DoiTap = (x, y) => {

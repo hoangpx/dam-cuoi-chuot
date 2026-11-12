@@ -161,7 +161,7 @@ function c4StreetItems(items, g, vis) {
     const F = C4.fight, y = c4Y(F.z), s = c4S(F.z);
     items.push({ z: F.z + .01, f: () => { g.save(); g.globalAlpha = .55; g.fillStyle = '#c3b596';
       for (let i = 0; i < 5; i++) { const a = F.t * 3 + i * 1.3; g.beginPath(); g.arc(F.x + Math.cos(a) * 30 * s, y - (40 + Math.sin(a * 1.3) * 16) * s, (14 + (i % 2) * 6) * s, 0, 6.283); g.fill(); }
-      g.globalAlpha = 1; g.font = `900 ${Math.round(22 * s)}px "Playfair Display", serif`; g.textAlign = 'center'; g.fillStyle = '#a3332a';
+      g.globalAlpha = 1; g.font = `900 ${Math.round(22 * s)}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.fillStyle = '#a3332a';
       g.fillText(['!', '✱', '!!', '✱'][Math.floor(F.t * 4) % 4], F.x + Math.sin(F.t * 7) * 12 * s, y - 170 * s); g.restore(); } });
   }
   // children's games on the grass in front of the lane

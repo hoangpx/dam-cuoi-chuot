@@ -35,7 +35,7 @@ function c4Art() {
     a.fk('brown', c4Poly([[-178, -236], [-152, -264], [-40, -278], [40, -278], [152, -264], [178, -236], [150, -226], [0, -232], [-150, -226]]), 2.4);
     for (let i = 0; i < 12; i++) a.key(smooth([[-150 + i * 27, -266], [-158 + i * 29, -228]], false), 1);
     a.fk('yellow', c4Rect(-70, -214, 70, -184), 2);
-    a.text('TRẦU CAU', 0, -199, 19, 'dark', '"Playfair Display", serif', 'ink', 900);
+    a.text('TRẦU CAU', 0, -199, 19, 'dark', '"Be Vietnam Pro", sans-serif', 'ink', 900);
     a.fk('red', c4Rect(-130, -76, 130, -64), 1.8);
     a.fk('brown', c4Poly([[-126, -64], [126, -64], [122, 0], [-122, 0]]), 1.8);
     for (let i = -2; i <= 2; i++) a.key(lines([[i * 48, -60, i * 48, -4]]), 1);
@@ -47,7 +47,7 @@ function c4Art() {
     for (let i = 0; i < 8; i++) a.key(smooth([[-96 + i * 27, -296], [-104 + i * 29, -264]], false), 1);
     a.fk('red', circ(0, -312, 9), 1.6);
     a.fk('white', c4Rect(-80, -244, 80, -204), 2);
-    a.text('CHỢ LÀNG', 0, -224, 24, 'dark', '"Playfair Display", serif', 'ink', 900);
+    a.text('CHỢ LÀNG', 0, -224, 24, 'dark', '"Be Vietnam Pro", sans-serif', 'ink', 900);
   });
   const scaffold = part([-160, -270, 160, 4], a => {
     const p = []; for (const x of [-140, -60, 20, 100, 150]) p.push([x, 0, x + 4, -250]); for (const y of [-60, -130, -200]) p.push([-150, y, 156, y - 6]);
@@ -461,7 +461,7 @@ function c4Critter(g, w, x, y, s) {
 // speech bubbles: the words decide the size (measured in the real font, iPhone fonts run wider), dots towards the speaker
 const C4_BUB = new Map(), C4_MEASURE = document.createElement('canvas').getContext('2d');
 function c4Wrap(text, size, maxW) {
-  C4_MEASURE.font = `900 ${size}px "Playfair Display", serif`;
+  C4_MEASURE.font = `900 ${size}px "Be Vietnam Pro", sans-serif`;
   const out = []; let cur = '';
   for (const word of text.split(' ')) { const t = cur ? cur + ' ' + word : word; if (cur && C4_MEASURE.measureText(t).width > maxW) { out.push(cur); cur = word; } else cur = t; }
   if (cur) out.push(cur);
@@ -473,9 +473,9 @@ const C4_BUB_RES = Math.max(RES, DPR * 1.3);
 function c4Bubble(text, side = 0, size = 16, maxW = 190) {
   const key = text + '|' + side + '|' + size + '|' + maxW; if (C4_BUB.has(key)) return C4_BUB.get(key);
   const lines = Array.isArray(text) ? text : c4Wrap(text, size, maxW);
-  C4_MEASURE.font = `900 ${size}px "Playfair Display", serif`;
+  C4_MEASURE.font = `900 ${size}px "Be Vietnam Pro", sans-serif`;
   const tw = Math.max(...lines.map(l => C4_MEASURE.measureText(l).width)), lh = size * 1.32;
-  const w = tw / 2 + 14 + size * .25, h = lines.length * lh / 2 + 8 + size * .2, disp = '"Playfair Display", serif';
+  const w = tw / 2 + 14 + size * .25, h = lines.length * lh / 2 + 8 + size * .2, disp = '"Be Vietnam Pro", sans-serif';
   const p = part([-w - 8, -h - 8, w + 8, h + 32], a => {   // printed at C4_BUB_RES: the words stay sharp on the screen (owner 2026-11-11: "chữ trong bubble cứ bị mờ mờ")
     const shape = smooth([[-w + 4, -h + 4], [0, -h], [w - 3, -h + 5], [w, 0], [w - 4, h - 4], [0, h], [-w + 3, h - 5], [-w, 0]]);
     a.underFill(shape, '#f6f1e4'); a.fk('white', shape, 2.2);                 // a solid paper under the print (owner: easier to read)

@@ -90,7 +90,7 @@ function c4RivalItems(items, g, head, vis) {
   items.push({ z, f: () => { dp(g, A.ganh, C4_RIVAL_X + 20, c4Y(z), 0, s, s); c4Mouse(g, R0.M, C4_RIVAL_X - 70, 1, C4.t * 2, false, R0.say ? -.3 - Math.abs(Math.sin(C4.t * 5)) * .4 : null, null, s, c4Y(z), 3.3);
     const bx = C4_RIVAL_X + 20, by = c4Y(z) - 128 * s;                      // a red board so it reads as the rival
     g.fillStyle = INK; g.fillRect(bx - 2, by, 4, 40 * s); g.fillStyle = '#a3332a'; g.strokeStyle = INK; g.lineWidth = 2; g.fillRect(bx - 44, by - 26, 88, 26); g.strokeRect(bx - 44, by - 26, 88, 26);
-    g.fillStyle = '#f2ecde'; g.font = '900 15px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TRẦU RẺ', bx, by - 12); g.textBaseline = 'alphabetic'; } });
+    g.fillStyle = '#f2ecde'; g.font = '900 15px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TRẦU RẺ', bx, by - 12); g.textBaseline = 'alphabetic'; } });
   head(C4_RIVAL_X - 70, z, 168 * .9, R0, 1);
 }
 function c4RivalTap(x, y) {

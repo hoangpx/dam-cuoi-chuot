@@ -176,7 +176,7 @@ function p4TemRender() {
   P4T.boards.forEach((b, i) => { if (!(P4T.drag && P4T.drag.moved && P4T.drag.i === i)) p4TemBoard(g, L, b, i); });
   P4_TEM_ING.forEach((ing, i) => p4TemIng(g, L, ing, i));
   if (P4T.drag && P4T.drag.moved) p4TemBoard(g, L, P4T.boards[P4T.drag.i], P4T.drag.i);
-  for (const f of P4T.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = `900 ${26 * u}px "Playfair Display", serif`; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = f.ok ? '#2f6a4c' : '#a3332a'; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
+  for (const f of P4T.fx) { const k = f.t / 1.2; g.save(); g.globalAlpha = 1 - k * k; g.font = `900 ${26 * u}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#f2ecde'; g.fillStyle = f.ok ? '#2f6a4c' : '#a3332a'; g.strokeText(f.s, f.x, f.y - k * 40); g.fillText(f.s, f.x, f.y - k * 40); g.restore(); }
   // the shift's clock and takings
   const left = Math.max(0, Math.ceil(P4_TEM_SHIFT - P4T.t));
   $('#p4temTime').textContent = `Còn ${left} giây`; $('#p4temMoney').textContent = `Thu ${c4Money(P4T.earned)} · trầu ${SAVE4B.stock}`;
