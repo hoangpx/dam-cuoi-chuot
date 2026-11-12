@@ -72,7 +72,7 @@ function c4WkOpen(id, keepChat) {
   const log = (q.log || []).slice().reverse().map(e => `<li><span>Ngày ${e.d}</span> ${c4Esc4(e.t)}</li>`).join('') || '<li>Chưa có gì.</li>';
   $('#c4wkB').innerHTML = `<div class="wkHead"><img src="${c4WkFace(W)}" alt=""><div><h3>${c4Esc4(c4Cap1(W.name))}</h3><p>${b.age} tuổi · quê ${b.que}</p><p>${c4Esc4(W.where)}</p><p>Tính: ${c4WkKieuWord(b.kieu)}</p></div></div>`
     + `<p class="wkMood">Tỏ ra: <b>${c4GwWord(c4Gw(q))}</b>${bad.length ? ` · <span class="bad">${bad.join(' · ')}</span>` : ''}</p>`
-    + `<div class="tbars">${bar('nhanh nhẹn', W.tr.sp)}${bar('nhiệt tình', W.tr.wm)}${bar('trung thực', W.tr.ho)}${W.rel !== undefined ? bar('quan hệ', W.rel / 100) : ''}</div>`
+    + `<div class="tbars">${bar('nhanh nhẹn', W.tr.sp)}${bar('nhiệt tình', W.tr.wm)}${bar('trung thực', W.tr.ho)}${bar('quan hệ', c4WkRel(W) / 100)}</div>`
     + `<h4>Tiền công</h4><p>Công <b>${m(W.wage)}</b> một ngày, trả mỗi tối.</p>${wageBtns}${c4BonusRow(q, W.wage, id)}`
     + `<h4>Trò chuyện</h4><div class="wkChat">${chat || '<p class="sm">Hỏi han người làm vài câu.</p>'}</div><div class="row wkSay"><input type="text" maxlength="120" placeholder="Nói gì với ${c4Esc4(c4Cap1(W.name))}…" data-wkin="1"${C4WK.busy ? ' disabled' : ''}><button class="btn" data-wksend="1"${C4WK.busy ? ' disabled' : ''}>${C4WK.busy ? '…' : 'Nói'}</button></div>`
     + `<details class="wkLog"><summary>Lịch sử</summary><ul>${log}</ul></details>`
@@ -184,7 +184,7 @@ function c4WkWish(W, band) {
 }
 
 /* ---------- the history: pay each evening, sick days, asks; answers; bonuses ---------- */
-{ const g0 = c4BonusGive; c4BonusGive = function (id, amt) { const W = c4BonusWho(id), bd = W && W.q.bd, m0 = SAVE4.money; g0.apply(this, arguments); if (W && W.q.bd === SAVE4.day && bd !== SAVE4.day) { c4WkHintMet(W.q, (m0 - SAVE4.money) / Math.max(1, W.wage));  c4WkLog(W.q, `Được thưởng ${c4Money(Math.round(m0 - SAVE4.money))}.`); persist4(); if (typeof p4Persist === 'function' && SAVE4B && SAVE4B.house) p4Persist(); } if (C4WK.id === id && !$('#c4wk').hidden) c4WkOpen(id, true); }; }
+{ const g0 = c4BonusGive; c4BonusGive = function (id, amt) { const W = c4BonusWho(id), bd = W && W.q.bd, m0 = SAVE4.money; g0.apply(this, arguments); if (W && W.q.bd === SAVE4.day && bd !== SAVE4.day) { c4WkHintMet(W.q, (m0 - SAVE4.money) / Math.max(1, W.wage)); if (id[0] !== 'v') W.q.rel = Math.min(100, (W.q.rel ?? 50) + Math.round(10 * Math.pow(Math.min(10, (m0 - SAVE4.money) / Math.max(1, W.wage)), .6)));  c4WkLog(W.q, `Được thưởng ${c4Money(Math.round(m0 - SAVE4.money))}.`); persist4(); if (typeof p4Persist === 'function' && SAVE4B && SAVE4B.house) p4Persist(); } if (C4WK.id === id && !$('#c4wk').hidden) c4WkOpen(id, true); }; }
 { const a0 = c4WageAnswer; c4WageAnswer = function (yes) { const a = C4_WAGE_CUR, p = a && a.h.wq && a.h.wq.pend; if (p && yes) c4WkHintMet(a.h.wq, 1); if (p) c4WkLog(a.h.wq, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
 { const a0 = p4WageAnswer; p4WageAnswer = function (yes) { const a = P4_WAGE_CUR, q = a && (a.kind === 'shop' ? a.R.wq : a.h.wq), p = q && q.pend; if (p && yes) c4WkHintMet(q, 1); if (p) c4WkLog(q, yes ? `Xin tăng công, chủ đồng ý lên ${c4Money(p.to)}.` : 'Xin tăng công, chủ không đồng ý.'); return a0.apply(this, arguments); }; }
 { const pay0 = c4PayHands;
@@ -198,7 +198,7 @@ function c4WkWish(W, band) {
       if (here && !x.nowage && !h.unpaid) c4WkLog(q, `Nhận công ${c4Money(x.wage)}.`);
       else if (here && h.unpaid) c4WkLog(q, 'Chưa được trả công.');
       if (here && q.pend && q.pend !== x.pend && !q.pend.no) c4WkLog(q, `Xin tăng công từ ${c4Money(q.pend.from)} lên ${c4Money(q.pend.to)}.`);
-      if (here) c4WkMoodEvening(q, x.wage, h.fair || 0, h.name);
+      if (here) { c4WkMoodEvening(q, x.wage, h.fair || 0, h.name); c4WkGrow(q, h, 'sp', 'ho', h.rel, false); }
     }
     return r;
   }; }
@@ -215,6 +215,7 @@ function c4WkWish(W, band) {
       if (x.q.pend && x.q.pend !== x.pend && !x.q.pend.no) c4WkLog(x.q, `Xin tăng công từ ${c4Money(x.q.pend.from)} lên ${c4Money(x.q.pend.to)}.`);
       let fair = 0; try { fair = x.betel ? p4HandFair(x.h) : x.h ? p4HelpFair(x.R) : p4ShopFair(x.R); } catch (e) {}
       c4WkMoodEvening(x.q, x.wage, fair, x.h ? x.h.name : p4Keeper(x.R));
+      if (x.h) c4WkGrow(x.q, x.h, 'sp', 'ho', x.q.rel ?? 50, true); else c4WkGrow(x.q, x.R, 'ksp', 'kho', x.q.rel ?? 50, true);
     }
     return r;
   }; }
@@ -258,6 +259,9 @@ async function c4WkSend() {
     const up = { lich_su: .025, binh_thuong: .01 }[out.tone] || 0;          // talking on the subject warms them little by little (owner 2026-11-12: "trò chuyện thì tăng dần hảo cảm")
     if (up && q.chatG < .08) { const d = Math.min(up, .08 - q.chatG); q.chatG += d; q.gw = Math.min(1, c4Gw(q) + d); }
     else if (out.tone === 'ho') q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .05);
+    { const dr = { lich_su: 2, binh_thuong: 1, ho: -3 }[out.tone] || 0;         // the relationship follows the talk too (at most +6 a day)
+      if (q.relD !== day) { q.relD = day; q.relG = 0; }
+      if (dr < 0) c4WkRelAdd(W2, dr); else if (dr && q.relG < 6) { const d = Math.min(dr, 6 - q.relG); q.relG += d; c4WkRelAdd(W2, d); } }
     C4WK.left = out.left;
   } else {
     W2.q.chat = (W2.q.chat || []).slice(0, -1);                              // the unanswered line is not sent again as history
@@ -300,4 +304,19 @@ function c4WkMoodEvening(q, wage, fair, name) {
     const under = fair && wage < fair * (1 - .25 * c4Gw(q)) - 4, noGift = day - (q.bl || -99) >= 7;
     if (Math.random() < .07 + (under ? .15 : 0) + (noGift ? .1 : 0)) q.hint = { t: C4WK_KHO[(Math.random() * C4WK_KHO.length) | 0], day: day + 1, until: day + 2 };
   }
+}
+
+/* ---------- relationship, honesty and speed over time (owner 2026-11-12: "được thường xuyên trò chuyện và thưởng thì quan hệ tăng, quan hệ tăng thì
+   dần dần trung thực cũng lên; nhanh nhẹn thì càng làm lâu càng tăng dần"). HIDDEN: the "quan hệ" bar is the village hand's h.rel (as before) and,
+   in the town, q.rel (0–100, from 50). Chat on the subject +1, kind +2 (at most +6 a day), rude −3; a bonus +10 × days'-pay^.6 (village: thuong.js);
+   three evenings or more without a word −1 an evening. Each evening worked: honesty +.01 at quan hệ ≥ 70, +.02 at ≥ 85, −.01 at ≤ 30; speed +.01
+   in the town (the village's own c4Drift already adds .02). ---------- */
+const c4WkRel = W => W.place === 'lang' ? (W.h.rel ?? 60) : (W.q.rel ?? 50);
+function c4WkRelAdd(W, d) { if (W.place === 'lang') { if (typeof c4HandRel === 'function') c4HandRel(W.h, d); } else W.q.rel = Math.max(0, Math.min(100, Math.round((W.q.rel ?? 50) + d))); }
+function c4WkGrow(q, o, spK, hoK, rel, town) {
+  if (!o) return;
+  const cl = v => Math.max(0, Math.min(1, v));
+  if (town) { o[spK] = cl((o[spK] ?? .5) + .01); if (q.rel === undefined) q.rel = 50; if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 3) q.rel = Math.max(0, q.rel - 1); }
+  else if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 3 && typeof c4HandRel === 'function') c4HandRel(o, -1);
+  const r = rel ?? 50; o[hoK] = cl((o[hoK] ?? .5) + (r >= 85 ? .02 : r >= 70 ? .01 : r <= 30 ? -.01 : 0));
 }
