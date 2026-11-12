@@ -141,7 +141,7 @@ const c11Lamp = () => c11Count('den_dau') > 0;
       const open = C11_D4.some(([dx, dy]) => c11Kind(x + dx, y + dy) !== 'X') || [[1, 1], [-1, 1], [1, -1], [-1, -1]].some(([dx, dy]) => c11Kind(x + dx, y + dy) !== 'X');
       if (open) E.push({ y: y + .95, d: () => c11Boulder(g, sx(x + .5), sy(y + .98), T, c11Hash(x, y, 61)) });
     }
-    for (const [x, y] of c11Veins()) if (!SAVE11.dug['hang:' + x + ',' + y]) E.push({ y: y + .2, d: () => {
+    if (C11.area === 'hang') for (const [x, y] of c11Veins()) if (!SAVE11.dug['hang:' + x + ',' + y]) E.push({ y: y + .2, d: () => {
       for (let i = 0; i < 5; i++) { const a = c11Hash(x, y, i) * 6.283, d = c11Hash(x, i, y) * T * .3, tw = .5 + .5 * Math.sin(C11.t * 4 + i * 1.7 + x);
         g.fillStyle = `rgba(250,220,120,${.35 + tw * .65})`; const X = sx(x + .5) + Math.cos(a) * d, Y = sy(y + .6) + Math.sin(a) * d * .5, r = 1.5 + tw * 2.2;
         g.beginPath(); g.moveTo(X, Y - r * 1.8); g.lineTo(X + r * .5, Y); g.lineTo(X, Y + r * 1.8); g.lineTo(X - r * .5, Y); g.closePath(); g.fill(); }

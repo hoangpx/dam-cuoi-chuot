@@ -30,7 +30,7 @@ function c11WildSpawn() {
   const L = C11_WILD_AT[C11.area] || [], dead = c11San().dead[C11.area] || [];
   C11.wild = [];
   L.forEach(([kind, x, y, opt], i) => {
-    if (dead.includes(i)) return; const K = C11_WILD[kind]; if (!K) return;
+    if (dead.includes(i)) return; const K = C11_WILD[kind]; if (!K) return; if (opt && opt.when && !opt.when()) return;
     let px = x + .5, py = y + .6; if (K.ai !== 'swoop' && !c11WildFree(px, py)) { let best = null; for (let yy = 1; yy < C11_H - 1; yy++) for (let xx = 1; xx < C11_W - 1; xx++) if (c11WildFree(xx + .5, yy + .6)) { const d = Math.hypot(xx - x, yy - y); if (!best || d < best.d) best = { x: xx + .5, y: yy + .6, d }; } if (best) { px = best.x; py = best.y; } }
     C11.wild.push(Object.assign({ i, kind, x: px, y: py, hx: px, hy: py, hp: K.hp, face: 1, ph: Math.random() * 6, t: Math.random() * 3, cd: 0, stun: 0, mode: 'idle', tx: px, ty: py }, opt || {}));
   });
@@ -46,7 +46,7 @@ function c11WildDie(w) {
   w.dead = .6; const tx = Math.floor(w.x), ty = Math.floor(w.y);
   for (const [id, ch, n] of K.drops || []) if (Math.random() < ch) c11Drop(id, n, tx, ty);
   if (typeof c11Xp === 'function') c11Xp(K.xp || 5); c11Dots(tx, ty, '#e8d8b0', 12, 1.6); c11Msg(`Hạ được ${K.name.toLowerCase()}`, '#2f6a4c');
-  if (w.onDead) w.onDead(w); persist11();
+  if (K.onDead) K.onDead(w); if (w.onDead) w.onDead(w); persist11();
 }
 function c11Strike(w) {
   const G = C11, W = c11Weapon(), K = C11_WILD[w.kind];
@@ -107,7 +107,7 @@ const C11_WILD_DRAW = {
       const dx = G.px - w.x, dy = G.py - w.y, d = Math.hypot(dx, dy) || .001, inW = G.inW;
       const go = (tx, ty, sp, fly) => { const ex = tx - w.x, ey = ty - w.y, l = Math.hypot(ex, ey); if (l < .05) return true; const st = Math.min(l, sp * dt), nx = w.x + ex / l * st, ny = w.y + ey / l * st; let ok = false;
         if (fly || c11WildFree(nx, w.y)) { w.x = nx; ok = true; } if (fly || c11WildFree(w.x, ny)) { w.y = ny; ok = true; } if (Math.abs(ex) > .05) w.face = ex > 0 ? 1 : -1; w.mov = ok; return !ok; };
-      const hit = () => { if (w.cd > 0 || inW && K.ai !== 'swoop') return; w.cd = K.cdHit || 1.5; c11HurtMe(K.dmg, w.x, w.y, K.why); if (K.poison) { G.poison = K.poison; c11Msg('Bị rắn cắn! Nọc ngấm dần, ăn gì đó cho lại máu', '#a3332a'); } };
+      const hit = () => { if (w.cd > 0 || inW && K.ai !== 'swoop') return; w.cd = K.cdHit || 1.5; c11HurtMe(K.dmg, w.x, w.y, K.why); if (K.onHit) K.onHit(w); if (K.poison) { G.poison = K.poison; c11Msg('Bị rắn cắn! Nọc ngấm dần, ăn gì đó cho lại máu', '#a3332a'); } };
       if (K.ai === 'bite') {
         if (d < K.see) { w.mode = 'run'; w.face = dx > 0 ? 1 : -1; hit(); }
         else { w.mode = 'idle'; if (w.t <= 0) { w.t = 3 + Math.random() * 5; const a = Math.random() * 6.283; w.tx = w.hx + Math.cos(a) * 1.5; w.ty = w.hy + Math.sin(a) * 1; } go(w.tx, w.ty, K.sp); }
@@ -143,7 +143,7 @@ const C11_WILD_DRAW = {
         const X = sx(w.x), Y = sy(w.y);
         g.save(); if (w.dead !== undefined) g.globalAlpha = Math.max(0, w.dead / .6); if (w.flash > 0 && Math.floor(w.flash * 30) % 2) g.globalAlpha *= .45;
         D(g, X, Y, T, w); g.restore();
-        if (w.hp < K.hp && w.dead === undefined) { const bw = T * (K.bar || .6), by = Y - T * (K.barY || 1.05); g.fillStyle = '#1d1915'; g.fillRect(X - bw / 2 - 1, by - 1, bw + 2, 6); g.fillStyle = '#c8402f'; g.fillRect(X - bw / 2, by, bw * Math.max(0, w.hp / K.hp), 4); }
+        const hpM = w.hpMax || K.hp; if (w.hp < hpM && w.dead === undefined) { const bw = T * (K.bar || .6), by = Y - T * (K.barY || 1.05); g.fillStyle = '#1d1915'; g.fillRect(X - bw / 2 - 1, by - 1, bw + 2, 6); g.fillStyle = '#c8402f'; g.fillRect(X - bw / 2, by, bw * Math.max(0, w.hp / hpM), 4); }
       } });
     }
   };

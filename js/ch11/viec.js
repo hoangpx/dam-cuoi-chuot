@@ -127,7 +127,7 @@ function c11StepText(s) {
   if (s.t === 'guard') return `Sau 21:00 ra ${c11AreaName(s.a)} nấp canh trộm quanh nhà ${nm}, bắt lấy nó`;
   return `Gặp ${nm}`;
 }
-const c11StepReady = s => s.t === 'talk' || (s.t === 'bring' && c11Count(s.item) >= s.n) || (s.t === 'carry' && c11Count(s.item) >= 1) || (s.t === 'pay' && SAVE11.money >= s.m);
+const c11StepReady = s => s.t === 'talk' || (s.t === 'hunt' && typeof c11HuntN === 'function' && c11HuntN(s) >= s.n) || (s.t === 'bring' && c11Count(s.item) >= s.n) || (s.t === 'carry' && c11Count(s.item) >= 1) || (s.t === 'pay' && SAVE11.money >= s.m);
 /* the next request a person can make: enough hearts, not done, nothing of theirs running */
 function c11Offer(p) {
   const Q = c11Q(); if (Q.act.some(q => q.giver === p.id)) return null;
@@ -198,7 +198,7 @@ function c11Board() {
 }
 function c11OpenBoard() {
   const Q = c11Q(), B = c11Board(), mine = Q.act.filter(q => q.src === 'bang').length;
-  const rows = B.posts.map(b => ({ name: b.title, sub: b.big ? `Hạn: ${b.days} ngày · ${b.steps.map(s => `${s.n} ${c11IName(s.item)}`).join(', ')} cho ${c11P(b.steps[0].who).name}` : `Hạn: hết ngày mai · ${c11StepText(b.steps[0]).replace(/ \(có.*\)/, '')}`, tag: `Nhận việc · thưởng ${c4Money(b.reward.m)}`, ok: true, f: () => {
+  const rows = B.posts.map(b => ({ name: b.title, sub: b.big && b.steps[0].t !== 'bring' ? `Hạn: ${b.days} ngày · ${c11StepText(b.steps[0])}` : b.big ? `Hạn: ${b.days} ngày · ${b.steps.map(s => `${s.n} ${c11IName(s.item)}`).join(', ')} cho ${c11P(b.steps[0].who).name}` : `Hạn: hết ngày mai · ${c11StepText(b.steps[0]).replace(/ \(có.*\)/, '')}`, tag: `Nhận việc · thưởng ${c4Money(b.reward.m)}`, ok: true, f: () => {
     if (Q.act.filter(q => q.src === 'bang').length >= 4) { C11.menu.note = 'Đang nhận bốn việc của đình rồi, làm xong đã'; return; }
     if (b.give && SAVE11.bag.every(Boolean)) { C11.menu.note = 'Túi đầy, không cầm thư được'; return; }
     if (b.give) c11Add(b.give, 1);
