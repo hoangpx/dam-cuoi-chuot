@@ -621,3 +621,47 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .card4 .byshop .bs.p details{grid-column:1 / -1;font-size:12px}
 .card4 .byshop .bs.p .gain,.card4 .byshop .bs.p .bad{white-space:nowrap}
 .card4 .byshop .bar.neg i{background:#a3332a}
+/* ===== giao diện mới (ch4-giao-dien, owner 2026-11-12) ===== */
+.coinFly{position:fixed;left:0;top:0;z-index:40;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a0,#e0b43a 55%,#a8781c);border:1.5px solid #5a3d0c;pointer-events:none;box-sizing:border-box}
+.coinFly::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:#5a3d0c;opacity:.75}
+#c4Money::before,#p4Money::before{content:'';display:inline-block;width:20px;height:16px;margin:0 6px -3px 0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M4 8q8-9 16 0' fill='none' stroke='%231d1915' stroke-width='1.8'/%3E%3Ccircle cx='9' cy='7' r='3' fill='%23e0b43a' stroke='%231d1915' stroke-width='1.2'/%3E%3Ccircle cx='14' cy='6' r='3' fill='%23e0b43a' stroke='%231d1915' stroke-width='1.2'/%3E%3Cpath d='M2 8h20l-2.5 10h-15z' fill='%23c9922b' stroke='%231d1915' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M4 12h16M5 15h14' stroke='%231d1915' stroke-width='.9'/%3E%3C/svg%3E") no-repeat center/contain}
+#c4Money.gotCoin,#p4Money.gotCoin{animation:purseBump .35s ease-out}
+@keyframes purseBump{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.purseDelta{position:fixed;z-index:41;transform:translateX(-50%);font:700 14px var(--body);padding:1px 7px;border-radius:9px;border:1.5px solid var(--ink);pointer-events:none;animation:deltaUp 1.5s ease-out forwards}
+.purseDelta.up{background:#e3ecd0;color:#2f6a3a}.purseDelta.dn{background:#f2d6cf;color:#a3332a}
+@keyframes deltaUp{0%{opacity:0;margin-top:-4px}15%{opacity:1}80%{opacity:1}100%{opacity:0;margin-top:14px}}
+/* one main button a sheet: the others are smaller and quieter */
+.c4sheet .card4 .btn.alt{font-size:15px;padding:6px 14px;box-shadow:2px 2px 0 var(--ink);border-width:1.5px}
+/* the stall sheet's folding sections */
+.card4 details.sec{border:1.5px solid rgba(29,25,21,.55);border-radius:8px;background:#fbf6ea;margin:6px 0;text-align:left;overflow:hidden}
+.card4 details.sec>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer}
+.card4 details.sec>summary::-webkit-details-marker{display:none}
+.card4 details.sec>summary::after{content:'›';margin-left:8px;font-size:20px;transition:transform .15s;opacity:.6}
+.card4 details.sec[open]>summary::after{transform:rotate(90deg)}
+.card4 details.sec .si{width:26px;height:26px;flex:none}.card4 details.sec .si svg{width:100%;height:100%}
+.card4 details.sec>summary b{font-family:var(--display);font-size:15px}
+.card4 details.sec>summary em{font-style:normal;font-size:13px;opacity:.75;margin-left:auto}
+.card4 details.sec>summary em:empty{display:none}
+.card4 details.sec>summary em+*{margin-left:0}
+.card4 details.sec .secB{padding:0 10px 10px;text-align:center}
+.card4 details.sec .secB>h4:first-child{display:none}
+/* the evening's seal */
+.dhRes{position:relative}
+.dhRes .seal{position:absolute;right:10px;top:8px;font-style:normal;font:900 16px var(--display);color:#a3332a;border:2.5px solid #a3332a;border-radius:6px;padding:2px 6px;transform:rotate(-12deg);opacity:.85;animation:stamp .35s cubic-bezier(.3,1.6,.5,1)}
+.dhRes .seal.loss{color:#5a3d0c;border-color:#5a3d0c}
+@keyframes stamp{0%{transform:rotate(-12deg) scale(2.2);opacity:0}100%{transform:rotate(-12deg) scale(1);opacity:.85}}
+/* portraits on the wage asks */
+.askFace{display:block;width:72px;height:72px;border-radius:50%;margin:0 auto 6px}
+/* toasts on a pasted slip of paper */
+body.c4 #toast{background:#f6efdc;color:#1d1915;border:2px solid #1d1915;box-shadow:3px 3px 0 rgba(29,25,21,.35);border-radius:4px;font-family:var(--body)}
+/* the town's sheets by night */
+body.p4night .c4sheet .card4{background:#efe0bd;box-shadow:0 0 0 2px rgba(255,190,90,.25),5px 5px 0 rgba(0,0,0,.45)}
+body.p4night .c4sheet{background:rgba(10,8,20,.5)}
+/* on a phone: the sheet comes up from the bottom, with a handle */
+@media (max-width:640px){
+  .c4sheet{align-items:flex-end!important;padding:0!important}
+  .c4sheet>*{margin:0!important}
+  .c4sheet .card4{max-width:none!important;width:100%!important;border-width:3px 0 0!important;border-radius:16px 16px 0 0;box-shadow:0 -4px 0 rgba(29,25,21,.25)!important;padding-top:24px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));max-height:90vh!important;max-height:90dvh!important;animation:sheetUp .22s ease-out}
+  .c4sheet .card4::before{content:'';position:sticky;top:-16px;display:block;width:44px;height:5px;border-radius:3px;background:rgba(29,25,21,.3);margin:-14px auto 10px;z-index:3}
+  @keyframes sheetUp{from{transform:translateY(30%)}to{transform:none}}
+}

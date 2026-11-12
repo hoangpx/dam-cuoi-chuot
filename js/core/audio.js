@@ -244,6 +244,10 @@ const AU = (() => {
     plop: on(() => { const t = c.currentTime; drum(t, 1.2, sfx); const n = noise(.4), f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(1600, t); f.frequency.exponentialRampToValueAtTime(200, t + .35); n.connect(f); env(f, t, .01, .35, .4).connect(sfx); n.start(t); n.stop(t + .4); }),
     chirp: on(() => { const t = c.currentTime; for (let i = 0; i < 3; i++) sweep('sine', 3800, 5200, .08, 4500, .12, t + i * .1); }),
     thump: on(() => { const t = c.currentTime; drum(t, 1.4, sfx); }),
+    // a copper coin dropped into a basket (chương IV, owner 2026-11-12: "khi có khách mua thì có tiếng tiền xu rơi xuống"): a bright ring, a second smaller bounce, a dull clink
+    coin: on((v = 1) => { const t = c.currentTime;
+      [[0, 2900, .09], [0, 4350, .05], [.085, 3100, .05], [.13, 2600, .03]].forEach(([dt, f, p]) => { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f * (1 + (Math.random() - .5) * .02); env(o, t + dt, .002, p * v, dt + .28).connect(sfx); o.start(t + dt); o.stop(t + dt + .32); });
+      const n = noise(.05), f2 = c.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 5200; f2.Q.value = 3; n.connect(f2); env(f2, t, .001, .05 * v, .05).connect(sfx); n.start(t); n.stop(t + .06); }),
     pluck: on((m = 86) => { const t = c.currentTime, o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(m); env(o, t, .005, .25, .5).connect(sfx); o.start(t); o.stop(t + .52); }),
     bark: on(() => { const t = c.currentTime; sweep('square', 420, 260, .12, 1400, .3, t); sweep('square', 380, 220, .14, 1400, .3, t + .2); }),
     snore: on(() => sweep('sawtooth', 90, 70, .9, 300, .14)),
