@@ -212,7 +212,7 @@ function c11OMainMenu() {
     rows.push({ name: `Bạn bè (${c11OFriendIds().length})`, sub: 'sang nhà bạn', ok: true, f: c11OFriendsMenu });
     if (C11O.reqs.length) rows.push({ name: `Lời mời (${C11O.reqs.length})`, sub: 'có người muốn kết bạn', ok: true, f: c11OReqMenu });
     if (C11O.visit) rows.push({ name: 'Về nhà mình', sub: 'rời nhà ' + C11O.visit.name, ok: true, f: () => { C11.menu = null; c11GoArea('lang', 1.7, 9.6); } });
-    rows.push({ name: 'Đổi tên', sub: 'bây giờ: ' + SAVE11.oname, ok: true, f: () => { C11.menu = null; const n = (prompt('Tên của bạn trong làng:', SAVE11.oname) || '').trim().slice(0, 18); if (n) { SAVE11.oname = n; persist11(); c11OSend({ t: 'hello', id: SAVE11.oid, name: n, friends: c11OFriendIds() }); } } });
+    rows.push({ name: 'Đổi tên', sub: 'bây giờ: ' + SAVE11.oname, ok: true, f: () => { C11.menu = null; c11ORename(); } });   // typed in the chat row: prompt() does not exist in some browsers and threw (owner 2026-11-11)
     rows.push({ name: 'Ra khỏi làng online', sub: 'chơi một mình', ok: true, f: () => { C11.menu = null; SAVE11.online = false; persist11(); c11OLeave(); } });
   }
   c11OM('Làng online', C11O.on ? `Bạn là ${SAVE11.oname}` : '', rows);
@@ -237,14 +237,18 @@ function c11OUi() {
   inp.maxLength = 90; inp.placeholder = 'Nói gì đó…'; inp.enterKeyHint = 'send'; inp.autocomplete = 'off';
   inp.style.cssText = 'flex:1;min-width:0;padding:5px 8px;border:2.4px solid #1d1915;border-radius:9px;background:#f4ead0;font:600 12px "Be Vietnam Pro",sans-serif';
   btn.textContent = 'Gửi'; btn.style.cssText = 'padding:5px 9px;border:2.4px solid #1d1915;border-radius:9px;background:#f7e3a4;font:800 12px "Be Vietnam Pro",sans-serif';
-  const send = () => { const t = inp.value.trim(); if (t) c11OSend({ t: 'chat', text: t }); inp.value = ''; c11OChatOpen(false); };
+  const send = () => { const t = inp.value.trim(), ui = C11O.ui;
+    if (ui && ui.mode === 'name') { const n = t.slice(0, 18); if (n) { SAVE11.oname = n; persist11(); c11OSend({ t: 'hello', id: SAVE11.oid, name: n, friends: c11OFriendIds() }); c11Msg(`Tên trong làng: ${n}`, '#2f6a4c'); } }
+    else if (t) c11OSend({ t: 'chat', text: t });
+    inp.value = ''; c11OChatOpen(false); };
   inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); send(); } else if (e.key === 'Escape') c11OChatOpen(false); });
   inp.addEventListener('keyup', e => e.stopPropagation());
   btn.addEventListener('click', send);
   row.append(inp, btn); box.append(row, log); document.body.appendChild(box);
-  return (C11O.ui = { box, log, inp, row, open: false });
+  return (C11O.ui = { box, log, inp, row, btn, open: false });
 }
-function c11OChatOpen(on) { const ui = c11OUi(); ui.open = !!on; ui.row.style.display = on ? 'flex' : 'none'; if (on) ui.inp.focus(); else { ui.inp.blur(); cv.focus(); } }
+function c11ORename() { const ui = c11OUi(); c11OChatOpen(true); ui.mode = 'name'; ui.inp.maxLength = 18; ui.inp.placeholder = 'Tên của bạn trong làng'; ui.inp.value = SAVE11.oname || ''; ui.btn.textContent = 'Lưu'; ui.inp.select(); }
+function c11OChatOpen(on) { const ui = c11OUi(); ui.open = !!on; ui.mode = 'chat'; ui.inp.maxLength = 90; ui.inp.placeholder = 'Nói gì đó…'; ui.btn.textContent = 'Gửi'; if (!on) ui.inp.value = ''; ui.row.style.display = on ? 'flex' : 'none'; if (on) { ui.box.style.display = 'block'; ui.inp.focus(); } else { ui.inp.blur(); cv.focus(); } }
 function c11OUiShow() {
   const ui = c11OUi(), vis = C11O.on && S.mode === 'c11play' && !C11.menu; if (ui.box.style.display !== (vis ? 'block' : 'none')) ui.box.style.display = vis ? 'block' : 'none';
   if (vis) c11OLogDraw();
