@@ -887,7 +887,8 @@ function c11Route(d, gx, gy) {
 }
 /* walking is finer than the tiles: a tree blocks only its trunk (and the map's edge ring all of it), so a gap between trunks can be walked through */
 function c11Solid(tx, ty, px, py) {
-  const kd = c11Kind(tx, ty); if (kd !== 't') return C11_BLOCK.includes(kd);
+  const kd = c11Kind(tx, ty); if (kd === 'w' && typeof c11SwimOk === 'function' && c11SwimOk(px, py)) return false;   // swimming or rowing (song.js)
+  if (kd !== 't') return C11_BLOCK.includes(kd);
   if (tx <= 0 || ty <= 0 || tx >= C11_W - 1 || ty >= C11_H - 1) return true;
   const tk = c11Pre() + tx + ',' + ty; if (SAVE11.gone[tk]) return false;
   return Math.hypot(px - (tx + .5), (py - (ty + .88)) * 1.5) < (SAVE11.cut[tk] ? .26 : .36);
@@ -983,7 +984,7 @@ function updateC11(dt) {
   if (G.eat && typeof c11EatUpdate === 'function') c11EatUpdate(dt);   // sitting at a table eating (tram.js): no walking meanwhile
   const K = G.eat ? {} : G.keys; let dx = (K.ArrowRight || K.KeyD ? 1 : 0) - (K.ArrowLeft || K.KeyA ? 1 : 0), dy = (K.ArrowDown || K.KeyS ? 1 : 0) - (K.ArrowUp || K.KeyW ? 1 : 0);
   if (G.joy && !G.eat) { dx += G.joy.x; dy += G.joy.y; }                          // the on-screen joystick on phones (nutdi.js)
-  const sp = SAVE11.stamina <= 0 ? 1.5 : 2.8; G.moving = false;
+  const sp = (SAVE11.stamina <= 0 ? 1.5 : 2.8) * (typeof c11SwimK === 'function' ? c11SwimK() : 1); G.moving = false;
   if (dx || dy) {
     G.go = null; G.kbd = true; const l = Math.hypot(dx, dy); dx /= l; dy /= l;
     if (c11Free(G.px + dx * sp * dt, G.py)) G.px += dx * sp * dt; if (c11Free(G.px, G.py + dy * sp * dt)) G.py += dy * sp * dt;
@@ -1250,7 +1251,7 @@ function renderC11() {
   for (const b of G.beasts || []) E.push({ y: b.y, d: () => c11Beast(g, b, sx(b.x), sy(b.y), T / 64 * ({ ga: .95, trong: 1.05, vit: .95, lon: .95, bo: 1.02, ngua: 1.4, trau: 1.25, cho: .62, meo: .9 }[b.kind] || 1) * (b.young ? .65 : 1)) });
   for (const v of G.vill) E.push({ y: v.y, d: () => c11DrawVill(g, v, sx(v.x), sy(v.y), T, V) });   // at work, with pose and tool (viecngay.js)
   const arm = G.swing > 0 ? 1 - G.swing / C11_SW : null;
-  E.push({ y: G.py, d: () => { if (G.eat && typeof c11EatDrawMe === 'function') { c11EatDrawMe(g, sx, sy, T, V); return; } c11Folk1(g, { sort: 0, id: 99, groom: true }, sx(G.px), sy(G.py), G.face, G.ph, G.moving, T, arm, V); } });
+  E.push({ y: G.py, d: () => { if (G.eat && typeof c11EatDrawMe === 'function') { c11EatDrawMe(g, sx, sy, T, V); return; } if (G.inW && typeof c11SwimDrawMe === 'function') { c11SwimDrawMe(g, sx, sy, T, V, arm); return; } c11Folk1(g, { sort: 0, id: 99, groom: true }, sx(G.px), sy(G.py), G.face, G.ph, G.moving, T, arm, V); } });
   E.sort((a, b) => a.y - b.y); for (const e of E) e.d();
   // sparks, words, speech
   for (const f of G.fx) {
@@ -1397,6 +1398,7 @@ function c11Chest(g, X, Y, k) {                                       // a lacqu
 function c11SignList() {
   const out = [];
   for (const [key, ex] of Object.entries(C11_AR.exits)) {
+    if (!ex[3]) continue;                                              // a wide way out names only one of its tiles (song.js)
     const [ex0, ey0] = key.split(',').map(Number); if (ex0 > 0 && ey0 > 0 && ex0 < C11_W - 1 && ey0 < C11_H - 1) continue;   // a gate inside the map has its own board
     const ix = ex0 === 0 ? 1 : ex0 === C11_W - 1 ? -1 : 0, iy = ey0 === 0 ? 1 : ey0 === C11_H - 1 ? -1 : 0;
     out.push({ gx: ex0 + .5 + ix * .9 + (iy ? 1.3 : 0), gy: ey0 + .55 + iy * .9 - (ix ? 1 : 0), ex0, ey0, text: ex[3] });
@@ -1761,16 +1763,13 @@ function c11Hud(g, W, H, st) {
   const mins = Math.floor(SAVE11.mins), hh = Math.floor(mins / 60) % 24, mm = Math.floor(mins % 60 / 10) * 10;
   c11Tag(g, W - 10, 10, c11Money(), { right: true, fill: '#f7e3a4' });
   c11Tag(g, W - 10, 46, `Ngày ${SAVE11.day} · ${hh}:${String(mm).padStart(2, '0')}${typeof c11WxIcon === 'function' ? ' ' + c11WxIcon() : ''}`, { right: true, size: 12, h: 26, pad: 18 });
-  // health
-  { const hw = 120, hx = W - 10 - hw, hy0 = 80, hf = Math.max(0, SAVE11.hp ?? C11_HP) / C11_HP;
-    g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.roundRect(hx, hy0, hw, 14, 7); g.fill(); g.stroke();
-    if (hf > 0) { g.fillStyle = G.hurt > 0 && Math.floor(G.t * 12) % 2 ? '#f08070' : '#c8402f'; g.beginPath(); g.roundRect(hx + 2, hy0 + 2, Math.max(8, (hw - 4) * hf), 10, 5); g.fill(); }
-    g.fillStyle = INK; g.font = '700 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText('Máu', hx - 6, hy0 + 8); g.textAlign = 'center'; g.fillText(Math.round(Math.max(0, SAVE11.hp ?? C11_HP)) + '/' + C11_HP, hx + hw / 2, hy0 + 8); }
-  // stamina
-  const bw = 120, bx = W - 10 - bw, by = 100;
-  g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.roundRect(bx, by, bw, 14, 7); g.fill(); g.stroke();
-  const f = Math.max(0, SAVE11.stamina) / C11_EN; if (f > 0) { g.fillStyle = f > .3 ? '#2f6a4c' : '#a3332a'; g.beginPath(); g.roundRect(bx + 2, by + 2, Math.max(8, (bw - 4) * f), 10, 5); g.fill(); }
-  g.fillStyle = INK; g.font = '700 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText(SAVE11.stamina <= 0 ? 'Kiệt sức' : 'Sức', bx - 6, by + 8); g.textAlign = 'center'; g.fillText(Math.round(Math.max(0, SAVE11.stamina)) + '/' + C11_EN, bx + bw / 2, by + 8);
+  // strength and, only when hurt, health: two bars with no label, left of the level ring (owner 2026-11-11)
+  { const hpNow = Math.max(0, SAVE11.hp ?? C11_HP), hurt = hpNow < C11_HP - .5, bw = 104, bx = W - 10 - 36 - bw, sy0 = hurt ? 80 : 88;
+    const bar = (y, f, col, txt) => { g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 2.2; g.beginPath(); g.roundRect(bx, y, bw, 14, 7); g.fill(); g.stroke();
+      if (f > 0) { g.fillStyle = col; g.beginPath(); g.roundRect(bx + 2, y + 2, Math.max(8, (bw - 4) * Math.min(1, f)), 10, 5); g.fill(); }
+      g.fillStyle = INK; g.font = '700 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, bx + bw / 2, y + 8); };
+    const f = Math.max(0, SAVE11.stamina) / C11_EN; bar(sy0, f, f > .3 ? '#2f6a4c' : '#a3332a', SAVE11.stamina <= 0 ? 'Kiệt sức' : Math.round(Math.max(0, SAVE11.stamina)) + '/' + C11_EN);
+    if (hurt) bar(sy0 + 18, hpNow / C11_HP, G.hurt > 0 && Math.floor(G.t * 12) % 2 ? '#f08070' : '#c8402f', Math.round(hpNow) + '/' + C11_HP); }
   g.restore();
   // the bar: five tools, then the ten slots of the bag (two rows on a narrow screen); tap a slot to hold it, tap a held food again to eat it
   const own = c11OwnSlots(), nT = own.length, wide = W >= 760, bs = wide ? 48 : Math.min(46, Math.floor((W - 24 - 9 * 4) / 10)), ts = wide ? 50 : Math.min(48, bs + 6), gap = 4;
@@ -1779,7 +1778,7 @@ function c11Hud(g, W, H, st) {
   const ty0 = wide ? H - ts - (isTouch ? 18 : 12) : bby - ts - 8, tx0 = wide ? (W - (bagW + toolW + 18)) / 2 : (W - toolW) / 2;
   /* on phones the bag folds away (owner 2026-11-10: "điện thoại đang ngắn mà túi đồ thì dài, cần có cơ chế mở to / thu nhỏ túi đồ"): one row of
      the tools, the thing in hand and a "Túi" button; the button opens the whole bag as before, "Thu túi" folds it again (G.bagOpen) */
-  const foldable = isTouch || !wide, bagBtn = (x, y, w, h, label) => { g.fillStyle = '#f7e3a4'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(x, y, w, h, 8); g.fill(); g.stroke(); g.fillStyle = INK; g.font = '800 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; const L = label.split('\n'); L.forEach((t, i) => g.fillText(t, x + w / 2, y + h / 2 + (i - (L.length - 1) / 2) * 13)); G.hud.push({ r: [x, y - 6, w, h + 12], f: () => { G.bagOpen = !G.bagOpen; c11Sfx.tap(); } }); };
+  const foldable = isTouch || !wide, bagBtn = (x, y, w, h, label) => { g.fillStyle = '#f7e3a4'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(x, y, w, h, 8); g.fill(); g.stroke(); g.fillStyle = INK; g.font = `800 ${label === '▾' ? 17 : 11}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; const L = label.split('\n'); L.forEach((t, i) => g.fillText(t, x + w / 2, y + h / 2 + (i - (L.length - 1) / 2) * 13)); G.hud.push({ r: [x, y - 6, w, h + 12], f: () => { G.bagOpen = !G.bagOpen; c11Sfx.tap(); } }); };
   if (foldable && !G.bagOpen) {
     const hi = G.slot - C11_SLOTS.length, held = hi >= 0 && SAVE11.bag[hi] ? hi : -1, n = nT + (held >= 0 ? 1 : 0) + 1, fs = Math.min(48, Math.floor((W - 24 - (n - 1) * gap) / n)), bwid = Math.max(fs, 58);
     const tot = nT * (fs + gap) + (held >= 0 ? fs + gap : 0) + bwid, fy = H - fs - 18; let x = (W - tot) / 2;
@@ -1788,8 +1787,10 @@ function c11Hud(g, W, H, st) {
     const nb = SAVE11.bag.filter(Boolean).length; bagBtn(x, fy, bwid, fs, `Túi\n${nb}/${C11_BAG}`);
     { const it = c11HandItem(); if (it) { const I = C11_ITEMS[it.id]; c11TagC(g, W / 2, fy - 40, `${I.name}${I.food ? ` · ăn: +${I.food} sức` : ''}`, { size: 11, h: 24, pad: 16, right: false, fill: '#fbf4dc' }); } }
   } else {
-  if (foldable) bagBtn(bx0 + bagW + 6 - 64, wide ? bby - 36 : ty0 + (ts - 24) / 2, 64, 24, 'Thu túi ▾');
-  own.forEach((si, k) => { const x = tx0 + k * (ts + gap); c11Slot(g, si, x, ty0, ts, si === G.slot); G.hud.push({ r: [x, ty0 - 8, ts, ts + 8], f: () => { G.slot = si; c11Sfx.tap(); } }); });   // only the tools you own show
+  /* the fold button is only an arrow (owner 2026-11-11: the words "Thu túi" lay over the last tool on a phone); on a narrow screen the tools shrink to leave it room at the end of their row */
+  const fb = 32, ts2 = wide || !foldable ? ts : Math.min(ts, Math.floor((W - 16 - fb - nT * gap) / nT)), tw2 = nT * ts2 + (nT - 1) * gap, tx2 = wide || !foldable ? tx0 : (W - (tw2 + gap + fb)) / 2;
+  if (foldable) { if (wide) bagBtn(bx0 + bagW + 6 - fb, bby - 38, fb, 26, '▾'); else bagBtn(tx2 + tw2 + gap, ty0, fb, ts2, '▾'); }
+  own.forEach((si, k) => { const x = tx2 + k * (ts2 + gap); c11Slot(g, si, x, ty0, ts2, si === G.slot); G.hud.push({ r: [x, ty0 - 8, ts2, ts2 + 8], f: () => { G.slot = si; c11Sfx.tap(); } }); });
   g.fillStyle = 'rgba(244,234,208,.85)'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.roundRect(bx0 - 6, bby - 6, bagW + 12, bagH + 12, 10); g.fill(); g.stroke();
   for (let i = 0; i < C11_BAG; i++) {
     const x = bx0 + (i % bcols) * (bs + gap), ry = bby + Math.floor(i / bcols) * (bs + gap), sel = G.slot === C11_SLOTS.length + i, sl = SAVE11.bag[i];

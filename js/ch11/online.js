@@ -219,8 +219,10 @@ function c11OMainMenu() {
 }
 function c11OHud(g, st) {
   if (!c11OUrl()) return;                                              // no Online button while it is closed                                              // the Online button under the farm name; a banner on a friend's farm
-  const n = C11O.on ? Math.max(C11O.count || 1, C11O.peers.size + 1) : 0, lab = C11O.on ? `Online · ${n} người` : 'Online', t = c11Tag(g, 10, 108, lab, { size: 12, h: 28, pad: 18, fill: C11O.on ? '#bfe3a8' : '#f4ead0' });
+  const n = C11O.on ? Math.max(C11O.count || 1, C11O.peers.size + 1) : 0, lab = 'Online', t = c11Tag(g, 10, 108, lab, { size: 12, h: 28, pad: 18, fill: C11O.on ? '#bfe3a8' : '#f4ead0' });
   C11.hud.push({ r: [t[0], t[1] + st, t[2], t[3]], f: c11OMainMenu });
+  if (C11O.on && !C11.menu) { const W = cv.width / DPR, open = C11O.ui && C11O.ui.open, c = c11Tag(g, W - 10, 118, open ? '✕' : '💬', { right: true, size: 13, h: 26, pad: 14, fill: open ? '#f4ead0' : '#f7e3a4' });   // chat: the box opens only from this button (owner 2026-11-11)
+    C11.hud.push({ r: [c[0] - 4, c[1] - 4 + st, c[2] + 8, c[3] + 8], f: () => c11OChatOpen(!open) }); }
   if (C11O.reqs.length) { g.fillStyle = '#e5391a'; g.beginPath(); g.arc(t[0] + t[2] - 2, t[1] + 2, 7, 0, 6.283); g.fill(); }
   if (C11O.visit) c11TagC(g, (cv.width / DPR) / 2, 10, `Nhà bạn ${C11O.visit.name}`, { size: 12, h: 28, pad: 22, fill: '#d9e6c0' });
 }
@@ -229,19 +231,20 @@ function c11OHud(g, st) {
 function c11OUi() {
   if (C11O.ui) return C11O.ui;
   const box = document.createElement('div'), log = document.createElement('div'), row = document.createElement('div'), inp = document.createElement('input'), btn = document.createElement('button');
-  box.style.cssText = 'position:fixed;right:10px;top:calc(136px + env(safe-area-inset-top,0px));width:min(230px,50vw);z-index:30;display:none;font:600 12px "Be Vietnam Pro",sans-serif';
+  box.style.cssText = 'position:fixed;right:10px;top:calc(150px + env(safe-area-inset-top,0px));width:min(230px,56vw);z-index:30;display:none;font:600 12px "Be Vietnam Pro",sans-serif';
   log.style.cssText = 'margin-top:4px;text-align:right;pointer-events:none;color:#1d1915;text-shadow:0 0 3px #fbf4dc,0 0 3px #fbf4dc,0 0 5px #fbf4dc';
-  row.style.cssText = 'display:flex;gap:4px';
+  row.style.cssText = 'display:none;gap:4px';
   inp.maxLength = 90; inp.placeholder = 'Nói gì đó…'; inp.enterKeyHint = 'send'; inp.autocomplete = 'off';
   inp.style.cssText = 'flex:1;min-width:0;padding:5px 8px;border:2.4px solid #1d1915;border-radius:9px;background:#f4ead0;font:600 12px "Be Vietnam Pro",sans-serif';
   btn.textContent = 'Gửi'; btn.style.cssText = 'padding:5px 9px;border:2.4px solid #1d1915;border-radius:9px;background:#f7e3a4;font:800 12px "Be Vietnam Pro",sans-serif';
-  const send = () => { const t = inp.value.trim(); if (t) c11OSend({ t: 'chat', text: t }); inp.value = ''; inp.blur(); cv.focus(); };
-  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); send(); } else if (e.key === 'Escape') { inp.blur(); cv.focus(); } });
+  const send = () => { const t = inp.value.trim(); if (t) c11OSend({ t: 'chat', text: t }); inp.value = ''; c11OChatOpen(false); };
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); send(); } else if (e.key === 'Escape') c11OChatOpen(false); });
   inp.addEventListener('keyup', e => e.stopPropagation());
   btn.addEventListener('click', send);
   row.append(inp, btn); box.append(row, log); document.body.appendChild(box);
-  return (C11O.ui = { box, log, inp });
+  return (C11O.ui = { box, log, inp, row, open: false });
 }
+function c11OChatOpen(on) { const ui = c11OUi(); ui.open = !!on; ui.row.style.display = on ? 'flex' : 'none'; if (on) ui.inp.focus(); else { ui.inp.blur(); cv.focus(); } }
 function c11OUiShow() {
   const ui = c11OUi(), vis = C11O.on && S.mode === 'c11play' && !C11.menu; if (ui.box.style.display !== (vis ? 'block' : 'none')) ui.box.style.display = vis ? 'block' : 'none';
   if (vis) c11OLogDraw();

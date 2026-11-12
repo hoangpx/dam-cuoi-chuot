@@ -188,10 +188,11 @@ function c11DrawSelf(g, W, px, py, pw, ph, top) {
   const oldHud = c11OHud;
   c11OHud = function (g, st) {
     oldHud(g, st);
-    const W = cv.width / DPR, lv = c11Lv(), a = C11_XP(lv), b = C11_XP(lv + 1), f = Math.max(0, Math.min(1, (SAVE11.xp - a) / (b - a))), w = 120, x = W - 10 - w, y = 119;
-    g.fillStyle = 'rgba(244,234,208,.9)'; g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.roundRect(x, y, w, 7, 3.5); g.fill(); g.stroke();
-    g.fillStyle = '#d9a52a'; g.beginPath(); g.roundRect(x + 1.5, y + 1.5, Math.max(4, (w - 3) * f), 4, 2); g.fill();
-    g.fillStyle = INK; g.font = '800 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText(`Cấp ${lv}`, x - 6, y + 4);
-    C11.hud.push({ r: [x - 44, y - 4 + st, w + 44, 16], f: () => c11OpenBook('ban') });
+    const W = cv.width / DPR, lv = c11Lv(), a = C11_XP(lv), b = C11_XP(lv + 1), f = Math.max(0, Math.min(1, (SAVE11.xp - a) / (b - a))), cx = W - 10 - 16, cy = 95, r = 13;
+    g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, r + 3, 0, 6.283); g.fill(); g.stroke();   // the level: its number inside a ring that fills with experience (owner 2026-11-11)
+    g.strokeStyle = 'rgba(29,25,21,.18)'; g.lineWidth = 4; g.beginPath(); g.arc(cx, cy, r - 1.5, 0, 6.283); g.stroke();
+    if (f > 0) { g.strokeStyle = '#d9a52a'; g.lineCap = 'round'; g.beginPath(); g.arc(cx, cy, r - 1.5, -1.5708, -1.5708 + 6.283 * f); g.stroke(); g.lineCap = 'butt'; }
+    g.fillStyle = INK; g.font = `900 ${lv > 99 ? 9 : 11}px "Be Vietnam Pro", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(lv, cx, cy + .5);
+    C11.hud.push({ r: [cx - 20, cy - 20 + st, 40, 40], f: () => c11OpenBook('ban') });
   };
 })();

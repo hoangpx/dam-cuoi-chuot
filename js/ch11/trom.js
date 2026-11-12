@@ -24,7 +24,7 @@ function tromLoss() {
 }
 const tromNear = (tx, ty) => { for (let r = 0; r <= 4; r++) for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) if (x > 0 && y > 0 && x < C11_W - 1 && y < C11_H - 1 && !c11Blocked(x, y) && c11Kind(x, y) !== 'E') return [x, y]; return [tx, ty]; };
 const tromGo = (t, tx, ty) => { const sx = Math.max(0, Math.min(C11_W - 1, Math.floor(t.x))), sy = Math.max(0, Math.min(C11_H - 1, Math.floor(t.y - .01))), d = c11Dist(sx, sy); t.path = d[ty] && d[ty][tx] >= 0 ? c11Route(d, tx, ty) : []; };
-const tromExits = () => Object.keys(C11_AR.exits).map(k => k.split(',').map(Number)).sort((a, b) => Math.hypot(b[0] + .5 - C11.px, b[1] + .5 - C11.py) - Math.hypot(a[0] + .5 - C11.px, a[1] + .5 - C11.py));   // farthest from the player first
+const tromExits = () => Object.keys(C11_AR.exits).map(k => k.split(',').map(Number)).filter(([x, y]) => C11_D4.some(([dx, dy]) => { const k = c11Kind(x + dx, y + dy); return k !== 'w' && !c11Blocked(x + dx, y + dy); })).sort((a, b) => Math.hypot(b[0] + .5 - C11.px, b[1] + .5 - C11.py) - Math.hypot(a[0] + .5 - C11.px, a[1] + .5 - C11.py));   // farthest from the player first
 function tromSpawn(tx, ty, job) {
   const E = tromExits(); if (!E.length) return false;
   const who = tromWho(), [ex, ey] = E[0];
