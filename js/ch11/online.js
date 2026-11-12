@@ -11,7 +11,8 @@
 const C11_SERVER = 'wss://dcc-lang.dcc-phong-choi.workers.dev/ws';                                                 // the Cloudflare Worker in worker/ (deployed 2026-10-27)
 const C11O = { ws: null, on: false, peers: new Map(), room: null, reqs: [], who: [], onlineF: new Set(), visit: null, pending: null, lines: [], mine: null, sendT: 0, last: '', tries: 0, closing: false, ui: null };
 const C11O_FARM = ['tiles', 'clear', 'cut', 'gone', 'hits', 'herd', 'pens', 'drops'];   // what a guest sees of the host's home
-if (SAVE11.online === undefined) SAVE11.online = true;                       // new players join the village online at once; "Ra khỏi làng online" turns it off for good
+SAVE11.online = true;   // everyone is in the village online, always (owner 2026-11-11: "tưởng lúc nào cũng vào chứ"); there is no leaving it any more
+// (was: only new players)                       // new players join the village online at once; "Ra khỏi làng online" turns it off for good
 const c11OUrl = () => { const q = /[?&]c11srv=([^&]+)/.exec(location.search); return q ? decodeURIComponent(q[1]) : C11_SERVER; };   // open to everyone (owner 2026-10-29: "bật online đi"); ?c11srv=ws://… still points it at a test server
 SAVE11.oid = SAVE11.oid || (() => { let s = ''; const a = 'abcdefghijkmnpqrstuvwxyz23456789'; for (let i = 0; i < 14; i++) s += a[(Math.random() * a.length) | 0]; return s; })();
 SAVE11.oname = SAVE11.oname || 'Chuột ' + (100 + ((Math.random() * 900) | 0));
@@ -213,7 +214,7 @@ function c11OMainMenu() {
     if (C11O.reqs.length) rows.push({ name: `Lời mời (${C11O.reqs.length})`, sub: 'có người muốn kết bạn', ok: true, f: c11OReqMenu });
     if (C11O.visit) rows.push({ name: 'Về nhà mình', sub: 'rời nhà ' + C11O.visit.name, ok: true, f: () => { C11.menu = null; c11GoArea('lang', 1.7, 9.6); } });
     rows.push({ name: 'Đổi tên', sub: 'bây giờ: ' + SAVE11.oname, ok: true, f: () => { C11.menu = null; c11ORename(); } });   // typed in the chat row: prompt() does not exist in some browsers and threw (owner 2026-11-11)
-    rows.push({ name: 'Ra khỏi làng online', sub: 'chơi một mình', ok: true, f: () => { C11.menu = null; SAVE11.online = false; persist11(); c11OLeave(); } });
+
   }
   c11OM('Làng online', C11O.on ? `Bạn là ${SAVE11.oname}` : '', rows);
 }
@@ -221,7 +222,7 @@ function c11OHud(g, st) {
   if (!c11OUrl()) return;                                              // no Online button while it is closed                                              // the Online button under the farm name; a banner on a friend's farm
   /* no Online button (owner 2026-11-11): the chat button under the level opens the chat; while it is open a second one opens the online menu (friends, name, leaving); offline, the chat button opens that menu to come back in */
   if (!C11.menu) { const W = cv.width / DPR, open = C11O.on && C11O.ui && C11O.ui.open, c = c11Tag(g, W - 10, 118, open ? '✕' : '💬', { right: true, size: 13, h: 26, pad: 14, fill: open ? '#f4ead0' : C11O.on ? '#f7e3a4' : '#e6dcc4' });
-    C11.hud.push({ r: [c[0] - 4, c[1] - 4 + st, c[2] + 8, c[3] + 8], f: () => C11O.on ? c11OChatOpen(!open) : c11OMainMenu() });
+    C11.hud.push({ r: [c[0] - 4, c[1] - 4 + st, c[2] + 8, c[3] + 8], f: () => { if (C11O.on) { c11OChatOpen(!open); return; } SAVE11.online = true; C11O.closing = false; C11O.tries = 0; if (!C11O.ws) c11OConnect(); c11Msg('Đang nối vào làng online…', '#2f6a4c'); } });   // not connected (the line dropped): the button joins again by itself, no menu
     if (C11O.reqs.length) { g.fillStyle = '#e5391a'; g.beginPath(); g.arc(c[0] + 2, c[1] + 2, 6, 0, 6.283); g.fill(); }
     if (open || C11O.reqs.length) { const m = c11Tag(g, c[0] - 6, 118, '👥', { right: true, size: 13, h: 26, pad: 14, fill: '#bfe3a8' }); C11.hud.push({ r: [m[0] - 4, m[1] - 4 + st, m[2] + 4, m[3] + 8], f: c11OMainMenu }); } }
   if (C11O.visit) c11TagC(g, (cv.width / DPR) / 2, 10, `Nhà bạn ${C11O.visit.name}`, { size: 12, h: 28, pad: 22, fill: '#d9e6c0' });
