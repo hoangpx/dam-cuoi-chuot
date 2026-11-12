@@ -1753,11 +1753,32 @@ function c11Folk1(g, p, x, y, face, ph, moving, T, arm, V) {
     if (d < T * 3 && !(C11.say && C11.say.who && C11.say.who.p === p)) { g.font = '700 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; const ny = y - T * 1.42 * (p.sc || 1); g.lineWidth = 4; g.strokeStyle = '#fbf4dc'; g.strokeText(p.name, x, ny); g.fillStyle = INK; g.fillText(p.name, x, ny); }
   }
 }
+/* the HUD's own little pictures, drawn in ink like the rest (owner 2026-11-11: the emoji map looked bad): 'book' the notebook, 'map' a folded map with a red pin */
+function c11HudIcon(g, kind, cx, cy, s = 1) {
+  g.save(); g.translate(cx, cy); g.scale(s, s); g.lineJoin = g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = 1.6;
+  if (kind === 'map') {
+    const P = [[-11, -6], [-4, -8], [4, -6], [11, -8], [11, 7], [4, 9], [-4, 7], [-11, 9]];
+    g.fillStyle = '#f6ecd0'; g.beginPath(); P.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill();
+    g.fillStyle = '#b9d98c'; g.beginPath(); g.moveTo(-11, -6); g.lineTo(-4, -8); g.lineTo(-4, 7); g.lineTo(-11, 9); g.closePath(); g.fill();          // a green fold
+    g.fillStyle = '#a9d2e0'; g.beginPath(); g.moveTo(4, 2); g.quadraticCurveTo(8, 0, 11, 2); g.lineTo(11, 7); g.lineTo(4, 9); g.closePath(); g.fill();  // a bit of river
+    g.beginPath(); P.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.stroke();
+    g.lineWidth = 1; g.strokeStyle = 'rgba(29,25,21,.45)'; g.beginPath(); g.moveTo(-4, -8); g.lineTo(-4, 7); g.moveTo(4, -6); g.lineTo(4, 9); g.stroke();
+    g.setLineDash([2, 2.4]); g.strokeStyle = '#8a5a34'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(-8, 4); g.quadraticCurveTo(-3, -1, 1, 3); g.stroke(); g.setLineDash([]);   // a dotted road to the pin
+    g.fillStyle = '#c8402f'; g.strokeStyle = INK; g.lineWidth = 1.3; g.beginPath(); g.moveTo(2, 3); g.bezierCurveTo(-3, -3, -2, -8, 2, -8); g.bezierCurveTo(6, -8, 7, -3, 2, 3); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#fbf4dc'; g.beginPath(); g.arc(2, -4.3, 1.5, 0, 6.283); g.fill();
+  } else {
+    g.fillStyle = '#a3332a'; g.beginPath(); g.roundRect(-11, -7, 22, 15, 2); g.fill(); g.stroke();                                      // the cover
+    g.fillStyle = '#fbf4dc'; g.beginPath(); g.moveTo(0, -6); g.quadraticCurveTo(-5, -9, -10, -6); g.lineTo(-10, 6); g.quadraticCurveTo(-5, 3, 0, 6); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(0, -6); g.quadraticCurveTo(5, -9, 10, -6); g.lineTo(10, 6); g.quadraticCurveTo(5, 3, 0, 6); g.closePath(); g.fill(); g.stroke();
+    g.lineWidth = 1; g.strokeStyle = 'rgba(29,25,21,.5)'; for (const y of [-3, 0, 3]) { g.beginPath(); g.moveTo(-8, y - 1.6); g.lineTo(-2.5, y - .4); g.moveTo(2.5, y - .4); g.lineTo(8, y - 1.6); g.stroke(); }
+  }
+  g.restore();
+}
 function c11Hud(g, W, H, st) {
   const G = C11; G.hud = [];
   g.save(); g.translate(0, st);
   const back = c11Tag(g, 10, 10, '← Chương', { size: 12, h: 28, pad: 18 }); G.hud.push({ r: [back[0], back[1] + st, back[2], back[3]], f: () => showChapters() });
-  const nq = c11Q().act.length, book = c11Tag(g, 10, 44, '📖', { size: 15, h: 30, pad: 16, fill: nq ? '#f2cf5a' : '#f7e3a4' });   // the notebook is an icon (owner 2026-11-11); a red dot counts the jobs running
+  const nq = c11Q().act.length, book = c11Tag(g, 10, 44, '', { size: 15, h: 32, pad: 40, fill: nq ? '#f2cf5a' : '#f7e3a4' }); c11HudIcon(g, 'book', book[0] + book[2] / 2, book[1] + book[3] / 2, 1.15);   // the notebook is an icon (owner 2026-11-11); a red dot counts the jobs running
   if (nq) { g.fillStyle = '#c8402f'; g.strokeStyle = INK; g.lineWidth = 1.5; g.beginPath(); g.arc(book[0] + book[2] - 1, book[1] + 2, 8, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.font = '800 10px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nq, book[0] + book[2] - 1, book[1] + 2.5); } G.hud.push({ r: [book[0], book[1] + st, book[2], book[3]], f: () => { c11OpenBook(); c11Sfx.tap(); } });
   // the place's name is not kept on screen (owner 2026-11-11): it shows on coming in and on the map
   if (typeof c11OHud === 'function') c11OHud(g, st);                     // Online button, friend's-farm banner (online.js)

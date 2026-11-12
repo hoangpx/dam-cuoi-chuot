@@ -56,7 +56,7 @@
   const oldHud = c11OHud;
   c11OHud = function (g, st) {
     oldHud(g, st);
-    const b = c11Tag(g, 54, 44, '🗺️', { size: 15, h: 30, pad: 16, fill: '#f7e3a4' });   // the map is an icon beside the notebook; the place's name is no longer kept on screen (owner 2026-11-11)
+    const b = c11Tag(g, 56, 44, '', { size: 15, h: 32, pad: 40, fill: '#f7e3a4' }); c11HudIcon(g, 'map', b[0] + b[2] / 2, b[1] + b[3] / 2, 1.15);   // the map is an icon beside the notebook; the place's name is no longer kept on screen (owner 2026-11-11)
     const open = () => { C11.menu = { map: true }; C11.go = null; c11Sfx.tap && c11Sfx.tap(); };
     C11.hud.push({ r: [b[0], b[1] + st, b[2], b[3]], f: open });
   };
