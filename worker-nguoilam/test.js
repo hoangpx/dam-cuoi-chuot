@@ -1,0 +1,23 @@
+// node test.js: the pure helpers of the chat (src/chat.js)
+import assert from 'node:assert';
+import { cleanPersona, cleanHistory, buildRequest, readAnswer, isBad, vnDay, SCHEMA } from './src/chat.js';
+const P = cleanPersona({ kieu: 'it_noi', name: 'Chị Sen', age: 24, female: true, que: 'làng Gốm', nha: 'có hai đứa con nhỏ', wage: 40, mood: 'quý chủ', where: 'Người làm hiệu trầu', extra: 'x'.repeat(9999) });
+assert.equal(P.name, 'Chị Sen'); assert.equal(P.wage, 40); assert.equal(P.extra, undefined);
+assert.equal(cleanPersona({ age: 9999, wage: -5, name: 'a'.repeat(99) }).age, 90);
+assert.equal(cleanPersona({ wage: -5 }).wage, 0);
+const H = cleanHistory([{ me: false, t: 'chào' }, { me: true, t: 'hi' }, { me: true, t: 'hai' }, { t: '' }, null]);
+assert.equal(H.length, 3);
+const R = buildRequest(P, H, 'Nhà cửa sao rồi?');
+assert.equal(R.model, 'claude-haiku-5-5'); assert.equal(R.messages[0].role, 'user'); assert.equal(R.messages.length, 1);
+assert.ok(R.messages[0].content.endsWith('Nhà cửa sao rồi?'));
+assert.ok(R.system.includes('Chị Sen') && R.system.includes('quý chủ') && R.system.includes('ít nói')); assert.equal(cleanPersona({ kieu: 'xyz' }).kieu, 'hom_hinh');
+assert.deepEqual(R.output_config.format.schema, SCHEMA);
+const R2 = buildRequest(P, [{ me: true, t: 'a' }, { me: false, t: 'b' }], 'c');
+assert.deepEqual(R2.messages.map(m => m.role), ['user', 'assistant', 'user']);
+assert.deepEqual(readAnswer({ stop_reason: 'end_turn', content: [{ type: 'text', text: '{"reply":"Dạ vâng","tone":"lich_su"}' }] }), { reply: 'Dạ vâng', tone: 'lich_su' });
+assert.equal(readAnswer({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'chữ thường' }] }).reply, 'chữ thường');
+assert.equal(readAnswer({ stop_reason: 'end_turn', content: [{ type: 'text', text: '{"reply":"x","tone":"lạ"}' }] }).tone, 'binh_thuong');
+assert.equal(readAnswer({ stop_reason: 'refusal', content: [] }).tone, 'binh_thuong');
+assert.ok(isBad('đụ má') && !isBad('đi chợ'));
+assert.match(vnDay(Date.UTC(2026, 0, 1, 18)), /^2026-01-02$/);
+console.log('ok');

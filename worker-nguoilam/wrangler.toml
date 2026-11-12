@@ -1,0 +1,13 @@
+name = "dcc-nguoilam"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# the API key is a secret, never in this file: npx wrangler secret put ANTHROPIC_API_KEY
+[[durable_objects.bindings]]
+name = "QUOTA"
+class_name = "Quota"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Quota"]
