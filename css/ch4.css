@@ -563,3 +563,5 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .card4 .bonusRow{flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
 .card4 .bonusRow .sm{width:100%;font-size:13px;opacity:.85;margin:0;text-align:center}
 .card4 .bonusRow .btn{font-size:13px;padding:6px 10px}
+.card4 .bonusAmt{display:inline-flex;align-items:center;gap:4px;font-size:13px}
+.card4 .bonusAmt input{width:90px;font:inherit;padding:5px 6px;border:1.5px solid #2b2620;border-radius:4px;background:#fffaf0}
