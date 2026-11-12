@@ -96,7 +96,7 @@ const C11_FERRY_AT = { ben: [14.6, 10.95, 12, 10, 'con'], con: [3.3, 9.5, 4, 8, 
     }
     if (!inW && G.inW && G.boating) { G.boating = false; }
     G.inW = inW;
-    if (!inW) { G.land = { a: G.area, x: G.px, y: G.py }; G.swimTo = null; }
+    if (!inW) { G.land = { a: G.area, x: G.px, y: G.py }; }   // (a tap's straight walk, C11.swimTo, also runs on land: the bank-to-water tap and the hunter's run-up in san.js)
     else if (G.boating && b) { b.x = G.px; b.y = G.py; }
     else {
       G.swimT = (G.swimT || 0) + dt; if (G.swimT >= 1) { G.swimT -= 1; c11Spend(C11_SWIM.cost); }
