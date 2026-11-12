@@ -141,7 +141,7 @@ function c4HandsBlock(g) {
   let apply = null;                                                       // the applicants for the hire, while the list is open
   const draw = () => {
     el.innerHTML = `<h4>Người bán</h4><p class="hint">Vợ tự bán được, nhưng phải chạy qua chạy lại giữa các hàng, nên khách phải chờ lâu. Thuê người phụ thì bán nhanh, mỗi hàng chỉ thuê được một người, và phải lên cấp 2 mới thuê được; công ${c4Money(c4WageAt(g, 0))} một ngày, và khi chồng vắng thì người làm thuê đi lấy hàng thay.</p>`
-      + (H.length ? H.map((h, i) => `<div class="hand"><span><b>${c4Cap1(h.name)}</b>${h.sick ? ' · ốm, nghỉ' : ''} · công ${c4Money(c4Wage(g, h))}/ngày<div class="tbars">${c4TraitBar('nhanh nhẹn', h.sp)}${c4TraitBar('nhiệt tình', h.wm)}${c4TraitBar('trung thực', h.ho)}${c4TraitBar('quan hệ', h.rel / 100)}</div></span><button class="btn alt" data-off="${i}">Đuổi việc</button></div>${(typeof c4BonusRow === 'function' ? c4BonusRow(h.wq, c4Wage(g, h), 'v|' + g + '|' + i) : '')}`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
+      + (H.length ? H.map((h, i) => typeof c4WkCard === 'function' ? c4WkCard('v|' + g + '|' + i) : `<p>${c4Cap1(h.name)}</p>`).join('') : '<p>Chưa thuê ai: vợ tự trông.</p>')
       + (apply ? c4ApplyHtml(g, apply) : H.length < c4HandsMax(g) ? `<button class="btn" data-hire="1">Thuê một người · ${c4Money(c4NextWage(g))}/ngày</button>` : c4HandsMax(g) === 0 ? '<p class="hint">Nâng hàng lên cấp 2 mới thuê được người.</p>' : '');
     el.querySelector('[data-hire]')?.addEventListener('click', () => {
       if (H.length >= c4HandsMax(g) || Date.now() - (c4HandsBlock.last || 0) < 800) { draw(); return; }   // (a double tap could hire past the limit; a lagging tap hired twice)

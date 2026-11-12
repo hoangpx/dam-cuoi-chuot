@@ -565,3 +565,24 @@ body.touch #c4hud .mid{margin:0 auto}   /* a tablet: the clock stays between the
 .card4 .bonusRow .btn{font-size:13px;padding:6px 10px}
 .card4 .bonusAmt{display:inline-flex;align-items:center;gap:4px;font-size:13px}
 .card4 .bonusAmt input{width:90px;font:inherit;padding:5px 6px;border:1.5px solid #2b2620;border-radius:4px;background:#fffaf0}
+.wkCard{display:flex;align-items:center;gap:10px;width:100%;margin:6px 0;padding:6px 10px;background:#fffaf0;border:1.5px solid #2b2620;border-radius:8px;box-shadow:2px 2px 0 #2b2620;font:inherit;text-align:left;cursor:pointer;color:inherit}
+.wkCard img{width:44px;height:44px;border-radius:50%;flex:none}
+.wkCard span{flex:1;display:flex;flex-direction:column;min-width:0}
+.wkCard small{font-size:13px;opacity:.8}
+.wkCard em{font-style:normal;font-size:12px;color:#a3332a}
+.wkCard i{font-style:normal;font-size:22px;opacity:.6}
+.card4.wk{text-align:left}
+.card4.wk .wkHead{display:flex;gap:12px;align-items:center}
+.card4.wk .wkHead img{width:84px;height:84px;border-radius:50%;flex:none}
+.card4.wk .wkHead h3{margin:0 0 2px}
+.card4.wk .wkHead p{margin:0;font-size:14px;opacity:.85}
+.card4.wk .wkMood{margin:8px 0}
+.card4.wk h4{margin:14px 0 4px}
+.card4.wk .wkChat{background:#fffaf0;border:1px solid #c9b88f;border-radius:6px;padding:6px 8px;max-height:180px;overflow:auto}
+.card4.wk .wkChat p{margin:4px 0;font-size:14px}
+.card4.wk .wkChat p.me{color:#5a4a30}
+.card4.wk .wkTopics{flex-wrap:wrap;gap:6px;justify-content:flex-start}
+.card4.wk .wkTopics .btn{font-size:13px;padding:6px 10px}
+.card4.wk .wkLog ul{margin:6px 0;padding-left:18px;max-height:200px;overflow:auto;font-size:13px}
+.card4.wk .wkLog li span{opacity:.6;margin-right:4px}
+.card4.wk .bonusRow .bmood{display:none}

@@ -27,7 +27,7 @@ function c4BonusRow(q, wage, id) {
   const done = q.bd === SAVE4.day, w = Math.max(1, Math.round(wage));
   const btns = done ? '<span class="sm">Đã thưởng hôm nay.</span>'
     : `<label class="bonusAmt">Thưởng <input type="number" inputmode="numeric" min="1" step="1" value="${w}" data-bonusin="${id}"> đồng</label><button class="btn alt" data-bonus="${id}">Thưởng</button>`;
-  return `<div class="row bonusRow" data-bonusrow="${id}"><span class="sm">Tỏ ra: ${c4GwWord(c4Gw(q))}</span>${btns}</div>`;
+  return `<div class="row bonusRow" data-bonusrow="${id}"><span class="sm bmood">Tỏ ra: ${c4GwWord(c4Gw(q))}</span>${btns}</div>`;
 }
 // id → { q, wage, name, h? }: v|g|i (a village hand), k|key (a town keeper), p|key|i (a town helper), t|i (a betel house hand)
 function c4BonusWho(id) {
@@ -36,7 +36,7 @@ function c4BonusWho(id) {
   if (typeof p4Shops !== 'function') return null;
   if (t === 'k') { const R = p4Shops()[a]; return R && { q: R.wq || (R.wq = {}), wage: p4KeeperWage(R), name: p4Keeper(R) }; }
   if (t === 'p') { const R = p4Shops()[a], h = R && p4ShopHands(R)[+b]; return h && { q: h.wq || (h.wq = {}), wage: p4HelpWage(R, h), name: h.name }; }
-  if (t === 't') { const h = p4Hands()[+b]; return h && { q: h.wq || (h.wq = {}), wage: h.wage, name: h.name }; }
+  if (t === 't') { const h = p4Hands()[+a]; return h && { q: h.wq || (h.wq = {}), wage: h.wage, name: h.name }; }
   return null;
 }
 function c4BonusGive(id, amt) {
