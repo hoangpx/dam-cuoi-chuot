@@ -10,10 +10,10 @@ function c4CoinFrom(sx, sy, toEl) {
   const n = 1 + (Math.random() < .35 ? 1 : 0);
   for (let i = 0; i < n; i++) {
     const c = document.createElement('i'); c.className = 'coinFly'; document.body.appendChild(c);
-    const x0 = sx + (i ? 10 : 0), y0 = sy, mx = (x0 + tx) / 2 + (Math.random() - .5) * 40, my = Math.max(14, Math.min(y0, ty) - 40 - Math.random() * 30);   // the arc stays on the screen
-    const a = c.animate([{ transform: `translate(${x0}px,${y0}px) scale(.9) rotate(0deg)`, opacity: 0 }, { transform: `translate(${x0}px,${y0 - 14}px) scale(1.05) rotate(40deg)`, opacity: 1, offset: .12 },
-      { transform: `translate(${mx}px,${my}px) scale(1) rotate(200deg)`, offset: .55 }, { transform: `translate(${tx}px,${ty}px) scale(.55) rotate(380deg)`, opacity: .9 }],
-      { duration: 1350 + i * 160, easing: 'cubic-bezier(.35,.1,.35,1)', delay: i * 160 });   // (owner: slower)
+    const x0 = sx + (i ? 10 : 0), y0 = sy;   // straight to the basket, slowing down as it nears it (owner 2026-11-12: "bay thẳng vào giỏ tiền, đến gần thì chậm lại")
+    const a = c.animate([{ transform: `translate(${x0}px,${y0}px) scale(1) rotate(0deg)`, opacity: 0 }, { transform: `translate(${x0 + (tx - x0) * .04}px,${y0 + (ty - y0) * .04}px) scale(1) rotate(30deg)`, opacity: 1, offset: .08 },
+      { transform: `translate(${tx}px,${ty}px) scale(.6) rotate(360deg)`, opacity: .95 }],
+      { duration: 1300 + i * 160, easing: 'cubic-bezier(.2,.6,.25,1)', delay: i * 160 });   // (owner: slower)
     a.onfinish = () => { c.remove(); toEl.classList.remove('gotCoin'); void toEl.offsetWidth; toEl.classList.add('gotCoin'); };
   }
   const now = performance.now(); if (now - C4UI.coinT > 110) { C4UI.coinT = now; setTimeout(() => { try { AU.coin(); } catch (e) {} }, 1250); }
