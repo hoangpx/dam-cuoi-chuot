@@ -96,7 +96,9 @@ function c11SapTap(i) {
   C11.menu = { title: `${T.name} · sạp ${i + 1}`, note: `Hôm nay bán được ${c4Money(s.todayDay === SAVE11.day ? s.todaySum || 0 : 0)} · ${kept}`, cols: 2, rows: [
     { name: 'Bày hàng', sub: `${n}/${C11_SAP_SLOTS} chỗ · hàng đúng nghề bán chạy hơn`, tag: ' ', ok: n < C11_SAP_SLOTS, f: () => c11SapPut(i, 0) },
     { name: 'Hàng trên sạp', sub: n ? s.slots.filter(Boolean).map(sl => `${C11_ITEMS[sl.id].name} ×${sl.n}`).join(', ') : 'Chưa bày gì', tag: ' ', ok: true, f: () => c11SapGoods(i) },
-    { name: s.hand >= SAVE11.day ? 'Người trông sạp' : 'Thuê người trông', sub: s.hand >= SAVE11.day ? `Trông đến hết ngày ${s.hand}` : 'Có người trông thì mình đi đâu sạp vẫn bán', price: C11_SAP_WAGE, ok: SAVE11.money >= C11_SAP_WAGE, f: () => c11SapHand(i) },
+    s.hand >= SAVE11.day
+      ? { name: s.handAuto ? 'Người trông sạp · thuê dài ngày' : 'Người trông sạp · chỉ hôm nay', sub: s.handAuto ? `Mỗi sáng tự trả ${c4Money(C11_SAP_WAGE)} tiền công, không phải ra thuê lại. Bấm để cho nghỉ từ mai` : 'Hết hôm nay là nghỉ. Bấm để thuê dài ngày, mỗi sáng tự trả công', tag: s.handAuto ? 'Cho nghỉ từ mai' : 'Thuê dài ngày', ok: true, f: () => c11SapHand(i) }
+      : { name: 'Thuê người trông', sub: `Có người trông thì mình đi đâu sạp vẫn bán. Thuê một lần, các sáng sau tự trả ${c4Money(C11_SAP_WAGE)} tiền công`, price: C11_SAP_WAGE, ok: SAVE11.money >= C11_SAP_WAGE, f: () => c11SapHand(i) },
     { name: s.than ? 'Ban thờ Thần Tài' : 'Lập ban thờ Thần Tài', sub: s.than ? (s.huong === SAVE11.day ? 'Hương đã thắp, hôm nay bình an' : 'Thắp hương: khách đông hơn, tránh chuyện xui') : 'Thờ Thần Tài, Thổ Địa cho buôn bán bình an', price: s.than ? 2 : C11_SAP_THAN, f: () => c11SapThan(i) },
     { name: 'Sổ bán hàng', sub: (s.log && s.log[0] ? s.log[0].text : 'Chưa có gì') + ` · tổng ${c4Money(s.sum || 0)}`, tag: ' ', ok: true, f: () => c11SapBook(i) },
     { name: 'Gia hạn thuê', sub: `Đang thuê đến hết ngày ${s.until}`, tag: ' ', ok: true, f: () => c11SapDays(i, s.trade) },
@@ -151,9 +153,9 @@ function c11SapClear(i) {
 }
 function c11SapHand(i) {
   const s = c11Saps()[i];
-  if (s.hand >= SAVE11.day) { c11Msg(`Người trông sạp làm đến hết ngày ${s.hand}`, '#5b2f1f'); return; }
+  if (s.hand >= SAVE11.day) { s.handAuto = !s.handAuto; c11SapLog(s, s.handAuto ? 'Thuê người trông dài ngày' : 'Cho người trông nghỉ từ mai'); persist11(); c11Sfx.tap(); c11SapTap(i); return; }   // hired once, paid by itself each morning (a player, 2026-11-13: hiring again every day was a chore)
   if (SAVE11.money < C11_SAP_WAGE) { C11.menu.note = 'Chưa đủ tiền công'; return; }
-  SAVE11.money -= C11_SAP_WAGE; s.hand = SAVE11.day; s.handP = s.handP || c11SapHandPerson(i); c11SapLog(s, `Thuê ${s.handP.name} trông sạp hôm nay`); persist11(); c11Sfx.tap(); c11SapTap(i);
+  SAVE11.money -= C11_SAP_WAGE; s.hand = SAVE11.day; s.handAuto = true; s.handP = s.handP || c11SapHandPerson(i); c11SapLog(s, `Thuê ${s.handP.name} trông sạp, mỗi sáng tự trả công`); persist11(); c11Sfx.tap(); c11SapTap(i);
 }
 const C11_SAP_HANDS = ['cái Tẹo', 'thằng Cò', 'chị Nhỡ', 'cô Gấm', 'anh Mít', 'cái Bống'];
 function c11SapHandPerson(i) { const nm = C11_SAP_HANDS[(i * 2 + SAVE11.day) % C11_SAP_HANDS.length]; return { id: 'hand' + i, name: nm, sort: C4_ADULT_SORTS2[(i * 3 + 1) % C4_ADULT_SORTS2.length] }; }
@@ -228,3 +230,19 @@ c11CanNew = function (tx, ty, tool, k, key) {
   if (C11.area === 'dayhang' && c11SapAt(tx, ty) >= 0) return true;
   return c11SapCan0(tx, ty, tool, k, key);
 };
+/* each morning: a hand hired for the long run is paid by itself and keeps the stall again, while the stall is rented and the purse can pay */
+(() => {
+  const oldDay = c11NewDay;
+  c11NewDay = function () {
+    oldDay();
+    const notes = [];
+    c11Saps().forEach((s, i) => {
+      if (!s || !s.handAuto) return;
+      if (!c11SapOn(s)) { s.handAuto = false; notes.push(`Sạp số ${i + 1} hết hạn thuê, người trông nghỉ`); return; }
+      if (SAVE11.money < C11_SAP_WAGE) { s.handAuto = false; c11SapLog(s, 'Không đủ tiền công, người trông nghỉ'); notes.push(`Không đủ tiền công, người trông sạp số ${i + 1} nghỉ`); return; }
+      SAVE11.money -= C11_SAP_WAGE; s.hand = SAVE11.day; s.handP = s.handP || c11SapHandPerson(i); c11SapLog(s, `Trả ${c4Money(C11_SAP_WAGE)} công cho ${s.handP.name}`);
+    });
+    persist11();
+    if (notes.length) setTimeout(() => { if (S.mode === 'c11play') c11Msg(notes.join(' · '), '#a3332a'); }, 5200);
+  };
+})();
