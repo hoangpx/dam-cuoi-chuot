@@ -35,8 +35,8 @@ const P4_MINI = {
     r: { lua: ['thuoc', 'lua', 'keo', 'gap'], vai: ['thuoc', 'vai', 'keo', 'day'], the: ['thuoc', 'the', 'gap'] } },
   gom: { pieces: [['bat', 'Bát'], ['dia', 'Đĩa'], ['binh', 'Bình'], ['am', 'Ấm'], ['rom', 'Rơm lót'], ['giay', 'Giấy gói'], ['day', 'Dây buộc']],
     r: { bat: ['bat', 'dia', 'rom', 'day'], binh: ['binh', 'rom', 'giay'], am: ['am', 'rom', 'giay', 'day'] } },
-  vang: { pieces: [['nhan', 'Nhẫn'], ['khuyen', 'Khuyên'], ['vong', 'Vòng'], ['khan', 'Khăn nhung'], ['hop', 'Hộp gỗ'], ['giay', 'Giấy hồng']],
-    r: { nhan: ['nhan', 'hop'], khuyen: ['khuyen', 'khan', 'hop'], vong: ['vong', 'khan', 'hop', 'giay'] } },
+  vang: { pieces: [['nhan', 'Nhẫn'], ['khuyen', 'Khuyên'], ['vong', 'Vòng'], ['da', 'Đá quý'], ['khan', 'Khăn nhung'], ['hop', 'Hộp gỗ'], ['giay', 'Giấy hồng']],
+    r: { nhan: ['nhan', 'hop'], khuyen: ['khuyen', 'khan', 'hop'], vong: ['vong', 'khan', 'hop', 'giay'], daquy: ['da', 'khan', 'hop'] } },
   den: { pieces: [['khung', 'Khung tre'], ['do', 'Giấy đỏ'], ['vang', 'Giấy vàng'], ['canh', 'Cánh sen'], ['ho', 'Hồ dán'], ['nen', 'Nến'], ['tua', 'Tua']],
     r: { tron: ['khung', 'do', 'ho', 'tua'], sen: ['khung', 'canh', 'ho', 'nen'], keo: ['khung', 'vang', 'ho', 'nen', 'tua'], hoa: ['canh', 'nen'] } },
 };
@@ -56,7 +56,7 @@ const P4_ICON_OF = {
   may: { do: ['ruler', '#e0b43a'], vai: ['cloth', '#c0567a'], keo: ['scissors'], kim: ['spool', '#2f5f8f'], khan: ['cloth', '#2a221d'], gap: ['fold'] },
   vai: { thuoc: ['ruler', '#e0b43a'], lua: ['cloth', '#c0567a'], vai: ['cloth', '#7a4a22'], the: ['cloth', '#2a221d'], keo: ['scissors'], gap: ['fold'], day: ['string', '#a3332a'] },
   gom: { bat: ['bowl', '#fbf8ef'], dia: ['plate'], binh: ['vase', '#2f5f8f'], am: ['kettle'], rom: ['bits', '#e0c070'], giay: ['paper', '#d9b878'], day: ['string', '#a3332a'] },
-  vang: { nhan: ['ring', '#c8ccd2'], khuyen: ['earring', '#e0b43a'], vong: ['bangle', '#e0b43a'], khan: ['cloth', '#a3332a'], hop: ['box'], giay: ['paper', '#e88aa8'] },
+  vang: { nhan: ['ring', '#c8ccd2'], khuyen: ['earring', '#e0b43a'], vong: ['bangle', '#e0b43a'], da: ['gem', '#2f8a6a'], khan: ['cloth', '#a3332a'], hop: ['box'], giay: ['paper', '#e88aa8'] },
   den: { khung: ['frame'], do: ['paper', '#c4473a'], vang: ['paper', '#e0b43a'], canh: ['petals', '#e88aa8'], ho: ['jar', '#e8e2d2'], nen: ['candle'], tua: ['tassel', '#c4473a'] },
 };
 const p4IconStroke = (g, r) => { g.strokeStyle = INK; g.lineWidth = Math.max(1, r * .07); g.lineJoin = 'round'; g.lineCap = 'round'; };
@@ -127,6 +127,12 @@ const P4_ICON_DRAW = {
   petals: (g, r, c) => { for (let i = 0; i < 6; i++) { g.save(); g.rotate(i * 1.05); g.fillStyle = c; g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(r * .3, -r * .35, 0, -r * .75); g.quadraticCurveTo(-r * .3, -r * .35, 0, 0); g.fill(); g.stroke(); g.restore(); } g.fillStyle = '#e0b43a'; g.beginPath(); g.arc(0, 0, r * .14, 0, 6.283); g.fill(); g.stroke(); },
   plate: (g, r) => { p4El(g, 0, r * .1, r * .8, r * .38, '#fbf8ef'); g.strokeStyle = '#2f5a9a'; g.lineWidth = Math.max(1, r * .07); g.beginPath(); g.ellipse(0, r * .1, r * .55, r * .24, 0, 0, 6.283); g.stroke(); p4IconStroke(g, r); },
   vase: (g, r, c) => { g.fillStyle = c; g.beginPath(); g.moveTo(-r * .18, -r * .75); g.lineTo(r * .18, -r * .75); g.quadraticCurveTo(r * .1, -r * .4, r * .45, -r * .05); g.quadraticCurveTo(r * .6, r * .5, r * .25, r * .8); g.lineTo(-r * .25, r * .8); g.quadraticCurveTo(-r * .6, r * .5, -r * .45, -r * .05); g.quadraticCurveTo(-r * .1, -r * .4, -r * .18, -r * .75); g.closePath(); g.fill(); g.stroke(); g.strokeStyle = '#fbf8ef'; g.lineWidth = Math.max(1, r * .08); g.beginPath(); g.moveTo(-r * .4, r * .2); g.quadraticCurveTo(0, 0, r * .4, r * .2); g.stroke(); p4IconStroke(g, r); },
+  // a cut gem: crown, table and pavilion facets (đá quý, owner 2026-11-12)
+  gem: (g, r, c) => { const top = -r * .38, mid = -r * .08, bot = r * .62, w = r * .72, t = r * .36;
+    g.fillStyle = c; g.beginPath(); g.moveTo(-t, top); g.lineTo(t, top); g.lineTo(w, mid); g.lineTo(0, bot); g.lineTo(-w, mid); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.moveTo(-t, top); g.lineTo(t, top); g.lineTo(t * .55, mid); g.lineTo(-t * .55, mid); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(-w, mid); g.lineTo(w, mid); g.moveTo(-t * .55, mid); g.lineTo(0, bot); g.lineTo(t * .55, mid); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.arc(-t * .35, top + r * .1, r * .06, 0, 6.283); g.fill(); },
   ring: (g, r, c) => { g.strokeStyle = INK; g.lineWidth = Math.max(2, r * .22); g.beginPath(); g.arc(0, r * .15, r * .45, 0, 6.283); g.stroke(); g.strokeStyle = c; g.lineWidth = Math.max(1, r * .12); g.stroke(); p4IconStroke(g, r); p4El(g, 0, -r * .35, r * .17, r * .14, '#c4473a'); },
   earring: (g, r, c) => { for (const x of [-.32, .32]) { g.strokeStyle = c; g.lineWidth = Math.max(1, r * .08); g.beginPath(); g.arc(x * r, -r * .35, r * .14, Math.PI, 0); g.stroke(); p4IconStroke(g, r); p4El(g, x * r, r * .15, r * .15, r * .32, c); } },
   bangle: (g, r, c) => { g.strokeStyle = INK; g.lineWidth = Math.max(2, r * .3); g.beginPath(); g.ellipse(0, 0, r * .62, r * .45, 0, 0, 6.283); g.stroke(); g.strokeStyle = c; g.lineWidth = Math.max(1, r * .18); g.stroke(); p4IconStroke(g, r); },

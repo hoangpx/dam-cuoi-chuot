@@ -41,7 +41,7 @@ const P4_KINDS = {
   'TRÀ SEN': P4_SHOPK([W('sen', 'Trà sen', 'gói', 80, 160, 1.5), W('man', 'Trà mạn', 'gói', 32, 65, 3), W('am', 'Ấm chén', 'bộ', 110, 220, .6)], 'sang', { mua: .9 }, 'tra', 18),
   'TIỆM VẢI': P4_SHOPK([W('lua', 'Lụa tơ tằm', 'tấm', 85, 170, 1.5), W('vai', 'Vải nâu', 'tấm', 32, 65, 3), W('the', 'Vải the', 'tấm', 55, 110, 2)], 'deu', { mua: .8 }, 'vai', 20),
   'HÀNG GỐM': P4_SHOPK([W('bat', 'Bát đĩa', 'chồng', 22, 45, 3), W('binh', 'Bình hoa', 'chiếc', 50, 100, 1.5), W('am', 'Ấm tích', 'chiếc', 40, 80, 1.5)], 'sang', { mua: .8 }, 'gom', 16),
-  'TIỆM VÀNG': P4_SHOPK([W('nhan', 'Nhẫn bạc', 'chiếc', 50, 90, 3), W('khuyen', 'Khuyên tai', 'đôi', 72, 130, 2), W('vong', 'Vòng vàng', 'chiếc', 210, 380, .6)], 'deu', { mua: .9 }, 'vang', 12),
+  'TIỆM VÀNG': P4_SHOPK([W('nhan', 'Nhẫn bạc', 'chiếc', 50, 90, 3), W('khuyen', 'Khuyên tai', 'đôi', 72, 130, 2), W('vong', 'Vòng vàng', 'chiếc', 210, 380, .6), W('daquy', 'Đá quý', 'viên', 400, 720, .35)], 'deu', { mua: .9 }, 'vang', 12),   // đá quý: owner 2026-11-12
   'MAY ÁO DÀI': P4_SHOPK([W('aodai', 'Áo dài may sẵn', 'bộ', 150, 300, 1), W('sua', 'Sửa áo', 'lần', 18, 35, 3), W('khanxep', 'Khăn xếp', 'chiếc', 35, 70, 1.5)], 'deu', { mua: .8 }, 'may', 18),
 };
 for (const n of P4_LAMP_NAMES) P4_KINDS[n] = P4_LAMPK;
