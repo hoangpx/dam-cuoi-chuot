@@ -232,7 +232,7 @@ function p4MiniRestore() {
     if (p4TemMatch(b, c.order)) {
       const r = p4ShopSell(S.R, S.key, c.order.ware, 1, false);
       if (r.n) {
-        const tip = Math.round(r.got * .5 * Math.max(0, c.pat / c.patMax)); SAVE4.money += tip; P4.today.take += tip;
+        const tip = p4Kind(S.R).t === 'an' ? Math.round(r.got * .5 * Math.max(0, c.pat / c.patMax)) : 0;   // only an eating house's customers tip for a quick bowl (owner 2026-11-13: not the goldsmith or any shop) SAVE4.money += tip; P4.today.take += tip;
         if (tip > 0) { const T = P4.shopDay[S.key] || (P4.shopDay[S.key] = { n: 0, take: 0, cost: 0, by: {} }); T.take += tip; T.tip = (T.tip || 0) + tip; }   // the customers' tips are the shop's takings too (the shift's sheet counted them, the evening tally did not)
         const got = r.got + tip; P4T.earned += got; P4T.cost = (P4T.cost || 0) + r.n * c.order.ware.c;   // the goods were paid out of the purse as they sold (owner, 2026-11-08: a player saw Thu 30 quan, 20 in the purse)
         P4T.served++; persist4(); p4Persist(); AU.pluck(84 + (got % 5));
