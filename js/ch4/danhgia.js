@@ -91,6 +91,7 @@ function c4RvRefresh() { document.querySelectorAll('.rvw').forEach(d => { d.inne
 const c4RvTabName = sid => { const a = c4RvAvg(sid); return a === null ? 'Đánh giá' : `Đánh giá ★${a.toFixed(1).replace('.', ',')}`; };
 // the tab bar: Hàng quán | Mời khách (when there is anyone to invite) | Đánh giá
 function c4RvBar(body, sid, label, treat, sheetEl, store, onSet) {
+  if (treat && !treat.children.length) treat.innerHTML = '<p class="sm">Chưa có khách quen nào để mời. Bán cho người ta vài lần là quen.</p>';   // the tab always shows (owner 2026-11-13: "Luôn hiện")
   const n = treat ? treat.querySelectorAll('.tr').length : 0, bar = document.createElement('div'); bar.className = 'uptabs';
   bar.innerHTML = `<button type="button" data-ut="q">${label}</button>` + (treat && treat.children.length ? `<button type="button" data-ut="m">Mời khách${n ? ' (' + n + ')' : ''}</button>` : '') + `<button type="button" data-ut="r" data-sid="${sid}">${c4RvTabName(sid)}</button>`;
   body.prepend(bar);
