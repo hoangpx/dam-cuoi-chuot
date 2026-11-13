@@ -113,6 +113,9 @@ function startP4() {
 function p4NewDay() {
   Object.assign(P4, { day: SAVE4B.day, mins: P4_OPEN, phase: 'open', walkers: [], Q: [], fx: [], today: { sold: 0, take: 0, spent: 0, lost: 0 } });
   P4.FQ = {}; P4.shopDay = {}; P4.boss = null; P4.thugs = null;
+  { const K = SAVE4B.todayS;   // the day's ledger is kept in the save: a reload mid-day used to lose the morning's sales from the evening tally (a player, 2026-11-13: three gold shifts, the tally showed less)
+    if (K && K.d === SAVE4B.day && K.w === SAVE4.day && K.today && K.shop) { P4.today = K.today; P4.shopDay = K.shop; }
+    else SAVE4B.todayS = { d: SAVE4B.day, w: SAVE4.day, today: P4.today, shop: P4.shopDay }; }
   P4.sellers = p4MakeSellers(); P4.wife = P4.sellers[0]; P4.apply = null; P4.boatT = 25;
   for (const b of P4.townBoats || []) if (b.order) { b.order = null; b.stop = false; b.say = null; if (b.y0 !== undefined) { b.y = b.y0; b.y0 = undefined; } }   // last night's callers are gone
   for (let i = 0; i < 18; i++) p4Spawn(P4.camX - 200 + Math.random() * (p4View().vw + 400));

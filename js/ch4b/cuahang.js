@@ -235,7 +235,7 @@ p4ShopsEvening = function () {
     (R.tk = R.tk || []).push(Math.round(T.take)); if (R.tk.length > 7) R.tk.shift();                       // the takings of the last 7 evenings (fair pay, doicong.js)
     (R.nh = R.nh || []).push(T.n); if (R.nh.length > 7) R.nh.shift();
     p4RefDrift(R); p4TireEvening(R);
-    let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}, vốn hàng đã bán ${c4Money(T.cost)}, công ${c4Money(wage)}, ${K.t === 'an' ? 'than củi, nước' : 'dầu đèn, giấy gói'} ${c4Money(oh)}` + mis.text;
+    let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}${T.tip ? ` (có ${c4Money(T.tip)} khách thưởng)` : ''}, vốn hàng đã bán ${c4Money(T.cost)}, công ${c4Money(wage)}, ${K.t === 'an' ? 'than củi, nước' : 'dầu đèn, giấy gói'} ${c4Money(oh)}` + mis.text;
     const byTxt = (T.n ? `<br><span class="sm">Từng món: ${K.wares.filter(w => (T.by || {})[w.id]).map(w => `${w.n.toLowerCase()} ${T.by[w.id]} ${w.u}`).join(', ')}${K.wares.some(w => p4OnMenu(R, w) && !(T.by || {})[w.id]) ? ' · không bán được: ' + K.wares.filter(w => p4OnMenu(R, w) && !(T.by || {})[w.id]).map(w => w.n.toLowerCase()).join(', ') : ''}</span>` : '');   // each ware's count (a player asked: easier to set prices)
     if ((SAVE4B.day - R.since + 1) % 7 === 0) {
       let note = '';
@@ -252,7 +252,7 @@ p4ShopsEvening = function () {
     }
     out.push(`<p>${line}${byTxt}</p>`);
   }
-  P4.shopDay = {}; persist4(); p4Persist();
+  P4.shopDay = {}; if (SAVE4B.todayS) SAVE4B.todayS.shop = P4.shopDay; persist4(); p4Persist();
   return out.join('');
 };
 

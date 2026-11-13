@@ -70,7 +70,7 @@ function p4ShopsEvening() {
     }
     out.push(`<p>${line}</p>`);
   }
-  P4.shopDay = {}; persist4(); p4Persist();
+  P4.shopDay = {}; if (SAVE4B.todayS) SAVE4B.todayS.shop = P4.shopDay; persist4(); p4Persist();
   return out.join('');
 }
 // the sheet of an eating house along the street: rent it, buy it, or (when ours) its week, the signboard, the name, buy it out, give it up
