@@ -136,7 +136,7 @@ function w4TownEnter() {
 function w4TownBetelRate(m) {
   const h = m / 60; let busy = .4; for (let i = P4_BUSY.length - 1; i >= 0; i--) if (h >= P4_BUSY[i][0]) { busy = P4_BUSY[i][1]; break; }
   if (typeof c4TetFlow === 'function') busy *= c4TetFlow();               // the days round Tết (js/ch4/tet.js)
-  const walkers = busy * p4WxFlow() / 3.2, buy = Math.min(1, .3 * p4BetelFlow() * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * .8);
+  const walkers = busy * p4WxFlow() / 3.2, buy = Math.min(1, .3 * p4BetelFlow() * (typeof c4RvK === 'function' ? c4RvK('pho:trau') : 1) * p4Warmth() * (SAVE4B.sign ? 1.1 : 1) * p4Harass() * .8);
   return walkers * buy / (P4_MPS * (m >= 18 * 60 ? .4 : 1));
 }
 // betel bought at the house on a day (the house sheet's Nhập trầu): a new day begun away from the town buys the same (w4TownAutoBuy)

@@ -8,7 +8,8 @@
 const C4_FIRE_DAYS = 30;
 const c4FireN = () => (SAVE4.fireLog || []).filter(d => SAVE4.day - d < C4_FIRE_DAYS).length;
 const c4FireK = () => 1 - Math.min(.6, .1 * c4FireN());
-function c4FireNote() { const L = (SAVE4.fireLog || (SAVE4.fireLog = [])).filter(d => SAVE4.day - d < C4_FIRE_DAYS); L.push(SAVE4.day); SAVE4.fireLog = L; persist4(); }
+function c4FireNote(sid, who) { if (sid && typeof c4RvStaff === 'function') c4RvStaff(sid, who, 'duoi');   // the one sent away writes a review (danhgia.js)
+  const L = (SAVE4.fireLog || (SAVE4.fireLog = [])).filter(d => SAVE4.day - d < C4_FIRE_DAYS); L.push(SAVE4.day); SAVE4.fireLog = L; persist4(); }
 // worse people for a bad name: traits scaled, the asked pay moved with them (field `ask` in the village, `wage` in the town)
 function c4FireWorse(list) {
   const k = c4FireK(); if (k >= 1) return list;
@@ -24,11 +25,11 @@ function c4FireWorse(list) {
 { const a0 = p4Applicants; p4Applicants = function () { return c4FireWorse(a0.apply(this, arguments)); }; }
 { const a0 = p4ShopApplicants; p4ShopApplicants = function () { return c4FireWorse(a0.apply(this, arguments)); }; }
 // the dismissals
-{ const f0 = c4WkFire; c4WkFire = function (W) { const town = W && W.place !== 'lang' && !W.R && W.id0 !== 'k'; const r = f0.apply(this, arguments); if (r && !town) c4FireNote(); return r; }; }   // (a betel hand goes through p4HandsClick, counted there)
-{ const f0 = p4HandsClick; p4HandsClick = function (b) { const h = b && b.dataset && b.dataset.fire !== undefined && p4Hands()[+b.dataset.fire]; const r = f0.apply(this, arguments); if (h && !p4Hands().includes(h)) c4FireNote(); return r; }; }
+{ const f0 = c4WkFire; c4WkFire = function (W) { const town = W && W.place !== 'lang' && !W.R && W.id0 !== 'k'; const r = f0.apply(this, arguments); if (r && !town) c4FireNote(W.place === 'lang' ? 'lang:' + W.g : 'pho:' + W.key, W.h && W.h.name); return r; }; }   // (a betel hand goes through p4HandsClick, counted there)
+{ const f0 = p4HandsClick; p4HandsClick = function (b) { const h = b && b.dataset && b.dataset.fire !== undefined && p4Hands()[+b.dataset.fire]; const r = f0.apply(this, arguments); if (h && !p4Hands().includes(h)) c4FireNote('pho:trau', h.name); return r; }; }
 { const f0 = p4ShopClick; p4ShopClick = function (b) {
     const sel = typeof P4 !== 'undefined' && P4.shopSel, R = sel && p4Shops()[sel.key], x = R && b && b.dataset && b.dataset.fire !== undefined && p4ShopHands(R)[+b.dataset.fire];
-    const r = f0.apply(this, arguments); if (x && !p4ShopHands(R).includes(x)) c4FireNote(); return r; }; }
+    const r = f0.apply(this, arguments); if (x && !p4ShopHands(R).includes(x)) c4FireNote('pho:' + sel.key, x.name); return r; }; }
 { const f0 = p4ApplyClick; p4ApplyClick = function (R, key, b) {
     const A = P4.sapply, k = b && b.dataset && b.dataset.spick !== undefined && A && A.key === key && A.role === 'k' && A.list[+b.dataset.spick], kn0 = R.kn;
-    const r = f0.apply(this, arguments); if (k && R.kn !== kn0) c4FireNote(); return r; }; }
+    const r = f0.apply(this, arguments); if (k && R.kn !== kn0) c4FireNote('pho:' + key, kn0); return r; }; }

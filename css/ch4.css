@@ -684,3 +684,17 @@ body.c4 #c4hud .bar .tag.tl,body.c4 #p4hud .bar .tag.tl{box-shadow:none!importan
 body.c4 .card4 h3,body.c4 .card4 h4{font-weight:800}
 body.c4 #toast span{box-shadow:none;border-radius:10px;font-family:var(--body)}
 body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--body)}
+
+/* Đánh giá tab (js/ch4/danhgia.js) */
+#c4up.tab-rv #c4upB,#c4up.tab-rv #c4upGo,#c4up.tab-rv #c4upO>:not(.rvw):not(.uptabs):not(.upback){display:none!important}
+#c4up:not(.tab-rv) .rvw,.p4sheet:not(.tab-rv) .rvw{display:none}
+#p4home.tab-rv #p4homeB>:not(.rvw):not(.uptabs),#p4shop.tab-rv #p4shopB>:not(.rvw):not(.uptabs):not(.row:last-child){display:none!important}
+.rvw{text-align:left}
+.rvw .rvhead{font-size:16px;margin:0 0 8px}
+.rvw .rvst{color:#c98a1c;letter-spacing:1px;font-size:15px}
+.rvw .rvl{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow-y:auto;padding-right:2px}
+.rvw .rvi{padding:6px 8px;border:1.5px solid rgba(29,25,21,.25);background:#f6f0e2;border-radius:4px}
+.rvw .rvi.nv{background:#f3e3dc;border-color:rgba(163,51,42,.35)}
+.rvw .rvi p{margin:3px 0 0;font-size:14px;line-height:1.35}
+.rvw .rvt small{color:#6b5f52}
+.rvw .rvwait{color:#6b5f52;font-style:italic}

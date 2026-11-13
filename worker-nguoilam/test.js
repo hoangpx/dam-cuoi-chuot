@@ -21,3 +21,11 @@ assert.equal(readAnswer({ stop_reason: 'refusal', content: [] }).tone, 'binh_thu
 assert.ok(isBad('đụ má') && !isBad('đi chợ'));
 assert.match(vnDay(Date.UTC(2026, 0, 1, 18)), /^2026-01-02$/);
 console.log('ok');
+// the reviews (src/review.js)
+import { cleanItems, buildReview, readReview, RV_SCHEMA } from './src/review.js';
+const I = cleanItems([{ k: 'nv', s: 9, shop: 'Phở', who: 'anh Tư', why: 'duoi' }, { k: 'x', s: 0, why: 'zzz' }, ...Array(9).fill({ k: 'kh', s: 5 })]);
+assert.equal(I.length, 6); assert.equal(I[0].s, 5); assert.equal(I[0].k, 'nv'); assert.equal(I[1].k, 'kh'); assert.equal(I[1].s, 1); assert.equal(I[1].why, 'ngon');
+const RR = buildReview(I.slice(0, 2)); assert.equal(RR.model, 'claude-haiku-5-5'); assert.deepEqual(RR.output_config.format.schema, RV_SCHEMA); assert.ok(RR.messages[0].content.includes('anh Tư'));
+assert.deepEqual(readReview({ stop_reason: 'end_turn', content: [{ type: 'text', text: '{"texts":["Ngon xỉu","đụ má"]}' }] }, 3), ['Ngon xỉu', '', '']);
+assert.deepEqual(readReview({ stop_reason: 'refusal', content: [] }, 1), ['']);
+console.log('review ok');
