@@ -304,3 +304,4 @@ Bốn nút dưới nhỏ và thấp hơn (owner 2026-11-12: che biển "Đất t
 
 Một font, một kiểu nút (owner 2026-11-12: "dùng 1 font Be Vietnam Pro thôi; nút bo tròn, không đổ bóng"): trong chương IV (body.c4, cả quê và phố) --display = --body nên mọi chữ HTML là Be Vietnam Pro; chữ vẽ trên canvas của js/ch4 và js/ch4b (29 chỗ "Playfair Display") đổi sang "Be Vietnam Pro"; tải thêm độ đậm 700/800 (index.html); .btn, .tag, thẻ người làm, thẻ cửa hàng, tab: bo 10 px, không đổ bóng, viền 1,5 px; ô chọn / ô nhập cũng Be Vietnam Pro. Các chương khác giữ font cũ. VERSION 2026-11-12za.
 Ô tiền đứng yên khi xu bay vào (owner 2026-11-12: "đừng làm ô tiền to nhỏ"): bỏ hiệu ứng purseBump. VERSION 2026-11-12zb.
+Quán gạo, trò tự bán (owner 2026-11-12: "gạo tám và gạo nếp giống y hệt nhau"): tiemnho.js hai hình riêng: ricelong (gạo tám: bát hạt dài thon màu ngà) và riceround (gạo nếp: đống hạt tròn trắng mẩy trên lá chuối xanh). VERSION 2026-11-12zc.
