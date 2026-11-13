@@ -130,7 +130,10 @@ function c4PayHands(d, quits) {
       // owner: a hand only takes from the day's sales of the stall they work at (C4.today.by[g].take), never the whole purse.
       // at 20% relationship they may run off with that day's takings (rarer since 2026-10-16); there is no skimming any more (owner)
       const tk = Math.min(SAVE4.money, (C4.today.by && C4.today.by[g] && C4.today.by[g].take) || 0);
-      if (tk > 0 && R() < (typeof c4RunChance === 'function' ? c4RunChance(c4Wage(g, h), c4HandFair(h), h.ho, h.rel, h.wq && h.wq.mad, h.wq) : (h.rel <= 20 ? .2 * (1 - h.ho) : 0))) {   // the shared rule (doicong-que.js): rare when paid fairly
+      c4SulkDrift(h, 'sp', 'wm', c4Unhappy(h.wq, h.rel, c4Wage(g, h), c4HandFair(h)));   // unhappy: slower and colder first (doicong-que.js)
+      const pRun = c4RunChance(c4Wage(g, h), c4HandFair(h), h.ho, h.rel, h.wq && h.wq.mad, h.wq), thief = c4Thief(h.wq, h.sp, h.wm, h.ho);
+      if (!thief && R() < pRun * C4_QUIT_K) { quits.push(`${c4Cap1(h.name)} (${C4_GOODS[g].name.toLowerCase()}) bỏ việc, không làm nữa.`); H.splice(H.indexOf(h), 1); continue; }
+      if (tk > 0 && thief && R() < pRun) {   // only a worker scolded a lot and run down takes the money (doicong-que.js)
          SAVE4.money -= tk; d.theft = (d.theft || 0) + tk; quits.push(`${c4Cap1(h.name)} ôm theo ${c4Money(tk)} tiền bán hàng hôm nay ở ${C4_GOODS[g].name.toLowerCase()} rồi biến mất.`); H.splice(H.indexOf(h), 1); continue; }
     }
   }

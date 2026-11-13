@@ -23,7 +23,24 @@ function c4RunChance(wage, fair, ho, rel, mad, q) {
   return Math.min(.35, (.002 + (m ? .15 * under * m : 0)) * (1.5 - h) * (rel !== undefined && rel <= 20 ? 2 : 1));
 }
 // a hand that may run off with a rich day's takings (the trom_ngay event): refused a raise since last paid fairly, or on bad terms, and not just raised
-const c4Sour = h => !c4Grace(h.wq) && ((h.wq && h.wq.mad > 0) || (h.rel !== undefined && h.rel <= 20));
+/* Sulking before running (owner 2026-11-13: "giảm tỷ lệ nhân viên bỏ ôm tiền xuống, thay vào đó là làm chậm hơn, nhiệt tình kém hơn -> khách ghé ít hơn,
+   khi mà bị chửi nhiều và các chỉ số giảm xuống nhiều thì mới ôm tiền bỏ trốn, còn bình thường chỉ bỏ làm chứ ko lấy tiền"; hidden). An unhappy worker
+   (c4Unhappy: refused since last paid fairly, quan hệ ≤ 30, or paid under .8 of fair) loses .02 nhanh nhẹn and .03 nhiệt tình each evening (c4SulkDrift,
+   floor .05), so serving is slower and fewer buyers come (traits feed speed and the shop's draw already). A rude word in the chat is noted in wq.scold
+   (days) and costs .01 / .02 at once. The evening roll c4RunChance is now a chance to LEAVE: normally they only quit, taking nothing, at half that
+   chance (C4_QUIT_K); only a worker scolded C4_THIEF_SCOLD times or more in the last 7 days whose three traits average under C4_THIEF_LOW runs off
+   with the day's takings, at the full chance. The rich-purse event trom_ngay needs the same. */
+const C4_QUIT_K = .5, C4_THIEF_SCOLD = 3, C4_THIEF_LOW = .3;
+const c4Scolds = q => ((q && q.scold) || []).filter(d => SAVE4.day - d < 7).length;
+function c4ScoldNote(q, o, spK, wmK) {
+  if (!q) return; const L = (q.scold || []).filter(d => SAVE4.day - d < 7); L.push(SAVE4.day); q.scold = L;
+  if (o) { o[spK] = Math.max(.05, (o[spK] ?? .5) - .01); o[wmK] = Math.max(.05, (o[wmK] ?? .5) - .02); }
+}
+const c4TrAvg = (sp, wm, ho) => ((sp ?? .5) + (wm ?? .5) + (ho ?? .5)) / 3;
+const c4Thief = (q, sp, wm, ho) => c4Scolds(q) >= C4_THIEF_SCOLD && c4TrAvg(sp, wm, ho) < C4_THIEF_LOW;
+const c4Unhappy = (q, rel, wage, fair) => !c4Grace(q) && ((q && q.mad > 0) || (rel !== undefined && rel <= 30) || (fair > 0 && wage < .8 * fair));
+function c4SulkDrift(o, spK, wmK, unhappy) { if (!o || !unhappy) return; o[spK] = Math.max(.05, (o[spK] ?? .5) - .02); o[wmK] = Math.max(.05, (o[wmK] ?? .5) - .03); }
+const c4Sour = h => c4Thief(h.wq, h.sp, h.wm, h.ho) && !c4Grace(h.wq) && ((h.wq && h.wq.mad > 0) || (h.rel !== undefined && h.rel <= 20));
 // fair pay by the takings (owner, 2026-11-09, approved proposal, the same rule as the town): a hired hand is a helper beside the wife, so half the
 // trade's share (eating 18 %, staples 8 %, trade 11 %; tamly.js c4GCat) of the stall's takings over its last 7 evenings (h.tk); kept in h.fair
 const C4_VCAT_L = { an: .11, ty: .08, cd: .11, xx: .06, mv: .12 };

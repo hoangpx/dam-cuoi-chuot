@@ -258,7 +258,7 @@ async function c4WkSend() {
     const q = W2.q, day = SAVE4.day; q.talkD = day; if (q.chatD !== day) { q.chatD = day; q.chatG = 0; }
     const up = { lich_su: .025, binh_thuong: .01 }[out.tone] || 0;          // talking on the subject warms them little by little (owner 2026-11-12: "trò chuyện thì tăng dần hảo cảm")
     if (up && q.chatG < .08) { const d = Math.min(up, .08 - q.chatG); q.chatG += d; q.gw = Math.min(1, c4Gw(q) + d); }
-    else if (out.tone === 'ho') q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .05);
+    else if (out.tone === 'ho') { q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .05); const k = id.split('|')[0], o = k === 'k' ? p4Shops()[id.split('|')[1]] : W2.h || (k === 'p' ? p4ShopHands(p4Shops()[id.split('|')[1]])[+id.split('|')[2]] : k === 't' ? p4Hands()[+id.split('|')[1]] : null); c4ScoldNote(q, o, k === 'k' ? 'ksp' : 'sp', k === 'k' ? 'kwm' : 'wm'); }   // a rude word is remembered (doicong-que.js)
     { const dr = { lich_su: 2, binh_thuong: 1, ho: -3 }[out.tone] || 0;         // the relationship follows the talk too (at most +6 a day)
       if (q.relD !== day) { q.relD = day; q.relG = 0; }
       if (dr < 0) c4WkRelAdd(W2, dr); else if (dr && q.relG < 6) { const d = Math.min(dr, 6 - q.relG); q.relG += d; c4WkRelAdd(W2, d); } }
