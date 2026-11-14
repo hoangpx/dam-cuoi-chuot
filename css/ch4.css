@@ -769,3 +769,6 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 /* the swipe-to-close sheets: the card cannot rubber-band and the backdrop does not scroll, so only my drag moves it (dongtay.js) */
 .c4sheet.xs{overflow:hidden}
 .c4sheet.xs .card4{overscroll-behavior-y:none}
+/* buttons standing straight in a card (the evening's Sang ngày mới / Lên phố huyện / Đi ngủ) were drawn edge to edge; every such button keeps a
+   little room round it (owner 2026-11-14: "chữ dính với nhau, rà soát lại hết"; the other sheets put theirs in a .row with a gap) */
+.c4sheet .card4>.btn{margin:5px 4px}
