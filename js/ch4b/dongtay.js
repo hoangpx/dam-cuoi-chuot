@@ -10,6 +10,11 @@ const C4X = {
   c4ev: () => $('#c4ev .card4').querySelector('.nvTabs') ? [...$('#c4evO').querySelectorAll('button')].find(b => /Đóng/.test(b.textContent)) : null,
   // a worker's sheet (owner 2026-11-14: "ấn vào detail của một nhân viên xong đóng lại thì nó lại quay lại cái phần trước chứ nó không đóng"): the ×,
   // a swipe or a tap outside close it for good; going back to the list or the stall is the sheet's own buttons (‹ Danh sách nhân viên, Quay lại)
+  // a stall's and a shop's own sheet (owner 2026-11-14: "sao chữ nâng cấp và đóng nó lơ lửng ở giữa thế này? bỏ chữ đóng đi, cho chữ nâng cấp
+  // dính vào bảng và để lên đầu"): no Đóng either; the village stall's upgrade button is moved up under the title (below)
+  c4up: () => $('#c4upX'),
+  p4shop: () => $('#p4shopB [data-shopx]'),
+  p4home: () => $('#p4homeX'),
   c4wk: () => typeof C4WK !== 'undefined' && C4WK.id ? { click: () => { C4WK.id = null; if (typeof C4NV !== 'undefined') C4NV.id = null; $('#c4wk').hidden = true; (S.mode === 'c4bplay' ? p4Sheets : c4Sheets)(null); } } : null
 };
 const c4XCan = id => { const f = C4X[id]; return !!(f && f()); };
@@ -63,3 +68,5 @@ for (const id of Object.keys(C4X)) {
   };
   card.addEventListener('touchend', end); card.addEventListener('touchcancel', end);
 }
+// the stall sheet's upgrade button: out of the bottom row (which floated mid-sheet on an iPhone) and up under the title
+{ const go = $('#c4upGo'), t = $('#c4upT'); if (go && t) { const top = document.createElement('div'); top.className = 'upTop'; top.appendChild(go); t.after(top); } }

@@ -772,3 +772,12 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 /* buttons standing straight in a card (the evening's Sang ngày mới / Lên phố huyện / Đi ngủ) were drawn edge to edge; every such button keeps a
    little room round it (owner 2026-11-14: "chữ dính với nhau, rà soát lại hết"; the other sheets put theirs in a .row with a gap) */
 .c4sheet .card4>.btn{margin:5px 4px}
+/* stall and shop sheets: × instead of Đóng (dongtay.js), the upgrade button up top; the bottom rows left with nothing to show are gone */
+#c4upX,#p4homeX,#p4shopB [data-shopx]{display:none!important}
+#c4up .card4>.row:last-child:not(:has(button:not(#c4upX))),#p4home .card4>.row:last-child:not(:has(button:not([hidden]):not(#p4homeX))),#p4shopB>.row:last-child:not(:has(button:not([data-shopx]))){display:none!important}
+#c4up .upTop{margin:0 0 10px}
+#c4up .upTop .btn{margin:0 auto;display:block}
+#c4up .upTop .btn[hidden]{display:none}
+/* these sheets measure their height from the sheet itself, not from the screen unit (an iPhone's dvh and the fixed sheet disagreed, and the card
+   ran past the bottom with its sticky row floating mid-way) */
+#c4ev .card4:has(.nvTabs),#p4ups .card4,#c4wk .card4,#c4up .card4,#p4shop .card4,#p4home .card4,#c4note .card4,#hs .card4{height:min(760px,calc(100% - 24px))!important;max-height:calc(100% - 24px)!important}
