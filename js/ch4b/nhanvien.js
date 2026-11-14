@@ -7,7 +7,7 @@
 const C4NV = { tab: 'hang', keep: false, id: null };
 // going between the list and a worker: no slide-up of the sheet. The card's animation is switched off inline and switched back on only once
 // that sheet is hidden again (taking a class off later would restart the animation on the open sheet: the jump the owner saw on going back)
-const C4NV_SHEETS = ['c4ev', 'p4ups', 'c4wk'];
+const C4NV_SHEETS = ['c4ev', 'p4ups', 'c4wk', 'c4up', 'p4shop', 'p4home'];
 function c4NvSwap() { for (const id of C4NV_SHEETS) { const c = document.querySelector('#' + id + ' .card4'); if (c) c.style.animation = 'none'; } }
 { const mo = new MutationObserver(ms => { for (const m of ms) if (m.target.hidden) { const c = m.target.querySelector('.card4'); if (c) c.style.animation = ''; } });
   setTimeout(() => { for (const id of C4NV_SHEETS) { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden'] }); } }, 0); }
@@ -107,3 +107,6 @@ addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('#c4wkB [data-wkfire][data-sure]'); if (!t || !C4NV.id || C4NV.id !== C4WK.id) return;
   setTimeout(() => { if (C4WK.id || !$('#c4wk').hidden) return; C4NV.id = null; c4NvSwap(); C4NV.keep = true; C4NV.tab = 'nv'; if (S.mode === 'c4bplay') p4OpenUps(); else c4OpenUps(); }, 0);
 }, true);
+// the same between the shop list and a shop's own sheet (owner 2026-11-14: "từ danh sách cửa hàng ấn vào từng quán cũng đang bị giật lên giật xuống"):
+// a card of the list and the sheet's "‹ Danh sách cửa hàng" switch sheets without the slide (the sheets keep one height too, css)
+addEventListener('click', e => { if (e.target.closest && e.target.closest('#c4evB .nvShops [data-up],#p4upsB .nvShops [data-k],.upback')) c4NvSwap(); }, true);

@@ -718,7 +718,7 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 #p4hud .bar:has(#p4Buy:not([hidden]))::after{content:"";flex-basis:100%;order:8;height:0}
 #c4wkB>.nvBack{display:block;margin:0 auto 12px}
 /* the Quán sheet and the worker sheet keep one size: switching tabs or going in and out of a worker does not move the sheet (owner 2026-11-14) */
-#c4ev .card4:has(.nvTabs),#p4ups .card4,#c4wk .card4{height:82vh;height:82dvh;max-height:82dvh!important}
+#c4ev .card4:has(.nvTabs),#p4ups .card4,#c4wk .card4,#c4up .card4,#p4shop .card4,#p4home .card4{height:min(760px,calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)))!important}   /* one height for the Quán list, a shop, a worker, the notebook (owner 2026-11-14) */
 #c4ev .card4:has(.nvTabs),#p4ups .card4{display:flex;flex-direction:column}
 #c4ev .card4:has(.nvTabs) #c4evB,#p4ups .card4 #p4upsB{flex:1 0 auto}
 #c4wkB .nvSure{border:1.5px solid #a3332a;border-radius:10px;background:#fbeee6;padding:8px 10px;margin-top:10px}
@@ -736,3 +736,9 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
    so the backdrop's bar is hidden (it can still scroll if ever needed) (owner 2026-11-14: "ấn nút quán… hiện lên cái scroll xong biến mất") */
 .c4sheet{scrollbar-width:none}
 .c4sheet::-webkit-scrollbar{display:none}
+/* a shop's own sheet keeps the list's height, its closing row at the foot (nhanvien.js, owner 2026-11-14) */
+#c4up .card4,#p4shop .card4,#p4home .card4{display:flex;flex-direction:column}
+#c4up .card4>*,#p4shop .card4>*,#p4home .card4>*,#p4shopB>*{flex-shrink:0}
+#c4up .card4>.row:last-child,#p4home .card4>.row:last-child{margin-top:auto!important}
+#p4shopB{flex:1 0 auto;display:flex;flex-direction:column}
+#p4shopB>.row:last-child{margin-top:auto}
