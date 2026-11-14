@@ -724,3 +724,10 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 #c4wkB .nvSure{border:1.5px solid #a3332a;border-radius:10px;background:#fbeee6;padding:8px 10px;margin-top:10px}
 #c4wkB .nvSure p{margin:0 0 6px}
 #c4wkB .nvSure .btn.red{background:#a3332a;color:#f2ecde;border-color:#a3332a}
+.nvStaff .nvPlace{margin:14px 0 6px;padding:5px 10px;border-radius:8px;color:#f2ecde;background:#2f6a4c;font-size:15px;text-align:left}
+.nvStaff .nvPlace:first-child{margin-top:0}
+.nvStaff .nvPlace.pho{background:#a3332a}
+.nvStaff .nvPlace small,.nvStaff h5 small{font-weight:400;opacity:.8;font-size:12px}
+.nvStaff .nvShop{margin:0 0 10px}
+.nvStaff h5{margin:8px 2px 5px;font-size:14px;text-align:left;border-bottom:1.5px solid rgba(29,25,21,.25);padding-bottom:2px}
+.nvCard .nvT b i{font-style:normal;font-weight:400;font-size:12px;opacity:.7}

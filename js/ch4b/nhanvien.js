@@ -11,32 +11,43 @@ const C4NV_SHEETS = ['c4ev', 'p4ups', 'c4wk'];
 function c4NvSwap() { for (const id of C4NV_SHEETS) { const c = document.querySelector('#' + id + ' .card4'); if (c) c.style.animation = 'none'; } }
 { const mo = new MutationObserver(ms => { for (const m of ms) if (m.target.hidden) { const c = m.target.querySelector('.card4'); if (c) c.style.animation = ''; } });
   setTimeout(() => { for (const id of C4NV_SHEETS) { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden'] }); } }, 0); }
+// every worker as [place, id, shop, role], in the order shown: the village's stalls, then the town's betel house and shops
 function c4NvIds() {
   const out = [];
-  for (const g of c4Owned()) c4Hands(g).forEach((h, i) => out.push(['lang', `v|${g}|${i}`, 'hàng ' + C4_GOODS[g].name.toLowerCase()]));
+  for (const g of c4Owned()) c4Hands(g).forEach((h, i) => out.push(['lang', `v|${g}|${i}`, 'Hàng ' + C4_GOODS[g].name.toLowerCase(), 'người bán']));
   if (typeof p4Shops === 'function' && SAVE4B && SAVE4B.house) {
-    p4Hands().forEach((h, i) => out.push(['pho', `t|${i}`, 'hiệu trầu']));
+    const home = SAVE4B.name ? p4Cap1(String(SAVE4B.name).toLowerCase()) : 'Hiệu trầu';
+    p4Hands().forEach((h, i) => out.push(['pho', `t|${i}`, home, 'người bán trầu']));
     const S = p4Shops();
     for (const k of Object.keys(S).sort((a, b) => a - b)) {
       const R = S[k], nm = p4Cap1(String(R.name || '').toLowerCase());
-      out.push(['pho', `k|${k}`, 'đứng quán ' + nm]);
-      p4ShopHands(R).forEach((h, i) => out.push(['pho', `p|${k}|${i}`, 'phụ quán ' + nm]));
+      out.push(['pho', `k|${k}`, nm, 'đứng quán']);
+      p4ShopHands(R).forEach((h, i) => out.push(['pho', `p|${k}|${i}`, nm, 'phụ quán']));
     }
   }
   return out;
 }
-function c4NvCard([place, id, where]) {
+function c4NvCard([place, id, shop, role]) {
   const W = c4WkWho(id); if (!W) return '';
   const b = c4WkBadges(W), bar = (l, v) => c4TraitBar(l, v === undefined ? .5 : v);
-  return `<button class="nvCard" data-nv="${id}"><img src="${c4WkFace(W)}" alt=""><span class="nvT"><b>${c4Esc4(c4Cap1(W.name))}</b>`
-    + `<small><em class="nvP ${place}">${place === 'lang' ? 'Chợ quê' : 'Phố Huyện'}</em> ${c4Esc4(where)}</small>`
+  return `<button class="nvCard" data-nv="${id}"><img src="${c4WkFace(W)}" alt=""><span class="nvT"><b>${c4Esc4(c4Cap1(W.name))} <i>${role}</i></b>`
     + `<small>công ${c4Money(W.wage)}/ngày · ${c4GwWord(c4Gw(W.q))}</small>${b.length ? `<small class="bad">${b.join(' · ')}</small>` : ''}</span>`
     + `<span class="tbars">${bar('Nhanh nhẹn', W.tr.sp)}${bar('Nhiệt tình', W.tr.wm)}${bar('Trung thực', W.tr.ho)}${bar('Quan hệ', c4WkRel(W) / 100)}</span></button>`;
 }
 function c4NvHtml() {
   const L = c4NvIds();
   if (!L.length) return '<p class="sm">Chưa thuê người làm nào. Thuê người ở từng hàng, từng quán.</p>';
-  return `<div class="nvList">${L.map(c4NvCard).join('')}</div>`;
+  // grouped (owner 2026-11-14: "gom theo section của từng quán và của chợ quê hay phố huyện"): Chợ quê / Phố Huyện, then a heading per shop
+  let h = '';
+  for (const [place, title] of [['lang', 'Chợ quê'], ['pho', 'Phố Huyện']]) {
+    const P = L.filter(x => x[0] === place); if (!P.length) continue;
+    h += `<h4 class="nvPlace ${place}">${title} <small>${P.length} người</small></h4>`;
+    for (const shop of [...new Set(P.map(x => x[2]))]) {
+      const Sh = P.filter(x => x[2] === shop);
+      h += `<div class="nvShop"><h5>${c4Esc4(shop)} <small>${Sh.length} người</small></h5><div class="nvList">${Sh.map(c4NvCard).join('')}</div></div>`;
+    }
+  }
+  return h;
 }
 // two tabs over a list box (#c4evB in the village, #p4upsB in the town)
 function c4NvTabs(box) {
