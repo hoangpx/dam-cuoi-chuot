@@ -732,3 +732,7 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 .nvStaff h5{margin:8px 2px 5px;font-size:14px;text-align:left;border-bottom:1.5px solid rgba(29,25,21,.25);padding-bottom:2px}
 .nvCard .nvT b i{font-style:normal;font-weight:400;font-size:12px;opacity:.7}
 #c4amO .go+.btn{display:block;margin:12px auto 0}   /* "Nhập hàng ở phố" under "Họp chợ": they touched (owner 2026-11-14) */
+/* the sheet's backdrop showed a scroll bar while the card slid up (the slide pushes it past the bottom for .22 s); the card scrolls itself,
+   so the backdrop's bar is hidden (it can still scroll if ever needed) (owner 2026-11-14: "ấn nút quán… hiện lên cái scroll xong biến mất") */
+.c4sheet{scrollbar-width:none}
+.c4sheet::-webkit-scrollbar{display:none}
