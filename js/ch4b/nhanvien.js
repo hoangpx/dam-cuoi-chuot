@@ -77,3 +77,22 @@ for (const id of ['c4Ups', 'p4Ups']) { const b = document.getElementById(id); if
     }
     return r;
   }; }
+// firing asks first, in words (owner 2026-11-14: "khi đuổi thì phải có confirm chữ"): the Đuổi việc / Cho nghỉ button turns into a line asking
+// whether to really let this person go, with the button that does it (data-sure, which the worker sheet's own handler then runs) and Thôi
+addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('#c4wkB [data-wkfire]:not([data-sure]),#c4wkB [data-nvno]'); if (!t) return;
+  e.stopPropagation(); e.preventDefault(); AU.tap();
+  if (t.dataset.nvno) { c4WkOpen(C4WK.id, true); return; }
+  const W = C4WK.id && c4WkWho(C4WK.id); if (!W) return;
+  const nm = c4Esc4(c4Cap1(W.name)), lang = W.place === 'lang';
+  const pay = lang && C4.phase === 'open' && C4.today && W.h && !W.h.nowage ? ` Hôm nay vẫn phải trả công ${c4Money(c4Wage(W.g, W.h))}.` : '';
+  const row = t.closest('.row'), box = document.createElement('div'); box.className = 'nvSure';
+  box.innerHTML = `<p>${lang ? `Đuổi việc <b>${nm}</b> thật không?` : `Cho <b>${nm}</b> nghỉ việc thật không?`}${pay}</p>`
+    + `<div class="row"><button class="btn red" data-wkfire="1" data-sure="1">${lang ? 'Đuổi việc' : 'Cho nghỉ'}</button><button class="btn alt" data-nvno="1">Thôi</button></div>`;
+  row.replaceWith(box); box.scrollIntoView({ block: 'nearest' });
+}, true);
+// once let go, back to the staff list when the worker was opened from it (the person is gone, so the sheet's own way back closes everything)
+addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('#c4wkB [data-wkfire][data-sure]'); if (!t || !C4NV.id || C4NV.id !== C4WK.id) return;
+  setTimeout(() => { if (C4WK.id || !$('#c4wk').hidden) return; C4NV.id = null; c4NvSwap(); C4NV.keep = true; C4NV.tab = 'nv'; if (S.mode === 'c4bplay') p4OpenUps(); else c4OpenUps(); }, 0);
+}, true);

@@ -88,7 +88,7 @@ function c4WkFire(W) {
     const H = c4Hands(W.g), h = W.h; if (!h) return;
     for (const k in C4.SV) { const a = C4.SV[k]; if (a) for (const sv of [...a]) if (sv.by === h) a.splice(a.indexOf(sv), 1); }
     let paid = '';
-    if (C4.phase === 'open' && !h.nowage) { const w = Math.min(Math.max(0, SAVE4.money), c4Wage(W.g, h)); SAVE4.money -= w; C4.today.wages += w; paid = `, trả công hôm nay ${c4Money(w)}`; }
+    if (C4.phase === 'open' && C4.today && !h.nowage) { const w = Math.min(Math.max(0, SAVE4.money), c4Wage(W.g, h)); SAVE4.money -= w; C4.today.wages += w; paid = `, trả công hôm nay ${c4Money(w)}`; }
     H.splice(H.indexOf(h), 1); toast(`${c4Cap1(h.name)} bị đuổi việc${paid}.`); persist4(); c4Hud();
   } else if (W.id0 === 'k') { toast('Người đứng quán không cho nghỉ được, chỉ đổi người khác (nút “Đổi người đứng quán” trong quán).', 3); return false; }
   else if (W.R) { const H = p4ShopHands(W.R); H.splice(H.indexOf(W.h), 1); toast(`Đã cho ${W.h.name} nghỉ.`, 2.2); p4Persist(); }

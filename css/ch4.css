@@ -721,3 +721,6 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 #c4ev .card4:has(.nvTabs),#p4ups .card4,#c4wk .card4{height:82vh;height:82dvh;max-height:82dvh!important}
 #c4ev .card4:has(.nvTabs),#p4ups .card4{display:flex;flex-direction:column}
 #c4ev .card4:has(.nvTabs) #c4evB,#p4ups .card4 #p4upsB{flex:1 0 auto}
+#c4wkB .nvSure{border:1.5px solid #a3332a;border-radius:10px;background:#fbeee6;padding:8px 10px;margin-top:10px}
+#c4wkB .nvSure p{margin:0 0 6px}
+#c4wkB .nvSure .btn.red{background:#a3332a;color:#f2ecde;border-color:#a3332a}
