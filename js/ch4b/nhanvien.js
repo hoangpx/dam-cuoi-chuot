@@ -69,8 +69,8 @@ function c4NvTabs(box) {
   });
   set(C4NV.keep ? C4NV.tab : 'hang'); C4NV.keep = false;
 }
-{ const o0 = c4OpenUps; c4OpenUps = function () { const r = o0.apply(this, arguments); $('#c4evT').textContent = 'Quán của nhà mình'; c4NvTabs($('#c4evB')); return r; }; }
-{ const o0 = p4OpenUps; p4OpenUps = function () { const r = o0.apply(this, arguments); const t = $('#p4ups h3'); if (t) t.textContent = 'Quán của nhà mình'; c4NvTabs($('#p4upsB')); return r; }; }
+{ const o0 = c4OpenUps; c4OpenUps = function () { const r = o0.apply(this, arguments); $('#c4evT').textContent = 'Quán của nhà mình'; if (typeof c4QuanFill === 'function') c4QuanFill($('#c4evB')); c4NvTabs($('#c4evB')); return r; }; }
+{ const o0 = p4OpenUps; p4OpenUps = function () { const r = o0.apply(this, arguments); const t = $('#p4ups h3'); if (t) t.textContent = 'Quán của nhà mình'; if (typeof c4QuanFill === 'function') c4QuanFill($('#p4upsB')); c4NvTabs($('#p4upsB')); return r; }; }
 // a worker opened from this list goes back to it; one opened from a stall's own sheet (a [data-wk] card) goes back there as before
 addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-wk]')) C4NV.id = null; }, true);
 { const w0 = c4WkWho; c4WkWho = function (id) {

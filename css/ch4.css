@@ -754,3 +754,15 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 .c4tabs.two{display:flex;flex-wrap:wrap;gap:4px;overflow:visible}
 .c4tabs.two .brk{flex-basis:100%;height:0}
 .c4tabs.two button{flex:1 1 auto;padding:5px 2px;font-size:12px;text-align:center;white-space:nowrap}
+/* the round × of the notebook and the Quán list (dongtay.js); their Đóng rows are gone (owner 2026-11-14) */
+.c4sheet.xs .card4>.xbar{position:sticky;top:0;height:0;z-index:6;flex-shrink:0}
+.c4sheet.xs .xbtn{position:absolute;right:-6px;top:-14px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);background:#f6f0e2;color:var(--ink);font:700 22px/1 var(--body);display:flex;align-items:center;justify-content:center;padding:0 0 2px;cursor:pointer}
+#c4ev .card4:not(:has(.nvTabs))>.xbar{display:none}
+#c4note .card4>.row:last-child,#hs .card4>.row:last-child,#p4ups .card4>.row:last-child,#c4ev .card4:has(.nvTabs) #c4evO{display:none!important}
+.c4sheet.xs .card4{touch-action:pan-y}
+#c4noteB>.nvPlace{margin:10px 0 6px;padding:5px 10px;border-radius:8px;color:#f2ecde;background:#2f6a4c;font-size:15px;text-align:left}
+#c4noteB>.nvPlace.pho{background:#a3332a}
+#c4noteB>.nvPlace small{font-weight:400;opacity:.8;font-size:12px}
+.nvShops>.nvPlace{margin:12px 0 6px;padding:5px 10px;border-radius:8px;color:#f2ecde;background:#2f6a4c;font-size:15px;text-align:left}
+.nvShops>.nvPlace:first-child{margin-top:0}
+.nvShops>.nvPlace.pho{background:#a3332a}
