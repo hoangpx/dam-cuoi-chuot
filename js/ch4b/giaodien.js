@@ -126,3 +126,22 @@ function c4ChatDock() {
 setInterval(c4ChatDock, 300);
 { const h0 = c4Hud; c4Hud = function () { const r = h0.apply(this, arguments); c4ChatDock(); return r; }; }
 { const h0 = p4Hud; p4Hud = function () { const r = h0.apply(this, arguments); c4ChatDock(); return r; }; }
+
+/* ---------- 9. the phone's status bar takes the colour of the scene's paper (owner 2026-11-14: a strip of another yellow above the notch). The
+   page's theme-color was one fixed yellow while chương IV's paper changes by day and place; once a second, while the market or the street is on,
+   the top band of the canvas is averaged and given to the theme-color and the page background; leaving puts the page's own colour back. ---------- */
+{
+  const meta = document.querySelector('meta[name="theme-color"]'), orig = meta && meta.content, tiny = document.createElement('canvas'); tiny.width = 8; tiny.height = 1;
+  const tc = tiny.getContext('2d', { willReadFrequently: true });
+  let was = null;
+  setInterval(() => {
+    try {
+      const on = S.mode === 'c4play' || S.mode === 'c4bplay';
+      if (!on) { if (was) { if (meta) meta.content = orig; document.documentElement.style.background = ''; was = null; } return; }
+      tc.clearRect(0, 0, 8, 1); tc.drawImage(cv, 0, 0, cv.width, Math.max(1, Math.round(cv.height * .02)), 0, 0, 8, 1);
+      const d = tc.getImageData(0, 0, 8, 1).data; let r = 0, g = 0, b = 0; for (let i = 0; i < 32; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+      const hex = '#' + [r, g, b].map(v => Math.round(v / 8).toString(16).padStart(2, '0')).join('');
+      if (hex !== was) { was = hex; if (meta) meta.content = hex; document.documentElement.style.background = hex; }
+    } catch (e) {}
+  }, 1000);
+}

@@ -19,7 +19,7 @@ function c4DayLook() {
   const rs = mulberry(SAVE4.seed + 977);                                    // owner: the houses and big trees stay the same every day
   const far = [], near = [];
   for (let x = -120; x < 2700; x += 220 + rs() * 160) { const k = kinds[(rs() * kinds.length) | 0]; far.push([x, k === 'hay' ? 'house' : k, .4 + rs() * .08, (rs() * 6) | 0]); }
-  for (let x = 160; x < C4_W + 60; x += 240 + rs() * 200) { if (Math.abs(x - C4_STALL) < 150) continue; near.push([x, kinds[(rs() * kinds.length) | 0], .6 + rs() * .35, (rs() * 6) | 0]); }
+  for (let x = 160; x < C4_W + 60; x += 240 + rs() * 200) { if (Math.abs(x - C4_STALL) < 150) continue; const it = [x, kinds[(rs() * kinds.length) | 0], .6 + rs() * .35, (rs() * 6) | 0]; if (Math.abs(x - C4_GATE) < 300) continue; near.push(it); }   // nothing stands right behind the market gate (owner 2026-11-14: a house showed through it); the draws are made first, so every other house keeps its place
   C4.scene = { far, near };
   // the children's games on the grass in front, two of them, somewhere along the lane
   // (owner, 2026-10-28: not the same two games all day, and not at dawn) each spot plays in sessions from about 8:00, a random game each, with breaks between
