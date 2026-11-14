@@ -731,3 +731,4 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 .nvStaff .nvShop{margin:0 0 10px}
 .nvStaff h5{margin:8px 2px 5px;font-size:14px;text-align:left;border-bottom:1.5px solid rgba(29,25,21,.25);padding-bottom:2px}
 .nvCard .nvT b i{font-style:normal;font-weight:400;font-size:12px;opacity:.7}
+#c4amO .go+.btn{display:block;margin:12px auto 0}   /* "Nhập hàng ở phố" under "Họp chợ": they touched (owner 2026-11-14) */
