@@ -77,7 +77,10 @@ function c4Sections(root, key) {
 {
   let st = null;
   const closeBtn = card => [...card.querySelectorAll('button')].reverse().find(b => b.offsetParent && /^(Đóng|Quay lại|Thôi|‹?\s*Đóng sổ)$/.test(b.textContent.trim()));
-  document.addEventListener('touchstart', e => { const card = e.target.closest && e.target.closest('.c4sheet .card4'); if (!card || card.scrollTop > 2) { st = null; return; } st = { card, y: e.touches[0].clientY, dy: 0 }; }, { passive: true });
+  document.addEventListener('touchstart', e => { const card = e.target.closest && e.target.closest('.c4sheet .card4'); if (!card || card.scrollTop > 2) { st = null; return; }
+    // the notebook and Quán swipe themselves (dongtay.js); both at once made the card spring back before it slid away (owner 2026-11-14)
+    { const sh = card.closest('.c4sheet.xs'); if (sh && typeof c4XCan === 'function' && c4XCan(sh.id)) { st = null; return; } }
+    st = { card, y: e.touches[0].clientY, dy: 0 }; }, { passive: true });
   document.addEventListener('touchmove', e => { if (!st) return; st.dy = e.touches[0].clientY - st.y; if (st.dy > 0 && st.card.scrollTop <= 0) st.card.style.transform = `translateY(${Math.min(st.dy, 260) * .8}px)`; }, { passive: true });
   document.addEventListener('touchend', () => { if (!st) return; const { card, dy } = st; st = null; const b = dy > 110 && closeBtn(card);
     card.style.transition = 'transform .18s ease-out'; card.style.transform = b ? 'translateY(100%)' : ''; setTimeout(() => { card.style.transition = ''; card.style.transform = ''; if (b) b.click(); }, b ? 170 : 190); }, { passive: true });

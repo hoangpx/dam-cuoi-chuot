@@ -33,15 +33,27 @@ for (const id of Object.keys(C4X)) {
   // a swipe down from the top of the page
   let y0 = null, dy = 0, t0 = 0, drag = false;
   card.addEventListener('touchstart', e => { if (!c4XCan(id) || e.touches.length !== 1 || e.target.closest('input,textarea,select')) { y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; t0 = performance.now(); drag = false; }, { passive: true });
+  // (owner 2026-11-14: "pull xuống xong nó lại hiện lên xong nó lại ẩn đi"): the phone started its own scroll / rubber band on the first few
+  // pixels (they were not held back), pulled the page down with my drag and sprang it back on release before the card slid away. Now, with the
+  // page at its top, every downward move is mine from the first pixel (preventDefault), the card cannot rubber-band (css overscroll none), and
+  // the click the phone may send after the lift is swallowed.
   card.addEventListener('touchmove', e => {
     if (y0 === null) return;
     const d = e.touches[0].clientY - y0;
-    if (!drag) { if (d > 6 && card.scrollTop <= 0) drag = true; else if (d < -6 || card.scrollTop > 0) { y0 = null; return; } else return; }
-    dy = Math.max(0, d); e.preventDefault();
+    if (!drag) {
+      if (card.scrollTop > 0 || d < 0) { y0 = null; return; }   // scrolling the page: the phone's own
+      if (e.cancelable) e.preventDefault(); else { y0 = null; return; }
+      if (d <= 6) return;
+      drag = true;
+    }
+    if (!e.cancelable) { y0 = null; drag = false; card.style.transition = 'transform .18s ease-out'; card.style.transform = ''; return; }
+    e.preventDefault(); dy = Math.max(0, d);
     card.style.transition = 'none'; card.style.transform = `translateY(${dy}px)`;
   }, { passive: false });
   const end = () => {
     if (y0 === null) return; y0 = null; if (!drag) return; drag = false;
+    const eat = ev => { if (!ev.isTrusted) return; ev.stopPropagation(); ev.preventDefault(); };   // the tap the phone may make of the lift
+    addEventListener('click', eat, true); setTimeout(() => removeEventListener('click', eat, true), 450);
     const fast = dy / Math.max(1, performance.now() - t0) > .6;
     if (dy > 90 || (dy > 30 && fast)) c4SlideClose(sheet);
     else { card.style.transition = 'transform .18s ease-out'; card.style.transform = ''; setTimeout(() => { if (!sheet.dataset.closing) card.style.transition = ''; }, 200); }

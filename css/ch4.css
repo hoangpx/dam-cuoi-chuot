@@ -766,3 +766,6 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 .nvShops>.nvPlace{margin:12px 0 6px;padding:5px 10px;border-radius:8px;color:#f2ecde;background:#2f6a4c;font-size:15px;text-align:left}
 .nvShops>.nvPlace:first-child{margin-top:0}
 .nvShops>.nvPlace.pho{background:#a3332a}
+/* the swipe-to-close sheets: the card cannot rubber-band and the backdrop does not scroll, so only my drag moves it (dongtay.js) */
+.c4sheet.xs{overflow:hidden}
+.c4sheet.xs .card4{overscroll-behavior-y:none}
