@@ -743,3 +743,9 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 #p4shopB{flex:1 0 auto;display:flex;flex-direction:column}
 #p4shopB>.row:last-child{margin-top:auto}
 #c4hud .bar .tag.tl.off,#p4hud .bar .tag.tl.off{opacity:.4;cursor:default}
+/* a sheet's card keeps the same width whether its page is long or short: its scroll bar is hidden (it scrolls by finger or wheel), so a long tab
+   of the notebook no longer brings a bar in and narrows everything (owner 2026-11-14: "có 1 cái control lúc ẩn lúc hiện") */
+.c4sheet .card4{scrollbar-width:none}
+.c4sheet .card4::-webkit-scrollbar{display:none}
+/* in a card laid out as a column, a long page shrank the grab handle (5 px → 0) and moved the title and tabs up 5 px: nothing in a card shrinks */
+.c4sheet .card4::before,.c4sheet .card4>*{flex-shrink:0}

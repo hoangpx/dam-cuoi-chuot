@@ -110,3 +110,20 @@ addEventListener('click', e => {
 // the same between the shop list and a shop's own sheet (owner 2026-11-14: "từ danh sách cửa hàng ấn vào từng quán cũng đang bị giật lên giật xuống"):
 // a card of the list and the sheet's "‹ Danh sách cửa hàng" switch sheets without the slide (the sheets keep one height too, css)
 addEventListener('click', e => { if (e.target.closest && e.target.closest('#c4evB .nvShops [data-up],#p4upsB .nvShops [data-k],.upback')) c4NvSwap(); }, true);
+// the notebook's tab row (village c4OpenNotes, town hsOpen) is drawn anew on every tab, and was then centred on the open tab: the whole row slid
+// sideways at each tap (owner 2026-11-14: "ấn chuyển các tab trong sổ tay vẫn ko mượt"). Now the row keeps where it was and moves only as far as
+// needed to show the open tab whole.
+function c4TabsKeep(sel, fn) {
+  return function () {
+    const old = document.querySelector(sel + ' .c4tabs'), sl = old ? old.scrollLeft : null;
+    const r = fn.apply(this, arguments);
+    const bar = document.querySelector(sel + ' .c4tabs'), on = bar && bar.querySelector('.on');
+    if (bar && sl !== null) {
+      let x = sl; if (on) { const l = on.offsetLeft - bar.offsetLeft, rr = l + on.offsetWidth; if (l < x + 6) x = l - 6; else if (rr > x + bar.clientWidth - 6) x = rr - bar.clientWidth + 6; }
+      bar.scrollLeft = Math.max(0, x);
+    }
+    return r;
+  };
+}
+c4OpenNotes = c4TabsKeep('#c4note', c4OpenNotes);
+if (typeof hsOpen === 'function') hsOpen = c4TabsKeep('#hs', hsOpen);
