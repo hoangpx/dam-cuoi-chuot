@@ -742,3 +742,4 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 #c4up .card4>.row:last-child,#p4home .card4>.row:last-child{margin-top:auto!important}
 #p4shopB{flex:1 0 auto;display:flex;flex-direction:column}
 #p4shopB>.row:last-child{margin-top:auto}
+#c4hud .bar .tag.tl.off,#p4hud .bar .tag.tl.off{opacity:.4;cursor:default}

@@ -107,13 +107,19 @@ function c4AskFace(box, id) { try { const W = c4WkWho(id); if (!box || !W || box
 /* ---------- 7. the bottom bar: four tiles of one style, the chat button among them (owner 2026-11-12: "icon chat để cùng chỗ Phố Huyện, bỏ chữ Lên,
    làm 4 nút dưới cùng phong cách giống nhau"). The chat button (sangcho.js #cnChatB) moves into the market's bar while I am in my own market, and
    back to its floating place (#cnTools) when I visit a friend's market. ---------- */
-setInterval(() => {
+// docked at once whenever a market's HUD is drawn (c4Hud / p4Hud), not only by the timer: it used to join up to .3 s late, so on going between
+// the village and the town the three tiles stood centred alone, then jumped left (owner 2026-11-14: "4 nút vẫn chớp chớp"). While chat is not
+// available it stays in the bar greyed out (.off) instead of leaving, so the tiles never move.
+function c4ChatDock() {
   try {
     const b = $('#cnChatB'); if (!b) return;
     const bar = S.mode === 'c4play' ? $('#c4hud .bar') : S.mode === 'c4bplay' ? $('#p4hud .bar') : null;
     if (bar) {
       if (b.parentElement !== bar) { bar.appendChild(b); b.classList.add('tag', 'ic', 'tl'); if (!b.querySelector('span')) b.insertAdjacentHTML('beforeend', '<span>Trò chuyện</span>'); }
-      b.hidden = !cnTools || cnTools.hidden;
-    } else if (cnTools && b.parentElement !== cnTools) { cnTools.appendChild(b); b.classList.remove('tag', 'ic', 'tl'); const s = b.querySelector('span'); if (s) s.remove(); b.hidden = false; }
+      const off = !cnTools || cnTools.hidden; b.hidden = false; b.classList.toggle('off', off); b.disabled = off;
+    } else if (cnTools && b.parentElement !== cnTools) { cnTools.appendChild(b); b.classList.remove('tag', 'ic', 'tl', 'off'); b.disabled = false; const s = b.querySelector('span'); if (s) s.remove(); b.hidden = false; }
   } catch (e) {}
-}, 300);
+}
+setInterval(c4ChatDock, 300);
+{ const h0 = c4Hud; c4Hud = function () { const r = h0.apply(this, arguments); c4ChatDock(); return r; }; }
+{ const h0 = p4Hud; p4Hud = function () { const r = h0.apply(this, arguments); c4ChatDock(); return r; }; }
