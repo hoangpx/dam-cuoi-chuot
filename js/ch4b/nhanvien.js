@@ -5,6 +5,8 @@
    worker of both places (village hands, town keepers, helpers, the betel house's hands) with place, shop, pay, mood and the four bars; a tap
    opens the worker sheet of nguoilam-ct.js (c4WkOpen), whose Quay lại comes back to this list. */
 const C4NV = { tab: 'hang', keep: false, id: null };
+// going between the list and a worker: no slide-up of the sheet (css body.nvSwap)
+function c4NvSwap() { document.body.classList.add('nvSwap'); clearTimeout(C4NV.sw); C4NV.sw = setTimeout(() => document.body.classList.remove('nvSwap'), 400); }
 function c4NvIds() {
   const out = [];
   for (const g of c4Owned()) c4Hands(g).forEach((h, i) => out.push(['lang', `v|${g}|${i}`, 'hàng ' + C4_GOODS[g].name.toLowerCase()]));
@@ -48,7 +50,7 @@ function c4NvTabs(box) {
   bar.addEventListener('click', e => { const x = e.target.closest('[data-nvt]'); if (!x) return; e.stopPropagation(); AU.tap(); set(x.dataset.nvt); });
   staff.addEventListener('click', e => {
     const x = e.target.closest('[data-nv]'); if (!x) return; e.stopPropagation(); AU.tap();
-    C4NV.id = x.dataset.nv; c4WkOpen(x.dataset.nv);
+    C4NV.id = x.dataset.nv; c4NvSwap(); c4WkOpen(x.dataset.nv);
   });
   set(C4NV.keep ? C4NV.tab : 'hang'); C4NV.keep = false;
 }
@@ -58,7 +60,7 @@ function c4NvTabs(box) {
 addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-wk]')) C4NV.id = null; }, true);
 { const w0 = c4WkWho; c4WkWho = function (id) {
     const W = w0.apply(this, arguments);
-    if (W && C4NV.id === id) W.back = () => { C4NV.id = null; C4NV.keep = true; C4NV.tab = 'nv'; if (S.mode === 'c4bplay') p4OpenUps(); else c4OpenUps(); };
+    if (W && C4NV.id === id) W.back = () => { c4NvSwap(); C4NV.id = null; C4NV.keep = true; C4NV.tab = 'nv'; if (S.mode === 'c4bplay') p4OpenUps(); else c4OpenUps(); };
     return W;
   }; }
 // the bottom button: "Quán" with a stall icon (village and town)
