@@ -810,7 +810,9 @@ function c4GoalReached(sleep) {
 
 /* ---------- the market at work ---------- */
 function updateC4(dt) {
-  C4.t += dt;
+  // the drawing's clock stops while a sheet holds the scene still (renderC4 draws it once): it ran on, so on closing the clouds, birds and
+  // swaying all jumped ahead by the time the sheet was open (owner 2026-11-14: "đóng mở sổ tay thì cái mây đằng sau nó cứ bị giật")
+  if (!(C4.sheet && C4.sheet !== 'c4day' && C4.drawnSheet === C4.sheet && C4.phase !== 'story')) C4.t += dt;
   if (C4.phase === 'story') { c4StoryUpdate(dt); return; }
   if (C4.paused || C4.kheOn) { c4EvTick(dt); AU.ambient({}); return; }                            // a sheet is open: the market waits, the rain bed goes quiet
   for (const f of C4.fx) f.t += dt; C4.fx = C4.fx.filter(f => f.t < 1.2);
