@@ -7,7 +7,10 @@ const C4X = {
   c4note: () => $('#c4noteX'),
   hs: () => $('#hsX'),
   p4ups: () => $('#p4upsX'),
-  c4ev: () => $('#c4ev .card4').querySelector('.nvTabs') ? [...$('#c4evO').querySelectorAll('button')].find(b => /Đóng/.test(b.textContent)) : null
+  c4ev: () => $('#c4ev .card4').querySelector('.nvTabs') ? [...$('#c4evO').querySelectorAll('button')].find(b => /Đóng/.test(b.textContent)) : null,
+  // a worker's sheet (owner 2026-11-14: "ấn vào detail của một nhân viên xong đóng lại thì nó lại quay lại cái phần trước chứ nó không đóng"): the ×,
+  // a swipe or a tap outside close it for good; going back to the list or the stall is the sheet's own buttons (‹ Danh sách nhân viên, Quay lại)
+  c4wk: () => typeof C4WK !== 'undefined' && C4WK.id ? { click: () => { C4WK.id = null; if (typeof C4NV !== 'undefined') C4NV.id = null; $('#c4wk').hidden = true; (S.mode === 'c4bplay' ? p4Sheets : c4Sheets)(null); } } : null
 };
 const c4XCan = id => { const f = C4X[id]; return !!(f && f()); };
 function c4SlideClose(sheet) {
