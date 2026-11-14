@@ -5,8 +5,12 @@
    worker of both places (village hands, town keepers, helpers, the betel house's hands) with place, shop, pay, mood and the four bars; a tap
    opens the worker sheet of nguoilam-ct.js (c4WkOpen), whose Quay lại comes back to this list. */
 const C4NV = { tab: 'hang', keep: false, id: null };
-// going between the list and a worker: no slide-up of the sheet (css body.nvSwap)
-function c4NvSwap() { document.body.classList.add('nvSwap'); clearTimeout(C4NV.sw); C4NV.sw = setTimeout(() => document.body.classList.remove('nvSwap'), 400); }
+// going between the list and a worker: no slide-up of the sheet. The card's animation is switched off inline and switched back on only once
+// that sheet is hidden again (taking a class off later would restart the animation on the open sheet: the jump the owner saw on going back)
+const C4NV_SHEETS = ['c4ev', 'p4ups', 'c4wk'];
+function c4NvSwap() { for (const id of C4NV_SHEETS) { const c = document.querySelector('#' + id + ' .card4'); if (c) c.style.animation = 'none'; } }
+{ const mo = new MutationObserver(ms => { for (const m of ms) if (m.target.hidden) { const c = m.target.querySelector('.card4'); if (c) c.style.animation = ''; } });
+  setTimeout(() => { for (const id of C4NV_SHEETS) { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden'] }); } }, 0); }
 function c4NvIds() {
   const out = [];
   for (const g of c4Owned()) c4Hands(g).forEach((h, i) => out.push(['lang', `v|${g}|${i}`, 'hàng ' + C4_GOODS[g].name.toLowerCase()]));

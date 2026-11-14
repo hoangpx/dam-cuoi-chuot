@@ -719,6 +719,5 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 #c4wkB>.nvBack{display:block;margin:0 auto 12px}
 /* the Quán sheet and the worker sheet keep one size: switching tabs or going in and out of a worker does not move the sheet (owner 2026-11-14) */
 #c4ev .card4:has(.nvTabs),#p4ups .card4,#c4wk .card4{height:82vh;height:82dvh;max-height:82dvh!important}
-body.nvSwap .c4sheet .card4{animation:none!important}
 #c4ev .card4:has(.nvTabs),#p4ups .card4{display:flex;flex-direction:column}
 #c4ev .card4:has(.nvTabs) #c4evB,#p4ups .card4 #p4upsB{flex:1 0 auto}
