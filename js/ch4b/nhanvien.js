@@ -118,7 +118,8 @@ function c4TabsKeep(sel, fn) {
     const old = document.querySelector(sel + ' .c4tabs'), sl = old ? old.scrollLeft : null;
     const r = fn.apply(this, arguments);
     const bar = document.querySelector(sel + ' .c4tabs'), on = bar && bar.querySelector('.on');
-    if (bar && sl !== null) {
+    if (bar) { const n = bar.children.length; if (n > 4 && !bar.querySelector('.brk')) { bar.classList.add('two'); const k = document.createElement('i'); k.className = 'brk'; bar.children[Math.ceil(n / 2) - 1].after(k); } }   // two rows (owner 2026-11-14)
+    if (bar && sl !== null && !bar.classList.contains('two')) {
       let x = sl; if (on) { const l = on.offsetLeft - bar.offsetLeft, rr = l + on.offsetWidth; if (l < x + 6) x = l - 6; else if (rr > x + bar.clientWidth - 6) x = rr - bar.clientWidth + 6; }
       bar.scrollLeft = Math.max(0, x);
     }

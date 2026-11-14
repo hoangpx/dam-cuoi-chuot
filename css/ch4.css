@@ -749,3 +749,8 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 .c4sheet .card4::-webkit-scrollbar{display:none}
 /* in a card laid out as a column, a long page shrank the grab handle (5 px → 0) and moved the title and tabs up 5 px: nothing in a card shrinks */
 .c4sheet .card4::before,.c4sheet .card4>*{flex-shrink:0}
+/* the notebook's tabs in two rows instead of one sliding row (owner 2026-11-14: "các tab trong sổ tay scroll khó quá, để 2 hàng đi"): a grid whose
+   break after half the tabs is put in by c4TabsKeep, so the rows never change while switching */
+.c4tabs.two{display:flex;flex-wrap:wrap;gap:4px;overflow:visible}
+.c4tabs.two .brk{flex-basis:100%;height:0}
+.c4tabs.two button{flex:1 1 auto;padding:5px 2px;font-size:12px;text-align:center;white-space:nowrap}
