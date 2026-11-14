@@ -63,3 +63,11 @@ addEventListener('click', e => { if (e.target.closest && e.target.closest('[data
   }; }
 // the bottom button: "Quán" with a stall icon (village and town)
 for (const id of ['c4Ups', 'p4Ups']) { const b = document.getElementById(id); if (b) { b.title = 'Quán'; b.setAttribute('aria-label', 'Quán'); b.innerHTML = '<i class="ic4 quan"></i><span>Quán</span>'; } }
+// opened from the staff list: a button at the top back to it (owner 2026-11-14: "khi ấn vào 1 nhân viên thì phải có nút quay lại danh sách nhân viên")
+{ const o0 = c4WkOpen; c4WkOpen = function (id) {
+    const r = o0.apply(this, arguments), box = $('#c4wkB');
+    if (box && C4NV.id === id && C4WK.id === id && !box.querySelector('.nvBack')) {
+      const b = document.createElement('button'); b.className = 'btn alt upback nvBack'; b.textContent = '‹ Danh sách nhân viên'; b.dataset.wkback = '1'; box.prepend(b);
+    }
+    return r;
+  }; }

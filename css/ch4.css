@@ -716,3 +716,4 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 #p4hud .bar{flex-wrap:wrap;justify-content:center;width:max-content;max-width:96vw}
 #p4hud .bar #p4Buy{order:9}
 #p4hud .bar:has(#p4Buy:not([hidden]))::after{content:"";flex-basis:100%;order:8;height:0}
+#c4wkB>.nvBack{display:block;margin:0 auto 12px}
