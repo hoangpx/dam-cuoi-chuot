@@ -51,6 +51,10 @@ name = "JIGSAW_TB"
 class_name = "JigsawTB"
 
 [[durable_objects.bindings]]
+name = "JIGSAW_TD"
+class_name = "JigsawTD"
+
+[[durable_objects.bindings]]
 name = "JIGSAW_ROOM"
 class_name = "JigsawRoom"
 
@@ -130,3 +134,8 @@ new_sqlite_classes = ["JigsawHB"]
 [[migrations]]
 tag = "v15"
 new_sqlite_classes = ["JigsawTB"]
+
+# 2026-11-15: the eleventh print (Trần Hưng Đạo, 2240 pieces), its own object and storage
+[[migrations]]
+tag = "v16"
+new_sqlite_classes = ["JigsawTD"]
