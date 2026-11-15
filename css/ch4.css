@@ -784,3 +784,4 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 
 /* a shut stall in the HUD's ware list (owner 2026-11-15) */
 #c4Stock .w.shut,#p4Stock .w.shut{color:#a3332a;opacity:.85}
+#c4Stock.none{display:none!important}   /* every stall shut: no empty box in the corner */

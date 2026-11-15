@@ -1071,7 +1071,7 @@ function c4Hud() {
   $('#c4Money').innerHTML = c4Money(SAVE4.money);
   $('#c4Time').textContent = `Ngày ${SAVE4.day}  ${C4_ZOD[c4Hour(C4.mins)] || ''} ${c4Clock(C4.mins)}  ${C4_WXI[c4Wx()]}`;
   $('#c4Time').title = `giờ ${c4Hour(C4.mins)}`;
-  { const ws = $('#c4Stock .ws'), h = c4Owned().map(g => c4Shut(g) ? `<span class="w shut">${C4_WARE_I[g] || C4_GOODS[g].name} đã đóng</span>` : `<span class="w">${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}</span>`).join(''); if (ws && ws.innerHTML !== h) { ws.innerHTML = h; c4StkClear(); } }   // the wares, folded down or across (c4StkSet)
+  { const ws = $('#c4Stock .ws'), h = c4Owned().filter(g => !c4Shut(g)).map(g => `<span class="w">${C4_WARE_I[g] || C4_GOODS[g].name} ${c4Stock(g)}</span>`).join(''); { const box = $('#c4Stock'); if (box) box.classList.toggle('none', !h); } if (ws && ws.innerHTML !== h) { ws.innerHTML = h; c4StkClear(); } }   // the wares, folded down or across (c4StkSet)
   $('#c4Debt').innerHTML = SAVE4.debt > 0.5 ? 'Nợ ' + c4Money(SAVE4.debt) : '';
   $('#c4Debt').hidden = !(SAVE4.debt > 0.5);
   $('#c4Note').classList.toggle('new', !!C4.noteNew);
