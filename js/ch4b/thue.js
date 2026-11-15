@@ -107,8 +107,8 @@ function p4ShopSheet() {
 // which then has a button back here (P4.fromList, cleared when the sheets close)
 function p4OpenUps() {
   const S = p4Shops(), keys = Object.keys(S).sort((a, b) => a - b);
-  const cards = [`<button class="upc" data-k="home"><b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b><span class="lv">Hiệu trầu</span><span>${SAVE4B.shut ? 'đang đóng' : 'còn ' + SAVE4B.stock + ' miếng trầu'}</span></button>`,
-    ...keys.map(k => { const R = S[k], T = P4.shopDay[k] || { n: 0 }; return `<button class="upc" data-k="${k}"><b>${p4Esc(R.name)}</b><span class="lv">${R.own === 'buy' ? 'Quán của mình' : 'Quán thuê'}</span><span>${R.shut ? 'đang đóng' : 'hôm nay ' + T.n + ' bát/đĩa'}</span></button>`; })];
+  const cards = [`<button class="upc" data-k="home"><b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b><span class="lv">Hiệu trầu</span><span>${SAVE4B.shut ? '<span class="bad">Đã đóng cửa</span>' : 'còn ' + SAVE4B.stock + ' miếng trầu'}</span></button>`,
+    ...keys.map(k => { const R = S[k], T = P4.shopDay[k] || { n: 0 }; return `<button class="upc" data-k="${k}"><b>${p4Esc(R.name)}</b><span class="lv">${R.own === 'buy' ? 'Quán của mình' : 'Quán thuê'}</span><span>${R.shut ? '<span class="bad">Đã đóng cửa</span>' : 'hôm nay ' + T.n + ' bát/đĩa'}</span></button>`; })];
   $('#p4upsB').innerHTML = `<div class="ups">${cards.join('')}</div>` + (keys.length ? '' : '<p class="sm">Chưa thuê quán ăn nào: chạm vào một quán ăn trên phố để thuê.</p>');
   p4Sheets('p4ups');
 }

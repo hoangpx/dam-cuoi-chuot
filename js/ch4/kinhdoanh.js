@@ -490,7 +490,7 @@ function c4OpenUps() {
     const G = C4_GOODS[g], own = c4Own(g), lvI = g === 'trau' ? SAVE4.lv : c4SLvI(g), lvN = g === 'trau' ? C4_LV.length : G.buy ? C4_BUY_TOP + 1 : C4_SHOP_LV.length;
     const name = g === 'trau' ? c4Lv().name : own ? c4SLv(g).name : 'Đất trống', L = !own && c4Landlord(g);
     return `<button class="upc ${own ? '' : 'empty'}" data-up="${g}"><b>${G.name}</b><span class="lv">${name}</span>`
-      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>thuê ${c4Money(L.price)}</span>`) + '</button>';
+      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i>${c4Shut(g) ? '<span><span class="bad">Đã đóng cửa</span></span>' : `<span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>`}` : `<span>thuê ${c4Money(L.price)}</span>`) + '</button>';
   };
   $('#c4evB').innerHTML = `<div class="ups">${all.map(card).join('')}</div>`;
   $('#c4evB').querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => { AU.tap(); C4.upListNext = true; c4OpenUp(b.dataset.up); }));

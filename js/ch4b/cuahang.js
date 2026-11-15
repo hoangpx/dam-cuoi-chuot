@@ -192,7 +192,7 @@ function p4StockHud() {
     if (ws.length) lines.push(`<span class="w"><b>${p4Esc(p4KindTitle(R.food))}</b> ${ws.map(w => { const n = R.stock[w.id] || 0; return `<i class="${n < 1 ? 'out' : 'low'}">${P4_WSHORT[w.n] || w.n} ${n}</i>`; }).join(' · ')}</span>`);
   }
   const cap = p4StkFold(), open = lines.length > cap && p4StkOpen();
-  const parts = (SAVE4B.house ? [`<span class="w"><b>Trầu</b> ${SAVE4B.stock}</span>`] : []).concat(open ? lines : lines.slice(0, cap));
+  const parts = (SAVE4B.house ? [SAVE4B.shut ? '<span class="w shut"><b>Trầu</b> đã đóng</span>' : `<span class="w"><b>Trầu</b> ${SAVE4B.stock}</span>`] : []).concat(open ? lines : lines.slice(0, cap));
   if (lines.length > cap) parts.push(`<button class="fold" data-stk="1">${open ? 'Thu gọn ▴' : `Xem thêm ${lines.length - cap} quán sắp hết ▾`}</button>`);
   const h = parts.join(''); if (el.innerHTML !== h) el.innerHTML = h;
   el.hidden = !parts.length;

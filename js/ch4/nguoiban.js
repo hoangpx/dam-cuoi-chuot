@@ -211,7 +211,7 @@ function c4HandPlan(ev) {
 const C4_HUSB_INVITE = ['Mời cô bác ghé gánh nhà tôi!', 'Ghé xem một tí, không mua cũng được!', 'Bà con ơi, hàng nhà tôi tươi nhất chợ!', 'Mời bác ghé, vợ tôi bán vui lắm!', 'Ai đi qua cũng ghé một tí nào!'];
 // one line per ware, said only when we sell it
 const C4_HUSB_WARE = { banhcuon: 'Bánh cuốn nóng tráng tại chỗ đây, mời ăn sáng!', ruou: 'Rượu nếp cái hoa vàng đây, chén nào cũng thơm!', gom: 'Bát đĩa, nồi niêu Bát Tràng đây, bền đẹp!', thuoc: 'Thuốc nam gia truyền đây, cảm cúm đau lưng có cả!', trau: 'Trầu têm cánh phượng, cau non đây, mời vào!', che: 'Chè xanh nóng hổi đây, mời bác bát chè!', xoi: 'Xôi nóng dẻo thơm đây, ăn sáng cho chắc dạ!', xen: 'Kim chỉ, gương lược, đủ cả, mời chị em xem!', bun: 'Bún riêu cua đồng nóng đây, thơm phức!', thit: 'Thịt lợn mới mổ đây!', gao: 'Gạo tám thơm đây, mời cô bác!', rau: 'Rau tươi mới hái đây!', trung: 'Trứng gà ta đây, còn ấm!', ga: 'Gà ta béo ngậy đây!', qua: 'Hoa quả ngọt lịm đây!', non: 'Nón lá mới đây, đội vào là xinh!', ca: 'Cá đồng tươi rói đây!', vai: 'Vải đẹp may áo đây!', banh: 'Bánh đa giòn rụm đây!' };
-const c4HusbLine = () => c4Pick([...C4_HUSB_INVITE, ...c4Owned().filter(g => c4Stock(g) > 0 && C4_HUSB_WARE[g]).map(g => C4_HUSB_WARE[g]), ...c4Owned().filter(g => c4Stock(g) > 0 && C4_HUSB_WARE[g]).map(g => C4_HUSB_WARE[g])]);
+const c4HusbLine = () => c4Pick([...C4_HUSB_INVITE, ...c4Owned().filter(g => c4Stock(g) > 0 && !c4Shut(g) && C4_HUSB_WARE[g]).map(g => C4_HUSB_WARE[g]), ...c4Owned().filter(g => c4Stock(g) > 0 && !c4Shut(g) && C4_HUSB_WARE[g]).map(g => C4_HUSB_WARE[g])]);
 function c4HusbTout(dt) {
   const P = C4.porter; if (C4.phase !== 'open' || !(P.st === 'idle' || P.st === 'walk')) return;
   if (P.st === 'walk' && P.strollX == null) P.st = 'idle';
@@ -223,6 +223,7 @@ function c4HusbTout(dt) {
   }
   if ((P.toutT = (P.toutT ?? 3) - dt) > 0) return;
   P.toutT = 5 + R() * 5;
+  if (!c4OpenStalls().length) return;                                     // every stall shut: nobody to call in (owner 2026-11-15)
   if (!P.say) c4Say(P, c4HusbLine());
   const goods = c4Owned().filter(g => c4Stock(g) > 0 && c4Open(g)); if (!goods.length || R() > .4) return;
   const w = C4.walkers.find(w => w.st === 'walk' && !w.buy && !w.visit && !w.rival && w.kind === 'mouse' && !w.buf && !w.drunk && w.pid !== undefined && Math.abs(w.x - P.x) < 320);

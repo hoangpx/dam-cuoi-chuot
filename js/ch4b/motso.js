@@ -14,13 +14,13 @@ function c4QuanVillageCards() {
     const G = C4_GOODS[g], own = c4Own(g), lvI = g === 'trau' ? SAVE4.lv : c4SLvI(g), lvN = g === 'trau' ? C4_LV.length : G.buy ? C4_BUY_TOP + 1 : C4_SHOP_LV.length;
     const name = g === 'trau' ? c4Lv().name : own ? c4SLv(g).name : 'Đất trống', L = !own && c4Landlord(g);
     return `<button class="upc ${own ? '' : 'empty'}" data-up="${g}"><b>${G.name}</b><span class="lv">${name}</span>`
-      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i><span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>` : `<span>thuê ${c4Money(L.price)}</span>`) + '</button>';
+      + (own ? `<i class="bar"><i style="width:${(lvI + 1) / lvN * 100}%"></i></i>${c4Shut(g) ? '<span><span class="bad">Đã đóng cửa</span></span>' : `<span>còn ${c4Stock(g)}/${c4Cap(g)} ${G.unit}</span>`}` : `<span>thuê ${c4Money(L.price)}</span>`) + '</button>';
   }).join('');
 }
 function c4QuanTownCards() {
   const S = p4Shops(), keys = Object.keys(S).sort((a, b) => a - b), day = (typeof P4 !== 'undefined' && P4.shopDay) || {};
-  return [`<button class="upc" data-k="home"><b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b><span class="lv">Hiệu trầu</span><span>${SAVE4B.shut ? 'đang đóng' : 'còn ' + SAVE4B.stock + ' miếng trầu'}</span></button>`,
-    ...keys.map(k => { const R = S[k], T = day[k] || { n: 0 }; return `<button class="upc" data-k="${k}"><b>${p4Esc(R.name)}</b><span class="lv">${R.own === 'buy' ? 'Quán của mình' : 'Quán thuê'}</span><span>${R.shut ? 'đang đóng' : 'hôm nay ' + T.n + ' bát/đĩa'}</span></button>`; })].join('')
+  return [`<button class="upc" data-k="home"><b>${p4Esc(SAVE4B.name || 'TRẦU CAU')}</b><span class="lv">Hiệu trầu</span><span>${SAVE4B.shut ? '<span class="bad">Đã đóng cửa</span>' : 'còn ' + SAVE4B.stock + ' miếng trầu'}</span></button>`,
+    ...keys.map(k => { const R = S[k], T = day[k] || { n: 0 }; return `<button class="upc" data-k="${k}"><b>${p4Esc(R.name)}</b><span class="lv">${R.own === 'buy' ? 'Quán của mình' : 'Quán thuê'}</span><span>${R.shut ? '<span class="bad">Đã đóng cửa</span>' : 'hôm nay ' + T.n + ' bát/đĩa'}</span></button>`; })].join('')
     + (keys.length ? '' : '<p class="sm">Chưa thuê quán ăn nào: chạm vào một quán ăn trên phố để thuê.</p>');
 }
 function c4QuanFill(box) {

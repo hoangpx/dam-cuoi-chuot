@@ -781,3 +781,6 @@ body.c4 select,body.c4 input,body.c4 textarea,body.c4 button{font-family:var(--b
 /* these sheets measure their height from the sheet itself, not from the screen unit (an iPhone's dvh and the fixed sheet disagreed, and the card
    ran past the bottom with its sticky row floating mid-way) */
 #c4ev .card4:has(.nvTabs),#p4ups .card4,#c4wk .card4,#c4up .card4,#p4shop .card4,#p4home .card4,#c4note .card4,#hs .card4{height:min(760px,calc(100% - 24px))!important;max-height:calc(100% - 24px)!important}
+
+/* a shut stall in the HUD's ware list (owner 2026-11-15) */
+#c4Stock .w.shut,#p4Stock .w.shut{color:#a3332a;opacity:.85}
