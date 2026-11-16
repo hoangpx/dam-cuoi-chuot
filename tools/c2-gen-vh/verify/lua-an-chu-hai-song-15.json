@@ -1,0 +1,1 @@
+{"id":"lua-an-chu-hai-song-15","ok":true,"len":99,"states":24737,"moves":"DRRDDDRULUULLLDDRLUURRRDDLRUULDRDRDDLUUULULLDDRLUURRDRDRDDLUULUULLDDRRUURLDDRULURRRRRRRRURRURRRDDDL","ess":[{"op":"+","r":"water:is:fire"},{"op":"+","r":"fire:is:water"}],"chain":"Ghép NƯỚC LÀ LỬA → Phá NƯỚC LÀ LỬA → Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC","unsure":[]}

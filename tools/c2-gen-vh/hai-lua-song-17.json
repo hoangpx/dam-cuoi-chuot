@@ -1,0 +1,90 @@
+{
+ "id": "hai-lua-song",
+ "score": 10.5512859997563,
+ "moves": "URRRDLDRDDLUURUULLLDDRRLLUURRDRDUULLLDDRRDRULURURRRURDDDRDLLLUURRRRRRRRRR",
+ "len": 73,
+ "states": 68805,
+ "map": [
+  "M=1W=3N=4F=5......",
+  "wN.w.fw..f...~~...",
+  "....#f...f...~~...",
+  ".mw..f...f...~~.g.",
+  "..9.=f...f...~~...",
+  "..wM.f...f...~~...",
+  "G=6..f...f...~~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:float"
+  },
+  {
+   "op": "+",
+   "r": "mouse:is:safe"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BAY → Ghép CHUỘT LÀ BỀN → Phá CHUỘT LÀ BAY"
+}

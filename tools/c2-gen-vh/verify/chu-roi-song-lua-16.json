@@ -1,0 +1,1 @@
+{"id":"chu-roi-song-lua-16","ok":true,"len":44,"states":50997,"moves":"RLLUURRURRRRDDLUULLLDLLDDRRRURRUURRRRRRRRRRR","ess":[{"op":"+","r":"mouse:is:float"},{"op":"+","r":"mouse:is:safe"}],"chain":"Ghép CHUỘT LÀ BAY → Phá CHUỘT LÀ BAY → Ghép CHUỘT LÀ BỀN","unsure":[]}

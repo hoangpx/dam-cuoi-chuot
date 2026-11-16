@@ -1,0 +1,1 @@
+{"id":"lua-an-chu-song-8","ok":true,"len":90,"states":51818,"moves":"LDLDDRRRDRULLLLUURURDLLDDRRRDRULLLLUURRDULLDDRRRLUURRLLDDRDRULLUURRLLDDRRUDLLUURRRRRRRRRDR","ess":[{"op":"+","r":"water:is:text"},{"op":"+","r":"fire:is:water"}],"chain":"Ghép NƯỚC LÀ CHỮ → Phá NƯỚC LÀ CHỮ → Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC","unsure":[]}

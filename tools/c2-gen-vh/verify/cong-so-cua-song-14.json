@@ -1,0 +1,1 @@
+{"id":"cong-so-cua-song-14","ok":true,"len":49,"states":41941,"moves":"DDDLDUULLLURDLDRURRRDDLURULLULDLDRURRRDDLURULRRRR","ess":[{"op":"+","r":"key:is:push"},{"op":"+","r":"water:is:key"},{"op":"+","r":"key:is:mouse"}],"chain":"Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY → Ghép NƯỚC LÀ CHÌA → Phá NƯỚC LÀ CHÌA → Ghép CHÌA LÀ CHUỘT","unsure":[]}

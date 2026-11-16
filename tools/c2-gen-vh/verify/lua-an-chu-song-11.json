@@ -1,0 +1,1 @@
+{"id":"lua-an-chu-song-11","ok":true,"len":91,"states":117457,"moves":"URRDRDDLURULULLDLDRUURRDRDDLUULULDLDRURRRDDLURULLULLDDRUDRURRDDLURULLDLLUURLDDRURRRRRRRRRRR","ess":[{"op":"+","r":"fire:is:water"},{"op":"+","r":"water:is:float"}],"chain":"Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC → Ghép NƯỚC LÀ BAY","unsure":[]}

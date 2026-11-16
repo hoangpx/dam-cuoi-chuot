@@ -1,0 +1,86 @@
+{
+ "id": "ben-hai-lua-song",
+ "score": 12.994052843646305,
+ "moves": "RDRRDDLLDLRURRUULLDLLDDRRDRRUUDDLLULLUURRUULDRDDRRDDLLULLUURLDDRRUDLLUURURDLLDDRRUULURRRLLDDRRURRRRRRRRRRRRRR",
+ "len": 109,
+ "states": 95538,
+ "map": [
+  "M=1W=3N=4F=5G=6.....",
+  "wm.w.fw..f..w~~.....",
+  "w#...f...f...~~.....",
+  "..=w.f...f...~~...g.",
+  ".w..Mf...f...~~.....",
+  ".9.w.f...f...~~.....",
+  ".w.N.f...f...~~....."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   12,
+   0
+  ],
+  [
+   13,
+   0
+  ],
+  [
+   14,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:safe"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BỀN"
+}

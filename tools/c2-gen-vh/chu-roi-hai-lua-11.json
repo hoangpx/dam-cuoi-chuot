@@ -1,0 +1,86 @@
+{
+ "id": "chu-roi-hai-lua",
+ "score": 77.28916032089884,
+ "moves": "DDRRRRRRUULLRRDDDDLLRUULLLULLDRRRRRRUULLLLDLDRUURRRRDRRRRRRR",
+ "len": 60,
+ "states": 5795,
+ "map": [
+  "M=1W=3F=5T=$...",
+  "ww.ww.wf.w.f...",
+  "mw.=.M.f...f...",
+  "...www.f...f.g.",
+  ".......f...f...",
+  "www.w..f...f...",
+  "G=6..#.f...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:safe"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BỀN"
+}

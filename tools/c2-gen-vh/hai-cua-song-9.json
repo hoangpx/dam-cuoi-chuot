@@ -1,0 +1,98 @@
+{
+ "id": "hai-cua-song",
+ "score": 112.9923306595545,
+ "moves": "RRRUULLRRDDLLLUUDDRRURULLRDDLLUULURLURLLDRURDLLDRRRRRRRRRLLLLLLLUURDLDRRRRRRRRRRRRRUR",
+ "len": 85,
+ "states": 214179,
+ "map": [
+  "M=1W=3N=4D=8K=7....",
+  "w..wKwwd.w.dw..~...",
+  "......Nd...d...~...",
+  "..k..w.d...d...~.g.",
+  "9.k..=.d...d...~...",
+  "w.w.w2.d...d...~...",
+  "G=6m...d...d...~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   12,
+   0
+  ],
+  [
+   13,
+   0
+  ],
+  [
+   14,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "key:is:push"
+  }
+ ],
+ "chain": "Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ ĐẨY"
+}

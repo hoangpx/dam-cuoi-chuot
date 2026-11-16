@@ -1,0 +1,106 @@
+{
+ "id": "lua-an-chu-song",
+ "score": 157.55926694920072,
+ "moves": "URRDRRDLDRUULLULLDDRLUURDRRRDDLURULLULLDDRLUURDRRRDDLURULLULLDDRLUURRDRRDDLULUULLDDRRRDRULLLLURRRRRRRRRRRR",
+ "len": 106,
+ "states": 153611,
+ "map": [
+  "M=1W=3N=4F=5..",
+  "ww.w.fw..~~...",
+  "...w.f...~~...",
+  "m=...f...~~.g.",
+  "..FN.f...~~...",
+  "F)T.9f...~~...",
+  "G=6.wf...~~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "water:is:fire"
+  },
+  {
+   "op": "+",
+   "r": "fire:is:text"
+  },
+  {
+   "op": "+",
+   "r": "fire:is:water"
+  }
+ ],
+ "chain": "Ghép NƯỚC LÀ LỬA → Phá NƯỚC LÀ LỬA → Ghép LỬA LÀ CHỮ → Phá LỬA LÀ CHỮ → Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC"
+}

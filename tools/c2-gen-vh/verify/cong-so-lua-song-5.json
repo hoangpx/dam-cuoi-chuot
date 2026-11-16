@@ -1,0 +1,1 @@
+{"id":"cong-so-lua-song-5","ok":true,"len":30,"states":13279,"moves":"LDDDRRUULULDRRDDLUDLLURUURDRRR","ess":[{"op":"+","r":"fire:is:water"},{"op":"+","r":"water:is:mouse"}],"chain":"Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC → Ghép NƯỚC LÀ CHUỘT","unsure":[]}

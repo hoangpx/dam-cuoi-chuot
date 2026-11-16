@@ -1,0 +1,1 @@
+{"id":"song-cua-lua-13","ok":true,"len":47,"states":63020,"moves":"LLDLLDDRURRDDRUULLUURDDRDDLURULLULULDDURRDLRRRR","ess":[{"op":"+","r":"water:is:fire"},{"op":"+","r":"fire:is:gate"}],"chain":"Ghép NƯỚC LÀ LỬA → Phá NƯỚC LÀ LỬA → Ghép LỬA LÀ CỔNG","unsure":[]}

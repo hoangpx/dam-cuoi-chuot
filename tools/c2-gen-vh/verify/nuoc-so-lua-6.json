@@ -1,0 +1,1 @@
+{"id":"nuoc-so-lua-6","ok":true,"len":13,"states":8108,"moves":"URRURRDLRDLRR","ess":[{"op":"+","r":"fire:is:float"},{"op":"+","r":"water:is:float"}],"chain":"Ghép LỬA LÀ BAY → Ghép NƯỚC LÀ BAY → Phá LỬA LÀ BAY → Phá NƯỚC LÀ BAY","unsure":[]}

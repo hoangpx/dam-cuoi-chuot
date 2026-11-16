@@ -1,0 +1,1 @@
+{"id":"cong-so-lua-song-2","ok":true,"len":57,"states":232572,"moves":"DDRLUURDLDRRULURRDDURDURUULDDRDLUURRRRRRRRRDDLLLLLLLULLDD","ess":[{"op":"-","r":"water:is:float"},{"op":"+","r":"mouse:is:float"},{"op":"+","r":"water:is:fire"}],"chain":"Phá NƯỚC LÀ BAY → Ghép CHUỘT LÀ BAY → Ghép NƯỚC LÀ LỬA → Phá CHUỘT LÀ BAY","unsure":[]}

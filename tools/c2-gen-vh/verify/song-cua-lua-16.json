@@ -1,0 +1,1 @@
+{"id":"song-cua-lua-16","ok":true,"len":11,"states":43,"moves":"ULDDLDRRRRR","ess":[{"op":"-","r":"key:is:water"},{"op":"+","r":"key:is:fire"},{"op":"+","r":"key:is:float"},{"op":"+","r":"key:is:push"}],"chain":"Ghép CHÌA LÀ LỬA → Phá CHÌA LÀ NƯỚC → Ghép CHÌA LÀ BAY → Phá CHÌA LÀ LỬA → Ghép CHÌA LÀ ĐẨY → Phá CHÌA LÀ BAY → Phá CHÌA LÀ ĐẨY","unsure":[]}

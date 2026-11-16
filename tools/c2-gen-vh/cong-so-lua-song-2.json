@@ -1,0 +1,106 @@
+{
+ "id": "cong-so-lua-song",
+ "score": 97.09967228280067,
+ "moves": "DDRLUURDLDRRULURRDDURDURUULDDRDLUURRRRRRRRRDDLLLLLLLULLDD",
+ "len": 57,
+ "states": 232572,
+ "map": [
+  "M=1W=3N=4F=5..",
+  "wwww.fw..~~...",
+  "mN...f...~~...",
+  ".=...f...~~.g.",
+  ".9...f...~~...",
+  "G(M..f...~~...",
+  "G=6F.f...~~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "-",
+   "r": "water:is:float"
+  },
+  {
+   "op": "+",
+   "r": "mouse:is:float"
+  },
+  {
+   "op": "+",
+   "r": "water:is:fire"
+  }
+ ],
+ "chain": "Phá NƯỚC LÀ BAY → Ghép CHUỘT LÀ BAY → Ghép NƯỚC LÀ LỬA → Phá CHUỘT LÀ BAY"
+}

@@ -1,0 +1,86 @@
+{
+ "id": "ca-an-chu-ba-lua",
+ "score": 111.33002369500363,
+ "moves": "DLLUULDLDDRURRDULLDRURRDDDLURULLULLDRRURDULUULDDLDRRURRDDDLURULLULLDRRURDRDDLUURRRURRRRRRRRR",
+ "len": 92,
+ "states": 27755,
+ "map": [
+  "M=1W=3F=5G=6.....",
+  "w..wwfw..f...f...",
+  ".=.wmf...f...f...",
+  ".#s..f...f...f.g.",
+  "..M.sf...f...f...",
+  "S)T..f...f...f...",
+  "w.w..f...f...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:safe"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BỀN"
+}

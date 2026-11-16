@@ -1,0 +1,1 @@
+{"id":"cong-so-lua-song-16","ok":true,"len":66,"states":167021,"moves":"ULLULURDDRRRULDDRRDRURULLLULULRDRDDLULULLURDDRRRULLDLURRRRRRRRRRRR","ess":[{"op":"+","r":"fire:is:float"},{"op":"+","r":"fire:is:water"},{"op":"+","r":"water:is:float"}],"chain":"Ghép LỬA LÀ BAY → Phá LỬA LÀ BAY → Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC → Ghép NƯỚC LÀ BAY","unsure":[]}

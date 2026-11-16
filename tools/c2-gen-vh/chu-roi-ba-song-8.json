@@ -1,0 +1,86 @@
+{
+ "id": "chu-roi-ba-song",
+ "score": 111.25106226628813,
+ "moves": "RDRRDDDLLLUULULLLDDDDRRRLLLUUUURRDRDRDRRRUULLRRDDLLDLLRUUULULLLDDDDRRLLUUUURRDRRRRRRRRRRRRRRRR",
+ "len": 94,
+ "states": 5628,
+ "map": [
+  "M=1W=3T=$N=4G=6.....",
+  "w..wm.w.~w..~...~...",
+  "....w...~...~...~...",
+  ".w...9=.~...~...~.g.",
+  "..w..ww.~...~...~...",
+  ".w.w....~...~...~...",
+  ".N....ww~...~...~..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   12,
+   0
+  ],
+  [
+   13,
+   0
+  ],
+  [
+   14,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "water:is:float"
+  }
+ ],
+ "chain": "Ghép NƯỚC LÀ BAY"
+}

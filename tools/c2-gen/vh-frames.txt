@@ -1,0 +1,15 @@
+# frames still short of 6 strict boards (round 2, 2026-11-16); the ones that gave 0 in 12 seeds and the full ones are left out
+ba-song-da
+ben-hai-lua-song
+chu-roi-cua
+cong-so-lua-song
+cua-lua-song
+hai-cua-song
+hai-lua-song
+song-cua-lua
+chu-roi-lua-song
+ca-an-chu-lua-song
+lua-an-chu-hai-song
+bon-lua-bay
+chu-roi-ba-lua
+chu-roi-song-lua

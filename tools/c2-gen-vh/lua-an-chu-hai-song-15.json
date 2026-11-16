@@ -1,0 +1,102 @@
+{
+ "id": "lua-an-chu-hai-song",
+ "score": 136.18004108719944,
+ "moves": "DRRDDDRULUULLLDDRLUURRRDDLRUULDRDRDDLUUULULLDDRLUURRDRDRDDLUULUULLDDRRUURLDDRULURRRRRRRRURRURRRDDDL",
+ "len": 99,
+ "states": 24737,
+ "map": [
+  "M=1W=3N=4F=5....",
+  "wm.w.fw..~...~~.",
+  ".....f...~...~~.",
+  ".w=.wf...~...~g.",
+  ".NF..f...~...~~.",
+  "F)T.9f...~...~~.",
+  "G=6..f...~...~~."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "water:is:fire"
+  },
+  {
+   "op": "+",
+   "r": "fire:is:water"
+  }
+ ],
+ "chain": "Ghép NƯỚC LÀ LỬA → Phá NƯỚC LÀ LỬA → Ghép LỬA LÀ NƯỚC → Phá LỬA LÀ NƯỚC"
+}

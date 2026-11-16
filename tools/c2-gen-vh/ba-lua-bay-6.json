@@ -1,0 +1,74 @@
+{
+ "id": "ba-lua-bay",
+ "score": 125.75251857690166,
+ "moves": "UUULLDLLDDRRUDLLUUURRRRDDLRUULLLDLDDRRURRUULLRRDDLLULLURRDDRRUUDDLLUUURRLLDRLDDRRUULURRRRRRRRURRRDDR",
+ "len": 100,
+ "states": 38386,
+ "map": [
+  "M=1W=3F=5G=6.....",
+  "w..w.fw..f...f...",
+  ".w.=.f...f...f...",
+  ".....f...f...f.g.",
+  "...w.f...f...f...",
+  ".wM9.f...f...f...",
+  "...wmf...f...f..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "mouse:is:float"
+  }
+ ],
+ "chain": "Ghép CHUỘT LÀ BAY → Phá CHUỘT LÀ BAY"
+}

@@ -1,0 +1,86 @@
+{
+ "id": "ba-cua",
+ "score": 107.83372800578516,
+ "moves": "RUULDLDRRURDDRDDRRULLDLUURULLLRRDDLLRRRRUULDDLLLUUURRDDULLDDRRRURDLLDRRRRRRRRRRRRRUUUR",
+ "len": 86,
+ "states": 189631,
+ "map": [
+  "M=1W=3D=8K=7G=6....",
+  "w..w..wd.w.dw..d...",
+  ".2..w..d...d...d...",
+  "=m..k..d...d...d.g.",
+  "..w.k.wd...d...d...",
+  ".....K.d...d...d...",
+  "w.w...kd...d...d..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   12,
+   0
+  ],
+  [
+   13,
+   0
+  ],
+  [
+   14,
+   0
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "key:is:push"
+  }
+ ],
+ "chain": "Ghép CHÌA LÀ ĐẨY"
+}

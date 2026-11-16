@@ -1,0 +1,98 @@
+{
+ "id": "chu-roi-cua",
+ "score": 221.20737137385754,
+ "moves": "UURURRRRDRDLRDDLLUURUULLLLDDRLRUURRURDDRDDDLLUDRRUULUULLLDLDRUURRRDDLRUULLLDLDRUURRRDDLLRRUULLLDLDRULLDDRULURURRRRDDLLRRUULLLDLDRULURRRURDDRDDDLLUURRULULLLDLLDDRULURDRULURRRURDDRDDDLLUURRRRRRRRUR",
+ "len": 195,
+ "states": 54424,
+ "map": [
+  "M=1W=3T=$D=8K=7",
+  "w..w..wd.w.dw..",
+  "w...k.wd...d...",
+  "..Kww..d...d.g.",
+  "..=..2.d...d...",
+  "m.w.kw.d...d...",
+  "G=6....d...d..."
+ ],
+ "fixed": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   9,
+   0
+  ],
+  [
+   10,
+   0
+  ],
+  [
+   11,
+   0
+  ],
+  [
+   12,
+   0
+  ],
+  [
+   13,
+   0
+  ],
+  [
+   14,
+   0
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "dirs": [],
+ "ess": [
+  {
+   "op": "+",
+   "r": "key:is:push"
+  }
+ ],
+ "chain": "Ghép CHÌA LÀ ĐẨY"
+}
