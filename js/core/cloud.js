@@ -39,7 +39,11 @@ async function cloudUnpack(got) {
   const json = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
   return { ...got, data: JSON.parse(json) };
 }
-const cloudSave = async (code, keepalive) => cloudRpc('dcc_save', { p_code: code, p_data: await cloudPack(cloudSnapshot()) }, keepalive);
+// (2026-11-16) a browser drops a keepalive request whose body is over 64 KB without a word: a long save goes as a plain request
+const cloudSave = async (code, keepalive) => { const d = await cloudPack(cloudSnapshot()); return cloudRpc('dcc_save', { p_code: code, p_data: d }, keepalive && JSON.stringify(d).length < 60000); };
+// the last push that failed (kept outside the synced dcc.* keys), so the panel can say the progress is NOT going up
+const cloudErrSet = v => { try { if (v) localStorage.setItem('cloudErr', JSON.stringify(v)); else localStorage.removeItem('cloudErr'); } catch (e) {} };
+const cloudErrGet = () => { try { return JSON.parse(localStorage.getItem('cloudErr') || 'null'); } catch (e) { return null; } };
 async function cloudRpc(fn, body, keepalive) {
   const r = await fetch(CLOUD.url + fn, { method: 'POST', keepalive: !!keepalive, headers: { apikey: CLOUD.key, 'content-type': 'application/json' }, body: JSON.stringify(body) });
   if (!r.ok) { const er = new Error('rpc ' + r.status); er.status = r.status; throw er; }
@@ -97,10 +101,11 @@ async function cloudPush(keepalive) {
   const code = cloudCode(); if (!code) return false;
   clearTimeout(CLOUD.timer); CLOUD.timer = 0;
   if (!CLOUD.checked && !keepalive) { const r = await cloudSync('push'); if (r === 'reloading') return false; }   // never put a stale copy over a newer one
-  try { await cloudSave(code, keepalive); localStorage.setItem('dcc.cloudT', String(Date.now())); cloudStatus(); return true; }
+  try { await cloudSave(code, keepalive); localStorage.setItem('dcc.cloudT', String(Date.now())); cloudErrSet(null); cloudStatus(); return true; }
   catch (e) {
+    cloudErrSet({ t: Date.now(), s: e.status || 0 });
     if (e.status && !CLOUD.warned) { CLOUD.warned = true; try { toast(lg('Tiến trình chưa lưu lên mạng được (máy chủ từ chối). Đừng nạp mã ở máy khác lúc này kẻo mất ngày chơi.', 'Progress could not be saved online (the server refused). Do not load the code on another device for now.'), 4); } catch (er) {} }
-    cloudStatus(lg('Chưa lưu được lên mạng (mất kết nối?). Game sẽ thử lại lần sau.', 'Could not save online (no connection?). The game will try again later.')); return false; }
+    cloudStatus(); return false; }   // (the panel says whether it was refused or could not connect, and since when it has worked)
 }
 // every save the game makes on this device goes up later: at most one trip a CLOUD_EVERY (chương IV saves all the time; owner, 2026-10-17:
 // Supabase logs every request), and at once when the page is hidden or left
@@ -127,7 +132,11 @@ function cloudStatus(msg) {
   const st = $('#cloudSt'); if (!st) return;
   if (msg) { st.textContent = msg; return; }
   const t = +cloudGet('dcc.cloudT') || 0;
-  st.textContent = t ? lg('Đã lưu lên mạng lúc ', 'Saved online at ') + new Date(t).toLocaleTimeString(LANG_LOCALE, { hour: '2-digit', minute: '2-digit' }) + lg(' ngày ', ', ') + new Date(t).toLocaleDateString(LANG_LOCALE) + '.' : '';
+  const at = x => new Date(x).toLocaleTimeString(LANG_LOCALE, { hour: '2-digit', minute: '2-digit' }) + lg(' ngày ', ', ') + new Date(x).toLocaleDateString(LANG_LOCALE);
+  const er = cloudErrGet(), bad = er && er.t > t;
+  st.textContent = (t ? lg('Đã lưu lên mạng lúc ', 'Saved online at ') + at(t) + '.' : '') +
+    (bad ? (er.s ? lg(` Lần lưu gần nhất (${at(er.t)}) bị máy chủ từ chối: tiến trình mới chưa lên mạng, đừng nạp mã ở máy khác lúc này.`, ` The last save (${at(er.t)}) was refused by the server: newer progress is not online yet; do not load the code on another device now.`)
+      : lg(` Lần lưu gần nhất (${at(er.t)}) không kết nối được, game sẽ thử lại.`, ` The last save (${at(er.t)}) could not connect; the game will try again.`)) : '');
 }
 $('#bCloudSync') && $('#bCloudSync').addEventListener('click', async e => {
   const b = e.currentTarget, msg = $('#cloudMsg'); b.disabled = true; msg.textContent = lg('Đang so với bản trên mạng…', 'Comparing with the online copy…');
