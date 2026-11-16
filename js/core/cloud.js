@@ -49,6 +49,7 @@ async function cloudRpc(fn, body, keepalive) {
 // 'older' = ours is newer or only here (keep it, it goes up). A key with no recorded time counts as changed when the
 // copy holding it was last synced (cloud: its server time; here: dcc.cloudT).
 const cloudRev = s => { const m = /"_rev":(\d+)/.exec(s || ''); return m ? +m[1] : 0; };
+const cloudDay = s => { try { const v = JSON.parse(s || 'null'); return v && +v.day || 0; } catch (e) { return 0; } };
 function cloudDiff(got) {
   const cd = got.data || {}, local = cloudSnapshot(), lm = cloudMtGet(), tc = Date.parse(got.t) || 0, ts = +cloudGet('dcc.cloudT') || 0;
   let cm = {}; try { cm = JSON.parse(cd[CLOUD_MT] || '{}') || {}; } catch (e) {}
@@ -57,7 +58,11 @@ function cloudDiff(got) {
     if (k === CLOUD_MT || CLOUD.skip.includes(k) || !k.startsWith('dcc.')) continue;
     const inC = typeof cd[k] === 'string', inL = k in local;
     if (inC && inL && cd[k] === local[k]) continue;
-    if (inC && inL && (k === 'dcc.c4' || k === 'dcc.c4b')) {               // chương IV: the copy played further (more saves) wins, whatever the clocks say
+    if (inC && inL && (k === 'dcc.c4' || k === 'dcc.c4b')) {               // chương IV: the copy played further wins, whatever the clocks say
+      // (2026-11-16, a player at day 1026 found day ~700: a copy with FEWER DAYS never replaces one with more; village and town go together,
+      // decided by the village's day (dcc.c4), then by the save counter _rev)
+      const dc = cloudDay(cd['dcc.c4']), dl = cloudDay(local['dcc.c4']);
+      if (dc && dl && dc !== dl) { (dc > dl ? newer : older).push(k); continue; }
       const rc = cloudRev(cd[k]), rl = cloudRev(local[k]);
       if (rc !== rl && rc && rl) { (rc > rl ? newer : older).push(k); continue; }
     }
@@ -163,7 +168,9 @@ $('#bCloudLoad').addEventListener('click', async e => {
   try { got = await cloudUnpack(await cloudRpc('dcc_load', { p_code: code })); } catch (er) { msg.textContent = lg('Không kết nối được, bạn thử lại sau nhé.', 'Could not connect. Please try again later.'); b.disabled = false; return; }
   b.disabled = false;
   if (!got || !got.data) { msg.textContent = lg('Không tìm thấy mã này. Bạn xem lại từng chữ nhé.', 'No such code. Please check each letter.'); return; }
-  if (!confirm(lg('Tiến trình trên máy này sẽ được thay bằng tiến trình của mã ', 'The progress on this device will be replaced by the progress saved under ') + cloudShow(code) + lg('. Tiếp tục?', '. Go on?'))) { msg.textContent = ''; return; }
+  const dNew = cloudDay(got.data['dcc.c4']), dHere = cloudDay(cloudSnapshot()['dcc.c4']);   // (2026-11-16) say so when the code holds fewer days of chương IV than this device
+  const less = dHere > dNew ? lg(` Lưu ý: chương IV trên máy này đang ở ngày ${dHere}, còn mã này chỉ ở ngày ${dNew || 1}: nạp vào sẽ mất ${dHere - (dNew || 1)} ngày.`, ` Note: chương IV here is at day ${dHere}, this code only at day ${dNew || 1}: loading it loses ${dHere - (dNew || 1)} days.`) : '';
+  if (!confirm(lg('Tiến trình trên máy này sẽ được thay bằng tiến trình của mã ', 'The progress on this device will be replaced by the progress saved under ') + cloudShow(code) + '.' + less + lg(' Tiếp tục?', ' Go on?'))) { msg.textContent = ''; return; }
   try {
     for (const k of Object.keys(cloudSnapshot())) localStorage.removeItem(k);
     for (const [k, v] of Object.entries(got.data)) if (k.startsWith('dcc.') && !CLOUD.skip.includes(k) && typeof v === 'string') cloudRaw.call(localStorage, k, v);   // raw: the cloud's own times stay (dcc.mt came with it), a loaded copy is never 'newer' than the device that made it
