@@ -10,8 +10,9 @@
    - a customer giving up (c4Snubbed, p4Walkout, the betel queue): about 1 in 3; 1–2★ (sold out: "het").
    SPARSE (owner 2026-11-13: "thi thoảng 1, 2 ngày mới có 1 đánh giá thôi, đôi khi đánh giá 1* hoặc 5* mà ko rõ lý do"): one customer review a shop, then
    none for the next 1–2 game days (SAVE4.rvn[sid] = the first day another may come); about one in six is a whim, 1★ or 5★ for no reason (why 'vu_vo').
-   THE WORDS: queued in SAVE4.rvq and sent six at a time to the chat Worker's /review (worker-nguoilam/src/review.js, Claude Haiku 5.5, young and witty
-   Vietnamese, ≤ 25 words, matching the stars); when it cannot answer (no network, the day's limit), the game writes one of its own lines (C4_RV_LOCAL).
+   THE WORDS (owner 2026-11-15: no more Haiku, "cho 1000 kho câu đi, bạn tự viết"): 1000 hand-written lines in js/ch4/danhgia-cau.js (C4_RV_CAU, by kind);
+   c4RvLocal takes one not used yet (SAVE4.rvU[kind]: the whole pool of a kind goes round before a line comes back, and never one that shop already shows).
+   The Worker route /review (worker-nguoilam/src/review.js) is still deployed but nothing calls it.
    THE STARS BRING PEOPLE (hidden): the average of the last 20 customer reviews of a shop (at least 3) moves its buyers by ×(1 + .06·(avg − 3)): ×1.12 at
    5★, ×.88 at 1★ (village c4Want, town p4ShopRate, the betel house's buy chance live and in the background). Workers' reviews are shown with their
    stars but do not count for customers. ---------- */
@@ -30,9 +31,8 @@ function c4RvAdd(sid, k, s, who, why, ware) {
     const N = SAVE4.rvn || (SAVE4.rvn = {}); if (SAVE4.day < (N[sid] || 0)) return; N[sid] = SAVE4.day + 1 + (Math.random() < .5 ? 1 : 0);
     if (Math.random() < C4_RV_WHIM) { s = Math.random() < .5 ? 1 : 5; why = 'vu_vo'; }
   }
-  (SAVE4.rvq || (SAVE4.rvq = [])).push({ sid, k, s, who: String(who || '').slice(0, 30), why, ware: ware || '', d: SAVE4.day });
-  if (SAVE4.rvq.length > 30) SAVE4.rvq.splice(0, SAVE4.rvq.length - 30);
-  persist4();
+  c4RvPut({ sid, k, s, who: String(who || '').slice(0, 30), why, ware: ware || '', d: SAVE4.day });   // the words come from the hand-written pool at once (danhgia-cau.js)
+  persist4(); c4RvRefresh();
 }
 function c4RvStaff(sid, who, why) { c4RvAdd(sid, 'nv', why === 'bo' ? (Math.random() < .5 ? 1 : 2) : 1, who, why); }
 function c4RvCustomer(sid, who, wait, ware) {
@@ -41,27 +41,24 @@ function c4RvCustomer(sid, who, wait, ware) {
   c4RvAdd(sid, 'kh', s, who, s >= 5 ? c4RvPick(['nhanh', 'ngon', 're']) : 'ngon', ware);
 }
 function c4RvGiveUp(sid, who, empty, ware) { if (Math.random() > 1 / 3) return; c4RvAdd(sid, 'kh', Math.random() < .6 ? 1 : 2, who, empty ? 'het' : 'cham', ware); }
-// the game's own words when the Worker cannot write (a few of each, never the hidden numbers)
-const C4_RV_LOCAL = {
-  5: ['Đỉnh nóc kịch trần, ăn xong muốn quay lại ngay 😋', 'Phục vụ nhanh như chớp, 10 điểm không có nhưng!', 'Chill phết, giá hạt dẻ, chủ dễ thương xỉu.', 'Quán ruột từ nay nha, ai chưa thử là thiệt thòi.'],
-  4: ['Ổn áp đấy, mỗi tội hơi đông chờ xíu.', 'Ngon nha, lần sau quay lại chấm 5 sao.', 'Được của ló, chủ vui tính, chỉ thiếu chỗ ngồi.'],
-  3: ['Cũng tạm, không có gì để chê mà cũng chẳng để mê.', 'Bình thường thôi, đi ngang thì ghé.', 'Không tệ, nhưng chờ hơi lâu nha chủ ơi.'],
-  2: ['Chờ mỏi cả râu, thôi đi quán khác cho lành.', 'Hơi xu, mong quán cố gắng hơn.', 'Đến nơi thì hết hàng, toang thật sự.'],
-  1: ['Đợi mòn mỏi không ai ngó, một sao là còn nể lắm đó.', 'Ét o ét, đi quán này là xác định nhịn đói về.', 'U là trời, vừa chậm vừa hết hàng, bye bye.'],
-  nv: ['Chủ khó như giải đố, ai sắp vào làm thì nhớ mang theo tinh thần thép.', 'Làm quần quật mà mặt chủ lúc nào cũng hãm, anh em cẩn thận nha.', 'Công thì bé tí mà việc thì to đùng, né gấp còn kịp.', 'Bị chửi suốt, chủ keo kiệt bủn xỉn, người sau tự lo thân nhé.', 'Chủ nói một đằng làm một nẻo, vào làm nhớ ghi âm… à nhầm, ghi sổ cẩn thận.']
-};
-const c4RvLocal = x => c4RvPick(x.k === 'nv' ? C4_RV_LOCAL.nv : (C4_RV_LOCAL[x.s] || C4_RV_LOCAL[3]));
+const c4RvKind = x => x.k === 'nv' ? (C4_RV_CAU[x.why] ? x.why : 'bo') : x.why === 'vu_vo' ? (x.s <= 2 ? 'vv1' : 'vv5') : x.why === 'het' ? 'het' : x.why === 'cham' || x.s <= 2 ? 'cham' : x.s >= 5 ? 'k5' : x.s === 4 ? 'k4' : 'k3';
+function c4RvLocal(x) {   // a line of the pool not used yet (the whole pool goes round before one comes back; never one already under that shop)
+  const kind = c4RvKind(x), P = C4_RV_CAU[kind], U = SAVE4.rvU || (SAVE4.rvU = {}), used = new Set(U[kind] || []), here = new Set(c4RvList(x.sid).map(r => r.t));
+  let free = P.map((_, i) => i).filter(i => !used.has(i) && !here.has(P[i]));
+  if (!free.length) { U[kind] = []; free = P.map((_, i) => i).filter(i => !here.has(P[i])); if (!free.length) free = P.map((_, i) => i); }
+  const i = free[(Math.random() * free.length) | 0]; (U[kind] = U[kind] || []).push(i); return P[i];
+}
 function c4RvPut(x, t) {
   const R = SAVE4.rv || (SAVE4.rv = {}), L = R[x.sid] || (R[x.sid] = []);
   L.unshift({ d: x.d, k: x.k, s: x.s, who: x.who, why: x.why, t: t || c4RvLocal(x) }); if (L.length > C4_RV_KEEP) L.length = C4_RV_KEEP;
 }
 const c4RvDev = () => { try { let d = localStorage.getItem('dcc_wkdev'); if (!d) { d = (SAVE4.oid || '') + Math.random().toString(36).slice(2, 10); localStorage.setItem('dcc_wkdev', d); } return d; } catch (e) { return 'x' + (SAVE4.oid || ''); } };
 // send up to six waiting reviews; anything the Worker cannot write gets the game's own line
-async function c4RvFlush() {
+async function c4RvFlush() {   // (only drains reviews queued by an older version: the pool writes them now, the Worker is no longer asked)
   const Q = SAVE4 && SAVE4.rvq; if (C4RV.busy || !Q || !Q.length) return;
   const batch = Q.slice(0, 6);
   let texts = null;
-  if (C4RV.off !== String(SAVE4.day)) {
+  if (false) {
     C4RV.busy = true;
     try {
       const r = await fetch(C4_RV_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dev: c4RvDev(), items: batch.map(x => ({ k: x.k, s: x.s, shop: c4RvShopName(x.sid), ware: x.ware, who: x.who, why: x.why })) }) });
