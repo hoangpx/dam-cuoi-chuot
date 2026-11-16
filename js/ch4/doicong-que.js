@@ -4,6 +4,9 @@
    (h.wq.ask); that evening the tally says so (wq.pend); on the open market a sheet #c4wage asks: raise (h.wageUp, read by c4Wage) or refuse.
    Refused (an ask waits until it is answered): that evening the hand runs off with that stall's takings of the day. */
 const C4_FAIR = .1, C4_FAIR_DAYS = 7;
+// after a raise (granted, or Thêm công) nobody asks again for 14 days (owner, 2026-11-16: "14 ngày ko đòi")
+const C4_ASK_QUIET = 14;
+const c4AskQuiet = q => !!q && q.quiet != null && SAVE4.day - q.quiet < C4_ASK_QUIET;
 // one rule for every hired hand, village and town (owner, 2026-11-08: "apply hết luật chung người làm cho cả huyện và quê, nhưng nếu được trả lương xứng
 // đáng thì % ôm tiền bỏ trốn rất ít"): the chance an evening that a hand runs off with the day's takings of where they work. Paid fairly (or no fair pay
 // known yet): about 0.4 %; the further under the fair pay, the likelier (up to ~30 % unpaid by half); honest hands less, dishonest more; in the village a hand
@@ -44,9 +47,12 @@ const c4Sour = h => c4Thief(h.wq, h.sp, h.wm, h.ho) && !c4Grace(h.wq) && ((h.wq 
 // fair pay by the takings (owner, 2026-11-09, approved proposal, the same rule as the town): a hired hand is a helper beside the wife, so half the
 // trade's share (eating 18 %, staples 8 %, trade 11 %; tamly.js c4GCat) of the stall's takings over its last 7 evenings (h.tk); kept in h.fair
 const C4_VCAT_L = { an: .11, ty: .08, cd: .11, xx: .06, mv: .12 };
+// (owner, 2026-11-16: "tính theo lãi thôi"): by the stall's profit before wages (takings − goods − rent by the day; h.lw), half of the town keeper's
+// share of it (P4_LAI_K: labour / (labour + net), so a stall doing as planned pays about the old fair)
+const C4_LAI_K = { an: .29, ty: .42, cd: .32, xx: .2, mv: .29 };
 function c4HandFairOf(h, g) {
-  const H = h.tk; if (!H || H.length < 3) return 0;
-  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(.5 * (C4_VCAT_L[c4GCat(g)] || .11) * avg / 5) * 5) : 0;
+  const H = h.lw; if (!H || H.length < 3) return 0;
+  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(.5 * (C4_LAI_K[c4GCat(g)] || .3) * avg / 5) * 5) : 0;
 }
 const c4HandFair = h => h.fair || 0;
 { const pay0 = c4PayHands;
@@ -56,9 +62,11 @@ const c4HandFair = h => h.fair || 0;
       for (const h of [...H]) {
         const wage = c4Wage(g, h), q = h.wq || (h.wq = {}), who = `${c4Cap1(h.name)} (${C4_GOODS[g].name.toLowerCase()})`;
         (h.tk = h.tk || []).push(Math.round(take)); if (h.tk.length > C4_FAIR_DAYS) h.tk.shift();
+        (h.lw = h.lw || []).push(Math.round(take - (b.cogs || 0) - rent)); if (h.lw.length > C4_FAIR_DAYS) h.lw.shift();
         const fair = h.fair = c4HandFairOf(h, g);
         if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + 4 + ((Math.random() * 4) | 0); quits.push(`${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.`); continue; }   // keeps working, likelier to run off (c4RunChance)
         if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; q.mad = 0; continue; }
+        if (!q.pend && c4AskQuiet(q)) { q.ask = null; continue; }   // 14 days after a raise
         if (q.pend) { quits.push(`${who} vẫn chờ trả lời việc tăng công lên ${c4Money(q.pend.to)}.`); continue; }
         if (!q.ask) { q.ask = SAVE4.day + 4 + ((Math.random() * 4) | 0); continue; }
         if (SAVE4.day >= q.ask) { const to = Math.min(fair, wage + Math.max(1, Math.floor(wage * .1))); q.pend = { to, from: wage, day: SAVE4.day, g }; quits.push(`${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.`); }   // at most a tenth more each time (owner)
@@ -78,7 +86,7 @@ function c4WageOpen() {
 }
 function c4WageAnswer(yes) {
   const a = C4_WAGE_CUR; C4_WAGE_CUR = null; const p = a && a.h.wq && a.h.wq.pend; if (!p) { c4Sheets(null); return; }
-  if (yes) { a.h.wageUp = (a.h.wageUp || 0) + Math.max(0, p.to - c4Wage(a.g, a.h)); a.h.wq.pend = null; a.h.wq.ask = null; a.h.wq.mad = 0; a.h.wq.ok = SAVE4.day; toast(`Đã tăng công ${c4Cap1(a.h.name)} lên ${c4Money(p.to)} một ngày.`, 2.6); }
+  if (yes) { a.h.wageUp = (a.h.wageUp || 0) + Math.max(0, p.to - c4Wage(a.g, a.h)); a.h.wq.pend = null; a.h.wq.ask = null; a.h.wq.mad = 0; a.h.wq.ok = a.h.wq.quiet = SAVE4.day; toast(`Đã tăng công ${c4Cap1(a.h.name)} lên ${c4Money(p.to)} một ngày.`, 2.6); }
   else { p.no = true; toast(`Không tăng công. ${c4Cap1(a.h.name)} sầm mặt lại…`, 2.6); }
   persist4(); AU.tap();
   if (!c4WageOpen()) c4Sheets(null);

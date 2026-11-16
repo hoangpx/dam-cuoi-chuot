@@ -232,7 +232,8 @@ p4ShopsEvening = function () {
     // the small costs (charcoal, lamp oil, water, wrapping), and what goes wrong now and then (p4Mishaps: food thrown away, breakage, theft, repairs)
     const oh = Math.round((P4_CAT[K.cat] || P4_CAT.cd).o * T.take), mis = p4Mishaps(R, key, T), extra = oh + mis.cost;
     SAVE4.money -= wage + extra; P4.today.spent += wage + extra; R.wk = (R.wk || 0) + Math.round(T.take - T.cost - wage - extra);
-    (R.tk = R.tk || []).push(Math.round(T.take)); if (R.tk.length > 7) R.tk.shift();                       // the takings of the last 7 evenings (fair pay, doicong.js)
+    (R.tk = R.tk || []).push(Math.round(T.take)); if (R.tk.length > 7) R.tk.shift();                       // the takings of the last 7 evenings
+    (R.lw = R.lw || []).push(Math.round(T.take - T.cost - extra - (R.own === 'buy' ? p4TaxOf(R) : p4RentNow(R)) / 7)); if (R.lw.length > 7) R.lw.shift();   // profit before wages (fair pay, doicong.js)
     (R.nh = R.nh || []).push(T.n); if (R.nh.length > 7) R.nh.shift();
     p4RefDrift(R); p4TireEvening(R);
     let line = `<b>${p4Esc(R.name)}</b>: bán ${T.n} ${K.t === 'an' ? 'phần' : 'món'}, thu ${c4Money(T.take)}${T.tip ? ` (có ${c4Money(T.tip)} khách thưởng)` : ''}, vốn hàng đã bán ${c4Money(T.cost)}, công ${c4Money(wage)}, ${K.t === 'an' ? 'than củi, nước' : 'dầu đèn, giấy gói'} ${c4Money(oh)}` + mis.text;

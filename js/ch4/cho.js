@@ -733,11 +733,11 @@ function c4Event(kind) {
     if (kind === 'tangluong') {
       h.askDay = SAVE4.lastHandAsk = SAVE4.day; const ask = Math.max(1, Math.round(w * (.05 + R() * .05)));      // a raise is 5–10 % of the wage (owner, 2026-10-09)
       Object.assign(E, { title: 'Người làm đòi tăng công', text: `${nm} (${job}) thấy công ${c4Money(w)} mỗi ngày còn thấp, đòi tăng thêm. Quan hệ: ${h.rel}/100.`, opts: [
-        [`Tăng ${c4Money(ask)} mỗi ngày`, () => { h.wageUp = (h.wageUp || 0) + ask; c4HandRel(h, 6); toast(`${nm} mừng, công giờ là ${c4Money(c4Wage(g, h))} mỗi ngày.`, 3.2); }],
+        [`Tăng ${c4Money(ask)} mỗi ngày`, () => { h.wageUp = (h.wageUp || 0) + ask; (h.wq || (h.wq = {})).quiet = SAVE4.day; c4HandRel(h, 6); toast(`${nm} mừng, công giờ là ${c4Money(c4Wage(g, h))} mỗi ngày.`, 3.2); }],
         ['Từ chối', () => { c4HandRel(h, -12); toast(h.rel <= 20 ? `${nm} bực lắm, coi chừng có chuyện.` : `${nm} buồn, không nói thêm gì.`, 3.2); }]] });
     } else {
       Object.assign(E, { title: 'Người làm xin nghỉ', text: `${nm} (${job}) xin nghỉ việc: thấy chủ bạc, quan hệ chỉ còn ${h.rel}/100. Giữ lại hay cho nghỉ?`, opts: [
-        [`Tăng ${c4Money(inc)} mỗi ngày để giữ`, () => { h.wageUp = (h.wageUp || 0) + inc; c4HandRel(h, 15); toast(`${nm} ở lại, công giờ là ${c4Money(c4Wage(g, h))} mỗi ngày.`, 3.2); }],
+        [`Tăng ${c4Money(inc)} mỗi ngày để giữ`, () => { h.wageUp = (h.wageUp || 0) + inc; (h.wq || (h.wq = {})).quiet = SAVE4.day; c4HandRel(h, 15); toast(`${nm} ở lại, công giờ là ${c4Money(c4Wage(g, h))} mỗi ngày.`, 3.2); }],
         ['Cho nghỉ, tuyển người khác', () => { c4DropHand(g, h); toast(`${nm} nghỉ việc. Muốn có người mới thì thuê ở mục Người bán.`, 3.4); }]] });
     }
   } else if (kind === 'nvdem') { if (!c4NvDemEvent(E)) return;                 // the evening question of a counting task (nhiemvu.js)

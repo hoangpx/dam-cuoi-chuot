@@ -24,13 +24,19 @@ function p4FairOf(hist, share) {
 // staples 8 %, trade 11 %, the goldsmith 6 %, lamps 12 %) of the last 7 evenings' takings (R.tk, cuahang.js), a helper half of it; the betel house's
 // hands share 6 % of its takings (about the old 10 % of its profit). p4FairOf now reads takings.
 const p4FairShare = (hist, k) => { if (!hist || hist.length < 3) return 0; const avg = hist.reduce((a, b) => a + b, 0) / hist.length; return avg > 0 ? p4Round5(k * avg) : 0; };
-const p4ShopFair = R => p4FairShare(R.tk, (P4_CAT[p4Kind(R).cat] || P4_CAT.cd).l);
+// (owner, 2026-11-16: "tính theo lãi thôi"): fair pay by the shop's PROFIT before wages (takings − goods − small costs and mishaps − rent or tax by the day;
+// R.lw, cuahang.js), averaged over the last 7 evenings. The keeper's share of it (P4_LAI_K) is the trade's labour share over (labour + net), so at the
+// planned takings it equals the plain wage: only a shop doing better than planned makes them ask; raising prices or selling by hand no longer counts
+// unless it really adds profit. A helper half of it; the betel house's hands share 12 % of (betel takings − 3 a quid).
+const P4_LAI_K = { an: .29, ty: .42, cd: .32, xx: .2, mv: .29 };
+const p4ShopFair = R => p4FairShare(R.lw, P4_LAI_K[p4Kind(R).cat] || .3);
 const p4HelpFair = R => p4Round5(.5 * p4ShopFair(R));
-const p4HandFair = h => p4FairShare(SAVE4B.trauHist, .06 / Math.max(1, p4Hands().length));
+const p4HandFair = h => p4FairShare(SAVE4B.trauHist, .12 / Math.max(1, p4Hands().length));
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + p4Rand47(); return `<p>${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.</p>`; }   // keeps working, likelier to run off (owner)
   if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; q.mad = 0; return ''; }
+  if (!q.pend && c4AskQuiet(q)) { q.ask = null; return ''; }
   if (q.pend) return `<p>${who} vẫn chờ trả lời việc tăng công lên ${c4Money(q.pend.to)}.</p>`;
   if (!q.ask) { q.ask = SAVE4.day + p4Rand47(); return ''; }
   if (SAVE4.day >= q.ask) { const to = p4AskTo(wage, fair); q.pend = { to, from: wage, day: SAVE4.day }; return `<p class="bad">${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.</p>`; }
@@ -72,8 +78,8 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
     const H = p4Hands();
     // the betel house's own profit: its takings less the betel (3 đồng a quid) and its hands' wages (the house is ours: no rent)
     if (!SAVE4B.trauHistP) { SAVE4B.trauHist = []; SAVE4B.trauHistP = 1; }
-    if (SAVE4B.trauHistP !== 2) { SAVE4B.trauHist = []; SAVE4B.trauHistP = 2; }   // (2026-11-09: takings now, not profit)
-    SAVE4B.trauHist.push(Math.round(trau)); if (SAVE4B.trauHist.length > P4_FAIR_DAYS) SAVE4B.trauHist.shift();
+    if (SAVE4B.trauHistP !== 3) { SAVE4B.trauHist = []; SAVE4B.trauHistP = 3; }   // (2026-11-16: profit before wages again: takings less 3 a quid)
+    SAVE4B.trauHist.push(Math.round(trau - 3 * (P4.today.sold || 0))); if (SAVE4B.trauHist.length > P4_FAIR_DAYS) SAVE4B.trauHist.shift();
     for (const h of H.slice()) {
       const q = h.wq || (h.wq = {});
       const gone = () => { H.splice(H.indexOf(h), 1); const s = P4.sellers && P4.sellers.find(m => m.h === h); if (s) { P4.sellers.splice(P4.sellers.indexOf(s), 1); P4.sellers.forEach((m, k) => { m.slot = k; }); } };
@@ -116,7 +122,7 @@ function p4WageAnswer(yes) {
   const q = a.kind === 'shop' ? a.R.wq : a.h.wq, p = q.pend; if (!p) { p4Sheets(null); return; }
   if (yes) {
     if (a.kind === 'shop') a.R.raise = p.to - p4KeeperBase(a.R); else if (a.kind === 'help') { a.h.raise = p.to - p4HelpBase(a.R); a.h.quit = null; } else { if (!a.h.w0) a.h.w0 = a.h.wage; a.h.wage = p.to; }
-    q.pend = null; q.ask = null; q.mad = 0; q.ok = SAVE4.day; toast(`Đã tăng công lên ${c4Money(p.to)} một ngày.`, 2.6);
+    q.pend = null; q.ask = null; q.mad = 0; q.ok = q.quiet = SAVE4.day; toast(`Đã tăng công lên ${c4Money(p.to)} một ngày.`, 2.6);
   } else { p.no = true; toast('Không tăng công. Người làm sầm mặt lại…', 2.6); }
   p4Persist(); AU.tap();
   if (!p4WageOpen()) p4Sheets(null);
@@ -149,6 +155,7 @@ function p4WageSet(q, cur, base, d) {
   const step = p4WageStep(base), to = Math.max(Math.max(5, p4R5(base * .5)), Math.min(base * 3, cur + d * step));
   if (to === cur) return cur;
   if (to > cur) {
+    q.quiet = SAVE4.day; q.ask = null;
     if (q.pend && !q.pend.no && to >= q.pend.to) { q.pend = null; q.ask = null; q.mad = 0; q.ok = SAVE4.day; }
     else if (q.mad) q.mad--;
   } else {
