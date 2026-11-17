@@ -56,11 +56,12 @@ const c4Sour = h => c4Thief(h.wq, h.sp, h.wm, h.ho) && !c4Grace(h.wq) && ((h.wq 
 const C4_VCAT_L = { an: .11, ty: .08, cd: .11, xx: .06, mv: .12 };
 // (owner, 2026-11-16: "tính theo lãi thôi"): by the stall's profit before wages (takings − goods − rent by the day; h.lw), half of the town keeper's
 // share of it (P4_LAI_K: labour / (labour + net), so a stall doing as planned pays about the old fair)
-const C4_LAI_K = { an: .2, ty: .2, cd: .2, xx: .2, mv: .2 };   // (owner 2026-11-16: 10 % of the stall's profit: .5 × .2 below)
+const C4_LAI_K = { an: .2, ty: .2, cd: .2, xx: .2, mv: .2 };   // (no longer read: c4HandFairOf uses c4WkPct)
 // (owner 2026-11-16: "người làm thứ 2 sẽ đòi 5-7% tiền lãi, người thứ 3 cũng vậy") the first worker of a place 10 % of its profit, every next one
 // their own share between 5 and 7 % (h.pct, drawn once); village stalls, town shops (keeper first, then helpers) and the betel house alike
 // (owner 2026-11-16, then: "người thứ 2 và thứ 3 cũng ~10% đi") every next one about 10 % too: their own share between 9 and 11 %
-const c4WkPct = (h, i) => { if (!i) return .1; if (!(h.pct >= .09 && h.pct <= .11)) h.pct = Math.round((.09 + Math.random() * .02) * 1000) / 1000; return h.pct; };
+// (owner 2026-11-16, final: "lãi 15 - 10 - 10") the first worker of a place 15 % of its profit, the second, third and any later one 10 %
+const c4WkPct = (h, i) => i ? .1 : .15;
 function c4HandFairOf(h, g) {
   const H = h.lw; if (!H || H.length < 3) return 0;
   const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(c4WkPct(h, Math.max(0, c4Hands(g).indexOf(h))) * avg / 5) * 5) : 0;
