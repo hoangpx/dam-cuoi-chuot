@@ -28,14 +28,14 @@ const p4FairShare = (hist, k) => { if (!hist || hist.length < 3) return 0; const
 // R.lw, cuahang.js), averaged over the last 7 evenings. The keeper's share of it (P4_LAI_K) is the trade's labour share over (labour + net), so at the
 // planned takings it equals the plain wage: only a shop doing better than planned makes them ask; raising prices or selling by hand no longer counts
 // unless it really adds profit. A helper half of it; the betel house's hands share 12 % of (betel takings − 3 a quid).
-const P4_LAI_K = { an: .29, ty: .42, cd: .32, xx: .2, mv: .29 };
+const P4_LAI_K = { an: .1, ty: .1, cd: .1, xx: .1, mv: .1 };   // (owner 2026-11-16: "đòi khi dưới 10% lãi hằng ngày": every trade 10 %; it was .2-.42)
 const p4ShopFair = R => p4FairShare(R.lw, P4_LAI_K[p4Kind(R).cat] || .3);
-const p4HelpFair = R => p4Round5(.5 * p4ShopFair(R));
-const p4HandFair = h => p4FairShare(SAVE4B.trauHist, .12 / Math.max(1, p4Hands().length));
+const p4HelpFair = R => p4ShopFair(R);   // (owner 2026-11-16: every worker 10 % of the shop's profit, helpers too; was half the keeper's)
+const p4HandFair = h => p4FairShare(SAVE4B.trauHist, .1 / Math.max(1, p4Hands().length));
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + p4Rand47(); return `<p>${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.</p>`; }   // keeps working, likelier to run off (owner)
-  if (!fair || wage >= fair * .9) { q.ask = null; q.pend = null; q.mad = 0; return ''; }   // (2026-11-16: only under 90 % of fair)
+  if (!fair || wage >= fair) { q.ask = null; q.pend = null; q.mad = 0; return ''; }   // (2026-11-16: asks only under the fair pay = 10 % of the profit)
   if (!q.pend && c4AskQuiet(q)) { q.ask = null; return ''; }
   if (q.pend) return '';   // (2026-11-16: no line every evening while the ask waits)
   if (!q.ask) { q.ask = SAVE4.day + p4Rand47(); return ''; }

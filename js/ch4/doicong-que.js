@@ -56,7 +56,7 @@ const c4Sour = h => c4Thief(h.wq, h.sp, h.wm, h.ho) && !c4Grace(h.wq) && ((h.wq 
 const C4_VCAT_L = { an: .11, ty: .08, cd: .11, xx: .06, mv: .12 };
 // (owner, 2026-11-16: "tính theo lãi thôi"): by the stall's profit before wages (takings − goods − rent by the day; h.lw), half of the town keeper's
 // share of it (P4_LAI_K: labour / (labour + net), so a stall doing as planned pays about the old fair)
-const C4_LAI_K = { an: .29, ty: .42, cd: .32, xx: .2, mv: .29 };
+const C4_LAI_K = { an: .2, ty: .2, cd: .2, xx: .2, mv: .2 };   // (owner 2026-11-16: 10 % of the stall's profit: .5 × .2 below)
 function c4HandFairOf(h, g) {
   const H = h.lw; if (!H || H.length < 3) return 0;
   const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(.5 * (C4_LAI_K[c4GCat(g)] || .3) * avg / 5) * 5) : 0;
@@ -72,7 +72,7 @@ const c4HandFair = h => h.fair || 0;
         (h.lw = h.lw || []).push(Math.round(take - (b.cogs || 0) - rent)); if (h.lw.length > C4_FAIR_DAYS) h.lw.shift();
         const fair = h.fair = c4HandFairOf(h, g);
         if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + 8 + ((Math.random() * 7) | 0); quits.push(`${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.`); continue; }   // keeps working, likelier to run off (c4RunChance)
-        if (!fair || wage >= fair * .9) { q.ask = null; q.pend = null; q.mad = 0; continue; }   // (2026-11-16: only under 90 % of fair)
+        if (!fair || wage >= fair) { q.ask = null; q.pend = null; q.mad = 0; continue; }   // (2026-11-16: asks only under 10 % of the stall's profit)
         if (!q.pend && c4AskQuiet(q)) { q.ask = null; continue; }   // 14 days after a raise
         if (q.pend) continue;   // (2026-11-16: no line every evening while the ask waits)
         if (!q.ask) { q.ask = SAVE4.day + 8 + ((Math.random() * 7) | 0); continue; }
