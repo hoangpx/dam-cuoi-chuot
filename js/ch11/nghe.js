@@ -225,7 +225,7 @@ function c11CanNew(tx, ty, tool, k) {
   if (c11HerdAt(tx, ty) && !'DBCSNQUTYZ'.includes(k)) return true;
   if (tool === 'rod') return k === 'w' && !C11.fish;
   if (tool === 'shovel') return c11DigOk(tx, ty, k);
-  if (tool === 'dan') return (k === 'g' || k === 'f') && C11.area === 'ruong' && !SAVE11.tiles[c11Pre() + tx + ',' + ty];
+  if (tool === 'dan') { const s = SAVE11.tiles[c11Pre() + tx + ',' + ty]; return (k === 'g' || k === 'f') && C11.area === 'ruong' && (!s || !!s.dan); }   // a trellis too: the Búa đục on it offers "Dỡ giàn" (players, 2026-11-16: it could never be taken down, the tap only walked)
   return undefined;
 }
 function c11NewDayNew() {

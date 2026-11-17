@@ -74,6 +74,11 @@ c11Tap = function (tx, ty, wx, wy) {
     if (!c11Take('go', RAO_WOOD)) { c11Msg(`Cần ${RAO_WOOD} gỗ trong túi cho mỗi đoạn rào`, '#a3332a'); return; }
     c11Spend(C11_COST.dan * .5); SAVE11.fences[key] = 1; c11Dots(tx, ty, '#c89a5e', 8); c11Chips && c11Chips(tx, ty - .3, C11.face * -1, 6); persist11(); return;
   }
+  /* the wrong tool on a fence or a trellis: say which one takes it down (players hacked at them with the axe and nothing happened) */
+  if (C11.area === 'ruong' && ['axe', 'hoe', 'sickle'].includes(c11HandTool()) && !(typeof C11O !== 'undefined' && C11O.visit)) {
+    const st = SAVE11.tiles[tx + ',' + ty], gian = st && st.dan && !(st.crop && !st.dead && c11Stage(st) === 3);
+    if ((raoOn(tx, ty) || gian) && !(C11.raoTold > C11.t - 5)) { C11.raoTold = C11.t; c11Msg(c11Has('dan') ? `Cầm Búa đục rồi bấm vào ${gian ? 'giàn để dỡ' : 'đoạn rào để phá'}` : `Phải có Búa đục (mua ở lò rèn) mới ${gian ? 'dỡ được giàn' : 'phá được rào'}`, '#5b2f1f'); }
+  }
   if (C11.area === 'ruong' && raoOn(tx, ty) && c11HandTool() === 'dan' && !(typeof C11O !== 'undefined' && C11O.visit)
       ) { if (Math.hypot(tx + .5 - C11.px, ty + .5 - C11.py) <= 2.5) { raoAsk(tx, ty); return; } C11.raoGo = { tx, ty }; }   // the Búa đục that built it: a tap on a piece asks (owner); from farther off the mouse walks there and then asks (players tapped from afar and saw nothing)
   for (const b of C11.beasts || []) if (!b.herd && RAO_SHOO.includes(b.kind) && Math.abs(wx - b.x) < .8 && wy > b.y - 1.2 && wy < b.y + .35) {
