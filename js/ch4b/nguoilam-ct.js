@@ -177,7 +177,7 @@ function c4WkWish(W, band) {
   if (q.pend && !q.pend.no) return `Dạ, em vẫn đang chờ ông bà trả lời chuyện tăng công lên ${c4Money(q.pend.to)}.`;
   let fair = 0;
   try { fair = W.place === 'lang' ? c4HandFairOf(W.h, W.g) : W.R && !W.h ? p4ShopFair(W.R) * (1 - .25 * c4Gw(q)) : W.R ? p4HelpFair(W.R) * (1 - .25 * c4Gw(q)) : p4HandFair(W.h) * (1 - .25 * c4Gw(q)); } catch (e) {}
-  if (fair && W.wage < fair - 4) return band === 0 ? 'Làm vất vả mà công chẳng bõ, em cũng đang tính đây.' : 'Dạ… nói ra ông bà đừng giận, em thấy công hơi ít so với việc.';
+  if (fair && W.wage < fair * .9) return band === 0 ? 'Làm vất vả mà công chẳng bõ, em cũng đang tính đây.' : 'Dạ… nói ra ông bà đừng giận, em thấy công hơi ít so với việc.';
   if (W.R && typeof p4Tired === 'function' && p4Tired(W.R)) return 'Quầy đông quá, giá có thêm người phụ thì đỡ cho em.';
   if (W.h && W.h.quit) return 'Em đã thưa với ông bà rồi, mấy hôm nữa em xin nghỉ.';
   return band === 2 ? 'Em làm ở đây vui lắm, ông bà cứ yên tâm.' : band === 1 ? 'Dạ không ạ, em làm bình thường.' : 'Dạ… thôi, không có gì đâu ạ.';
@@ -299,11 +299,11 @@ function c4WkMoodEvening(q, wage, fair, name) {
   if (!q) return;
   const day = SAVE4.day;
   if (q.talkD === undefined) q.talkD = day;                                  // (workers of old saves start as just talked to)
-  if (q.hint && day >= q.hint.until) { q.hint = null; q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .08); }
-  if (day - q.talkD >= 3) q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .02);       // nobody has asked after them for days
+  if (q.hint && day >= q.hint.until) { q.hint = null; q.gw = Math.max(C4_GW_MIN, c4Gw(q) - .03); }   // (2026-11-16: −.08 → −.03)
+  if (day - q.talkD >= 5) q.gw = Math.max(-.15, c4Gw(q) - .01);       // nobody has asked after them for days (2026-11-16: from 5 days, −.01, never below −.15)
   if (!q.hint) {
     const under = fair && wage < fair * (1 - .25 * c4Gw(q)) - 4, noGift = day - (q.bl || -99) >= 7;
-    if (Math.random() < .07 + (under ? .15 : 0) + (noGift ? .1 : 0)) q.hint = { t: C4WK_KHO[(Math.random() * C4WK_KHO.length) | 0], day: day + 1, until: day + 2 };
+    if (Math.random() < .04 + (under ? .08 : 0) + (noGift ? .03 : 0)) q.hint = { t: C4WK_KHO[(Math.random() * C4WK_KHO.length) | 0], day: day + 1, until: day + 2 };
   }
 }
 
@@ -318,8 +318,9 @@ function c4WkRelAdd(W, d) { if (W.place === 'lang') { if (typeof c4HandRel === '
 function c4WkGrow(q, o, spK, hoK, rel, town, wmK, wage, fair) {
   if (!o) return;
   const cl = v => Math.max(0, Math.min(1, v));
-  if (town) { o[spK] = cl((o[spK] ?? .5) + .01); if (q.rel === undefined) q.rel = 50; if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 3) q.rel = Math.max(0, q.rel - 1); }
-  else if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 3 && typeof c4HandRel === 'function') c4HandRel(o, -1);
+  // (2026-11-16) not talked to: from 5 evenings, −1 an evening, never below 40 by neglect alone (it used to slide to 30 and set off sulking)
+  if (town) { o[spK] = cl((o[spK] ?? .5) + .01); if (q.rel === undefined) q.rel = 50; if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 5 && q.rel > 40) q.rel = Math.max(40, q.rel - 1); }
+  else if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 5 && typeof c4HandRel === 'function' && o.rel > 40) c4HandRel(o, -1);
   const r = rel ?? 50; o[hoK] = cl((o[hoK] ?? .5) + (r >= 85 ? .02 : r >= 70 ? .01 : r <= 30 ? -.01 : 0));
   // warmth follows the pay (owner 2026-11-12: "nhiệt tình thì tăng theo lương và thưởng"): paid well over what they think fair +.02, fairly +.01, under −.01
   if (wmK && fair > 0) { const f = fair * (1 - .25 * c4Gw(q)), k = wage / Math.max(1, f); o[wmK] = cl((o[wmK] ?? .5) + (k >= 1.2 ? .02 : k >= .95 ? .01 : k < .8 ? -.01 : 0)); }

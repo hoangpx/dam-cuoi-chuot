@@ -10,7 +10,7 @@
 const P4_FAIR = .1, P4_FAIR_DAYS = 7;
 // one ask is at most a tenth more than the pay now (owner, 2026-11-08: "mỗi lần đòi cũng không quá 10% tiền lương hiện tại"); they ask again later
 const p4AskTo = (wage, fair) => Math.min(fair, wage + Math.max(1, Math.floor(wage * .1)));
-const p4Rand47 = () => 4 + ((Math.random() * 4) | 0);
+const p4Rand47 = () => 8 + ((Math.random() * 7) | 0);   // (2026-11-16: 4-7 → 8-14 days between asks; owner: "đòi tăng lương ít thôi")
 const p4Round5 = n => Math.max(5, Math.round(n / 5) * 5);
 const p4KeeperName = () => p4Cap1(p4Pick(C4_HAND_TITLES) + ' ' + p4Pick(C4_HAND_NAMES));
 // the shop's keeper has a name now (for the asking and the running off)
@@ -35,9 +35,9 @@ const p4HandFair = h => p4FairShare(SAVE4B.trauHist, .12 / Math.max(1, p4Hands()
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + p4Rand47(); return `<p>${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.</p>`; }   // keeps working, likelier to run off (owner)
-  if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; q.mad = 0; return ''; }
+  if (!fair || wage >= fair * .9) { q.ask = null; q.pend = null; q.mad = 0; return ''; }   // (2026-11-16: only under 90 % of fair)
   if (!q.pend && c4AskQuiet(q)) { q.ask = null; return ''; }
-  if (q.pend) return `<p>${who} vẫn chờ trả lời việc tăng công lên ${c4Money(q.pend.to)}.</p>`;
+  if (q.pend) return '';   // (2026-11-16: no line every evening while the ask waits)
   if (!q.ask) { q.ask = SAVE4.day + p4Rand47(); return ''; }
   if (SAVE4.day >= q.ask) { const to = p4AskTo(wage, fair); q.pend = { to, from: wage, day: SAVE4.day }; return `<p class="bad">${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.</p>`; }
   return '';

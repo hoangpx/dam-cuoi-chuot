@@ -42,7 +42,7 @@ function c4ScoldNote(q, o, spK, wmK) {
 const c4TrAvg = (sp, wm, ho) => ((sp ?? .5) + (wm ?? .5) + (ho ?? .5)) / 3;
 const c4Thief = (q, sp, wm, ho) => c4Scolds(q) >= C4_THIEF_SCOLD && c4TrAvg(sp, wm, ho) < C4_THIEF_LOW;
 const c4Unhappy = (q, rel, wage, fair) => !c4Grace(q) && ((q && q.mad > 0) || (rel !== undefined && rel <= 30) || (fair > 0 && wage < .8 * fair));
-function c4SulkDrift(o, spK, wmK, unhappy) { if (!o || !unhappy) return; o[spK] = Math.max(.05, (o[spK] ?? .5) - .02); o[wmK] = Math.max(.05, (o[wmK] ?? .5) - .03); }
+function c4SulkDrift(o, spK, wmK, unhappy) { if (!o || !unhappy) return; o[spK] = Math.max(.05, (o[spK] ?? .5) - .01); o[wmK] = Math.max(.05, (o[wmK] ?? .5) - .015); }   // (2026-11-16: halved)
 const c4Sour = h => c4Thief(h.wq, h.sp, h.wm, h.ho) && !c4Grace(h.wq) && ((h.wq && h.wq.mad > 0) || (h.rel !== undefined && h.rel <= 20));
 // fair pay by the takings (owner, 2026-11-09, approved proposal, the same rule as the town): a hired hand is a helper beside the wife, so half the
 // trade's share (eating 18 %, staples 8 %, trade 11 %; tamly.js c4GCat) of the stall's takings over its last 7 evenings (h.tk); kept in h.fair
@@ -64,11 +64,11 @@ const c4HandFair = h => h.fair || 0;
         (h.tk = h.tk || []).push(Math.round(take)); if (h.tk.length > C4_FAIR_DAYS) h.tk.shift();
         (h.lw = h.lw || []).push(Math.round(take - (b.cogs || 0) - rent)); if (h.lw.length > C4_FAIR_DAYS) h.lw.shift();
         const fair = h.fair = c4HandFairOf(h, g);
-        if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + 4 + ((Math.random() * 4) | 0); quits.push(`${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.`); continue; }   // keeps working, likelier to run off (c4RunChance)
-        if (!fair || wage >= fair - 4) { q.ask = null; q.pend = null; q.mad = 0; continue; }
+        if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + 8 + ((Math.random() * 7) | 0); quits.push(`${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.`); continue; }   // keeps working, likelier to run off (c4RunChance)
+        if (!fair || wage >= fair * .9) { q.ask = null; q.pend = null; q.mad = 0; continue; }   // (2026-11-16: only under 90 % of fair)
         if (!q.pend && c4AskQuiet(q)) { q.ask = null; continue; }   // 14 days after a raise
-        if (q.pend) { quits.push(`${who} vẫn chờ trả lời việc tăng công lên ${c4Money(q.pend.to)}.`); continue; }
-        if (!q.ask) { q.ask = SAVE4.day + 4 + ((Math.random() * 4) | 0); continue; }
+        if (q.pend) continue;   // (2026-11-16: no line every evening while the ask waits)
+        if (!q.ask) { q.ask = SAVE4.day + 8 + ((Math.random() * 7) | 0); continue; }
         if (SAVE4.day >= q.ask) { const to = Math.min(fair, wage + Math.max(1, Math.floor(wage * .1))); q.pend = { to, from: wage, day: SAVE4.day, g }; quits.push(`${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.`); }   // at most a tenth more each time (owner)
       }
     }

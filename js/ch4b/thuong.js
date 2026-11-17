@@ -9,7 +9,7 @@
    - Effects: the chance to run off with the takings (and a town helper's skimming, which uses the same chance) × (1 − .7 g) when g ≥ 0,
      × (1 + 1.5 |g|) below 0; the pay they think fair × (1 − .25 g) (fewer and later asks; more when sour); a new ask comes up to 5 days later
      at full goodwill; a village hand's "quan hệ" rises with each bonus. */
-const C4_GW_MIN = -.4, C4_GW_FALL = .03;
+const C4_GW_MIN = -.4, C4_GW_FALL = .01;   // (owner 2026-11-16: players said not rewarding daily made the bars fall hard: .03 → .01, and it only fades down to 0)
 const c4Gw = q => (q && q.gw) || 0;
 const c4GwWord = g => g >= .6 ? 'rất quý chủ' : g >= .25 ? 'quý chủ' : g > -.15 ? 'bình thường' : g > -.3 ? 'hơi phật ý' : 'chán chủ';
 const c4GwRunK = g => g >= 0 ? Math.max(.1, 1 - .7 * g) : 1 + 1.5 * -g;
@@ -71,7 +71,7 @@ function c4GwEvening(qs, before) {
     if (!q) return;
     let g = c4Gw(q);
     if (tet && q.tetY !== y) { q.tetY = y; g = Math.min(1, g + .4); }
-    g = Math.max(C4_GW_MIN, g - C4_GW_FALL); q.gw = Math.round(g * 1000) / 1000;
+    if (g > 0) g = Math.max(0, g - C4_GW_FALL); q.gw = Math.round(g * 1000) / 1000;
     if (q.ask && q.ask !== before[i] && g > 0) q.ask += Math.round(5 * g);
   });
 }
