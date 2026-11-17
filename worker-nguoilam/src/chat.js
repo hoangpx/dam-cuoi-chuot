@@ -3,7 +3,7 @@
 export const MODEL = 'claude-haiku-5-5';
 export const MAX_MSG = 120;              // letters a player may type
 export const PER_DEVICE = 10;            // messages a device may send a Vietnam day (owner 2026-11-12: 10)
-export const PER_IP = 40;                // and an address
+export const PER_IP = 400;               // and an address (2026-11-16: 40 → 400; mobile networks put many players behind one address, they were all refused)
 export const PER_DAY = 5000;             // the whole game a day (about $0.65 at Haiku 5.5's price; owner: keep it cheap)
 
 const BAD = /(^|[^\p{L}])(địt|đụ ?má|lồn|cặc|buồi|đĩ|fuck|shit|dick|pussy)(?=$|[^\p{L}])/iu;   // (\b does not see Vietnamese letters)
