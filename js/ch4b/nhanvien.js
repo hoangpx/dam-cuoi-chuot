@@ -86,6 +86,14 @@ for (const id of ['c4Ups', 'p4Ups']) { const b = document.getElementById(id); if
     if (box && C4NV.id === id && C4WK.id === id && !box.querySelector('.nvBack')) {
       const b = document.createElement('button'); b.className = 'btn alt upback nvBack'; b.textContent = '‹ Danh sách nhân viên'; b.dataset.wkback = '1'; box.prepend(b);
     }
+    // (owner 2026-11-17: "khi ấn vào người bán thì phải có nút quay lại quán của người đó", "cho thêm nút quay lại lên đầu") opened from a stall's
+    // or shop's own sheet: the same way back at the top, named after that place
+    else if (box && C4WK.id === id && !box.querySelector('.nvBack')) {
+      const W = c4WkWho(id); if (W) {
+        const b = document.createElement('button'); b.className = 'btn alt upback nvBack'; b.dataset.wkback = '1';
+        b.textContent = '‹ ' + (W.place === 'lang' ? 'Quầy ' + C4_GOODS[W.g].name.toLowerCase() : W.R ? 'Quán ' + W.R.name : 'Hiệu trầu'); box.prepend(b);
+      }
+    }
     return r;
   }; }
 // firing asks first, in words (owner 2026-11-14: "khi đuổi thì phải có confirm chữ"): the Đuổi việc / Cho nghỉ button turns into a line asking
@@ -128,3 +136,15 @@ function c4TabsKeep(sel, fn) {
 }
 c4OpenNotes = c4TabsKeep('#c4note', c4OpenNotes);
 if (typeof hsOpen === 'function') hsOpen = c4TabsKeep('#hs', hsOpen);
+// (owner 2026-11-17: "cho thêm nút quay lại lên đầu", "áp dụng với tất cả cho đồng nhất") every page whose bottom has a "Quay lại" gets the
+// same way back at the top: the worker page (above), the house's Sắm sanh list (#c4shop) and a guest's profile opened from another page (#hsWho)
+{
+  const top = (before, id, go) => { const el = $('#' + before); if (!el || $('#' + id)) return null; const b = document.createElement('button'); b.id = id; b.type = 'button'; b.className = 'btn alt upback'; b.textContent = '‹ Quay lại'; b.style.cssText = 'display:block;margin:0 auto 12px'; b.addEventListener('click', e => { e.stopPropagation(); go(); }); el.before(b); return b; };
+  // (the profile sheets are made by hoso.js, which loads later: added on the first tap anywhere, before that tap is handled)
+  const ensure = () => {
+    if (!$('#c4shopTop')) top('c4shopB', 'c4shopTop', () => { const x = $('#c4shopX'); if (x) x.click(); });
+    if (!$('#hsWhoTop')) { const hb = top('hsWhoB', 'hsWhoTop', () => { const x = $('#hsWhoBack'); if (x) x.click(); }), hx = $('#hsWhoBack');
+      if (hb && hx) { const sync = () => { hb.hidden = hx.textContent !== 'Quay lại'; }; sync(); new MutationObserver(sync).observe(hx, { childList: true, characterData: true, subtree: true }); } }   // only when there is a page to go back to
+  };
+  ensure(); addEventListener('pointerdown', ensure, true); addEventListener('click', ensure, true);
+}

@@ -99,6 +99,36 @@ function c4WkFire(W) {
   else p4HandsClick({ dataset: { fire: String(W.i) } });
   return true;
 }
+// one wage step of the open worker (d đồng, + or −); returns whether the pay changed
+function c4WkWageStep(d) {
+  const W = C4WK.id && c4WkWho(C4WK.id); if (!W || !d) return false;
+  const before = W.wage, [k, , i] = C4WK.id.split('|');
+  const to = k === 'v' ? c4VWage(W.g, W.h, d) : k === 'k' ? p4ShopWage(W.R, 'k', d) : k === 'p' ? p4ShopWage(W.R, i, d) : p4HandWage(W.h, d);
+  if (to === before) return false;
+  if (to > before) c4WkHintMet(W.q, 1);
+  const L = W.q.log || [], last = L[L.length - 1], txt = `${to > before ? 'Chủ tăng công lên' : 'Chủ bớt công còn'} ${c4Money(to)} một ngày.`;
+  if (last && last.d === SAVE4.day && /^Chủ (tăng|bớt) công/.test(last.t) && (to > before) === /^Chủ tăng/.test(last.t)) last.t = txt; else c4WkLog(W.q, txt);   // one line per run of presses
+  if (k === 'v') persist4(); else p4Persist();
+  c4WkOpen(C4WK.id, true); return true;
+}
+// holding Thêm / Bớt công (owner 2026-11-17): one step at once, then repeats after .4 s, faster and faster, and after a while 2, 5, 10 đồng a step
+function c4WkHold(sign) {
+  c4WkHoldStop(); C4WK.held = 0;
+  let n = 0, wait = 400; AU.tap();
+  if (!c4WkWageStep(sign)) return;
+  const tick = () => {
+    n++; const step = n > 45 ? 10 : n > 30 ? 5 : n > 15 ? 2 : 1;
+    if (!c4WkWageStep(sign * step)) { c4WkHoldStop(); return; }
+    wait = Math.max(45, wait * .85); C4WK.holdT = setTimeout(tick, wait);
+  };
+  C4WK.holdT = setTimeout(tick, wait);
+}
+function c4WkHoldStop() { if (C4WK.holdT) { clearTimeout(C4WK.holdT); C4WK.holdT = 0; } }
+document.addEventListener('pointerdown', e => {
+  const t = e.target.closest && e.target.closest('[data-wkw]'); if (!t || t.disabled || (e.button && e.button !== 0)) return;
+  e.preventDefault(); c4WkHold(+t.dataset.d || 0);
+}, true);
+for (const ev of ['pointerup', 'pointercancel', 'blur']) addEventListener(ev, () => { if (C4WK.holdT || C4WK.held === 0) { c4WkHoldStop(); C4WK.held = performance.now(); } }, true);
 document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-wk],[data-wkback],[data-wkfire],[data-wkt],[data-wkw],[data-wksend]'); if (!t || t.disabled) return;
   if (t.dataset.wksend) { e.stopPropagation(); c4WkSend(); return; }
@@ -107,11 +137,8 @@ document.addEventListener('click', e => {
   if (t.dataset.wkback) { c4WkBack(); return; }
   const W = C4WK.id && c4WkWho(C4WK.id); if (!W) { c4WkBack(); return; }
   if (t.dataset.wkw) {
-    const d = +t.dataset.d || 0, before = W.wage, [k, , i] = C4WK.id.split('|');
-    const to = k === 'v' ? c4VWage(W.g, W.h, d) : k === 'k' ? p4ShopWage(W.R, 'k', d) : k === 'p' ? p4ShopWage(W.R, i, d) : p4HandWage(W.h, d);
-    if (to > before) c4WkHintMet(W.q, 1);
-    if (to !== before) c4WkLog(W.q, `${to > before ? 'Chủ tăng công lên' : 'Chủ bớt công còn'} ${c4Money(to)} một ngày.`); if (k === 'v') persist4(); else p4Persist();
-    c4WkOpen(C4WK.id, true); return;
+    if (C4WK.held && performance.now() - C4WK.held < 600) return;   // (the click that ends a press already counted by c4WkHold)
+    c4WkWageStep(+t.dataset.d || 0); return;
   }
   if (t.dataset.wkfire) { if (c4WkFire({ ...W, id0: C4WK.id.split('|')[0] }) !== false) c4WkBack(); return; }
   if (t.dataset.wkt) { c4WkTalk(W, t.dataset.wkt); c4WkOpen(C4WK.id, true); }

@@ -150,16 +150,18 @@ function p4WageAnswer(yes) {
 // least 5 đồng), between half and three times the plain pay. The evening rules stay: paid under fair they still ask, paid fairly they do not.
 // A raise that reaches a waiting ask answers it with yes (grudge gone, 7 days of grace); any other raise eases one grudge; a cut adds one grudge,
 // ends the grace and brings the next ask closer. (Nothing of this is told to the player.)
-const p4WageStep = base => Math.max(5, p4R5(base * .1));
+// (owner 2026-11-17: "thêm công bớt công để +-1, giữ lâu thì nhảy số càng nhanh") a tap moves the pay 1 đồng; d may be bigger while the button
+// is held (nguoilam-ct.js c4WkHold). A cut adds a grudge and a raise eases one at most once a day each, so holding a button counts as one change.
+const p4WageStep = base => 1;
 function p4WageSet(q, cur, base, d) {
-  const step = p4WageStep(base), to = Math.max(Math.max(5, p4R5(base * .5)), Math.min(base * 3, cur + d * step));
+  const to = Math.max(Math.max(5, p4R5(base * .5)), Math.min(base * 3, cur + d));
   if (to === cur) return cur;
   if (to > cur) {
     q.quiet = SAVE4.day; q.ask = null;
     if (q.pend && !q.pend.no && to >= q.pend.to) { q.pend = null; q.ask = null; q.mad = 0; q.ok = SAVE4.day; }
-    else if (q.mad) q.mad--;
+    else if (q.mad && q.upD !== SAVE4.day) { q.mad--; q.upD = SAVE4.day; }
   } else {
-    q.mad = (q.mad || 0) + 1; q.ok = null; if (q.pend) q.pend.from = to;
+    if (q.cutD !== SAVE4.day) { q.mad = (q.mad || 0) + 1; q.cutD = SAVE4.day; } q.ok = null; if (q.pend) q.pend.from = to;
     if (!q.ask || q.ask > SAVE4.day + 2) q.ask = SAVE4.day + 2;
   }
   return to;
