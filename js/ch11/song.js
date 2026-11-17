@@ -98,6 +98,12 @@ const C11_FERRY_AT = { ben: [14.6, 10.95, 12, 10, 'con'], con: [3.3, 9.5, 4, 8, 
     G.inW = inW;
     if (!inW) { G.land = { a: G.area, x: G.px, y: G.py }; }   // (a tap's straight walk, C11.swimTo, also runs on land: the bank-to-water tap and the hunter's run-up in san.js)
     else if (G.boating && b) { b.x = G.px; b.y = G.py; }
+    else if (b && Math.hypot(G.px - b.x, G.py - b.y) < 1.15) { G.boating = true; G.swimTo = null; G.px = b.x; G.py = b.y; c11Msg('Leo lên thuyền', '#2f6a4c'); }   // swimming up to the boat climbs into it (players, 2026-11-16: once in the water away from the boat there was no getting back in)
+    else if (!c11Know('boi')) {                                        // in the water, cannot swim, not in the boat: back into the boat if it is here, else onto the bank
+      if (b) { G.px = b.x; G.py = b.y; G.boating = true; c11Msg('Bám được vào thuyền, leo lên', '#2f6a4c'); }
+      else { const L = G.land && G.land.a === G.area ? G.land : c11NearLand(G.px, G.py); if (L) { G.px = L.x; G.py = L.y; } G.inW = false; c11Msg('Không biết bơi, lóp ngóp bò lên bờ', '#5b2f1f'); }
+      G.swimTo = null; G.go = null;
+    }
     else {
       G.swimT = (G.swimT || 0) + dt; if (G.swimT >= 1) { G.swimT -= 1; c11Spend(C11_SWIM.cost); }
       if (SAVE11.stamina <= 0) {                                       // spent: washed ashore
