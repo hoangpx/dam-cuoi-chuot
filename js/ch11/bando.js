@@ -25,32 +25,49 @@
     else if (id === 'rung') { g.strokeStyle = '#3f7a2a'; g.lineWidth = 2.4; for (const dx of [-8, -1, 6]) { g.beginPath(); g.moveTo(dx, 7); g.lineTo(dx + 1, -11); g.stroke(); } g.fillStyle = '#6fb44a'; for (const [dx, dy] of [[-6, -9], [2, -11], [9, -7]]) { g.beginPath(); g.ellipse(dx, dy, 5, 2.2, -.4, 0, 6.283); g.fill(); } }
     g.restore();
   };
+  /* the pages: the village itself, then one per far region (vungxa.js C11_REGIONS); each page is a grid of cards joined by roads */
+  const KIND_ICON = { field: 'dong', village: 'lang', lake: 'ben', marsh: 'ben', forest: 'rungram', hill: 'hang', orchard: 'rung', meadow: 'dong', river: 'con' };
+  const KIND_FILL = { field: '#cfe39a', village: '#e9d2a8', lake: '#a9d2e0', marsh: '#b9cfa8', forest: '#7fb070', hill: '#bdb2a2', orchard: '#cfe0a0', meadow: '#d6e8a8', river: '#b9dce6' };
+  const pageOf = id => (C11_AREAS[id] && C11_AREAS[id].far) || 'lang';
+  const pageSpec = page => {
+    if (page === 'lang' || typeof C11_REGIONS === 'undefined' || !C11_REGIONS[page]) {
+      const cards = Object.keys(AT).filter(id => C11_AREAS[id]).map(id => ({ id, at: AT[id], name: NAME[id], fill: FILL[id], icon: id, small: id === 'dinhba' || id === 'tram' || id === 'dayhang' })), roads = [], seen = new Set();
+      for (const [id, A] of Object.entries(C11_AREAS)) { if (!AT[id]) continue; for (const ex of Object.values(A.exits || {})) { const to = ex[0]; if (!AT[to]) continue; const k = [id, to].sort().join('|'); if (seen.has(k)) continue; seen.add(k); roads.push([id, to]); } }
+      return { cols: 4, rows: 4, cards, roads, title: 'Bản đồ làng Vũ Đại' };
+    }
+    const R = C11_REGIONS[page], cards = [{ id: '@', at: R.V, name: 'Làng Vũ Đại', fill: '#efc49a', icon: 'lang' }], roads = [];
+    for (const P of Object.values(C11_FAR_BY)) { if (P.reg !== page) continue; cards.push({ id: P.id, at: P.at, name: P.name, fill: KIND_FILL[P.kind], icon: KIND_ICON[P.kind] }); roads.push([P.id, P.par]); }
+    return { cols: R.cols, rows: R.rows, cards, roads, title: R.name };
+  };
   const draw = (g, W, H, m) => {
     g.fillStyle = 'rgba(20,16,30,.55)'; g.fillRect(0, 0, W, H);
-    const pw = Math.min(W - 16, 620), cols = 4, rows = 4, cw = (pw - 24) / cols, ch = Math.min(cw * .78, (H - 150) / rows), ph = ch * rows + 92, px = (W - pw) / 2, py = Math.max(10, (H - ph) / 2);
-    /* the paper */
+    const here = C11_AR && C11_AR.id;
+    if (!m.page) m.page = pageOf(here);
+    const S = pageSpec(m.page), tabs = typeof C11_REGIONS === 'undefined' ? [] : [['lang', 'Làng'], ...Object.entries(C11_REGIONS).map(([k, R]) => [k, R.name.replace('Vùng ', '')])];
+    const pw = Math.min(W - 16, 620), cw = (pw - 24) / S.cols, ch = Math.min(cw * .78, (H - 190) / S.rows), ph = ch * S.rows + 128, px = (W - pw) / 2, py = Math.max(10, (H - ph) / 2);
     g.fillStyle = '#f6ecd0'; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.roundRect(px, py, pw, ph, 14); g.fill(); g.stroke();
     g.strokeStyle = 'rgba(140,100,50,.35)'; g.lineWidth = 1.2; g.beginPath(); g.roundRect(px + 7, py + 7, pw - 14, ph - 14, 9); g.stroke();
-    g.fillStyle = INK; g.font = '900 20px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Bản đồ làng Vũ Đại', W / 2, py + 26);
-    const ox = px + 12, oy = py + 50, C = id => [ox + (AT[id][0] + .5) * cw, oy + (AT[id][1] + .5) * ch];
-    /* roads first: one for every pair of places joined by a way out */
-    const seen = new Set();
-    for (const [id, A] of Object.entries(C11_AREAS)) { if (!AT[id]) continue; for (const ex of Object.values(A.exits || {})) { const to = ex[0]; if (!AT[to]) continue; const k = [id, to].sort().join('|'); if (seen.has(k)) continue; seen.add(k);
-      const [x0, y0] = C(id), [x1, y1] = C(to); g.lineCap = 'round'; g.strokeStyle = '#8a6a3e'; g.lineWidth = 9; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.strokeStyle = '#d9b97a'; g.lineWidth = 5; g.stroke(); } }
-    /* the places */
-    const here = C11_AR && C11_AR.id;
-    for (const id of Object.keys(AT)) {
-      if (!C11_AREAS[id]) continue;
-      const small = id === 'dinhba' || id === 'tram' || id === 'dayhang', w = cw * (small ? .5 : .82), h = ch * (small ? .46 : .72), [cx, cy] = C(id), x = cx - w / 2, y = cy - h / 2, me = id === here;
-      g.fillStyle = FILL[id] || '#e9d2a8'; g.strokeStyle = me ? '#c8402f' : INK; g.lineWidth = me ? 3.6 : 2.2; g.beginPath(); g.roundRect(x, y, w, h, 9); g.fill(); g.stroke();
-      icon(g, id, cx, y + h * .36, Math.min(1.3, h / 52) * (small ? .8 : 1));
-      let fs = small ? 9.5 : 12; g.font = `800 ${fs}px "Be Vietnam Pro", sans-serif`; while (g.measureText(NAME[id]).width > w - 6 && fs > 8) { fs -= .5; g.font = `800 ${fs}px "Be Vietnam Pro", sans-serif`; }
-      g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(NAME[id], cx, y + h * .8);
-      /* the mouse: a red dot at its spot inside this place, pulsing */
-      if (me) { const fx = Math.max(.08, Math.min(.92, C11.px / C11_W)), fy = Math.max(.1, Math.min(.9, C11.py / C11_H)), dx = x + w * fx, dy = y + h * fy, p = 1 + Math.sin(C11.t * 5) * .25;
+    g.fillStyle = INK; g.font = '900 20px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(S.title, W / 2, py + 26);
+    /* the tabs */
+    if (tabs.length) { const tw = (pw - 24) / tabs.length;
+      tabs.forEach(([k, nm], i) => { const x = px + 12 + i * tw, y = py + 46, on = k === m.page, mine = k === pageOf(here);
+        g.fillStyle = on ? '#c8402f' : '#efe3c4'; g.strokeStyle = INK; g.lineWidth = 1.8; g.beginPath(); g.roundRect(x + 2, y, tw - 4, 26, 8); g.fill(); g.stroke();
+        g.fillStyle = on ? '#fbf4dc' : INK; g.font = '800 12px "Be Vietnam Pro", sans-serif'; g.fillText(nm + (mine && !on ? ' •' : ''), x + tw / 2, y + 13);
+        C11.hud.push({ r: [x, y - 4, tw, 34], modal: true, f: () => { m.page = k; } }); }); }
+    const ox = px + 12, oy = py + 84, pos = {}; for (const c of S.cards) pos[c.id] = [ox + (c.at[0] + .5) * cw, oy + (c.at[1] + .5) * ch];
+    const C = id => pos[id === '@' ? '@' : id] || pos['@'];
+    for (const [a, b] of S.roads) { if (!pos[a] || !(pos[b] || b === '@')) continue; const [x0, y0] = C(a), [x1, y1] = C(b);
+      g.lineCap = 'round'; g.strokeStyle = '#8a6a3e'; g.lineWidth = 9; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.strokeStyle = '#d9b97a'; g.lineWidth = 5; g.stroke(); }
+    for (const c of S.cards) {
+      const small = c.small, w = cw * (small ? .5 : .82), h = ch * (small ? .46 : .72), [cx, cy] = pos[c.id], x = cx - w / 2, y = cy - h / 2, me = c.id === here || (c.id === '@' && pageOf(here) === 'lang');
+      g.fillStyle = c.fill || '#e9d2a8'; g.strokeStyle = me ? '#c8402f' : INK; g.lineWidth = me ? 3.6 : 2.2; g.beginPath(); g.roundRect(x, y, w, h, 9); g.fill(); g.stroke();
+      icon(g, c.icon, cx, y + h * .36, Math.min(1.3, h / 52) * (small ? .8 : 1));
+      let fs = small ? 9.5 : 12; g.font = `800 ${fs}px "Be Vietnam Pro", sans-serif`; while (g.measureText(c.name).width > w - 6 && fs > 8) { fs -= .5; g.font = `800 ${fs}px "Be Vietnam Pro", sans-serif`; }
+      g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(c.name, cx, y + h * .8);
+      if (c.id === here) { const fx = Math.max(.08, Math.min(.92, C11.px / C11_W)), fy = Math.max(.1, Math.min(.9, C11.py / C11_H)), dx = x + w * fx, dy = y + h * fy, p = 1 + Math.sin(C11.t * 5) * .25;
         g.fillStyle = 'rgba(200,64,47,.3)'; g.beginPath(); g.arc(dx, dy, 9 * p, 0, 6.283); g.fill(); g.fillStyle = '#c8402f'; g.strokeStyle = '#fbf4dc'; g.lineWidth = 2; g.beginPath(); g.arc(dx, dy, 5, 0, 6.283); g.fill(); g.stroke(); }
     }
-    g.fillStyle = 'rgba(29,25,21,.6)'; g.font = '600 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillText('Chấm đỏ là chỗ bạn đang đứng · chạm để đóng', W / 2, py + ph - 18);
+    g.fillStyle = 'rgba(29,25,21,.6)'; g.font = '600 11px "Be Vietnam Pro", sans-serif'; g.textAlign = 'center'; g.fillText('Chấm đỏ là chỗ bạn đang đứng · chạm ngoài để đóng', W / 2, py + ph - 18);
   };
   const oldMenu = c11DrawMenu;
   c11DrawMenu = function (g, W, H) { const m = C11.menu; if (m && m.map) return draw(g, W, H, m); return oldMenu(g, W, H); };

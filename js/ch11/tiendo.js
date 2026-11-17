@@ -9,7 +9,7 @@
      fights: tap quickly N times before it breaks the line. SAVE11.dex counts every catch; the notebook has a tab Cá and a tab Bản thân. */
 SAVE11.xp = SAVE11.xp || 0; SAVE11.up = SAVE11.up || {}; SAVE11.dex = SAVE11.dex || {};
 const C11_XP = n => 20 * n * (n - 1);                                   // total XP for level n: 2 at 40, 3 at 120, 5 at 400, 10 at 1800
-const c11Lv = () => { let n = 1; while (n < 30 && SAVE11.xp >= C11_XP(n + 1)) n++; return n; };
+const c11Lv = () => { let n = 1; while (SAVE11.xp >= C11_XP(n + 1)) n++; return n; };
 const C11_PERKS = { 3: ['cau', 'Câu khéo', 'cá hiếm cắn câu lâu hơn, giằng co dễ hơn'], 4: ['kheo', 'Khéo tay', 'làm việc đỡ tốn sức một phần mười'], 5: ['tui1', 'Túi rộng', 'thêm 2 ô túi'],
   7: ['kheo2', 'Khéo tay hơn', 'làm việc đỡ tốn sức một phần năm'], 8: ['ruong', 'Rương rộng', 'thêm 10 ô rương'], 10: ['tui2', 'Túi rộng hơn', 'thêm 2 ô túi'] };
 const c11Perk = id => Object.entries(C11_PERKS).some(([lv, p]) => p[0] === id && c11Lv() >= +lv);
