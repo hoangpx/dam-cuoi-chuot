@@ -77,7 +77,7 @@ const c4HandFair = h => h.fair || 0;
         (h.lw = h.lw || []).push(Math.round(take - (b.cogs || 0) - rent)); if (h.lw.length > C4_FAIR_DAYS) h.lw.shift();
         const fair = h.fair = c4HandFairOf(h, g);
         if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + 8 + ((Math.random() * 7) | 0); quits.push(`${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.`); continue; }   // keeps working, likelier to run off (c4RunChance)
-        if (!fair || wage >= fair) { q.ask = null; q.pend = null; q.mad = 0; continue; }   // (2026-11-16: asks only under 10 % of the stall's profit)
+        if (!fair || wage >= fair * .9) { q.ask = null; q.pend = null; q.mad = 0; continue; }   // (owner 2026-11-16: no ask while within 10 % of the fair pay)
         if (!q.pend && c4AskQuiet(q)) { q.ask = null; continue; }   // 14 days after a raise
         if (q.pend) continue;   // (2026-11-16: no line every evening while the ask waits)
         if (!q.ask) { q.ask = SAVE4.day + 8 + ((Math.random() * 7) | 0); continue; }

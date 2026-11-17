@@ -35,7 +35,7 @@ const p4HandFair = h => p4FairShare(SAVE4B.trauHist, c4WkPct(h, Math.max(0, p4Ha
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + p4Rand47(); return `<p>${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.</p>`; }   // keeps working, likelier to run off (owner)
-  if (!fair || wage >= fair) { q.ask = null; q.pend = null; q.mad = 0; return ''; }   // (2026-11-16: asks only under the fair pay = 10 % of the profit)
+  if (!fair || wage >= fair * .9) { q.ask = null; q.pend = null; q.mad = 0; return ''; }   // (owner 2026-11-16: "công lệch dưới 10% thì ko đòi nữa": no ask while within 10 % of the fair pay)
   if (!q.pend && c4AskQuiet(q)) { q.ask = null; return ''; }
   if (q.pend) return '';   // (2026-11-16: no line every evening while the ask waits)
   if (!q.ask) { q.ask = SAVE4.day + p4Rand47(); return ''; }

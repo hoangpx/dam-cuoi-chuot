@@ -177,7 +177,7 @@ function c4WkWish(W, band) {
   if (q.pend && !q.pend.no) return `Dạ, em vẫn đang chờ ông bà trả lời chuyện tăng công lên ${c4Money(q.pend.to)}.`;
   let fair = 0;
   try { fair = W.place === 'lang' ? c4HandFairOf(W.h, W.g) : W.R && !W.h ? p4ShopFair(W.R) * (1 - .25 * c4Gw(q)) : W.R ? p4HelpFair(W.R, W.h) * (1 - .25 * c4Gw(q)) : p4HandFair(W.h) * (1 - .25 * c4Gw(q)); } catch (e) {}
-  if (fair && W.wage < fair) return band === 0 ? 'Làm vất vả mà công chẳng bõ, em cũng đang tính đây.' : 'Dạ… nói ra ông bà đừng giận, em thấy công hơi ít so với việc.';
+  if (fair && W.wage < fair * .9) return band === 0 ? 'Làm vất vả mà công chẳng bõ, em cũng đang tính đây.' : 'Dạ… nói ra ông bà đừng giận, em thấy công hơi ít so với việc.';
   if (W.R && typeof p4Tired === 'function' && p4Tired(W.R)) return 'Quầy đông quá, giá có thêm người phụ thì đỡ cho em.';
   if (W.h && W.h.quit) return 'Em đã thưa với ông bà rồi, mấy hôm nữa em xin nghỉ.';
   return band === 2 ? 'Em làm ở đây vui lắm, ông bà cứ yên tâm.' : band === 1 ? 'Dạ không ạ, em làm bình thường.' : 'Dạ… thôi, không có gì đâu ạ.';
