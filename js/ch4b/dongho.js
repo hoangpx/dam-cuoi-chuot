@@ -15,7 +15,7 @@
      the day in the village runs the town to its closing first (w4BeforeDay). The town's caught-up hour is kept (SAVE4.w4.pho) so a reload
      never sells the same hours twice. */
 const W4 = { day: 0, mins: 0, pho: 0 };
-const W4_BG = .7;                                  // the town trades in the background with ~30 % fewer customers than when the player is there (owner 2026-10-28)
+const W4_BG = .95;                                 // the town trades in the background with a few fewer customers than when the player is there (owner 2026-10-28: .7; 2026-11-16 players: "không đứng ở phố thì gần như không bán được gì": measured 65-69 % of the live sales and half the profit, now .95)
 function w4Load() {   // the world's hour today, from the save (a reload) or a fresh morning
   const s = SAVE4.w4;
   if (W4.day !== SAVE4.day) { const ok = s && s.day === SAVE4.day; W4.day = SAVE4.day; W4.mins = ok ? s.mins : C4_OPEN; W4.pho = ok && s.pho ? s.pho : 0; }
