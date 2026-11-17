@@ -30,8 +30,8 @@ const p4FairShare = (hist, k) => { if (!hist || hist.length < 3) return 0; const
 // unless it really adds profit. A helper half of it; the betel house's hands share 12 % of (betel takings − 3 a quid).
 const P4_LAI_K = { an: .1, ty: .1, cd: .1, xx: .1, mv: .1 };   // (owner 2026-11-16: "đòi khi dưới 10% lãi hằng ngày": every trade 10 %; it was .2-.42)
 const p4ShopFair = R => p4FairShare(R.lw, P4_LAI_K[p4Kind(R).cat] || .3);
-const p4HelpFair = R => p4ShopFair(R);   // (owner 2026-11-16: every worker 10 % of the shop's profit, helpers too; was half the keeper's)
-const p4HandFair = h => p4FairShare(SAVE4B.trauHist, .1 / Math.max(1, p4Hands().length));
+const p4HelpFair = (R, h) => { const f = p4ShopFair(R); return f && h ? p4Round5(f * c4WkPct(h, 1) / .1) : f; };   // a helper: their own 5-7 % (c4WkPct), the keeper 10 %
+const p4HandFair = h => p4FairShare(SAVE4B.trauHist, c4WkPct(h, Math.max(0, p4Hands().indexOf(h))));   // the betel house: first hand 10 %, the others 5-7 %
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + p4Rand47(); return `<p>${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.</p>`; }   // keeps working, likelier to run off (owner)
@@ -61,7 +61,7 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
       out.push(line || (R.kn === kn0 && !p4Ran ? p4RandomRun(who, T.take || 0, p4KeeperWage(R), p4ShopFair(R), R.kho, newKeeper, q, tired, { sp: R.ksp, wm: R.kwm }) : ''));
       // the helpers: they ask on their own; refused, they leave a few days later instead of running off, and meanwhile now and then take a little
       for (const h of [...p4ShopHands(R)]) {
-        const hq = h.wq || (h.wq = {}), hw = `Người phụ ${p4Cap1(h.name)} (${R.name})`, fair = p4HelpFair(R), wage = p4HelpWage(R, h);
+        const hq = h.wq || (h.wq = {}), hw = `Người phụ ${p4Cap1(h.name)} (${R.name})`, fair = p4HelpFair(R, h), wage = p4HelpWage(R, h);
         if (h.quit && SAVE4.day >= h.quit) { p4ShopHands(R).splice(p4ShopHands(R).indexOf(h), 1); out.push(`<p class="bad">${hw} đã thôi việc.</p>`); continue; }
         if (hq.pend && hq.pend.no) { hq.mad = (hq.mad || 0) + 1; hq.pend = null; hq.ask = null; h.quit = h.quit || SAVE4.day + 2 + ((Math.random() * 3) | 0); out.push(`<p class="bad">${hw} không được tăng công, nói mấy hôm nữa sẽ nghỉ.</p>`); continue; }
         const l2 = h.quit ? '' : p4WageEvening(hq, hw, T.take || 0, wage, fair, () => '');

@@ -176,7 +176,7 @@ function c4WkWish(W, band) {
   const q = W.q;
   if (q.pend && !q.pend.no) return `Dạ, em vẫn đang chờ ông bà trả lời chuyện tăng công lên ${c4Money(q.pend.to)}.`;
   let fair = 0;
-  try { fair = W.place === 'lang' ? c4HandFairOf(W.h, W.g) : W.R && !W.h ? p4ShopFair(W.R) * (1 - .25 * c4Gw(q)) : W.R ? p4HelpFair(W.R) * (1 - .25 * c4Gw(q)) : p4HandFair(W.h) * (1 - .25 * c4Gw(q)); } catch (e) {}
+  try { fair = W.place === 'lang' ? c4HandFairOf(W.h, W.g) : W.R && !W.h ? p4ShopFair(W.R) * (1 - .25 * c4Gw(q)) : W.R ? p4HelpFair(W.R, W.h) * (1 - .25 * c4Gw(q)) : p4HandFair(W.h) * (1 - .25 * c4Gw(q)); } catch (e) {}
   if (fair && W.wage < fair) return band === 0 ? 'Làm vất vả mà công chẳng bõ, em cũng đang tính đây.' : 'Dạ… nói ra ông bà đừng giận, em thấy công hơi ít so với việc.';
   if (W.R && typeof p4Tired === 'function' && p4Tired(W.R)) return 'Quầy đông quá, giá có thêm người phụ thì đỡ cho em.';
   if (W.h && W.h.quit) return 'Em đã thưa với ông bà rồi, mấy hôm nữa em xin nghỉ.';
@@ -213,7 +213,7 @@ function c4WkWish(W, band) {
       if (!here) continue;
       if (x.betel && x.h.unpaid) c4WkLog(x.q, 'Chưa được trả công.'); else c4WkLog(x.q, `Nhận công ${c4Money(x.wage)}.`);
       if (x.q.pend && x.q.pend !== x.pend && !x.q.pend.no) c4WkLog(x.q, `Xin tăng công từ ${c4Money(x.q.pend.from)} lên ${c4Money(x.q.pend.to)}.`);
-      let fair = 0; try { fair = x.betel ? p4HandFair(x.h) : x.h ? p4HelpFair(x.R) : p4ShopFair(x.R); } catch (e) {}
+      let fair = 0; try { fair = x.betel ? p4HandFair(x.h) : x.h ? p4HelpFair(x.R, x.h) : p4ShopFair(x.R); } catch (e) {}
       c4WkMoodEvening(x.q, x.wage, fair, x.h ? x.h.name : p4Keeper(x.R));
       if (x.h) c4WkGrow(x.q, x.h, 'sp', 'ho', x.q.rel ?? 50, true, 'wm', x.wage, fair); else c4WkGrow(x.q, x.R, 'ksp', 'kho', x.q.rel ?? 50, true, 'kwm', x.wage, fair);
     }

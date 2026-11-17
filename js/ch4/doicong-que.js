@@ -57,9 +57,12 @@ const C4_VCAT_L = { an: .11, ty: .08, cd: .11, xx: .06, mv: .12 };
 // (owner, 2026-11-16: "tính theo lãi thôi"): by the stall's profit before wages (takings − goods − rent by the day; h.lw), half of the town keeper's
 // share of it (P4_LAI_K: labour / (labour + net), so a stall doing as planned pays about the old fair)
 const C4_LAI_K = { an: .2, ty: .2, cd: .2, xx: .2, mv: .2 };   // (owner 2026-11-16: 10 % of the stall's profit: .5 × .2 below)
+// (owner 2026-11-16: "người làm thứ 2 sẽ đòi 5-7% tiền lãi, người thứ 3 cũng vậy") the first worker of a place 10 % of its profit, every next one
+// their own share between 5 and 7 % (h.pct, drawn once); village stalls, town shops (keeper first, then helpers) and the betel house alike
+const c4WkPct = (h, i) => { if (!i) return .1; if (!(h.pct >= .05 && h.pct <= .07)) h.pct = Math.round((.05 + Math.random() * .02) * 1000) / 1000; return h.pct; };
 function c4HandFairOf(h, g) {
   const H = h.lw; if (!H || H.length < 3) return 0;
-  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(.5 * (C4_LAI_K[c4GCat(g)] || .3) * avg / 5) * 5) : 0;
+  const avg = H.reduce((a, b) => a + b, 0) / H.length; return avg > 0 ? Math.max(5, Math.round(c4WkPct(h, Math.max(0, c4Hands(g).indexOf(h))) * avg / 5) * 5) : 0;
 }
 const c4HandFair = h => h.fair || 0;
 { const pay0 = c4PayHands;
