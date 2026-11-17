@@ -319,11 +319,23 @@ function c4WkGrow(q, o, spK, hoK, rel, town, wmK, wage, fair) {
   if (!o) return;
   const cl = v => Math.max(0, Math.min(1, v));
   // (2026-11-16) not talked to: from 5 evenings, −1 an evening, never below 40 by neglect alone (it used to slide to 30 and set off sulking)
-  if (town) { o[spK] = cl((o[spK] ?? .5) + .01); if (q.rel === undefined) q.rel = 50; if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 5 && q.rel > 40) q.rel = Math.max(40, q.rel - 1); }
-  else if (SAVE4.day - (q.talkD ?? SAVE4.day) >= 5 && typeof c4HandRel === 'function' && o.rel > 40) c4HandRel(o, -1);
+  // paid fairly (below): the neglect counts only every other evening
+  const paidOk = !o.unpaid && (!(fair > 0) || wage >= .9 * fair * (town ? 1 - .25 * c4Gw(q) : 1)), lone = SAVE4.day - (q.talkD ?? SAVE4.day) >= 5 && (!paidOk || SAVE4.day % 2 === 0);
+  if (town) { o[spK] = cl((o[spK] ?? .5) + .01); if (q.rel === undefined) q.rel = 50; if (lone && q.rel > 40) q.rel = Math.max(40, q.rel - 1); }
+  else if (lone && typeof c4HandRel === 'function' && o.rel > 40) c4HandRel(o, -1);
   const r = rel ?? 50; o[hoK] = cl((o[hoK] ?? .5) + (r >= 85 ? .02 : r >= 70 ? .01 : r <= 30 ? -.01 : 0));
   // warmth follows the pay (owner 2026-11-12: "nhiệt tình thì tăng theo lương và thưởng"): paid well over what they think fair +.02, fairly +.01, under −.01
-  if (wmK && fair > 0) { const f = fair * (1 - .25 * c4Gw(q)), k = wage / Math.max(1, f); o[wmK] = cl((o[wmK] ?? .5) + (k >= 1.2 ? .02 : k >= .95 ? .01 : k < .8 ? -.01 : 0)); }
+  if (wmK && fair > 0) { const f = fair * (1 - .25 * c4Gw(q)), k = wage / Math.max(1, f); o[wmK] = cl((o[wmK] ?? .5) + (k >= 1.2 ? .01 : k < .8 ? -.01 : 0)); }
+  // (owner 2026-11-16: "đang trả công xứng đáng thì độ nhiệt tình, thân thiện, quan hệ tăng dần dần tùy người") paid at least 90 % of what they think
+  // fair: each evening nhiệt tình +.012, goodwill (how fond of the boss) +.035 up to .6, quan hệ +1, all times the worker's own pace q.pace
+  // (drawn once, .6 … 1.6: some warm up fast, some slowly); not talked to for days then costs only every other evening
+  if (paidOk) {   // (no fair pay known yet, or a shop at a loss: any pay is fair; the village's h.fair already holds the goodwill; unpaid: nothing)
+    const r = q.pace >= .6 && q.pace <= 1.6 ? q.pace : (q.pace = Math.round((.6 + Math.random() * 1) * 100) / 100);
+    if (wmK) o[wmK] = cl((o[wmK] ?? .5) + .012 * r);
+    if (c4Gw(q) < .6) q.gw = Math.min(.6, c4Gw(q) + .035 * r);
+    q.relF = (q.relF || 0) + r; const up = Math.floor(q.relF); q.relF -= up;
+    if (up) { if (town) q.rel = Math.min(100, (q.rel ?? 50) + up); else if (typeof c4HandRel === 'function') c4HandRel(o, up); }
+  }
 }
 // a bonus warms them at once: +.03 × days'-pay^.6
 function c4WkWarm(id, days) {
