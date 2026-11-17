@@ -30,8 +30,8 @@ const p4FairShare = (hist, k) => { if (!hist || hist.length < 3) return 0; const
 // unless it really adds profit. A helper half of it; the betel house's hands share 12 % of (betel takings − 3 a quid).
 const P4_LAI_K = { an: .1, ty: .1, cd: .1, xx: .1, mv: .1 };   // (owner 2026-11-16: "đòi khi dưới 10% lãi hằng ngày": every trade 10 %; it was .2-.42)
 const p4ShopFair = R => p4FairShare(R.lw, P4_LAI_K[p4Kind(R).cat] || .3);
-const p4HelpFair = (R, h) => { const f = p4ShopFair(R); return f && h ? p4Round5(f * c4WkPct(h, 1) / .1) : f; };   // a helper: their own 5-7 % (c4WkPct), the keeper 10 %
-const p4HandFair = h => p4FairShare(SAVE4B.trauHist, c4WkPct(h, Math.max(0, p4Hands().indexOf(h))));   // the betel house: first hand 10 %, the others 5-7 %
+const p4HelpFair = (R, h) => { const f = p4ShopFair(R); return f && h ? p4Round5(f * c4WkPct(h, 1) / .1) : f; };   // a helper: their own 9-11 % (c4WkPct), the keeper 10 %
+const p4HandFair = h => p4FairShare(SAVE4B.trauHist, c4WkPct(h, Math.max(0, p4Hands().indexOf(h))));   // the betel house: first hand 10 %, the others 9-11 %
 // one evening's look at a worker: q = its wage state, take = today's takings of what it minds, wage / fair now; returns a tally line
 function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (q.pend && q.pend.no) { q.mad = (q.mad || 0) + 1; q.pend = null; q.ask = SAVE4.day + p4Rand47(); return `<p>${who} không được tăng công, vẫn làm nhưng mặt nặng mày nhẹ.</p>`; }   // keeps working, likelier to run off (owner)
