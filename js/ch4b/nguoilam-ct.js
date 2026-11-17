@@ -264,9 +264,10 @@ async function c4WkSend() {
       if (dr < 0) c4WkRelAdd(W2, dr); else if (dr && q.relG < 6) { const d = Math.min(dr, 6 - q.relG); q.relG += d; c4WkRelAdd(W2, d); } }
     C4WK.left = out.left;
   } else {
-    W2.q.chat = (W2.q.chat || []).slice(0, -1);                              // the unanswered line is not sent again as history
-    C4WK.chat.push([0, err === 'limit' ? 'Thôi ông bà ơi, hôm nay nói thế đủ rồi, để em còn làm. Mai chuyện tiếp ạ.' : err === 'busy' ? 'Dạ… em đang dở tay, lát nữa ông bà hỏi lại nhé.' : 'Dạ…? (ồn quá, người làm không nghe rõ)']);
-    if (err !== 'limit') toast('Chưa nói chuyện được lúc này, thử lại sau nhé.', 2.4);
+    // (2026-11-16, players: a worker who "có vẻ muốn thưa chuyện" answered "Mai chuyện tiếp" once the day's chat was used up) the worker never
+    // turns the player away: without the chat server they answer in written words, what is on their mind first (the worry they hint at, else c4WkWish)
+    const H = c4WkHint(W2.q);
+    c4WkSay(W2, 0, H ? H.t : c4WkWish(W2, c4WkBand(W2.q)));
   }
   persist4(); if (W2.place === 'pho') p4Persist();
   if (C4WK.id === id && !$('#c4wk').hidden) { c4WkOpen(id, true); const i2 = $('#c4wkB [data-wkin]'); if (i2) i2.focus(); }
