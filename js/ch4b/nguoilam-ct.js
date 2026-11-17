@@ -12,6 +12,10 @@ const C4WK_NHA_F = ['còn mẹ già ở quê', 'có hai đứa con nhỏ', 'vừ
 const C4WK_THICH = ['hát chèo', 'câu cá', 'nuôi gà chọi', 'ăn xôi gấc', 'nghe kể chuyện cổ tích', 'chơi ô ăn quan', 'thả diều', 'thêu thùa'];
 const c4WkFemale = name => /^(chị|cô|thím|bà|con|mợ)\b/i.test(String(name).trim());
 // who it is: the worker's data and the sheet to go back to
+// (owner 2026-11-17: "ở chợ quê ko điều chỉnh được tiền công cho người làm hả?") a village hand's pay moves like the town's (p4WageSet: a tenth of
+// the plain pay a step, from half to three times it; a raise reaching a waiting ask answers it, a cut adds a grudge); the plain pay is c4WageAt
+const c4VWageBase = (g, h) => c4WageAt(g, Math.max(0, c4Hands(g).indexOf(h)));
+function c4VWage(g, h, d) { const b = c4VWageBase(g, h), to = p4WageSet(h.wq || (h.wq = {}), c4Wage(g, h), b, d); h.wageUp = to - b; return to; }
 function c4WkWho(id) {
   const W = c4BonusWho(id); if (!W) return null;
   const [t, a, b] = id.split('|');
@@ -67,7 +71,7 @@ function c4WkOpen(id, keepChat) {
   { const H = c4WkHint(W.q); if (H && H.told !== SAVE4.day) { H.told = SAVE4.day; c4WkSay(W, 0, H.t); } }   // a worker with a worry brings it up (hints.js below)
   const q = W.q, b = c4WkBio(W), m = c4Money, bad = c4WkBadges(W);
   const bar = (l, v) => c4TraitBar(l, v === undefined ? .5 : v);
-  const wageBtns = W.place === 'pho' ? `<div class="row">${p4WageBtns(`data-wkw="${id}"`, p4WageCan(W.wage, W.R && !W.h ? p4KeeperBase(W.R) : W.R ? p4HelpBase(W.R) : (W.h.w0 || W.h.wage)))}</div>` : '';
+  const wageBtns = `<div class="row">${p4WageBtns(`data-wkw="${id}"`, p4WageCan(W.wage, W.place === 'lang' ? c4VWageBase(W.g, W.h) : W.R && !W.h ? p4KeeperBase(W.R) : W.R ? p4HelpBase(W.R) : (W.h.w0 || W.h.wage)))}</div>`;   // (owner 2026-11-17: the village too)
   const chat = C4WK.chat.map(([who, t]) => `<p class="${who ? 'me' : 'them'}"><b>${who ? 'Bạn' : c4Esc4(c4Cap1(W.name))}:</b> ${c4Esc4(t)}</p>`).join('');
   const log = (q.log || []).slice().reverse().map(e => `<li><span>Ngày ${e.d}</span> ${c4Esc4(e.t)}</li>`).join('') || '<li>Chưa có gì.</li>';
   $('#c4wkB').innerHTML = `<div class="wkHead"><img src="${c4WkFace(W)}" alt=""><div><h3>${c4Esc4(c4Cap1(W.name))}</h3><p>${b.age} tuổi · quê ${b.que}</p><p>${c4Esc4(W.where)}</p><p>Tính: ${c4WkKieuWord(b.kieu)}</p></div></div>`
@@ -104,9 +108,9 @@ document.addEventListener('click', e => {
   const W = C4WK.id && c4WkWho(C4WK.id); if (!W) { c4WkBack(); return; }
   if (t.dataset.wkw) {
     const d = +t.dataset.d || 0, before = W.wage, [k, , i] = C4WK.id.split('|');
-    const to = k === 'k' ? p4ShopWage(W.R, 'k', d) : k === 'p' ? p4ShopWage(W.R, i, d) : p4HandWage(W.h, d);
+    const to = k === 'v' ? c4VWage(W.g, W.h, d) : k === 'k' ? p4ShopWage(W.R, 'k', d) : k === 'p' ? p4ShopWage(W.R, i, d) : p4HandWage(W.h, d);
     if (to > before) c4WkHintMet(W.q, 1);
-    if (to !== before) c4WkLog(W.q, `${to > before ? 'Chủ tăng công lên' : 'Chủ bớt công còn'} ${c4Money(to)} một ngày.`); p4Persist();
+    if (to !== before) c4WkLog(W.q, `${to > before ? 'Chủ tăng công lên' : 'Chủ bớt công còn'} ${c4Money(to)} một ngày.`); if (k === 'v') persist4(); else p4Persist();
     c4WkOpen(C4WK.id, true); return;
   }
   if (t.dataset.wkfire) { if (c4WkFire({ ...W, id0: C4WK.id.split('|')[0] }) !== false) c4WkBack(); return; }
