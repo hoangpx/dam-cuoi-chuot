@@ -6,6 +6,13 @@
 const C4_FAIR = .1, C4_FAIR_DAYS = 7;
 // after a raise (granted, or Thêm công) nobody asks again for 14 days (owner, 2026-11-16: "14 ngày ko đòi")
 const C4_ASK_QUIET = 14;
+// (owner 2026-11-16: "không để người làm tất cả các quán đòi tăng cùng lúc") one new ask at a time in the whole game, village and town: none while
+// another waits for an answer, and at least 2 days after the last one was raised (SAVE4.askD); a worker held back tries again 1-3 days later
+function c4AskGate(q) {
+  const waiting = (typeof c4WageAsks === 'function' && c4WageAsks().length) || (typeof p4WageAsks === 'function' && typeof SAVE4B !== 'undefined' && p4WageAsks().length);
+  if (waiting || SAVE4.day - (SAVE4.askD ?? -99) < 2) { q.ask = SAVE4.day + 1 + ((Math.random() * 3) | 0); return false; }
+  SAVE4.askD = SAVE4.day; return true;
+}
 const c4AskQuiet = q => !!q && q.quiet != null && SAVE4.day - q.quiet < C4_ASK_QUIET;
 // one rule for every hired hand, village and town (owner, 2026-11-08: "apply hết luật chung người làm cho cả huyện và quê, nhưng nếu được trả lương xứng
 // đáng thì % ôm tiền bỏ trốn rất ít"): the chance an evening that a hand runs off with the day's takings of where they work. Paid fairly (or no fair pay
@@ -69,7 +76,7 @@ const c4HandFair = h => h.fair || 0;
         if (!q.pend && c4AskQuiet(q)) { q.ask = null; continue; }   // 14 days after a raise
         if (q.pend) continue;   // (2026-11-16: no line every evening while the ask waits)
         if (!q.ask) { q.ask = SAVE4.day + 8 + ((Math.random() * 7) | 0); continue; }
-        if (SAVE4.day >= q.ask) { const to = Math.min(fair, wage + Math.max(1, Math.floor(wage * .1))); q.pend = { to, from: wage, day: SAVE4.day, g }; quits.push(`${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.`); }   // at most a tenth more each time (owner)
+        if (SAVE4.day >= q.ask && c4AskGate(q)) { const to = Math.min(fair, wage + Math.max(1, Math.floor(wage * .1))); q.pend = { to, from: wage, day: SAVE4.day, g }; quits.push(`${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.`); }   // at most a tenth more each time (owner)
       }
     }
     return pay0(d, quits);

@@ -39,7 +39,7 @@ function p4WageEvening(q, who, take, wage, fair, onRun) {
   if (!q.pend && c4AskQuiet(q)) { q.ask = null; return ''; }
   if (q.pend) return '';   // (2026-11-16: no line every evening while the ask waits)
   if (!q.ask) { q.ask = SAVE4.day + p4Rand47(); return ''; }
-  if (SAVE4.day >= q.ask) { const to = p4AskTo(wage, fair); q.pend = { to, from: wage, day: SAVE4.day }; return `<p class="bad">${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.</p>`; }
+  if (SAVE4.day >= q.ask && c4AskGate(q)) { const to = p4AskTo(wage, fair); q.pend = { to, from: wage, day: SAVE4.day }; return `<p class="bad">${who} kêu công ${c4Money(wage)} một ngày là ít, đòi tăng lên ${c4Money(to)}.</p>`; }
   return '';
 }
 { const pay0 = p4PayHands;
