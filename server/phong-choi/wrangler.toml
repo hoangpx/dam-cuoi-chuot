@@ -55,6 +55,10 @@ name = "JIGSAW_TD"
 class_name = "JigsawTD"
 
 [[durable_objects.bindings]]
+name = "JIGSAW_CC"
+class_name = "JigsawCC"
+
+[[durable_objects.bindings]]
 name = "JIGSAW_ROOM"
 class_name = "JigsawRoom"
 
@@ -139,3 +143,8 @@ new_sqlite_classes = ["JigsawTB"]
 [[migrations]]
 tag = "v16"
 new_sqlite_classes = ["JigsawTD"]
+
+# 2026-11-18: the twelfth print (Chơi chim, 2560 pieces), its own object and storage
+[[migrations]]
+tag = "v17"
+new_sqlite_classes = ["JigsawCC"]
