@@ -15,6 +15,10 @@ import { cleanChat, CHAT_GAP } from './chat.js';
 
 // one class a picture: cfg = { pic: the name kept in the saved state, cols, rows, pw, ph: the print's size in pixels, freeze }
 export function makeJigsaw(cfg) {
+// HIBERNATION FOR EVERY PRINT (2026-11-20, the Cloudflare bill: $25 of Durable Objects duration in a month): the shared prints used to accept
+// their sockets the old way and run the 100 ms tick for as long as anybody had the picture open, so each print with a viewer was billed
+// around the clock. Now every print sleeps like the private rooms (see "HIBERNATING SOCKETS" below); a class may still pass hib: false.
+cfg = { hib: true, ...cfg };
 const COLS = cfg.cols, ROWS = cfg.rows, N = COLS * ROWS, PW = cfg.pw, PH = cfg.ph, PIC = cfg.pic, CW = 44;
 const ASP = PW / PH, CH = CW / (ASP * ROWS / COLS), BW = CW * COLS, BH = CH * ROWS, WW = BW * 1.5, WH = BH * 1.5;
 // REPORT (owner, 2026-10-24): a player reports another; REPORT_NEED reports from that many DIFFERENT networks (an address as its /64) within a day and the reported one is kicked and can not come back (BAN_FOREVER).
@@ -25,7 +29,7 @@ const BIG_HOLD_MS = 10000, BIG_LOCK_MS = 60000;   // the biggest group: nobody c
 const FIX_MIN = 2;   // the biggest group (isBiggest) is meant from this many pieces on
 const SAVE_EVERY = 30000;   // seconds between saves of plain drops (joins save at once)
 // KEEP_DONE (owner, 2026-10-20): a finished picture is not replaced by a new shuffle of the same picture; set false when a new picture is ready
-const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 5, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, BAN_STEPS = [30 * 60000, 24 * 3600000, 365 * 86400000], VER = '2026-10-23-log';
+const MAX_SOCK_IP = 20, MIN_HOLD = 180, JOIN_WIN = 20000, JOIN_DEV = 16, JOIN_IP = 30, STRIKE_WIN = 60000, STRIKES_BAN = 5, PAID_MIN = 40, BAN_DEV = 30 * 60000, BAN_IP = 10 * 60000, BAN_STEPS = [30 * 60000, 24 * 3600000, 365 * 86400000], VER = '2026-11-20-hib';
 // HOLD RULE (owner, 2026-10-22): when someone clicks a group another player is carrying, the carrier is reminded not to hold it long and must put it down within
 // NUDGE_MS; once it is down (by themselves or by the server) they cannot pick up that group again for LOCK_MS
 const NUDGE_MS = 30000, LOCK_MS = 90000;
@@ -170,6 +174,9 @@ class Jigsaw extends DurableObject {
   async webSocketMessage(ws, data) { await this.ready; const c = this.connOf(ws); if (c) return this.onMsg(c, typeof data === 'string' ? data : new TextDecoder().decode(data)); }
   async webSocketClose(ws) { await this.ready; const c = this.connOf(ws); if (c) this.onClose(c); }
   webSocketError(ws) { this.webSocketClose(ws); }
+  // the locks (and the join counters) live in memory only: a pending timer keeps the object from sleeping until the longest lock is over,
+  // so a player cannot shake one off by waiting for a quiet room
+  stayAwake(ms) { const until = Date.now() + ms; if (until <= (this.awakeUntil || 0)) return; this.awakeUntil = until; clearTimeout(this.awakeT); this.awakeT = setTimeout(() => { this.awakeT = null; }, ms); }
   wakeTick() { if (!this.tick) this.tick = setInterval(() => this.step(), 100); }
   stat() { return { n: [...this.conns.values()].filter(c => c.joined && !c.test).length, players: this.ppl.size, since: this.startAt, took: this.done && this.doneAt && this.startAt ? this.doneAt - this.startAt : 0, joined: N - this.groups.size, done: this.done, total: N }; }
   touch(now) { if (cfg.touch) { try { cfg.touch(this, !!now); } catch (e) {} } }
@@ -226,7 +233,7 @@ class Jigsaw extends DurableObject {
     if (g.nudgeAt) return; const h = this.conns.get(g.by); if (!h) return;
     g.nudgeAt = now + NUDGE_MS; this.send(h, { t: 'nudge', g: gid, sec: NUDGE_MS / 1000, by: c.name || '' }); this.send(c, { t: 'poked', g: gid });
   }
-  lockPieces(dev, ids, ms) { if (!dev) return; let m = this.locks.get(dev); const now = Date.now(); if (!m) { m = new Map(); this.locks.set(dev, m); } for (const [k, t] of m) if (t < now) m.delete(k); for (const id of ids) m.set(id, now + (ms || LOCK_MS)); }
+  lockPieces(dev, ids, ms) { if (!dev) return; this.stayAwake(ms || LOCK_MS); let m = this.locks.get(dev); const now = Date.now(); if (!m) { m = new Map(); this.locks.set(dev, m); } for (const [k, t] of m) if (t < now) m.delete(k); for (const id of ids) m.set(id, now + (ms || LOCK_MS)); }
   lockLeft(dev, g) { const m = this.locks.get(dev); if (!m || !m.size) return 0; const now = Date.now(); let best = 0; for (const id of g.ids) { const t = m.get(id); if (t && t - now > best) best = t - now; } return best; }
   // THE BIGGEST GROUP (owner, 2026-10-31, replaces the 2026-10-24 rule that fixed it): the group with the most pieces (strictly: no other group is as big, and at least FIX_MIN pieces) can be carried,
   // but it cannot be put down while it lies on a piece of another group (centres closer than .8 of a cell): the drop is refused ('nodrop') and it stays in the carrier's hand; nobody carries it
@@ -516,4 +523,4 @@ export class JigsawTB extends makeJigsaw({ pic: 'tb1', cols: 40, rows: 55, pw: 2
 // the eleventh print (2026-11-15): Trần Hưng Đạo, 56 x 40 = 2240 pieces of 50 px (2800 x 2000, img/ch10/tran-hung-dao.jpg). In the list from the start. Same guards as every print
 export class JigsawTD extends makeJigsaw({ pic: 'td1', cols: 56, rows: 40, pw: 2800, ph: 2000, freeze: false }) {}
 // the twelfth print (2026-11-18): Chơi chim, 64 x 40 = 2560 pieces of 50 px (3200 x 2000, img/ch10/choi-chim.jpg). In the list from the start. Same guards as every print
-export class JigsawCC extends makeJigsaw({ pic: 'cc1', cols: 64, rows: 40, pw: 3200, ph: 2000, freeze: false }) {}
+export class JigsawCC2 extends makeJigsaw({ pic: 'cc1', cols: 64, rows: 40, pw: 3200, ph: 2000, freeze: false }) {}

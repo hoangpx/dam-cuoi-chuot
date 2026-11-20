@@ -56,7 +56,7 @@ class_name = "JigsawTD"
 
 [[durable_objects.bindings]]
 name = "JIGSAW_CC"
-class_name = "JigsawCC"
+class_name = "JigsawCC2"
 
 [[durable_objects.bindings]]
 name = "JIGSAW_ROOM"
@@ -148,3 +148,9 @@ new_sqlite_classes = ["JigsawTD"]
 [[migrations]]
 tag = "v17"
 new_sqlite_classes = ["JigsawCC"]
+
+# 2026-11-20: every print now hibernates (src/jigsaw.js); Chơi chim had a viewer, so the deploy left it on the old code. Rename to restart it
+# (keeps its storage and the name main), as v4 / v8
+[[migrations]]
+tag = "v18"
+renamed_classes = [{ from = "JigsawCC", to = "JigsawCC2" }]

@@ -24,7 +24,7 @@
    server → client: welcome, players, round, in, prog, go, hole, result, stat, idle, board, sync, ping. */
 import { DurableObject } from 'cloudflare:workers';
 import { cleanChat, CHAT_GAP } from './chat.js';
-export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3, JigsawLH, JigsawLY, JigsawLO, JigsawNH, JigsawHB, JigsawTB, JigsawTD, JigsawCC } from './jigsaw.js';
+export { JigsawV2, JigsawVQ, JigsawDG, JigsawDG3, JigsawLH, JigsawLY, JigsawLO, JigsawNH, JigsawHB, JigsawTB, JigsawTD, JigsawCC2 } from './jigsaw.js';
 export { JigsawRoom, JigsawReg } from './jigsawroom.js';
 import { frozenJg, FROZEN_COUNT } from './frozen.js';
 
