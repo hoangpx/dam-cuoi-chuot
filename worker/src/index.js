@@ -7,11 +7,35 @@ const ORIGINS = ['https://damcuoichuot.com', 'https://www.damcuoichuot.com', 'ht
 // Góc Tĩnh Tâm keeps its incense in the object's storage: today's (inc:<day> = { n, ids }, one stick a player a Vietnam day) and, for the
 // owner's records (GET /tt/stats; since 2026-10-29 the game shows visitors and sticks in the corner's top right), how many sticks were ever lit (incAll) and by how many people (incPeople,
 // p:<id> marks each). The urn shows today's sticks burning and the older ones as stubs. Its wishes are Chương IV's lanterns (Supabase).
-const TT_NOW = 'tinhtam7', TT_PREV = 'tinhtam6';                          // the corner's object now and the one before it (migrate)
+const TT_NOW = 'tinhtam8', TT_PREV = 'tinhtam7';                          // the corner's object now and the one before it (migrate)
 const vnDay = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
 const cleanText = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 export class Village {
-  constructor(state, env) { this.state = state; this.env = env; this.hub = new Hub(); this.hub.custom = (p, m) => this.custom(p, m).catch(e => console.error("tt custom", e && e.stack || e)); }
+  // WebSocket Hibernation (2026-11-20, the Cloudflare bill): sockets are accepted with state.acceptWebSocket, so the object sleeps while
+  // nobody sends anything and is billed only while it handles a message. Waking runs this constructor again: the players are rebuilt from
+  // their sockets' attachments and the friend lists in storage (fr:<id>) before the first message is handled.
+  constructor(state, env) {
+    this.state = state; this.env = env; this.hub = new Hub(); this.hub.custom = (p, m) => this.custom(p, m).catch(e => console.error("tt custom", e && e.stack || e));
+    state.blockConcurrencyWhile(async () => {
+      for (const ws of state.getWebSockets()) {
+        this.hub.add(ws); let a = null; try { a = ws.deserializeAttachment(); } catch (e) {}
+        if (a && a.id) this.hub.restore(ws, a, await state.storage.get('fr:' + a.id));
+      }
+    });
+  }
+  flush() {
+    const hub = this.hub;
+    for (const p of hub.dirty) if (hub.bySock.get(p.sock) === p) { try { p.sock.serializeAttachment(hub.att(p)); } catch (e) { console.error('att', e && e.message); } }
+    for (const p of hub.big) if (hub.bySock.get(p.sock) === p) this.state.storage.put('fr:' + p.id, [...p.friends]).catch(() => {});
+    hub.dirty.clear(); hub.big.clear();
+  }
+  async webSocketMessage(ws, data) { this.hub.message(ws, typeof data === 'string' ? data : new TextDecoder().decode(data)); this.flush(); }
+  async webSocketClose(ws, code) { this.end(ws); try { ws.close(1000, 'bye'); } catch (e) {} }
+  async webSocketError(ws) { this.end(ws); }
+  end(ws) {
+    const p = this.hub.bySock.get(ws); this.hub.close(ws); this.flush();
+    if (p && !this.hub.players.has(p.id)) this.state.storage.delete('fr:' + p.id).catch(() => {});
+  }
   // a new object of the corner takes over the counts of the one before it (TT_PREV) the first time it is used: the totals from its /tt/stats,
   // today's sticks with their light times and places from a ttinfo over a WebSocket (the old object keeps running its old code)
   migrate() {
@@ -19,10 +43,10 @@ export class Village {
     return this.migP = (async () => {
       const S = this.state.storage; if (await S.get('mig')) return;
       const old = this.env.VILLAGE.get(this.env.VILLAGE.idFromName(TT_PREV));
-      const st = await (await old.fetch('https://dcc/tt/stats')).json();
+      const st = await (await old.fetch('https://dcc/tt/stats?chuyennha')).json();
       let info = null;
       try {
-        const r = await old.fetch('https://dcc/tt/ws', { headers: { Upgrade: 'websocket' } }), ws = r.webSocket;
+        const r = await old.fetch('https://dcc/tt/ws?chuyennha', { headers: { Upgrade: 'websocket' } }), ws = r.webSocket;
         if (ws) {
           ws.accept();
           info = await new Promise(res => {
@@ -43,7 +67,7 @@ export class Village {
     })().catch(e => { console.error('tt migrate', e && e.stack || e); this.migP = null; });
   }
   async custom(p, m) {
-    await this.migrate();
+    if (!/^chuyennha/.test(p.id)) await this.migrate();      // the next object asking for today's sticks must not wait on this one moving house
     const S = this.state.storage, day = vnDay(), hub = this.hub, all = msg => { for (const q of hub.roomOf(p.room)) hub.send(q, typeof msg === 'function' ? msg(q) : msg); };
     if (m.t === 'ttinfo') {                                                 // sent once on entering: a visit (each player counted once: v:<id>)
       const inc = (await S.get('inc:' + day)) || { n: 0, ids: [] };
@@ -68,10 +92,7 @@ export class Village {
     if (/\/count$/.test(new URL(req.url).pathname)) return new Response(JSON.stringify({ count: this.hub.players.size }), { headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' } });   // how many are in the village now (the chapter list shows it)
     if (req.headers.get('Upgrade') !== 'websocket') return new Response('Làng Vũ Đại online. Dùng WebSocket.', { status: 426 });
     const pair = new WebSocketPair(), [client, server] = Object.values(pair);
-    server.accept(); this.hub.add(server);
-    server.addEventListener('message', e => this.hub.message(server, e.data));
-    const end = () => this.hub.close(server);
-    server.addEventListener('close', end); server.addEventListener('error', end);
+    this.state.acceptWebSocket(server); this.hub.add(server);
     return new Response(null, { status: 101, webSocket: client });
   }
 }
@@ -80,9 +101,9 @@ export default {
     const url = new URL(req.url), origin = req.headers.get('Origin') || '';
     if (url.pathname === '/ws') {
       if (origin && !ORIGINS.some(o => origin === o || origin.startsWith(o + ':'))) return new Response('forbidden', { status: 403 });
-      return env.VILLAGE.get(env.VILLAGE.idFromName('lang')).fetch(req);
+      return env.VILLAGE.get(env.VILLAGE.idFromName('lang2')).fetch(req);
     }
-    if (url.pathname === '/count') return env.VILLAGE.get(env.VILLAGE.idFromName('lang')).fetch(req);
+    if (url.pathname === '/count') return env.VILLAGE.get(env.VILLAGE.idFromName('lang2')).fetch(req);
     // Góc Tĩnh Tâm: its own object (the same Hub code), so its count and its players are apart from the village's. A running object keeps
     // its old code while anyone is connected: after changing the code, rename it (tinhtam → … → tinhtam4 → …) as for the village
     if (url.pathname === '/tt/ws') {

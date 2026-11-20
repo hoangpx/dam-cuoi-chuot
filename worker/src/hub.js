@@ -9,7 +9,17 @@ const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f<>]/g,
 const num = (v, lo, hi) => { v = +v; return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
 
 export class Hub {
-  constructor() { this.players = new Map(); this.bySock = new Map(); }
+  constructor() { this.players = new Map(); this.bySock = new Map(); this.dirty = new Set(); this.big = new Set(); }
+  // Hibernation (index.js): the Durable Object sleeps between messages and forgets this memory. Each player's small state rides on its
+  // socket (att → serializeAttachment, after every message that changed it: dirty), the friend list in storage (big); restore() rebuilds
+  // a player from both when the object wakes, without telling anybody.
+  touch(p, big) { this.dirty.add(p); if (big) this.big.add(p); }
+  att(p) { return { id: p.id, name: p.name, look: p.look, room: p.room, x: p.x, y: p.y, face: p.face, mv: p.mv }; }
+  restore(sock, a, friends) {
+    const p = { ...a, sock, last: 0, friends: new Set(Array.isArray(friends) ? friends : []) };
+    const old = this.players.get(p.id); if (old && old.sock !== sock) this.bySock.delete(old.sock);
+    this.bySock.set(sock, p); this.players.set(p.id, p); return p;
+  }
   send(p, msg) { try { p.sock.send(JSON.stringify(msg)); } catch (e) { /* a dead socket is dropped by its close event */ } }
   roomOf(room) { const r = []; for (const p of this.players.values()) if (p.room === room) r.push(p); return r; }
   pub(p) { return { id: p.id, name: p.name, x: p.x, y: p.y, face: p.face, mv: p.mv, look: p.look || null }; }
@@ -37,7 +47,7 @@ export class Hub {
       const old = this.players.get(id);
       if (old && old.sock !== sock) { this.send(old, { t: 'bye', why: 'Bạn đã vào làng từ chỗ khác' }); this.bySock.delete(old.sock); try { old.sock.close(); } catch (e) {} this.leave(old, old.room); }
       p = { id, sock, name: clean(m.name, LIMITS.name) || 'Chuột lạ', look: cleanLook(m.look), room: null, x: 0, y: 0, face: 1, mv: 0, last: 0, friends: new Set((Array.isArray(m.friends) ? m.friends : []).slice(0, 200).map(f => clean(f, 24))) };
-      this.bySock.set(sock, p); this.players.set(id, p);
+      this.bySock.set(sock, p); this.players.set(id, p); this.touch(p, true);
       this.send(p, { t: 'welcome', id, online: [...p.friends].filter(f => this.players.has(f)), count: this.players.size });
       this.tell(id, 'on'); return;
     }
@@ -48,10 +58,10 @@ export class Hub {
       case 'room': {                                                    // enter an area (or a home farm)
         const room = clean(m.room, LIMITS.room); if (!room) return;
         if (p.room) this.leave(p, p.room);
-        p.x = num(m.x, 0, 200); p.y = num(m.y, 0, 200); this.join(p, room); break;
+        p.x = num(m.x, 0, 200); p.y = num(m.y, 0, 200); this.join(p, room); this.touch(p); break;
       }
       case 'move': {
-        if (!p.room) return; p.x = num(m.x, 0, 200); p.y = num(m.y, 0, 200); p.face = m.face < 0 ? -1 : 1; p.mv = Math.round(num(m.mv, 0, 3));   // 0 stand, 1 walk, 2 sit (Góc Tĩnh Tâm)
+        if (!p.room) return; p.x = num(m.x, 0, 200); p.y = num(m.y, 0, 200); p.face = m.face < 0 ? -1 : 1; p.mv = Math.round(num(m.mv, 0, 3)); this.touch(p);   // 0 stand, 1 walk, 2 sit (Góc Tĩnh Tâm)
         for (const q of this.roomOf(p.room)) if (q !== p) this.send(q, { t: 'move', id: p.id, x: p.x, y: p.y, face: p.face, mv: p.mv });
         break;
       }
@@ -64,7 +74,7 @@ export class Hub {
         const list = []; for (const q of this.players.values()) { if (q.id !== p.id && list.length < 60) list.push({ id: q.id, name: q.name, room: q.room }); }
         this.send(p, { t: 'who', list, count: this.players.size }); break;
       }
-      case 'friends': p.friends = new Set((Array.isArray(m.list) ? m.list : []).slice(0, 200).map(f => clean(f, 24))); this.send(p, { t: 'online', online: [...p.friends].filter(f => this.players.has(f)) }); break;
+      case 'friends': p.friends = new Set((Array.isArray(m.list) ? m.list : []).slice(0, 200).map(f => clean(f, 24))); this.touch(p, true); this.send(p, { t: 'online', online: [...p.friends].filter(f => this.players.has(f)) }); break;
       // relayed to one player: friend requests (fr: ask / ok / no), asking a host for the farm (snapreq), the farm itself (snap),
       // helping on someone's farm (help), a private whisper (dm)
       case 'fr': case 'snapreq': case 'snap': case 'help': case 'dm': {

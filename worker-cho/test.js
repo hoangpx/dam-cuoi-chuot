@@ -1,4 +1,5 @@
 import { Hub } from './src/hub.js';
+import assert from 'node:assert/strict';
 let fail = 0; const ok = (c, msg) => { if (!c) { fail++; console.log('FAIL', msg); } };
 const sock = name => ({ name, got: [], send(s) { this.got.push(JSON.parse(s)); }, close() { this.closed = true; }, last(t) { return [...this.got].reverse().find(m => m.t === t); } });
 const H = new Hub(), a = sock('a'), b = sock('b'), c = sock('c');
@@ -21,4 +22,19 @@ go(b, { t: 'leave' }); ok(a.last('gone'), 'gone to host');
 go(b, { t: 'visit', host: 'AAAAAAAAAA', place: 'lang' }); H.close(a); ok(b.last('closed'), 'host leaves, visitors sent home');
 go(c, { t: 'ison', id: 'AAAAAAAAAA' }); ok(!c.last('ison').on, 'ison off');
 go(c, { t: 'host', place: 'pho', snap: {} }); go(b, { t: 'hosts' }); ok(b.last('hosts').list.some(h => h.id === 'CCCCCCCCCC' && h.place === 'pho'), 'hosts list');
-console.log(fail ? fail + ' failed' : 'all ok'); process.exit(fail ? 1 : 0);
+console.log(fail ? fail + ' failed' : 'all ok'); process.exitCode = fail ? 1 : 0;
+// hibernation: a fresh hub rebuilt from attachments + stored look and snapshot keeps the market and its visitor
+{
+  const J2 = JSON.stringify, h1 = new Hub(), mk1 = hub => { const s = { out: [], send(x) { this.out.push(JSON.parse(x)); }, close() {} }; hub.add(s); return s; };
+  const lst = (s, t) => [...s.out].reverse().find(m => m.t === t);
+  const ho = mk1(h1), vi = mk1(h1);
+  h1.message(ho, J2({ t: 'hello', id: 'hhhhhhhh', name: 'Chủ', prof: { fur: 'x' } })); h1.message(ho, J2({ t: 'host', place: 'lang', snap: { st: [1, 2] } }));
+  h1.message(vi, J2({ t: 'hello', id: 'vvvvvvvv', name: 'Khách' })); h1.message(vi, J2({ t: 'visit', host: 'hhhhhhhh', place: 'lang', x: 5, z: .5 }));
+  const pH = h1.bySock.get(ho), pV = h1.bySock.get(vi), aH = JSON.parse(J2(h1.att(pH))), aV = JSON.parse(J2(h1.att(pV)));
+  const h2 = new Hub(); h2.add(ho); h2.add(vi); h2.restore(ho, aH, pH.prof, pH.host.snap); h2.restore(vi, aV, pV.prof, null);
+  assert.equal(h2.hostCount(), 1); assert.equal(h2.bySock.get(vi).room, 'hhhhhhhh:lang');
+  h2.message(vi, J2({ t: 'buy', to: 'hhhhhhhh', id: 'b1', g: 'trau', n: 2 })); assert.equal(lst(ho, 'buy').n, 2);
+  h2.message(vi, J2({ t: 'visit', host: 'hhhhhhhh', place: 'lang' })); assert.deepEqual(lst(vi, 'room').snap, { st: [1, 2] });
+  h2.close(ho); assert.equal(lst(vi, 'closed').host, 'hhhhhhhh'); assert.ok(h2.dirty.has(h2.bySock.get(vi)));
+  console.log('hibernate restore ok');
+}

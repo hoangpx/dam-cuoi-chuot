@@ -1,2 +1,2 @@
-worker-cho/.wrangler/
-worker-cho/node_modules/
+.wrangler/
+node_modules/

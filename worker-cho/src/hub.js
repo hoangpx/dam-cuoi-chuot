@@ -9,7 +9,17 @@ const num = (v, lo, hi) => { v = +v; return Number.isFinite(v) ? Math.max(lo, Ma
 const PLACES = ['lang', 'pho'];
 
 export class Hub {
-  constructor() { this.players = new Map(); this.bySock = new Map(); }
+  constructor() { this.players = new Map(); this.bySock = new Map(); this.dirty = new Set(); this.big = new Set(); }
+  // Hibernation (index.js): the Durable Object sleeps between messages and forgets this memory. Each player's small state rides on its
+  // socket (att → serializeAttachment, after every message that changed it: dirty), the look and the market snapshot in storage (big);
+  // restore() rebuilds a player from both when the object wakes, without telling anybody.
+  touch(p, big) { this.dirty.add(p); if (big) this.big.add(p); }
+  att(p) { return { id: p.id, name: p.name, sort: p.sort, room: p.room, hp: p.host ? p.host.place : null, x: p.x, z: p.z, face: p.face, mv: p.mv }; }
+  restore(sock, a, prof, snap) {
+    const { hp, ...rest } = a, p = { ...rest, sock, prof: prof || null, host: hp ? { place: hp, snap: snap || null } : null, last: 0 };
+    const old = this.players.get(p.id); if (old && old.sock !== sock) this.bySock.delete(old.sock);
+    this.bySock.set(sock, p); this.players.set(p.id, p); return p;
+  }
   send(p, msg) { try { p.sock.send(JSON.stringify(msg)); } catch (e) { /* a dead socket is dropped by its close event */ } }
   hostCount() { let n = 0; for (const p of this.players.values()) if (p.host) n++; return n; }
   roomOf(room) { const r = []; for (const p of this.players.values()) if (p.room === room) r.push(p); return r; }
@@ -21,10 +31,10 @@ export class Hub {
   }
   shut(h) {                                                          // a host is gone or closed: the visitors are sent home
     const room = h.id + ':' + h.host.place;
-    for (const q of this.roomOf(room)) if (q !== h) { q.room = null; this.send(q, { t: 'closed', host: h.id, name: h.name }); }
-    h.host = null; if (h.room && h.room.startsWith(h.id + ':')) h.room = null;
+    for (const q of this.roomOf(room)) if (q !== h) { q.room = null; this.touch(q); this.send(q, { t: 'closed', host: h.id, name: h.name }); }
+    h.host = null; this.touch(h, true); if (h.room && h.room.startsWith(h.id + ':')) h.room = null;
   }
-  leaveRoom(p) { if (!p.room) return; const room = p.room; p.room = null; for (const q of this.roomOf(room)) this.send(q, { t: 'gone', id: p.id }); }
+  leaveRoom(p) { if (!p.room) return; const room = p.room; p.room = null; this.touch(p); for (const q of this.roomOf(room)) this.send(q, { t: 'gone', id: p.id }); }
   message(sock, raw) {
     if (typeof raw !== 'string' || raw.length > LIMITS.snap + 2000) return;
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
@@ -37,7 +47,7 @@ export class Hub {
       if (old && old.sock !== sock) { this.send(old, { t: 'bye', why: 'Bạn đã vào từ chỗ khác' }); this.bySock.delete(old.sock); try { old.sock.close(); } catch (e) {} this.leaveRoom(old); if (old.host) this.shut(old); }
       const prof = m.prof && typeof m.prof === 'object' && JSON.stringify(m.prof).length < 1800 ? m.prof : null;
       p = { id, sock, name: clean(m.name, LIMITS.name) || 'Chuột lạ', sort: num(m.sort, 0, 60) | 0, prof, room: null, host: null, x: 0, z: .7, face: 1, mv: 0, last: 0 };
-      this.bySock.set(sock, p); this.players.set(id, p);
+      this.bySock.set(sock, p); this.players.set(id, p); this.touch(p, true);
       this.send(p, { t: 'welcome', id, count: this.players.size }); return;
     }
     if (!p) return;
@@ -48,7 +58,7 @@ export class Hub {
         if (p.host && (!place || place !== p.host.place)) this.shut(p);
         if (!place) { this.send(p, { t: 'hosting', place: null }); break; }
         const s = JSON.stringify(m.snap || null); if (s.length > LIMITS.snap) return;
-        const first = !p.host; p.host = { place, snap: m.snap || null };
+        const first = !p.host; p.host = { place, snap: m.snap || null }; this.touch(p, true);
         if (first) { this.leaveRoom(p); p.room = p.id + ':' + place; p.x = 0; p.z = .5; }
         else for (const q of this.roomOf(p.room)) if (q !== p) this.send(q, { t: 'snap', host: p.id, snap: p.host.snap });
         this.send(p, { t: 'hosting', place, peers: this.roomOf(p.room).filter(q => q !== p).map(q => this.pub(q)) });
@@ -69,14 +79,14 @@ export class Hub {
         if (this.roomOf(room).length >= LIMITS.perRoom) { this.send(p, { t: 'crowd' }); return; }
         if (p.host) this.shut(p);
         this.leaveRoom(p);
-        p.room = room; p.x = num(m.x, 0, 12000); p.z = num(m.z, 0, 1.2);
+        p.room = room; p.x = num(m.x, 0, 12000); p.z = num(m.z, 0, 1.2); this.touch(p);
         this.send(p, { t: 'room', host: h.id, hostName: h.name, place, snap: h.host.snap, peers: this.roomOf(room).filter(q => q !== p).map(q => this.pub(q)) });
         for (const q of this.roomOf(room)) if (q !== p) this.send(q, { t: 'came', p: this.pub(p) });
         break;
       }
       case 'leave': this.leaveRoom(p); this.send(p, { t: 'left' }); break;
       case 'move': {
-        if (!p.room) return; p.x = num(m.x, 0, 12000); p.z = num(m.z, 0, 1.2); p.face = m.face < 0 ? -1 : 1; p.mv = m.mv ? 1 : 0;
+        if (!p.room) return; p.x = num(m.x, 0, 12000); p.z = num(m.z, 0, 1.2); p.face = m.face < 0 ? -1 : 1; p.mv = m.mv ? 1 : 0; this.touch(p);
         for (const q of this.roomOf(p.room)) if (q !== p) this.send(q, { t: 'move', id: p.id, x: p.x, z: p.z, face: p.face, mv: p.mv });
         break;
       }

@@ -25,3 +25,17 @@ const a2 = mk(); h.message(a2, J({ t: 'hello', id: 'aaaaaaaa', name: 'An' }));
 assert.equal(last(a, 'bye').t, 'bye'); assert.ok(a.closed);                   // the same id elsewhere kicks the old socket
 h.close(b); h.message(a2, J({ t: 'who' })); assert.equal(last(a2, 'who').list.some(x => x.id === 'bbbbbbbb'), false);
 console.log('hub ok');
+// hibernation: a fresh hub rebuilt from attachments + stored friends knows the same players and rooms, without telling anyone
+{
+  const h1 = new Hub(), mk1 = hub => { const s = { out: [], send(x) { this.out.push(JSON.parse(x)); }, close() {} }; hub.add(s); return s; };
+  const x = mk1(h1), y = mk1(h1);
+  h1.message(x, J({ t: 'hello', id: 'xxxxxxxx', name: 'Xuân', friends: ['yyyyyyyy'] })); h1.message(x, J({ t: 'room', room: 'dinh', x: 2, y: 3 }));
+  h1.message(y, J({ t: 'hello', id: 'yyyyyyyy', name: 'Yến' })); h1.message(y, J({ t: 'room', room: 'dinh', x: 4, y: 5 }));
+  assert.ok(h1.dirty.size > 0 && h1.big.size === 2);
+  const atts = [[x, h1.att(h1.bySock.get(x)), [...h1.bySock.get(x).friends]], [y, h1.att(h1.bySock.get(y)), []]];
+  const h2 = new Hub(); for (const [s, a, f] of atts) { s.out = []; h2.add(s); h2.restore(s, JSON.parse(J(a)), f); }
+  assert.equal(h2.players.size, 2); assert.equal(x.out.length + y.out.length, 0);
+  h2.message(y, J({ t: 'move', x: 7, y: 7, face: 1, mv: 1 })); assert.equal(last(x, 'move').x, 7);
+  h2.close(y); assert.equal(last(x, 'off').id, 'yyyyyyyy');                     // x still has y as a friend
+  console.log('hibernate restore ok');
+}
