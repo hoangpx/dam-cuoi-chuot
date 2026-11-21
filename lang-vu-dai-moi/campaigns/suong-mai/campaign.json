@@ -9,6 +9,24 @@
     "prompt": "Nhấn phím bất kỳ",
     "credit": ""
   },
+  "player": {
+    "preset": "traveler",
+    "spec": {
+      "hair": "hairBlack",
+      "eyes": "brown",
+      "cape": false,
+      "outfit": {
+        "top": "#7a5236",
+        "bottom": "#2c2a30",
+        "accent": "brown",
+        "style": "tunic",
+        "shirt": "#7a5236"
+      },
+      "gear": {
+        "boots": "#5a4030"
+      }
+    }
+  },
   "start": {
     "level": "suong-mai",
     "entrance": ""
