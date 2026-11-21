@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Emberfall — Luminati 2.5D Pixel-Art Engine</title>
+  <meta name="description" content="Emberfall — Riverside Village: a 2.5D diorama built with the Luminati engine on three.js." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' rx='3' fill='%23140f17'/%3E%3Cpath fill='%23c9a45c' d='M7 2h2v1h1v2h1v2h1v4h-1v1h-1v1H6v-1H5v-1H4V7h1V5h1V3h1z'/%3E%3Cpath fill='%23f59a2e' d='M7 5h2v2h1v3H9v1H7v-1H6V7h1z'/%3E%3Cpath fill='%23fff6d0' d='M7 8h2v2H7z'/%3E%3C/svg%3E" />
+  <!-- the UI fonts: Google Fonts first, the copies built into dist/ if that fails (src/engine/ui/FontLoader.js) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <style>html,body{background:#000;height:100%;margin:0;overflow:hidden}#app{background:#000;position:fixed;inset:0;overflow:hidden}#app canvas{width:100%;height:100%;display:block}#loading{--px:2px;--fpx:1px;z-index:1000;color:#e8cf8a;background:radial-gradient(at 50% 55%,#3a120c 0%,#1c0806 40%,#0c0403 74%);place-items:center;transition:opacity .85s;display:grid;position:fixed;inset:0}@supports (width:round(down, 1px, 1px)){#loading{--px:max(2px, round(down, min(100vw / 640, 100vh / 360), 1px));--fpx:max(1px, round(up, calc(var(--px) / 2), 1px))}}#loading.is-done{opacity:0;pointer-events:none}#loading .inner{justify-items:center;gap:calc(var(--px) * 7);display:grid}#loading .is-pending{visibility:hidden}#loading .ember{width:calc(var(--px) * 11);height:calc(var(--px) * 11);image-rendering:pixelated;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%2307080f' d='M5 0h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM3 2h1v1h-1zM7 2h1v1h-1zM2 3h1v1h-1zM8 3h1v1h-1zM1 4h1v1h-1zM9 4h1v1h-1zM0 5h1v1h-1zM10 5h1v1h-1zM1 6h1v1h-1zM9 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM3 8h1v1h-1zM7 8h1v1h-1zM4 9h1v1h-1zM6 9h1v1h-1zM5 10h1v1h-1z'/%3E%3Cpath fill='%23e8cf8a' d='M5 1h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM3 3h1v1h-1zM2 4h1v1h-1zM1 5h1v1h-1zM2 6h1v1h-1z'/%3E%3Cpath fill='%23c9a45c' d='M7 3h1v1h-1zM3 7h1v1h-1z'/%3E%3Cpath fill='%238c6a32' d='M8 4h1v1h-1zM9 5h1v1h-1zM8 6h1v1h-1zM7 7h1v1h-1zM4 8h1v1h-1zM6 8h1v1h-1zM5 9h1v1h-1z'/%3E%3Cpath fill='%23f4e3b3' d='M4 4h1v1h-1z'/%3E%3Cpath fill='%239c2a12' d='M8 5h1v1h-1zM7 6h1v1h-1zM6 7h1v1h-1zM5 8h1v1h-1z'/%3E%3Cpath fill='%23f08a3a' d='M5 3h2v1h-2zM5 4h3v1h-3zM3 5h5v1h-5zM3 6h4v1h-4zM4 7h2v1h-2z'/%3E%3Cpath fill='%23ffe0a8' d='M5 2h1v1h-1zM4 3h1v1h-1zM3 4h1v1h-1zM2 5h1v1h-1z'/%3E%3C/svg%3E") 50%/100% 100% no-repeat;animation:.9s infinite lu-load-bob;position:relative}#loading .ember:before{content:"";inset:calc(var(--px) * -10);z-index:-1;background:radial-gradient(circle,#f08a3a57 0%,#f08a3a1f 38%,#f08a3a00 68%);animation:1.8s step-end infinite lu-load-glow;position:absolute}#loading .title{--ui-fonts:400 16px "VT323";letter-spacing:.4em;text-transform:uppercase;color:#e8cf8a;text-shadow:0 var(--px) 0 #07080f;margin-right:-.4em;font:400 20px/1.2 Georgia,Times New Roman,serif}#loading .title.uf{font:400 calc(var(--fpx) * 27) / 1 "VT323", monospace;letter-spacing:calc(var(--px) * 2);margin-right:calc(var(--px) * -2);text-shadow:var(--fpx) 0 0 #07080f, calc(var(--fpx) * -1) 0 0 #07080f, 0 var(--fpx) 0 #07080f, 0 calc(var(--fpx) * -1) 0 #07080f, 0 calc(var(--fpx) * 2) 0 #07080f}html:lang(ja) #loading .title,html:lang(ja) #loading .label{letter-spacing:0;text-transform:none;margin-right:0;font-family:Yu Gothic UI,Yu Gothic,Meiryo,Hiragino Sans,Hiragino Kaku Gothic ProN,Noto Sans CJK JP,sans-serif}html:lang(zh) #loading .title,html:lang(zh) #loading .label{letter-spacing:0;text-transform:none;margin-right:0;font-family:Microsoft YaHei UI,Microsoft YaHei,PingFang SC,Hiragino Sans GB,Noto Sans CJK SC,sans-serif}html:lang(ja) #loading .title{--ui-fonts:700 16px "Noto Sans JP";font-weight:700}html:lang(ja) #loading .title.uf{font:700 calc(var(--px) * 12) / 1.1 "Noto Sans JP", sans-serif;letter-spacing:0;text-shadow:var(--px) 0 0 #07080f, calc(var(--px) * -1) 0 0 #07080f, 0 var(--px) 0 #07080f, 0 calc(var(--px) * -1) 0 #07080f, 0 calc(var(--px) * 2) 0 #07080f;margin-right:0}@supports (width:round(down, 1px, 1px)){@media (min-width:1920px) and (min-height:1080px){html:lang(ja) #loading .title{--ui-fonts:400 16px DotGothic16}html:lang(ja) #loading .title.uf{font:400 round(nearest, calc(var(--px) * 12), 16px) / 1.1 DotGothic16, sans-serif}}}html:lang(zh) #loading .title{--ui-fonts:400 16px "Jersey 15"|900 16px "Noto Sans SC";font-weight:900}html:lang(zh) #loading .title.uf{font:900 calc(var(--px) * 13) / 1.1 "Jersey 15", "Noto Sans SC", sans-serif;letter-spacing:0;margin-right:0}#loading .bar{width:calc(var(--px) * 140);height:calc(var(--px) * 4);border:var(--px) solid #07080f;box-shadow:0 0 0 var(--px) #6e4f1e;background:#120a0e;position:relative}#loading .bar:before,#loading .bar:after{content:"";top:var(--px);width:calc(var(--px) * 2);height:calc(var(--px) * 2);box-shadow:0 0 0 var(--px) #07080f;background:#e8cf8a;position:absolute}#loading .bar:before{left:calc(var(--px) * -7)}#loading .bar:after{right:calc(var(--px) * -7)}#loading .bar>i{transform-origin:0;background:linear-gradient(#f4e3b3 0 25%,#e8cf8a 25% 50%,#c9a45c 50% 75%,#8c6a32 75% 100%);height:100%;transition:transform .35s;display:block;transform:scaleX(.02)}#loading .label{--ui-fonts:400 16px "VT323";letter-spacing:.08em;color:#c6bda9;text-shadow:0 1px #07080f;font:400 12px/1.4 Segoe UI,system-ui,sans-serif}#loading .label.uf{font:400 calc(var(--fpx) * 18.667) / 1 "VT323", monospace;letter-spacing:var(--px)}html:lang(ja) #loading .label{--ui-fonts:400 16px "Jersey 10"|500 16px "Noto Sans JP"}html:lang(ja) #loading .label.uf{font:500 calc(var(--px) * 7) / 1.4 "Jersey 10", "Noto Sans JP", sans-serif;letter-spacing:0}html:lang(zh) #loading .label{--ui-fonts:400 16px "Jersey 10"|500 16px "Noto Sans SC"}html:lang(zh) #loading .label.uf{font:500 calc(var(--px) * 7) / 1.4 "Jersey 10", "Noto Sans SC", sans-serif;letter-spacing:0}#loading.is-error .bar{display:none}#loading.is-error .label{color:#e0674f;max-width:min(calc(var(--px) * 320), 86vw);text-align:center;white-space:normal;line-height:1.6}html:lang(ja) #loading.is-error .label{--ui-fonts:500 16px "Noto Sans JP"}html:lang(ja) #loading.is-error .label.uf{font:500 calc(var(--px) * 7) / 1.6 "Noto Sans JP", sans-serif}html:lang(zh) #loading.is-error .label{--ui-fonts:500 16px "Noto Sans SC"}html:lang(zh) #loading.is-error .label.uf{font:500 calc(var(--px) * 7) / 1.6 "Noto Sans SC", sans-serif}#loading.is-error .ember{filter:grayscale(.85)brightness(.6);animation:none}#loading.is-error .ember:before{display:none}#loading .actions{gap:calc(var(--px) * 12);margin-top:calc(var(--px) * 4);display:none}#loading.is-error .actions{flex-wrap:wrap;justify-content:center;display:flex}#loading .actions a{color:#f3ead7;padding:var(--px) 0;border-bottom:var(--px) solid #8c6a32;font:400 13px/1.4 Segoe UI,system-ui,sans-serif;text-decoration:none}html:lang(en) #loading .label.uf~.actions a{font:400 calc(var(--fpx) * 18.667) / 1.4 "Jersey 10", monospace;letter-spacing:var(--px)}#loading .actions a:hover,#loading .actions a:focus-visible{color:#f4e3b3;border-color:#e8cf8a;outline:none}@keyframes lu-load-bob{0%,49%{transform:translateY(0)}50%,to{transform:translateY(calc(var(--px) * -1))}}@keyframes lu-load-glow{0%{opacity:1}50%{opacity:.55}}@media (prefers-reduced-motion:reduce){#loading .ember,#loading .ember:before{animation:none}}</style>
+  <script type="module" crossorigin src="./assets/game-jd2jSqD9.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/LevelStorage-JaoBFERB.js">
+  <link rel="modulepreload" crossorigin href="./assets/GlobalUniforms-BMXj3q_v.js">
+  <link rel="modulepreload" crossorigin href="./assets/SetPieceKit-DP35AB17.js">
+  <link rel="modulepreload" crossorigin href="./assets/Trees-BixY43Hv.js">
+  <link rel="modulepreload" crossorigin href="./assets/minimap-DzJZopcE.js">
+  <link rel="modulepreload" crossorigin href="./assets/Water-DvTZ_5MJ.js">
+  <link rel="modulepreload" crossorigin href="./assets/SmallProps-C5k08o7A.js">
+  <link rel="modulepreload" crossorigin href="./assets/SeasonKit-DYltrdP6.js">
+  <link rel="modulepreload" crossorigin href="./assets/House-BN-SSW3r.js">
+  <link rel="modulepreload" crossorigin href="./assets/ThawField-DUWC1gaN.js">
+  <link rel="modulepreload" crossorigin href="./assets/SkyKit-C76C5Dp1.js">
+  <link rel="modulepreload" crossorigin href="./assets/Props-DuFIOkLn.js">
+  <link rel="modulepreload" crossorigin href="./assets/WeatherLook-C36ah7dJ.js">
+  <link rel="modulepreload" crossorigin href="./assets/I18n-hnOETwdO.js">
+  <link rel="modulepreload" crossorigin href="./assets/core-CwJjgI_K.js">
+  <link rel="modulepreload" crossorigin href="./assets/LevelMap-6Krazt7R.js">
+  <link rel="modulepreload" crossorigin href="./assets/ContentText-Gi3TUWWp.js">
+  <link rel="stylesheet" crossorigin href="./assets/core-DoaAtbep.css">
+  <link rel="stylesheet" crossorigin href="./assets/game-DYpAyo__.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="loading" role="status" aria-live="polite">
+    <div class="inner">
+      <div class="ember"></div>
+      <div class="title">Emberfall</div>
+      <div class="bar"><i></i></div>
+      <div class="label">Loading</div>
+      <div class="actions"></div>
+    </div>
+  </div>
+  <script>
+    // The loading screen before main.js: the page's language (src/engine/i18n/I18n.js resolveLang:
+    // ?lang=, else localStorage 'luminati.lang', else English) on <html lang> from the first frame, so
+    // its CSS applies at once — and on a Japanese or Chinese page the static English texts stay
+    // hidden until main.js writes the language's own (at most 2.5 s).
+    //
+    // Then the texts switch to the UI fonts once those are in for their characters
+    // (src/engine/ui/FontLoader.js loads them in parallel: Google, else dist/): each text's
+    // --ui-fonts (one CSS font per face, '|' between) must be declared and, for every character,
+    // the face that would draw it loaded — read from the FontFace objects themselves, never
+    // document.fonts.check(), which reports a CJK face's slices as in while they are still loading
+    // when a face of the same name is installed on the system (Noto Sans SC). A face still loading
+    // would leave the text invisible (font-display: block), so until then the system's faces: a new
+    // text whose characters need a slice not in yet (the label at each step) drops .uf at once and
+    // takes it again when document.fonts.load has them.
+    (function () {
+      var L = document.getElementById('loading');
+      if (!L) return;
+      var els = [L.querySelector('.title'), L.querySelector('.label')];
+      var TAGS = { en: 'en', ja: 'ja', zh: 'zh-Hans' };
+      function norm(v) {
+        var p = typeof v === 'string' ? v.trim().toLowerCase().split(/[-_]/)[0] : '';
+        return Object.prototype.hasOwnProperty.call(TAGS, p) ? p : '';
+      }
+      var lang = '';
+      try { lang = norm(new URLSearchParams(location.search).get('lang')); } catch (e) { lang = ''; }
+      if (!lang) { try { lang = norm(localStorage.getItem('luminati.lang')); } catch (e) { lang = ''; } }
+      lang = lang || 'en';
+      document.documentElement.lang = TAGS[lang];
+      var first = els.map(function (el) { return el ? el.textContent : ''; });
+      function reveal() { els.forEach(function (el) { if (el) el.classList.remove('is-pending'); }); }
+      if (lang !== 'en') {
+        els.forEach(function (el) { if (el) el.classList.add('is-pending'); });
+        setTimeout(reveal, 2500);
+      }
+      if (!document.fonts || !window.MutationObserver || typeof FontFace === 'undefined') return;
+
+      // a FontFace's unicode-range as [from, to] code point pairs (cached by its text)
+      var RANGES = {};
+      function rangesOf(face) {
+        var key = face.unicodeRange || 'U+0-10FFFF';
+        if (RANGES[key]) return RANGES[key];
+        var out = [];
+        key.split(',').forEach(function (part) {
+          var m = /U\+([0-9A-Fa-f?]+)(?:-([0-9A-Fa-f]+))?/.exec(part);
+          if (!m) return;
+          var lo = parseInt(m[1].replace(/\?/g, '0'), 16);
+          var hi = m[2] ? parseInt(m[2], 16) : parseInt(m[1].replace(/\?/g, 'F'), 16);
+          out.push([lo, hi]);
+        });
+        RANGES[key] = out;
+        return out;
+      }
+      function covers(face, cp) {
+        var r = rangesOf(face);
+        for (var i = 0; i < r.length; i++) if (cp >= r[i][0] && cp <= r[i][1]) return true;
+        return false;
+      }
+      // the faces of a CSS font ('500 16px "Noto Sans JP"'): its family, at its weight
+      function facesOf(font) {
+        var m = /"([^"]+)"|([A-Za-z0-9]+)\s*$/.exec(font);
+        var fam = m ? (m[1] || m[2]) : '';
+        var w = Number((/^\s*(\d{3})\b/.exec(font) || [0, 400])[1]);
+        var out = [];
+        document.fonts.forEach(function (f) {
+          if (f.family.replace(/["']/g, '') !== fam || f.style === 'italic') return;
+          var ws = String(f.weight).replace('normal', '400').replace('bold', '700').split(/\s+/).map(Number);
+          if (ws.length > 1 ? w >= ws[0] && w <= ws[1] : ws[0] === w) out.push(f);
+        });
+        return out;
+      }
+      var asked = {};
+      // true when `font` is declared and, for each character of `part`, the face that draws it (the
+      // last declared one whose unicode-range holds it) is loaded; else asks for those characters
+      function ready(font, part) {
+        var faces = facesOf(font);
+        if (!faces.length) return false;
+        var on = true;
+        for (var i = 0; i < part.length && on; i++) {
+          var cp = part.codePointAt(i);
+          if (cp > 0xffff) i++;
+          for (var j = faces.length - 1; j >= 0; j--) {
+            if (!covers(faces[j], cp)) continue;
+            if (faces[j].status !== 'loaded') on = false;
+            break;
+          }
+        }
+        // (asked again when the family's faces change: Google's removed, dist/'s declared instead)
+        var key = font + '\n' + part + '\n' + faces.length;
+        if (!on && !asked[key]) {
+          asked[key] = 1;
+          document.fonts.load(font, part).then(sync, sync);
+        }
+        return on;
+      }
+      function textReady(el) {
+        var fonts = getComputedStyle(el).getPropertyValue('--ui-fonts').trim().split('|');
+        var text = el.textContent || '';
+        if (!text || !fonts[0]) return false;
+        var on = true;
+        fonts.forEach(function (font, i) {
+          // the Japanese / Chinese face (after Jersey, which sets ASCII) only for the other characters
+          var part = i ? text.replace(/[\x20-\x7e\xb7\xd7]/g, '') : text;
+          if (part && !ready(font.trim(), part)) on = false;
+        });
+        return on;
+      }
+      function sync() {
+        els.forEach(function (el, k) {
+          if (!el) return;
+          if (el.textContent !== first[k]) el.classList.remove('is-pending');
+          el.classList.toggle('uf', textReady(el));
+        });
+      }
+      document.fonts.addEventListener('loadingdone', sync);
+      var mo = new MutationObserver(sync);
+      els.forEach(function (el) { if (el) mo.observe(el, { childList: true, characterData: true, subtree: true }); });
+      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+      mo.observe(L, { attributes: true, attributeFilter: ['class'] });
+      window.addEventListener('resize', sync);
+      sync();
+    })();
+  </script>
+</body>
+</html>

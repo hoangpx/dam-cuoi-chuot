@@ -1,0 +1,290 @@
+{
+  "format": "luminati-story",
+  "version": 1,
+  "items": {
+    "bo-lua": {
+      "name": "Bó lúa",
+      "text": "Một bó lúa chín vàng, bông trĩu hạt.",
+      "textKeys": {
+        "text": "F515B2CBA2F62955066A2BF2481C87E0"
+      }
+    },
+    "gao-moi": {
+      "name": "Gạo tám mới",
+      "text": "Túi gạo tám vừa xay giã từ lúa đầu mùa, thơm nức.",
+      "key": true,
+      "textKeys": {
+        "text": "7CA19A10C05B68CEBCABD03C127B6D97"
+      }
+    },
+    "xoi-moi": {
+      "name": "Mâm xôi cơm mới",
+      "text": "Xôi nếp gạo mới Chị Hạnh vừa đồ, còn nóng hổi.",
+      "key": true,
+      "textKeys": {
+        "text": "56FD098E50C249B3097FD7007657B390"
+      }
+    },
+    "den-ong-sao": {
+      "name": "Đèn ông sao",
+      "text": "Chiếc đèn ông sao giấy bóng kính đỏ của Bé Mơ.",
+      "key": true,
+      "textKeys": {
+        "text": "6A581EE909937ABA97A499FBD8DA3EAC"
+      }
+    },
+    "dieu": {
+      "name": "Con diều",
+      "text": "Con diều giấy của Bé Tí, đuôi dài thướt tha.",
+      "key": true,
+      "textKeys": {
+        "text": "CCCDBBCD0FC14A686C639B2B6E3E0DC0"
+      }
+    },
+    "giun": {
+      "name": "Mồi giun",
+      "text": "Mấy con giun đào dưới gốc chuối, làm mồi câu cá rô.",
+      "textKeys": {
+        "text": "A3A96F63103A747F18309C116A22F7C6"
+      }
+    },
+    "ca-ro": {
+      "name": "Cá rô đồng",
+      "text": "Con cá rô đồng béo múp Chú Tư vừa câu được.",
+      "textKeys": {
+        "text": "7EEC85207EACC4B67BE0DCF4977E35B6"
+      }
+    },
+    "nuoc-gieng": {
+      "name": "Nước giếng làng",
+      "text": "Một gáo nước giếng làng trong vắt, mát lạnh.",
+      "textKeys": {
+        "text": "A8949866E30A94F01BEBA1CC086A42B3"
+      }
+    }
+  },
+  "quests": {
+    "com-moi": {
+      "title": "Lễ cơm mới",
+      "text": "Lúa chín rồi. Theo lệ làng, phải dâng mâm xôi cơm mới lên Thành hoàng trước khi gặt đại trà.",
+      "stages": [
+        {
+          "id": "ra-dong",
+          "text": "Cụ Lâm nhờ ra Đồng lúa chín tìm Cô Lan, gặt mấy bó lúa đầu mùa."
+        },
+        {
+          "id": "gat-lua",
+          "text": "Cô Lan cần ba bó lúa. Gặt ở những thửa ruộng có bông lúa lấp lánh."
+        },
+        {
+          "id": "nau-xoi",
+          "text": "Cô Lan đã xay giã thành gạo mới. Mang về làng nhờ Chị Hạnh đồ xôi."
+        },
+        {
+          "id": "dang-le",
+          "text": "Mâm xôi đã chín. Mang lên sân đình cho Cụ Lâm."
+        }
+      ],
+      "goals": [
+        {
+          "text": "Bó lúa (${item:bo-lua} / 3)",
+          "done": "item:bo-lua >= 3 or stage:com-moi >= nau-xoi"
+        }
+      ],
+      "textKeys": {
+        "text": "BF5BA8E22C7F09B4AA85357E8E77E33B",
+        "stages": {
+          "ra-dong": "644A1073BC31798E81D118B05CA99D6C",
+          "gat-lua": "47E4ABE53CDC2E0743BB9BE90D43CE51",
+          "nau-xoi": "E8748883C4AA7AEA5BD40336DE8AD267",
+          "dang-le": "99EEA6CBA5E82EF59B382CC47AAFA359"
+        },
+        "goals": [
+          "8A98CF28757F207BD90C8ED0C1B1C410"
+        ]
+      }
+    },
+    "den-ong-sao": {
+      "title": "Đèn ông sao",
+      "text": "Bé Mơ đánh rơi chiếc đèn ông sao ở bờ hồ sen. Tối nay bọn trẻ đi rước đèn.",
+      "stages": [
+        {
+          "id": "tim",
+          "text": "Tìm đèn ở bờ hồ sen, phía đông."
+        },
+        {
+          "id": "tra",
+          "text": "Tìm được rồi. Mang trả Bé Mơ."
+        }
+      ],
+      "textKeys": {
+        "text": "F3BDB5B2D9CB9C5FCBFEF9F1E6D27E2D",
+        "stages": {
+          "tim": "4BF5D02D37395419B24F5F86F5A85495",
+          "tra": "E04EF6B3049223162D863E3875DAD9BC"
+        }
+      }
+    },
+    "dieu": {
+      "title": "Con diều đứt dây",
+      "text": "Diều của Bé Tí đứt dây, mắc trên mái chòi canh giữa đồng.",
+      "stages": [
+        {
+          "id": "tim",
+          "text": "Gỡ diều trên mái chòi canh, cạnh đường cái."
+        },
+        {
+          "id": "tra",
+          "text": "Mang diều trả Bé Tí."
+        }
+      ],
+      "textKeys": {
+        "text": "DEFA6BC2A43273D035C98549FC76F3CC",
+        "stages": {
+          "tim": "6776DE3E50D4494C95CA759E20401291",
+          "tra": "F4DBC672645505A7B50055B299825D2B"
+        }
+      }
+    },
+    "nuoc-gieng": {
+      "title": "Nước giếng pha trà",
+      "text": "Sư Viên muốn pha ấm trà bằng nước giếng làng dưới sân đình.",
+      "stages": [
+        {
+          "id": "muc",
+          "text": "Múc nước ở giếng làng, cạnh cây đa."
+        },
+        {
+          "id": "mang",
+          "text": "Mang nước lên chùa cho Sư Viên."
+        }
+      ],
+      "textKeys": {
+        "text": "AA0038F1E118E8E1C0C588A3752EF1DC",
+        "stages": {
+          "muc": "52A7C287D4F8B2836CCF59F8F9D144BF",
+          "mang": "F397376D453DAB9E4F8E0F988B4C5AC7"
+        }
+      }
+    },
+    "moi-cau": {
+      "title": "Mồi câu",
+      "text": "Chú Tư hết mồi câu. Dưới gốc chuối gần hồ sen có nhiều giun.",
+      "stages": [
+        {
+          "id": "dao",
+          "text": "Đào giun dưới gốc chuối gần hồ sen."
+        },
+        {
+          "id": "mang",
+          "text": "Mang mồi cho Chú Tư."
+        }
+      ],
+      "textKeys": {
+        "text": "944184A74F5B9C7F89DA1F1022F2A60A",
+        "stages": {
+          "dao": "AABBABDD054235E9AAA4552E54C60B85",
+          "mang": "148DEF9AB3F99BDA0FA0C6A325178F02"
+        }
+      }
+    }
+  },
+  "actors": {
+    "lam": {
+      "name": "Cụ Lâm",
+      "preset": "cu",
+      "portraitColor": "#cfc6b0",
+      "talk": "lam"
+    },
+    "mo": {
+      "name": "Bé Mơ",
+      "preset": "em",
+      "portraitColor": "#5a7aa0",
+      "talk": "mo"
+    },
+    "sau": {
+      "name": "Bác Sáu",
+      "preset": "nongdan",
+      "portraitColor": "#cfb25a",
+      "talk": "sau"
+    },
+    "hanh": {
+      "name": "Chị Hạnh",
+      "preset": "cogai",
+      "portraitColor": "#e8eef2",
+      "talk": "hanh"
+    },
+    "tu": {
+      "name": "Chú Tư",
+      "preset": "nongdan",
+      "portraitColor": "#5a7aa0",
+      "talk": "tu"
+    },
+    "vien": {
+      "name": "Sư Viên",
+      "preset": "nhasu",
+      "portraitColor": "#c87a2a",
+      "talk": "vien"
+    },
+    "lan": {
+      "name": "Cô Lan",
+      "preset": "cogai",
+      "portraitColor": "#ecdca6",
+      "talk": "lan"
+    },
+    "hai": {
+      "name": "Bác Hai",
+      "preset": "nongdan",
+      "portraitColor": "#cfb25a",
+      "talk": "hai"
+    },
+    "tam": {
+      "name": "Anh Tám",
+      "preset": "nongdan",
+      "portraitColor": "#8a6a3a",
+      "talk": "tam"
+    },
+    "tan": {
+      "name": "Cụ Tần",
+      "preset": "cu",
+      "portraitColor": "#cfc6b0",
+      "talk": "tan"
+    },
+    "ti": {
+      "name": "Bé Tí",
+      "preset": "em",
+      "portraitColor": "#5a7aa0",
+      "talk": "ti"
+    }
+  },
+  "events": [
+    {
+      "id": "loi-chao",
+      "on": "arrive",
+      "level": "suong-mai",
+      "once": true,
+      "run": [
+        "wait 1.5",
+        "toast Cụ Lâm dưới gốc đa đang tìm cháu. #line:EADA6AD9703F42AC8BAAA6CA53E1B237"
+      ]
+    }
+  ],
+  "starts": {
+    "gat-lua": {
+      "level": "dong-lua",
+      "entrance": "from-village",
+      "quests": {
+        "com-moi": "gat-lua"
+      }
+    },
+    "dang-le": {
+      "level": "suong-mai",
+      "items": {
+        "xoi-moi": 1
+      },
+      "quests": {
+        "com-moi": "dang-le"
+      }
+    }
+  }
+}

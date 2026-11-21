@@ -1,0 +1,35 @@
+{
+  "format": "luminati-campaign",
+  "version": 1,
+  "name": "Làng Vũ Đại",
+  "subtitle": "Cây đa, giếng nước, sân đình",
+  "title": {
+    "title": "LÀNG VŨ ĐẠI",
+    "subtitle": "Cây đa, giếng nước, sân đình",
+    "prompt": "Nhấn phím bất kỳ",
+    "credit": ""
+  },
+  "start": {
+    "level": "suong-mai",
+    "entrance": ""
+  },
+  "levels": [
+    {
+      "id": "suong-mai"
+    },
+    {
+      "id": "dong-lua"
+    }
+  ],
+  "chapters": [],
+  "story": [
+    "main.json",
+    "loi.story"
+  ],
+  "textKeys": {
+    "subtitle": "C4897D726055DDC9DFBC8E4F3F4EA7FA",
+    "title.title": "8FD88562B23543594C59C3B39FAE580C",
+    "title.subtitle": "24D3D4A4B482C78A6F8DF5537DE2CF59",
+    "title.prompt": "224543AB2AC00C600F2AE4CA1203C162"
+  }
+}
