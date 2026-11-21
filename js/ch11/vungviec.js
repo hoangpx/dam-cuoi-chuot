@@ -353,3 +353,29 @@ function c11ChainDone(vil, k, gap) {
   const eld = c11P(c11FvId(vil, 0)), L = c11HQOf(eld), i = L.findIndex(q => q.chain && q.chain[0] === vil && q.chain[1] === k);
   return i >= 0 && c11DoneAgo(eld.id + ':' + i, gap);
 }
+
+/* ---------- a source for every thing a job asks for (owner 2026-11-21: "tìm xem còn lỗi nào như thế nữa ko? người chơi hỏi nhiều quá",
+   after cây tre turned out to have no source). An audit of every bring / carry step, the village works, the hearth's recipes, the
+   kiln's orders and the animals' feed against every source (shops, crops, forage, fish, digging, wild things, animals, the hearth,
+   the kiln, the stalls) found eight things nothing gave: gạch, ngói, vôi, dầu hoả, chiếu cói, nón quai thao (the dệt vải shop's one
+   is a hat to wear, not a thing in the bag), xôi đỗ, xôi gấc. Now:
+   - Xóm Mới's builder sells gạch, ngói, vôi five at a time; the potter of Làng Gốm sells gạch and ngói one at a time; hills dig up vôi.
+   - the village's hàng xén sells dầu hoả and chiếu cói, Làng Nón sells nón quai thao, one at a time (shop.one rows).
+   - the hearth cooks xôi đỗ (2 gạo nếp) and xôi gấc (2 gạo nếp + 1 quả rừng for the gấc); chị Thơm's stall at the Trạm sells both. */
+if (typeof C11_SHOPS !== 'undefined') {
+  C11_SHOPS.push({ who: 'v_xommoi_0', title: 'Gạch ngói vôi của thợ dựng nhà', feed: ['gach', 'ngoi', 'voi'].filter(id => C11_ITEMS[id]), say: 'Gạch nung già lửa, ngói mũi hài, vôi tôi kỹ. Dựng nhà thì cứ hỏi tôi.' });
+  C11_SHOPS.push({ who: 'trade:hàng xén', title: 'Hàng xén: dầu hoả, chiếu cói', one: ['dau_hoa', 'chieu_coi'].filter(id => C11_ITEMS[id]), say: 'Dầu hoả thắp đèn, chiếu cói mới dệt, có cả đấy.' });
+  const non = C11_SHOPS.find(s => s.who === 'v_langnon_3'); if (non && C11_ITEMS.non_quai_thao) non.one = ['non_quai_thao'];
+  const oldRows = c11ToolRows;
+  c11ToolRows = function (shop) {
+    const rows = oldRows(shop);
+    for (const id of shop.one || []) { const I = C11_ITEMS[id]; rows.push({ name: I.name, sub: I.desc, price: I.price, ok: SAVE11.money >= I.price, f: () => {
+      if (SAVE11.money < I.price) { C11.menu.note = 'Chưa đủ tiền'; return; } if (c11Add(id, 1)) { C11.menu.note = 'Túi đầy rồi'; return; }
+      SAVE11.money -= I.price; persist11(); C11.menu.note = `Đã mua ${I.name.toLowerCase()}`; } }); }
+    return rows;
+  };
+}
+if (typeof C11_GOM_SELL !== 'undefined') for (const id of ['gach', 'ngoi']) if (C11_ITEMS[id] && !C11_GOM_SELL.includes(id)) C11_GOM_SELL.push(id);
+if (typeof C11_DIG !== 'undefined' && C11_ITEMS.voi) for (const P of Object.values(C11_FAR_BY)) if (P.kind === 'hill') C11_DIG[P.id].push(['voi', 2.5]);
+if (typeof C11_NHA_RECIPES !== 'undefined') for (const r of [['xoi_do', [['gao_nep', 2]], 1], ['xoi_gac', [['gao_nep', 2], ['qua', 1]], 1]]) if (C11_ITEMS[r[0]] && !C11_NHA_RECIPES.some(x => x[0] === r[0])) C11_NHA_RECIPES.push(r);
+if (typeof C11_TRAM_SHOPS !== 'undefined') for (const id of ['xoi_do', 'xoi_gac']) if (C11_ITEMS[id] && !C11_TRAM_SHOPS.com.dishes.includes(id)) C11_TRAM_SHOPS.com.dishes.push(id);
