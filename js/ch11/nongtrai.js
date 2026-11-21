@@ -772,7 +772,7 @@ function c11Act(tx, ty) {
     c11Spend(C11_COST.axe);
     const stump = !!SAVE11.cut[key], hk = (stump ? 's' : '') + key, h = (SAVE11.hits[hk] || 0) + 1; SAVE11.hits[hk] = h;
     c11Sfx.thump && c11Sfx.thump(); c11Chips(tx, ty - (stump ? .1 : .5), tx + .5 < C11.px ? -1 : 1, stump ? 6 : 8); if (!stump) C11.shake = { key, t: 0 };
-    if (!stump && h >= 10) { delete SAVE11.hits[hk]; SAVE11.cut[key] = SAVE11.day; c11Drop('go', 3, tx, ty); C11.fall = { key, t: 0, dir: tx + .5 < C11.px ? -1 : 1 }; c11Sfx.pluck && c11Sfx.pluck(); c11Chips(tx, ty - .6, tx + .5 < C11.px ? -1 : 1, 14); c11Pop(tx, ty - 1, 'Gỗ văng ra, nhặt đi', '#8a5a38'); }
+    if (!stump && h >= 10) { delete SAVE11.hits[hk]; SAVE11.cut[key] = SAVE11.day; const tre = c11TreeType(tx, ty) === 'bamboo'; c11Drop(tre ? 'tre' : 'go', 3, tx, ty); C11.fall = { key, t: 0, dir: tx + .5 < C11.px ? -1 : 1 }; c11Sfx.pluck && c11Sfx.pluck(); c11Chips(tx, ty - .6, tx + .5 < C11.px ? -1 : 1, 14); c11Pop(tx, ty - 1, tre ? 'Tre đổ rồi, nhặt đi' : 'Gỗ văng ra, nhặt đi', '#8a5a38'); }
     else if (stump && h >= 6) { delete SAVE11.hits[hk]; delete SAVE11.cut[key]; SAVE11.gone[key] = SAVE11.day; c11Drop('go', 2, tx, ty); c11Sfx.pluck && c11Sfx.pluck(); c11Chips(tx, ty - .1, tx + .5 < C11.px ? -1 : 1, 12); c11Pop(tx, ty - 1, 'Gỗ văng ra', '#8a5a38'); }
     return;
   }

@@ -46,7 +46,7 @@ function c11Xp(n) {
   c11Drop = function (kind, n, tx, ty) {
     oldDrop(kind, n, tx, ty);
     const I = C11_ITEMS[kind]; if (!I) return;
-    c11Xp(C11_CROPS[kind] ? 3 * n : kind === 'go' ? 2 : kind === 'buong_chuoi' ? 3 * n : I.cat === 'ca' ? 0 : 1);
+    c11Xp(C11_CROPS[kind] ? 3 * n : kind === 'go' || kind === 'tre' ? 2 : kind === 'buong_chuoi' ? 3 * n : I.cat === 'ca' ? 0 : 1);
   };
   /* village jobs: XP, and at 10 and 25 jobs done the bag grows by two */
   const oldDone = c11QuestDone;
