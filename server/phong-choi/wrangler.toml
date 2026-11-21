@@ -59,6 +59,10 @@ name = "JIGSAW_CC"
 class_name = "JigsawCC2"
 
 [[durable_objects.bindings]]
+name = "JIGSAW_OT"
+class_name = "JigsawOT"
+
+[[durable_objects.bindings]]
 name = "JIGSAW_ROOM"
 class_name = "JigsawRoom"
 
@@ -154,3 +158,8 @@ new_sqlite_classes = ["JigsawCC"]
 [[migrations]]
 tag = "v18"
 renamed_classes = [{ from = "JigsawCC", to = "JigsawCC2" }]
+
+# 2026-11-20: the thirteenth print (Ông Tơ cưỡi rồng, 2255 pieces), its own object and storage
+[[migrations]]
+tag = "v19"
+new_sqlite_classes = ["JigsawOT"]
