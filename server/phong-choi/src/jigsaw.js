@@ -524,5 +524,5 @@ export class JigsawTB extends makeJigsaw({ pic: 'tb1', cols: 40, rows: 55, pw: 2
 export class JigsawTD extends makeJigsaw({ pic: 'td1', cols: 56, rows: 40, pw: 2800, ph: 2000, freeze: false }) {}
 // the twelfth print (2026-11-18): Chơi chim, 64 x 40 = 2560 pieces of 50 px (3200 x 2000, img/ch10/choi-chim.jpg). In the list from the start. Same guards as every print
 export class JigsawCC2 extends makeJigsaw({ pic: 'cc1', cols: 64, rows: 40, pw: 3200, ph: 2000, freeze: false }) {}
-// the thirteenth print (2026-11-20): Ông Tơ cưỡi rồng, 41 x 55 = 2255 pieces of 50 px (2050 x 2750, img/ch10/ong-to.jpg). In the list from the start. Same guards as every print
+// the thirteenth print (2026-11-20): Ông Tơ, 41 x 55 = 2255 pieces of 50 px (2050 x 2750, img/ch10/ong-to.jpg). In the list from the start. Same guards as every print
 export class JigsawOT extends makeJigsaw({ pic: 'ot1', cols: 41, rows: 55, pw: 2050, ph: 2750, freeze: false }) {}
