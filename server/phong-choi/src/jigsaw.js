@@ -526,3 +526,6 @@ export class JigsawTD extends makeJigsaw({ pic: 'td1', cols: 56, rows: 40, pw: 2
 export class JigsawCC2 extends makeJigsaw({ pic: 'cc1', cols: 64, rows: 40, pw: 3200, ph: 2000, freeze: false }) {}
 // the thirteenth print (2026-11-20): Ông Tơ, 41 x 55 = 2255 pieces of 50 px (2050 x 2750, img/ch10/ong-to.jpg). In the list from the start. Same guards as every print
 export class JigsawOT extends makeJigsaw({ pic: 'ot1', cols: 41, rows: 55, pw: 2050, ph: 2750, freeze: false }) {}
+
+// the fourteenth print (2026-11-24): Dùng nông cụ cải tiến, 61 x 49 = 2989 pieces of 50 px (3050 x 2450, img/ch10/nong-cu.jpg). In the list from the start. Same guards as every print
+export class JigsawNC extends makeJigsaw({ pic: 'nc1', cols: 61, rows: 49, pw: 3050, ph: 2450, freeze: false }) {}
