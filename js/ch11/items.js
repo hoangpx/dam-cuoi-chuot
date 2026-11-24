@@ -88,7 +88,7 @@ const C11_ITEM_ROWS = [
   ['ca_chep_do', 'Cá chép đỏ', 'ca', 300, 0, '#d84020', 'Hiếm lắm. Ngày ông Công ông Táo thả cho chép hoá rồng.'],
   ['ca_lang', 'Cá lăng', 'ca', 90, 15, '#9a8a6a', 'Chỉ có ở khúc sông sâu.'],
   ['ca_nheo', 'Cá nheo', 'ca', 70, 12, '#5a5a4a', 'Da trơn, thịt béo.'],
-  ['rac', 'Rác rưởi', 'ca', 0, 0, '#8a8a7a', 'Một chiếc dép cũ vướng vào lưỡi câu.'],
+  ['rac', 'Rác rưởi', 'ca', 1, 0, '#8a8a7a', 'Một chiếc dép cũ vướng vào lưỡi câu.'],
   // ---- từ con vật (animal products)
   ['trung_ga', 'Trứng gà', 'thu', 10, 6, '#f0e0c0', 'Gà ta đẻ, lòng đỏ vàng ươm.'],
   ['trung_vit', 'Trứng vịt', 'thu', 12, 7, '#e0e8e0', 'Vịt bầu đẻ ở bờ ao.'],
