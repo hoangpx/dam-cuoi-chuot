@@ -67,6 +67,10 @@ name = "JIGSAW_NC"
 class_name = "JigsawNC"
 
 [[durable_objects.bindings]]
+name = "JIGSAW_BM"
+class_name = "JigsawBM"
+
+[[durable_objects.bindings]]
 name = "JIGSAW_ROOM"
 class_name = "JigsawRoom"
 
@@ -172,3 +176,8 @@ new_sqlite_classes = ["JigsawOT"]
 [[migrations]]
 tag = "v20"
 new_sqlite_classes = ["JigsawNC"]
+
+# 2026-11-26: the fifteenth print (Bịt mắt bắt dê, 2904 pieces), its own object and storage
+[[migrations]]
+tag = "v21"
+new_sqlite_classes = ["JigsawBM"]

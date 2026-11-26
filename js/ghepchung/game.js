@@ -11,6 +11,7 @@ const jgPersist = () => { try { localStorage.setItem('dcc.jg', JSON.stringify(JG
 const JG = { tab: 'chung', gvel: 0, G: null, im: null, welcome: null, id: null, players: [], conn: 'connecting', chat: new Map(), emo: new Map(), tray: false, trayBtns: [], btns: [], ui: null, board: null, bscroll: 0, drag: null, t: 0, flash: null, st: 0, mvT: 0, mvKey: '', doneAt: 0, conf: [], bad: false, pos: new Map(), joinedN: 0, pz: null, L: null, list: {}, listAt: 0, listBusy: false, thumbs: {}, gscroll: 0, rooms: null, roomsMeta: null, room: null, rthumbs: {}, pw: {} };
 // the prints: the newest first. cols x rows is the cut (the server has the same numbers); the thumbnails are small copies for the list
 const JG_PUZZLES = [
+  { id: 'bm', pic: { id: 'bm', src: 'img/ch10/bit-mat-bat-de.jpg', w: 3300, h: 2200, vi: 'Bịt mắt bắt dê', en: 'Blindfold Goat Catching' }, thumb: 'img/ch10/thumb-bm.jpg', cols: 66, rows: 44 },
   { id: 'nc', pic: { id: 'nc', src: 'img/ch10/nong-cu.jpg', w: 3050, h: 2450, vi: 'Dùng nông cụ cải tiến', en: 'Using Improved Farm Tools' }, thumb: 'img/ch10/thumb-nc.jpg', cols: 61, rows: 49 },
   { id: 'ot', pic: { id: 'ot', src: 'img/ch10/ong-to.jpg', w: 2050, h: 2750, vi: 'Ông Tơ', en: 'The Matchmaker' }, thumb: 'img/ch10/thumb-ot.jpg', cols: 41, rows: 55 },
   { id: 'cc', pic: { id: 'cc', src: 'img/ch10/choi-chim.jpg', w: 3200, h: 2000, vi: 'Chơi chim', en: 'Playing with Birds' }, thumb: 'img/ch10/thumb-cc.jpg', cols: 64, rows: 40 },
