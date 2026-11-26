@@ -1292,22 +1292,33 @@ function c11DrawMenu(g, W, H) {
   if (m.book) { c11DrawBook(g, W, H, m); return; }
   g.fillStyle = 'rgba(20,16,30,.5)'; g.fillRect(0, 0, W, H);
   const cols = m.cols || 1, pw = Math.min(W - 20, cols === 2 ? 420 : 360), gap = 8, rows = Math.ceil(m.rows.length / cols), cw0 = (pw - 24 - gap * (cols - 1)) / cols;
-  g.font = '600 10.5px "Be Vietnam Pro", sans-serif'; const subs = m.rows.map(r => { const tx0 = (r.icon && c11Art().crop[r.icon]) ? 56 : 12; return c11Wrap(g, r.sub || '', cw0 - tx0 - 8).slice(0, 3); }), rh = Math.max(cols === 2 ? 62 : 58, 45 + 13 * Math.max(1, ...subs.map(l => l.length))), ph = 76 + rows * (rh + gap) + 26, px = (W - pw) / 2, py = Math.max(8, (H - ph) / 2);
+  g.font = '600 10.5px "Be Vietnam Pro", sans-serif'; const subs = m.rows.map(r => { const tx0 = (r.icon && c11Art().crop[r.icon]) ? 56 : 12; return c11Wrap(g, r.sub || '', cw0 - tx0 - 8).slice(0, 3); }), rh = Math.max(cols === 2 ? 62 : 58, 45 + 13 * Math.max(1, ...subs.map(l => l.length))), full = 76 + rows * (rh + gap) + 26, ph = Math.min(full, H - 16), px = (W - pw) / 2, py = Math.max(8, (H - ph) / 2);   // a list longer than the screen scrolls (wheel, drag; a player could not reach the last rows of the forge)
   g.fillStyle = '#f4ead0'; g.strokeStyle = INK; g.lineWidth = 3.2; g.beginPath(); g.roundRect(px, py, pw, ph, 14); g.fill(); g.stroke();
   g.fillStyle = INK; g.font = '900 22px "Playfair Display", serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(m.title, W / 2, py + 26);
   g.font = '600 12px "Be Vietnam Pro", sans-serif'; g.fillStyle = 'rgba(29,25,21,.7)'; g.fillText('Ví: ' + c4Money(SAVE11.money), W / 2, py + 50);
   if (m.note) { g.fillStyle = '#2f6a4c'; g.font = '700 12px "Be Vietnam Pro", sans-serif'; g.fillText(m.note, W / 2, py + ph - 14); }
   const cw = (pw - 24 - gap * (cols - 1)) / cols, A = c11Art();
+  const vt = py + 66, vb = py + ph - 26, viewH = vb - vt, content = rows * (rh + gap) - gap, scMax = Math.max(0, content - viewH); m.scMax = scMax; m.sc = Math.max(0, Math.min(scMax, m.sc || 0));
+  if (scMax) { g.save(); g.beginPath(); g.rect(px + 2, vt - 3, pw - 4, viewH + 6); g.clip(); }
   m.rows.forEach((r, i) => {
-    const x = px + 12 + (i % cols) * (cw + gap), y = py + 66 + Math.floor(i / cols) * (rh + gap), ok = r.ok !== undefined ? r.ok : SAVE11.money >= (r.price || 0);
+    const x = px + 12 + (i % cols) * (cw + gap), y = vt + Math.floor(i / cols) * (rh + gap) - m.sc, ok = r.ok !== undefined ? r.ok : SAVE11.money >= (r.price || 0);
     g.fillStyle = ok ? '#f7e3a4' : '#e6dcc0'; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.roundRect(x, y, cw, rh, 10); g.fill(); g.stroke();
     let tx = x + 12;
     if (r.icon && A.crop[r.icon]) { g.save(); g.beginPath(); g.roundRect(x + 4, y + 4, 44, rh - 8, 7); g.clip(); g.fillStyle = 'rgba(111,165,76,.25)'; g.fillRect(x + 4, y + 4, 44, rh - 8); c11Spr(g, A.crop[r.icon][3], x + 26, y + rh - 8, .36); g.restore(); tx = x + 56; }
     g.textAlign = 'left'; g.fillStyle = INK; g.font = '800 14px "Be Vietnam Pro", sans-serif'; g.fillText(r.name, tx, y + 17, cw - (tx - x) - 8);
     g.font = '600 10.5px "Be Vietnam Pro", sans-serif'; g.fillStyle = 'rgba(29,25,21,.75)'; const sl = subs[i]; sl.forEach((l, k) => g.fillText(l, tx, y + 34 + k * 13));
     g.fillStyle = '#a3332a'; g.font = '800 12px "Be Vietnam Pro", sans-serif'; g.fillText(r.tag !== undefined ? r.tag : c4Money(r.price), tx, y + 34 + Math.max(1, sl.length) * 13 + 4, cw - (tx - x) - 8);
-    C11.hud.push({ r: [x, y, cw, rh], modal: true, f: r.f });
+    const y0 = scMax ? Math.max(y, vt) : y, y1 = scMax ? Math.min(y + rh, vb) : y + rh;
+    if (y1 > y0) C11.hud.push({ r: [x, y0, cw, y1 - y0], modal: true, f: r.f });
   });
+  if (scMax) {
+    g.restore();
+    const bh = Math.max(24, viewH * viewH / content), by = vt + (viewH - bh) * (m.sc / scMax);
+    g.fillStyle = 'rgba(29,25,21,.35)'; g.beginPath(); g.roundRect(px + pw - 8, by, 4, bh, 2); g.fill();
+    g.fillStyle = 'rgba(29,25,21,.55)'; g.font = '900 13px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (m.sc < scMax - 2) g.fillText('▼', px + pw - 22, vb + 7);   // more below
+    if (m.sc > 2) g.fillText('▲', px + pw - 22, vt - 8);
+  }
 }
 function c11DrawGrid(g, W, H, m) {                                   // the bag beside the chest, or the bag at a selling place
   g.fillStyle = 'rgba(20,16,30,.55)'; g.fillRect(0, 0, W, H);
@@ -1831,6 +1842,7 @@ function c11Pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r
 function c11Down(e) {
   if (S.mode !== 'c11play' || !C11.ready || !C11.v) return; capturePointer(e);
   const [x, y] = c11Pos(e), st = safeTop();
+  if (C11.menu && C11.menu.scMax > 0) { C11.menu.press = { x, y, sc0: C11.menu.sc || 0, moved: false }; return; }   // a long list: wait to see a drag or a tap (c11Up)
   if (C11.menu) { for (const h of C11.hud) if (h.modal) { const [a, b, w, hh] = h.r; if (x >= a && x <= a + w && y >= b && y <= b + hh) { h.f(); return; } } C11.menu = null; return; }
   if (C11.fade) return;
   for (const h of C11.hud) { const [a, b, w, hh] = h.r; if (x >= a && x <= a + w && y >= b && y <= b + hh) { h.f(); return; } }
@@ -1838,6 +1850,17 @@ function c11Down(e) {
   const V = C11.v, wx = (x + V.cx) / V.T, wy = (y - st + V.cy) / V.T, tx = Math.floor(wx), ty = Math.floor(wy);
   if (tx >= 0 && ty >= 0 && tx < C11_W && ty < C11_H) c11Tap(tx, ty, wx, wy);
 }
+function c11MenuMove(e) {
+  const m = C11.menu; if (!m || !m.press) return; const [, y] = c11Pos(e), dy = y - m.press.y;
+  if (Math.abs(dy) > 6) m.press.moved = true;
+  if (m.press.moved) m.sc = Math.max(0, Math.min(m.scMax || 0, m.press.sc0 - dy));
+}
+function c11MenuUp() {
+  const m = C11.menu; if (!m || !m.press) return; const P = m.press; m.press = null; if (P.moved) return;
+  for (const h of C11.hud) if (h.modal) { const [a, b, w, hh] = h.r; if (P.x >= a && P.x <= a + w && P.y >= b && P.y <= b + hh) { h.f(); return; } }
+  C11.menu = null;
+}
+addEventListener('wheel', e => { const m = typeof C11 !== 'undefined' && C11.menu; if (S.mode === 'c11play' && m && m.scMax > 0) { m.sc = Math.max(0, Math.min(m.scMax, (m.sc || 0) + e.deltaY)); e.preventDefault(); } }, { passive: false });
 function c11Key(e) {
   if (e.code === 'Escape') { if (C11.menu) { C11.menu = null; return; } showChapters(); return; }
   if (/^(Arrow|Key[WASD])/.test(e.code) || e.code === 'Space') e.preventDefault();
@@ -1861,6 +1884,6 @@ registerChapter({
   hasProgress: () => false,
   hide: c11Hide,
   update: updateC11, render: renderC11, key: c11Key,
-  pointer: { down: c11Down, move() {}, up() {} },
+  pointer: { down: c11Down, move: c11MenuMove, up: c11MenuUp },
   next() { startC11(); }, retry() { startC11(); },
 });
