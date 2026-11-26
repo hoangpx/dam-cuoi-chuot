@@ -103,9 +103,10 @@ const c4RankWhen = t => {
   months = Math.max(1, months);
   return months < 12 ? `${months} tháng trước` : `${Math.max(1, Math.floor(months / 12))} năm trước`;
 };
-const c4RankRvHtml = list => {
+// the host may take down what a guest wrote in his house (owner, 2026-11-25): a "Xóa" button on each line of MY house, two taps (no confirm())
+const c4RankRvHtml = (list, mine) => {
   const L = Array.isArray(list) ? list.filter(r => r && (r.note || r.amount > 0)) : [];
-  return L.length ? '<ul class="rvl">' + L.map(r => `<li class="rv"><p class="rvh">${r.from_pub ? `<button type="button" class="rvgo" data-pub="${p4Esc(r.from_pub)}" title="Sang thăm nhà người này"><b>${p4Esc(r.from_name || 'Khách')}</b> ›</button>` : `<b>${p4Esc(r.from_name || 'Khách')}</b>`} ${c4RankRvTag(r)}`
+  return L.length ? '<ul class="rvl">' + L.map(r => `<li class="rv"><p class="rvh">${mine && r.id != null ? `<button type="button" class="rvdel" data-id="${+r.id}" style="float:right;font-size:12px;padding:2px 8px">Xóa</button>` : ''}${r.from_pub ? `<button type="button" class="rvgo" data-pub="${p4Esc(r.from_pub)}" title="Sang thăm nhà người này"><b>${p4Esc(r.from_name || 'Khách')}</b> ›</button>` : `<b>${p4Esc(r.from_name || 'Khách')}</b>`} ${c4RankRvTag(r)}`
       + `<span class="rvwhen">${c4RankWhen(r.created_at)}</span></p>`
       + (r.note ? `<p class="rvn">${p4Esc(r.note)}</p>` : '') + '</li>').join('') + '</ul>'
     : '<p class="cnt rvnone">Chưa ai để lại lời gì.</p>';
@@ -115,7 +116,13 @@ const c4RankHud = () => { try { if (S.mode === 'c4bplay') p4Hud(); else c4Hud();
 function c4RankRvLoad(B, r) {
   const box = B.querySelector('.rvB'); if (!box) return;
   p4Rpc('dcc_rank_review_list', { p_target: r.pub, p_limit: 40 }).then(l => {
-    box.innerHTML = c4RankRvHtml(l);
+    box.innerHTML = c4RankRvHtml(l, r.mine);
+    box.querySelectorAll('.rvdel').forEach(b => b.addEventListener('click', async () => {
+      if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Xóa thật?'; setTimeout(() => { if (b.isConnected) { delete b.dataset.sure; b.textContent = 'Xóa'; } }, 3000); return; }
+      b.disabled = true;
+      try { await p4Rpc('dcc_rank_review_del', { p_id: +b.dataset.id, p_device: p4Device() }); AU.tap(); toast('Đã xóa lời nhận xét.', 2.4); c4RankRvLoad(B, r); }
+      catch (e) { b.disabled = false; toast('Chưa xóa được. Lát nữa thử lại nhé.', 2.8); }
+    }));
     box.querySelectorAll('.rvgo').forEach(b => b.addEventListener('click', () => { AU.tap(); c4RankVisit(0, b.dataset.pub); }));   // on to the house of whoever wrote it
   })
     .catch(() => { box.innerHTML = '<p class="cnt rvnone">Chưa tải được lời nhận xét.</p>'; });
